@@ -16,7 +16,9 @@ internal sealed class ModuleConfiguration : IEntityTypeConfiguration<Module>
             // crear. La misma regla la valida el host antes de arrancar.
             table.HasCheckConstraint("ck_modules_code_format", "code ~ '^[a-z][a-z0-9_]{1,39}$'");
             table.HasCheckConstraint("ck_modules_display_name_not_empty", Check.NotEmpty("display_name"));
+            table.HasCheckConstraint("ck_modules_description_not_empty", Check.NotEmpty("description"));
             table.HasCheckConstraint("ck_modules_version_not_empty", Check.NotEmpty("version"));
+            table.HasCheckConstraint("ck_modules_display_order", "display_order >= 0");
         });
 
         builder.HasKey(x => x.ModuleId).HasName("pk_modules");
@@ -37,7 +39,8 @@ internal sealed class ModuleConfiguration : IEntityTypeConfiguration<Module>
 
         builder.Property(x => x.Description)
             .HasColumnName("description")
-            .HasMaxLength(300);
+            .HasMaxLength(300)
+            .IsRequired();
 
         builder.Property(x => x.Version)
             .HasColumnName("version")

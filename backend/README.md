@@ -9,6 +9,7 @@ despliegue (ADR-002).
 Sillar.sln
 ├── Sillar.Shared/            IModule, validación del grafo, tipos de plataforma
 ├── Sillar.Shared.Tests/      pruebas del validador del grafo (xUnit)
+├── Sillar.Core.Tests/        pruebas de la lógica de autenticación (xUnit)
 ├── Sillar.Core.Contracts/    lo único que los demás módulos ven de CORE
 ├── Sillar.Core/              módulo núcleo: dominio, datos, migraciones, endpoints
 └── Sillar.Api/               host: descubre módulos y registra solo los activos
@@ -55,9 +56,29 @@ dotnet run --project Sillar.Api      # http://localhost:5080, Swagger en /swagge
 `Sillar.Shared.Tests` cubre el validador del grafo de módulos, que es lo que
 decide si el host arranca o aborta: ciclos, dependencias duras hacia módulos
 inexistentes, códigos que no sirven como nombre de schema y activaciones
-incoherentes. Es lógica pura, sin base de datos ni host, así que corre en
+incoherentes.
+
+`Sillar.Core.Tests` cubre la lógica de autenticación: la secuencia de inicio de
+sesión, la política de contraseñas, la vigencia de las sesiones, la jerarquía de
+roles y los tokens.
+
+Ambos son lógica pura, sin base de datos ni host, así que corren en
 milisegundos. Los nombres de las pruebas están en español a propósito: la salida
-de `dotnet test` se lee como la lista de reglas que cumple el arranque.
+de `dotnet test` se lee como la lista de reglas que el sistema garantiza.
+
+Dos de esas pruebas vigilan un **orden**, no un cálculo, y por eso conviene no
+tocarlas a la ligera:
+
+- `El_senuelo_no_se_calcula_cuando_la_cuenta_existe` y su pareja para el correo
+  desconocido. Sin ese cálculo señuelo, la respuesta a un correo no registrado
+  llega mucho antes que la de uno real, y ese margen revela qué correos existen.
+- `Con_la_contrasena_incorrecta_y_la_cuenta_bloqueada_devuelve_401_y_no_423`.
+  La contraseña se verifica **antes** de mirar el bloqueo: quien no la sabe
+  recibe siempre el mismo 401, y solo quien sí la sabe recibe el 423 con una
+  explicación útil.
+
+El código sigue compilando si alguien invierte ese orden. Lo único que cambia es
+que el formulario de acceso empieza a contar qué cuentas existen.
 
 ### Migraciones
 
@@ -100,20 +121,53 @@ El host ejecuta siempre la misma secuencia (SPEC de CORE §7):
 7. Registra servicios y rutas **solo** de los módulos activos. Un módulo
    inactivo no devuelve 403: su ruta no existe.
 
-### Salir del modo instalación durante el desarrollo
+### Completar la instalación
 
-Los endpoints `/api/setup*` llegan en la siguiente entrega de CORE. Hasta
-entonces, la fila de instalación se crea a mano:
+Con la base recién migrada, el host arranca en modo instalación y solo responde
+`/api/setup*`:
 
-```sql
-INSERT INTO core.installation
-    (singleton, business_name, installation_key, product_version, license_type, is_setup_complete)
-VALUES
-    (true, 'Instalación de desarrollo', gen_random_uuid(), '1.0.0', 'trial', true)
-ON CONFLICT (singleton) DO UPDATE SET is_setup_complete = true;
+```bash
+curl -X POST http://localhost:5080/api/setup -H 'Content-Type: application/json' -d '{
+  "businessName": "Negocio de desarrollo",
+  "licenseType": "trial",
+  "admin": {
+    "fullName": "Nombre Apellido",
+    "email": "persona@ejemplo.pe",
+    "password": "una contraseña larga"
+  }
+}'
 ```
 
-Al reiniciar, el host sincroniza el catálogo y `GET /api/capabilities` responde.
+Devuelve 201 y **el host se detiene** para volver a arrancar en modo normal: en
+Docker el contenedor reinicia solo; con `dotnet run`, se relanza a mano. A partir
+de ahí `/api/setup*` responde 404 y funciona el resto del API.
+
+La instalación no abre sesión. Se entra después:
+
+```bash
+curl -X POST http://localhost:5080/api/admin/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"persona@ejemplo.pe","password":"una contraseña larga"}'
+```
+
+## Sesión y CSRF
+
+- Cookie `sillar_session`: `HttpOnly`, `Secure`, `SameSite=Strict`, sin `Max-Age`.
+  Muere al cerrar el navegador; la autoridad sobre la vigencia es la fila de
+  `core.admin_sessions`. **`Secure` también en desarrollo**: los navegadores
+  tratan `localhost` como contexto seguro. Un problema de sesión en local nunca
+  es por esto.
+- Toda petición que no sea `GET`, `HEAD` u `OPTIONS` exige la cabecera
+  `X-CSRF-Token` con el token que devolvió el login. Sin ella, 403.
+- **`GET /api/admin/auth/csrf` emite un token nuevo y anula el anterior.** Como
+  en base de datos solo vive el hash, devolver el mismo es imposible. El frontend
+  debe pedirlo una vez al cargar y guardarlo en memoria; si dos pestañas lo piden,
+  la primera empieza a recibir 403 y tiene que volver a pedirlo. Lo razonable es
+  reintentar una vez ante un 403 de CSRF.
+- Sesión de 8 horas de inactividad, tope absoluto de 7 días, y `last_seen_at`
+  solo se reescribe si tiene más de un minuto.
+- Contraseñas con BCrypt. El factor de trabajo se configura en
+  `Sillar:Security:PasswordWorkFactor` y **no puede bajar de 12**: el host se
+  niega a arrancar si se intenta.
 
 ## Añadir un módulo
 

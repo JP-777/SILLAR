@@ -108,11 +108,17 @@ Catálogo de módulos que el producto conoce. **Se sincroniza desde el código a
 | module_id | integer | No | PK | |
 | code | varchar(40) | No | UNIQUE | `core`, `catalog`, `sales`… |
 | display_name | varchar(80) | No | | Nombre visible |
-| description | varchar(300) | Sí | | Qué hace, en lenguaje de negocio |
+| description | varchar(300) | **No** | | Qué hace, en lenguaje de negocio |
 | version | varchar(20) | No | | Versión del módulo |
 | is_core | boolean | No | | `true` solo para CORE. No se puede desactivar |
 | display_order | integer | No | | Orden en el panel |
 | created_at / updated_at | timestamptz | | | |
+
+**Restricciones:** `ck_modules_display_name_not_empty`, `ck_modules_description_not_empty`, `ck_modules_display_order CHECK (display_order >= 0)`.
+
+`description` es **obligatoria**. Esta tabla alimenta la pantalla donde el negocio ve sus
+módulos y decide qué activar o qué comprar: un módulo sin descripción es una fila en blanco
+en la pantalla que sostiene el argumento de venta.
 
 ### 4.3 `core.module_dependencies`
 

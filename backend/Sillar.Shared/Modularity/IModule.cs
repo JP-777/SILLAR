@@ -31,7 +31,12 @@ public interface IModule
     string DisplayName { get; }
 
     /// <summary>Qué hace el módulo, en lenguaje de negocio. Máximo 300 caracteres.</summary>
-    string? Description { get; }
+    /// <remarks>
+    /// Obligatoria. Alimenta la pantalla donde el negocio ve sus módulos y decide
+    /// qué activar o qué comprar: un módulo sin descripción es una fila en blanco
+    /// en la pantalla que sostiene el argumento de venta.
+    /// </remarks>
+    string Description { get; }
 
     /// <summary>Versión del módulo, en formato <c>mayor.menor.parche</c>.</summary>
     string Version { get; }

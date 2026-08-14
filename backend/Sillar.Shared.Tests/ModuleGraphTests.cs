@@ -182,6 +182,32 @@ public class ModuleGraphTests
         Assert.Contains(resultado.Errors, error => error.Contains("descripción"));
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Un_modulo_sin_descripcion_aborta(string descripcion)
+    {
+        // La descripción alimenta el panel donde el negocio decide qué activar
+        // o qué comprar. Un módulo sin ella deja una fila en blanco justo en la
+        // pantalla que sostiene el argumento de venta.
+        var resultado = ModuleGraph.Validate([
+            Core(),
+            new FakeModule("catalog", hard: ["core"], description: descripcion)
+        ]);
+
+        Assert.False(resultado.IsValid);
+        Assert.Contains(resultado.Errors, error => error.Contains("descripción"));
+    }
+
+    [Fact]
+    public void Una_posicion_negativa_en_el_panel_aborta()
+    {
+        var resultado = ModuleGraph.Validate([Core(), Modulo("catalog", orden: -1)]);
+
+        Assert.False(resultado.IsValid);
+        Assert.Contains(resultado.Errors, error => error.Contains("posición"));
+    }
+
     [Fact]
     public void Una_dependencia_blanda_inexistente_solo_avisa()
     {

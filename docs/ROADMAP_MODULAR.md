@@ -11,6 +11,10 @@ El roadmap anterior avanzaba por capas: primero toda la base de datos, luego tod
 
 El nuevo roadmap tiene **una fase de fundación** y luego **un ciclo idéntico por módulo**.
 
+**Entregas dentro de un módulo.** Un módulo grande se parte en entregas sucesivas, cada una
+con su documento en `docs/modules/<código>/ENTREGA-NN-<nombre>.md` que refina el SPEC.
+CORE va así: entrega 1, esqueleto y capacidades; entrega 2, instalación y autenticación.
+
 ### El ciclo de módulo (5 pasos)
 
 Cada módulo recorre siempre los mismos cinco pasos, en orden:

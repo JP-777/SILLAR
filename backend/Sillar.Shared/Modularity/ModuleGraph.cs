@@ -132,9 +132,16 @@ public static partial class ModuleGraph
                 errors.Add($"El módulo '{module.Code}' necesita un nombre visible de 1 a {MaxDisplayNameLength} caracteres.");
             }
 
-            if (module.Description is { Length: > MaxDescriptionLength })
+            if (string.IsNullOrWhiteSpace(module.Description) || module.Description.Length > MaxDescriptionLength)
             {
-                errors.Add($"La descripción del módulo '{module.Code}' pasa de {MaxDescriptionLength} caracteres.");
+                errors.Add(
+                    $"El módulo '{module.Code}' necesita una descripción de 1 a {MaxDescriptionLength} caracteres: " +
+                    "es lo que lee el negocio en el panel para decidir si lo activa.");
+            }
+
+            if (module.DisplayOrder < 0)
+            {
+                errors.Add($"El módulo '{module.Code}' declara la posición {module.DisplayOrder}, que no puede ser negativa.");
             }
 
             if (string.IsNullOrWhiteSpace(module.Version)

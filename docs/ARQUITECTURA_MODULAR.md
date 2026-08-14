@@ -253,7 +253,7 @@ public interface IModule
 {
     string   Code            { get; }   // "catalog"
     string   DisplayName     { get; }   // "Catálogo de Productos"
-    string   Description     { get; }   // qué hace, en lenguaje de negocio
+    string   Description     { get; }   // obligatoria: alimenta el panel de módulos
     string   Version         { get; }   // "1.0.0"
     int      DisplayOrder    { get; }   // orden en el panel
     string[] HardDependencies{ get; }   // ["core"]

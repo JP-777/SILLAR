@@ -15,17 +15,20 @@ namespace Sillar.Core;
 /// </summary>
 public sealed class CoreModule : IModule
 {
+    /// <summary>Código del módulo, para etiquetar auditoría y medios.</summary>
+    public const string ModuleCode = ModuleGraph.CoreCode;
+
     /// <summary>Nombre de la cadena de conexión en la configuración.</summary>
     public const string ConnectionStringName = "Default";
 
     /// <inheritdoc />
-    public string Code => ModuleGraph.CoreCode;
+    public string Code => ModuleCode;
 
     /// <inheritdoc />
     public string DisplayName => "Núcleo de plataforma";
 
     /// <inheritdoc />
-    public string? Description =>
+    public string Description =>
         "Identidad de la instalación, catálogo de módulos y su activación, usuarios " +
         "administradores, autenticación, configuración del sitio, gestión de archivos y auditoría.";
 
@@ -53,7 +56,8 @@ public sealed class CoreModule : IModule
                 "Se define en .env como ConnectionStrings__Default.");
         }
 
-        services.AddCoreData(connectionString);
+        services.AddCoreEssentials(configuration, connectionString);
+        services.AddCoreAuthentication();
 
         // La foto de activaciones la deja el host en el contenedor antes de
         // llamar aquí; el registro es la lectura de esa foto que ven los demás
@@ -65,5 +69,7 @@ public sealed class CoreModule : IModule
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         endpoints.MapCapabilitiesEndpoints();
+        endpoints.MapAuthEndpoints();
+        endpoints.MapAdminUserEndpoints();
     }
 }

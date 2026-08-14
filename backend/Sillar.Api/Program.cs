@@ -1,5 +1,6 @@
 using Microsoft.OpenApi;
 using Sillar.Api.Modularity;
+using Sillar.Core.Endpoints;
 using Sillar.Shared.Configuration;
 using Sillar.Shared.Platform;
 
@@ -63,12 +64,18 @@ app.UseStatusCodePages();
 
 if (boot.IsSetupMode)
 {
-    // El modo instalación no monta rutas de negocio. Las de instalación llegan
-    // con la siguiente entrega de CORE.
-    app.Logger.LogWarning("SILLAR arrancó en MODO INSTALACIÓN. No hay rutas de negocio disponibles.");
+    // Modo instalación: solo /api/setup*. Ninguna ruta de negocio existe
+    // todavía, y las de instalación dejarán de existir en cuanto se complete.
+    app.MapSetupEndpoints();
+    app.Logger.LogWarning(
+        "SILLAR arrancó en MODO INSTALACIÓN. Solo responde /api/setup*. " +
+        "Completa la instalación con POST /api/setup y el host se reiniciará en modo normal.");
 }
 else
 {
+    app.UseAuthentication();
+    app.UseAuthorization();
+
     foreach (var module in boot.Active)
     {
         module.MapEndpoints(app);

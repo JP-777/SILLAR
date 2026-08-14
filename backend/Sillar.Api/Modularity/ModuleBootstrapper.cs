@@ -79,6 +79,11 @@ internal static class ModuleBootstrapper
         // --- Paso 3 bis: ¿modo instalación? -------------------------------
         if (await IsSetupPendingAsync(database, logger, cancellationToken))
         {
+            // Lo mínimo para que /api/setup* funcione: datos, reloj, hashes y
+            // auditoría. Ni sesiones ni autorización: todavía no hay a quién
+            // autenticar.
+            builder.Services.AddCoreEssentials(builder.Configuration, connectionString);
+
             return new ModuleBootstrapResult(modules, [], IsSetupMode: true);
         }
 

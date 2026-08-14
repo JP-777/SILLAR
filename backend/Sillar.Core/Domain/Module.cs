@@ -20,8 +20,8 @@ public class Module
     /// <summary>Nombre visible, en español.</summary>
     public required string DisplayName { get; set; }
 
-    /// <summary>Qué hace el módulo, en lenguaje de negocio.</summary>
-    public string? Description { get; set; }
+    /// <summary>Qué hace el módulo, en lenguaje de negocio. Obligatoria.</summary>
+    public required string Description { get; set; }
 
     /// <summary>Versión del módulo.</summary>
     public required string Version { get; set; }

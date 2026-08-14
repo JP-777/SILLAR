@@ -22,6 +22,9 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11" />
     <!-- Swagger: interfaz de exploración del API. -->
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+    <!-- BCrypt para contraseñas. .NET no lo trae y CLAUDE.md lo exige con
+         factor de trabajo 12 o más. -->
+    <PackageVersion Include="BCrypt.Net-Next" Version="4.2.0" />
   </ItemGroup>
 
   <!-- Solo para proyectos de pruebas. -->

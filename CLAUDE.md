@@ -112,6 +112,14 @@ Nombres de restricciones: `pk_`, `fk_`, `uq_`, `ck_`, `idx_` seguidos de tabla y
 5. No crear abstracciones "por si acaso". Solo se generaliza cuando existe un segundo caso real.
 6. Cada endpoint documentado con comentarios XML y visible en Swagger.
 
+## Pruebas
+
+- Un proyecto de pruebas por proyecto que las necesite, **junto a él** en `backend/`, con el
+  nombre `Sillar.<Proyecto>.Tests`. No una carpeta `tests/` aparte.
+- Los nombres de las pruebas van **en español**: la salida de `dotnet test` debe leerse como
+  la lista de reglas que el sistema garantiza.
+- Las pruebas de lógica no tocan la base de datos.
+
 ## Criterio de terminado
 
 Un módulo está terminado cuando **se puede instalar y desinstalar sin romper nada del resto del sistema**. Si al desactivarlo aparece un enlace roto, una ruta muerta, un hueco visual o un fallo al arrancar, no está terminado.

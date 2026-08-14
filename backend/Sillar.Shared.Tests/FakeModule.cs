@@ -26,7 +26,7 @@ internal sealed class FakeModule(
 
     public string DisplayName => displayName ?? $"Módulo {code}";
 
-    public string? Description => description;
+    public string Description => description ?? $"Lo que hace el módulo {code}.";
 
     public string Version => version ?? "1.0.0";
 
