@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SILLAR — Sistema de diseño del producto</title>
+<style>
+/* ============================================================
+   SILLAR · Tokens
+   El tema es un dato, no código: los componentes solo leen
+   variables. Cambiar de marca = cambiar este bloque.
+   ============================================================ */
+:root{
+  /* Piedra — neutrales cálidos, tomados del sillar arequipeño */
+  --stone-50:#FAF8F5;  --stone-100:#F2EEE7; --stone-200:#E3DCD1;
+  --stone-300:#CBC2B2; --stone-400:#A29886; --stone-500:#7A7062;
+  --stone-600:#5C5447; --stone-700:#443E34; --stone-800:#2C2822;
+  --stone-900:#1A1713;
+
+  /* Acento — el azul del cielo de Arequipa contra la piedra blanca */
+  --accent-100:#D4E5F0; --accent-300:#7FB0D0; --accent-500:#1F6795;
+  --accent-600:#18536F; --accent-700:#123D55;
+
+  /* Semánticos */
+  --success:#2E7D5B; --success-bg:#E6F2EC;
+  --warning:#9C6414; --warning-bg:#FBF0DD;
+  --danger:#B23A2B;  --danger-bg:#FBEAE7;
+
+  /* Roles — lo que los componentes usan de verdad */
+  --bg:var(--stone-50);
+  --bg-raised:#FFFFFF;
+  --bg-sunken:var(--stone-100);
+  --text:var(--stone-800);
+  --text-muted:var(--stone-600);
+  --text-subtle:var(--stone-500);
+  --border:var(--stone-200);        /* divisores decorativos */
+  --border-strong:var(--stone-500); /* bordes de controles: contraste 4.58:1 */
+  --primary:var(--accent-500);
+  --primary-hover:var(--accent-600);
+  --on-primary:#FFFFFF;
+
+  /* Geometría — bloque tallado: esquinas apenas suavizadas */
+  --r-sm:3px; --r-md:5px; --r-lg:8px;
+
+  /* Espaciado */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px;
+
+  --shadow:0 1px 2px rgba(26,23,19,.06), 0 1px 3px rgba(26,23,19,.05);
+  --shadow-lg:0 2px 4px rgba(26,23,19,.06), 0 8px 24px rgba(26,23,19,.08);
+
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+}
+[data-theme="dark"]{
+  --bg:var(--stone-900);
+  --bg-raised:var(--stone-800);
+  --bg-sunken:#12100D;
+  --text:var(--stone-100);
+  --text-muted:var(--stone-300);
+  --text-subtle:var(--stone-400);
+  --border:var(--stone-700);
+  --border-strong:var(--stone-400);
+  --primary:var(--accent-600);
+  --primary-hover:var(--accent-500);
+  --success-bg:#17241E; --warning-bg:#2A2115; --danger-bg:#2A1A17;
+  --shadow:0 1px 3px rgba(0,0,0,.4);
+  --shadow-lg:0 8px 24px rgba(0,0,0,.5);
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);
+  font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{margin:0;font-weight:640;letter-spacing:-.015em;line-height:1.25}
+code{font-family:var(--mono);font-size:.86em;background:var(--bg-sunken);
+  padding:2px 5px;border-radius:var(--r-sm);color:var(--text-muted)}
+
+.wrap{max-width:1080px;margin:0 auto;padding:var(--s7) var(--s5) var(--s8)}
+.section{margin-top:var(--s8)}
+.section > h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;
+  color:var(--text-subtle);font-weight:700;padding-bottom:var(--s3);
+  border-bottom:1px solid var(--border);margin-bottom:var(--s5)}
+.lead{color:var(--text-muted);max-width:62ch}
+.grid{display:grid;gap:var(--s4)}
+.row{display:flex;gap:var(--s3);flex-wrap:wrap;align-items:center}
+
+/* ---------- Cabecera ---------- */
+.masthead{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--s5);
+  flex-wrap:wrap}
+.mark{display:flex;align-items:center;gap:var(--s4)}
+.blocks{display:grid;grid-template-columns:repeat(2,17px);gap:3px;flex:none}
+.blocks i{display:block;height:17px;background:var(--stone-300);border-radius:2px}
+.blocks i:nth-child(1){background:var(--accent-500)}
+.blocks i:nth-child(4){background:var(--stone-400)}
+.brand{font-size:30px;font-weight:700;letter-spacing:.14em;margin:0}
+.acronym{color:var(--text-muted);font-size:14px;margin-top:2px}
+.acronym b{color:var(--primary);font-weight:700}
+
+/* ---------- Botones ---------- */
+.btn{font:inherit;font-weight:560;border-radius:var(--r-md);border:1px solid transparent;
+  padding:8px 16px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+  transition:background .12s,border-color .12s,color .12s;white-space:nowrap}
+.btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.btn-primary{background:var(--primary);color:var(--on-primary)}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-secondary{background:var(--bg-raised);color:var(--text);border-color:var(--border-strong)}
+.btn-secondary:hover{background:var(--bg-sunken)}
+.btn-ghost{background:transparent;color:var(--text-muted)}
+.btn-ghost:hover{background:var(--bg-sunken);color:var(--text)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{filter:brightness(.92)}
+.btn-sm{padding:5px 11px;font-size:13.5px}
+.btn-lg{padding:11px 22px;font-size:16px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+
+/* ---------- Campos ---------- */
+.field{display:flex;flex-direction:column;gap:5px}
+.label{font-size:13px;font-weight:600;color:var(--text-muted)}
+.input{font:inherit;color:var(--text);background:var(--bg-raised);
+  border:1px solid var(--border-strong);border-radius:var(--r-md);padding:8px 11px;width:100%}
+.input::placeholder{color:var(--text-subtle)}
+.input:focus{outline:2px solid var(--primary);outline-offset:-1px;border-color:var(--primary)}
+.hint{font-size:12.5px;color:var(--text-subtle)}
+.hint.error{color:var(--danger)}
+.input.is-error{border-color:var(--danger)}
+
+/* ---------- Superficies ---------- */
+.card{background:var(--bg-raised);border:1px solid var(--border);
+  border-radius:var(--r-lg);padding:var(--s5);box-shadow:var(--shadow)}
+
+/* ---------- Estados ---------- */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;
+  padding:3px 9px;border-radius:100px;border:1px solid transparent}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.badge-active{background:var(--success-bg);color:var(--success)}
+.badge-pending{background:var(--warning-bg);color:var(--warning)}
+.badge-off{background:var(--bg-sunken);color:var(--text-subtle)}
+.badge-danger{background:var(--danger-bg);color:var(--danger)}
+
+/* ---------- Tabla ---------- */
+.table-wrap{background:var(--bg-raised);border:1px solid var(--border);
+  border-radius:var(--r-lg);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--text-subtle);padding:11px var(--s4);background:var(--bg-sunken);
+  border-bottom:1px solid var(--border);font-weight:700}
+td{padding:11px var(--s4);border-bottom:1px solid var(--border)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--bg-sunken)}
+.num{text-align:right}
+
+/* ---------- Tarjeta de módulo (componente firma) ---------- */
+.modules{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:var(--s4)}
+.module{background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:var(--s4) var(--s5) var(--s5);position:relative;overflow:hidden}
+.module::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--primary)}
+.module.is-off{opacity:.62}
+.module.is-off::before{background:var(--stone-400)}
+.module.is-locked::before{background:var(--stone-300)}
+.module-top{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--s3)}
+.module-code{font-family:var(--mono);font-size:11.5px;color:var(--text-subtle);letter-spacing:.05em}
+.module h4{font-size:16px;margin:3px 0 6px}
+.module p{margin:0;font-size:13.5px;color:var(--text-muted);min-height:38px}
+.module-foot{display:flex;justify-content:space-between;align-items:center;
+  margin-top:var(--s4);padding-top:var(--s3);border-top:1px solid var(--border)}
+.dep{font-size:12px;color:var(--text-subtle)}
+.dep b{color:var(--text-muted);font-weight:600}
+
+/* ---------- Interruptor ---------- */
+.switch{position:relative;width:38px;height:22px;flex:none;border:none;padding:0;
+  background:var(--stone-400);border-radius:100px;cursor:pointer;transition:background .15s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;
+  background:#fff;border-radius:50%;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.switch[aria-checked="true"]{background:var(--success)}
+.switch[aria-checked="true"]::after{transform:translateX(16px)}
+.switch[disabled]{opacity:.5;cursor:not-allowed}
+.switch:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+/* ---------- Avisos ---------- */
+.alert{display:flex;gap:var(--s3);padding:var(--s4);border-radius:var(--r-md);
+  border-left:3px solid;font-size:14px}
+.alert-info{background:var(--accent-100);border-color:var(--accent-500);color:var(--accent-700)}
+.alert-warn{background:var(--warning-bg);border-color:var(--warning);color:var(--warning)}
+.alert-danger{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
+[data-theme="dark"] .alert-info{background:#122A38;color:var(--accent-300)}
+
+/* ---------- Navegación lateral ---------- */
+.nav{background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:var(--s3);width:238px}
+.nav-group{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-subtle);
+  font-weight:700;padding:var(--s3) var(--s3) var(--s2)}
+.nav a{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
+  padding:7px var(--s3);border-radius:var(--r-sm);color:var(--text-muted);
+  text-decoration:none;font-size:14px;font-weight:500}
+.nav a:hover{background:var(--bg-sunken);color:var(--text)}
+.nav a.is-active{background:var(--primary);color:var(--on-primary);font-weight:600}
+.nav .count{font-size:11.5px;opacity:.75;font-variant-numeric:tabular-nums}
+
+/* ---------- Estado vacío ---------- */
+.empty{text-align:center;padding:var(--s7) var(--s5);border:1px dashed var(--border-strong);
+  border-radius:var(--r-lg);color:var(--text-muted)}
+.empty .blocks{margin:0 auto var(--s4);grid-template-columns:repeat(2,20px)}
+.empty .blocks i{height:20px}
+
+/* ---------- Paleta ---------- */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:var(--s2)}
+.sw{border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border)}
+.sw .chip{height:56px}
+.sw .meta{padding:6px 8px;background:var(--bg-raised);font-size:11px;line-height:1.4}
+.sw .meta b{display:block;font-weight:600}
+.sw .meta span{color:var(--text-subtle);font-family:var(--mono);font-size:10.5px}
+
+/* ---------- Tipografía / escalas ---------- */
+.type-row{display:flex;align-items:baseline;gap:var(--s4);padding:var(--s3) 0;
+  border-bottom:1px solid var(--border)}
+.type-row .tag{font-family:var(--mono);font-size:11.5px;color:var(--text-subtle);width:150px;flex:none}
+.scale{display:flex;align-items:flex-end;gap:var(--s2)}
+.scale div{background:var(--accent-300);border-radius:2px 2px 0 0;width:34px}
+.scale span{display:block;text-align:center;font-family:var(--mono);font-size:10.5px;
+  color:var(--text-subtle);margin-top:4px}
+
+.toolbar{display:flex;gap:var(--s2);align-items:center}
+.note{font-size:13px;color:var(--text-subtle);margin-top:var(--s3);max-width:62ch}
+@media(max-width:720px){.brand{font-size:24px}.wrap{padding:var(--s5) var(--s4)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="mark">
+      <div class="blocks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div>
+        <h1 class="brand">SILLAR</h1>
+        <div class="acronym"><b>S</b>istema <b>I</b>ntegrado y <b>L</b>icenciable de
+          <b>L</b>ogística, <b>A</b>dministración y <b>R</b>etail</div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button class="btn btn-secondary btn-sm" id="theme">Tema oscuro</button>
+    </div>
+  </header>
+
+  <p class="lead" style="margin-top:var(--s5)">
+    Sistema de diseño del <b>producto</b>: panel de administración, instalador y material de venta.
+    La web pública de cada cliente usa su propio tema y no se parece a esto.
+    Todo lo que ves aquí se define con variables CSS: cambiar de marca es cambiar un bloque de tokens,
+    nunca un componente.
+  </p>
+
+  <!-- ============ PALETA ============ -->
+  <section class="section">
+    <h2>Paleta · Piedra</h2>
+    <p class="lead" style="margin-top:-8px;margin-bottom:var(--s4)">
+      Neutrales cálidos tomados del sillar: blanco crema recién tallado, gris cálido envejecido.
+      No es el gris azulado corporativo de siempre.
+    </p>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#FAF8F5"></div><div class="meta"><b>50</b><span>#FAF8F5</span></div></div>
+      <div class="sw"><div class="chip" style="background:#F2EEE7"></div><div class="meta"><b>100</b><span>#F2EEE7</span></div></div>
+      <div class="sw"><div class="chip" style="background:#E3DCD1"></div><div class="meta"><b>200</b><span>#E3DCD1</span></div></div>
+      <div class="sw"><div class="chip" style="background:#CBC2B2"></div><div class="meta"><b>300</b><span>#CBC2B2</span></div></div>
+      <div class="sw"><div class="chip" style="background:#A29886"></div><div class="meta"><b>400</b><span>#A29886</span></div></div>
+      <div class="sw"><div class="chip" style="background:#7A7062"></div><div class="meta"><b>500</b><span>#7A7062</span></div></div>
+      <div class="sw"><div class="chip" style="background:#5C5447"></div><div class="meta"><b>600</b><span>#5C5447</span></div></div>
+      <div class="sw"><div class="chip" style="background:#443E34"></div><div class="meta"><b>700</b><span>#443E34</span></div></div>
+      <div class="sw"><div class="chip" style="background:#2C2822"></div><div class="meta"><b>800</b><span>#2C2822</span></div></div>
+      <div class="sw"><div class="chip" style="background:#1A1713"></div><div class="meta"><b>900</b><span>#1A1713</span></div></div>
+    </div>
+
+    <h2 style="margin-top:var(--s6)">Paleta · Acento y semánticos</h2>
+    <p class="lead" style="margin-top:-8px;margin-bottom:var(--s4)">
+      El acento es el azul del cielo de Arequipa contra la piedra blanca. Es el único color
+      que corta la neutralidad, y por eso marca acciones y estado activo.
+    </p>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#D4E5F0"></div><div class="meta"><b>acento 100</b><span>#D4E5F0</span></div></div>
+      <div class="sw"><div class="chip" style="background:#7FB0D0"></div><div class="meta"><b>acento 300</b><span>#7FB0D0</span></div></div>
+      <div class="sw"><div class="chip" style="background:#1F6795"></div><div class="meta"><b>acento 500</b><span>#1F6795</span></div></div>
+      <div class="sw"><div class="chip" style="background:#18536F"></div><div class="meta"><b>acento 600</b><span>#18536F</span></div></div>
+      <div class="sw"><div class="chip" style="background:#2E7D5B"></div><div class="meta"><b>éxito</b><span>#2E7D5B</span></div></div>
+      <div class="sw"><div class="chip" style="background:#9C6414"></div><div class="meta"><b>aviso</b><span>#9C6414</span></div></div>
+      <div class="sw"><div class="chip" style="background:#B23A2B"></div><div class="meta"><b>peligro</b><span>#B23A2B</span></div></div>
+    </div>
+    <p class="note">
+      Contraste verificado: texto principal 13.8:1 · secundario 7.0:1 · botón primario 6.1:1 ·
+      semánticos entre 4.9:1 y 5.9:1. Todos superan AA. Los bordes de campos usan
+      <code>--border-strong</code> (4.6:1) y no el divisor decorativo, que se queda en 1.7:1
+      y no cumpliría el mínimo de 3:1 exigido a los controles.
+    </p>
+  </section>
+
+  <!-- ============ TIPOGRAFÍA ============ -->
+  <section class="section">
+    <h2>Tipografía</h2>
+    <div class="type-row"><span class="tag">Título · 30/640</span><span style="font-size:30px;font-weight:640;letter-spacing:-.015em">Pedidos del mes</span></div>
+    <div class="type-row"><span class="tag">Sección · 20/640</span><span style="font-size:20px;font-weight:640">Catálogo de productos</span></div>
+    <div class="type-row"><span class="tag">Base · 15/400</span><span>Cuaderno universitario cuadriculado Stanford A4 100 hojas</span></div>
+    <div class="type-row"><span class="tag">Menor · 13.5/400</span><span style="font-size:13.5px;color:var(--text-muted)">Actualizado hace 3 minutos por el administrador</span></div>
+    <div class="type-row"><span class="tag">Etiqueta · 12/700</span><span style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;color:var(--text-subtle)">Estado del pedido</span></div>
+    <div class="type-row"><span class="tag">Cifras tabulares</span><span style="font-variant-numeric:tabular-nums;font-size:16px">S/ 1,248.50 &nbsp; S/ 89.90 &nbsp; S/ 7.00</span></div>
+    <p class="note">
+      Cifras siempre con <code>tabular-nums</code>: en una tabla de precios las columnas deben
+      alinearse por dígito. Quien administra el negocio pasa horas leyendo estas tablas.
+    </p>
+  </section>
+
+  <!-- ============ ESPACIADO ============ -->
+  <section class="section">
+    <h2>Espaciado y geometría</h2>
+    <div class="scale">
+      <div><div style="height:4px"></div><span>4</span></div>
+      <div><div style="height:8px"></div><span>8</span></div>
+      <div><div style="height:12px"></div><span>12</span></div>
+      <div><div style="height:16px"></div><span>16</span></div>
+      <div><div style="height:24px"></div><span>24</span></div>
+      <div><div style="height:32px"></div><span>32</span></div>
+      <div><div style="height:48px"></div><span>48</span></div>
+      <div><div style="height:64px"></div><span>64</span></div>
+    </div>
+    <p class="note">
+      Radios de 3, 5 y 8 px. Deliberadamente pequeños: un bloque tallado tiene aristas,
+      no cantos redondeados. Es la diferencia entre parecer una herramienta de trabajo
+      y parecer una aplicación de consumo.
+    </p>
+  </section>
+
+  <!-- ============ BOTONES ============ -->
+  <section class="section">
+    <h2>Botones</h2>
+    <div class="row" style="margin-bottom:var(--s4)">
+      <button class="btn btn-primary">Guardar cambios</button>
+      <button class="btn btn-secondary">Cancelar</button>
+      <button class="btn btn-ghost">Ver historial</button>
+      <button class="btn btn-danger">Desinstalar módulo</button>
+      <button class="btn btn-primary" disabled>No disponible</button>
+    </div>
+    <div class="row">
+      <button class="btn btn-primary btn-sm">Pequeño</button>
+      <button class="btn btn-primary">Mediano</button>
+      <button class="btn btn-primary btn-lg">Grande</button>
+    </div>
+  </section>
+
+  <!-- ============ CAMPOS ============ -->
+  <section class="section">
+    <h2>Campos de formulario</h2>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));max-width:760px">
+      <div class="field">
+        <label class="label" for="f1">Nombre del producto</label>
+        <input class="input" id="f1" value="Lápiz técnico HB Faber-Castell">
+        <span class="hint">Producto + característica + marca + presentación</span>
+      </div>
+      <div class="field">
+        <label class="label" for="f2">Precio</label>
+        <input class="input" id="f2" value="2.50">
+        <span class="hint">En soles, sin símbolo</span>
+      </div>
+      <div class="field">
+        <label class="label" for="f3">Categoría</label>
+        <input class="input is-error" id="f3" placeholder="Selecciona una categoría">
+        <span class="hint error">La categoría es obligatoria</span>
+      </div>
+      <div class="field">
+        <label class="label" for="f4">Palabras clave</label>
+        <input class="input" id="f4" placeholder="lapiz, tecnico, hb, dibujo">
+        <span class="hint">Separadas por coma. Mejoran la búsqueda</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MÓDULOS ============ -->
+  <section class="section">
+    <h2>Tarjeta de módulo · componente firma</h2>
+    <p class="lead" style="margin-top:-8px;margin-bottom:var(--s4)">
+      Es la pantalla que resume el producto entero: el negocio ve sus bloques y enciende
+      los que compró. Un módulo con dependencia dura insatisfecha no se puede activar,
+      y la interfaz lo dice antes de que el usuario lo intente.
+    </p>
+    <div class="modules">
+      <div class="module">
+        <div class="module-top">
+          <div><div class="module-code">M01</div><h4>Catálogo</h4></div>
+          <button class="switch" role="switch" aria-checked="true" aria-label="Catálogo activo"></button>
+        </div>
+        <p>Categorías, productos, imágenes y búsqueda.</p>
+        <div class="module-foot"><span class="dep">Requiere <b>CORE</b></span><span class="badge badge-active">Activo</span></div>
+      </div>
+
+      <div class="module">
+        <div class="module-top">
+          <div><div class="module-code">M03</div><h4>Ventas Online</h4></div>
+          <button class="switch" role="switch" aria-checked="true" aria-label="Ventas activo"></button>
+        </div>
+        <p>Carrito, pedidos y confirmación por WhatsApp.</p>
+        <div class="module-foot"><span class="dep">Requiere <b>M01</b> · usa <b>M04</b></span><span class="badge badge-active">Activo</span></div>
+      </div>
+
+      <div class="module is-off">
+        <div class="module-top">
+          <div><div class="module-code">M05b</div><h4>Órdenes de Servicio</h4></div>
+          <button class="switch" role="switch" aria-checked="false" aria-label="Órdenes de servicio inactivo"></button>
+        </div>
+        <p>Registro de encargos: anillado, manualidades y trabajos personalizados.</p>
+        <div class="module-foot"><span class="dep">Requiere <b>M05a</b></span><span class="badge badge-off">Inactivo</span></div>
+      </div>
+
+      <div class="module is-locked">
+        <div class="module-top">
+          <div><div class="module-code">M06</div><h4>Seguimiento</h4></div>
+          <button class="switch" role="switch" aria-checked="false" disabled aria-label="Seguimiento bloqueado"></button>
+        </div>
+        <p>Estados del trabajo y tablero para el cliente.</p>
+        <div class="module-foot"><span class="dep">Falta <b>M05b</b></span><span class="badge badge-pending">Bloqueado</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TABLA ============ -->
+  <section class="section">
+    <h2>Tabla de datos</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Producto</th><th>Categoría</th><th class="num">Precio</th><th class="num">Stock</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr><td>Cuaderno cuadriculado Stanford A4 100 hojas</td><td>Escolar</td><td class="num">S/ 8.50</td><td class="num">60</td><td><span class="badge badge-active">Publicado</span></td></tr>
+          <tr><td>Lápiz técnico HB Faber-Castell</td><td>Arquitectura</td><td class="num">S/ 2.50</td><td class="num">120</td><td><span class="badge badge-active">Publicado</span></td></tr>
+          <tr><td>Acuarela profesional Winsor &amp; Newton 12 colores</td><td>Arte</td><td class="num">S/ 89.90</td><td class="num">8</td><td><span class="badge badge-pending">Sin imagen</span></td></tr>
+          <tr><td>Mandil blanco de laboratorio manga larga</td><td>Medicina</td><td class="num">S/ 59.90</td><td class="num">0</td><td><span class="badge badge-danger">Agotado</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ NAVEGACIÓN + AVISOS ============ -->
+  <section class="section">
+    <h2>Navegación y avisos</h2>
+    <div style="display:flex;gap:var(--s5);flex-wrap:wrap;align-items:flex-start">
+      <nav class="nav">
+        <div class="nav-group">Catálogo</div>
+        <a href="#" class="is-active">Productos <span class="count">248</span></a>
+        <a href="#">Categorías <span class="count">9</span></a>
+        <div class="nav-group">Ventas</div>
+        <a href="#">Pedidos <span class="count">12</span></a>
+        <a href="#">Clientes <span class="count">86</span></a>
+        <div class="nav-group">Sitio</div>
+        <a href="#">Banners</a>
+        <a href="#">Promociones</a>
+        <div class="nav-group">Sistema</div>
+        <a href="#">Módulos</a>
+        <a href="#">Configuración</a>
+      </nav>
+      <div style="flex:1;min-width:290px;display:grid;gap:var(--s3)">
+        <div class="alert alert-info"><span>El menú se construye desde los módulos activos. Si desactivas Ventas, Pedidos y Clientes desaparecen sin dejar rastro.</span></div>
+        <div class="alert alert-warn"><span>Seguimiento no puede activarse: requiere Órdenes de Servicio, que está inactivo.</span></div>
+        <div class="alert alert-danger"><span>Desinstalar Clientes eliminará la relación con los pedidos. Los pedidos conservan sus datos de contacto.</span></div>
+        <div class="empty">
+          <div class="blocks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <h4 style="margin-bottom:6px">Todavía no hay productos</h4>
+          <p style="margin:0 0 var(--s4);font-size:14px">Empieza creando una categoría y luego añade productos.</p>
+          <button class="btn btn-primary btn-sm">Crear categoría</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="note" style="margin-top:var(--s7);padding-top:var(--s4);border-top:1px solid var(--border)">
+    Punto de partida para Claude Design · SILLAR · agosto 2026
+  </p>
+</div>
+
+<script>
+  // Sin almacenamiento del navegador: el tema vive solo en memoria.
+  var dark = false;
+  document.getElementById('theme').addEventListener('click', function(){
+    dark = !dark;
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    this.textContent = dark ? 'Tema claro' : 'Tema oscuro';
+  });
+  document.querySelectorAll('.switch:not([disabled])').forEach(function(s){
+    s.addEventListener('click', function(){
+      var on = this.getAttribute('aria-checked') === 'true';
+      this.setAttribute('aria-checked', String(!on));
+      var card = this.closest('.module');
+      card.classList.toggle('is-off', on);
+      var b = card.querySelector('.badge');
+      b.className = 'badge ' + (on ? 'badge-off' : 'badge-active');
+      b.textContent = on ? 'Inactivo' : 'Activo';
+    });
+  });
+</script>
+</body>
+</html>
