@@ -46,7 +46,7 @@ Es la única fase que no es un módulo. Sin ella no se puede empezar.
 | **F-05** | `CLAUDE.md` y plantilla de especificación de módulo | ✅ Completado |
 | **F-06** | Decisión del nombre del producto: **SILLAR** (ADR-007) | ✅ Completado |
 | **F-07** | Solución .NET base: `Api`, `Shared`, `Core`, contrato `IModule`, orquestador de módulos | ✅ Completado |
-| **F-08** | Proyecto React base: `shared`, `layout`, `capabilities`, composición de rutas | Pendiente |
+| **F-08** | Proyecto React base: `shared`, `layout`, `capabilities`, composición de rutas | ✅ Completado |
 
 F-06 quedó resuelto antes de escribir código, que era justamente el objetivo: renombrar ahora costó una sustitución de texto.
 

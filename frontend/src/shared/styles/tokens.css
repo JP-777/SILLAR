@@ -1,0 +1,93 @@
+/* ==========================================================================
+   Tokens de SILLAR
+
+   Extraídos de docs/sillar-design-system.html. Si cambia allí, cambia aquí.
+
+   REGLA: ningún componente escribe un color. Solo variables de rol. Es lo que
+   sostiene la doble identidad —el panel siempre con el tema de SILLAR, la web
+   pública con el del cliente— sin tocar un solo componente.
+
+   Contrastes validados: texto principal 13.8:1, botón primario 6.1:1,
+   borde de control 4.6:1. Un color nuevo exige verificarlo.
+   ========================================================================== */
+
+:root {
+  /* Piedra — neutrales cálidos, tomados del sillar arequipeño */
+  --stone-50: #FAF8F5;
+  --stone-100: #F2EEE7;
+  --stone-200: #E3DCD1;
+  --stone-300: #CBC2B2;
+  --stone-400: #A29886;
+  --stone-500: #7A7062;
+  --stone-600: #5C5447;
+  --stone-700: #443E34;
+  --stone-800: #2C2822;
+  --stone-900: #1A1713;
+
+  /* Acento — el azul del cielo de Arequipa contra la piedra blanca */
+  --accent-100: #D4E5F0;
+  --accent-300: #7FB0D0;
+  --accent-500: #1F6795;
+  --accent-600: #18536F;
+  --accent-700: #123D55;
+
+  /* Semánticos */
+  --success: #2E7D5B;
+  --success-bg: #E6F2EC;
+  --warning: #9C6414;
+  --warning-bg: #FBF0DD;
+  --danger: #B23A2B;
+  --danger-bg: #FBEAE7;
+
+  /* Roles — lo que los componentes usan de verdad */
+  --bg: var(--stone-50);
+  --bg-raised: #FFFFFF;
+  --bg-sunken: var(--stone-100);
+  --text: var(--stone-800);
+  --text-muted: var(--stone-600);
+  --text-subtle: var(--stone-500);
+  --border: var(--stone-200);        /* divisores decorativos */
+  --border-strong: var(--stone-500); /* bordes de controles: contraste 4.58:1 */
+  --primary: var(--accent-500);
+  --primary-hover: var(--accent-600);
+  --on-primary: #FFFFFF;
+
+  /* Geometría — bloque tallado: esquinas apenas suavizadas */
+  --r-sm: 3px;
+  --r-md: 5px;
+  --r-lg: 8px;
+
+  /* Espaciado */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --s8: 64px;
+
+  --shadow: 0 1px 2px rgba(26, 23, 19, .06), 0 1px 3px rgba(26, 23, 19, .05);
+  --shadow-lg: 0 2px 4px rgba(26, 23, 19, .06), 0 8px 24px rgba(26, 23, 19, .08);
+
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+[data-theme="dark"] {
+  --bg: var(--stone-900);
+  --bg-raised: var(--stone-800);
+  --bg-sunken: #12100D;
+  --text: var(--stone-100);
+  --text-muted: var(--stone-300);
+  --text-subtle: var(--stone-400);
+  --border: var(--stone-700);
+  --border-strong: var(--stone-400);
+  --primary: var(--accent-600);
+  --primary-hover: var(--accent-500);
+  --success-bg: #17241E;
+  --warning-bg: #2A2115;
+  --danger-bg: #2A1A17;
+  --shadow: 0 1px 3px rgba(0, 0, 0, .4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, .5);
+}

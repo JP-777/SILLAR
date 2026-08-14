@@ -54,6 +54,25 @@ csrfToken = base64url( HMAC-SHA256( claveCsrf, admin_session_id ) )
 - `installation_key` pasa a tener un uso criptográfico además de identificar la instalación. Queda anotado aquí porque afecta a qué se puede hacer con ese valor: **no debe exponerse en ninguna respuesta del API ni rotarse a la ligera.** Rotarla invalida los tokens CSRF de todas las sesiones vivas, que entonces recibirán 403 hasta volver a pedir `/csrf`.
 - La etiqueta `"sillar-csrf-v1"` lleva versión a propósito: si algún día hace falta invalidar todos los tokens sin tocar `installation_key`, se sube a `v2`.
 
+## Regla derivada: `installation_key` no sale del servidor
+
+Desde el momento en que esa columna es material criptográfico, deja de ser un identificador que se pueda pasear. La regla, para que no haya que deducirla:
+
+**`installation_key` no sale nunca del servidor.** Ni en una respuesta del API, ni en un registro de log, ni en el frontend, ni en un mensaje de error. Solo la leen el arranque y quien derive de ella.
+
+**Todo uso externo utiliza un valor derivado con su propia etiqueta HKDF**, nunca la clave en bruto y nunca la clave de otro uso:
+
+```
+claveCsrf     = HKDF( installation_key, info = "sillar-csrf-v1" )
+claveLicencia = HKDF( installation_key, info = "sillar-license-v1" )   ← fase 5
+```
+
+El motivo es la separación de dominios criptográficos. Dos usos que comparten clave se comprometen juntos: si el valor que firma las licencias fuera el mismo que valida los tokens CSRF, filtrar uno regalaría el otro. Con etiquetas distintas, el que se filtre no sirve para nada más.
+
+La consecuencia práctica llega en la **fase 5**. Un archivo de licencia firmado necesita identificar la instalación, y la tentación será meter `installation_key` dentro. No se hace: se mete un identificador derivado con la etiqueta de licencia, que identifica igual de bien y no permite reconstruir nada.
+
+Si algún día hace falta un identificador público de la instalación —para soporte, para telemetría, para lo que sea— se añade una columna aparte con ese propósito. Reutilizar esta sería confundir un secreto con un nombre.
+
 ## Alcance
 
 Se aplica en la **entrega 2.1** de CORE, antes de F-08, para que el frontend se construya contra la semántica definitiva. El §3 de `ENTREGA-02-AUTENTICACION.md` ya recoge el diseño corregido.

@@ -1,0 +1,87 @@
+/* ==========================================================================
+   Base — lo mínimo antes de que empiecen los componentes.
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  margin: 0;
+  font-weight: 640;
+  letter-spacing: -.015em;
+  line-height: 1.25;
+}
+
+h1 { font-size: 26px; }
+h2 { font-size: 20px; }
+h3 { font-size: 16px; }
+
+p { margin: 0; }
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+a:hover { text-decoration: underline; }
+
+code {
+  font-family: var(--mono);
+  font-size: .86em;
+  background: var(--bg-sunken);
+  padding: 2px 5px;
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+}
+
+/* El foco SIEMPRE visible: la interfaz tiene que ser navegable con teclado y
+   quien la recorre así necesita saber dónde está. Nunca outline: none sin
+   sustituirlo por algo igual de claro. */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* Para quien prefiere menos movimiento. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* Texto visible solo para lectores de pantalla. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

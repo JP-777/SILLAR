@@ -79,11 +79,36 @@ Esta separación es la que permite vender el mismo sistema a dos negocios que co
 
 ---
 
-## 6. Pendientes de marca
+## 6. Identidad del panel de administración
+
+**Decidido: el panel es de SILLAR. El nombre del negocio aparece como contexto, no como marca.**
+
+Era la decisión que bloqueaba F-08. La regla concreta:
+
+| Elemento | Qué se muestra |
+|---|---|
+| Tema visual | Siempre el de SILLAR. Nunca el del cliente |
+| Identificación del producto | «SILLAR» discreto, en el pie de la barra lateral |
+| Identificación del negocio | El nombre del negocio, visible en la barra superior: *estás administrando X* |
+| Logo del cliente | **Nunca** en el armazón del panel. Solo dentro de las pantallas donde se gestiona, como un dato más |
+
+Tres razones:
+
+1. **El panel es lo que vas a demostrar.** Si lleva la identidad de un cliente, cada captura de pantalla para vender filtra quién es tu cliente, que es exactamente lo que la regla del §2 prohíbe.
+2. **Sin presencia del producto no hay producto.** Quien administra su negocio a diario debe saber qué está usando; es lo que hace que exista un nombre que recomendar.
+3. **Es el patrón que la gente ya conoce.** Shopify, WordPress y cualquier panel de gestión funcionan así: la herramienta se identifica, y el negocio aparece como el espacio en el que se trabaja.
+
+La distinción operativa es simple: **SILLAR identifica la herramienta, el nombre del negocio identifica el contexto de trabajo.** El cliente no se confunde sobre dónde está, y tú no pierdes el producto.
+
+Marca blanca del panel —que un cliente lo vea con su propia identidad— queda **fuera de alcance**. Es un caso comercial que hoy no existe y construirlo ahora sería configurabilidad para clientes imaginarios. Si algún día aparece, se resuelve como se resuelve todo aquí: con un tema, que ya es un dato.
+
+---
+
+## 7. Pendientes de marca
 
 - [ ] Registrar el dominio antes de comunicar el nombre.
-- [ ] Definir la paleta y la tipografía de SILLAR.
-- [ ] Construir el sistema de diseño del producto como biblioteca de componentes.
+- [x] ~~Decidir si el panel lleva marca del producto, del cliente, o ambas.~~ Resuelto en §6.
+- [ ] Definir la tipografía definitiva de SILLAR. La paleta ya está validada en contraste.
+- [ ] Construir el sistema de diseño del producto como biblioteca de componentes. Empieza en F-08.
 - [ ] Logo de SILLAR.
-- [ ] Decidir si el panel de administración lleva marca del producto, del cliente, o ambas.
 - [ ] Publicar la plantilla de tema para instalaciones nuevas.

@@ -1,0 +1,259 @@
+/* ==========================================================================
+   Componentes base.
+
+   Ni un color literal: solo variables de rol. Comprobarlo es tan fácil como
+   buscar '#' en este archivo, y esa facilidad es parte del diseño.
+   ========================================================================== */
+
+/* --- Button ------------------------------------------------------------- */
+
+.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  font-family: inherit;
+  font-weight: 560;
+  cursor: pointer;
+  transition: background-color .12s ease, border-color .12s ease, color .12s ease;
+  white-space: nowrap;
+}
+
+.ui-button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.ui-button--md { padding: var(--s2) var(--s4); font-size: 14px; }
+.ui-button--sm { padding: var(--s1) var(--s3); font-size: 13px; }
+.ui-button--lg { padding: var(--s3) var(--s5); font-size: 15px; }
+
+.ui-button--block { width: 100%; }
+
+.ui-button--primary {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.ui-button--primary:hover:not(:disabled) { background: var(--primary-hover); }
+
+.ui-button--secondary {
+  background: var(--bg-raised);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.ui-button--secondary:hover:not(:disabled) { background: var(--bg-sunken); }
+
+.ui-button--ghost {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.ui-button--ghost:hover:not(:disabled) {
+  background: var(--bg-sunken);
+  color: var(--text);
+}
+
+.ui-button--danger {
+  background: var(--danger);
+  color: var(--on-primary);
+}
+
+.ui-button--danger:hover:not(:disabled) { filter: brightness(.92); }
+
+/* --- Input -------------------------------------------------------------- */
+
+.ui-input {
+  width: 100%;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--bg-raised);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ui-input::placeholder { color: var(--text-subtle); }
+
+.ui-input:disabled {
+  background: var(--bg-sunken);
+  cursor: not-allowed;
+}
+
+.ui-input--invalid { border-color: var(--danger); }
+
+/* --- Field -------------------------------------------------------------- */
+
+.ui-field { display: flex; flex-direction: column; gap: var(--s1); }
+
+.ui-field__label {
+  font-size: 13px;
+  font-weight: 560;
+  color: var(--text);
+}
+
+.ui-field__hint { font-size: 12.5px; color: var(--text-subtle); }
+
+.ui-field__error { font-size: 12.5px; color: var(--danger); }
+
+.ui-field__required { color: var(--danger); margin-left: 2px; }
+
+/* --- Alert -------------------------------------------------------------- */
+
+.ui-alert {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  font-size: 14px;
+}
+
+.ui-alert__title { font-weight: 600; }
+
+.ui-alert--info {
+  background: var(--bg-sunken);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.ui-alert--success {
+  background: var(--success-bg);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.ui-alert--warning {
+  background: var(--warning-bg);
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.ui-alert--danger {
+  background: var(--danger-bg);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* --- Card --------------------------------------------------------------- */
+
+.ui-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+}
+
+.ui-card__header {
+  padding: var(--s4) var(--s5);
+  border-bottom: 1px solid var(--border);
+}
+
+.ui-card__title { font-size: 15px; font-weight: 600; }
+
+.ui-card__subtitle { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+.ui-card__body { padding: var(--s5); }
+
+/* --- Badge -------------------------------------------------------------- */
+
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--s2);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 560;
+  line-height: 1.5;
+}
+
+.ui-badge--neutral { background: var(--bg-sunken); color: var(--text-muted); }
+.ui-badge--success { background: var(--success-bg); color: var(--success); }
+.ui-badge--warning { background: var(--warning-bg); color: var(--warning); }
+.ui-badge--danger { background: var(--danger-bg); color: var(--danger); }
+
+/* --- Switch ------------------------------------------------------------- */
+
+.ui-switch { display: inline-flex; align-items: center; gap: var(--s2); cursor: pointer; }
+
+.ui-switch__input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ui-switch__track {
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--stone-300);
+  position: relative;
+  transition: background-color .15s ease;
+  flex-shrink: 0;
+}
+
+.ui-switch__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  box-shadow: var(--shadow);
+  transition: transform .15s ease;
+}
+
+.ui-switch__input:checked + .ui-switch__track { background: var(--primary); }
+
+.ui-switch__input:checked + .ui-switch__track .ui-switch__thumb { transform: translateX(16px); }
+
+.ui-switch__input:focus-visible + .ui-switch__track {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.ui-switch__input:disabled + .ui-switch__track { opacity: .55; cursor: not-allowed; }
+
+.ui-switch__label { font-size: 14px; }
+
+/* --- EmptyState --------------------------------------------------------- */
+
+.ui-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s7) var(--s5);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.ui-empty__title { font-size: 15px; font-weight: 600; color: var(--text); }
+
+.ui-empty__description { font-size: 14px; max-width: 48ch; }
+
+/* --- Spinner ------------------------------------------------------------ */
+
+.ui-spinner {
+  display: inline-block;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: ui-spin .7s linear infinite;
+}
+
+.ui-spinner--sm { width: 14px; height: 14px; }
+.ui-spinner--md { width: 20px; height: 20px; }
+.ui-spinner--lg { width: 32px; height: 32px; border-width: 3px; }
+
+@keyframes ui-spin {
+  to { transform: rotate(360deg); }
+}

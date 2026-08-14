@@ -1,0 +1,7 @@
+# pnpm bloquea los scripts de instalación por defecto, que es lo correcto: un
+# postinstall es código de terceros ejecutándose en tu máquina.
+#
+# esbuild necesita el suyo para colocar el binario de la plataforma, y sin él
+# Vite no compila. Se autoriza ese y ninguno más.
+allowBuilds:
+  esbuild: true

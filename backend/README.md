@@ -60,6 +60,55 @@ docker compose --profile full up -d --build   # base de datos + API
 El servicio `api` queda fuera del arranque por defecto para no estorbar el ciclo
 con `dotnet run`.
 
+## Recuperar una instalación que no arranca
+
+El host **aborta el arranque** si un módulo activo tiene una dependencia dura
+inactiva (SPEC §7, paso 6). Es deliberado: prefiere caerse donde alguien lo ve a
+funcionar a medias. El log lo dice con nombres:
+
+```
+crit: SILLAR no puede arrancar.
+Las activaciones de esta instalación son incoherentes:
+  · El módulo 'sales' está activo, pero su dependencia dura 'catalog' no lo está.
+    Actívala o desactiva 'sales'.
+```
+
+**La trampa está en cómo se sale de ahí.** El endpoint que arreglaría esto vive
+en el host, y el host no arranca; la única vía es SQL. Cualquiera de las dos
+salidas sirve, y la elección depende de qué quería el negocio:
+
+```sql
+-- Opción A: activar la dependencia que falta.
+UPDATE core.module_activations
+   SET is_active = true, activated_at = now(), deactivated_at = NULL
+ WHERE module_id = (SELECT module_id FROM core.modules WHERE code = 'catalog');
+
+-- Opción B: desactivar el módulo que la reclama.
+UPDATE core.module_activations
+   SET is_active = false, deactivated_at = now()
+ WHERE module_id = (SELECT module_id FROM core.modules WHERE code = 'sales');
+```
+
+Para ver el estado completo antes de decidir:
+
+```sql
+SELECT m.code, m.display_name, a.is_active
+  FROM core.modules m
+  LEFT JOIN core.module_activations a USING (module_id)
+ ORDER BY m.display_order, m.code;
+```
+
+Después, arrancar de nuevo. El arranque vuelve a validar el grafo y dirá si
+queda algo.
+
+**Cuándo puede pasar esto.** Con el API funcionando, no debería: el endpoint de
+activación valida con la misma función que el arranque, relee el estado antes de
+confirmar, y desde la entrega 3b toma un `pg_advisory_xact_lock` que impide que
+dos administradores simultáneos confirmen cambios que juntos rompen el sistema.
+Los caminos que quedan son editar `core.module_activations` a mano, restaurar un
+respaldo tomado de otra versión del producto, o desplegar una versión que ya no
+incluye un módulo que estaba activo.
+
 ## Respaldo — las dos cosas, siempre juntas
 
 **La base de datos y la carpeta de archivos se respaldan y se restauran juntas.**
