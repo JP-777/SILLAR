@@ -116,6 +116,11 @@ internal static class ModuleBootstrapper
 
         builder.Services.AddSingleton(new ModuleActivationSnapshot(activeModules));
 
+        // El catálogo completo, no solo lo activo: el endpoint de activación
+        // necesita razonar sobre el grafo entero para decir qué se puede
+        // encender y qué bloquea qué.
+        builder.Services.AddSingleton(new DeclaredModules(modules));
+
         foreach (var module in active)
         {
             module.RegisterServices(builder.Services, builder.Configuration);

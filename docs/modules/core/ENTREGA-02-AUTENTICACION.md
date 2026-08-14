@@ -301,42 +301,20 @@ Dos pruebas vigilan la secuencia, porque el orden se puede romper sin que nada d
 3. El umbral de coincidencia en la política de contraseñas subió de tres a cuatro caracteres (§1).
 4. La guarda del último `super_admin` se conserva pese a ser inalcanzable hoy (§7.2).
 
-### Corrección aplicada — CSRF (entrega 2.1)
+### Corrección pendiente de aplicar — CSRF (entrega 2.1)
 
-El token CSRF pasó de aleatorio con rotación a determinista, derivado de la sesión por HMAC (ADR-012). El §3 de este documento recoge el diseño; el código ya lo implementa.
+La implementación de la entrega 2 emite un token CSRF aleatorio y lo rota en cada llamada a `/csrf`, lo que hace que con dos pestañas abiertas la primera empiece a recibir 403. **El §3 de este documento ya recoge el diseño corregido** (token derivado por HMAC, ADR-012); el código todavía no.
 
-- **Sin migración:** `csrf_token_hash` conserva tipo, nulabilidad y escritura.
-- **Sin dependencias nuevas:** HKDF y HMAC-SHA256 vienen en `System.Security.Cryptography`.
-- La recomendación de reintentar ante un 403 se retiró del `backend/README.md`.
+Mientras no se aplique, sigue vigente la mitigación del `backend/README.md`: reintentar una vez ante un 403 de CSRF. Al aplicarla, esa recomendación se retira del README.
 
 Criterios de aceptación de la corrección:
 
-- [x] Dos llamadas consecutivas a `GET /api/admin/auth/csrf` devuelven el mismo token
-- [x] Un token obtenido antes de otra llamada a `/csrf` sigue siendo válido
-- [x] Un token CSRF de otra sesión sigue devolviendo 403
-- [x] El token de una sesión revocada ya no sirve
-- [x] Reiniciar el proceso no invalida los tokens de las sesiones vivas
-- [x] `csrf_token_hash` sigue sin contener el token en claro
-
-Lo comprobado a mano, contra el servidor:
-
-| Comprobación | Resultado |
-|---|---|
-| Tres `GET /csrf` seguidos | El mismo valor las tres veces, e igual al que devolvió el login |
-| Dos pestañas escribiendo | 201 y 200; ninguna invalida a la otra |
-| Token de otra sesión | 403; con el propio, 204 |
-| Sesión revocada | 401 antes de llegar a la comprobación de CSRF |
-| Proceso detenido y relanzado | El mismo token, y un `PUT` con el token previo al reinicio responde 200 |
-| `installation_key` en las respuestas | Cero apariciones en `capabilities`, `me`, `users`, `sessions` y `settings/public` |
-
-Reparto de pruebas: 10 pruebas puras en `Sillar.Core.Tests/CsrfTokenFactoryTests.cs`, con claves fijas y sin base de datos. La del reinicio se representa con dos instancias distintas del factory derivadas de la misma `installation_key`; la supervivencia real se comprobó deteniendo y relanzando el proceso.
-
-### Decisiones tomadas durante la corrección
-
-1. Los `Guid` se convierten a bytes en **big-endian** (`ToByteArray(bigEndian: true)`). El orden por defecto depende de la plataforma, así que dejarlo al azar habría producido tokens distintos en Windows y en Arch para la misma sesión.
-2. `CsrfTokenFactory` **rechaza `Guid.Empty`**. Es la forma de que construirlo antes de leer `core.installation` falle de inmediato y no genere tokens derivados de una clave en blanco.
-3. `SessionTokens.CreateCsrfToken` se retiró: solo el token de sesión sigue siendo aleatorio.
-4. `IsSetupPendingAsync` pasó a llamarse `ReadInstallationKeyAsync` y devuelve la clave en lugar de un booleano. Es el único punto del arranque que lee `core.installation`, y ahora también es de donde sale la clave CSRF.
+- [ ] Dos llamadas consecutivas a `GET /api/admin/auth/csrf` devuelven el mismo token
+- [ ] Un token obtenido antes de otra llamada a `/csrf` sigue siendo válido
+- [ ] Un token CSRF de otra sesión sigue devolviendo 403
+- [ ] El token de una sesión revocada ya no sirve
+- [ ] Reiniciar el proceso no invalida los tokens de las sesiones vivas
+- [ ] `csrf_token_hash` sigue sin contener el token en claro
 
 ---
 

@@ -7,7 +7,10 @@ using Sillar.Core.Authentication;
 using Sillar.Core.Contracts;
 using Sillar.Core.Data;
 using Sillar.Core.Domain.Values;
+using Sillar.Core.Modularity;
 using Sillar.Core.Services;
+using Sillar.Core.Settings;
+using Sillar.Shared.Events;
 
 namespace Sillar.Core;
 
@@ -40,6 +43,19 @@ public static class CoreServices
 
         services.AddScoped<IAuditWriter, AuditWriter>();
         services.AddScoped<SetupService>();
+
+        // También en modo instalación: completar la instalación es el otro caso
+        // en que el host tiene que detenerse tras responder.
+        services.AddSingleton<HostRestarter>();
+
+        // Bus de eventos. Hoy no hay ningún manejador registrado: publicar es
+        // gratis y M10 Reportes se alimentará de aquí cuando exista.
+        services.AddSingleton<IEventPublisher, InProcessEventBus>();
+
+        // La caché de configuración es singleton porque vive más que una
+        // petición; abre su propio ámbito para leer de la base.
+        services.AddSingleton<SettingsCache>();
+        services.AddSingleton<ISettingsReader>(provider => provider.GetRequiredService<SettingsCache>());
 
         return services;
     }
@@ -77,6 +93,9 @@ public static class CoreServices
 
         services.AddScoped<AdminAuthenticationService>();
         services.AddScoped<AdminUserService>();
+        services.AddScoped<SiteSettingService>();
+        services.AddScoped<AuditQueryService>();
+        services.AddScoped<ModuleActivationService>();
 
         return services;
     }

@@ -26,6 +26,34 @@ services:
       retries: 5
       start_period: 10s
 
+  # API de SILLAR.
+  # Se levanta con:  docker compose --profile full up -d
+  #
+  # En desarrollo lo normal es 'dotnet run' desde backend/, así que este
+  # servicio queda fuera del arranque por defecto. Sirve para probar el sistema
+  # como se despliega de verdad.
+  api:
+    build:
+      context: ./backend
+    container_name: ${COMPOSE_PROJECT_NAME:-sillar}_api
+    profiles: ["full"]
+    # NO NEGOCIABLE. Activar o desactivar un módulo detiene el proceso a
+    # propósito, porque el enrutamiento se construye al arrancar. Sin esta
+    # política, activar un módulo apaga el sistema y no lo vuelve a encender.
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      # Desde otro contenedor la base se llama 'db', no 'localhost'.
+      ConnectionStrings__Default: >-
+        Host=db;Port=5432;Database=${POSTGRES_DB:-sillar_dev};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD en .env}
+      # El host se detiene tras un cambio de activación y Docker lo relanza.
+      Modules__RestartAfterActivation: "true"
+    ports:
+      - "${API_PORT:-5080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
   # Interfaz web para inspeccionar la base de datos.
   # Opcional: se levanta solo con  docker compose --profile tools up -d
   pgadmin:

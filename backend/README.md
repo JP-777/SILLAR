@@ -8,8 +8,8 @@ despliegue (ADR-002).
 ```
 Sillar.sln
 ├── Sillar.Shared/            IModule, validación del grafo, tipos de plataforma
-├── Sillar.Shared.Tests/      pruebas del validador del grafo (xUnit)
-├── Sillar.Core.Tests/        pruebas de la lógica de autenticación (xUnit)
+├── Sillar.Shared.Tests/      pruebas del grafo y la paginación (xUnit)
+├── Sillar.Core.Tests/        pruebas de autenticación, CSRF y configuración (xUnit)
 ├── Sillar.Core.Contracts/    lo único que los demás módulos ven de CORE
 ├── Sillar.Core/              módulo núcleo: dominio, datos, migraciones, endpoints
 └── Sillar.Api/               host: descubre módulos y registra solo los activos
@@ -51,6 +51,36 @@ dotnet test  Sillar.sln              # pruebas: no necesitan base de datos
 dotnet run --project Sillar.Api      # http://localhost:5080, Swagger en /swagger
 ```
 
+También se puede levantar el sistema entero en contenedores, como se despliega:
+
+```bash
+docker compose --profile full up -d --build   # base de datos + API
+```
+
+El servicio `api` queda fuera del arranque por defecto para no estorbar el ciclo
+con `dotnet run`.
+
+## Activar y desactivar módulos
+
+El enrutamiento se construye al arrancar (SPEC §7): escribir la fila de
+activación no hace aparecer ni desaparecer rutas en el proceso vivo. Por eso
+`POST /api/admin/modules/{code}/activate` **detiene el host después de
+responder** y lo relanza el orquestador.
+
+- `Modules:RestartAfterActivation` gobierna la conducta. En desarrollo vale
+  `false`: el proceso sigue en pie y la respuesta dice `restart: required`.
+  El servicio `api` de `docker-compose.yml` lo pone en `true`.
+- **El contenedor del API necesita `restart: unless-stopped`.** Sin eso, activar
+  un módulo apaga el sistema y no lo vuelve a encender. Ya está puesto; si
+  alguien toca ese servicio, es lo primero que hay que conservar.
+- Las sesiones y los tokens CSRF sobreviven al reinicio: viven en base de datos
+  y se derivan de `installation_key` (ADR-012). Quien active un módulo encuentra
+  su sesión intacta al reconectar.
+- La validación del endpoint es **la misma función** que usa el arranque
+  (`ModuleGraph.ValidateActivations`), y el estado resultante se relee de la base
+  y se vuelve a validar antes de confirmar la transacción. Si el host no
+  arrancaría con ese estado, la operación se deshace y no se escribe nada.
+
 ### Pruebas
 
 `Sillar.Shared.Tests` cubre el validador del grafo de módulos, que es lo que
@@ -79,6 +109,14 @@ tocarlas a la ligera:
 
 El código sigue compilando si alguien invierte ese orden. Lo único que cambia es
 que el formulario de acceso empieza a contar qué cuentas existen.
+
+Hay una tercera del mismo tipo:
+`Ninguna_secuencia_de_operaciones_permitidas_deja_el_sistema_sin_arrancar`.
+Recorre **todos** los estados de activación alcanzables sobre un grafo de seis
+módulos y comprueba que el validador del arranque acepta cada uno. Vigila que el
+endpoint de activación no pueda persistir un estado que impida arrancar — un
+fallo ahí deja la instalación muerta, porque el host se detiene justo después y
+solo se recupera por SQL.
 
 ### Migraciones
 

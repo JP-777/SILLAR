@@ -112,6 +112,76 @@ public static partial class ModuleGraph
         return problems;
     }
 
+    /// <summary>
+    /// Calcula qué módulos quedarían activos tras activar o desactivar uno.
+    /// </summary>
+    /// <remarks>
+    /// No decide si la operación es legítima: solo dice cómo quedaría el mundo.
+    /// Quien llama pasa el resultado por <see cref="ValidateActivations"/>, que es
+    /// la comprobación que hace el arranque, y así ambos juzgan con el mismo
+    /// criterio en vez de con dos parecidos.
+    /// </remarks>
+    /// <param name="activeCodes">Módulos activos ahora.</param>
+    /// <param name="moduleCode">Módulo que se activa o se desactiva.</param>
+    /// <param name="activate">Verdadero para activar, falso para desactivar.</param>
+    public static IReadOnlySet<string> ResultingActiveCodes(
+        IReadOnlySet<string> activeCodes,
+        string moduleCode,
+        bool activate)
+    {
+        var resulting = new HashSet<string>(activeCodes, StringComparer.OrdinalIgnoreCase);
+
+        if (activate)
+        {
+            resulting.Add(moduleCode);
+        }
+        else
+        {
+            resulting.Remove(moduleCode);
+        }
+
+        return resulting;
+    }
+
+    /// <summary>
+    /// Devuelve las dependencias duras del módulo indicado que están inactivas.
+    /// </summary>
+    /// <remarks>
+    /// Es lo que hay que nombrar en el 409 al activar: decir «faltan
+    /// dependencias» sin decir cuáles obliga a la persona a adivinar.
+    /// </remarks>
+    public static IReadOnlyList<string> MissingHardDependencies(
+        IReadOnlyList<IModule> modules,
+        IReadOnlySet<string> activeCodes,
+        string moduleCode)
+    {
+        var module = modules.FirstOrDefault(
+            candidate => string.Equals(candidate.Code, moduleCode, StringComparison.OrdinalIgnoreCase));
+
+        return module is null
+            ? []
+            : [.. module.HardDependencies.Where(required => !activeCodes.Contains(required)).Order(StringComparer.Ordinal)];
+    }
+
+    /// <summary>
+    /// Devuelve los módulos activos que dependen de forma dura del indicado.
+    /// </summary>
+    /// <remarks>
+    /// Son los que impiden desactivarlo. Las dependencias blandas no aparecen
+    /// aquí a propósito: tolerar la ausencia es justamente lo que significan, y
+    /// bloquear por una sería negar el concepto.
+    /// </remarks>
+    public static IReadOnlyList<string> ActiveHardDependents(
+        IReadOnlyList<IModule> modules,
+        IReadOnlySet<string> activeCodes,
+        string moduleCode)
+        => [.. modules
+            .Where(module => activeCodes.Contains(module.Code)
+                && !string.Equals(module.Code, moduleCode, StringComparison.OrdinalIgnoreCase)
+                && module.HardDependencies.Contains(moduleCode, StringComparer.OrdinalIgnoreCase))
+            .Select(module => module.Code)
+            .Order(StringComparer.Ordinal)];
+
     /// <summary>Comprueba que cada módulo se declara a sí mismo correctamente.</summary>
     private static void ValidateDeclarations(IReadOnlyList<IModule> modules, List<string> errors)
     {

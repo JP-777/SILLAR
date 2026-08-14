@@ -17,4 +17,11 @@
     <PackageReference Include="BCrypt.Net-Next" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Las piezas internas de CORE se prueban sin volverlas públicas: lo que
+         no forma parte del contrato no tiene por qué salir del módulo solo
+         para poder comprobarlo. -->
+    <InternalsVisibleTo Include="Sillar.Core.Tests" />
+  </ItemGroup>
+
 </Project>

@@ -76,9 +76,11 @@ CORE es demasiado grande para un solo ciclo de cinco pasos, así que se parte en
 |---|---|---|
 | **01** | Esqueleto del módulo, `IModule`, sincronización de `core.modules`, `/api/capabilities` | ✅ Cerrada |
 | **02** | Instalación, login, sesiones por cookie, CSRF, cambio de contraseña, CRUD de usuarios | ✅ Cerrada — commit `de4994a`, 95 pruebas |
-| **03** | Activación de módulos, `site_settings`, medios, auditoría consultable | Pendiente |
+| **02.1** | Token CSRF determinista derivado de la sesión (ADR-012) | ✅ Cerrada — commit `4c37cdc` |
+| **03** | Activación de módulos, `site_settings`, auditoría consultable | Pendiente |
+| **03b** | Gestión de medios | Pendiente — antes de la interfaz de M01 y M02 |
 
-La entrega 03 completa los endpoints del SPEC §6 que siguen sin implementar y es la que da contenido real al panel. Conviene que exista antes de construir sus pantallas.
+La entrega 03 completa los endpoints del SPEC §6 que siguen sin implementar y es la que da contenido real al panel. Conviene que exista antes de construir sus pantallas. Los medios se apartaron a la 03b: no comparten maquinaria con el resto y nadie los necesita hasta que M01 o M02 tengan interfaz.
 
 ---
 

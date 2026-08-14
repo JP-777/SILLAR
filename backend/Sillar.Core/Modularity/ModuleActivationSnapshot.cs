@@ -1,6 +1,19 @@
 using Sillar.Core.Contracts;
+using Sillar.Shared.Modularity;
 
 namespace Sillar.Core.Modularity;
+
+/// <summary>
+/// Los módulos que el host descubrió en el despliegue, activos o no.
+/// </summary>
+/// <remarks>
+/// El descubrimiento es cosa del host, pero el endpoint de activación necesita
+/// el catálogo completo para razonar sobre el grafo: qué depende de qué, qué
+/// falta para activar algo y quién bloquea una desactivación. El host lo deja
+/// aquí al arrancar, igual que la foto de activaciones.
+/// </remarks>
+/// <param name="Modules">Todos los módulos declarados en el código.</param>
+public sealed record DeclaredModules(IReadOnlyList<IModule> Modules);
 
 /// <summary>
 /// Foto de las activaciones tomada durante el arranque.

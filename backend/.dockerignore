@@ -1,0 +1,9 @@
+# Lo que no debe entrar en el contexto de compilación de la imagen.
+# Sin esto, cada build copia cientos de megas de artefactos locales.
+
+**/bin/
+**/obj/
+**/*.user
+.config/
+*.sln
+*.md
