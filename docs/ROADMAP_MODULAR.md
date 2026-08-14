@@ -36,12 +36,12 @@ Es la única fase que no es un módulo. Sin ella no se puede empezar.
 | ID | Tarea | Estado |
 |---|---|---|
 | **F-01** | Repositorio, estructura de carpetas, `.gitattributes`, `.gitignore` | ✅ Completado |
-| **F-02** | Entorno Docker Compose con PostgreSQL 16 funcionando en Windows | En curso |
+| **F-02** | Entorno Docker Compose con PostgreSQL 16 funcionando en Windows | ✅ Completado |
 | **F-03** | ADRs y arquitectura modular documentada | ✅ Completado |
 | **F-04** | Material previo archivado **fuera del repositorio** (PRD, diccionario, ER, scripts, prototipo) | ✅ Completado |
 | **F-05** | `CLAUDE.md` y plantilla de especificación de módulo | ✅ Completado |
 | **F-06** | Decisión del nombre del producto: **SILLAR** (ADR-007) | ✅ Completado |
-| **F-07** | Solución .NET base: `Api`, `Shared`, `Core`, contrato `IModule`, orquestador de módulos | Pendiente |
+| **F-07** | Solución .NET base: `Api`, `Shared`, `Core`, contrato `IModule`, orquestador de módulos | ✅ Completado |
 | **F-08** | Proyecto React base: `shared`, `layout`, `capabilities`, composición de rutas | Pendiente |
 
 F-06 quedó resuelto antes de escribir código, que era justamente el objetivo: renombrar ahora costó una sustitución de texto.

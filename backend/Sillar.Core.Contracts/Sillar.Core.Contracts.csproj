@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ==========================================================================
+       Sillar.Core.Contracts — lo único que los demás módulos ven de CORE.
+
+       Solo interfaces y tipos de intercambio. Ninguna implementación, ningún
+       DbContext, ninguna entidad. Si algo de aquí necesita EF Core, está mal
+       colocado.
+       ========================================================================== -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

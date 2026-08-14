@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ==========================================================================
+       Sillar.Shared — tipos base de la plataforma.
+
+       No referencia a nadie. Todo módulo puede referenciarlo.
+       Aquí no entra lógica de negocio ni acceso a datos.
+
+       Referencia el framework de ASP.NET Core porque IModule declara
+       RegisterServices y MapEndpoints, que necesitan IServiceCollection e
+       IEndpointRouteBuilder. Es una referencia al framework ya instalado, no
+       un paquete que se descargue.
+       ========================================================================== -->
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+</Project>

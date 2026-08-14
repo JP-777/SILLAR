@@ -253,7 +253,9 @@ public interface IModule
 {
     string   Code            { get; }   // "catalog"
     string   DisplayName     { get; }   // "Catálogo de Productos"
+    string   Description     { get; }   // qué hace, en lenguaje de negocio
     string   Version         { get; }   // "1.0.0"
+    int      DisplayOrder    { get; }   // orden en el panel
     string[] HardDependencies{ get; }   // ["core"]
     string[] SoftDependencies{ get; }   // []
 
@@ -261,6 +263,9 @@ public interface IModule
     void MapEndpoints(IEndpointRouteBuilder endpoints);
 }
 ```
+
+`IsCore` no está en la interfaz: se deriva de `Code == "core"`, para que ningún módulo pueda
+declararse núcleo a sí mismo.
 
 El host descubre los módulos, **valida el grafo de dependencias**, filtra por licencia activa y registra únicamente los habilitados. Un módulo no licenciado no expone endpoints: no es que devuelva 403, es que la ruta no existe.
 

@@ -16,6 +16,40 @@ integrations/<a>_<b>.sql         FK opcional entre dos módulos con dependencia 
 integrations/<a>_<b>_drop.sql    elimina esa FK y anula referencias huérfanas
 ```
 
+## Colación y búsqueda en español
+
+El clúster se crea con **proveedor ICU y locale `es-PE`**, y con
+`default_text_search_config = pg_catalog.spanish`. Ambas cosas se fijan en `docker-compose.yml`.
+
+Esto importa más de lo que parece. Con la colación `C` que traen las imágenes sin locale,
+PostgreSQL ordena así:
+
+```
+Ana  acuarela  avión  nube  zapato  árbol  ñandú     <- incorrecto
+acuarela  Ana  árbol  avión  nube  ñandú  zapato     <- ICU es-PE
+```
+
+Las palabras con tilde y con ñ quedaban después de la Z. En un catálogo en español eso
+arruina cualquier listado alfabético.
+
+**La colación se fija al inicializar el clúster.** Cambiarla después obliga a volcar y
+recargar toda la base, así que no se toca sin una migración planificada.
+
+### Dos colaciones, dos necesidades
+
+El módulo CORE crea dos colaciones no deterministas en su schema:
+
+| Colación | Fuerza ICU | Ignora | Para qué |
+|---|---|---|---|
+| `core.es_ci` | level2 | mayúsculas | Identidad y unicidad: correos, claves |
+| `core.es_search` | level1 | mayúsculas y tildes | Campos por los que el usuario busca |
+
+Una sola no sirve para ambas cosas. En búsqueda hace falta que `lapiz` encuentre `LÁPIZ`,
+porque nadie escribe tildes al buscar. En un correo con restricción de unicidad **no**
+conviene: `josé@ejemplo.pe` y `jose@ejemplo.pe` son buzones distintos.
+
+La ñ es letra propia del español, así que ninguna de las dos la iguala con la n.
+
 ## Reglas
 
 1. Un script solo toca **su propio schema**.

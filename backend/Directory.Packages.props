@@ -1,0 +1,34 @@
+<Project>
+
+  <!-- ==========================================================================
+       Versiones de paquetes centralizadas.
+
+       Los módulos comparten proceso y ciclo de publicación (ADR-002), así que
+       tienen que compartir versión de EF Core. Dos versiones distintas del mismo
+       proveedor en un mismo host es una avería difícil de diagnosticar.
+
+       Los .csproj referencian el paquete sin versión; la versión se decide aquí.
+       ========================================================================== -->
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Proveedor PostgreSQL para EF Core. Lo usa cada módulo con su DbContext. -->
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <!-- Solo herramienta: habilita "dotnet ef" en el proyecto de arranque.
+         No se despliega (PrivateAssets="all"). -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11" />
+    <!-- Swagger: interfaz de exploración del API. -->
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+  </ItemGroup>
+
+  <!-- Solo para proyectos de pruebas. -->
+  <ItemGroup>
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+  </ItemGroup>
+
+</Project>

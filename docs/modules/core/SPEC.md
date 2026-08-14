@@ -34,6 +34,51 @@ CORE no se cobra por separado: es lo que convierte a SILLAR en un producto insta
 
 Convenciones vigentes: `integer GENERATED ALWAYS AS IDENTITY`, `timestamptz`, eliminación lógica con `is_active`, `created_at` con `DEFAULT now()`, `updated_at` por trigger, `CHECK` de texto no vacío en campos obligatorios.
 
+### 4.0 Colaciones compartidas
+
+La primera migración de CORE crea **dos** colaciones no deterministas. Viven en el schema
+`core` porque las usarán varios módulos y CORE es dependencia dura de todos.
+
+```sql
+-- Identidad y unicidad: ignora mayúsculas, RESPETA tildes
+CREATE COLLATION core.es_ci (
+    provider      = icu,
+    locale        = 'es-PE-u-ks-level2',
+    deterministic = false
+);
+
+-- Búsqueda del usuario: ignora mayúsculas Y tildes
+CREATE COLLATION core.es_search (
+    provider      = icu,
+    locale        = 'es-PE-u-ks-level1',
+    deterministic = false
+);
+```
+
+Son dos necesidades distintas y una sola colación no puede servir a ambas:
+
+| Caso | `es_ci` (level2) | `es_search` (level1) |
+|---|---|---|
+| `LAPIZ` = `lapiz` | sí | sí |
+| `lapiz` = `LÁPIZ` | **no** | sí |
+| `José` = `Jose` | **no** | sí |
+| `ñoño` = `NOÑO` | no | no |
+
+**`es_ci` para identidad.** Se usa en `admin_users.email` y en cualquier campo con
+restricción de unicidad. Ahí conviene respetar las tildes: `josé@ejemplo.pe` y
+`jose@ejemplo.pe` son buzones distintos, y tratarlos como el mismo permitiría que alguien
+bloqueara el registro de otro.
+
+**`es_search` para búsqueda.** Se usa en los campos por los que el usuario busca —nombre de
+producto, marca, palabras clave— porque nadie escribe las tildes al buscar. Es la que hace
+que `lapiz` encuentre `Lápiz técnico HB`.
+
+Nota sobre la ñ: en español la ñ es una letra propia, no una n con virgulilla, así que
+**ninguna** de las dos colaciones iguala `ñ` con `n`. Es el comportamiento correcto.
+
+El clúster ya viene con colación ICU `es-PE` y búsqueda de texto en español desde
+`docker-compose.yml`.
+
 ### 4.1 `core.installation`
 
 Identidad del negocio instalado y datos de licencia. **Contiene exactamente una fila.**
@@ -372,6 +417,8 @@ Base vacía o instalación sin completar: el API solo expone `/api/setup*` y el 
 ## 9. Criterios de aceptación
 
 - [ ] El schema `core` se crea con migraciones y se elimina con `99_drop.sql` sin afectar a otros
+- [ ] `core.es_ci` existe: `'LAPIZ' = 'lapiz'` verdadero, `'José' = 'Jose'` falso
+- [ ] `core.es_search` existe: `'lapiz' = 'LÁPIZ'` verdadero
 - [ ] El seed es idempotente: ejecutarlo dos veces no duplica ni falla
 - [ ] Con la base vacía, el sistema entra en modo instalación y solo expone `/api/setup*`
 - [ ] Completada la instalación, las rutas de instalación dejan de responder

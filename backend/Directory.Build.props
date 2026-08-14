@@ -1,0 +1,36 @@
+<Project>
+
+  <!-- ==========================================================================
+       Propiedades comunes a todos los proyectos de la solución.
+
+       Vive aquí y no en cada .csproj para que añadir un módulo nuevo sea copiar
+       un proyecto vacío: hereda framework, nulabilidad y documentación XML sin
+       que nadie tenga que acordarse.
+       ========================================================================== -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Documentación XML: CLAUDE.md exige cada endpoint documentado y visible
+         en Swagger. Sin este fichero, Swashbuckle no tiene qué mostrar. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- 1591 = miembro público sin comentario XML. Se documentan los endpoints y
+         los contratos, no cada propiedad de cada entidad. -->
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Product>SILLAR</Product>
+    <Version>1.0.0</Version>
+    <NeutralLanguage>es</NeutralLanguage>
+    <!-- El producto formatea fechas y ordena texto en español: la globalización
+         invariante rompería ambas cosas. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+</Project>

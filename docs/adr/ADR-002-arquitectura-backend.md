@@ -32,6 +32,26 @@ Se adopta **modular monolith**: un proyecto .NET por módulo dentro de una sola 
 
 ## Mecanismo de control
 
-Cada módulo implementa `IModule` declarando código, versión y dependencias duras y blandas. El host valida el grafo al arrancar: si una dependencia dura está inactiva, el arranque falla con un mensaje explícito en lugar de degradarse en silencio.
+Cada módulo implementa `IModule`:
+
+```csharp
+public interface IModule
+{
+    string   Code            { get; }   // "catalog"
+    string   DisplayName     { get; }   // "Catálogo de Productos"
+    string   Description     { get; }   // qué hace, en lenguaje de negocio
+    string   Version         { get; }   // "1.0.0"
+    int      DisplayOrder    { get; }   // orden en el panel
+    string[] HardDependencies{ get; }   // ["core"]
+    string[] SoftDependencies{ get; }   // []
+
+    void RegisterServices(IServiceCollection services, IConfiguration config);
+    void MapEndpoints(IEndpointRouteBuilder endpoints);
+}
+```
+
+`Description` y `DisplayOrder` están porque `core.modules` los almacena y esa tabla se sincroniza desde el código: si la interfaz no los declara, no hay de dónde sacarlos. `IsCore` **no** forma parte de la interfaz: se deriva de `Code == "core"`, para que ningún módulo pueda declararse núcleo a sí mismo.
+
+El host valida el grafo al arrancar: si una dependencia dura está inactiva, el arranque falla con un mensaje explícito en lugar de degradarse en silencio.
 
 Regla de referencias: un módulo solo puede referenciar `Sillar.Shared`, `Sillar.Core.Contracts` y los `Contracts` de sus dependencias declaradas. Conviene que esta regla se verifique en el pipeline de compilación, no solo por revisión.

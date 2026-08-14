@@ -85,6 +85,10 @@ Ejemplo correcto: `Cuaderno universitario cuadriculado Stanford A4 100 hojas`
 - `created_at` con `DEFAULT now()`, `updated_at` mediante trigger `set_updated_at()`
 - Datos snapshot en tablas transaccionales: el pedido conserva nombre y precio del momento
 - **Todos los scripts deben ser idempotentes**
+- El clúster usa colación **ICU `es-PE`** y búsqueda de texto en español
+- Dos colaciones compartidas: **`core.es_ci`** (ignora mayúsculas, respeta tildes) para
+  identidad y unicidad, y **`core.es_search`** (ignora mayúsculas y tildes) para los campos
+  por los que el usuario busca. No confundirlas
 
 Nombres de restricciones: `pk_`, `fk_`, `uq_`, `ck_`, `idx_` seguidos de tabla y campo.
 
