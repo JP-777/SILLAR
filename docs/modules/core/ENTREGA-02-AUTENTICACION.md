@@ -1,6 +1,6 @@
 # CORE · Entrega 2 — Instalación y autenticación
 
-- **Módulo:** `core` · **Estado:** Aprobado
+- **Módulo:** `core` · **Estado:** Cerrado (14/08/2026, commit `de4994a`)
 - **Refina:** `SPEC.md` §6 (endpoints) y §8 (reglas)
 - **Decide sobre:** ADR-010
 
@@ -43,8 +43,10 @@ Crea en una sola transacción la fila de `installation` con `is_setup_complete =
 
 - **Mínimo 12 caracteres.** Sin exigir mayúsculas, dígitos ni símbolos.
 - Se rechazan las que aparezcan en una lista corta de contraseñas comunes, incrustada en el código.
-- Se rechaza si contiene el correo o el nombre del usuario.
+- Se rechaza si contiene el correo o el nombre del usuario. La comprobación se hace sobre los fragmentos del nombre y del correo de **cuatro o más caracteres**; los de tres o menos se ignoran.
 - Sin caducidad ni rotación obligatoria.
+
+**Sobre el umbral de cuatro caracteres.** Con un umbral de tres, un usuario llamado «Ana Quispe» no podía usar `mesa lampara ventana`, porque `ana` está contenido dentro de `ventana`. El umbral se fijó en cuatro durante la implementación: el apellido y el correo se siguen comprobando, y con doce caracteres de mínimo un nombre de tres letras nunca puede ser la contraseña entera. Es un límite de coincidencia por subcadena, no por palabra: `quispe2026quispe` se sigue rechazando.
 
 Esto sigue la recomendación vigente del NIST: la longitud protege más que la composición, y forzar símbolos y rotaciones produce contraseñas peores y anotadas en un papel bajo el teclado. En una librería, ese papel existe.
 
@@ -87,11 +89,23 @@ SHA-256 y no BCrypt, deliberadamente. BCrypt es lento a propósito para resistir
 
 Es la contrapartida obligatoria de usar cookies. `SameSite=Strict` ayuda pero no basta.
 
-- Al iniciar sesión se genera un token CSRF de 32 bytes. Su hash va a `csrf_token_hash`; el token en claro se devuelve **en el cuerpo de la respuesta**, nunca en una cookie.
+**El token CSRF es determinista, derivado de la sesión** (ADR-012):
+
+```
+csrfToken = base64url( HMAC-SHA256( claveCsrf, admin_session_id ) )
+```
+
+- `claveCsrf` se deriva al arrancar de `core.installation.installation_key` mediante HKDF, con una etiqueta de contexto fija (`"sillar-csrf-v1"`). No se guarda en configuración ni en variables de entorno, y sobrevive a los reinicios porque su origen está en base de datos.
+- Al crear la sesión se calcula el token y su SHA-256 va a `csrf_token_hash`, igual que antes. **La tabla no cambia.**
+- El token en claro se devuelve **en el cuerpo de la respuesta** del login, nunca en una cookie.
 - El frontend lo envía en la cabecera `X-CSRF-Token` en todo método que no sea `GET`, `HEAD` u `OPTIONS`.
-- `GET /api/admin/auth/csrf` lo devuelve de nuevo para la sesión activa, por si el frontend se recarga.
-- La comparación se hace **en tiempo constante**.
+- `GET /api/admin/auth/csrf` **recalcula el mismo token** para la sesión activa y lo devuelve. Es idempotente: llamarlo cien veces desde cinco pestañas devuelve siempre el mismo valor y no invalida nada.
+- La verificación compara el SHA-256 del token recibido contra `csrf_token_hash`, **en tiempo constante**. Se compara contra la fila, no contra el HMAC recalculado, para que rotar `claveCsrf` invalide los tokens en vez de aceptarlos por accidente.
 - Sin token válido: **403**.
+
+**Por qué determinista y no aleatorio con rotación.** Un token aleatorio obliga a que `/csrf` emita uno nuevo cada vez, porque en base de datos solo vive el hash y el original es irrecuperable. Con dos pestañas abiertas, la segunda invalida a la primera y esta empieza a recibir 403 sin haber hecho nada mal. Derivarlo de `admin_session_id` elimina la carrera de raíz: el valor es una función de la sesión, no un estado que compita consigo mismo. Ver ADR-012 para las alternativas descartadas y el coste asumido.
+
+**Consecuencia que hay que tener presente:** el token CSRF ya no puede rotarse dentro de una sesión. Si se filtrara, la única salida es cerrar esa sesión — que es exactamente lo que hace `logout`, y lo que hace el cambio de contraseña con las demás sesiones.
 
 ---
 
@@ -125,6 +139,8 @@ Respuesta 200:
 ```
 
 **El paso 2 no es opcional.** Sin ese cálculo señuelo, la respuesta para un correo inexistente llega mucho más rápido que para uno existente, y ese margen basta para averiguar qué correos están registrados.
+
+**El hash señuelo se calcula al arrancar**, sobre un valor aleatorio y con el mismo factor de trabajo que la configuración tenga vigente. No es una constante incrustada en el código: si lo fuera con factor 12 y alguien subiera el factor a 13, el señuelo pasaría a tardar menos que una verificación real y el margen de tiempo volvería a abrirse por el otro lado.
 
 **El orden de los pasos 3 y 5 tampoco.** Se verifica la contraseña *antes* de mirar el bloqueo, y solo entonces se devuelve 423. Así, quien no sabe la contraseña recibe siempre el mismo 401 y no descubre nada; quien sí la sabe recibe una explicación útil en lugar de un error opaco. Es el equilibrio entre no filtrar información y no dejar a la dueña del negocio adivinando por qué no entra.
 
@@ -183,6 +199,8 @@ Se implementa `ICurrentUser` del contrato de CORE. Ningún módulo consulta `cor
 
 1. `DELETE` es **desactivación lógica**: `is_active = false` y revocación de todas sus sesiones.
 2. No se puede dejar el sistema sin `super_admin` activo. La operación que lo haría se rechaza con **409**.
+
+   *Nota de implementación (entrega 2).* Esta guarda es **inalcanzable con las rutas actuales**. Quien ejecuta la operación es siempre un `super_admin` activo y solo se excluye del recuento al usuario afectado, así que el propio actor basta para que la comprobación pase. El único camino hasta cero es actuar sobre uno mismo, y eso lo corta antes la regla 3 con su propio 409. La conducta que exige el SPEC §8.4 se cumple, pero por la otra regla y con otro mensaje. La guarda se conserva a propósito: el día que exista traspaso de propiedad, un comando de mantenimiento sin sesión o una operación por lotes, será el único punto que impida quedarse sin nadie que pueda entrar.
 3. Un usuario no puede desactivarse ni cambiarse el rol a sí mismo.
 4. Al crear un usuario, la contraseña la fija el `super_admin` y pasa la política. No hay contraseñas generadas ni enviadas por correo mientras no exista envío de correo.
 5. Cambiar el rol o desactivar a alguien revoca sus sesiones activas de inmediato.
@@ -194,55 +212,135 @@ Se implementa `ICurrentUser` del contrato de CORE. Ningún módulo consulta `cor
 
 **Instalación**
 
-- [ ] Con la base recién migrada, `GET /api/setup/status` responde `setupRequired: true`
-- [ ] `POST /api/setup` crea instalación y `super_admin`, y devuelve 201
-- [ ] Tras la instalación, ambas rutas responden **404**
-- [ ] Dos `POST /api/setup` simultáneos crean una sola instalación
-- [ ] Una contraseña de 11 caracteres se rechaza; una de 12 se acepta
-- [ ] Se rechaza una contraseña que contenga el correo del usuario
+- [x] Con la base recién migrada, `GET /api/setup/status` responde `setupRequired: true`
+- [x] `POST /api/setup` crea instalación y `super_admin`, y devuelve 201
+- [x] Tras la instalación, ambas rutas responden **404**
+- [x] Dos `POST /api/setup` simultáneos crean una sola instalación
+- [x] Una contraseña de 11 caracteres se rechaza; una de 12 se acepta
+- [x] Se rechaza una contraseña que contenga el correo del usuario
 
 **Sesión**
 
-- [ ] La cookie llega con `HttpOnly`, `Secure`, `SameSite=Strict` y sin `Max-Age`
-- [ ] `admin_sessions.token_hash` no contiene el token en claro
-- [ ] Una petición autenticada dentro del minuto siguiente **no** vuelve a escribir `last_seen_at`
-- [ ] Una sesión con más de 8 horas de inactividad se rechaza
-- [ ] Una sesión con más de 7 días desde `issued_at` se rechaza aunque haya actividad reciente
-- [ ] `logout` marca `revoked_at`, y reutilizar esa cookie devuelve 401
+- [x] La cookie llega con `HttpOnly`, `Secure`, `SameSite=Strict` y sin `Max-Age`
+- [x] `admin_sessions.token_hash` no contiene el token en claro
+- [x] Una petición autenticada dentro del minuto siguiente **no** vuelve a escribir `last_seen_at`
+- [x] Una sesión con más de 8 horas de inactividad se rechaza
+- [x] Una sesión con más de 7 días desde `issued_at` se rechaza aunque haya actividad reciente
+- [x] `logout` marca `revoked_at`, y reutilizar esa cookie devuelve 401
 
 **CSRF**
 
-- [ ] Un `POST` sin `X-CSRF-Token` devuelve 403
-- [ ] Un `POST` con un token CSRF de otra sesión devuelve 403
-- [ ] Un `GET` sin token CSRF funciona con normalidad
+- [x] Un `POST` sin `X-CSRF-Token` devuelve 403
+- [x] Un `POST` con un token CSRF de otra sesión devuelve 403
+- [x] Un `GET` sin token CSRF funciona con normalidad
 
 **Login**
 
-- [ ] Correo inexistente y contraseña incorrecta devuelven la misma respuesta 401
-- [ ] La diferencia de tiempo entre correo existente e inexistente es despreciable
-- [ ] Cinco fallos bloquean la cuenta 15 minutos
-- [ ] Contraseña correcta con cuenta bloqueada devuelve **423**; contraseña incorrecta con cuenta bloqueada devuelve **401**
-- [ ] Un acceso correcto reinicia `failed_login_count`
-- [ ] Un usuario con `is_active = false` no puede entrar
-- [ ] `PERSONA@EJEMPLO.PE` entra igual que `persona@ejemplo.pe`
+- [x] Correo inexistente y contraseña incorrecta devuelven la misma respuesta 401
+- [x] La diferencia de tiempo entre correo existente e inexistente es despreciable
+- [x] Cinco fallos bloquean la cuenta 15 minutos
+- [x] Contraseña correcta con cuenta bloqueada devuelve **423**; contraseña incorrecta con cuenta bloqueada devuelve **401**
+- [x] Un acceso correcto reinicia `failed_login_count`
+- [x] Un usuario con `is_active = false` no puede entrar
+- [x] `PERSONA@EJEMPLO.PE` entra igual que `persona@ejemplo.pe`
 
 **Usuarios**
 
-- [ ] No se puede desactivar al último `super_admin` activo: 409
-- [ ] Un usuario no puede desactivarse a sí mismo
-- [ ] Desactivar a alguien revoca sus sesiones de inmediato
-- [ ] Cambiar la propia contraseña revoca las demás sesiones y conserva la actual
-- [ ] Ninguna respuesta del API contiene `password_hash`
+- [~] No se puede desactivar al último `super_admin` activo: **se cumple por la regla 3**, con 409 y mensaje distinto. Ver la nota de §7.2
+- [x] Un usuario no puede desactivarse a sí mismo
+- [x] Desactivar a alguien revoca sus sesiones de inmediato
+- [x] Cambiar la propia contraseña revoca las demás sesiones y conserva la actual
+- [x] Ninguna respuesta del API contiene `password_hash`
 
 **General**
 
-- [ ] `setup`, `login`, `login_failed`, `logout` y los cambios de usuario quedan auditados
-- [ ] Todos los endpoints documentados en Swagger
-- [ ] `backend/README.md` ya no documenta el `INSERT` manual
+- [x] `setup`, `login`, `login_failed`, `logout` y los cambios de usuario quedan auditados
+- [x] Todos los endpoints documentados en Swagger
+- [x] `backend/README.md` ya no documenta el `INSERT` manual
+
+Leyenda: `[x]` verificado · `[~]` cumplido por otra vía, con nota.
 
 ---
 
-## 9. Fuera de alcance
+## 9. Cierre
+
+- **Commit:** `de4994a` en `main`, árbol limpio.
+- **Pruebas:** 95 en verde.
+- **Verificación:** los 26 criterios del §8, contra PostgreSQL 16 y por HTTP.
+
+### Lo que se comprobó a mano
+
+| Comprobación | Resultado |
+|---|---|
+| Tres `POST /api/setup` simultáneos | Una sola instalación; las otras dos, 404 |
+| Atributos de la cookie | `path=/; secure; samesite=strict; httponly`, sin `Max-Age` |
+| Token en base de datos | Cero filas con el token en claro; hash de 44 caracteres |
+| Umbral de `last_seen_at` | No se reescribe tras tres peticiones dentro del minuto |
+| 8 h de inactividad / 7 días desde `issued_at` | 401 en ambos casos |
+| Cambio de contraseña | Revoca las otras sesiones, conserva la actual |
+| `PERSONA@EJEMPLO.PE` | Entra igual |
+| `password_hash` en respuestas | Ninguna respuesta lo menciona |
+| Acciones auditadas | `setup`, `login`, `login_failed` (24), `logout`, `create` |
+
+### Tiempos de login, medidos contra el servidor real
+
+| Correo inexistente | Correo existente |
+|---|---|
+| 0.389805 s | 0.388669 s |
+| 0.373170 s | 0.370832 s |
+| 0.367123 s | 0.360723 s |
+
+La diferencia queda por debajo del ruido de red. El señuelo del §4 cumple su función.
+
+Dos pruebas vigilan la secuencia, porque el orden se puede romper sin que nada deje de compilar: una cuenta las llamadas al verificador —así, borrar el señuelo en un refactor rompe la prueba en vez de abrir una fuga que solo se detecta con cronómetro— y otra fija el orden entre los pasos 3 y 5.
+
+### Decisiones tomadas durante la implementación
+
+1. El CRUD de usuarios entró en esta entrega aunque el SPEC lo listaba aparte: comparte toda la maquinaria con la autenticación —BCrypt, validación de roles, la regla del último `super_admin`— y separarlo obligaba a construirlo dos veces.
+2. El hash señuelo se calcula al arrancar, no es constante (§4).
+3. El umbral de coincidencia en la política de contraseñas subió de tres a cuatro caracteres (§1).
+4. La guarda del último `super_admin` se conserva pese a ser inalcanzable hoy (§7.2).
+
+### Corrección aplicada — CSRF (entrega 2.1)
+
+El token CSRF pasó de aleatorio con rotación a determinista, derivado de la sesión por HMAC (ADR-012). El §3 de este documento recoge el diseño; el código ya lo implementa.
+
+- **Sin migración:** `csrf_token_hash` conserva tipo, nulabilidad y escritura.
+- **Sin dependencias nuevas:** HKDF y HMAC-SHA256 vienen en `System.Security.Cryptography`.
+- La recomendación de reintentar ante un 403 se retiró del `backend/README.md`.
+
+Criterios de aceptación de la corrección:
+
+- [x] Dos llamadas consecutivas a `GET /api/admin/auth/csrf` devuelven el mismo token
+- [x] Un token obtenido antes de otra llamada a `/csrf` sigue siendo válido
+- [x] Un token CSRF de otra sesión sigue devolviendo 403
+- [x] El token de una sesión revocada ya no sirve
+- [x] Reiniciar el proceso no invalida los tokens de las sesiones vivas
+- [x] `csrf_token_hash` sigue sin contener el token en claro
+
+Lo comprobado a mano, contra el servidor:
+
+| Comprobación | Resultado |
+|---|---|
+| Tres `GET /csrf` seguidos | El mismo valor las tres veces, e igual al que devolvió el login |
+| Dos pestañas escribiendo | 201 y 200; ninguna invalida a la otra |
+| Token de otra sesión | 403; con el propio, 204 |
+| Sesión revocada | 401 antes de llegar a la comprobación de CSRF |
+| Proceso detenido y relanzado | El mismo token, y un `PUT` con el token previo al reinicio responde 200 |
+| `installation_key` en las respuestas | Cero apariciones en `capabilities`, `me`, `users`, `sessions` y `settings/public` |
+
+Reparto de pruebas: 10 pruebas puras en `Sillar.Core.Tests/CsrfTokenFactoryTests.cs`, con claves fijas y sin base de datos. La del reinicio se representa con dos instancias distintas del factory derivadas de la misma `installation_key`; la supervivencia real se comprobó deteniendo y relanzando el proceso.
+
+### Decisiones tomadas durante la corrección
+
+1. Los `Guid` se convierten a bytes en **big-endian** (`ToByteArray(bigEndian: true)`). El orden por defecto depende de la plataforma, así que dejarlo al azar habría producido tokens distintos en Windows y en Arch para la misma sesión.
+2. `CsrfTokenFactory` **rechaza `Guid.Empty`**. Es la forma de que construirlo antes de leer `core.installation` falle de inmediato y no genere tokens derivados de una clave en blanco.
+3. `SessionTokens.CreateCsrfToken` se retiró: solo el token de sesión sigue siendo aleatorio.
+4. `IsSetupPendingAsync` pasó a llamarse `ReadInstallationKeyAsync` y devuelve la clave en lugar de un booleano. Es el único punto del arranque que lee `core.installation`, y ahora también es de donde sale la clave CSRF.
+
+---
+
+## 10. Fuera de alcance
 
 | Qué | Cuándo |
 |---|---|

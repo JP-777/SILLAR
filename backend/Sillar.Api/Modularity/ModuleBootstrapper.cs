@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Sillar.Core;
+using Sillar.Core.Authentication;
 using Sillar.Core.Data;
 using Sillar.Core.Modularity;
 using Sillar.Shared.Modularity;
@@ -77,15 +78,22 @@ internal static class ModuleBootstrapper
         await ApplyMigrationsIfAllowedAsync(builder, database, logger, cancellationToken);
 
         // --- Paso 3 bis: ¿modo instalación? -------------------------------
-        if (await IsSetupPendingAsync(database, logger, cancellationToken))
+        var installationKey = await ReadInstallationKeyAsync(database, logger, cancellationToken);
+
+        if (installationKey is null)
         {
             // Lo mínimo para que /api/setup* funcione: datos, reloj, hashes y
             // auditoría. Ni sesiones ni autorización: todavía no hay a quién
-            // autenticar.
+            // autenticar, ni installation_key de la que derivar la clave CSRF.
             builder.Services.AddCoreEssentials(builder.Configuration, connectionString);
 
             return new ModuleBootstrapResult(modules, [], IsSetupMode: true);
         }
+
+        // La clave CSRF se deriva aquí y no antes: su origen es la fila de
+        // core.installation que se acaba de leer (ADR-012). El host la deja en el
+        // contenedor, igual que hace con la foto de activaciones.
+        builder.Services.AddSingleton(new CsrfTokenFactory(installationKey.Value));
 
         // --- Pasos 4 y 5: sincronizar catálogo y activaciones -------------
         var synchronizer = new ModuleSynchronizer(database, loggerFactory.CreateLogger<ModuleSynchronizer>());
@@ -174,7 +182,17 @@ internal static class ModuleBootstrapper
     /// Determina si la instalación sigue pendiente: sin schema, sin fila de
     /// instalación, o con la instalación sin completar.
     /// </summary>
-    private static async Task<bool> IsSetupPendingAsync(
+    /// <returns>
+    /// La clave de la instalación, o <c>null</c> si la instalación sigue
+    /// pendiente y hay que arrancar en modo instalación.
+    /// </returns>
+    /// <remarks>
+    /// Devuelve la clave y no solo un booleano porque de ella se deriva la clave
+    /// CSRF (ADR-012). Es el único punto del arranque donde se lee
+    /// <c>core.installation</c>, y ocurre en el paso 3: antes no existe la fila y
+    /// no habría nada que derivar.
+    /// </remarks>
+    private static async Task<Guid?> ReadInstallationKeyAsync(
         CoreDbContext database,
         ILogger logger,
         CancellationToken cancellationToken)
@@ -187,7 +205,7 @@ internal static class ModuleBootstrapper
                 logger,
                 "el schema 'core' todavía no existe. Aplica las migraciones con " +
                 "'dotnet ef database update --project Sillar.Core --startup-project Sillar.Api'");
-            return true;
+            return null;
         }
 
         var pending = (await database.Database.GetPendingMigrationsAsync(cancellationToken)).ToList();
@@ -205,24 +223,23 @@ internal static class ModuleBootstrapper
         if (installation is null)
         {
             LogSetupMode(logger, "no hay ninguna fila en core.installation");
-            return true;
+            return null;
         }
 
         if (!installation.IsSetupComplete)
         {
             LogSetupMode(logger, "core.installation tiene is_setup_complete = false");
-            return true;
+            return null;
         }
 
-        return false;
+        return installation.InstallationKey;
     }
 
     private static void LogSetupMode(ILogger logger, string reason)
     {
         logger.LogWarning(
             "MODO INSTALACIÓN: {Reason}. No se registra ningún módulo y no se monta ninguna ruta de negocio. " +
-            "Los endpoints /api/setup* llegan en la siguiente entrega de CORE; hasta entonces, para salir del " +
-            "modo instalación hay que crear la fila de core.installation a mano (ver backend/README.md).",
+            "Completa la instalación con POST /api/setup; el host se reiniciará en modo normal.",
             reason);
     }
 }

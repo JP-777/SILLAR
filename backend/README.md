@@ -158,11 +158,17 @@ curl -X POST http://localhost:5080/api/admin/auth/login -H 'Content-Type: applic
   es por esto.
 - Toda petición que no sea `GET`, `HEAD` u `OPTIONS` exige la cabecera
   `X-CSRF-Token` con el token que devolvió el login. Sin ella, 403.
-- **`GET /api/admin/auth/csrf` emite un token nuevo y anula el anterior.** Como
-  en base de datos solo vive el hash, devolver el mismo es imposible. El frontend
-  debe pedirlo una vez al cargar y guardarlo en memoria; si dos pestañas lo piden,
-  la primera empieza a recibir 403 y tiene que volver a pedirlo. Lo razonable es
-  reintentar una vez ante un 403 de CSRF.
+- **`GET /api/admin/auth/csrf` es idempotente**: devuelve siempre el mismo token
+  para la misma sesión y no invalida nada. El token se deriva de la identidad de
+  la sesión por HMAC (ADR-012), así que el frontend puede pedirlo cuando le
+  convenga y desde tantas pestañas como haga falta, sin coordinarse. **Un 403
+  significa una sola cosa: no tienes permiso.** No hay que reintentar.
+- El token CSRF **no rota dentro de una sesión**. Si se filtrara, la salida es
+  cerrar la sesión: eso hacen `logout` y el cambio de contraseña.
+- `core.installation.installation_key` es el origen de la clave CSRF, además de
+  identificar la instalación. **No se expone en ninguna respuesta del API y no se
+  rota a la ligera**: cambiarla obliga a todas las sesiones vivas a volver a
+  pedir su token.
 - Sesión de 8 horas de inactividad, tope absoluto de 7 días, y `last_seen_at`
   solo se reescribe si tiene más de un minuto.
 - Contraseñas con BCrypt. El factor de trabajo se configura en

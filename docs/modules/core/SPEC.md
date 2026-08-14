@@ -406,6 +406,7 @@ Base vacía o instalación sin completar: el API solo expone `/api/setup*` y el 
 2. Un módulo **no se activa** si alguna de sus dependencias duras está inactiva.
 3. Un módulo **no se desactiva** si otro módulo activo depende de él de forma dura.
 4. Debe existir **al menos un `super_admin` activo**. La operación que dejaría cero se rechaza.
+   *Implementada en la entrega 2, pero inalcanzable con las rutas actuales: la regla 5 la cubre antes. Ver `ENTREGA-02-AUTENTICACION.md` §7.2.*
 5. Un usuario **no puede desactivarse ni borrarse a sí mismo**.
 6. Contraseñas con BCrypt, factor de trabajo ≥ 12. Nunca en claro, nunca en registros de log, nunca en respuestas del API.
 7. Sesión de 8 horas de inactividad con renovación deslizante. Cerrar sesión **revoca la fila**, no basta con borrar la cookie.

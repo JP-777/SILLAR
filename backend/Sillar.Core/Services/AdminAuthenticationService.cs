@@ -20,6 +20,7 @@ internal sealed class AdminAuthenticationService(
     CoreDbContext database,
     IPasswordHasher hasher,
     IAuditWriter audit,
+    CsrfTokenFactory csrf,
     TimeProvider clock)
 {
     /// <summary>Ejecuta la secuencia de inicio de sesión de la entrega 2 §4.</summary>
@@ -108,25 +109,23 @@ internal sealed class AdminAuthenticationService(
 
     /// <summary>Devuelve el token CSRF de una sesión activa.</summary>
     /// <remarks>
-    /// El token en claro no se guarda en ninguna parte, así que no se puede
-    /// recuperar: se emite uno nuevo y se sustituye el hash de la sesión. El
-    /// anterior deja de valer, que es lo correcto si el frontend lo perdió.
+    /// Es idempotente y no escribe nada: el token se recalcula a partir de la
+    /// identidad de la sesión (ADR-012). Llamarlo desde cinco pestañas devuelve
+    /// siempre el mismo valor y ninguna invalida a las demás.
+    ///
+    /// Antes emitía uno nuevo cada vez, porque de un token aleatorio solo queda
+    /// el hash y el original es irrecuperable. Aquello convertía el 403 en un
+    /// estado esperado del frontend.
     /// </remarks>
     public async Task<string?> RefreshCsrfTokenAsync(Guid sessionId, CancellationToken cancellationToken)
     {
-        var session = await database.AdminSessions
-            .FirstOrDefaultAsync(candidate => candidate.AdminSessionId == sessionId, cancellationToken);
+        // La sesión ya la validó el esquema de autenticación antes de llegar
+        // aquí; se relee por si la revocaron entre una cosa y otra.
+        var isAlive = await database.AdminSessions.AnyAsync(
+            candidate => candidate.AdminSessionId == sessionId && candidate.RevokedAt == null,
+            cancellationToken);
 
-        if (session is null || session.RevokedAt is not null)
-        {
-            return null;
-        }
-
-        var csrfToken = SessionTokens.CreateCsrfToken();
-        session.CsrfTokenHash = SessionTokens.Hash(csrfToken);
-        await database.SaveChangesAsync(cancellationToken);
-
-        return csrfToken;
+        return isAlive ? csrf.Create(sessionId) : null;
     }
 
     /// <summary>Cambia la contraseña del usuario en sesión.</summary>
@@ -236,13 +235,19 @@ internal sealed class AdminAuthenticationService(
             .ExecuteDeleteAsync(cancellationToken);
 
         var sessionToken = SessionTokens.CreateSessionToken();
-        var csrfToken = SessionTokens.CreateCsrfToken();
+
+        // El identificador va primero porque el token CSRF se deriva de él.
+        var sessionId = Guid.CreateVersion7();
+        var csrfToken = csrf.Create(sessionId);
 
         var session = new AdminSession
         {
-            AdminSessionId = Guid.CreateVersion7(),
+            AdminSessionId = sessionId,
             AdminUserId = user.AdminUserId,
             TokenHash = SessionTokens.Hash(sessionToken),
+            // Se sigue guardando el hash, no el token, y la verificación sigue
+            // comparando contra esta columna: si algún día se rota la clave CSRF,
+            // los tokens viejos dejan de valer en vez de aceptarse por accidente.
             CsrfTokenHash = SessionTokens.Hash(csrfToken),
             IssuedAt = now,
             LastSeenAt = now,

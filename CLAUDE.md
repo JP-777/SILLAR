@@ -12,8 +12,9 @@ Antes de escribir código, lee:
 - `docs/ROADMAP_MODULAR.md` — orden de trabajo y ciclo de módulo
 - `docs/adr/` — decisiones tomadas y sus razones
 - `docs/modules/<módulo>/SPEC.md` — la especificación del módulo en el que se está trabajando
+- `docs/modules/<módulo>/ENTREGA-NN-*.md` — cuando un módulo es demasiado grande para un solo ciclo, se parte en entregas. Cada una refina el SPEC para su alcance y cierra con su propia verificación
 
-El SPEC del módulo en curso es la fuente de verdad. Si algo del SPEC contradice a este archivo, gana el SPEC y hay que avisarlo.
+El SPEC del módulo en curso es la fuente de verdad. Si algo del SPEC contradice a este archivo, gana el SPEC y hay que avisarlo. Un documento de entrega refina el SPEC dentro de su alcance: donde ambos hablen del mismo punto, manda el de la entrega.
 
 ---
 
@@ -98,7 +99,7 @@ Nombres de restricciones: `pk_`, `fk_`, `uq_`, `ck_`, `idx_` seguidos de tabla y
 
 - Contraseñas con **BCrypt**, factor de trabajo ≥ 12. Nunca en claro, nunca en logs, nunca en respuestas del API.
 - Sesión administrativa por **cookie `httpOnly`, `Secure`, `SameSite=Strict`**, respaldada en `core.admin_sessions` (ADR-010). Se guarda el hash del token, jamás el token.
-- **Protección CSRF obligatoria** en toda petición que modifique datos.
+- **Protección CSRF obligatoria** en toda petición que modifique datos. El token es determinista, derivado de la sesión por HMAC, y `GET /api/admin/auth/csrf` es idempotente (ADR-012). No volver a introducir rotación.
 - El mensaje de error de acceso es siempre el mismo, exista o no la cuenta.
 - Archivos subidos: nombre **generado**, nunca el original. Se valida el tipo real del contenido, no la extensión (ADR-011).
 - Ninguna respuesta del API expone `password_hash` ni datos de licencia.

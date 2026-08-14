@@ -47,7 +47,7 @@ public class SessionTokenTests
     [Fact]
     public void Un_token_coincide_con_su_propio_hash()
     {
-        var token = SessionTokens.CreateCsrfToken();
+        var token = SessionTokens.CreateSessionToken();
 
         Assert.True(SessionTokens.Matches(token, SessionTokens.Hash(token)));
     }
@@ -55,9 +55,9 @@ public class SessionTokenTests
     [Fact]
     public void El_token_de_otra_sesion_no_coincide()
     {
-        var ajeno = SessionTokens.CreateCsrfToken();
+        var ajeno = SessionTokens.CreateSessionToken();
 
-        Assert.False(SessionTokens.Matches(ajeno, SessionTokens.Hash(SessionTokens.CreateCsrfToken())));
+        Assert.False(SessionTokens.Matches(ajeno, SessionTokens.Hash(SessionTokens.CreateSessionToken())));
     }
 
     [Theory]

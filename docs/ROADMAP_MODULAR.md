@@ -68,6 +68,18 @@ Módulos que entran en la primera entrega, en orden de construcción. El orden r
 
 Al cerrar la Fase 1, la primera instalación tiene su web completa y el producto cuenta con siete módulos vendibles.
 
+### CORE por entregas
+
+CORE es demasiado grande para un solo ciclo de cinco pasos, así que se parte en entregas con su propio documento bajo `docs/modules/core/`.
+
+| Entrega | Alcance | Estado |
+|---|---|---|
+| **01** | Esqueleto del módulo, `IModule`, sincronización de `core.modules`, `/api/capabilities` | ✅ Cerrada |
+| **02** | Instalación, login, sesiones por cookie, CSRF, cambio de contraseña, CRUD de usuarios | ✅ Cerrada — commit `de4994a`, 95 pruebas |
+| **03** | Activación de módulos, `site_settings`, medios, auditoría consultable | Pendiente |
+
+La entrega 03 completa los endpoints del SPEC §6 que siguen sin implementar y es la que da contenido real al panel. Conviene que exista antes de construir sus pantallas.
+
 ---
 
 ## Fase 2 — Operación de servicios
