@@ -52,11 +52,13 @@ docker compose down -v     # BORRA los datos
 
 La base de datos no se crea de una sola vez: se instala módulo por módulo, según lo que el cliente tenga licenciado.
 
+Las tablas las crean las **migraciones de EF Core** de cada módulo (ADR-009):
+
 ```bash
-# Ejemplo: instalar el núcleo y el catálogo
-docker compose exec db psql -U postgres -d sillar_dev -f /scripts/modules/core/01_schema.sql
-docker compose exec db psql -U postgres -d sillar_dev -f /scripts/modules/core/02_seed.sql
-docker compose exec db psql -U postgres -d sillar_dev -f /scripts/modules/catalog/01_schema.sql
+# 1. Aplicar las migraciones del módulo
+dotnet ef database update --context CatalogDbContext --project backend/Sillar.Modules.Catalog
+
+# 2. Sembrar sus datos mínimos
 docker compose exec db psql -U postgres -d sillar_dev -f /scripts/modules/catalog/02_seed.sql
 ```
 
@@ -97,6 +99,7 @@ Todos los scripts son idempotentes: ejecutarlos dos veces no duplica datos ni pr
 | `docs/ARQUITECTURA_MODULAR.md` | Catálogo de módulos, dependencias, schemas y reglas |
 | `docs/ROADMAP_MODULAR.md` | Fases, orden de construcción y ciclo de módulo |
 | `docs/adr/` | Por qué se decidió cada cosa |
+| `docs/modules/core/SPEC.md` | Especificación del módulo CORE, el primero a construir |
 | `docs/MARCA.md` | Identidad de SILLAR y separación respecto a la marca del cliente |
 | `docs/modules/_PLANTILLA_SPEC.md` | Plantilla para especificar un módulo nuevo |
 | `docs/adr/ADR-008-repositorio-por-cliente.md` | Dónde vive lo específico de cada instalación |

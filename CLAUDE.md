@@ -36,10 +36,17 @@ El SPEC del módulo en curso es la fuente de verdad. Si algo del SPEC contradice
 4. Cada módulo implementa `IModule` declarando código, versión, dependencias duras y dependencias blandas.
 5. Las dependencias son dirigidas y **nunca circulares**.
 
+### Esquema y migraciones
+
+- **Las migraciones de EF Core son la fuente de verdad del esquema** (ADR-009). Cada módulo tiene sus migraciones y su historial `__migrations` dentro de su propio schema.
+- Se escriben a mano, no se generan: los seeds (`database/modules/<código>/02_seed.sql`), los scripts de integración y la desinstalación (`99_drop.sql`).
+- Extensiones de PostgreSQL e índices especializados van dentro de una migración con `MigrationBuilder.Sql(...)`.
+- **En producción las migraciones nunca se aplican al arrancar.** Es un paso explícito del despliegue.
+
 ### Claves foráneas entre schemas
 
-- **Dependencia dura:** se permite FK cruzada, en el script del módulo dependiente.
-- **Dependencia blanda:** prohibida la FK en el script base. Columna nullable más datos snapshot. La FK va en `database/integrations/<a>_<b>.sql`.
+- **Dependencia dura:** se permite FK cruzada, declarada en la migración del módulo dependiente.
+- **Dependencia blanda:** prohibida la FK, tanto en migraciones como en el esquema base. Columna nullable más datos snapshot. La FK va en `database/integrations/<a>_<b>.sql`, que solo se ejecuta si ambos módulos están instalados.
 
 ### Dependencias blandas en código
 
@@ -82,6 +89,15 @@ Ejemplo correcto: `Cuaderno universitario cuadriculado Stanford A4 100 hojas`
 Nombres de restricciones: `pk_`, `fk_`, `uq_`, `ck_`, `idx_` seguidos de tabla y campo.
 
 ---
+
+## Seguridad — no negociable
+
+- Contraseñas con **BCrypt**, factor de trabajo ≥ 12. Nunca en claro, nunca en logs, nunca en respuestas del API.
+- Sesión administrativa por **cookie `httpOnly`, `Secure`, `SameSite=Strict`**, respaldada en `core.admin_sessions` (ADR-010). Se guarda el hash del token, jamás el token.
+- **Protección CSRF obligatoria** en toda petición que modifique datos.
+- El mensaje de error de acceso es siempre el mismo, exista o no la cuenta.
+- Archivos subidos: nombre **generado**, nunca el original. Se valida el tipo real del contenido, no la extensión (ADR-011).
+- Ninguna respuesta del API expone `password_hash` ni datos de licencia.
 
 ## Reglas de trabajo
 

@@ -183,8 +183,8 @@ que solo se ejecutan si ambos módulos están activos en la instalación.
 ```
 database/
 ├── modules/
-│   ├── core/       { 01_schema.sql, 02_seed.sql, 99_drop.sql }
-│   ├── catalog/    { 01_schema.sql, 02_seed.sql, 99_drop.sql }
+│   ├── core/       { 02_seed.sql, 99_drop.sql }
+│   ├── catalog/    { 02_seed.sql, 99_drop.sql }
 │   ├── cms/        { ... }
 │   ├── crm/        { ... }
 │   ├── sales/      { ... }
@@ -196,7 +196,7 @@ database/
 └── install.sql          orquestador: lee los módulos a instalar y ejecuta en orden
 ```
 
-Cada `01_schema.sql` empieza con `CREATE SCHEMA IF NOT EXISTS <modulo>;` y **solo toca su propio schema**. Desmontar un módulo es ejecutar su `99_drop.sql`.
+Las tablas las crean las **migraciones de EF Core** de cada módulo, con su historial `__migrations` dentro de su propio schema (ADR-009). Los scripts que quedan aquí son el seed y la desinstalación. Desmontar un módulo es ejecutar su `99_drop.sql`.
 
 Todos los scripts son idempotentes.
 

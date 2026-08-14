@@ -1,8 +1,13 @@
 # ADR-003 — Aislamiento de datos: un schema PostgreSQL por módulo
 
-- **Estado:** Aceptada
+- **Estado:** Aceptada · **enmendada por ADR-009**
 - **Fecha:** 2026-08-14
 - **Decide:** JP
+
+> **Enmienda (ADR-009):** las tablas ya no se crean con `01_schema.sql` escrito a mano, sino con
+> migraciones de EF Core por módulo, cada una con su historial dentro de su propio schema.
+> Todo lo demás sigue vigente: un schema por módulo, las reglas de claves foráneas duras y
+> blandas, los scripts de integración y la anulación de referencias huérfanas.
 
 ## Contexto
 

@@ -18,7 +18,7 @@ Cada módulo recorre siempre los mismos cinco pasos, en orden:
 | Paso | Nombre | Entregable | Dónde se hace |
 |---|---|---|---|
 | **1** | SPEC | Especificación: propósito, dependencias, tablas, contrato, endpoints, eventos, criterios de aceptación | **Este chat** |
-| **2** | DATOS | Diccionario del módulo, ER del módulo, `01_schema.sql`, `02_seed.sql`, `99_drop.sql` | Se diseña aquí, se implementa en **Claude Code** |
+| **2** | DATOS | Diccionario del módulo, ER del módulo, migraciones EF Core, `02_seed.sql`, `99_drop.sql` | Se diseña aquí, se implementa en **Claude Code** |
 | **3** | API | Proyecto del módulo, `DbContext`, modelos, DTOs, endpoints, validaciones, Swagger | **Claude Code** |
 | **4** | UI | Componentes, páginas, rutas, servicios HTTP, integración con capacidades | **Claude Code** |
 | **5** | CIERRE | Documentación del módulo, prueba de montaje y desmontaje, entrega | **Este chat** |
@@ -35,8 +35,8 @@ Es la única fase que no es un módulo. Sin ella no se puede empezar.
 
 | ID | Tarea | Estado |
 |---|---|---|
-| **F-01** | Repositorio, estructura de carpetas, `.gitattributes`, `.gitignore` | Pendiente |
-| **F-02** | Entorno Docker Compose con PostgreSQL 16 funcionando en Windows | Pendiente |
+| **F-01** | Repositorio, estructura de carpetas, `.gitattributes`, `.gitignore` | ✅ Completado |
+| **F-02** | Entorno Docker Compose con PostgreSQL 16 funcionando en Windows | En curso |
 | **F-03** | ADRs y arquitectura modular documentada | ✅ Completado |
 | **F-04** | Material previo archivado **fuera del repositorio** (PRD, diccionario, ER, scripts, prototipo) | ✅ Completado |
 | **F-05** | `CLAUDE.md` y plantilla de especificación de módulo | ✅ Completado |
@@ -119,7 +119,7 @@ Nada del trabajo previo se pierde. Se reubica:
 | BD-01 Análisis de entidades | Absorbido en el catálogo de módulos de `ARQUITECTURA_MODULAR.md` |
 | BD-02 Diccionario de datos | Paso 2 del ciclo de cada módulo — y así se completa lo que quedó a medias |
 | BD-03 Modelo ER | Paso 2 del ciclo de cada módulo, más el mapa de dependencias |
-| BD-04 Script SQL | Se parte en `01_schema.sql` por módulo |
+| BD-04 Script SQL | Se convierte en las migraciones EF Core de cada módulo |
 | BD-05 Datos semilla | Se parte en `02_seed.sql` por módulo |
 | BD-06 Optimización | Deja de ser global: la búsqueda entra en M01, los índices en cada módulo |
 | BE-01 a BE-04 | Fundación F-07 |
