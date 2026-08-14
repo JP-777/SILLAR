@@ -74,5 +74,6 @@ public sealed class CoreModule : IModule
         endpoints.MapAdminModuleEndpoints();
         endpoints.MapSettingsEndpoints();
         endpoints.MapAuditEndpoints();
+        endpoints.MapMediaEndpoints();
     }
 }

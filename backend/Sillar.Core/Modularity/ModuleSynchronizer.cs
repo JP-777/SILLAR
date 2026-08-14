@@ -48,7 +48,58 @@ public sealed class ModuleSynchronizer(CoreDbContext database, ILogger<ModuleSyn
 
         await database.SaveChangesAsync(cancellationToken);
 
+        await MarkOrphanMediaAsync(declared, cancellationToken);
+
         return await ReadActiveAsync(declared, cancellationToken);
+    }
+
+    /// <summary>
+    /// Marca como huérfanos los archivos cuyo módulo ya no existe en el producto.
+    /// </summary>
+    /// <remarks>
+    /// <b>Desinstalado, no desactivado.</b> La distinción importa: desactivar es
+    /// reversible y ocurre a diario en una demostración, así que marcar
+    /// huérfanos al desactivar llenaría el panel de avisos falsos que habría que
+    /// deshacer al reactivar. Un módulo ausente del catálogo que declara el
+    /// código sí deja sus archivos sin dueño para siempre.
+    ///
+    /// Por eso se compara contra los módulos <i>declarados</i>, sin mirar
+    /// activaciones, y por eso vive aquí y no en el endpoint de activación.
+    ///
+    /// Los archivos huérfanos no se borran (SPEC §8.13): se listan para que
+    /// alguien decida.
+    /// </remarks>
+    private async Task MarkOrphanMediaAsync(IReadOnlyList<IModule> declared, CancellationToken cancellationToken)
+    {
+        var knownCodes = declared.Select(module => module.Code).ToArray();
+
+        // Los que perdieron su módulo. Un archivo sin dueño declarado —subido
+        // por CORE mismo o por una versión anterior— no cuenta como huérfano.
+        var orphaned = await database.MediaAssets
+            .Where(asset => asset.OwnerModuleCode != null
+                && !knownCodes.Contains(asset.OwnerModuleCode)
+                && !asset.IsOrphan)
+            .ExecuteUpdateAsync(update => update.SetProperty(asset => asset.IsOrphan, true), cancellationToken);
+
+        // Y los que lo recuperaron: reinstalar un módulo devuelve sus archivos.
+        var adopted = await database.MediaAssets
+            .Where(asset => asset.OwnerModuleCode != null
+                && knownCodes.Contains(asset.OwnerModuleCode)
+                && asset.IsOrphan)
+            .ExecuteUpdateAsync(update => update.SetProperty(asset => asset.IsOrphan, false), cancellationToken);
+
+        if (orphaned > 0)
+        {
+            logger.LogWarning(
+                "{Count} archivo(s) quedaron huérfanos: su módulo ya no existe en esta versión del producto. " +
+                "No se borran; se listan en el panel para que alguien decida.",
+                orphaned);
+        }
+
+        if (adopted > 0)
+        {
+            logger.LogInformation("{Count} archivo(s) recuperaron su módulo y dejan de estar huérfanos.", adopted);
+        }
     }
 
     /// <summary>Da de alta o actualiza la ficha de cada módulo declarado.</summary>

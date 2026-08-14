@@ -46,6 +46,17 @@ internal sealed class ModuleActivationService(
     IEventPublisher events,
     TimeProvider clock)
 {
+    /// <summary>
+    /// Clave del bloqueo que serializa las activaciones de la instalación.
+    /// </summary>
+    /// <remarks>
+    /// Constante y propia de CORE. El valor no significa nada por sí mismo: solo
+    /// tiene que ser el mismo en todos los procesos de la instalación y no
+    /// chocar con el que use otro módulo. Si algún día otro necesita un bloqueo
+    /// de este tipo, que elija otro número y lo anote junto a este.
+    /// </remarks>
+    public const long ActivationLockKey = 5_111_401_001;
+
     private IReadOnlyList<IModule> Catalog => declared.Modules;
 
     /// <summary>Devuelve el catálogo completo con su estado y sus bloqueos.</summary>
@@ -96,6 +107,23 @@ internal sealed class ModuleActivationService(
         }
 
         await using var transaction = await database.Database.BeginTransactionAsync(cancellationToken);
+
+        // Antes de leer nada. Validar dentro de la transacción protege contra un
+        // cambio malo, pero no contra DOS CAMBIOS BUENOS QUE JUNTOS SON MALOS:
+        // con dos administradores operando a la vez, cada transacción ve su
+        // propia instantánea, las dos se aprueban por separado y el estado
+        // resultante impide arrancar.
+        //
+        // Va antes de la lectura a propósito: tomado después, cada transacción
+        // ya tendría su instantánea y el bloqueo llegaría tarde para lo único
+        // que debe impedir.
+        //
+        // Se libera solo al terminar la transacción, y no hace falta subir el
+        // nivel de aislamiento.
+        await database.Database.ExecuteSqlRawAsync(
+            "SELECT pg_advisory_xact_lock({0})",
+            [ActivationLockKey],
+            cancellationToken);
 
         var rows = await ReadActivationsAsync(cancellationToken);
         var activeCodes = ActiveCodesOf(rows);

@@ -32,3 +32,10 @@ desktop.ini
 *.log
 tmp/
 temp/
+
+# Archivos subidos. Nunca al repositorio: son datos de una instalación, no del
+# producto. HAY QUE RESPALDARLOS junto con la base de datos (ADR-011).
+#
+# Anclado a la raíz con la barra inicial: sin ella, el patrón también ignoraría
+# backend/Sillar.Core/Media/, que es código fuente.
+/media/

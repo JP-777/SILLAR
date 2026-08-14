@@ -1,6 +1,6 @@
 # CORE · Entrega 3 — Activación de módulos, configuración y auditoría
 
-- **Módulo:** `core` · **Estado:** Aprobado
+- **Módulo:** `core` · **Estado:** Cerrado (14/08/2026, commit `4fe76b4`, 152 pruebas) · con una corrección pendiente, ver §2
 - **Refina:** `SPEC.md` §6 (endpoints), §7 (arranque) y §8 (reglas 1, 2, 3, 10, 14, 15)
 - **Decide sobre:** ADR-004
 
@@ -101,6 +101,23 @@ Es el punto delicado de esta entrega. El host aborta el arranque si un módulo a
 
 Por eso la comprobación del endpoint y la del arranque son **la misma función**, sobre el mismo grafo, no dos implementaciones parecidas. La prueba que lo vigila toma la activación resultante y la pasa por el validador de arranque antes de confirmar la transacción: si no arrancaría, la operación se rechaza y no se escribe nada.
 
+### Dos activaciones a la vez — corrección pendiente
+
+Validar dentro de la transacción protege contra un cambio malo, no contra **dos cambios buenos que juntos son malos**. Con dos `super_admin` operando a la vez, cada transacción ve su propia instantánea: si uno desactiva M05b mientras el otro activa M06, ambas operaciones son válidas por separado, ambas confirman, y el estado resultante impide arrancar. Es el mismo escenario contra el que se diseñó la validación, entrando por la puerta de al lado.
+
+**Regla:** la transacción de activación toma antes un `pg_advisory_xact_lock` sobre una clave constante del módulo CORE. Serializa todas las activaciones de la instalación; se libera al terminar la transacción. No hace falta subir el nivel de aislamiento.
+
+Es un caso improbable —dos administradores tocando módulos en el mismo segundo— con una consecuencia desproporcionada: instalación muerta, recuperable solo por SQL. El bloqueo cuesta una línea.
+
+Criterios:
+
+- [x] Dos activaciones concurrentes que juntas producirían un estado no arrancable no pueden confirmar las dos
+- [x] Una activación normal no queda esperando el bloqueo más de lo que dura su transacción
+
+**Aplicado en la entrega 3b.** El bloqueo se toma antes de leer las activaciones, no después: tomado después, cada transacción ya tendría su instantánea y llegaría tarde para lo único que debe impedir.
+
+Verificado contra PostgreSQL con dos conexiones simultáneas sobre la misma clave: la segunda quedó esperando y obtuvo el bloqueo a los 1506 ms, exactamente cuando la primera confirmó, sin colarse antes. Sin contención, tomarlo y soltarlo cuesta 1 ms; tres activaciones seguidas por HTTP respondieron en 214, 57 y 31 ms. Tras un `rollback` no quedaba ningún bloqueo vivo.
+
 Se descarta desactivar en cascada. Que apagar Servicios apague también Seguimiento sin avisar es el tipo de comodidad que un día apaga media instalación con un clic. El 409 explica qué bloquea y la persona decide el orden.
 
 ---
@@ -135,7 +152,7 @@ Todas las claves con su valor, tipo, descripción, `is_public` y un indicador de
 
 ### `GET /api/settings/public`
 
-Ya existe. Esta entrega solo añade que responde desde la misma caché y que refleja los cambios de inmediato, sin reinicio. La configuración no toca el enrutamiento; los módulos sí.
+Estaba declarado en el SPEC §6 desde el principio, pero **no se implementó en las entregas 1 ni 2**; entra aquí. Responde desde la misma caché y refleja los cambios de inmediato, sin reinicio. La configuración no toca el enrutamiento; los módulos sí.
 
 ---
 
@@ -159,94 +176,45 @@ La depuración por antigüedad queda fuera de alcance. Se decidirá cuando haya 
 
 ## 5. Criterios de aceptación
 
-Leyenda: **[x]** verificado · **[~]** verificado por pruebas, no por HTTP · **[ ]** pendiente.
-
 **Activación**
 
-- [x] `GET /api/admin/modules` devuelve activos e inactivos, con `canDeactivate` y `blockedBy` calculados en el servidor
-- [~] Activar un módulo con una dependencia dura inactiva devuelve 409 nombrándola
-- [~] Desactivar un módulo del que otro activo depende duro devuelve 409 nombrando quién bloquea
-- [x] Desactivar CORE devuelve 409
-- [x] Un `code` desconocido devuelve 404
-- [x] Activar un módulo ya activo devuelve `restart: none` y no escribe auditoría
-- [~] Una dependencia blanda inactiva no impide activar ni desactivar
-- [x] La respuesta llega completa al cliente antes de que el proceso se detenga
-- [~] Con `Modules:RestartAfterActivation = false` el proceso no se detiene y la respuesta dice `restart: required`
+- [ ] `GET /api/admin/modules` devuelve activos e inactivos, con `canDeactivate` y `blockedBy` calculados en el servidor
+- [ ] Activar un módulo con una dependencia dura inactiva devuelve 409 nombrándola
+- [ ] Desactivar un módulo del que otro activo depende duro devuelve 409 nombrando quién bloquea
+- [ ] Desactivar CORE devuelve 409
+- [ ] Un `code` desconocido devuelve 404
+- [ ] Activar un módulo ya activo devuelve `restart: none` y no escribe auditoría
+- [ ] Una dependencia blanda inactiva no impide activar ni desactivar
+- [ ] La respuesta llega completa al cliente antes de que el proceso se detenga
+- [ ] Con `Modules:RestartAfterActivation = false` el proceso no se detiene y la respuesta dice `restart: required`
 - [ ] Tras el reinicio, `GET /api/capabilities` refleja el cambio
-- [x] Tras el reinicio, la sesión y el token CSRF anteriores siguen siendo válidos
+- [ ] Tras el reinicio, la sesión y el token CSRF anteriores siguen siendo válidos
 - [ ] El contenedor del API se relanza solo tras la detención
-- [x] Ninguna secuencia de activaciones y desactivaciones permitida por el endpoint produce un estado que impida arrancar
-- [~] `activate` y `deactivate` quedan auditados
-
-**Los tres que no llegan a [x], y por qué.** Solo existe CORE, y CORE no se
-desactiva: con un único módulo no hay ninguna activación que cambie de estado, y
-sin eso no se puede recorrer por HTTP el ciclo activar → reiniciar → ver la ruta
-nueva. Lo marcado **[~]** está cubierto por pruebas de lógica —en particular el
-recorrido exhaustivo de estados alcanzables, que es el criterio 13—; lo marcado
-**[ ]** no se puede comprobar de ninguna forma hasta que exista M01 Catálogo. El
-criterio del contenedor tampoco se ejecutó porque el CLI de Docker no está
-disponible en la máquina de desarrollo actual; la política está puesta en
-`docker-compose.yml` y se comprueba con `docker compose --profile full up -d`.
+- [ ] Ninguna secuencia de activaciones y desactivaciones permitida por el endpoint produce un estado que impida arrancar
+- [ ] `activate` y `deactivate` quedan auditados
 
 **Configuración**
 
-- [x] `GET /api/admin/settings` marca las claves que siguen en `PENDIENTE_DEFINIR`
-- [x] Un valor que no encaja con `value_type` devuelve 400 indicando el tipo esperado
-- [x] Una clave desconocida devuelve 404 y no se crea
-- [x] Un `admin` puede cambiar el valor pero no `is_public`; un `super_admin` puede ambas cosas
-- [x] `GET /api/settings/public` refleja el cambio sin reiniciar
-- [x] `GET /api/settings/public` sigue sin devolver claves con `is_public = false`
-- [x] La auditoría del cambio no contiene el valor, ni el nuevo ni el anterior
+- [ ] `GET /api/admin/settings` marca las claves que siguen en `PENDIENTE_DEFINIR`
+- [ ] Un valor que no encaja con `value_type` devuelve 400 indicando el tipo esperado
+- [ ] Una clave desconocida devuelve 404 y no se crea
+- [ ] Un `admin` puede cambiar el valor pero no `is_public`; un `super_admin` puede ambas cosas
+- [ ] `GET /api/settings/public` refleja el cambio sin reiniciar
+- [ ] `GET /api/settings/public` sigue sin devolver claves con `is_public = false`
+- [ ] La auditoría del cambio no contiene el valor, ni el nuevo ni el anterior
 
 **Auditoría**
 
-- [x] Los filtros combinan entre sí
-- [x] El tamaño de página por defecto es 50 y no se puede pedir más de 200
-- [x] Los resultados llegan ordenados por fecha descendente
-- [x] No existe ninguna ruta que edite o borre registros de auditoría
-- [x] Un usuario desactivado sigue apareciendo en los registros anteriores, con su correo
+- [ ] Los filtros combinan entre sí
+- [ ] El tamaño de página por defecto es 50 y no se puede pedir más de 200
+- [ ] Los resultados llegan ordenados por fecha descendente
+- [ ] No existe ninguna ruta que edite o borre registros de auditoría
+- [ ] Un usuario desactivado sigue apareciendo en los registros anteriores, con su correo
 
 **General**
 
-- [x] Todos los endpoints documentados en Swagger
-- [x] Un `editor` no accede a ninguno de estos endpoints
-
----
-
-## 5b. Cierre
-
-- **Pruebas:** 152 en verde (49 en `Sillar.Shared.Tests`, 103 en `Sillar.Core.Tests`).
-- **Sin migración:** esta entrega no toca el esquema.
-- **Paquetes nuevos:** ninguno.
-
-### Lo que se comprobó a mano
-
-| Comprobación | Resultado |
-|---|---|
-| Desactivar CORE | 409 con el motivo |
-| Activar CORE estando activo | 200 con `restart: none`, y cero filas de auditoría |
-| Código de módulo inexistente | 404 |
-| Valor que no encaja con `value_type` | 400 diciendo qué se esperaba, en `email`, `url`, `number` y `json` |
-| Clave desconocida | 404, y la clave no aparece en la tabla |
-| `admin` cambiando `is_public` | 403; el mismo cambio con `super_admin`, 200 |
-| Caché | `/api/settings/public` refleja el valor nuevo sin reiniciar, y deja de exponer la clave despublicada |
-| Auditoría del cambio | `Configuración 'whatsapp_number' actualizada.` — cero coincidencias del valor |
-| Paginación | 50 por defecto; `pageSize=5000` se recorta a 200 |
-| Filtros | `action` + `entityType` combinados, y `entityId`, `adminUserId` y `from` por separado |
-| Orden | Descendente por fecha, comprobado sobre la lista devuelta |
-| Solo lectura | `POST`, `PUT`, `DELETE` y `PATCH` sobre `/api/admin/audit` → 405 |
-| Usuario desactivado | Sus registros anteriores conservan el correo |
-| Roles | `editor` recibe 403 en módulos, configuración y auditoría; `admin` recibe 403 en auditoría |
-| Swagger | 19 rutas, todas con resumen |
-| Orden respuesta/parada | `POST /api/setup` devuelve sus 77 bytes completos y solo entonces se detiene el host |
-
-### Decisiones tomadas durante la implementación
-
-1. **`GET /api/settings/public` no existía.** El §3 decía «Ya existe», pero nunca llegó a implementarse en las entregas 1 ni 2. Se implementa aquí, desde la caché.
-2. **La parada del host se unificó.** `POST /api/setup` tenía su propia copia del patrón `Response.OnCompleted`; ahora ambos usan `HostRestarter`, con dos políticas: la activación consulta la bandera de configuración y la instalación se detiene siempre, porque cambiar de modo de arranque no es opcional. El efecto secundario útil es que el orden respuesta/parada queda verificado por HTTP a través del flujo de instalación.
-3. **La validación se hace dos veces.** Antes de escribir, para responder 409 con un mensaje útil; y después de escribir, releyendo de la base y pasando el resultado por el validador del arranque antes de confirmar. La segunda es la que garantiza el §2: lo que se valida es exactamente lo que va a quedar guardado.
-4. **`ActiveCodesOf` ignora las filas activas de módulos que ya no existen en el código.** El validador razona sobre lo que hay, no sobre lo que hubo: una fila huérfana de una versión anterior no debe bloquear una desactivación legítima.
-5. El bus de eventos se registra sin ningún manejador. Publicar es gratis, y M10 Reportes se alimentará de ahí.
+- [ ] Todos los endpoints documentados en Swagger
+- [ ] Un `editor` no accede a ninguno de estos endpoints
 
 ---
 

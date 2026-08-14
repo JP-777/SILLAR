@@ -9,6 +9,7 @@ using Sillar.Core.Data;
 using Sillar.Core.Domain.Values;
 using Sillar.Core.Modularity;
 using Sillar.Core.Services;
+using Sillar.Core.Media;
 using Sillar.Core.Settings;
 using Sillar.Shared.Events;
 
@@ -57,6 +58,8 @@ public static class CoreServices
         services.AddSingleton<SettingsCache>();
         services.AddSingleton<ISettingsReader>(provider => provider.GetRequiredService<SettingsCache>());
 
+        services.Configure<MediaOptions>(configuration.GetSection(MediaOptions.SectionName));
+
         return services;
     }
 
@@ -96,6 +99,9 @@ public static class CoreServices
         services.AddScoped<SiteSettingService>();
         services.AddScoped<AuditQueryService>();
         services.AddScoped<ModuleActivationService>();
+        services.AddScoped<MediaService>();
+        services.AddScoped<MediaStorage>();
+        services.AddScoped<IMediaStorage>(provider => provider.GetRequiredService<MediaStorage>());
 
         return services;
     }

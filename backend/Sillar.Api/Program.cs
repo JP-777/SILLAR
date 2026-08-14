@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.OpenApi;
 using Sillar.Api.Modularity;
 using Sillar.Core.Endpoints;
+using Sillar.Core.Media;
 using Sillar.Shared.Configuration;
 using Sillar.Shared.Platform;
 
@@ -9,6 +11,23 @@ using Sillar.Shared.Platform;
 DotEnv.Load();
 
 var builder = WebApplication.CreateBuilder(args);
+
+// El límite de tamaño se aplica TAMBIÉN aquí, no solo al validar el contenido.
+// Sin esto, alguien que anuncie dos gigabytes consigue que el servidor los
+// reciba enteros antes de que ninguna validación llegue a opinar.
+//
+// Se deja un margen sobre el máximo por archivo para las fronteras y cabeceras
+// del multipart, que viajan en el mismo cuerpo.
+var maxUpload = builder.Configuration.GetValue<long?>($"{MediaOptions.SectionName}:MaxSizeBytes")
+    ?? new MediaOptions().MaxSizeBytes;
+var maxBody = maxUpload + 64 * 1024;
+
+builder.WebHost.ConfigureKestrel(kestrel => kestrel.Limits.MaxRequestBodySize = maxBody);
+builder.Services.Configure<FormOptions>(form =>
+{
+    form.MultipartBodyLengthLimit = maxBody;
+    form.MultipartHeadersLengthLimit = 16 * 1024;
+});
 
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();

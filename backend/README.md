@@ -60,6 +60,48 @@ docker compose --profile full up -d --build   # base de datos + API
 El servicio `api` queda fuera del arranque por defecto para no estorbar el ciclo
 con `dotnet run`.
 
+## Respaldo — las dos cosas, siempre juntas
+
+**La base de datos y la carpeta de archivos se respaldan y se restauran juntas.**
+No es una recomendación: es la consecuencia negativa que anota el ADR-011 y el
+error clásico del que avisa. Se vuelca la base, se olvida la carpeta, y al
+restaurar aparece un catálogo entero sin una sola imagen.
+
+```bash
+# Respaldar
+docker compose exec -T db pg_dump -U postgres sillar_dev > respaldo.sql
+cp -r media/ respaldo-media/
+
+# Restaurar
+docker compose exec -T db psql -U postgres -d sillar_dev < respaldo.sql
+cp -r respaldo-media/. media/
+```
+
+La carpeta se configura en `Media:RootPath` y, en contenedor, se monta desde
+`MEDIA_PATH` del `.env`. Es una carpeta del host y no un volumen con nombre
+justamente para esto: respaldarla es copiar algo que se ve en el explorador de
+archivos, y así el respaldo se hace de verdad.
+
+Nunca entra al repositorio: son datos de una instalación, no del producto.
+
+## Medios
+
+- Solo **JPEG, PNG y WebP**, con un máximo de 5 MB (`Media:MaxSizeBytes`).
+- **El tipo se decide por los bytes iniciales**, nunca por la extensión ni por el
+  `Content-Type` que envía el cliente: los dos los elige quien sube el archivo.
+  Un `.png` cuyo contenido es otra cosa se rechaza con 415.
+- El límite se aplica además en Kestrel, para que un cuerpo enorme no llegue
+  siquiera a recibirse.
+- **SVG se rechaza, y no debe reintroducirse con un saneador.** Un SVG es XML con
+  scripts que, servido desde `/media`, se ejecuta en el mismo origen que el
+  panel: la cookie viaja sola y el token CSRF se puede pedir. La salida, si algún
+  día hace falta vectorial, es servir los medios desde otro origen.
+- El nombre en disco se genera; el original solo se guarda para mostrarlo. Es lo
+  que hace inofensivo un nombre con `../`.
+- La baja es lógica: el binario se conserva, pero deja de servirse.
+- `is_orphan` marca los archivos de módulos **desinstalados**, no desactivados, y
+  se recalcula al arrancar. Desactivar un módulo no toca nada.
+
 ## Activar y desactivar módulos
 
 El enrutamiento se construye al arrancar (SPEC §7): escribir la fila de
@@ -80,6 +122,12 @@ responder** y lo relanza el orquestador.
   (`ModuleGraph.ValidateActivations`), y el estado resultante se relee de la base
   y se vuelve a validar antes de confirmar la transacción. Si el host no
   arrancaría con ese estado, la operación se deshace y no se escribe nada.
+- La transacción toma un `pg_advisory_xact_lock` sobre una clave constante,
+  **antes de leer nada**. Validar dentro de la transacción protege contra un
+  cambio malo, pero no contra dos cambios buenos que juntos son malos: con dos
+  administradores operando a la vez, cada uno ve su propia instantánea, ambos se
+  aprueban y el resultado no arranca. El bloqueo los serializa y se libera solo
+  al terminar la transacción.
 
 ### Pruebas
 

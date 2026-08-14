@@ -48,8 +48,17 @@ services:
         Host=db;Port=5432;Database=${POSTGRES_DB:-sillar_dev};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD en .env}
       # El host se detiene tras un cambio de activación y Docker lo relanza.
       Modules__RestartAfterActivation: "true"
+      Media__RootPath: /data/media
     ports:
       - "${API_PORT:-5080}:8080"
+    volumes:
+      # Carpeta del host, no volumen con nombre, para que respaldarla sea copiar
+      # una carpeta que se ve desde el explorador de archivos.
+      #
+      # HAY QUE RESPALDARLA JUNTO CON LA BASE DE DATOS. Es la consecuencia
+      # negativa que anota el ADR-011 y el error clásico: se vuelca la base, se
+      # olvida esto, y al restaurar aparece un catálogo entero sin imágenes.
+      - ${MEDIA_PATH:-./media}:/data/media
     depends_on:
       db:
         condition: service_healthy
