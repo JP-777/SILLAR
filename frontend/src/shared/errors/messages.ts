@@ -28,6 +28,14 @@ export interface Failure {
   readonly message: string;
   /** Mensajes por campo, cuando el servidor dice cuál. */
   readonly fieldErrors: Record<string, string> | null;
+  /**
+   * Códigos que provocaron el conflicto, si el servidor los envió aparte.
+   *
+   * La pantalla que sepa traducirlos a nombres visibles los usa para componer
+   * su propia frase con enlaces. La que no, muestra `message`, que se basta
+   * solo.
+   */
+  readonly blockedBy: string[] | null;
 }
 
 /**
@@ -43,6 +51,7 @@ export function describe(error: unknown, context: string): Failure {
       kind: 'inline',
       message: `No se pudo ${context}. Vuelve a intentarlo.`,
       fieldErrors: null,
+      blockedBy: null,
     };
   }
 
@@ -50,19 +59,18 @@ export function describe(error: unknown, context: string): Failure {
     case 'Network':
       // La superposición de reconexión ya está en pantalla explicándolo. Añadir
       // aquí otro mensaje sería decir dos veces lo mismo.
-      return { kind: 'silent', message: '', fieldErrors: null };
+      return { kind: 'silent', message: '', fieldErrors: null, blockedBy: null };
 
     case 'Unauthorized':
       // El cliente HTTP ya redirigió al login.
-      return { kind: 'silent', message: '', fieldErrors: null };
+      return { kind: 'silent', message: '', fieldErrors: null, blockedBy: null };
 
     case 'Forbidden':
       return {
         kind: 'forbidden',
-        message: error.detail
-          ? `${error.message} ${error.detail}`
-          : error.message,
+        message: error.detail ? `${error.message} ${error.detail}` : error.message,
         fieldErrors: null,
+        blockedBy: null,
       };
 
     case 'ValidationFailed':
@@ -70,33 +78,44 @@ export function describe(error: unknown, context: string): Failure {
         kind: 'validation',
         message: error.displayMessage,
         fieldErrors: toFieldErrors(error),
+        blockedBy: null,
       };
 
     case 'Conflict':
-      // El backend redacta estos para leerse: «'demo_catalog' no puede
-      // desactivarse porque estos módulos activos dependen de él…». Reescribirlo
-      // aquí sería tener la misma frase en dos sitios.
-      return { kind: 'inline', message: error.message, fieldErrors: null };
+      // El backend redacta estos para leerse, así que se usa su frase tal cual:
+      // reescribirla aquí sería tener la misma en dos sitios.
+      //
+      // Lo que sí viaja aparte son los códigos que bloquean. La pantalla que
+      // sepa traducirlos a nombres visibles compone su propia frase con enlaces;
+      // la que no, muestra este mensaje, que se basta solo.
+      return {
+        kind: 'inline',
+        message: error.message,
+        fieldErrors: null,
+        blockedBy: error.blockedBy,
+      };
 
     case 'Locked':
       return {
         kind: 'inline',
         message: error.detail ? `${error.message} ${error.detail}` : error.message,
         fieldErrors: null,
+        blockedBy: null,
       };
 
     case 'NotFound':
       return {
         kind: 'inline',
-        message: `Eso ya no existe. Puede que alguien lo haya cambiado mientras tanto.`,
+        message: 'Eso ya no existe. Puede que alguien lo haya cambiado mientras tanto.',
         fieldErrors: null,
+        blockedBy: null,
       };
 
     case 'PayloadTooLarge':
-      return { kind: 'inline', message: error.message, fieldErrors: null };
-
     case 'UnsupportedMediaType':
-      return { kind: 'inline', message: error.message, fieldErrors: null };
+      // Los redacta el backend con el detalle concreto: cuántos megabytes, qué
+      // formatos se aceptan.
+      return { kind: 'inline', message: error.message, fieldErrors: null, blockedBy: null };
 
     default:
       // Ni siquiera aquí: se dice qué se intentaba y qué hacer.
@@ -104,6 +123,7 @@ export function describe(error: unknown, context: string): Failure {
         kind: 'inline',
         message: `No se pudo ${context}. Si vuelve a pasar, revisa el registro del servidor.`,
         fieldErrors: null,
+        blockedBy: null,
       };
   }
 }

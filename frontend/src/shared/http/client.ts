@@ -192,37 +192,64 @@ async function toApiError(response: Response, allowUnauthorized: boolean): Promi
     onUnauthorized?.();
   }
 
-  return new ApiError(kind, response.status, problem.title, problem.detail, problem.errors);
+  return new ApiError(
+    kind,
+    response.status,
+    problem.title,
+    problem.detail,
+    problem.errors,
+    problem.blockedBy,
+  );
 }
 
 interface Problem {
   title: string;
   detail: string | null;
   errors: ValidationErrors | null;
+  blockedBy: string[] | null;
 }
 
 async function readProblem(response: Response): Promise<Problem> {
-  const fallback = `Error ${response.status}.`;
+  const fallback = `No se pudo completar la operación (${response.status}).`;
+  const empty: Problem = { title: fallback, detail: null, errors: null, blockedBy: null };
 
   try {
     const contentType = response.headers.get('Content-Type') ?? '';
 
     if (!contentType.includes('json')) {
-      return { title: fallback, detail: null, errors: null };
+      return empty;
     }
 
     const payload = (await response.json()) as {
       title?: string;
       detail?: string;
       errors?: ValidationErrors;
+      blockedBy?: unknown;
     };
 
     return {
       title: payload.title ?? fallback,
       detail: payload.detail ?? null,
       errors: payload.errors ?? null,
+      blockedBy: readCodes(payload.blockedBy),
     };
   } catch {
-    return { title: fallback, detail: null, errors: null };
+    return empty;
   }
+}
+
+/**
+ * Lee la lista de códigos si viene y tiene la forma esperada.
+ *
+ * Se comprueba en vez de confiar: si el servidor cambia la forma, la interfaz
+ * cae al mensaje en lugar de romperse a mitad de pintar.
+ */
+function readCodes(value: unknown): string[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  const codes = value.filter((item): item is string => typeof item === 'string' && item.length > 0);
+
+  return codes.length > 0 ? codes : null;
 }

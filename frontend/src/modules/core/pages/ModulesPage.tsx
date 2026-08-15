@@ -85,7 +85,7 @@ export function ModulesPage() {
       title="Módulos"
       description="Los bloques que componen tu sistema. Activar o desactivar uno reinicia el servicio unos segundos."
     >
-      <FailureAlert failure={failure} />
+      <ConflictNotice failure={failure} displayNames={displayNames} onJumpTo={jumpTo} />
 
       {state.status === 'error' && <Alert tone="danger">{state.failure.message}</Alert>}
 
@@ -159,5 +159,48 @@ export function ModulesPage() {
 
       <Toasts toasts={toasts} />
     </PageContainer>
+  );
+}
+
+/**
+ * El 409, con los módulos que bloquean nombrados y enlazados.
+ *
+ * El servidor explica el motivo y envía los códigos aparte; la interfaz hace lo
+ * único que solo ella puede hacer, que es convertirlos en nombres visibles y en
+ * enlaces a su tarjeta.
+ *
+ * Si `blockedBy` no llega o no se reconoce, se muestra el mensaje del servidor
+ * y ya está: se basta solo, solo que sin enlaces.
+ */
+function ConflictNotice({
+  failure,
+  displayNames,
+  onJumpTo,
+}: {
+  failure: Failure | null;
+  displayNames: ReadonlyMap<string, string>;
+  onJumpTo: (code: string) => void;
+}) {
+  if (!failure || failure.kind === 'silent' || !failure.message) {
+    return null;
+  }
+
+  if (!failure.blockedBy) {
+    return <FailureAlert failure={failure} />;
+  }
+
+  return (
+    <Alert tone="warning">
+      {failure.message}{' '}
+      {failure.blockedBy.map((code, index) => (
+        <span key={code}>
+          {index > 0 && index === failure.blockedBy!.length - 1 ? ' y ' : index > 0 ? ', ' : ''}
+          <button type="button" className="mod__jump" onClick={() => onJumpTo(code)}>
+            {displayNames.get(code) ?? code}
+          </button>
+        </span>
+      ))}
+      {'.'}
+    </Alert>
   );
 }

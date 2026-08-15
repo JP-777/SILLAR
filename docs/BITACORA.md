@@ -4,7 +4,7 @@ Registro vivo para continuar el trabajo. Los documentos de `docs/` dicen **qué*
 
 Si retomas el proyecto sin haber estado en la conversación: lee las secciones 1 a 4 antes de decidir nada.
 
-**Última actualización:** 14 de agosto de 2026 · commit `3930784`
+**Última actualización:** 14 de agosto de 2026 · commit `005e8fb`
 
 ---
 
@@ -14,12 +14,12 @@ Si retomas el proyecto sin haber estado en la conversación: lee las secciones 1
 |---|---|
 | Fundación F-01 a F-08 | Completa |
 | CORE — backend | Completo. 20 rutas, 181 pruebas |
-| CORE — pantallas | **En curso: entrega 4a** |
+| CORE — pantallas | 4a completa. **En curso: entrega 4b** |
 | M01 Catálogo en adelante | Sin empezar |
 
 Entorno: PostgreSQL 16 en Docker con colación ICU `es-PE`. Backend en `:5080`, frontend Vite en `:5173` con proxy a `/api` y `/media`.
 
-**Ahora mismo:** entrega 4a — pantallas de módulos y usuarios, con los módulos de mentira como requisito previo. Después, 4b: configuración, auditoría y medios. Luego M01.
+**Ahora mismo:** entrega 4b — configuración, auditoría y medios. Al cerrarla termina la sección 4 y CORE queda completo, backend y pantallas. **Punto de control acordado con JP: avisar al terminar 4b.** Después, M01 Catálogo.
 
 ---
 
@@ -41,6 +41,10 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
 
 **En la interfaz: ningún «Ha ocurrido un error» y ningún botón «Aceptar».** Un conflicto es una frase que dice qué lo impide y qué hacer; un botón nombra la acción que ejecuta.
 
+**Cuando una convención se puede convertir en error de compilación, se convierte.** `confirmLabel` sin valor por defecto hace imposible terminar con un «Aceptar» por descuido. Vale más que cualquier revisión.
+
+**Los mensajes de error del API son texto de interfaz.** Desde que la interfaz muestra la frase del servidor, acortarla a algo técnico degrada el panel sin tocar el frontend. Se redactan para quien administra su negocio.
+
 ---
 
 ## 3. Decisiones que se rompen sin querer
@@ -60,6 +64,7 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
 | Panel con marca SILLAR | Es lo que se demuestra al vender |
 | Baja lógica en todo | Lo borrado deja huecos en banners y pedidos que lo referencian |
 | Sin desactivación en cascada | El sistema nombra el obstáculo; la persona ordena |
+| Módulos de demostración imposibles en producción | Dos barreras de compilación, no configuración |
 
 ---
 
@@ -78,8 +83,7 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
 
 | Pendiente | Estado |
 |---|---|
-| **Módulos de mentira** | Requisito previo de la entrega 4a. Sin ellos, la pantalla de módulos no se puede probar y tres criterios de la entrega 3 siguen sin verificar |
-| **Verificación visual de F-08** | Lista de diez minutos en la §6. Hacerla **antes** de las pantallas |
+| **Verificación visual de F-08 y 4a** | Claude Code no ve la interfaz. Lista en la §6 |
 | `docker compose --profile full up -d --build` | Criterio de reinicio del contenedor, sin ejecutar |
 | Confirmar `CLAUDE.md` de la raíz | Que conserve la línea de `ENTREGA-NN-*.md` y la de no reintroducir rotación de CSRF |
 | Tipografía y logo de SILLAR | La paleta está validada; lo demás no |
@@ -89,26 +93,35 @@ Aplazados por decisión, no pendientes: retención de auditoría, vectoriales en
 
 ---
 
-## 6. Verificación manual de F-08
+## 6. Verificación manual pendiente
 
-Con API y frontend levantados, diez minutos:
+```
+cd backend  && Modules__IncludeDemoModules=true dotnet run --project Sillar.Api
+cd frontend && pnpm dev
+```
 
-1. **Reconexión.** Entra al panel, detén el API con Ctrl+C, comprueba que aparece la superposición y que no salen más peticiones. Relánzalo: debe recuperarse solo, **con la sesión abierta**, y una escritura debe funcionar sin volver a entrar.
-2. **Dos pestañas** escribiendo. Ningún 403.
-3. **Teclado.** Recorre el login con Tab. El foco siempre visible.
-4. **Tema oscuro.** Busca texto que pierda contraste.
-5. **Sesión.** Recarga con sesión abierta: se mantiene. Cierra sesión: el panel te rechaza.
+Siete tarjetas: CORE sin interruptor, dos activas, dos inactivas, dos bloqueadas.
 
-Lo que falle se arregla antes de las pantallas. Corregir el armazón con cinco pantallas encima cuesta el triple.
+1. **Las cuatro variantes de tarjeta.** Que la bloqueada nombre lo que le falta y el enlace lleve a su tarjeta.
+2. **Ciclo completo.** Activa un módulo: aviso del reinicio, superposición de reconexión, vuelta sola **con la sesión abierta**, y el módulo activo.
+3. **El 409.** Intenta desactivar uno del que otro dependa: frase que nombra al que bloquea, sin reinicio.
+4. **Dos pestañas** escribiendo. Ningún 403.
+5. **Teclado.** Recorre módulos y usuarios con Tab. Foco siempre visible, diálogos que atrapan el foco y se cierran con Escape.
+6. **Tema oscuro.** Busca texto que pierda contraste.
+
+Lo que falle se arregla antes de 4b: los patrones de 4a se repiten tres veces allí.
 
 ---
 
-## 7. Última sesión — 14 de agosto de 2026
+## 7. Registro
 
-**Decidido:** identidad del panel (`MARCA.md` §6, marca SILLAR con el negocio como contexto); `installation_key` no sale del servidor —se detectó que la fase 5 tendería a meterla en el archivo de licencia, poniendo la clave del CSRF en manos del cliente—; procedimiento de recuperación de una instalación que no arranca.
+**14 ago · F-08 y entrega 4a.** Decidida la identidad del panel (`MARCA.md` §6) y la regla de que `installation_key` no sale del servidor — se detectó que la fase 5 tendería a meterla en el archivo de licencia, poniendo la clave del CSRF en manos del cliente.
 
-**F-08 entregado.** Tres decisiones de Claude Code aprobadas: el estado de reconexión fuera de React —así el cliente HTTP lo consulta antes de cada envío y ninguna pantalla tiene que acordarse—, la recarga completa al reconectar, y la autorización de un único script de instalación en pnpm.
+De Claude Code se aprobaron: el estado de reconexión fuera de React, la recarga completa al reconectar, las tres barreras de `Sillar.Modules.Demo` —dos de compilación— y `describe()` reutilizando la frase del servidor.
 
-**Consecuencia anotada:** la recarga completa pierde un formulario a medias en otra pestaña. Hoy no aplica porque no hay formularios largos; cuando 4a los tenga, avisar antes de recargar.
+**Consecuencias anotadas:**
 
-**Entrega 4a especificada.** Se parte de 4b a propósito: módulos y usuarios tienen reglas reales, y los patrones que fijen —tabla, formulario, confirmación destructiva, errores tipados— se repiten tres veces en 4b. Si salen mal, salen mal multiplicados.
+- La recarga completa pierde un formulario a medias en otra pestaña. Cuando haya formularios largos, avisar antes de recargar.
+- `describe()` convirtió los mensajes del API en texto de interfaz. Y mostró un código donde 4a pedía nombre y enlace: por eso el 409 pasa a llevar `blockedBy` estructurado, corregido en el §0 de 4b antes de que el patrón se repita.
+
+**Entrega 4b especificada.** Cierra la sección 4. Un solo patrón nuevo, la galería, justificado porque los medios son visuales.

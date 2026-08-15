@@ -10,6 +10,13 @@ using Sillar.Core.Services;
 namespace Sillar.Core.Endpoints;
 
 /// <summary>Consulta y cambio de las activaciones de módulos.</summary>
+/// <remarks>
+/// <b>Los mensajes de error de estos endpoints son texto de interfaz.</b> El
+/// panel los muestra tal cual —no los reescribe, para no tener la misma frase
+/// en dos sitios—, así que se redactan para que los lea una persona que
+/// administra su negocio, no un desarrollador leyendo un registro. Acortarlos a
+/// algo técnico degrada la interfaz sin tocar el frontend.
+/// </remarks>
 public static class AdminModuleEndpoints
 {
     /// <summary>Monta las rutas de módulos.</summary>
@@ -118,7 +125,16 @@ public static class AdminModuleEndpoints
                 return Results.NotFound();
 
             case ActivationOutcome.Conflict:
-                return Results.Problem(title: result.Error, statusCode: StatusCodes.Status409Conflict);
+                // Los códigos que bloquean viajan aparte del mensaje. El
+                // servidor explica el motivo; convertirlos en nombres visibles y
+                // en enlaces a su tarjeta es lo único que solo la interfaz puede
+                // hacer, y para eso necesita los datos, no una frase.
+                return Results.Problem(
+                    title: result.Error,
+                    statusCode: StatusCodes.Status409Conflict,
+                    extensions: result.BlockedBy is { Count: > 0 } blockedBy
+                        ? new Dictionary<string, object?> { ["blockedBy"] = blockedBy }
+                        : null);
 
             case ActivationOutcome.NoChange:
                 // Ni reinicio ni auditoría: no ha pasado nada.

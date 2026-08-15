@@ -4,6 +4,9 @@ import { RequireRole } from '../../session';
 import { ModulesPage } from './pages/ModulesPage';
 import { UsersPage } from './pages/UsersPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { AuditPage } from './pages/AuditPage';
+import { MediaPage } from './pages/MediaPage';
 
 /**
  * Lo que el módulo CORE aporta al panel.
@@ -16,10 +19,13 @@ export const coreNavigation: ModuleNavigation = {
   group: 'Sistema',
   items: [
     { to: '/admin/modulos', label: 'Módulos', minimumRole: 'admin' },
+    { to: '/admin/configuracion', label: 'Configuración', minimumRole: 'admin' },
+    { to: '/admin/archivos', label: 'Archivos', minimumRole: 'editor' },
     // Solo `super_admin`. La entrada NO EXISTE para los demás roles: no aparece
     // deshabilitada ni tachada. Lo resuelve `visibleNavigation`, que filtra por
     // rol además de por módulo activo.
     { to: '/admin/usuarios', label: 'Usuarios', minimumRole: 'super_admin' },
+    { to: '/admin/auditoria', label: 'Auditoría', minimumRole: 'super_admin' },
   ],
 };
 
@@ -35,12 +41,18 @@ export const coreRoutes = (
     {/* Las guardas evitan la petición y enseñan la pantalla de acceso denegado
         a quien llegue escribiendo la ruta. No sustituyen a la autorización del
         backend, que es la que decide de verdad: estas son de presentación. */}
+    <Route element={<RequireRole minimum="editor" />}>
+      <Route path="archivos" element={<MediaPage />} />
+    </Route>
+
     <Route element={<RequireRole minimum="admin" />}>
       <Route path="modulos" element={<ModulesPage />} />
+      <Route path="configuracion" element={<SettingsPage />} />
     </Route>
 
     <Route element={<RequireRole minimum="super_admin" />}>
       <Route path="usuarios" element={<UsersPage />} />
+      <Route path="auditoria" element={<AuditPage />} />
     </Route>
 
     {/* Sin rol mínimo: cambiar la contraseña propia es una acción sobre uno

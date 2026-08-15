@@ -39,12 +39,22 @@ export class ApiError extends Error {
   readonly detail: string | null;
   readonly errors: ValidationErrors | null;
 
+  /**
+   * Códigos que provocaron un conflicto, cuando el servidor los envía aparte.
+   *
+   * Los 409 de activación de módulos los incluyen para que la interfaz pueda
+   * escribir los nombres visibles y enlazarlos a su tarjeta. El servidor explica
+   * el motivo; enlazar es lo único que solo la interfaz puede hacer.
+   */
+  readonly blockedBy: string[] | null;
+
   constructor(
     kind: ApiErrorKind,
     status: number,
     message: string,
     detail: string | null = null,
     errors: ValidationErrors | null = null,
+    blockedBy: string[] | null = null,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -52,6 +62,7 @@ export class ApiError extends Error {
     this.status = status;
     this.detail = detail;
     this.errors = errors;
+    this.blockedBy = blockedBy;
   }
 
   /** Mensajes de validación en una sola lista, para mostrarlos juntos. */

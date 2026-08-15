@@ -27,10 +27,28 @@ internal enum ActivationOutcome
 }
 
 /// <summary>Resultado de un cambio de activación.</summary>
+/// <param name="Outcome">Cómo terminó.</param>
+/// <param name="Error">
+/// Motivo del rechazo, redactado para que lo lea una persona.
+/// </param>
+/// <param name="IsActive">Estado en el que queda el módulo.</param>
+/// <param name="BlockedBy">
+/// Códigos de los módulos que impiden la operación.
+/// </param>
+/// <remarks>
+/// Los códigos van aparte del mensaje a propósito. El servidor explica el
+/// motivo; convertir esos códigos en nombres visibles y en enlaces a su tarjeta
+/// es lo único que solo la interfaz puede hacer, y necesita los datos, no una
+/// frase de la que extraerlos.
+/// </remarks>
 internal sealed record ActivationOperation(
     ActivationOutcome Outcome,
     string? Error = null,
-    bool IsActive = false);
+    bool IsActive = false,
+    IReadOnlyList<string>? BlockedBy = null);
+
+/// <summary>Motivo de un rechazo, con los códigos que lo provocan.</summary>
+internal sealed record ActivationBlock(string Message, IReadOnlyList<string> BlockedBy);
 
 /// <summary>
 /// Consulta y cambio de las activaciones de módulos.
@@ -135,7 +153,10 @@ internal sealed class ModuleActivationService(
 
         if (Blocks(module, activeCodes, activate) is { } blocked)
         {
-            return new ActivationOperation(ActivationOutcome.Conflict, blocked);
+            return new ActivationOperation(
+                ActivationOutcome.Conflict,
+                blocked.Message,
+                BlockedBy: blocked.BlockedBy);
         }
 
         var activation = await database.ModuleActivations
@@ -206,7 +227,13 @@ internal sealed class ModuleActivationService(
     }
 
     /// <summary>Explica qué impide la operación, o <c>null</c> si nada la impide.</summary>
-    private string? Blocks(IModule module, IReadOnlySet<string> activeCodes, bool activate)
+    /// <remarks>
+    /// El mensaje NO lleva la lista de códigos embebida: esos van en
+    /// <see cref="ActivationBlock.BlockedBy"/>, para que la interfaz pueda
+    /// escribir los nombres visibles y enlazarlos a su tarjeta. La frase se basta
+    /// sola cuando quien la recibe no sabe qué hacer con los datos.
+    /// </remarks>
+    private ActivationBlock? Blocks(IModule module, IReadOnlySet<string> activeCodes, bool activate)
     {
         if (activate)
         {
@@ -214,8 +241,10 @@ internal sealed class ModuleActivationService(
 
             return missing.Count == 0
                 ? null
-                : $"'{module.Code}' no puede activarse porque necesita módulos que están inactivos: " +
-                  $"{string.Join(", ", missing)}. Actívalos primero.";
+                : new ActivationBlock(
+                    $"«{module.DisplayName}» necesita otros módulos que ahora mismo están " +
+                    "inactivos. Actívalos primero.",
+                    missing);
         }
 
         var dependents = ModuleGraph.ActiveHardDependents(Catalog, activeCodes, module.Code);
@@ -225,8 +254,10 @@ internal sealed class ModuleActivationService(
         // instalación con un clic. Se explica quién bloquea y decide la persona.
         return dependents.Count == 0
             ? null
-            : $"'{module.Code}' no puede desactivarse porque estos módulos activos dependen de él: " +
-              $"{string.Join(", ", dependents)}. Desactívalos primero.";
+            : new ActivationBlock(
+                $"«{module.DisplayName}» no se puede desactivar porque otros módulos activos " +
+                "dependen de él. Desactívalos primero.",
+                dependents);
     }
 
     private ModuleResponse Describe(
