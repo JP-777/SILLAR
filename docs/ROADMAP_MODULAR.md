@@ -58,8 +58,8 @@ Módulos que entran en la primera entrega, en orden de construcción. El orden r
 
 | Orden | Módulo | Por qué va aquí |
 |---|---|---|
-| 1 | **CORE** | Todo lo demás se enchufa aquí. Incluye licencias, activación, settings y usuarios admin. |
-| 2 | **M01 Catálogo** | Base del negocio. Incluye la búsqueda con `pg_trgm` y `unaccent` que exige el PRD. |
+| 1 | **CORE** ✅ | Todo lo demás se enchufa aquí. Incluye licencias, activación, settings y usuarios admin. **Cerrado** — commit `73988ce`, 181 pruebas |
+| 2 | **M01 Catálogo** ← *en curso* | Base del negocio. Incluye la búsqueda con `pg_trgm` y `unaccent` que exige el PRD. **SPEC v1.1 en revisión** |
 | 3 | **M02 Contenido Web** | Banners: prioridad número uno declarada por la cliente. Es independiente, se puede construir en paralelo. |
 | 4 | **M04 Clientes** | Necesario para que Ventas tenga a quién asociar el pedido. |
 | 5 | **M03 Ventas Online** | Carrito y pedidos: prioridad número tres. Requiere M01 y aprovecha M04. |
@@ -78,9 +78,11 @@ CORE es demasiado grande para un solo ciclo de cinco pasos, así que se parte en
 | **02** | Instalación, login, sesiones por cookie, CSRF, cambio de contraseña, CRUD de usuarios | ✅ Cerrada — commit `de4994a`, 95 pruebas |
 | **02.1** | Token CSRF determinista derivado de la sesión (ADR-012) | ✅ Cerrada — commit `4c37cdc` |
 | **03** | Activación de módulos, `site_settings`, auditoría consultable | ✅ Cerrada — commit `4fe76b4`, 152 pruebas |
-| **03b** | Gestión de medios | Especificada — cierra CORE |
+| **03b** | Gestión de medios | ✅ Cerrada — commit `dd14431` |
+| **04a** | Pantallas de módulos y usuarios | ✅ Cerrada — commit `005e8fb` |
+| **04b** | Configuración, auditoría y medios en el panel | ✅ Cerrada — commit `73988ce`, 181 pruebas |
 
-La entrega 03 completa los endpoints del SPEC §6 que siguen sin implementar y es la que da contenido real al panel. Conviene que exista antes de construir sus pantallas. Los medios se apartaron a la 03b: no comparten maquinaria con el resto y nadie los necesita hasta que M01 o M02 tengan interfaz.
+**CORE está cerrado.** Siete entregas, 9 tablas, 20 rutas, 181 pruebas y 6 entradas de menú filtradas por rol. Lo único pendiente es la **verificación visual del panel**, que Claude Code no puede hacer porque no ve la interfaz — la lista está en la §6 de la bitácora.
 
 ---
 
@@ -109,10 +111,33 @@ Introduce autenticación de clientes finales, distinta de la de administradores.
 
 | Orden | Módulo | Notas |
 |---|---|---|
-| 11 | **M09 Inventario** | Movimientos de stock y sincronización con el sistema del negocio. Depende del acceso técnico al sistema actual del cliente. |
-| 12 | **M10 Reportes** | Analítica sobre eventos publicados por los demás módulos. |
-| 13 | **M11 Pagos** | Pasarela de pago en línea. |
-| 14 | **M12 Asistente** | Chatbot con IA. Requiere definir alcance con precisión antes de estimar. |
+| 11 | **M10 Reportes** | Analítica sobre eventos publicados por los demás módulos. |
+| 12 | **M11 Pagos** | Pasarela de pago en línea. |
+| 13 | **M12 Asistente** | Chatbot con IA. Requiere definir alcance con precisión antes de estimar. |
+
+**M09 Inventario sale de esta fase** y pasa a SILLAR ERP: sin existencias fiables no hay punto de venta que valga.
+
+---
+
+## SILLAR ERP — aparcado hasta cerrar lo que está en curso
+
+Producto aparte sobre el mismo código (ADR-015, enmendada por la ADR-017). **No se empieza hasta que M01 esté cerrado**, y antes de escribir su primera línea hay dos cosas que hacer:
+
+| Antes de M13 | Por qué |
+|---|---|
+| **Observar el mostrador** — `GUIA-OBSERVACION-MOSTRADOR.md` | Un flujo de trabajo no se puede entrevistar, hay que verlo. Sin esas mediciones no se especifica nada. Se puede hacer ya: no consume tiempo de desarrollo |
+| **Datos administrativos de Bsale** | Certificado, costo, volumen, y sobre todo **series y correlativos en uso**: al migrar, la numeración no puede reiniciarse ni saltar. Preguntas 7 a 10 de la guía |
+
+| Orden | Módulo | Notas |
+|---|---|---|
+| 1 | **M09 Inventario** | Cuenta contra `catalog.product_items`. Antes hay que decidir dónde vive el concepto de ubicación |
+| 2 | **M13 Punto de Venta** | El dolor diario y medible. Incluye caja y turnos |
+| 3 | **M14 Comprobantes** | Se enciende cuando el negocio lo necesita, no antes |
+| 4 | **M15 Compras** | |
+| 5 | **M17 Sucursales** | Solo cuando haya un segundo local real |
+| 6 | **M16 Sincronización** | El último: su tamaño depende de si las sucursales son nodos autónomos o terminales, y eso sigue abierto (ADR-017 §Lo que queda abierto) |
+
+**Bloqueo transversal:** la ADR-016 (claves `uuid` v7 en tablas replicadas) hay que aplicarla **antes** de la primera migración de M01, porque sus tablas se replican.
 
 ---
 

@@ -2,8 +2,14 @@
 
 > **S**istema **I**ntegrado y **L**icenciable de **L**ogística, **A**dministración y **R**etail
 
-**Versión:** 1.0 · **Fecha:** 14 de agosto de 2026 · **Responsable:** JP
+**Versión:** 1.1 · **Fecha:** 15 de agosto de 2026 · **Responsable:** JP
 **Estado:** Aprobado como base de desarrollo
+
+> **Dos productos, una plataforma (ADR-015, enmendada por la ADR-017).** SILLAR es la plataforma
+> y el código común. Sobre ella se publican **SILLAR WEB** —servicio web, en la nube, una
+> instancia por cliente— y **SILLAR ERP** —escritorio, base interna del negocio, varias
+> máquinas y sucursales—. Comparten código y módulos; no comparten instalación. Un módulo
+> escrito una vez sirve a los dos.
 
 Este documento define cómo se construye la plataforma para que cada sistema sea **modular y desmontable**, de modo que pueda venderse por módulos, licenciarse o entregarse como producto completo a distintos negocios.
 
@@ -59,6 +65,11 @@ No es vendible ni desmontable. Es la base sobre la que se enchufa todo lo demás
 | **M09** | Inventario | `inventory` | M01 (dura) | Fase 4 |
 | **M10** | Reportes y Analítica | `reporting` | consume eventos | Fase 4 |
 | **M11** | Pagos en línea | `payments` | M03 (dura) | Futuro |
+| **M13** | Punto de Venta — incluye caja y turnos | `pos` | M01 (dura) · M04, M09, M14 (blandas) | **ERP** |
+| **M14** | Comprobantes Electrónicos | `billing` | CORE | **ERP** |
+| **M15** | Compras y Proveedores | `purchasing` | M01, M09 (duras) | **ERP** |
+| **M16** | Sincronización entre nodos | `sync` | CORE | **ERP** |
+| **M17** | Sucursales | `branches` | CORE (dura) · M09, M13 (blandas) | **ERP** |
 | **M12** | Asistente conversacional | `assistant` | ninguna dura | Futuro |
 
 ### Detalle por módulo
@@ -83,9 +94,33 @@ No es vendible ni desmontable. Es la base sobre la que se enchufa todo lo demás
 
 **M08 — Portal del Cliente.** Cuentas de cliente, historial y consulta de estados. Muestra pedidos si M03 está activo y estados de trabajo si M06 está activo; funciona con solo el perfil si no hay ninguno.
 
-**M09 — Inventario.** Movimientos de stock y sincronización con el sistema del negocio.
+**M09 — Inventario.** Movimientos de stock. **Deja de ser fase 4:** es pieza central de SILLAR ERP, porque sin existencias fiables no hay punto de venta que valga. Cuenta contra `catalog.product_items` —la variante—, no contra el producto: si el verde y el azul comparten existencia, la tienda con 3 verdes y 0 azules diría «hay 3».
 
 **M10 — Reportes.** Analítica comercial construida sobre eventos publicados por los demás módulos.
+
+**M13 — Punto de Venta.** Mostrador, caja y turnos. **Depende de M14 de forma blanda**: sin Comprobantes instalado registra la venta sin documento fiscal, que es lo que permite venderlo fuera de Perú. Caja no es un módulo aparte: apertura, cierre y arqueo viven aquí, porque no existe un negocio que quiera control de caja sin punto de venta.
+
+**M14 — Comprobantes Electrónicos.** Integración con un proveedor autorizado de SUNAT, encapsulada tras `IFiscalDocuments` (ADR-014). Ningún otro módulo sabe que existe un tercero.
+
+**M15 — Compras y Proveedores.** Órdenes de compra y recepción de mercadería.
+
+**M16 — Sincronización entre nodos.** Réplica de los datos compartidos entre la base de mando y las copias (ADR-017). El mando es uno solo y explícito; ningún nodo se declara mando a sí mismo.
+
+**M17 — Sucursales.** Locales del negocio, conteo global de existencias, consulta de disponibilidad ajena, separaciones y traslados entre locales.
+
+> **Este módulo no aporta «sucursal»: aporta «más de una».** Es la distinción que lo hace
+> desmontable. M09 guarda las existencias contra una ubicación; sin M17 instalado hay
+> exactamente una y todo funciona igual. Con M17 hay varias, y solo entonces aparecen el
+> conteo global, la consulta a otro local, la separación y el traslado.
+>
+> La dependencia va de M17 hacia M09, no al revés: M17 le pregunta a M09 cuánto hay en cada
+> ubicación. **M09 no sabe qué es una sucursal** y no debe saberlo. Es blanda en los dos
+> sentidos posibles: un negocio de servicios con varios locales instala M17 sin M09 y sigue
+> teniendo locales para caja y turnos; un negocio de un solo local instala M09 sin M17 y
+> nunca ve la palabra «sucursal» en la interfaz.
+>
+> La FK de la ubicación de M09 hacia la tabla de locales de M17 va en
+> `database/integrations/inventory_branches.sql`, nunca en una migración.
 
 ---
 

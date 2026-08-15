@@ -2,7 +2,19 @@
 
 **SILLAR** — Sistema Integrado y Licenciable de Logística, Administración y Retail.
 
-Plataforma web modular para negocios de retail y servicios. Cada sistema —catálogo, ventas, servicios, seguimiento, contenido, portal— es un **módulo desmontable y licenciable por separado**.
+Plataforma modular para negocios de retail y servicios. Cada sistema —catálogo, ventas, servicios, seguimiento, contenido, portal, mostrador— es un **módulo desmontable y licenciable por separado**.
+
+**SILLAR es la plataforma; lo que se vende son dos productos construidos con ella** (ADR-015, enmendada por la ADR-017):
+
+| | **SILLAR WEB** | **SILLAR ERP** |
+|---|---|---|
+| Dónde vive | Servidor en la nube, una instancia por cliente | Máquina del propio negocio |
+| Para qué | Presencia, catálogo público, venta en línea | Mostrador, existencias, compras, comprobantes |
+| Módulos | M01–M08, M10–M12 | CORE, M01, M04, M09, M13–M17 |
+
+**Comparten el código, no la instalación.** Un módulo escrito una vez sirve a los dos: la diferencia entre WEB y ERP no se decide al compilar, se decide al instalar. En código no hay ninguna marca de producto — los espacios de nombres siguen siendo `Sillar.*`, que es la plataforma.
+
+**SILLAR ERP está aparcado.** Todo el trabajo en curso es de SILLAR WEB. No adelantar módulos del ERP.
 
 **Este repositorio contiene el producto, nunca a un cliente.** No escribas el nombre de ningún negocio real en proyectos, espacios de nombres, identificadores ni datos semilla. Cada instalación vive en su propio repositorio privado (ADR-008).
 
@@ -10,7 +22,9 @@ Antes de escribir código, lee:
 
 - `docs/ARQUITECTURA_MODULAR.md` — módulos, dependencias, schemas, reglas
 - `docs/ROADMAP_MODULAR.md` — orden de trabajo y ciclo de módulo
-- `docs/adr/` — decisiones tomadas y sus razones
+- `docs/adr/` — decisiones tomadas y sus razones. Una ADR marcada «sustituida» o «enmendada»
+  se conserva sin editar: lo vigente está en la que la sustituye
+- `docs/BITACORA.md` — con qué criterio se decide y qué toca ahora
 - `docs/modules/<módulo>/SPEC.md` — la especificación del módulo en el que se está trabajando
 - `docs/modules/<módulo>/ENTREGA-NN-*.md` — cuando un módulo es demasiado grande para un solo ciclo, se parte en entregas. Cada una refina el SPEC para su alcance y cierra con su propia verificación
 
@@ -58,7 +72,10 @@ Se resuelven pidiendo el contrato al contenedor y comprobando si existe. Si no e
 - Un módulo **nunca importa** de otro módulo. Lo compartido vive en `src/shared/`.
 - Cada módulo exporta su `routes.ts`; la app monta solo las rutas de módulos activos.
 - Menú, home y footer se construyen desde `GET /api/capabilities`. Nada escrito a mano.
-- Nada de `fetch` suelto en componentes: cada módulo tiene su capa de servicios.
+- Nada de `fetch` suelto en componentes: cada módulo tiene su capa de servicios, y todo pasa por el cliente HTTP de `shared/http`.
+- **Nunca `localStorage` ni `sessionStorage`** para la sesión ni el token CSRF: viven en memoria.
+- Ningún componente lleva un color escrito. Solo variables CSS de `shared/styles/tokens.css`.
+- Ningún «Ha ocurrido un error» y ningún botón «Aceptar». Un conflicto es una frase que dice qué lo impide y qué hacer; un botón nombra la acción que ejecuta.
 
 ---
 
@@ -79,7 +96,15 @@ Ejemplo correcto: `Cuaderno universitario cuadriculado Stanford A4 100 hojas`
 
 ## Convenciones de base de datos
 
-- `integer GENERATED ALWAYS AS IDENTITY` para claves primarias, nunca `SERIAL`
+- Claves primarias: **`uuid` v7 generado por la aplicación** en tablas que **se replican entre
+  nodos**; `integer GENERATED ALWAYS AS IDENTITY` en las que no. Nunca `SERIAL` (ADR-016).
+  Ante la duda: *¿puede esta fila nacer en un nodo y tener que existir en otro?*
+  Se replican catálogo, clientes, existencias, ventas y comprobantes. No se replica nada de
+  CORE: sesiones, auditoría, configuración y activación de módulos son del nodo.
+  Las tablas replicadas llevan además `origin_node` y `row_version`.
+- **Los identificadores nunca se muestran al usuario.** Los códigos visibles —`slug` para la
+  web, código de negocio para la caja, número de venta o de comprobante— son campos aparte,
+  legibles, y llevan la serie de su nodo delante
 - `timestamptz` para fechas, nunca `timestamp`
 - Eliminación **lógica** con `is_active`, nunca `DELETE` físico en tablas de negocio
 - `CHECK` para reglas de valor: precios y cantidades no negativos, textos obligatorios no vacíos

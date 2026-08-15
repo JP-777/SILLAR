@@ -39,3 +39,6 @@ temp/
 # Anclado a la raíz con la barra inicial: sin ella, el patrón también ignoraría
 # backend/Sillar.Core/Media/, que es código fuente.
 /media/
+
+# Ajustes locales de Claude Code. Son de la máquina, no del producto.
+.claude/settings.local.json
