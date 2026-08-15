@@ -4,6 +4,7 @@ import { HomePage } from '../platform/HomePage';
 import { LoginPage } from '../platform/LoginPage';
 import { PublicSite } from '../platform/PublicSite';
 import { RequireAuth } from '../session';
+import { coreRoutes } from '../modules/core/routes';
 
 /**
  * Rutas de la aplicación.
@@ -21,6 +22,7 @@ export function AppRoutes() {
       <Route element={<RequireAuth />}>
         <Route path="/admin" element={<AdminShell />}>
           <Route index element={<HomePage />} />
+          {coreRoutes}
         </Route>
       </Route>
 

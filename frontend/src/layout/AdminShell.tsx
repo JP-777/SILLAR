@@ -72,6 +72,12 @@ export function AdminShell() {
             </span>
           </div>
 
+          {/* Cambiar la contraseña cuelga de aquí y no del menú lateral: es una
+              acción sobre uno mismo, no administración de otros. */}
+          <NavLink to="/admin/mi-contrasena" className="ly-topbar__link">
+            Mi contraseña
+          </NavLink>
+
           <Button variant="ghost" size="sm" onClick={() => void logout()}>
             Cerrar sesión
           </Button>

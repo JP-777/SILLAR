@@ -1,0 +1,141 @@
+/* ==========================================================================
+   Tarjeta de módulo — componente firma.
+
+   Calcada de docs/sillar-design-system.html. Es la pantalla que sostiene el
+   argumento de venta: el negocio ve sus bloques, los que tiene y los que
+   podría tener.
+   ========================================================================== */
+
+.mod-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+  gap: var(--s4);
+}
+
+.mod {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--s4) var(--s5) var(--s5);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* La barra lateral de color: activo el acento, inactivo apagado, bloqueado
+   aún más tenue. Se lee de un vistazo sin tener que leer el distintivo. */
+.mod::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--primary);
+}
+
+.mod.is-off { opacity: .62; }
+.mod.is-off::before { background: var(--stone-400); }
+.mod.is-locked::before { background: var(--stone-300); }
+
+.mod__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--s3);
+}
+
+.mod__code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text-subtle);
+  letter-spacing: .05em;
+}
+
+.mod__name { font-size: 16px; margin: 3px 0 6px; }
+
+.mod__description {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--text-muted);
+  min-height: 38px;
+  flex: 1;
+}
+
+.mod__expiry {
+  font-size: 12px;
+  color: var(--text-subtle);
+  margin-top: var(--s2);
+}
+
+.mod__foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: var(--s4);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--border);
+}
+
+.mod__dep { font-size: 12px; color: var(--text-subtle); }
+.mod__dep b { color: var(--text-muted); font-weight: 600; }
+
+/* El módulo que bloquea lleva a su tarjeta: nombrarlo sin poder ir a él
+   deja el trabajo a medias. */
+.mod__jump {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Resalte al llegar desde otra tarjeta. */
+.mod.is-target { box-shadow: 0 0 0 2px var(--primary); }
+
+/* --- Interruptor de la tarjeta ------------------------------------------ */
+
+.mod__switch {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  flex: none;
+  border: none;
+  padding: 0;
+  background: var(--stone-400);
+  border-radius: 100px;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.mod__switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: var(--bg-raised);
+  border-radius: 50%;
+  transition: transform .15s;
+  box-shadow: var(--shadow);
+}
+
+.mod__switch[aria-checked='true'] { background: var(--success); }
+.mod__switch[aria-checked='true']::after { transform: translateX(16px); }
+.mod__switch[disabled] { opacity: .5; cursor: not-allowed; }
+
+/* --- Nota de la pantalla ------------------------------------------------ */
+
+.mod__note {
+  grid-column: 1 / -1;
+  padding: var(--s5);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-lg);
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+}

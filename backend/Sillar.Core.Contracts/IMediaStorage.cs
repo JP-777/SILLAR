@@ -58,8 +58,8 @@ public interface IMediaStorage
 }
 
 /// <summary>El archivo no se puede aceptar.</summary>
-/// <param name="Reason">Motivo, en español, para mostrar a quien lo subió.</param>
-/// <param name="TooLarge">
+/// <param name="reason">Motivo, en español, para mostrar a quien lo subió.</param>
+/// <param name="tooLarge">
 /// Verdadero si el problema es el tamaño, que se responde con 413; falso si es
 /// el tipo, que se responde con 415.
 /// </param>

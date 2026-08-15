@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ==========================================================================
+       Sillar.Modules.Demo — módulos de mentira.
+
+       NO PUEDEN EXISTIR EN UN DESPLIEGUE DE PRODUCCIÓN. Es la restricción
+       innegociable de la entrega 4a §0, y se garantiza con tres barreras:
+
+       1. Sillar.Api lo referencia SOLO cuando Configuration == Debug, así que
+          la DLL no aparece en una publicación Release. El Dockerfile publica
+          con -c Release: no llega al contenedor.
+       2. Todo el código va bajo #if DEBUG. Aunque alguien añadiera la
+          referencia en Release, el ensamblado compilaría vacío.
+       3. Modules:IncludeDemoModules vale false por defecto, así que ni siquiera
+          en desarrollo aparecen sin pedirlo.
+
+       Las dos primeras son de tiempo de compilación: no es que se filtren, es
+       que no pueden estar.
+
+       Sirven para dos cosas: probar la pantalla de módulos con un grafo
+       realista antes de que exista M01, y cerrar los criterios de la entrega 3
+       que necesitaban un segundo módulo.
+       ========================================================================== -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Lo mismo que puede referenciar cualquier módulo: nada de Domain ni de
+         Data ajenos. Si estos módulos de mentira necesitaran más, sería señal
+         de que la regla no se sostiene. -->
+    <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
+    <ProjectReference Include="..\Sillar.Core.Contracts\Sillar.Core.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

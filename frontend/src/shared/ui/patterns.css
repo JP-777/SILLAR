@@ -1,0 +1,201 @@
+/* ==========================================================================
+   Patrones que fija la entrega 4a §3 y que 4b reutiliza tal cual.
+
+   Ni un color literal, como el resto.
+   ========================================================================== */
+
+/* --- Tabla -------------------------------------------------------------- */
+
+.ui-table-wrap {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.ui-table-scroll { overflow-x: auto; }
+
+.ui-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.ui-table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.ui-table td {
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.ui-table tbody tr:last-child td { border-bottom: none; }
+
+.ui-table tbody tr:hover { background: var(--bg-sunken); }
+
+/* Dado de baja: atenuado, nunca oculto. Es eliminación lógica, y
+   desaparecerlo haría creer que se borró. */
+.ui-table tbody tr[data-dimmed='true'] { opacity: .55; }
+
+.ui-table__actions { text-align: right; white-space: nowrap; }
+
+.ui-table__sortable {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+}
+
+.ui-table__sortable:hover { color: var(--text); }
+
+.ui-table__state { padding: var(--s6) var(--s4); }
+
+/* --- Paginación --------------------------------------------------------- */
+
+.ui-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.ui-pagination__buttons { display: flex; gap: var(--s2); }
+
+/* --- Panel lateral ------------------------------------------------------ */
+
+.ui-drawer__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: color-mix(in srgb, var(--stone-900) 42%, transparent);
+}
+
+.ui-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 901;
+  width: min(460px, 100vw);
+  background: var(--bg-raised);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.ui-drawer__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s5);
+  border-bottom: 1px solid var(--border);
+}
+
+.ui-drawer__title { font-size: 17px; font-weight: 620; }
+
+.ui-drawer__description { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+.ui-drawer__body { flex: 1; overflow-y: auto; padding: var(--s5); }
+
+.ui-drawer__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s2);
+  padding: var(--s4) var(--s5);
+  border-top: 1px solid var(--border);
+}
+
+.ui-drawer__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-subtle);
+  font-size: 20px;
+  line-height: 1;
+  padding: var(--s1);
+  border-radius: var(--r-sm);
+}
+
+.ui-drawer__close:hover { color: var(--text); background: var(--bg-sunken); }
+
+/* --- Diálogo de confirmación -------------------------------------------- */
+
+.ui-dialog__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s5);
+  background: color-mix(in srgb, var(--stone-900) 42%, transparent);
+}
+
+.ui-dialog {
+  width: 100%;
+  max-width: 440px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--s5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.ui-dialog__title { font-size: 16px; font-weight: 620; }
+
+.ui-dialog__body { font-size: 14px; color: var(--text-muted); display: flex; flex-direction: column; gap: var(--s2); }
+
+.ui-dialog__footer { display: flex; justify-content: flex-end; gap: var(--s2); margin-top: var(--s2); }
+
+/* --- Avisos de escritura ------------------------------------------------ */
+
+.ui-toasts {
+  position: fixed;
+  bottom: var(--s5);
+  right: var(--s5);
+  z-index: 990;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  pointer-events: none;
+}
+
+.ui-toast {
+  min-width: 240px;
+  max-width: 380px;
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-lg);
+  font-size: 14px;
+  border-left: 3px solid var(--success);
+}
+
+.ui-toast--danger { border-left-color: var(--danger); }

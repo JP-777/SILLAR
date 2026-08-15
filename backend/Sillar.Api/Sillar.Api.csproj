@@ -17,6 +17,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Módulos de mentira, SOLO en Debug.
+         Esta condición es la primera de las tres barreras de la entrega 4a §0:
+         al publicar con -c Release la DLL sencillamente no se copia, así que no
+         llega al contenedor. No la quites sin leer ese apartado. -->
+    <ProjectReference Include="..\Sillar.Modules.Demo\Sillar.Modules.Demo.csproj"
+                      Condition="'$(Configuration)' == 'Debug'" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Swashbuckle.AspNetCore" />
     <!-- Solo diseño: habilita "dotnet ef migrations" y "dotnet ef database".
          PrivateAssets="all" impide que salga en la publicación. -->

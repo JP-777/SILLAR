@@ -36,7 +36,14 @@ internal static class ModuleBootstrapper
         var logger = loggerFactory.CreateLogger("Sillar.Arranque");
 
         // --- Paso 1: descubrir los módulos --------------------------------
-        var modules = ModuleDiscovery.Discover(logger);
+        // Los módulos de mentira solo se admiten en desarrollo y solo si alguien
+        // lo pide. En Release su DLL ni siquiera existe (entrega 4a §0), así que
+        // esto es la tercera barrera, no la única.
+        var allowDemoModules =
+            builder.Environment.IsDevelopment()
+            && builder.Configuration.GetValue<bool>(ModuleDiscovery.IncludeDemoSetting);
+
+        var modules = ModuleDiscovery.Discover(logger, allowDemoModules);
         logger.LogInformation(
             "Módulos descubiertos: {Count} ({Codes}).",
             modules.Count,

@@ -1,3 +1,4 @@
+import { coreNavigation } from '../modules/core/routes';
 import type { Role } from '../session/SessionProvider';
 
 /**
@@ -35,11 +36,10 @@ export interface ModuleNavigation {
 /**
  * Navegación aportada por los módulos.
  *
- * Vacío hasta que exista el primer módulo con interfaz. Las pantallas de
- * administración de CORE llegan en su propia entrega, después de F-08, y se
- * añadirán aquí como un elemento más.
+ * Cada módulo con interfaz añade aquí su entrada. La aplicación muestra solo la
+ * de los módulos activos y, dentro de cada una, solo lo que el rol alcanza.
  */
-export const MODULE_NAVIGATION: readonly ModuleNavigation[] = [];
+export const MODULE_NAVIGATION: readonly ModuleNavigation[] = [coreNavigation];
 
 /** Filtra la navegación por módulos activos y por rol. */
 export function visibleNavigation(

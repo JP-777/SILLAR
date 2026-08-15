@@ -44,8 +44,8 @@ public sealed class HostRestarter(
     /// preguntarlo: la petición muere sin respuesta justo después de que el
     /// cambio se haya escrito.
     ///
-    /// Por eso se cuelga de <see cref="HttpResponse.OnCompleted"/> y no se llama
-    /// a <c>StopApplication</c> desde el manejador.
+    /// Por eso se cuelga del final de la respuesta —<c>HttpResponse.OnCompleted</c>—
+    /// y no se llama a <c>StopApplication</c> desde el manejador.
     /// </remarks>
     /// <param name="context">Petición en curso.</param>
     /// <param name="reason">Qué provocó el reinicio, para el registro.</param>

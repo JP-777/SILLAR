@@ -21,8 +21,28 @@ internal static class ModuleDiscovery
 {
     private const string AssemblyPattern = "Sillar.*.dll";
 
+    /// <summary>
+    /// Prefijo de los códigos de los módulos de mentira.
+    /// </summary>
+    /// <remarks>
+    /// Se comprueba aquí en vez de confiar solo en que la DLL no esté: es la
+    /// tercera barrera de la entrega 4a §0, la que además hace ruido. Si un
+    /// módulo de mentira llegara a un despliegue, esto lo convierte en un
+    /// arranque abortado con un mensaje claro en lugar de un módulo falso
+    /// apareciendo en el panel de un cliente.
+    /// </remarks>
+    private const string DemoCodePrefix = "demo_";
+
+    /// <summary>Bandera que permite cargar los módulos de mentira.</summary>
+    public const string IncludeDemoSetting = "Modules:IncludeDemoModules";
+
     /// <summary>Descubre e instancia los módulos del despliegue.</summary>
-    public static IReadOnlyList<IModule> Discover(ILogger logger)
+    /// <param name="logger">Registro del arranque.</param>
+    /// <param name="allowDemoModules">
+    /// Si se admiten los módulos de mentira. Solo debe valer <c>true</c> en
+    /// desarrollo y cuando alguien lo pide expresamente.
+    /// </param>
+    public static IReadOnlyList<IModule> Discover(ILogger logger, bool allowDemoModules)
     {
         var modules = new List<IModule>();
 
@@ -47,6 +67,24 @@ internal static class ModuleDiscovery
                     throw new StartupAbortedException(
                         $"No se pudo instanciar el módulo '{type.FullName}'. " +
                         "Toda implementación de IModule necesita un constructor sin parámetros.");
+                }
+
+                if (module.Code.StartsWith(DemoCodePrefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!allowDemoModules)
+                    {
+                        // Silenciarlo sería peor: alguien acabaría preguntándose
+                        // por qué el panel no muestra lo que espera.
+                        logger.LogWarning(
+                            "Se ignora el módulo de demostración '{Code}': {Setting} no está activada.",
+                            module.Code,
+                            IncludeDemoSetting);
+                        continue;
+                    }
+
+                    logger.LogWarning(
+                        "Módulo de DEMOSTRACIÓN cargado: '{Code}'. No debe ocurrir en una instalación real.",
+                        module.Code);
                 }
 
                 modules.Add(module);
