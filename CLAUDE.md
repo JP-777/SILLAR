@@ -99,9 +99,15 @@ Ejemplo correcto: `Cuaderno universitario cuadriculado Stanford A4 100 hojas`
 - Claves primarias: **`uuid` v7 generado por la aplicación** en tablas que **se replican entre
   nodos**; `integer GENERATED ALWAYS AS IDENTITY` en las que no. Nunca `SERIAL` (ADR-016).
   Ante la duda: *¿puede esta fila nacer en un nodo y tener que existir en otro?*
-  Se replican catálogo, clientes, existencias, ventas y comprobantes. No se replica nada de
-  CORE: sesiones, auditoría, configuración y activación de módulos son del nodo.
+  Se replican catálogo, clientes, existencias, ventas, comprobantes y **`core.media_assets`**
+  (ADR-018). No se replican sesiones, auditoría, configuración ni activación de módulos.
   Las tablas replicadas llevan además `origin_node` y `row_version`.
+- **Una tabla que se replica no puede referenciar a una que no se replica** (ADR-018). La fila
+  viaja y la referencia se queda apuntando a otra cosa. No salta ninguna violación de clave
+  foránea, porque cada base es coherente por dentro: el síntoma es un catálogo sin fotos.
+  Al escribir cualquier FK, comprobar que las dos tablas están del mismo lado de la línea.
+- La clave de un archivo de medios **es el nombre del archivo**: el mismo `uuid` v7 en la fila
+  y en el disco. Un archivo encontrado se rastrea hasta su fila sin buscar nada
 - **Los identificadores nunca se muestran al usuario.** Los códigos visibles —`slug` para la
   web, código de negocio para la caja, número de venta o de comprobante— son campos aparte,
   legibles, y llevan la serie de su nodo delante

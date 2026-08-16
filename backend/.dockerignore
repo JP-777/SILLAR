@@ -1,5 +1,9 @@
 # Lo que no debe entrar en el contexto de compilación de la imagen.
 # Sin esto, cada build copia cientos de megas de artefactos locales.
+#
+# El Dockerfile copia el contexto entero y publica Sillar.Api.csproj: lo que
+# se enumera aquí es la excepción, no la regla. Un módulo nuevo entra solo,
+# sin tocar el Dockerfile.
 
 **/bin/
 **/obj/
@@ -7,3 +11,11 @@
 .config/
 *.sln
 *.md
+
+# Módulos de demostración: imposibles en producción. Tercera barrera, más
+# fuerte que las dos de compilación que ya tiene Sillar.Modules.Demo.
+**/Sillar.Modules.Demo/
+
+# Proyectos de pruebas: corren en la máquina de desarrollo y en el pipeline,
+# nunca en la imagen desplegada.
+**/*.Tests/

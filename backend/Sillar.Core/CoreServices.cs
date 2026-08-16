@@ -12,6 +12,7 @@ using Sillar.Core.Services;
 using Sillar.Core.Media;
 using Sillar.Core.Settings;
 using Sillar.Shared.Events;
+using Sillar.Shared.Replication;
 
 namespace Sillar.Core;
 
@@ -35,6 +36,10 @@ public static class CoreServices
         IConfiguration configuration,
         string connectionString)
     {
+        // El nodo de origen de las filas replicadas de CORE (ADR-018:
+        // media_assets). CoreDbContext lo exige en su constructor.
+        services.TryAddNodeIdentity(configuration);
+
         services.AddCoreData(connectionString);
         services.AddHttpContextAccessor();
         services.TryAddTimeProvider();

@@ -5,6 +5,7 @@
 - **Decide:** JP
 - **Enmienda:** la convención de claves primarias de `CLAUDE.md`
 - **Bloquea a:** M13, M14, M15, M16 — hay que resolverlo **antes** de construirlos
+- **Enmendada por:** ADR-018 — la tabla de clasificación de abajo. «Archivos y sus metadatos» quedó del lado equivocado: el catálogo se replica y referencia a los medios, así que los medios se replican. El criterio y las cuatro reglas siguen vigentes.
 
 ## Contexto
 
@@ -53,7 +54,7 @@ No es una migración global: es una distinción por tabla, decidida en el SPEC d
 | Ventas y sus líneas | Registro de auditoría |
 | Clientes | Configuración del sitio |
 | Comprobantes | Activación de módulos |
-| Movimientos de inventario, compras | Archivos y sus metadatos |
+| Movimientos de inventario, compras | ~~Archivos y sus metadatos~~ → se replican (ADR-018) |
 
 **Lo ya construido no se toca.** Ninguna tabla de CORE se replica: las sesiones son locales, la auditoría es del nodo, la configuración es de la instalación y los módulos activos también. Las 181 pruebas siguen valiendo.
 
@@ -77,6 +78,7 @@ La única excepción a revisar es `core.admin_users`: si el personal debe poder 
 
    Esta separación es la que permite que la clave sea fea y el número del ticket sea legible, en vez de una sola columna que hace mal las dos cosas. La serie por sucursal, además, **no es una preferencia: SUNAT exige serie propia por punto de emisión.**
 3. Las claves foráneas entre tablas replicadas también son `uuid`. Mezclar tipos en una relación es el camino corto a un error de conversión silencioso.
+   **Y una tabla que se replica no puede referenciar a una que no se replica** — la fila viaja, la referencia se queda (ADR-018).
 4. Las tablas replicadas llevan además el nodo de origen y una marca de versión, que M16 necesita para ordenar los cambios.
 
 ## Consecuencias

@@ -13,14 +13,14 @@ namespace Sillar.Core.Dtos;
 /// subida se acepta igualmente: es un aviso para el panel, no un rechazo.
 /// </param>
 public sealed record MediaUploadResponse(
-    int MediaAssetId,
+    Guid MediaAssetId,
     string Url,
     string? OriginalName,
     string MimeType,
     long SizeBytes,
     int? Width,
     int? Height,
-    int? DuplicateOf);
+    Guid? DuplicateOf);
 
 /// <summary>Archivo tal como se lista en el panel.</summary>
 /// <param name="MediaAssetId">Identificador.</param>
@@ -36,7 +36,7 @@ public sealed record MediaUploadResponse(
 /// <param name="IsActive">Si sigue en uso y se sirve.</param>
 /// <param name="CreatedAt">Cuándo se subió.</param>
 public sealed record MediaResponse(
-    int MediaAssetId,
+    Guid MediaAssetId,
     string Url,
     string? OriginalName,
     string MimeType,

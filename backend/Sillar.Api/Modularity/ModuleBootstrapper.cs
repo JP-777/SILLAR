@@ -4,6 +4,7 @@ using Sillar.Core.Authentication;
 using Sillar.Core.Data;
 using Sillar.Core.Modularity;
 using Sillar.Shared.Modularity;
+using Sillar.Shared.Replication;
 
 namespace Sillar.Api.Modularity;
 
@@ -73,7 +74,13 @@ internal static class ModuleBootstrapper
                 "Se define en el archivo .env de la raíz como ConnectionStrings__Default.");
         }
 
-        await using var database = new CoreDbContext(CoreDataServiceExtensions.BuildOptions(connectionString));
+        // El nodo se lee de la configuración igual que hará el contenedor más
+        // abajo: este contexto de vida corta no escribe en ninguna tabla
+        // replicada, pero el constructor lo exige (ADR-018).
+        var node = new NodeIdentity(builder.Configuration[NodeIdentity.SettingKey] ?? NodeIdentity.DefaultCode);
+
+        await using var database = new CoreDbContext(
+            CoreDataServiceExtensions.BuildOptions(connectionString), node, TimeProvider.System);
 
         if (!await database.Database.CanConnectAsync(cancellationToken))
         {

@@ -127,7 +127,7 @@ internal sealed class MediaService(
 
     /// <summary>Da de baja un archivo. Baja lógica: el binario se conserva.</summary>
     public async Task<bool> DeleteAsync(
-        int mediaAssetId,
+        Guid mediaAssetId,
         int actingUserId,
         string actingEmail,
         CancellationToken cancellationToken)
@@ -160,14 +160,14 @@ internal sealed class MediaService(
     /// dos módulos apuntaran al mismo archivo y que dar de baja uno rompiera al
     /// otro; evitarlo exige un recuento de referencias que nadie ha pedido.
     /// </remarks>
-    private async Task<int?> FindDuplicateAsync(string? checksum, int excludeId, CancellationToken cancellationToken)
+    private async Task<Guid?> FindDuplicateAsync(string? checksum, Guid excludeId, CancellationToken cancellationToken)
         => checksum is null
             ? null
             : await database.MediaAssets
                 .AsNoTracking()
                 .Where(asset => asset.Checksum == checksum && asset.IsActive && asset.MediaAssetId != excludeId)
                 .OrderBy(asset => asset.MediaAssetId)
-                .Select(asset => (int?)asset.MediaAssetId)
+                .Select(asset => (Guid?)asset.MediaAssetId)
                 .FirstOrDefaultAsync(cancellationToken);
 
     private static IQueryable<Domain.MediaAsset> Filter(

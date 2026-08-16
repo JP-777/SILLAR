@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ==========================================================================
+       Sillar.Modules.Catalog — M01 Catálogo de Productos.
+
+       Referencia solo Sillar.Shared y Sillar.Core.Contracts, que es lo que la
+       regla de referencias permite: nunca el Domain ni el Data de otro módulo.
+
+       Las cuatro claves foráneas hacia core.media_assets son cruzadas y están
+       permitidas porque CORE es dependencia DURA (SPEC §6.8). Se declaran en la
+       migración de este módulo, nunca en la de CORE.
+       ========================================================================== -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
+    <ProjectReference Include="..\Sillar.Core.Contracts\Sillar.Core.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Sillar.Modules.Catalog.Tests" />
+  </ItemGroup>
+
+</Project>

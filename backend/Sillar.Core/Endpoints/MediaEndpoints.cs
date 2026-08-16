@@ -44,7 +44,7 @@ public static class MediaEndpoints
             .WithSummary("Lista los archivos, con filtros y paginación.")
             .Produces<PagedResult<MediaResponse>>(StatusCodes.Status200OK);
 
-        admin.MapDelete("/{id:int}", Delete)
+        admin.MapDelete("/{id:guid}", Delete)
             .RequireAuthorization(AdminRole.Admin)
             .WithName("DeleteMedia")
             .WithSummary("Da de baja un archivo.")
@@ -180,7 +180,7 @@ public static class MediaEndpoints
     /// <param name="cancellationToken">Cancelación de la petición.</param>
     /// <returns>204 si se dio de baja, 404 si no existía o ya estaba de baja.</returns>
     private static async Task<IResult> Delete(
-        int id,
+        Guid id,
         MediaService media,
         CurrentUser currentUser,
         CancellationToken cancellationToken)

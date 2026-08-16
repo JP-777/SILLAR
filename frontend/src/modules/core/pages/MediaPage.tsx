@@ -269,11 +269,9 @@ export function MediaPage() {
         onConfirm={() => void remove()}
         onCancel={() => setPendingDeletion(null)}
       >
-        {/* La consecuencia real, no que se marque una columna. */}
-        <p>
-          <strong>Dejará de verse en la web</strong> allí donde esté puesto: en un producto, en un
-          banner, donde sea.
-        </p>
+        {/* Una frase, no un recuento: contar referencias entre módulos no
+            tiene segundo caso real (SPEC de M01 §6.8). */}
+        <p>Si esta imagen está en uso, desaparecerá de donde esté.</p>
         <p>El archivo no se borra del disco, así que se puede recuperar.</p>
       </ConfirmDialog>
 

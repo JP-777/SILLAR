@@ -341,12 +341,9 @@ namespace Sillar.Core.Migrations
 
             modelBuilder.Entity("Sillar.Core.Domain.MediaAsset", b =>
                 {
-                    b.Property<int>("MediaAssetId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
+                    b.Property<Guid>("MediaAssetId")
+                        .HasColumnType("uuid")
                         .HasColumnName("media_asset_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("MediaAssetId"));
 
                     b.Property<string>("AltText")
                         .HasMaxLength(180)
@@ -388,6 +385,11 @@ namespace Sillar.Core.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("mime_type");
 
+                    b.Property<string>("OriginNode")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("origin_node");
+
                     b.Property<string>("OriginalName")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
@@ -403,6 +405,11 @@ namespace Sillar.Core.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)")
                         .HasColumnName("relative_path");
+
+                    b.Property<long>("RowVersion")
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(1L)
+                        .HasColumnName("row_version");
 
                     b.Property<long>("SizeBytes")
                         .HasColumnType("bigint")

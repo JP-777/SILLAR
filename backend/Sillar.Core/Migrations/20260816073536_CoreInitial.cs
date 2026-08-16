@@ -23,9 +23,29 @@ namespace Sillar.Core.Migrations
     ///
     /// <c>core.es_search</c> se crea pero todavía no la usa ninguna columna:
     /// vive aquí porque es infraestructura compartida y la estrenará M01.
+    ///
+    /// Regenerada el 16 de agosto de 2026 (ADR-018): <c>media_assets</c> pasa a
+    /// <c>uuid</c> v7 y se replica. Recoge también, de una vez, lo que antes
+    /// era la migración separada <c>ModulesDescriptionRequired</c> —
+    /// <c>modules.description</c> obligatoria y <c>ck_modules_display_order</c>—,
+    /// porque no había ninguna instalación desplegada y hand-editar tres
+    /// archivos generados por migración era más frágil que regenerarlos.
     /// </remarks>
     public partial class CoreInitial : Migration
     {
+        /// <summary>
+        /// Tablas de CORE con columna <c>updated_at</c> mantenida por trigger.
+        /// </summary>
+        private static readonly string[] TablesWithUpdatedAt =
+        [
+            "installation",
+            "modules",
+            "module_activations",
+            "admin_users",
+            "site_settings",
+            "media_assets"
+        ];
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -100,7 +120,7 @@ namespace Sillar.Core.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
                     code = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     display_name = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false),
-                    description = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: true),
+                    description = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
                     version = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     is_core = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     display_order = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
@@ -112,7 +132,9 @@ namespace Sillar.Core.Migrations
                     table.PrimaryKey("pk_modules", x => x.module_id);
                     table.CheckConstraint("ck_modules_code_format", "code ~ '^[a-z][a-z0-9_]{1,39}$'");
                     table.CheckConstraint("ck_modules_code_not_empty", "btrim(code) <> ''");
+                    table.CheckConstraint("ck_modules_description_not_empty", "btrim(description) <> ''");
                     table.CheckConstraint("ck_modules_display_name_not_empty", "btrim(display_name) <> ''");
+                    table.CheckConstraint("ck_modules_display_order", "display_order >= 0");
                     table.CheckConstraint("ck_modules_version_not_empty", "btrim(version) <> ''");
                 });
 
@@ -204,8 +226,9 @@ namespace Sillar.Core.Migrations
                 schema: "core",
                 columns: table => new
                 {
-                    media_asset_id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
+                    media_asset_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    origin_node = table.Column<string>(type: "text", nullable: false),
+                    row_version = table.Column<long>(type: "bigint", nullable: false, defaultValue: 1L),
                     stored_name = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
                     original_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     relative_path = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
@@ -297,29 +320,6 @@ namespace Sillar.Core.Migrations
                         principalColumn: "module_id",
                         onDelete: ReferentialAction.Cascade);
                 });
-
-            // ================================================================
-            // Colación core.es_ci en las columnas que identifican
-            //
-            // Escrito a mano: el proveedor Npgsql genera COLLATE "core.es_ci",
-            // entrecomillando el nombre calificado como si fuera un identificador
-            // único, y PostgreSQL entonces busca una colación llamada
-            // literalmente «core.es_ci», que no existe.
-            //
-            // Va antes de crear los índices: cambiar la colación de una columna
-            // reconstruye sus índices, así que se crean ya en su forma final.
-            // ================================================================
-            migrationBuilder.Sql(
-                """
-                ALTER TABLE core.admin_users
-                    ALTER COLUMN email TYPE character varying(150) COLLATE core.es_ci;
-                """);
-
-            migrationBuilder.Sql(
-                """
-                ALTER TABLE core.site_settings
-                    ALTER COLUMN setting_key TYPE character varying(100) COLLATE core.es_ci;
-                """);
 
             migrationBuilder.CreateIndex(
                 name: "idx_admin_sessions_expires_at",
@@ -445,6 +445,30 @@ namespace Sillar.Core.Migrations
                 unique: true);
 
             // ================================================================
+            // Colación core.es_ci en las columnas que identifican
+            //
+            // Escrito a mano: el proveedor Npgsql genera COLLATE "core.es_ci",
+            // entrecomillando el nombre calificado como si fuera un identificador
+            // único, y PostgreSQL entonces busca una colación llamada
+            // literalmente «core.es_ci», que no existe.
+            //
+            // Va después de crear los índices porque cambiar la colación de una
+            // columna los reconstruye solo: quedan con la colación aplicada, no
+            // con la de antes.
+            // ================================================================
+            migrationBuilder.Sql(
+                """
+                ALTER TABLE core.admin_users
+                    ALTER COLUMN email TYPE character varying(150) COLLATE core.es_ci;
+                """);
+
+            migrationBuilder.Sql(
+                """
+                ALTER TABLE core.site_settings
+                    ALTER COLUMN setting_key TYPE character varying(100) COLLATE core.es_ci;
+                """);
+
+            // ================================================================
             // updated_at automático
             //
             // Escrito a mano: EF Core no genera triggers. La función vive en el
@@ -526,18 +550,5 @@ namespace Sillar.Core.Migrations
             migrationBuilder.Sql("DROP COLLATION IF EXISTS core.es_ci;");
             migrationBuilder.Sql("DROP COLLATION IF EXISTS core.es_search;");
         }
-
-        /// <summary>
-        /// Tablas de CORE con columna <c>updated_at</c> mantenida por trigger.
-        /// </summary>
-        private static readonly string[] TablesWithUpdatedAt =
-        [
-            "installation",
-            "modules",
-            "module_activations",
-            "admin_users",
-            "site_settings",
-            "media_assets"
-        ];
     }
 }

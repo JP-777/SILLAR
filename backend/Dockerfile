@@ -5,31 +5,22 @@
 # solo lleva el runtime. La imagen resultante no contiene código fuente ni
 # herramientas de compilación.
 #
+# Copia el contexto entero y publica Sillar.Api/Sillar.Api.csproj: MSBuild
+# resuelve solo las referencias de proyecto que ese .csproj declara, así que
+# un módulo nuevo entra en la imagen sin tocar este archivo. Antes esto
+# enumeraba cada proyecto a mano, y esa lista se quedó corta con Catalog sin
+# que nadie lo notara. Lo que NO debe entrar —Demo, los *.Tests, bin/, obj/—
+# vive en .dockerignore: ahí se enumera la excepción, no la regla.
+#
 # Se construye desde backend/:  docker compose --profile full build api
 # ============================================================================
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Primero los archivos de proyecto y de versiones: mientras no cambien, Docker
-# reutiliza la capa de restauración y no vuelve a descargar los paquetes en
-# cada compilación.
-COPY Directory.Build.props Directory.Packages.props ./
-COPY Sillar.Shared/Sillar.Shared.csproj                 Sillar.Shared/
-COPY Sillar.Core.Contracts/Sillar.Core.Contracts.csproj Sillar.Core.Contracts/
-COPY Sillar.Core/Sillar.Core.csproj                     Sillar.Core/
-COPY Sillar.Api/Sillar.Api.csproj                       Sillar.Api/
+COPY . .
 
-RUN dotnet restore Sillar.Api/Sillar.Api.csproj
-
-# Ahora el código. Los proyectos de pruebas no entran en la imagen: se ejecutan
-# en la máquina de desarrollo y en el pipeline, no en el despliegue.
-COPY Sillar.Shared/          Sillar.Shared/
-COPY Sillar.Core.Contracts/  Sillar.Core.Contracts/
-COPY Sillar.Core/            Sillar.Core/
-COPY Sillar.Api/             Sillar.Api/
-
-RUN dotnet publish Sillar.Api/Sillar.Api.csproj -c Release -o /app --no-restore
+RUN dotnet publish Sillar.Api/Sillar.Api.csproj -c Release -o /app
 
 # ----------------------------------------------------------------------------
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final

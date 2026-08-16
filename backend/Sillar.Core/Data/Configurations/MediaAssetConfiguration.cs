@@ -18,9 +18,23 @@ internal sealed class MediaAssetConfiguration : IEntityTypeConfiguration<MediaAs
 
         builder.HasKey(x => x.MediaAssetId).HasName("pk_media_assets");
 
+        // Generado por la aplicación con Guid.CreateVersion7(), no por la base
+        // de datos: es el mismo valor que el nombre del archivo en disco
+        // (ADR-018), y ese nombre se decide antes de escribir la fila.
         builder.Property(x => x.MediaAssetId)
             .HasColumnName("media_asset_id")
-            .UseIdentityAlwaysColumn();
+            .ValueGeneratedNever();
+
+        // Las cuatro columnas de la ADR-016 regla 4, que ahora lleva también
+        // media_assets (ADR-018): esta tabla se replica.
+        builder.Property(x => x.OriginNode)
+            .HasColumnName("origin_node")
+            .IsRequired();
+
+        builder.Property(x => x.RowVersion)
+            .HasColumnName("row_version")
+            .HasDefaultValue(1L)
+            .ValueGeneratedNever();
 
         builder.Property(x => x.StoredName)
             .HasColumnName("stored_name")

@@ -278,6 +278,22 @@ products   1 ─── N product_images
 | `catalog.product_items.image_id` | `core.media_assets.id` | dura | sí | Migración de M01 |
 | `catalog.product_images.media_asset_id` | `core.media_assets.id` | dura | sí | Migración de M01 |
 
+**Qué pasa al borrar un archivo que está en uso.** Las tres referencias nulables van a
+`ON DELETE SET NULL`: la marca se queda sin logo y la categoría sin portada, pero siguen
+existiendo. `product_images.media_asset_id` es `NOT NULL`, así que ahí no cabe: va a
+**`ON DELETE CASCADE`**, porque una fila de galería sin archivo no es nada.
+
+`RESTRICT` se descarta a propósito: haría fallar el borrado con una violación de clave foránea,
+que llega a la interfaz como el «Ha ocurrido un error» que este proyecto tiene prohibido.
+
+**A cambio, la galería de CORE avisa antes de borrar** — con una frase, no con un recuento:
+
+> *Si esta imagen está en uso, desaparecerá de donde esté.*
+
+Es deliberado que no diga cuántos. Contar referencias entre módulos ya se descartó por no tener
+segundo caso real, y sigue sin tenerlo. La frase cumple la regla que importa: **no ser
+silencioso**, que es distinto de ser exacto.
+
 ### 6.9 Datos semilla
 
 **Ninguno con contenido de negocio.** Ni una categoría de ejemplo, ni un producto de muestra: este repositorio contiene el producto, nunca a un cliente. El módulo recién instalado arranca vacío y la primera pantalla lo dice con una frase útil, no con una tabla en blanco.
@@ -388,6 +404,7 @@ Todas las de escritura exigen token CSRF y quedan en `core.audit_log`.
 9. Desactivar una categoría **no desactiva sus productos** y no actúa en cascada: el sistema avisa cuántos quedan sin esa categoría y la persona decide.
 10. Una categoría no puede ser su propia ancestra.
 11. Máximo una imagen principal por producto. Si no hay ninguna marcada, se usa la de menor `sort_order`.
+12. Borrar un archivo de la galería de CORE **vacía** el logo de la marca, la portada de la categoría y la imagen de la variante, y **quita** la fila de la galería del producto. Nunca falla con un error de clave foránea, y nunca ocurre sin aviso previo.
 12. La búsqueda pública ignora mayúsculas y tildes (`core.es_search`): *lapiz* encuentra *LÁPIZ*.
 13. La unicidad de código, slug y marca ignora mayúsculas pero **respeta tildes** (`core.es_ci`): *Artesco* y *ARTESCO* son la misma marca; *Peña* y *Pena* no.
 14. Los `uuid` **no se muestran nunca** en la interfaz ni en las URL. Fuera se usa el slug; dentro, el código del negocio.
@@ -409,6 +426,8 @@ Todas las de escritura exigen token CSRF y quedan en `core.audit_log`.
 - [ ] Desactivar una categoría con productos avisa y no desactiva nada más
 - [ ] Cambiar el nombre de un producto no cambia su slug
 - [ ] Las imágenes se asocian desde la galería de CORE y borrar la asociación no borra el archivo
+- [ ] Borrar un archivo **usado** por una marca, una categoría, una variante y un producto: los tres primeros quedan sin imagen, el cuarto pierde esa fila de galería, y ninguna operación falla con un error de base de datos
+- [ ] La galería avisa antes de borrar, con la frase, sin recuento
 - [ ] Todos los endpoints en Swagger, con ejemplos
 - [ ] La interfaz responde en móvil y escritorio, navegable por teclado, sin colores escritos a mano
 

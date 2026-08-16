@@ -13,9 +13,9 @@ Si retomas el proyecto sin haber estado en la conversación: lee las secciones 1
 | | |
 |---|---|
 | Fundación F-01 a F-08 | Completa |
-| CORE — backend | Completo. 9 tablas, 20 rutas, 181 pruebas |
+| CORE — backend | Completo. 9 tablas, 20 rutas, 181 pruebas (132 + 49). `media_assets` ahora replicable |
 | CORE — pantallas | Completo. 6 entradas de menú filtradas por rol |
-| **M01 Catálogo** | **Paso 1 del ciclo — SPEC v1.1 en revisión** |
+| **M01 Catálogo** | **Pasos 1 y 2 cerrados.** Esquema aplicado y verificado contra PostgreSQL real. Toca el paso 3, API |
 | M02 en adelante | Sin empezar |
 | SILLAR ERP (M13–M16) | **Nuevo producto.** En descubrimiento |
 
@@ -81,6 +81,8 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
 | `installation_key` no sale del servidor | Uso criptográfico. Todo uso externo va por un valor derivado |
 | Activar un módulo reinicia el host | El enrutamiento se construye al arrancar |
 | `is_orphan` = desinstalado, no desactivado | Desactivar es reversible y pasa en cada demostración |
+| **Activo en la base + ausente del binario = abortar** | Es un despliegue defectuoso, no una desinstalación. Inactivo + ausente sí es huérfano (ADR-019) |
+| El `Dockerfile` no enumera módulos | Copia todo y `.dockerignore` excluye por patrón. Una lista a mano se queda corta sola |
 | SVG rechazado | Se ejecuta en el mismo origen del panel y puede pedir el token CSRF |
 | Panel con marca SILLAR | Es lo que se demuestra al vender |
 | Baja lógica en todo | Lo borrado deja huecos en banners y pedidos que lo referencian |
@@ -94,6 +96,9 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
 | Preguntar no es comprar | La consulta a otro local no aparta nada. Separar y trasladar son actos del comprador, y son documentos |
 | **M17 no aporta «sucursal», aporta «más de una»** | Sin él hay una sola ubicación y M09 funciona igual. M09 no sabe qué es una sucursal |
 | Se cuenta y se cobra la **variante**, no el producto | 3 verdes y 0 azules no pueden sumar «hay 3». M09 y M13 apuntan a `product_items` |
+| **Lo que se replica no referencia a lo que no se replica** | La fila viaja y la referencia se queda. No hay error de FK: solo un catálogo sin fotos (ADR-018) |
+| Borrar un medio en uso: `SET NULL` donde cabe, `CASCADE` donde no | `RESTRICT` sacaría a la interfaz una violación de clave foránea, que es el error genérico prohibido |
+| La galería avisa **sin contar** | «Si esta imagen está en uso, desaparecerá de donde esté». No ser silencioso no es lo mismo que ser exacto |
 | La variante tampoco aporta «variante»: aporta **«más de una»** | Todo producto nace con una, sin nombre e invisible. La palabra no aparece hasta que hay dos |
 | Un solo nodo manda en cada momento | Ningún nodo se declara mando a sí mismo porque dejó de oír al otro. Retomar el mando es un acto humano |
 | Réplica ≠ respaldo | La réplica copia fielmente también el borrado accidental de doscientos productos. Hacen falta las dos |
@@ -110,6 +115,12 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
 - **`tasklist /FI "PID eq <pid>"` antes de matar nada.** Matar por puerto tumbó Docker Desktop entero. Para liberar un puerto, cambiar el puerto.
 - **Serialización de binarios explícita.** `Guid.ToByteArray()` habría dado tokens distintos en Windows y en Arch.
 - **Cada entrada de `onlyBuiltDependencies` exige justificación en el commit.** La lista corta es la defensa.
+- **Una lista escrita a mano de lo que hay que copiar se queda corta sola.** El `Dockerfile`
+  enumeraba proyecto por proyecto y nunca se enteró de M01: `dotnet` avisó con un
+  «Skipping project … because it was not found», el build terminó con éxito y el contenedor
+  arrancó diciendo «Módulos descubiertos: 1». Un módulo entero desaparecido, sin un solo error.
+  Se sustituyó por copiar todo y excluir por nombre en `.dockerignore`: así el próximo módulo
+  entra solo y lo que se enumera es la excepción, no la regla.
 - **Un campo nulo puede significar dos cosas.** `admin_user_id` nulo era «cuenta eliminada» y también «intento de acceso con un correo inexistente». Confundirlas habría hecho que la auditoría mintiera sobre gente que solo se equivocó al teclear.
 
 ---
@@ -119,7 +130,9 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
 | Pendiente | Estado |
 |---|---|
 | **Verificación visual del panel completo** | Claude Code no ve la interfaz. Es lo único que separa a CORE de estar verificado de punta a punta. Lista en la §6 |
-| `docker compose --profile full up -d --build` | Criterio de reinicio del contenedor, sin ejecutar |
+| Implementar la ADR-019 | Abortar si un módulo activo no aparece en el descubrimiento. Cabe en el paso 3 de M01, que es cuando M01 se activa por primera vez |
+| Verificación visual del panel | Sigue pendiente: es lo único que separa a CORE de estar verificado de punta a punta |
+
 | Tu `.env` local está desfasado | Le faltan `API_PORT` y `MEDIA_PATH`, que sí están en `.env.example`. Sin ellos, `docker compose --profile full up -d` no levanta el API |
 | Borrar `docs/BITACORA-SESION-2026-08-14.md` | Cumplió su función —traspasar contexto entre sesiones— y lo durable ya está en la ADR-012 y en las entregas. Dos bitácoras confunden cuál es la bitácora |
 | Tipografía y logo de SILLAR | La paleta está validada; lo demás no |
@@ -178,6 +191,23 @@ Yo había propuesto arrastrar la antigüedad de cada réplica y reservar en cada
 - **Preguntar no es comprar.** La mayoría de quien pregunta no lleva. Reservar en cada consulta llenaría los otros locales de apartados fantasma. La consulta es libre; separar y trasladar nacen de la intención del comprador y son documentos explícitos.
 
 Y quedó resuelto lo que estaba abierto: el concepto de sucursal **no va en CORE ni en M09, va en su propio módulo**. La formulación que lo hace desmontable: *no aporta «sucursal», aporta «más de una»*. La dependencia va de M17 a M09 y nunca al revés — un negocio de un solo local no debe ver la palabra en ninguna pantalla.
+
+**15 ago · paso 2 de M01 cerrado, y la ADR-018 aplicada.** `core.media_assets` replica con clave `uuid` v7 acuñada una sola vez en `MediaStorage.SaveAsync` —el mismo valor en la fila y en el disco—, las cuatro FK del catálogo pasan a `Guid`, y las migraciones de CORE se refundieron en una sola, que es lo que la ADR-018 autorizaba por no haber instalación desplegada. Las 181 pruebas siguen en verde (132 + 49).
+
+Dos aciertos de Claude Code que conviene imitar:
+
+- **`TryAddNodeIdentity` en `Sillar.Shared.Replication`**, creado solo cuando CORE se convirtió en el segundo módulo que lo necesitaba. Es la regla del segundo caso real aplicada bien: no existía cuando solo lo usaba el catálogo.
+- **Verificó ejecutando, no aplicando.** Base desde cero, migraciones, e `INSERT` reales dentro de una transacción revertida para comprobar que el `CHECK` del slug rechaza `Faber-Castell` y acepta `artesco`. «La migración se aplicó sin error» no demuestra que una restricción haga lo que dice: hay que intentar violarla.
+
+**15 ago · paso 2 de M01 al 80%, y el error que destapó (ADR-018).** El proyecto, las seis entidades, las seis configuraciones y la migración inicial están escritos y compilan sin advertencias. Faltan `02_seed.sql`, `99_drop.sql`, diccionario y ER.
+
+Al revisar la migración apareció que las cuatro FK hacia `core.media_assets` eran `integer` — correctas según la ADR-016 y **rotas** según la ADR-017: el catálogo se replica y los medios no, así que el catálogo llegaría a la web sin fotos y sin error. **El fallo era de mi tabla de clasificación**, no de la implementación. De ahí sale la regla que faltaba, ya en la §3.
+
+Se resolvió con algo que ya existía sin verse: los nombres de archivo que genera CORE **ya son `uuid` v7**, así que la clave entera de la fila era un segundo identificador para lo mismo. Ahora son el mismo valor.
+
+Dos consecuencias anotadas: **M16 tendrá que mover archivos además de filas** —una fila de medios sin sus bytes es una imagen rota, peor que una ausente—, y **`core.admin_users` cae bajo la misma regla** en cuanto las ventas registren quién vendió. Se decide antes de M13, no en M16.
+
+De Claude Code se aprueba todo, y una aportación que no era mía: **PostgreSQL no admite expresiones regulares sobre colaciones no deterministas**. El `CHECK` del formato del slug se crea sin protestar y después ningún `INSERT` funciona. Resuelto con `COLLATE "C"` dentro del propio `CHECK`. Eso se descubre ejecutando, no leyendo.
 
 **15 ago · revisión del repositorio completo.** Higiene correcta: `.env` ignorado, `/media/` ignorado y anclado a la raíz, nada sensible rastreado, ningún archivo de cliente. Se corrigieron tres desfases reales:
 

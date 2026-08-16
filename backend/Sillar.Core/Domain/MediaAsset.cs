@@ -1,13 +1,28 @@
+using Sillar.Shared.Replication;
+
 namespace Sillar.Core.Domain;
 
 /// <summary>
 /// Metadatos de un archivo subido. El binario vive en el volumen de disco
 /// (ADR-011); aquí solo está su ficha.
 /// </summary>
-public class MediaAsset
+/// <remarks>
+/// Se replica (ADR-018): un catálogo que viaja a otro nodo tiene que llevarse
+/// también las fichas de sus imágenes. La clave es <c>uuid</c> v7 generada por
+/// la aplicación, y es <b>el mismo valor</b> que <see cref="StoredName"/> antes
+/// de la extensión: un archivo encontrado en el disco se rastrea hasta su fila
+/// sin buscar nada, y al revés.
+/// </remarks>
+public class MediaAsset : IReplicatedEntity
 {
-    /// <summary>Identificador.</summary>
-    public int MediaAssetId { get; set; }
+    /// <summary>Identificador. El mismo valor que el nombre del archivo en disco.</summary>
+    public Guid MediaAssetId { get; set; }
+
+    /// <inheritdoc />
+    public string OriginNode { get; set; } = string.Empty;
+
+    /// <inheritdoc />
+    public long RowVersion { get; set; } = 1;
 
     /// <summary>
     /// Nombre en disco, <b>generado</b> por el sistema. Nunca el que envió quien

@@ -13,7 +13,7 @@ namespace Sillar.Core.Contracts;
 /// <param name="Width">Ancho en píxeles, si se pudo leer.</param>
 /// <param name="Height">Alto en píxeles, si se pudo leer.</param>
 public sealed record MediaAsset(
-    int MediaAssetId,
+    Guid MediaAssetId,
     string Url,
     string? OriginalName,
     string MimeType,
@@ -51,10 +51,10 @@ public interface IMediaStorage
     /// Da de baja un archivo. La baja es <b>lógica</b>: el binario se conserva.
     /// </summary>
     /// <returns><c>true</c> si existía y estaba activo.</returns>
-    Task<bool> DeleteAsync(int mediaAssetId, CancellationToken ct);
+    Task<bool> DeleteAsync(Guid mediaAssetId, CancellationToken ct);
 
     /// <summary>Devuelve la ruta pública de un archivo, o <c>null</c> si no existe.</summary>
-    string? GetPublicUrl(int mediaAssetId);
+    string? GetPublicUrl(Guid mediaAssetId);
 }
 
 /// <summary>El archivo no se puede aceptar.</summary>

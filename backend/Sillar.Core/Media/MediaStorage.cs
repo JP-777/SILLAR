@@ -49,7 +49,11 @@ internal sealed class MediaStorage(
         {
             var stored = await ReceiveAsync(content, tempPath, ct);
 
-            var storedName = $"{Guid.CreateVersion7()}{stored.Format.Extension}";
+            // El mismo uuid es la clave de la fila y el nombre del archivo
+            // (ADR-018): un archivo encontrado en el disco se rastrea hasta su
+            // fila sin buscar nada, y al revés.
+            var mediaAssetId = Guid.CreateVersion7();
+            var storedName = $"{mediaAssetId}{stored.Format.Extension}";
             var relativeFolder = $"{now:yyyy}/{now:MM}";
             var relativePath = $"{relativeFolder}/{storedName}";
 
@@ -59,6 +63,7 @@ internal sealed class MediaStorage(
 
             var asset = new Domain.MediaAsset
             {
+                MediaAssetId = mediaAssetId,
                 StoredName = storedName,
                 OriginalName = Truncate(originalName, 255),
                 RelativePath = relativePath,
@@ -85,7 +90,7 @@ internal sealed class MediaStorage(
     }
 
     /// <inheritdoc />
-    public async Task<bool> DeleteAsync(int mediaAssetId, CancellationToken ct)
+    public async Task<bool> DeleteAsync(Guid mediaAssetId, CancellationToken ct)
     {
         // Baja lógica, como en el resto del proyecto: el binario se conserva.
         // Borrarlo dejaría un hueco en cualquier banner o producto que lo
@@ -98,7 +103,7 @@ internal sealed class MediaStorage(
     }
 
     /// <inheritdoc />
-    public string? GetPublicUrl(int mediaAssetId)
+    public string? GetPublicUrl(Guid mediaAssetId)
     {
         var relativePath = database.MediaAssets
             .AsNoTracking()

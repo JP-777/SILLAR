@@ -202,9 +202,17 @@ Qué está activo **en esta instalación**. Se separa de `modules` porque tienen
 
 ### 4.8 `core.media_assets`
 
+**Se replica (ADR-018).** Un catálogo que viaja a otro nodo tiene que llevarse también las
+fichas de sus imágenes; si se quedaran con clave entera y local, la web recibiría productos
+sin fotos y sin ningún error de clave foránea. Por eso la clave es `uuid` v7 generada por la
+aplicación —igual que las tablas de M01— y lleva las mismas cuatro columnas de la ADR-016
+regla 4: `origin_node`, `row_version`, `created_at`, `updated_at`.
+
 | Campo | Tipo | Nulo | Clave | Descripción |
 |---|---|---|---|---|
-| media_asset_id | integer | No | PK | |
+| media_asset_id | uuid | No | PK | v7, generado por la aplicación. **El mismo valor** que el nombre del archivo en disco, antes de la extensión: un archivo encontrado en el disco se rastrea hasta su fila sin buscar nada, y al revés |
+| origin_node | text | No | | Nodo donde nació la fila |
+| row_version | bigint | No | | Marca de versión para M16. Default `1` |
 | stored_name | varchar(120) | No | UNIQUE | Nombre **generado**. Nunca el original |
 | original_name | varchar(255) | Sí | | Solo informativo, para mostrar |
 | relative_path | varchar(300) | No | | Ruta dentro del volumen |
@@ -221,8 +229,10 @@ Qué está activo **en esta instalación**. Se separa de `modules` porque tienen
 
 `owner_module_code` se guarda como texto y sin clave foránea a propósito: el módulo puede desinstalarse y el archivo tiene que sobrevivir marcado como huérfano.
 
-**Restricciones:** `ck_size_bytes CHECK (size_bytes > 0)`.
-**Índices:** `idx_media_assets_owner_module_code`, `idx_media_assets_checksum`.
+`created_by` sigue siendo `integer` y local: `admin_users` todavía no se replica. Es la segunda aplicación de la regla que anota la ADR-018, pendiente de decidir antes de M13, no aquí.
+
+**Restricciones:** `ck_media_assets_size_bytes CHECK (size_bytes > 0)`.
+**Índices:** `uq_media_assets_stored_name`, `idx_media_assets_owner_module_code`, `idx_media_assets_created_by`, `idx_media_assets_checksum`.
 
 ### 4.9 `core.audit_log`
 
