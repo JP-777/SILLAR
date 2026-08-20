@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Vacío a propósito: M02 no publica contratos ni eventos (SPEC §7). -->
+
+</Project>
