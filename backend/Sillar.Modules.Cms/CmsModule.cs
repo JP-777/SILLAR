@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sillar.Modules.Cms.Data;
+using Sillar.Modules.Cms.Endpoints;
 using Sillar.Modules.Cms.Services;
 using Sillar.Shared.Modularity;
 
@@ -43,11 +44,13 @@ public sealed class CmsModule : IModule
         services.AddScoped<SocialLinkService>();
     }
 
-    /// <remarks>
-    /// Los servicios del paso 3 ya están registrados; las rutas esperan los
-    /// contratos compartidos de autorización, CSRF y auditoría.
-    /// </remarks>
+    /// <summary>Monta las rutas públicas y administrativas de CMS.</summary>
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
+        endpoints.MapBannerEndpoints();
+        endpoints.MapPromotionEndpoints();
+        endpoints.MapFeaturedProductEndpoints();
+        endpoints.MapFeaturedProjectEndpoints();
+        endpoints.MapSocialLinkEndpoints();
     }
 }

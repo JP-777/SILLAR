@@ -113,3 +113,54 @@ Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base
 - El enganche HTTP completo: grupos público/administración, autorización por rol, filtro CSRF, auditoría, comentarios XML de endpoints y Swagger.
 - Conectar los argumentos internos del snapshot con el contrato `ProductPickerItem` cuando M01 lo publique; entonces se habilitan búsqueda, alta y reenlace de destacados.
 - Verificación por HTTP y contra PostgreSQL del paso 3, incluida interrupción observable del reorden y los controles 403, queda para cuando las rutas puedan montarse con los contratos de CORE.
+
+---
+
+## Encargo 02 — avance HTTP después de integrar M01 paso 4
+
+### Línea base integrada
+
+- Se fusionó el commit confirmado `e0e96c6` mediante el merge `03c47fd`, sin rehacer la rama ni perder los tres commits propios. `origin/main` seguía apuntando a `ccf939f`, por lo que se usó el SHA exacto entregado por coordinación.
+- El único conflicto fue `backend/Sillar.sln`; la resolución conserva los proyectos de Catálogo que llegaron y los tres proyectos de CMS. `Sillar.Api.csproj` se fusionó automáticamente con ambas referencias.
+- Antes de escribir código nuevo se restauró la solución y se observó: compilación Release con 0 advertencias y 0 errores; 254/254 pruebas superadas (132 CORE, 54 Shared, 41 Catálogo y 27 CMS).
+- El SPEC canónico permanece sin editar, con SHA-256 `A10E6C75D6521A0A2BD88809A0BE3CC9EF7310FA69A50E7DCBB59B8E939E9E2C`; `docs/modules/SPEC.md` no existe y `DATOS.md` conserva únicamente diccionario, ER y objetos físicos.
+
+### Construido
+
+- Se montaron las cinco rutas públicas y las operaciones administrativas de listado, detalle, edición, reorden y baja. Banners, promociones, trabajos y redes incluyen además el alta completa.
+- Los grupos administrativos requieren `editor`, todas sus mutaciones pasan por `CsrfEndpointFilter` y cada baja añade la política `admin`. Altas, ediciones, reordenamientos y bajas escriben auditoría de CORE mediante `IAuditWriter`.
+- El endpoint público de destacados pide `ICatalogService` al contenedor: si el contrato no existe devuelve una lista vacía; si existe, sirve el snapshot propio sin consultar tablas de Catálogo.
+- Todos los handlers montados tienen comentarios XML, nombre, resumen, tags y respuestas Swagger.
+
+### Decidido durante este avance
+
+- **Reversible — auditoría en el borde HTTP:** los servicios CMS siguen sin conocer sesión ni transporte; el endpoint audita solo después de una operación correcta. Se descartó duplicar en cada servicio los argumentos de usuario que ya posee el borde.
+- **Reversible — disponibilidad pública de destacados:** se usa la presencia real de `ICatalogService` como señal de que M01 está activo. No se consulta el nombre del módulo ni la tabla de activaciones.
+- **Reversible — no inventar el selector de M01:** no se añadió un contrato espejo ni se consultó el schema `catalog`. Se dejaron sin montar búsqueda, alta y reenlace de productos destacados hasta que el dueño de M01 publique el contrato que el SPEC exige.
+
+### Encontrado roto o pendiente fuera de M02
+
+- `e0e96c6` confirmó los cinco contratos compartidos de CORE, incluido `SessionTokens`, pero `Sillar.Modules.Catalog.Contracts` todavía contiene únicamente `ItemSnapshot` e `ICatalogService`. No existe `ProductPickerItem` ni `BuscarParaSeleccionAsync`, aunque el SPEC de M02 los declara necesarios y dice expresamente que M01 todavía no los expone.
+- Por esa ausencia, Swagger muestra 34 operaciones CMS con resumen, pero aún no puede mostrar el alta, reenlace y búsqueda administrativa de productos destacados. Implementarlas leyendo M01 por HTTP, por schema o con un tipo local violaría la frontera modular.
+
+### Verificación HTTP y PostgreSQL observada
+
+Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base `sillar_m02`, puerto host `55442`; host de prueba en `127.0.0.1:5082`.
+
+- **Línea base y host:** con CMS inactivo, `/api/cms/banners` devolvió 404. Activado y reiniciado, el host declaró `core, cms` activos y `catalog` inactivo. Las cinco rutas públicas devolvieron 200.
+- **Vigencia:** se crearon cinco banners. El futuro y el caducado aparecieron en administración con `isCurrent=false`, no en público; antes de retirar su medio, público devolvió únicamente `Actual con imagen`.
+- **Validación:** imagen presente con `altText=null` devolvió 400 y «Escribe el texto alternativo de la imagen»; sin imagen y texto nulo devolvió 201. Fechas 28-febrero → 1-febrero devolvieron 400 y «La fecha de fin debe ser posterior a la fecha de inicio», no un error de PostgreSQL.
+- **Orden atómico:** `editor` creó cinco banners y reordenó `[8,7,6,5,4]`; el listado devolvió exactamente `8,7,6,5,4`. Sustituir un ID por `999999` devolvió 400 y el listado posterior conservó el mismo orden. La auditoría dejó cinco `create:banner` y un `update:banner` de orden.
+- **Roles y CSRF:** `editor` obtuvo 403 al desactivar un banner; `super_admin` desactivó promociones, trabajos y redes con 200. Una escritura autenticada sin cabecera CSRF devolvió 403 con la frase que pide `X-CSRF-Token`.
+- **Medios:** el alta de un PNG devolvió 201. La baja lógica por `DELETE /api/admin/media/{id}` devolvió 204; el banner dejó de publicarse, administración devolvió `imageDesktopUrl=null` e `isComplete=false`. Como control físico posterior, `DELETE` de esa única fila ya inactiva terminó correctamente y PostgreSQL dejó `cms.banners.image_desktop_id IS NULL = true`.
+- **Dependencia blanda:** con Catálogo inactivo, destacados devolvió 200 y `[]`. Con integración y Catálogo activos devolvió el snapshot `Nombre snapshot conservado`. Tras `cms_catalog_drop.sql`, administración devolvió el mismo nombre con `pendingRelink=true` y público devolvió `[]`.
+- **Desinstalación de Catálogo:** después de retirar la integración y ejecutar su `99_drop.sql`, quedaron 0 tablas en `catalog`, 10 en `core`, 6 en `cms` (cinco de negocio más historial), cero `product_id` no nulos y el snapshot intacto. El host arrancó con `core,cms` sin advertencias; administración siguió mostrando el pendiente y público devolvió 200 vacío.
+- **Rutas restantes:** promociones, trabajos y redes recorrieron por HTTP `201 alta → 200 edición → 200 reorden → 200 baja`; después sus endpoints públicos devolvieron 200 vacíos.
+- **M02 desactivado:** tras desactivar y reiniciar, las cinco rutas públicas y `/api/admin/cms/banners` devolvieron 404. `/api/capabilities` devolvió 200 con solo `core`; el arranque declaró Catálogo y CMS inactivos y no emitió advertencias.
+- **Swagger:** 20 paths y 34 operaciones CMS montadas, todas con resumen XML; la diferencia hasta el conjunto completo corresponde exclusivamente al selector pendiente de M01.
+- **Cierre técnico:** `git diff --check` sin hallazgos; build Release con 0 advertencias y 0 errores; 254/254 pruebas superadas. EF Core respondió «No changes have been made to the model since the last migration».
+
+### Estado al terminar esta vuelta
+
+- CMS queda inactivo en la base exclusiva; su schema y sus datos de verificación permanecen. Catálogo queda inactivo y desinstalado como resultado de la casilla que exigía comprobar su desinstalación.
+- Falta que coordinación publique en M01 el contrato de selección descrito por el SPEC. Una vez integrado, se montan búsqueda, alta y reenlace de destacados y se repite Swagger/HTTP para cerrar el paso 3.

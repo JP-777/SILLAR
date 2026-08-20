@@ -1,9 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- M02 solo referencia la plataforma y los contratos de su dependencia dura. -->
+  <!-- M02 solo referencia la plataforma y los contratos de sus dependencias declaradas. -->
   <ItemGroup>
     <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
     <ProjectReference Include="..\Sillar.Core.Contracts\Sillar.Core.Contracts.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Catalog.Contracts\Sillar.Modules.Catalog.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
