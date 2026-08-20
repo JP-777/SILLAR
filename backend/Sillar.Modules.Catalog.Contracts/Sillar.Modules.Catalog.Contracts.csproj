@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ==========================================================================
+       Sillar.Modules.Catalog.Contracts — lo único que los demás módulos ven
+       de M01.
+
+       Solo interfaces y tipos de intercambio. Ninguna implementación, ningún
+       DbContext, ninguna entidad. Si algo de aquí necesita EF Core, está mal
+       colocado. Mismo patrón que Sillar.Core.Contracts.
+       ========================================================================== -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
