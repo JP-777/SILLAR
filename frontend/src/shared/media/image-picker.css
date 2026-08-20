@@ -1,0 +1,85 @@
+/* ==========================================================================
+   Selector de imagen de la galería de CORE.
+
+   Salió de `modules/catalog` al aparecer el segundo caso real (categorías).
+   Ni un color literal: solo variables de rol de shared/styles/tokens.css.
+   ========================================================================== */
+
+.ui-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.ui-picker__current {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+}
+
+.ui-picker__preview {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  border-radius: var(--r-sm);
+  background: var(--bg-raised);
+}
+
+.ui-picker__state {
+  padding: var(--s4);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13.5px;
+}
+
+.ui-picker__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: var(--s2);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.ui-picker__option {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s1);
+  padding: var(--s2);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  font: inherit;
+  color: var(--text-muted);
+}
+
+.ui-picker__option img {
+  width: 100%;
+  height: 64px;
+  object-fit: contain;
+}
+
+/* La elegida se marca con borde Y con un anillo, no solo con color: un estado
+   que depende únicamente del color desaparece para quien no lo distingue. El
+   aria-pressed lo dice además a los lectores de pantalla. */
+.ui-picker__option[aria-pressed='true'] {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary);
+  color: var(--text);
+}
+
+.ui-picker__name {
+  font-size: 11.5px;
+  line-height: 1.3;
+  text-align: center;
+  overflow-wrap: anywhere;
+}

@@ -33,7 +33,9 @@ export function ReconnectingOverlay() {
       aria-describedby="reconexion-mensaje"
     >
       <div className="pf-overlay__panel">
-        {!failed && <Spinner size="lg" label="Reconectando" />}
+        {/* Sin texto visible: el <h2> de abajo ya dice qué está pasando, y
+            repetirlo sería decirlo dos veces. Se sigue anunciando. */}
+        {!failed && <Spinner size="lg" label="Reconectando" visibleLabel={false} />}
 
         <h2 className="pf-overlay__title" id="reconexion-titulo">
           {failed ? 'No se pudo reconectar' : 'Aplicando el cambio'}

@@ -35,6 +35,13 @@ services:
   api:
     build:
       context: ./backend
+      # Por defecto, idéntico a antes de que este argumento existiera: Release.
+      # Solo e2e/ lo cambia a Debug, porque necesita que Sillar.Modules.Demo
+      # compile (docs/modules/core/ENTREGA-04A-*.md §0 explica por qué existe
+      # ese proyecto y las tres barreras que lo mantienen fuera de producción,
+      # sin tocar por este argumento).
+      args:
+        BUILD_CONFIGURATION: ${BUILD_CONFIGURATION:-Release}
     container_name: ${COMPOSE_PROJECT_NAME:-sillar}_api
     profiles: ["full"]
     # NO NEGOCIABLE. Activar o desactivar un módulo detiene el proceso a
@@ -48,6 +55,9 @@ services:
         Host=db;Port=5432;Database=${POSTGRES_DB:-sillar_dev};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD en .env}
       # El host se detiene tras un cambio de activación y Docker lo relanza.
       Modules__RestartAfterActivation: "true"
+      # Falso por defecto, e ignorado fuera de Development de todos modos: es
+      # la tercera barrera de ENTREGA-04A §0. Solo e2e/ lo pone en true.
+      Modules__IncludeDemoModules: ${MODULES_INCLUDE_DEMO:-false}
       Media__RootPath: /data/media
     ports:
       - "${API_PORT:-5080}:8080"

@@ -3,8 +3,9 @@
   <!-- ==========================================================================
        Sillar.Modules.Catalog — M01 Catálogo de Productos.
 
-       Referencia solo Sillar.Shared y Sillar.Core.Contracts, que es lo que la
-       regla de referencias permite: nunca el Domain ni el Data de otro módulo.
+       Referencia solo Sillar.Shared, Sillar.Core.Contracts y su propio
+       Sillar.Modules.Catalog.Contracts, que es lo que la regla de referencias
+       permite: nunca el Domain ni el Data de otro módulo.
 
        Las cuatro claves foráneas hacia core.media_assets son cruzadas y están
        permitidas porque CORE es dependencia DURA (SPEC §6.8). Se declaran en la
@@ -14,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
     <ProjectReference Include="..\Sillar.Core.Contracts\Sillar.Core.Contracts.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Catalog.Contracts\Sillar.Modules.Catalog.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

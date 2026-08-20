@@ -80,7 +80,7 @@
   padding: 0;
   font-family: inherit;
   font-size: 12.5px;
-  color: var(--primary);
+  color: var(--link);
   cursor: pointer;
   text-decoration: underline;
 }
@@ -131,4 +131,24 @@
   gap: var(--s3);
   color: var(--text-subtle);
   background: var(--bg);
+}
+
+/* Enlace de salto: fuera de la vista hasta que recibe el foco, y entonces
+   aparece arriba del todo. No se oculta con `display:none` — eso lo sacaría
+   también del recorrido de Tab, que es justo para lo que existe. */
+.pf-skip {
+  position: absolute;
+  top: var(--s2);
+  left: var(--s2);
+  z-index: 1000;
+  padding: var(--s2) var(--s3);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  color: var(--text);
+  transform: translateY(-200%);
+}
+
+.pf-skip:focus {
+  transform: translateY(0);
 }

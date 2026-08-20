@@ -19,6 +19,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sillar.Modules.Demo", "Sill
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sillar.Modules.Catalog", "Sillar.Modules.Catalog\Sillar.Modules.Catalog.csproj", "{4A67166A-546C-4A7B-8C42-16094D69B49A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sillar.Modules.Catalog.Contracts", "Sillar.Modules.Catalog.Contracts\Sillar.Modules.Catalog.Contracts.csproj", "{EDB7FB92-50D1-4A5D-B339-5CB41502B52C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sillar.Modules.Catalog.Tests", "Sillar.Modules.Catalog.Tests\Sillar.Modules.Catalog.Tests.csproj", "{A5C25619-7763-49D7-A699-7DF49CCCF8EF}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sillar.Modules.Cms.Contracts", "Sillar.Modules.Cms.Contracts\Sillar.Modules.Cms.Contracts.csproj", "{B7E05147-398E-4E7D-AE57-CE6E9F4187F6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sillar.Modules.Cms", "Sillar.Modules.Cms\Sillar.Modules.Cms.csproj", "{A34F2284-4DFA-43BA-A2EC-0CF4C188DC7B}"
@@ -167,6 +171,30 @@ Global
 		{F427826F-7DC7-470B-BD4B-1A9EB18B0B87}.Release|x64.Build.0 = Release|Any CPU
 		{F427826F-7DC7-470B-BD4B-1A9EB18B0B87}.Release|x86.ActiveCfg = Release|Any CPU
 		{F427826F-7DC7-470B-BD4B-1A9EB18B0B87}.Release|x86.Build.0 = Release|Any CPU
+		{EDB7FB92-50D1-4A5D-B339-5CB41502B52C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EDB7FB92-50D1-4A5D-B339-5CB41502B52C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EDB7FB92-50D1-4A5D-B339-5CB41502B52C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EDB7FB92-50D1-4A5D-B339-5CB41502B52C}.Debug|x64.Build.0 = Debug|Any CPU
+		{EDB7FB92-50D1-4A5D-B339-5CB41502B52C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EDB7FB92-50D1-4A5D-B339-5CB41502B52C}.Debug|x86.Build.0 = Debug|Any CPU
+		{EDB7FB92-50D1-4A5D-B339-5CB41502B52C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EDB7FB92-50D1-4A5D-B339-5CB41502B52C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EDB7FB92-50D1-4A5D-B339-5CB41502B52C}.Release|x64.ActiveCfg = Release|Any CPU
+		{EDB7FB92-50D1-4A5D-B339-5CB41502B52C}.Release|x64.Build.0 = Release|Any CPU
+		{EDB7FB92-50D1-4A5D-B339-5CB41502B52C}.Release|x86.ActiveCfg = Release|Any CPU
+		{EDB7FB92-50D1-4A5D-B339-5CB41502B52C}.Release|x86.Build.0 = Release|Any CPU
+		{A5C25619-7763-49D7-A699-7DF49CCCF8EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5C25619-7763-49D7-A699-7DF49CCCF8EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5C25619-7763-49D7-A699-7DF49CCCF8EF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A5C25619-7763-49D7-A699-7DF49CCCF8EF}.Debug|x64.Build.0 = Debug|Any CPU
+		{A5C25619-7763-49D7-A699-7DF49CCCF8EF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A5C25619-7763-49D7-A699-7DF49CCCF8EF}.Debug|x86.Build.0 = Debug|Any CPU
+		{A5C25619-7763-49D7-A699-7DF49CCCF8EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5C25619-7763-49D7-A699-7DF49CCCF8EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5C25619-7763-49D7-A699-7DF49CCCF8EF}.Release|x64.ActiveCfg = Release|Any CPU
+		{A5C25619-7763-49D7-A699-7DF49CCCF8EF}.Release|x64.Build.0 = Release|Any CPU
+		{A5C25619-7763-49D7-A699-7DF49CCCF8EF}.Release|x86.ActiveCfg = Release|Any CPU
+		{A5C25619-7763-49D7-A699-7DF49CCCF8EF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

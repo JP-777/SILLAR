@@ -12,10 +12,20 @@
 *.sln
 *.md
 
-# Módulos de demostración: imposibles en producción. Tercera barrera, más
-# fuerte que las dos de compilación que ya tiene Sillar.Modules.Demo.
-**/Sillar.Modules.Demo/
-
 # Proyectos de pruebas: corren en la máquina de desarrollo y en el pipeline,
 # nunca en la imagen desplegada.
 **/*.Tests/
+
+# Sillar.Modules.Demo NO se excluye aquí a propósito, aunque sea tentador:
+# .dockerignore filtra el contexto entero antes de que exista ningún build
+# stage, así que no puede depender de --build-arg BUILD_CONFIGURATION. Excluir
+# el directorio dejaría sin código fuente a CUALQUIER build, incluida
+# sillar_e2e-api, que lo necesita en Debug (ver e2e/README.md).
+#
+# Que sea imposible en producción lo siguen garantizando las tres barreras de
+# ENTREGA-04A §0, sin tocar: la referencia a este proyecto solo existe con
+# Configuration == Debug, todo su contenido vive bajo #if DEBUG, y
+# Modules:IncludeDemoModules solo se respeta en Development. El Dockerfile
+# real publica -c Release por defecto, así que las tres siguen actuando igual
+# que antes de este archivo — el código puede sobrar sin usarse en la etapa
+# de build, pero no llega nunca a /app.

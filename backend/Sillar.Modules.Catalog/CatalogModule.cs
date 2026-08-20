@@ -2,7 +2,10 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Sillar.Modules.Catalog.Contracts;
 using Sillar.Modules.Catalog.Data;
+using Sillar.Modules.Catalog.Endpoints;
+using Sillar.Modules.Catalog.Services;
 using Sillar.Shared.Modularity;
 using Sillar.Shared.Replication;
 
@@ -70,14 +73,25 @@ public sealed class CatalogModule : IModule
             npgsql => npgsql.MigrationsHistoryTable(
                 CatalogDbContext.MigrationsHistoryTable,
                 CatalogDbContext.Schema)));
+
+        services.AddScoped<CategoryService>();
+        services.AddScoped<BrandService>();
+        services.AddScoped<ProductService>();
+        services.AddScoped<ProductItemService>();
+        services.AddScoped<ProductImageService>();
+
+        // El contrato público (SPEC §7): lo que M03, M09, M13 y M15 ven de M01,
+        // sin conocer su schema. Mismo patrón que IMediaStorage en CORE.
+        services.AddScoped<CatalogService>();
+        services.AddScoped<ICatalogService>(provider => provider.GetRequiredService<CatalogService>());
     }
 
     /// <inheritdoc />
-    /// <remarks>
-    /// Sin rutas todavía: el paso 2 del ciclo entrega los datos, y los endpoints
-    /// son del paso 3.
-    /// </remarks>
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
+        endpoints.MapCategoryEndpoints();
+        endpoints.MapBrandEndpoints();
+        endpoints.MapProductEndpoints();
+        endpoints.MapProductItemEndpoints();
     }
 }

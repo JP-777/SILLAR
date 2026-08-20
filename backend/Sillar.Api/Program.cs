@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.OpenApi;
+using Sillar.Api.Documentation;
 using Sillar.Api.Modularity;
 using Sillar.Core.Endpoints;
 using Sillar.Core.Media;
@@ -46,6 +47,12 @@ builder.Services.AddSwaggerGen(options =>
     {
         options.IncludeXmlComments(documentation);
     }
+
+    // Y sus cuerpos de ejemplo, por el mismo criterio: **Api no nombra a
+    // ningún módulo**, los recoge por reflexión igual que los XML de arriba.
+    // Cada módulo los declara como datos (`ISchemaExamples`), sin conocer
+    // Swashbuckle.
+    options.SchemaFilter<ModuleSchemaExamples>();
 });
 
 // El arranque modular ocurre aquí, antes de construir la aplicación: de él
@@ -94,6 +101,10 @@ else
 {
     app.UseAuthentication();
     app.UseAuthorization();
+
+    // La única ruta de /api/setup* que sobrevive al modo normal: ver
+    // SetupEndpoints.MapAlwaysAvailableStatus.
+    app.MapAlwaysAvailableStatus();
 
     foreach (var module in boot.Active)
     {

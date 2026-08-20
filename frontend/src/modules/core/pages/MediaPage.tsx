@@ -36,7 +36,7 @@ export function MediaPage() {
   const [owner, setOwner] = useState('core');
   const [uploading, setUploading] = useState(false);
   const [notices, setNotices] = useState<{ tone: 'warning' | 'danger'; text: string }[]>([]);
-  const [duplicate, setDuplicate] = useState<{ id: number; of: number } | null>(null);
+  const [duplicate, setDuplicate] = useState<{ id: string; of: string } | null>(null);
   const [pendingDeletion, setPendingDeletion] = useState<MediaAsset | null>(null);
   const [busy, setBusy] = useState(false);
 

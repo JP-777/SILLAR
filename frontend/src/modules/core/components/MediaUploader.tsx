@@ -98,6 +98,10 @@ export function MediaUploader({
           multiple
           accept={ACCEPTED_TYPES.join(',')}
           className="sr-only"
+          // `sr-only` esconde a la vista pero NO al lector de pantalla: sin
+          // esto, quien navega con uno llega a un campo de archivo mudo.
+          // Lo encontró axe-core con impacto crítico (ver e2e/).
+          aria-label="Elegir imágenes para subir"
           onChange={(event) => {
             accept(event.target.files);
             // Se limpia para que volver a elegir el mismo archivo dispare el

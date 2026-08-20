@@ -27,6 +27,7 @@ Antes de escribir código, lee:
 - `docs/BITACORA.md` — con qué criterio se decide y qué toca ahora
 - `docs/modules/<módulo>/SPEC.md` — la especificación del módulo en el que se está trabajando
 - `docs/modules/<módulo>/ENTREGA-NN-*.md` — cuando un módulo es demasiado grande para un solo ciclo, se parte en entregas. Cada una refina el SPEC para su alcance y cierra con su propia verificación
+- `docs/PROTOCOLO-DISENO.md` — cómo se diseña un módulo antes de construir su interfaz, qué producen los proveedores que **no escriben** en el repositorio, y dónde está la frontera con `SILLAR-DISENO/`
 
 El SPEC del módulo en curso es la fuente de verdad. Si algo del SPEC contradice a este archivo, gana el SPEC y hay que avisarlo. Un documento de entrega refina el SPEC dentro de su alcance: donde ambos hablen del mismo punto, manda el de la entrega.
 
@@ -139,10 +140,101 @@ Nombres de restricciones: `pk_`, `fk_`, `uq_`, `ck_`, `idx_` seguidos de tabla y
 
 1. **Antes de modificar, explicar el plan.** Después de modificar, indicar qué archivos cambiaron y cómo probarlo.
 2. **No instalar dependencias sin preguntar.**
+
+### Autonomía
+
+**No pidas confirmación para ejecutar comandos.** El trabajo ocurre en un entorno de
+desarrollo desechable y no hay todavía ningún dato que perder. Si un comando hace falta para
+avanzar, ejecútalo.
+
+**Cuando tengas que elegir entre opciones, elige la que recomendarías y sigue.** No plantees
+la pregunta y esperes: decide.
+
+**Con una excepción, y es la que importa: si la decisión es cara de deshacer, para y
+pregunta.** La prueba es una sola:
+
+> ¿Esto se deshace editando un archivo, o hay que rehacer datos, migraciones o claves?
+
+Lo segundo no se decide solo. Este proyecto ya tiene tres casos de los que se salvó por
+poco —la colación del clúster, el tipo de las claves primarias y el nivel de variante—, y los
+tres eran baratos el día antes e imposibles el día después.
+
+### Informe de decisiones
+
+**Cada respuesta termina con un informe corto de lo que decidiste por tu cuenta.** Una línea
+por decisión:
+
+```
+DECIDÍ        Qué opción tomaste
+DESCARTÉ      Qué otra había
+POR QUÉ       En una frase
+REVERSIBLE    Sí / No — y si es No, dilo primero, no al final
+```
+
+Si no decidiste nada, dilo en una línea y ya. **El informe no es un resumen del trabajo:** es
+solo lo que se eligió sin preguntar, para que se pueda corregir antes de cerrar el módulo.
+
+Lo marcado como no reversible se revisa **antes** de pasar al siguiente paso, no al final.
 3. Este repositorio contiene **solo el producto**. Nada específico de un cliente entra al código de un módulo.
 4. Trabajar solo en el módulo en curso. No adelantar trabajo de otros módulos.
 5. No crear abstracciones "por si acaso". Solo se generaliza cuando existe un segundo caso real.
 6. Cada endpoint documentado con comentarios XML y visible en Swagger.
+
+### Toda afirmación sobre el código cita archivo y línea
+
+> Si no puedes citarla, no la afirmes. Ve a leerla.
+
+Vale para cualquier afirmación sobre qué hace el código, qué contiene un archivo, o si una
+barrera sigue en pie: `ruta/archivo.ext:línea`. No «creo que el `Dockerfile` excluye…», sino
+`backend/.dockerignore:17`.
+
+**De dónde salió.** Los días de los dos chats, uno afirmó de memoria y el otro citó archivos
+sobre el mismo `.dockerignore`, y las dos lecturas eran incompatibles. Se perdió medio día en
+algo que se resolvía abriendo el archivo.
+
+**Por qué ahora importa más que entonces.** Con dos chats, dos afirmaciones de memoria al menos
+chocaban entre sí y el conflicto se veía. Con uno solo **no hay nadie que contradiga**: una
+afirmación de memoria pasa a documentación sin fricción, y de ahí a decisión. Es además la
+regla que hace verificable todo lo demás de este archivo.
+
+Las tres formas en que se incumple sin notarlo: citar de memoria algo que se leyó hace veinte
+mensajes; describir lo que el código *debería* hacer en vez de lo que dice; y dar por vigente
+una barrera sin volver a mirarla después de haberla tocado.
+
+### El lector que ya no está
+
+Del 16 al 18 de agosto hubo un segundo chat que validaba lo que este decidía. Se retiró
+(`PROTOCOLO-DOS-CHATS.md`, retirado) porque el coste de tener dos cabezas superó a lo que
+aportaba, pero **lo que aportaba era real y hay que sustituirlo a mano**: quien validaba no
+había estado en la conversación donde se decidió, y por eso veía lo que desde dentro no se ve.
+
+Dos consecuencias concretas, y no son decorativas:
+
+- **El `REVERSIBLE No` pasa a ser lo único que protege.** Antes había alguien que lo
+  cuestionaba; ahora solo lo lee JP, y solo si está escrito. Por eso se escribe **primero**,
+  no al final.
+- **La pregunta del validador ya no llega de fuera. Hay que hacérsela.** Al construir una
+  pantalla y descubrir que falta un campo:
+
+  > ¿Esto lo necesita **el módulo**, o lo necesita **esta pantalla**?
+
+  Un campo añadido porque una pantalla lo pide optimiza para esa pantalla. El módulo tiene que
+  servir a dos productos y a clientes que todavía no existen. Si la respuesta es «esta
+  pantalla», es un hallazgo que se plantea, no una corrección que se aplica.
+
+Los tres casos de los que este proyecto se salvó por poco —la colación del clúster, el tipo de
+las claves primarias, el nivel de variante— los cazó alguien mirando desde fuera de donde se
+decidió. Conviene tenerlo presente.
+
+### Lo que es de JP
+
+No se delega, aunque se puede reducir:
+
+- **Aprobar decisiones** que cambien arquitectura o alcance.
+- **Aplicar los entregables** al repositorio y commitear.
+- **Mirar lo que solo se puede mirar**: que algo se vea bien, que una frase suene a persona,
+  que un flujo tenga sentido. Cuanto más cubra `e2e/`, menos veces hay que abrir el navegador
+  a mano — pero nunca llega a cero.
 
 ## Pruebas
 

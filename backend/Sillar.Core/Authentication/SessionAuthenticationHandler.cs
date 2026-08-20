@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Sillar.Core.Contracts;
 using Sillar.Core.Data;
 
 namespace Sillar.Core.Authentication;
@@ -78,7 +79,7 @@ public sealed class SessionAuthenticationHandler(
             new Claim(ClaimTypes.Name, user.FullName),
             new Claim(ClaimTypes.Role, user.Role),
             new Claim(SessionClaims.SessionId, session.AdminSessionId.ToString()),
-            new Claim(SessionClaims.CsrfTokenHash, session.CsrfTokenHash)
+            new Claim(CsrfEndpointFilter.ClaimType, session.CsrfTokenHash)
         ], SchemeName);
 
         return AuthenticateResult.Success(

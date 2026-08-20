@@ -1,4 +1,4 @@
-using Sillar.Core.Domain.Values;
+using Sillar.Core.Contracts;
 
 namespace Sillar.Core.Authentication;
 

@@ -1,13 +1,17 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Sillar.Core.Authentication;
+namespace Sillar.Core.Contracts;
 
 /// <summary>Generación, resumen y comparación de los secretos de sesión.</summary>
 /// <remarks>
 /// <see cref="Hash"/> y <see cref="Matches"/> los usan tanto el token de sesión
 /// como el CSRF: ambos se guardan resumidos y se comparan en tiempo constante.
 /// Lo que se separa es cómo nacen.
+///
+/// Vive aquí y no dentro de CORE porque <see cref="CsrfEndpointFilter"/> —que
+/// todo módulo con endpoints de escritura necesita— depende de
+/// <see cref="Matches"/> para verificar el token sin volver a tocar la base.
 /// </remarks>
 public static class SessionTokens
 {
@@ -17,7 +21,7 @@ public static class SessionTokens
     /// <summary>Genera un token de sesión aleatorio en base64url.</summary>
     /// <remarks>
     /// Solo el token de sesión es aleatorio. El CSRF se deriva de la identidad de
-    /// la sesión en <see cref="CsrfTokenFactory"/>, para que consultarlo no lo
+    /// la sesión en <c>CsrfTokenFactory</c>, para que consultarlo no lo
     /// cambie (ADR-012).
     /// </remarks>
     public static string CreateSessionToken() => Create(SessionTokenBytes);

@@ -1,28 +1,40 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { useCapability } from '../capabilities/useCapability';
 import { AdminShell } from '../layout/AdminShell';
 import { HomePage } from '../platform/HomePage';
 import { LoginPage } from '../platform/LoginPage';
 import { PublicSite } from '../platform/PublicSite';
 import { RequireAuth } from '../session';
+import { catalogPublicRoutes, catalogRoutes } from '../modules/catalog/routes';
 import { coreRoutes } from '../modules/core/routes';
 
 /**
  * Rutas de la aplicación.
  *
- * Cuando existan módulos con interfaz, cada uno exportará su `routes.ts` y se
- * montarán aquí solo los activos. Hoy no hay ninguno: `src/modules/` está vacío
- * a propósito, para comunicar dónde va lo que viene.
+ * Cada módulo con interfaz exporta sus rutas y **solo se montan las de los
+ * módulos activos**. Un módulo desactivado no deja una ruta muerta que
+ * responda con una pantalla rota: la ruta sencillamente no existe, y quien
+ * llegue escribiéndola cae en la redirección de abajo.
+ *
+ * CORE va sin condición porque siempre está activo — es la base sobre la que
+ * se enchufa todo lo demás.
  */
 export function AppRoutes() {
+  const { has } = useCapability();
+
   return (
     <Routes>
       <Route path="/" element={<PublicSite />} />
       <Route path="/login" element={<LoginPage />} />
 
+      {/* La tienda. Pública y fuera del panel: sin RequireAuth. */}
+      {has('catalog') && catalogPublicRoutes}
+
       <Route element={<RequireAuth />}>
         <Route path="/admin" element={<AdminShell />}>
           <Route index element={<HomePage />} />
           {coreRoutes}
+          {has('catalog') && catalogRoutes}
         </Route>
       </Route>
 

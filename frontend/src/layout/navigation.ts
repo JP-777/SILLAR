@@ -1,3 +1,4 @@
+import { catalogNavigation } from '../modules/catalog/routes';
 import { coreNavigation } from '../modules/core/routes';
 import type { Role } from '../session/SessionProvider';
 
@@ -38,8 +39,11 @@ export interface ModuleNavigation {
  *
  * Cada módulo con interfaz añade aquí su entrada. La aplicación muestra solo la
  * de los módulos activos y, dentro de cada una, solo lo que el rol alcanza.
+ *
+ * El orden es el del menú. CORE va primero porque es el sistema; los módulos
+ * de negocio van después, en el orden en que se contratan.
  */
-export const MODULE_NAVIGATION: readonly ModuleNavigation[] = [coreNavigation];
+export const MODULE_NAVIGATION: readonly ModuleNavigation[] = [coreNavigation, catalogNavigation];
 
 /** Filtra la navegación por módulos activos y por rol. */
 export function visibleNavigation(

@@ -26,9 +26,9 @@
   cursor: not-allowed;
 }
 
-.ui-button--md { padding: var(--s2) var(--s4); font-size: 14px; }
-.ui-button--sm { padding: var(--s1) var(--s3); font-size: 13px; }
-.ui-button--lg { padding: var(--s3) var(--s5); font-size: 15px; }
+.ui-button--md { min-height: var(--alto-control-md); padding: 0 var(--s4); font-size: 14px; }
+.ui-button--sm { min-height: var(--alto-control-sm); padding: 0 var(--s3); font-size: 13px; }
+.ui-button--lg { min-height: var(--alto-control-lg); padding: 0 var(--s5); font-size: 15px; }
 
 .ui-button--block { width: 100%; }
 
@@ -59,16 +59,24 @@
 
 .ui-button--danger {
   background: var(--danger);
-  color: var(--on-primary);
+  /* No --on-primary: aquí el fondo es --danger, que cambia de tono con el
+     tema. Ver --on-danger en tokens.css. */
+  color: var(--on-danger);
 }
 
 .ui-button--danger:hover:not(:disabled) { filter: brightness(.92); }
 
 /* --- Input -------------------------------------------------------------- */
 
+/* Misma altura que el botón del mismo tamaño: es lo que hace que un campo y
+   un botón puestos en la misma fila queden alineados. */
 .ui-input {
   width: 100%;
-  padding: var(--s2) var(--s3);
+  min-height: var(--alto-control-md);
+  /* Relleno vertical corto a propósito: con `--s2` el contenido sumaba 39 px y
+     se comía el mínimo, que es justo el desajuste que este token viene a
+     quitar. Así manda la altura declarada y no la aritmética. */
+  padding: var(--s1) var(--s3);
   border: 1px solid var(--border-strong);
   border-radius: var(--r-md);
   background: var(--bg-raised);
@@ -77,6 +85,9 @@
   font-size: 14px;
   line-height: 1.5;
 }
+
+.ui-input--sm { min-height: var(--alto-control-sm); padding: var(--s1) var(--s2); font-size: 13px; }
+.ui-input--lg { min-height: var(--alto-control-lg); padding: var(--s3) var(--s4); font-size: 15px; }
 
 .ui-input::placeholder { color: var(--text-subtle); }
 
@@ -256,4 +267,71 @@
 
 @keyframes ui-spin {
   to { transform: rotate(360deg); }
+}
+
+/* Envoltura del indicador: existe para poder colgar de ella el role="status"
+   sin que el anillo, que es aria-hidden, quede fuera de la región. */
+.ui-spinner-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+/* --- FilterChip --------------------------------------------------------- */
+
+.ui-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--alto-control-sm);
+  padding: 0 var(--s3);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg-raised);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Encendido: `--selected`, no `--success`. Designado no es «va bien».
+   Y no depende solo del color — `aria-pressed` lo dice, y el borde cambia. */
+.ui-chip--selected {
+  background: var(--selected-bg);
+  border-color: var(--selected);
+  color: var(--selected);
+  font-weight: 560;
+}
+
+/* --- Tag ---------------------------------------------------------------- */
+
+.ui-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  min-height: var(--alto-control-sm);
+  padding: 0 var(--s2);
+  border-radius: var(--r-sm);
+  background: var(--selected-bg);
+  color: var(--selected);
+  font-size: 13px;
+  font-weight: 560;
+}
+
+.ui-tag__remove {
+  background: none;
+  border: none;
+  padding: 0 var(--s1);
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* --- Nota del estado vacío ---------------------------------------------- */
+
+.ui-empty__note {
+  font-size: 12.5px;
+  color: var(--text-subtle);
+  max-width: 48ch;
 }

@@ -1,46 +1,14 @@
 using Microsoft.AspNetCore.Http;
+using Sillar.Core.Contracts;
 using Sillar.Core.Data;
 using Sillar.Core.Domain;
 
 namespace Sillar.Core.Auditing;
 
-/// <summary>Lo que se registra de una acción administrativa.</summary>
-/// <param name="Action">Acción realizada. Ver <see cref="Domain.Values.AuditAction"/>.</param>
-public sealed record AuditEntry(string Action)
-{
-    /// <summary>Quién actuó. Nulo si fue el sistema o si el correo no existe.</summary>
-    public int? AdminUserId { get; init; }
-
-    /// <summary>Correo de quien actuó, guardado como snapshot.</summary>
-    public string? AdminUserEmail { get; init; }
-
-    /// <summary>Módulo donde ocurrió.</summary>
-    public string? ModuleCode { get; init; }
-
-    /// <summary>Tipo de entidad afectada.</summary>
-    public string? EntityType { get; init; }
-
-    /// <summary>Identificador de la entidad afectada.</summary>
-    public string? EntityId { get; init; }
-
-    /// <summary>Descripción legible de lo ocurrido.</summary>
-    public string? Summary { get; init; }
-}
-
-/// <summary>Escribe en el registro de auditoría.</summary>
-/// <remarks>
-/// De momento vive dentro de CORE y no en <c>Sillar.Core.Contracts</c>: el SPEC
-/// §5 lo sitúa en el contrato público, pero todavía no existe ningún otro módulo
-/// que lo use. Se mueve al contrato en cuanto M01 lo necesite, que será su
-/// segundo caso real.
-/// </remarks>
-internal interface IAuditWriter
-{
-    /// <summary>Registra una acción.</summary>
-    Task WriteAsync(AuditEntry entry, CancellationToken cancellationToken);
-}
-
-/// <inheritdoc />
+/// <summary>
+/// Implementación de <see cref="IAuditWriter"/>. Único escritor de
+/// <c>core.audit_log</c>: el contrato es público, esta clase no.
+/// </summary>
 internal sealed class AuditWriter(
     CoreDbContext database,
     IHttpContextAccessor accessor,

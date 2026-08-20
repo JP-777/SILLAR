@@ -34,7 +34,7 @@ public class AuditLog
     /// </summary>
     public string? EntityId { get; set; }
 
-    /// <summary>Acción realizada. Ver <see cref="Values.AuditAction"/>.</summary>
+    /// <summary>Acción realizada. Ver <see cref="Contracts.AuditAction"/>.</summary>
     public required string Action { get; set; }
 
     /// <summary>Descripción legible de lo ocurrido.</summary>

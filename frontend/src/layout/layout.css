@@ -15,13 +15,16 @@
 
 @media (max-width: 860px) {
   .ly-shell {
-    grid-template-columns: 1fr;
+    /* `minmax(0, 1fr)` y no `1fr`: una columna de rejilla no baja de su
+       contenido mínimo, así que algo ancho dentro la estira y la página
+       entera se sale por la derecha. */
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr;
     grid-template-areas:
       'topbar'
+      'sidebar'
       'main';
   }
-
-  .ly-sidebar { display: none; }
 }
 
 /* --- Barra lateral ------------------------------------------------------ */
@@ -92,6 +95,49 @@
 
 .ly-sidebar__version { font-size: 11px; color: var(--text-subtle); }
 
+/* --- La barra lateral en móvil -------------------------------------------
+   **No desaparece.** Una columna de 232 px no cabe en 390, pero esconderla
+   deja el panel sin ninguna forma de navegar: no hay menú en la barra
+   superior. Pasa a fila envuelta encima del contenido, que cabe y conserva
+   todos los enlaces.
+
+   Estuvo escrito como `display: none` dentro de una media query colocada
+   **antes** de la regla base: misma especificidad, gana la última, así que
+   nunca ocultó nada y la barra se salía por la derecha. */
+@media (max-width: 860px) {
+  .ly-sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2);
+    padding: var(--s2) var(--s3);
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ly-sidebar__nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 0;
+    gap: var(--s1);
+    overflow-y: visible;
+  }
+
+  /* El rótulo del grupo no titula nada cuando los enlaces van en fila, pero
+     sigue diciendo de qué grupo es cada uno a quien lo escucha. */
+  .ly-sidebar__group {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .ly-sidebar__footer { display: none; }
+}
+
 /* --- Barra superior ----------------------------------------------------- */
 
 .ly-topbar {
@@ -99,7 +145,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--s4);
+  flex-wrap: wrap;
+  gap: var(--s3) var(--s4);
   padding: var(--s3) var(--s5);
   border-bottom: 1px solid var(--border);
   background: var(--bg-raised);
@@ -112,7 +159,10 @@
   color: var(--text);
 }
 
-.ly-topbar__right { display: flex; align-items: center; gap: var(--s4); }
+/* Envuelve: en 390 px el nombre, el rol, el enlace y salir no caben en una
+   línea, y sin `wrap` el bloque entero se sale por la derecha en vez de
+   bajar. */
+.ly-topbar__right { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s3); }
 
 .ly-topbar__user { display: flex; flex-direction: column; line-height: 1.3; }
 

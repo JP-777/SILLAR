@@ -34,14 +34,13 @@ public static class SessionCookie
 }
 
 /// <summary>Datos de la sesión que viajan en el principal de la petición.</summary>
+/// <remarks>
+/// El claim del hash CSRF vive en <see cref="Contracts.CsrfEndpointFilter.ClaimType"/>,
+/// no aquí: es quien lo lee, y todo módulo con endpoints de escritura necesita
+/// el mismo nombre.
+/// </remarks>
 internal static class SessionClaims
 {
     /// <summary>Identificador de la fila de sesión.</summary>
     public const string SessionId = "sillar:session_id";
-
-    /// <summary>
-    /// Hash del token CSRF de esta sesión, para que el filtro no vuelva a
-    /// consultar la base de datos.
-    /// </summary>
-    public const string CsrfTokenHash = "sillar:csrf_hash";
 }

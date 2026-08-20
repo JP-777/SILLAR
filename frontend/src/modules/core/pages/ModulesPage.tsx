@@ -146,12 +146,24 @@ export function ModulesPage() {
         onCancel={() => setPending(null)}
       >
         {/* El aviso del reinicio no es cortesía: es la única operación del panel
-            que interrumpe el servicio, incluida la web pública del negocio. */}
-        <p>
-          <strong>El sistema se reiniciará unos segundos.</strong> Durante ese rato ni el panel ni
-          la web pública responderán.
-        </p>
-        <p>Tu sesión seguirá abierta y volverás aquí automáticamente.</p>
+            que interrumpe el servicio, incluida la web pública del negocio.
+            La frase sale de restartsAutomatically, no de una suposición: en
+            una instalación con Modules:RestartAfterActivation en false nadie
+            va a volver solo, y prometerlo aquí sería mentir en ese entorno. */}
+        {pending?.restartsAutomatically ? (
+          <>
+            <p>
+              <strong>El sistema se reiniciará unos segundos.</strong> Durante ese rato ni el
+              panel ni la web pública responderán.
+            </p>
+            <p>Tu sesión seguirá abierta y volverás aquí automáticamente.</p>
+          </>
+        ) : (
+          <p>
+            <strong>Hace falta reiniciar el sistema a mano para que el cambio surta efecto.</strong>{' '}
+            Hasta entonces, el panel sigue funcionando con la configuración anterior.
+          </p>
+        )}
         {pending?.isActive && (
           <p>Las pantallas de este módulo dejarán de aparecer en el menú.</p>
         )}

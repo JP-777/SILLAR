@@ -52,7 +52,13 @@ export function Drawer({ open, title, description, onClose, footer, children }: 
         ref={panel}
         tabIndex={-1}
       >
-        <header className="ui-drawer__header">
+        {/* `div` y no `header`: un `<header>` que no cuelga de article,
+            aside, main, nav o section se mapea a landmark `banner`, y el
+            armazón ya tiene el suyo en la barra superior — dos banners en la
+            misma página es un fallo de accesibilidad (lo cazó axe-core al
+            abrir este panel). El `<h2>` de dentro sigue etiquetando el
+            diálogo por `aria-labelledby`, así que no se pierde nada. */}
+        <div className="ui-drawer__header">
           <div>
             <h2 className="ui-drawer__title" id="drawer-titulo">
               {title}
@@ -68,7 +74,7 @@ export function Drawer({ open, title, description, onClose, footer, children }: 
           >
             ×
           </button>
-        </header>
+        </div>
 
         <div className="ui-drawer__body">{children}</div>
 
@@ -230,7 +236,19 @@ export function Table<T>({
 }: TableProps<T>) {
   return (
     <div className="ui-table-wrap">
-      <div className="ui-table-scroll">
+      {/* Región de estado PERSISTENTE: existe desde el primer render, también
+          en reposo, y **fuera** del nodo que lleva `aria-busy`.
+
+          Las dos cosas son el patrón, no formalismo. Si el `role="status"`
+          llegara al DOM a la vez que el mensaje, el anuncio no está
+          garantizado (técnica de fallo F103 de WCAG). Y dentro del nodo
+          ocupado, el propio `aria-busy` puede posponer justo el anuncio que
+          se quiere dar. */}
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {loading ? 'Cargando datos.' : ''}
+      </div>
+
+      <div className="ui-table-scroll" aria-busy={loading}>
         <table className="ui-table">
           <thead>
             <tr>
@@ -250,7 +268,9 @@ export function Table<T>({
               <tr>
                 <td colSpan={columns.length} className="ui-table__state">
                   <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <Spinner label="Cargando" />
+                    {/* Sin región propia: la de esta tabla vive arriba, fuera
+                        del nodo con aria-busy. Ver el comentario de allí. */}
+                    <Spinner label="Cargando" announce={false} />
                   </div>
                 </td>
               </tr>
@@ -293,9 +313,23 @@ export interface PaginationProps {
   totalPages: number;
   totalItems: number;
   onChange: (page: number) => void;
+  /** Por defecto `md`. Ver el porqué en el comentario del componente. */
+  size?: 'sm' | 'md' | 'lg';
 }
 
-export function Pagination({ page, totalPages, totalItems, onChange }: PaginationProps) {
+/**
+ * Paginación.
+ *
+ * El tamaño se elige desde fuera y **por defecto es `md`**, no `sm`. Lo fijaba
+ * por dentro, y con eso la navegación entera del catálogo quedaba en botones
+ * de 26,8 px — en móvil, imposibles de acertar.
+ *
+ * La regla que lo explica y que conviene tener escrita: **`sm` vale para un
+ * control repetido en fila densa con ratón, y solo cuando existe otra manera
+ * de hacer lo mismo.** «Anterior» y «Siguiente» no cumplen ni una cosa ni la
+ * otra: no hay segunda vía para llegar a la página 2.
+ */
+export function Pagination({ page, totalPages, totalItems, onChange, size = 'md' }: PaginationProps) {
   if (totalItems === 0) {
     return null;
   }
@@ -309,11 +343,11 @@ export function Pagination({ page, totalPages, totalItems, onChange }: Paginatio
 
       {totalPages > 1 && (
         <div className="ui-pagination__buttons">
-          <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => onChange(page - 1)}>
+          <Button size={size} variant="secondary" disabled={page <= 1} onClick={() => onChange(page - 1)}>
             Anterior
           </Button>
           <Button
-            size="sm"
+            size={size}
             variant="secondary"
             disabled={page >= totalPages}
             onClick={() => onChange(page + 1)}

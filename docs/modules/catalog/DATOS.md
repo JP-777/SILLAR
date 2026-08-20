@@ -188,6 +188,28 @@ Sin `COLLATE "C"` dentro del `CHECK`, la restricción se crea sin protestar — 
 
 **Las colaciones se aplican con `ALTER COLUMN ... TYPE` después de crear los índices, no antes.** El proveedor Npgsql, si se le pide la colación en la definición de columna, genera `COLLATE "core.es_ci"` — comillas alrededor del nombre calificado completo, como si fuera un único identificador — y PostgreSQL busca (y no encuentra) una colación llamada literalmente `core.es_ci`. El `ALTER COLUMN` con SQL explícito, ejecutado después de crear los índices únicos, reconstruye esos índices con la colación ya aplicada.
 
+**La búsqueda de texto no la iguala `core.es_search`. La iguala `spanish_stem`, y conviene no confundirlas.**
+
+La regla 12 del SPEC promete que `lapiz` encuentra `LÁPIZ`, y el paso 3 lo comprueba contra la búsqueda pública de productos, que usa el índice GIN de `idx_products_busqueda` (`to_tsvector('spanish', ...) @@ plainto_tsquery('spanish', ...)`). La primera lectura tienta a atribuírselo a `core.es_search`, que está en la misma columna. **No es así**, y está comprobado, no asumido:
+
+```sql
+SELECT to_tsvector('spanish','LÁPIZ') @@ plainto_tsquery('spanish','lapiz');
+-- t
+
+SELECT to_tsvector('spanish', 'LÁPIZ');
+-- 'lapiz':1   ← ya sale en minúsculas y sin tilde
+```
+
+El vector sale normalizado **antes** de que la colación de la columna entre en juego, porque `to_tsvector` no la consulta nunca: las colaciones solo intervienen en `=`, `<`, `ORDER BY` y en operadores de patrón (`LIKE`, `~`) — todos comparaciones sobre el valor almacenado, no sobre cómo `to_tsvector` lo tokeniza. `ts_debug('spanish', 'LÁPIZ')` señala al responsable real:
+
+```
+alias: word   token: LÁPIZ   dictionaries: {spanish_stem}   lexemes: {lapiz}
+```
+
+Un único diccionario, `spanish_stem` —el lematizador Snowball en español—, que pliega mayúsculas y tildes como parte de su propia normalización. No hay ningún `unaccent` en la cadena; no hace falta.
+
+**Por qué importa la distinción y no es solo pedantería.** `core.es_search` sigue haciendo su trabajo en las mismas columnas: gobierna la igualdad y el `ORDER BY` de `name` y `variant_value`, y de ella depende `uq_product_items_valor` —que «Verde» y «verde» cuenten como el mismo valor de variante—. Pero son **dos mecanismos independientes que hoy coinciden en el resultado**, no una sola pieza haciendo dos trabajos. Cambiar la colación de estas columnas no tocaría en nada la búsqueda; cambiar la configuración de texto completo (`'spanish'` por otra) no tocaría en nada la igualdad ni el orden. Confundirlos lleva a "arreglar" el mecanismo equivocado el día que alguno falle.
+
 ---
 
 ## 5. Verificación aplicada (paso 4 del ciclo)

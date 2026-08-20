@@ -1,0 +1,274 @@
+/* ==========================================================================
+   Tienda pública — M01.
+
+   Móvil primero: la rejilla nace en una columna y crece con el ancho.
+   Ni un color literal.
+   ========================================================================== */
+
+.ti-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--s5) var(--s4) var(--s8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+}
+
+.ti-title { font-size: 24px; }
+
+.ti-lead { color: var(--text-muted); font-size: 15px; }
+
+/* --- Filtros ------------------------------------------------------------ */
+
+/* Envueltos, no barra lateral: en móvil una barra lateral o se esconde tras
+   un botón o se come la pantalla, y los filtros dejan de usarse. */
+.ti-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.ti-filters__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  align-items: center;
+}
+
+.ti-filters__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  width: 100%;
+}
+
+/* --- Rejilla ------------------------------------------------------------ */
+
+.ti-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s4);
+}
+
+@media (min-width: 560px) {
+  .ti-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 900px) {
+  .ti-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.ti-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.ti-card__link {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ti-card__image {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: var(--bg-sunken);
+}
+
+.ti-card__body {
+  padding: var(--s3) var(--s4) var(--s4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  flex: 1;
+}
+
+.ti-card__name { font-weight: 600; line-height: 1.3; }
+
+.ti-card__desc { font-size: 13px; color: var(--text-muted); flex: 1; }
+
+/* --- El cuadrado sin foto ----------------------------------------------- */
+
+/* Misma altura que una foto y lleno: la mezcla de tarjetas con y sin imagen
+   se tiene que leer como variedad, no como catálogo a medio llenar. */
+.ti-nophoto {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--s1);
+  padding: var(--s4);
+  background: var(--bg-sunken);
+  border-bottom: 1px solid var(--border);
+}
+
+.ti-nophoto--square { aspect-ratio: 1; }
+
+/* En la ficha pasa a 16:9: sin nada que encuadrar, un cuadrado grande solo
+   estira la página y aleja el precio. */
+.ti-nophoto--wide { aspect-ratio: 16 / 9; }
+
+.ti-nophoto__context {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.ti-nophoto__name {
+  font-size: 20px;
+  font-weight: 620;
+  line-height: 1.2;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* --- Precio ------------------------------------------------------------- */
+
+.ti-price { display: flex; flex-direction: column; gap: 2px; margin-top: var(--s1); }
+
+.ti-price__amount { font-weight: 640; }
+
+.ti-price--card .ti-price__amount { font-size: 16px; }
+.ti-price--detail .ti-price__amount { font-size: 26px; }
+
+/* Gratis es un precio: grande y en negrita, como cualquier otro. Esconderlo
+   en letra pequeña lo haría parecer un error. */
+.ti-price--gratis .ti-price__amount { color: var(--success); }
+
+/* A consultar no es un precio: apagado y más pequeño. */
+.ti-price--consultar .ti-price__amount {
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.ti-price--detail.ti-price--consultar .ti-price__amount { font-size: 18px; }
+
+.ti-price__note { font-size: 12px; color: var(--text-subtle); }
+
+/* --- Miga de pan -------------------------------------------------------- */
+
+.ti-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s1);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.ti-crumbs__sep { color: var(--text-subtle); }
+
+/* La vuelta al origen, cuando lo hay. Se pierde al recargar, y por eso la
+   versión corta es la de por defecto. */
+.ti-origin {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--s3) var(--s4);
+  border-left: 3px solid var(--border-strong);
+  background: var(--bg-sunken);
+  border-radius: var(--r-md);
+  font-size: 13px;
+}
+
+.ti-origin__note { color: var(--text-muted); }
+
+/* --- Ficha -------------------------------------------------------------- */
+
+.ti-detail {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s5);
+}
+
+@media (min-width: 860px) {
+  .ti-detail { grid-template-columns: 1.1fr 1fr; align-items: start; }
+}
+
+.ti-detail__image {
+  width: 100%;
+  border-radius: var(--r-lg);
+  background: var(--bg-sunken);
+}
+
+.ti-detail__gallery { display: flex; flex-direction: column; gap: var(--s2); }
+
+.ti-detail__thumbs { display: flex; flex-wrap: wrap; gap: var(--s2); list-style: none; margin: 0; padding: 0; }
+
+.ti-detail__thumbs img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+}
+
+.ti-detail__body { display: flex; flex-direction: column; gap: var(--s3); }
+
+.ti-detail__name { font-size: 26px; line-height: 1.2; }
+
+.ti-detail__brand { color: var(--text-muted); font-size: 14px; }
+
+.ti-detail__desc { color: var(--text-muted); white-space: pre-line; }
+
+/* --- Opciones (lo que varía) -------------------------------------------- */
+
+.ti-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--border);
+}
+
+.ti-options__title { font-size: 15px; font-weight: 600; }
+
+.ti-options__note { font-size: 13px; color: var(--text-muted); }
+
+.ti-options__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
+
+.ti-options__item {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+
+/* El precio se va al extremo, que es donde estaba antes de que la fila
+   tuviera un control delante. */
+.ti-options__value { flex: 1; }
+
+.ti-options__item:hover { border-color: var(--border-strong); }
+
+/* **La elegida se marca con borde y fondo, no solo con el punto del radio.**
+   Un punto de 13 px es lo único que distingue dos filas por lo demás
+   idénticas, y a la distancia de una demostración no se ve. */
+.ti-options__item[data-elegida] {
+  border-color: var(--selected);
+  background: var(--selected-bg);
+}
+
+/* El foco del radio tiene que verse en la fila entera, no solo en el
+   círculo: es la fila lo que se está eligiendo. */
+.ti-options__item:has(.ti-options__radio:focus-visible) {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.ti-options__value { font-weight: 560; }
+
+.ti-options__price { font-size: 14px; color: var(--text-muted); }

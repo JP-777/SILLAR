@@ -33,6 +33,15 @@ export interface AdminModule {
    * atrás.
    */
   blockedBy: string[];
+  /**
+   * Si esta instalación reinicia el host sola tras activar o desactivar.
+   *
+   * Igual en las seis tarjetas: es un dato del despliegue, no del módulo. El
+   * diálogo de confirmación lo usa para no prometer un reinicio automático que
+   * esta instalación no hace — se muestra antes de la operación, así que no
+   * puede leerlo de su respuesta todavía.
+   */
+  restartsAutomatically: boolean;
 }
 
 /** Resultado de activar o desactivar. */
