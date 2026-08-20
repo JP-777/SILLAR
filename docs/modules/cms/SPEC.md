@@ -61,7 +61,21 @@ Es la única dependencia hacia M01, y es **blanda**: se resuelve con columna nul
 | Módulo | Tipo | Qué necesita de él | Si no está |
 |---|---|---|---|
 | CORE | **Dura** | Autenticación, auditoría, `core.media_assets`, colaciones `es_ci` y `es_search` | No aplica: CORE siempre está |
-| M01 | **Blanda** | Solo para elegir qué producto se destaca | La sección de destacados no se ofrece en el panel ni se publica. Las filas existentes sobreviven con su snapshot |
+| M01 | **Blanda** | Solo para elegir qué producto se destaca, y **solo en el panel** | La sección de destacados no se ofrece en el panel ni se publica. Las filas existentes sobreviven con su snapshot |
+
+**La portada pública no llama a M01.** Renderiza desde el snapshot propio, y por eso sobrevive a la desinstalación y no depende de que el catálogo responda. La dependencia existe únicamente en el panel, en el instante de elegir el producto.
+
+**Lo que M01 tiene que exponer para eso**, y hoy no expone:
+
+```csharp
+public sealed record ProductPickerItem(
+    Guid ProductId, string Name, string Slug, Guid? PrimaryImageId);
+
+Task<IReadOnlyList<ProductPickerItem>> BuscarParaSeleccionAsync(
+    string texto, int limite, CancellationToken ct);
+```
+
+**No va dentro de `ItemSnapshot`.** Ese record es el congelado de la operación de venta y lo consumen M03 y M13; añadirle slug e imagen para una necesidad de la web lo convierte en el cajón de todos. Es un contrato aparte, de lectura para selección.
 
 **Módulos que dependen de M02:** ninguno. Nadie lee contenido editorial desde otro módulo.
 
@@ -90,7 +104,7 @@ La pieza principal de la portada.
 | `id` | `integer` | no | PK | | identidad |
 | `title` | `text` | sí | | Texto sobre la imagen | no vacío si viene |
 | `subtitle` | `text` | sí | | | |
-| `image_desktop_id` | `uuid` | no | FK → `core.media_assets` | | |
+| `image_desktop_id` | `uuid` | **sí** | FK → `core.media_assets` | `ON DELETE SET NULL` | Sin ella el banner no se publica |
 | `image_mobile_id` | `uuid` | sí | FK → `core.media_assets` | Si falta, se usa la de escritorio | |
 | `alt_text` | `text` | no | | Accesibilidad | no vacío |
 | `link_url` | `text` | sí | | Adónde lleva | ruta interna o URL absoluta |
@@ -99,16 +113,18 @@ La pieza principal de la portada.
 | `starts_at` | `timestamptz` | sí | | Desde cuándo se publica | |
 | `ends_at` | `timestamptz` | sí | | Hasta cuándo | **`> starts_at`** |
 
-**Restricciones:** `ck_banners_vigencia` sobre las dos fechas; `ck_banners_enlace` que impide `link_url` sin `link_label`.
+**Restricciones:** `ck_banners_vigencia` sobre las dos fechas; `ck_banners_enlace` que impide `link_url` sin `link_label`; `ck_banners_alt` que exige `alt_text` cuando hay imagen.
+
+**Ninguna FK hacia medios es `RESTRICT`.** Todas son `ON DELETE SET NULL`, y por eso las columnas de imagen son nullable. La conducta que M01 ya verificó es que borrar un archivo usado deja a quien lo usaba sin imagen y ninguna operación falla; `RESTRICT` haría que CORE no pudiera borrar un medio porque un banner lo usa, que es justo lo contrario. **Un banner sin imagen existe pero no se publica**, igual que una marca sin logo sigue existiendo.
 **Índices:** `idx_banners_publicados` sobre `(is_active, starts_at, ends_at)`.
 
-`alt_text` es obligatorio a propósito. Es la única forma de que la portada de un negocio real no acabe con cuatro imágenes mudas: si se pudiera omitir, se omitiría siempre.
+`alt_text` es obligatorio **cuando hay imagen**, y se comprueba con un `CHECK`, no con una regla de aplicación. Es la única forma de que la portada de un negocio real no acabe con cuatro imágenes mudas: si se pudiera omitir, se omitiría siempre.
 
 ### 6.2 `cms.promotions`
 
 Una promoción no es un banner: el banner ocupa el escenario y la promoción vive en una rejilla de varias.
 
-Mismos campos que `banners` salvo que la imagen es **una sola** (`image_id`, `uuid`, nullable — una promoción puede ser solo texto y precio) y añade:
+Mismos campos que `banners` salvo que la imagen es **una sola** (`image_id`, `uuid`, nullable — una promoción puede ser solo texto) y que `alt_text` sigue la misma regla condicional: obligatorio si hay imagen, nulo si no la hay. Añade:
 
 | Campo | Tipo | Nulo | Descripción | Regla |
 |---|---|---|---|---|
@@ -133,6 +149,8 @@ La selección curada de la decisión 4.2.
 
 **La FK hacia `catalog.products` vive en `database/integrations/cms_catalog.sql`**, con su `cms_catalog_drop.sql` que la elimina y anula las referencias huérfanas.
 
+**Retirar la integración anula todos los `product_id`, y eso no se deshace.** Reinstalar M01 después no restaura el vínculo: los destacados conservan nombre, slug e imagen, pero hay que volver a elegir el producto. Es la conducta correcta —la alternativa es dejar referencias a filas inexistentes, que es la basura silenciosa que la arquitectura prohíbe—, pero **el panel tiene que decirlo**: un destacado con `product_id` nulo y snapshot lleno se muestra como «pendiente de volver a enlazar», no como un destacado normal.
+
 El snapshot no es solo para sobrevivir a la desinstalación: **también evita que renombrar un producto reescriba la portada en silencio.** Si el nombre cambia, el panel lo señala y alguien decide.
 
 ### 6.4 `cms.featured_projects`
@@ -144,8 +162,8 @@ Los trabajos del negocio: el mural que pintaron, la tarjetería de una boda, el 
 | `id` | `integer` | no | PK | |
 | `title` | `text` | no | | no vacío |
 | `description` | `text` | sí | | |
-| `image_id` | `uuid` | no | FK → `core.media_assets` | |
-| `alt_text` | `text` | no | | no vacío |
+| `image_id` | `uuid` | **sí** | FK → `core.media_assets` | `ON DELETE SET NULL` |
+| `alt_text` | `text` | sí | | Obligatorio **si hay imagen** |
 | `display_order` | `integer` | no | | `>= 0` |
 
 ### 6.5 `cms.social_links`
@@ -204,6 +222,11 @@ Para cada una de las cinco entidades: listar (incluidas las no vigentes), obtene
 
 ## 9. Interfaz
 
+**La composición de la portada es trabajo de M02, y es superficie compartida.** Hoy `platform/PublicSite.tsx` pregunta a mano si `catalog` está activo. Con M02 aparece el segundo caso, y por tanto el momento de extraer el registro declarativo — siguiendo el modelo de `layout/navigation.ts`, que ya lo hace bien para el menú. Copiar el `if` en vez de extraerlo convierte la regla del segundo caso en «se copió en el segundo, el tercero y el cuarto».
+
+Es del paso 4, toca armazón, y **no se hace hasta que M01 esté fusionado**. Se avisa antes de tocarlo.
+
+
 **Qué aparece si el módulo está activo:** una entrada de menú «Contenido» en administración, con cinco secciones; y en la web pública, el carrusel de la portada, la rejilla de promociones, la tira de destacados, la galería de trabajos y los iconos del pie.
 
 **Qué desaparece si se desactiva:** las cinco pantallas de administración y sus rutas, y las cinco secciones públicas. **La portada no queda con un hueco: la sección no se renderiza, no se renderiza vacía.** El pie pierde los iconos sociales sin dejar un espacio en blanco.
@@ -233,7 +256,8 @@ Cada pantalla declara las dos cosas. Un SPEC que solo describe estados produce l
 5. **Al destacar un producto se copia su nombre, su slug y su imagen.** No se leen en cada petición: la portada pública no debe depender de que M01 responda.
 6. Si el snapshot y el producto vivo difieren, el panel lo dice y ofrece actualizar. **Nunca se actualiza solo.**
 7. Con M01 inactivo, la sección de destacados no se ofrece en el panel y su endpoint público devuelve lista vacía. **No falla.**
-8. Al desactivar un medio en CORE que un banner usa, el banner queda sin imagen y **no se rompe**: misma conducta que M01 verificó en `medios-compartidos.spec.ts`.
+8. Al borrar un medio en CORE que un banner usa, el banner queda sin imagen y **no se rompe**: misma conducta que M01 verificó en `medios-compartidos.spec.ts`. Un banner sin imagen no se publica, y el panel lo muestra como incompleto en vez de esconderlo.
+8b. Un destacado sin `product_id` pero con snapshot está **pendiente de volver a enlazar**. Se muestra en el panel, no se publica, y ofrece elegir producto de nuevo.
 9. `platform` se valida contra la lista cerrada. Una red nueva es una migración, no un texto libre.
 
 ---
@@ -251,6 +275,8 @@ Cada pantalla declara las dos cosas. Un SPEC que solo describe estados produce l
 - [ ] Dos enlaces de la misma red se rechazan, sin distinguir mayúsculas
 - [ ] **Con M01 desinstalado, los destacados conservan nombre e imagen y la portada no muestra enlaces rotos**
 - [ ] Renombrar un producto destacado no cambia la portada, y el panel señala la diferencia
+- [ ] Tras retirar la integración, los destacados aparecen en el panel como «pendiente de volver a enlazar», con su nombre, y se pueden reasignar
+- [ ] Borrar en CORE un medio usado por un banner **no falla**: el banner queda sin imagen y deja de publicarse
 - [ ] Desactivar en CORE un medio usado por un banner deja el banner sin imagen y ninguna operación falla
 - [ ] Ninguna pantalla muestra un identificador
 - [ ] Ningún «Ha ocurrido un error» ni ningún botón «Aceptar»

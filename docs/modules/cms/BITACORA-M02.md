@@ -62,7 +62,8 @@ Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base
 
 ## Encontrado roto o discrepante
 
-- El SPEC corregido de JP todavía no está visible en ninguno de los dos worktrees. En `m02`, `docs/modules/SPEC.md` y `docs/modules/cms/SPEC.md` tienen el mismo hash y ambos conservan la versión antigua; en `main` no existe aún la carpeta `docs/modules/cms`. Por instrucción expresa no se editó ni se trasladó el contenido antiguo.
+- JP entregó el SPEC corregido directamente en `docs/modules/cms/SPEC.md`; se conservó byte por byte y se eliminó la copia antigua `docs/modules/SPEC.md` de la ruta equivocada.
+- El SPEC corregido conserva dos restos del texto anterior en §4.1 y en la fila `banners.alt_text` de §6.1: allí todavía dice «obligatoria/no nullable», mientras el resto de §6.1 y las reglas 8 y 8b de §10 establecen las imágenes nullable, `ON DELETE SET NULL`, publicación incompleta y `alt_text` condicional. No se editó el archivo mantenido por coordinación; el modelo sigue la corrección expresa del encargo.
 - `origin/main` publicó y la rama `m02` integró el commit `ccf939f` con `Sillar.Modules.Catalog.Contracts` e `ISchemaExamples`. El contrato publicado resuelve variantes, pero todavía no expone el slug ni la imagen principal del producto que M02 debe copiar al destacar. Los contratos compartidos de autorización, CSRF y auditoría continúan solo como cambios sin commit en el worktree de M01. No se copiaron ni reprodujeron.
 
 ## Verificación de las correcciones
@@ -80,5 +81,35 @@ Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base
 
 ## Abierto
 
-- Trasladar y versionar sin editar el SPEC corregido cuando JP lo deje disponible.
 - Esperar el contrato de Catálogo que exponga nombre, slug e imagen principal del producto, y la publicación de los contratos compartidos de administración; después continuar con los endpoints del paso 3.
+
+## Avance del paso 3 sin contratos de administración
+
+### Construido
+
+- DTO públicos, de administración, creación y actualización para banners, promociones, productos destacados, trabajos y redes sociales. Las respuestas públicas resuelven URL de medios y no exponen sus identificadores; las administrativas conservan ID y URL porque el selector necesita ambos.
+- Cinco servicios con listado público, listado y detalle administrativo, creación, actualización, baja lógica y reorden. Productos destacados añade reenlace explícito del snapshot; observar M01 nunca lo actualiza solo.
+- `ScheduledCmsEntity` concentra las fechas de las tres entidades programables. `PublicationWindow.CurrentAt<T>` contiene la única expresión de vigencia, traducible por EF Core y compilable para lógica en memoria.
+- `OrderPlan` valida el conjunto entero antes de producir una sola asignación. `CmsOrderService` lo aplica con un único `SaveChanges` dentro de una transacción `Serializable`; una lista incompleta, repetida o con un ID inexistente devuelve cero asignaciones.
+- Se registraron los servicios en `CmsModule`, sin montar ninguna ruta. Autorización, filtro CSRF y auditoría siguen fuera hasta que sus contratos estén publicados.
+
+### Decidido durante este avance
+
+- **Reversible — alta y orden:** una fila nueva se añade al final; cambiar posiciones siempre usa el endpoint futuro de lista completa. Los DTO de edición no aceptan `display_order` individual.
+- **Reversible — baja separada de edición:** los DTO de actualización no incluyen `is_active`; así un `editor` no podrá desactivar por el endpoint de edición y la baja seguirá reservada al endpoint `admin`.
+- **Reversible — snapshot de producto:** mientras llega el contrato de M01, el servicio recibe como argumentos internos el nombre, slug e imagen ya resueltos. No declara un contrato espejo ni consulta tablas de Catálogo; el endpoint futuro extraerá esos valores de `ProductPickerItem`.
+- **Reversible — orden concurrente:** se eligió aislamiento `Serializable`. Si otra petición cambia la sección durante el reorden, el servicio devuelve un conflicto que pide recargar en vez de confirmar un orden calculado sobre una lista vieja.
+- **Reversible — medio dado de baja:** un banner público exige que `IMediaStorage` todavía resuelva su imagen de escritorio. Aunque una baja lógica de CORE conserve temporalmente el UUID en la fila, la respuesta observable lo trata como banner incompleto y no lo publica.
+
+### Verificación
+
+- `dotnet build backend/Sillar.sln -c Release --no-restore`: 0 advertencias y 0 errores.
+- `dotnet test backend/Sillar.sln -c Release --no-build --no-restore`: 27/27 pruebas CMS, 49/49 Shared y 132/132 CORE; 208/208 en total.
+- Las pruebas nuevas, con nombres en español y sin base de datos, cubren límites de vigencia, la misma expresión en las tres entidades, fechas inválidas con mensaje útil, enlaces, texto alternativo, plataformas, snapshots pendientes, planes de reorden completos o inválidos, ausencia de IDs de medios en respuestas públicas y ausencia de `is_active`/`display_order` en los DTO de edición.
+- EF Core informó que extraer `ScheduledCmsEntity` no produjo cambios pendientes en el modelo ni en el snapshot.
+
+### Pendiente
+
+- El enganche HTTP completo: grupos público/administración, autorización por rol, filtro CSRF, auditoría, comentarios XML de endpoints y Swagger.
+- Conectar los argumentos internos del snapshot con el contrato `ProductPickerItem` cuando M01 lo publique; entonces se habilitan búsqueda, alta y reenlace de destacados.
+- Verificación por HTTP y contra PostgreSQL del paso 3, incluida interrupción observable del reorden y los controles 403, queda para cuando las rutas puedan montarse con los contratos de CORE.

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sillar.Modules.Cms.Data;
+using Sillar.Modules.Cms.Services;
 using Sillar.Shared.Modularity;
 
 namespace Sillar.Modules.Cms;
@@ -32,9 +33,20 @@ public sealed class CmsModule : IModule
             npgsql => npgsql.MigrationsHistoryTable(
                 CmsDbContext.MigrationsHistoryTable,
                 CmsDbContext.Schema)));
+
+        services.AddSingleton(TimeProvider.System);
+        services.AddScoped<CmsOrderService>();
+        services.AddScoped<BannerService>();
+        services.AddScoped<PromotionService>();
+        services.AddScoped<FeaturedProductService>();
+        services.AddScoped<FeaturedProjectService>();
+        services.AddScoped<SocialLinkService>();
     }
 
-    /// <remarks>El paso 2 solo entrega datos; M02 todavía no monta rutas.</remarks>
+    /// <remarks>
+    /// Los servicios del paso 3 ya están registrados; las rutas esperan los
+    /// contratos compartidos de autorización, CSRF y auditoría.
+    /// </remarks>
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
     }
