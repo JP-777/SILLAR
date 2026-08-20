@@ -25,6 +25,15 @@ namespace Sillar.Core.Dtos;
 /// servidor a propósito — si el frontend rehiciera el análisis del grafo,
 /// tendríamos dos implementaciones de la misma regla y una se quedaría atrás.
 /// </param>
+/// <param name="RestartsAutomatically">
+/// Si esta instalación reinicia el host sola tras un cambio de activación
+/// (<c>Modules:RestartAfterActivation</c>). Igual para las seis tarjetas: es un
+/// dato del despliegue, no del módulo. Existe para que el diálogo de
+/// confirmación —que se muestra <b>antes</b> de activar o desactivar, cuando
+/// todavía no hay respuesta de esa operación que consultar— sepa qué frase es
+/// cierta en <i>esta</i> instalación, en vez de suponer que siempre se reinicia
+/// sola.
+/// </param>
 public sealed record ModuleResponse(
     string Code,
     string DisplayName,
@@ -40,7 +49,8 @@ public sealed record ModuleResponse(
     IReadOnlyList<string> SoftDependencies,
     bool CanActivate,
     bool CanDeactivate,
-    IReadOnlyList<string> BlockedBy);
+    IReadOnlyList<string> BlockedBy,
+    bool RestartsAutomatically);
 
 /// <summary>Resultado de activar o desactivar un módulo.</summary>
 /// <param name="Code">Código del módulo.</param>

@@ -72,6 +72,18 @@ Todos los scripts son idempotentes: ejecutarlos dos veces no duplica datos ni pr
 
 ---
 
+## Levantar una demostración
+
+Los comandos exactos para arrancar de cero —base limpia, migraciones, instalación, catálogo de
+demostración— están en **`docs/DEMOSTRACION.md`**, probados de principio a fin y no escritos de
+memoria. Incluye los datos de acceso, el recorrido que se enseña y qué hacer si algo falla.
+
+Los datos de demostración **no viven en los seeds de los módulos**, que están vacíos de datos de
+negocio a propósito (ADR-008): los siembra `scripts/demo/seed-demo.mjs` por API, y las imágenes
+se generan en memoria en vez de commitearse.
+
+---
+
 ## Estructura
 
 ```

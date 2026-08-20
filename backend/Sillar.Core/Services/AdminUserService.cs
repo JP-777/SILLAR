@@ -1,10 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using Sillar.Core.Auditing;
 using Sillar.Core.Authentication;
+using Sillar.Core.Contracts;
 using Sillar.Core.Data;
 using Sillar.Core.Domain;
-using Sillar.Core.Domain.Values;
 using Sillar.Core.Dtos;
 
 namespace Sillar.Core.Services;

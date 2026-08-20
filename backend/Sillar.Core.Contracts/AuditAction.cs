@@ -1,4 +1,4 @@
-namespace Sillar.Core.Domain.Values;
+namespace Sillar.Core.Contracts;
 
 /// <summary>Acciones que se registran en <c>core.audit_log</c>.</summary>
 public static class AuditAction

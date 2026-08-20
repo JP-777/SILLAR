@@ -6,6 +6,7 @@ import { connection } from '../shared/http/connection';
 import { isApiError } from '../shared/http/errors';
 import { SessionProvider, fetchSession, type AuthenticatedUser } from '../session';
 import { PlatformErrorPage } from '../platform/PlatformErrorPage';
+import { RouteFocus } from '../shared/a11y/RouteFocus';
 import { ReconnectingOverlay } from '../platform/ReconnectingOverlay';
 import { SetupPage } from '../platform/SetupPage';
 import {
@@ -117,7 +118,16 @@ export function App() {
           <PublicSettingsHost initial={boot.settings}>
             {/* Montado UNA vez, en la raíz. El estado de reconexión vive fuera
                 de React, así que sigue ahí aunque el usuario navegue. */}
+            {/* Enlace de salto: el primero del recorrido, invisible hasta
+                que recibe el foco. Ahora que hay `<main>` en las dos mitades
+                —panel y tienda— hay adónde saltar, y quien navega con teclado
+                no tiene que recorrer el menú entero en cada pantalla. */}
+            <a href="#contenido" className="pf-skip">
+              Saltar al contenido
+            </a>
+
             <ReconnectingOverlay />
+            <RouteFocus />
             <Wiring />
             <AppRoutes />
           </PublicSettingsHost>

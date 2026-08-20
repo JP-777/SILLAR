@@ -3,7 +3,8 @@ import type { Page } from './audit';
 
 /** Un archivo, tal como lo lista la galería. */
 export interface MediaAsset {
-  mediaAssetId: number;
+  /** uuid v7: el mismo valor que el nombre del archivo en disco (ADR-018). */
+  mediaAssetId: string;
   url: string;
   originalName: string | null;
   mimeType: string;
@@ -20,7 +21,7 @@ export interface MediaAsset {
 
 /** Resultado de una subida. */
 export interface MediaUploadResult {
-  mediaAssetId: number;
+  mediaAssetId: string;
   url: string;
   originalName: string | null;
   mimeType: string;
@@ -33,7 +34,7 @@ export interface MediaUploadResult {
    * **No es un error**: el archivo se subió. La entrega 3b decidió detectar
    * duplicados sin fusionarlos, así que esto es un aviso.
    */
-  duplicateOf: number | null;
+  duplicateOf: string | null;
 }
 
 export type MediaQuery = {
@@ -71,7 +72,7 @@ export const mediaService = {
   },
 
   /** Baja lógica. El binario se conserva, pero deja de servirse. */
-  deactivate: (id: number) => http.delete<void>(`/admin/media/${id}`),
+  deactivate: (id: string) => http.delete<void>(`/admin/media/${id}`),
 };
 
 /**

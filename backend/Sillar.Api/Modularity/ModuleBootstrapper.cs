@@ -111,8 +111,24 @@ internal static class ModuleBootstrapper
 
         // --- Pasos 4 y 5: sincronizar catálogo y activaciones -------------
         var synchronizer = new ModuleSynchronizer(database, loggerFactory.CreateLogger<ModuleSynchronizer>());
-        var activeModules = await synchronizer.SynchronizeAsync(modules, cancellationToken);
+        var sync = await synchronizer.SynchronizeAsync(modules, cancellationToken);
+        var activeModules = sync.Active;
         var activeCodes = activeModules.Select(module => module.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // --- ADR-019: un módulo activo que el binario no trae ------------
+        // No es una instalación degradada, es un despliegue incompleto: el
+        // aviso del arranque no basta —es un número entre otros, exige que
+        // alguien lo lea, y desaparece solo si se sube el nivel de registro—,
+        // así que se aborta con el mismo mecanismo que ya usa el paso 6.
+        var missingActive = ModuleGraph.ActiveButUndeclared(modules, sync.ActiveCodesInDatabase);
+        if (missingActive.Count > 0)
+        {
+            throw new StartupAbortedException(
+                $"Módulo(s) marcados activos en la base pero ausentes de este binario: " +
+                $"{string.Join(", ", missingActive)}. Es un despliegue incompleto: reconstruye la imagen " +
+                "('docker compose --profile full up -d --build api'). No lo resuelvas desactivando el " +
+                "módulo en la base: eso convertiría el despliegue roto en una instalación sin ese módulo.");
+        }
 
         // --- Paso 6: las dependencias duras de lo activo, activas ---------
         var problems = ModuleGraph.ValidateActivations(modules, activeCodes);

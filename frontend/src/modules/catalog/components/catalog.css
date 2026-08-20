@@ -1,0 +1,253 @@
+/* ==========================================================================
+   Catálogo — M01.
+
+   Ni un color literal: solo variables de rol de shared/styles/tokens.css.
+   Comprobarlo es buscar '#' en este archivo.
+   ========================================================================== */
+
+/* --- Celda de marca en la tabla ----------------------------------------- */
+
+.cat-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+
+/* Hueco intencionado cuando no hay imagen, o cuando la borraron de la
+   galería: un recuadro con una raya se lee como «sin imagen». Una etiqueta
+   rota se lee como «esto falló». */
+.cat-brand__logo {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  object-fit: contain;
+  border-radius: var(--r-sm);
+  background: var(--bg-sunken);
+}
+
+.cat-brand__nologo {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: var(--r-sm);
+  background: var(--bg-sunken);
+  border: 1px dashed var(--border-strong);
+}
+
+.cat-brand__slug {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-subtle);
+}
+
+/* --- Árbol de categorías ------------------------------------------------ */
+
+.cat-tree {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+
+/* La marca de rama, además de la sangría: con la columna estrecha la sangría
+   sola se pierde, y entonces la lista miente sobre la jerarquía. */
+.cat-tree__mark {
+  color: var(--text-subtle);
+  font-family: var(--mono);
+  margin-right: calc(var(--s2) * -1);
+}
+
+/* --- Galería de un producto --------------------------------------------- */
+
+.cat-images {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.cat-images__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s1);
+  padding: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+}
+
+.cat-images__item img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+/* --- Presentaciones ------------------------------------------------------ */
+
+.cat-variants {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--border);
+}
+
+.cat-variants__head { display: flex; flex-direction: column; gap: var(--s1); }
+
+.cat-variants__grid { display: flex; flex-direction: column; gap: var(--s2); }
+
+/* En móvil deja de ser tabla: una tarjeta por presentación. Se pierde
+   comparar de un vistazo; no se pierde ningún campo ni ninguna acción. */
+.cat-variants__row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s2);
+  padding: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-sunken);
+}
+
+/* La cabecera de tabla no tiene sentido cuando cada fila es una tarjeta. */
+.cat-variants__row--head { display: none; }
+
+/* Cada celda se titula sola con su etiqueta, que es lo que la cabecera hacía
+   en la tabla. */
+.cat-variants__row [data-label]::before {
+  content: attr(data-label);
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  margin-bottom: 2px;
+}
+
+.cat-variants__ordinal {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-subtle);
+}
+
+@media (min-width: 900px) {
+  .cat-variants__row {
+    grid-template-columns: 2rem 1.2fr 1fr 1fr 1.2fr auto;
+    align-items: center;
+    padding: var(--s2);
+    background: transparent;
+    border-color: transparent;
+    border-bottom-color: var(--border);
+    border-radius: 0;
+  }
+
+  .cat-variants__row--head {
+    display: grid;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-subtle);
+  }
+
+  /* Con cabecera, la etiqueta de cada celda sobra. */
+  .cat-variants__row [data-label]::before { display: none; }
+}
+
+.cat-variants__price { display: flex; align-items: center; gap: var(--s1); }
+
+/* La celda que hereda: pulsable, y se ve que lo es. */
+.cat-variants__inherit {
+  width: 100%;
+  text-align: left;
+  padding: var(--s1) var(--s2);
+  min-height: var(--alto-control-md);
+  background: none;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-md);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.cat-variants__inherit:hover { color: var(--text); border-style: solid; }
+
+/* Que dos códigos estén vacíos no es un conflicto: se dice con una frase
+   neutra, sin tono de aviso. */
+.cat-variants__ok { font-size: 12.5px; color: var(--text-subtle); }
+
+.cat-variants__actions { display: flex; flex-wrap: wrap; gap: var(--s2); }
+
+/* El aviso del momento: se lee, no se roba el foco. */
+.cat-variants__announce {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: var(--s2) var(--s3);
+  background: var(--selected-bg);
+  color: var(--selected);
+  border-radius: var(--r-md);
+}
+
+/* --- Asignación de categorías: el conjunto y la principal ----------------
+   Dos preguntas distintas, dos controles. El `fieldset` no lleva borde
+   porque el bloque ya está separado por el espacio del formulario, y un
+   marco dentro de otro marco no añade información. */
+.cat-assign {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.cat-assign__hint,
+.cat-assign__empty,
+.cat-assign__primary-note {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.cat-assign__list {
+  list-style: none;
+  margin: 0;
+  padding: var(--s2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.cat-assign__item {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: var(--alto-control-sm);
+  cursor: pointer;
+}
+
+/* El estado con palabra, no con color: una categoría dada de baja sigue
+   asignada al producto y hay que poder verlo sin distinguir tonos. */
+.cat-assign__off {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  padding: 0 var(--s1);
+}
+
+.cat-assign__primary {
+  border: 0;
+  padding: 0;
+  margin: var(--s2) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}

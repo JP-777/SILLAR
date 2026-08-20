@@ -1,8 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using Sillar.Core.Auditing;
+using Sillar.Core.Contracts;
 using Sillar.Core.Contracts.Events;
 using Sillar.Core.Data;
-using Sillar.Core.Domain.Values;
 using Sillar.Core.Dtos;
 using Sillar.Core.Modularity;
 using Sillar.Shared.Events;
@@ -62,7 +61,8 @@ internal sealed class ModuleActivationService(
     DeclaredModules declared,
     IAuditWriter audit,
     IEventPublisher events,
-    TimeProvider clock)
+    TimeProvider clock,
+    HostRestarter restarter)
 {
     /// <summary>
     /// Clave del bloqueo que serializa las activaciones de la instalación.
@@ -288,7 +288,8 @@ internal sealed class ModuleActivationService(
             [.. module.SoftDependencies],
             CanActivate: !isActive && missing.Count == 0,
             CanDeactivate: isActive && !isCore && dependents.Count == 0,
-            BlockedBy: isActive ? dependents : missing);
+            BlockedBy: isActive ? dependents : missing,
+            RestartsAutomatically: restarter.RestartsAutomatically);
     }
 
     private async Task<IReadOnlyDictionary<string, ActivationRow>> ReadActivationsAsync(

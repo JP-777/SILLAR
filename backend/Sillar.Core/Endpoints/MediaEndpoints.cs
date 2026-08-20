@@ -6,7 +6,6 @@ using Microsoft.Extensions.Options;
 using Sillar.Core.Authentication;
 using Sillar.Core.Contracts;
 using Sillar.Core.Data;
-using Sillar.Core.Domain.Values;
 using Sillar.Core.Dtos;
 using Sillar.Core.Media;
 using Sillar.Core.Services;

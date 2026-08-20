@@ -38,7 +38,7 @@ h3 { font-size: 16px; }
 p { margin: 0; }
 
 a {
-  color: var(--primary);
+  color: var(--link);
   text-decoration: none;
 }
 
@@ -55,23 +55,59 @@ code {
 
 /* El foco SIEMPRE visible: la interfaz tiene que ser navegable con teclado y
    quien la recorre así necesita saber dónde está. Nunca outline: none sin
-   sustituirlo por algo igual de claro. */
-:focus-visible {
+   sustituirlo por algo igual de claro.
+
+   `.ui-force-focus-ring` cubre el caso que `:focus-visible` no cubre solo:
+   el primer control de un diálogo abierto con ratón. El navegador juzga esa
+   modalidad por el clic que abrió el diálogo, no por que el control sea
+   nuevo — comprobado con un clic real (`useFocusTrap.ts`). */
+:focus-visible,
+.ui-force-focus-ring {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
   border-radius: var(--r-sm);
 }
 
-/* Para quien prefiere menos movimiento. */
+/* Para quien prefiere menos movimiento.
+   NO se elimina el cambio: se **sustituye** por un fundido corto de opacidad,
+   que sigue diciendo «esto cambió» sin desplazar ni escalar nada. Apagarlo
+   del todo deja saltos secos que se leen como fallo.
+
+   Ojo con la consecuencia: `transition-property: opacity` le pone ese fundido
+   a TODO elemento, incluidos los que antes cambiaban de golpe. Ningún control
+   puede depender de desaparecer visualmente para dejar de recibir eventos —
+   eso se apoya en `disabled`, `hidden`, `inert` o desmontaje, nunca en la
+   opacidad. Comprobado en `e2e/`, que corre la transversal entera también con
+   la preferencia activa. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition-property: opacity !important;
+    transition-duration: var(--duracion-cambio-reducido) !important;
+    transition-delay: 0ms !important;
+    transition-timing-function: var(--curva-entrada) !important;
+  }
+
+  /* Las capturas de View Transitions no deben interpolar posición ni tamaño. */
+  ::view-transition-group(*),
+  ::view-transition-image-pair(*) {
+    animation: none !important;
+  }
+
+  ::view-transition-old(*) {
+    animation: vista-reducida-salir var(--duracion-cambio-reducido) var(--curva-salida) both !important;
+  }
+
+  ::view-transition-new(*) {
+    animation: vista-reducida-entrar var(--duracion-cambio-reducido) var(--curva-entrada) both !important;
   }
 }
+
+@keyframes vista-reducida-entrar { from { opacity: 0; } }
+@keyframes vista-reducida-salir { to { opacity: 0; } }
 
 /* Texto visible solo para lectores de pantalla. */
 .sr-only {

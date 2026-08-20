@@ -33,7 +33,9 @@
   background: var(--primary);
 }
 
-.mod.is-off { opacity: .62; }
+/* Nada de opacity aquí: diluye el texto por debajo de 4.5:1 (hallado por
+   axe-core), y el estado ya se lee sin ambigüedad en el badge y en el color
+   del borde — el color y la opacidad nunca deberían ser la única señal. */
 .mod.is-off::before { background: var(--stone-400); }
 .mod.is-locked::before { background: var(--stone-300); }
 
@@ -88,7 +90,7 @@
   padding: 0;
   font: inherit;
   font-weight: 600;
-  color: var(--primary);
+  color: var(--link);
   cursor: pointer;
   text-decoration: underline;
 }

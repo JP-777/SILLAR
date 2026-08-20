@@ -31,10 +31,12 @@
   --accent-600: #18536F;
   --accent-700: #123D55;
 
-  /* Semánticos */
-  --success: #2E7D5B;
+  /* Semánticos. success y warning, un punto más oscuros que el primer intento:
+     ese contra su -bg quedaba en 4.35:1 y 4.38:1 — por debajo del 4.5:1 que
+     pide WCAG AA, hallado por axe-core (ver e2e/). danger ya cumplía. */
+  --success: #2A7052;
   --success-bg: #E6F2EC;
-  --warning: #9C6414;
+  --warning: #905C10;
   --warning-bg: #FBF0DD;
   --danger: #B23A2B;
   --danger-bg: #FBEAE7;
@@ -45,12 +47,51 @@
   --bg-sunken: var(--stone-100);
   --text: var(--stone-800);
   --text-muted: var(--stone-600);
-  --text-subtle: var(--stone-500);
+  /* No es --stone-500: ese daba 4.2:1 sobre --bg-sunken, que es el fondo de
+     una fila con el ratón encima. Cumplía contra --bg-raised, donde se
+     validó, y fallaba en el otro fondo del mismo sistema. Este cumple en los
+     dos (4.6:1 hundido, 5.3:1 elevado). */
+  --text-subtle: #726A5C;
   --border: var(--stone-200);        /* divisores decorativos */
   --border-strong: var(--stone-500); /* bordes de controles: contraste 4.58:1 */
   --primary: var(--accent-500);
   --primary-hover: var(--accent-600);
   --on-primary: #FFFFFF;
+  /* Texto de enlace o de acción en línea: sobre un fondo neutro, no dentro de
+     un botón lleno. Igual a --primary de día; de noche necesita su propio
+     tono, ver el porqué en el bloque [data-theme="dark"]. */
+  --link: var(--primary);
+  /* «Designado»: elegido de entre varios, no «va bien». Es un rol que **no
+     existía** y que tomaba prestado el más cercano, `success` — por eso un
+     filtro encendido se pintaba de verde, que quiere decir otra cosa.
+
+     No es el caso de --link ni de --on-danger: allí el rol existía y estaba
+     sirviendo a dos necesidades, y se partió. Aquí se **añade** el que
+     faltaba, sin colores nuevos: sale de la paleta de acento que ya está.
+
+     Contrastes por comprobar con axe-core, no por confiar en el cálculo:
+     día `--accent-600` sobre `--accent-100`, noche `--accent-300` sobre
+     `--accent-700`. */
+  --selected: var(--accent-600);
+  --selected-bg: var(--accent-100);
+
+  /* Texto encima de --danger cuando --danger es FONDO (el botón de peligro).
+     Mismo problema que --link resolvió para --primary: un semántico sirve de
+     texto y de fondo, y esas dos necesidades no piden el mismo tono. */
+  --on-danger: #FFFFFF;
+
+  /* Altura de los controles con texto. **Declarada, no deducida.**
+     Hasta ahora ningún control la fijaba: salía de sumar relleno y tipo, y por
+     eso un botón medía 38,5 y un campo a su lado 46 — la diferencia era
+     `line-height: 1.5` en `.ui-input` contra ninguna en `.ui-button`. Dos
+     controles que se ponen en la misma fila tienen que medir lo mismo porque
+     alguien lo decidió, no porque la aritmética coincida.
+
+     Los valores son casi los que `Button` ya medía: esto **fija donde está**,
+     no recoloca la interfaz. */
+  --alto-control-sm: 28px;
+  --alto-control-md: 36px;
+  --alto-control-lg: 46px;
 
   /* Geometría — bloque tallado: esquinas apenas suavizadas */
   --r-sm: 3px;
@@ -67,6 +108,35 @@
   --s7: 48px;
   --s8: 64px;
 
+  /* Movimiento. Tres escalones por lo que se mueve, no por cuánto: un control
+     responde, un mensaje aparece, una superficie entra. Las salidas bajan un
+     escalón —lo que se va no necesita anunciarse— y reutilizan los mismos
+     valores en vez de inventar un cuarto.
+
+     Las curvas arrancan con tangente vertical (`0, 0` de salida) para que el
+     movimiento responda al instante y frene al final; una curva que arranca
+     horizontal se siente como entrada lenta aunque dure lo mismo. */
+  --duracion-control: 120ms;
+  --duracion-mensaje: 180ms;
+  --duracion-superficie: 240ms;
+
+  --duracion-salida-control: var(--duracion-control);
+  --duracion-salida-mensaje: var(--duracion-control);
+  --duracion-salida-superficie: var(--duracion-mensaje);
+
+  /* Con movimiento reducido no se elimina el cambio: se reduce a un fundido
+     corto, que sigue diciendo «esto cambió» sin desplazar nada. */
+  --duracion-cambio-reducido: 80ms;
+
+  --curva-entrada: cubic-bezier(0, 0, 0.38, 0.9);
+  --curva-salida: cubic-bezier(0.2, 0, 1, 0.9);
+  --curva-bucle: linear;
+
+  /* Velo de los diálogos. Un solo valor para los dos temas a propósito: lo
+     que separa no es el color del velo sino el contraste entre el panel y lo
+     que hay detrás, y el panel ya cambia de tono con el tema. */
+  --velo-dialogo: color-mix(in srgb, var(--stone-900) 45%, transparent);
+
   --shadow: 0 1px 2px rgba(26, 23, 19, .06), 0 1px 3px rgba(26, 23, 19, .05);
   --shadow-lg: 0 2px 4px rgba(26, 23, 19, .06), 0 8px 24px rgba(26, 23, 19, .08);
 
@@ -74,7 +144,42 @@
   --mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
-[data-theme="dark"] {
+/* Oscuro en tres niveles, no dos — el error que el equipo de diseño marcó:
+   :root trae el claro base; este medio aplica el oscuro cuando el SISTEMA lo
+   pide, pero se apaga solo si ya hay una elección explícita a claro
+   (:not([data-theme="light"])); y el bloque [data-theme="dark"] de más abajo
+   repite las mismas variables para cuando la elección explícita es oscuro,
+   sin depender de qué prefiera el sistema. Sin este medio, un sistema en
+   oscuro con ninguna elección guardada se quedaba en claro por defecto —
+   `useTheme` nunca dejaba el atributo sin poner, así que esta regla no tenía
+   forma de actuar nunca. Cubierto en tema.spec.ts. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: var(--stone-900);
+    --bg-raised: var(--stone-800);
+    --bg-sunken: #12100D;
+    --text: var(--stone-100);
+    --text-muted: var(--stone-300);
+    --text-subtle: var(--stone-400);
+    --border: var(--stone-700);
+    --border-strong: var(--stone-400);
+    --primary: var(--accent-600);
+    --primary-hover: var(--accent-500);
+    --link: var(--accent-300);
+    --selected: var(--accent-300);
+    --selected-bg: var(--accent-700);
+    --success: #5FAE84;
+    --success-bg: #17241E;
+    --warning: #C79341;
+    --warning-bg: #2A2115;
+    --danger: #E08670;
+    --danger-bg: #2A1A17;
+    --shadow: 0 1px 3px rgba(0, 0, 0, .4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, .5);
+  }
+}
+
+:root[data-theme="dark"] {
   --bg: var(--stone-900);
   --bg-raised: var(--stone-800);
   --bg-sunken: #12100D;
@@ -85,9 +190,28 @@
   --border-strong: var(--stone-400);
   --primary: var(--accent-600);
   --primary-hover: var(--accent-500);
+  /* --primary de noche es --accent-600: perfecto de fondo de botón bajo texto
+     blanco (8.4:1), pero como texto directo sobre un fondo oscuro cae a
+     1.88:1 (hallado por axe-core en .mod__jump, ver e2e/) — es el mismo tono
+     oscuro pensado para la otra combinación. --accent-300, ya en la paleta,
+     sí funciona como texto de noche (6.3:1 sobre --bg-raised). */
+  --link: var(--accent-300);
+  --selected: var(--accent-300);
+  --selected-bg: var(--accent-700);
+  /* No basta con reteñir el -bg: el texto claro de día se apaga contra un
+     fondo oscuro de verdad y cae a ~3.2:1 (hallado por axe-core en modo
+     oscuro, ver e2e/). Cada semántico necesita su propio tono para la noche. */
+  --success: #5FAE84;
   --success-bg: #17241E;
+  --warning: #C79341;
   --warning-bg: #2A2115;
+  --danger: #E08670;
   --danger-bg: #2A1A17;
+  /* De noche --danger es un salmón claro, pensado para leerse SOBRE fondo
+     oscuro. Usado de fondo en el botón de peligro, el texto blanco encima
+     cae a 2.68:1 (lo cazó axe-core). Encima de ese salmón va texto oscuro:
+     6.7:1. En claro sigue siendo blanco sobre rojo. */
+  --on-danger: var(--stone-900);
   --shadow: 0 1px 3px rgba(0, 0, 0, .4);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, .5);
 }

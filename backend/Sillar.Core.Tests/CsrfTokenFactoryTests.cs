@@ -1,4 +1,5 @@
 using Sillar.Core.Authentication;
+using Sillar.Core.Contracts;
 
 namespace Sillar.Core.Tests;
 

@@ -8,6 +8,18 @@ using Sillar.Shared.Modularity;
 
 namespace Sillar.Core.Modularity;
 
+/// <summary>Resultado de sincronizar el catálogo de módulos con la base.</summary>
+/// <param name="Active">Módulos activos que además existen en el binario.</param>
+/// <param name="ActiveCodesInDatabase">
+/// Todo lo que <c>core.module_activations</c> marcaba activo antes de
+/// sincronizar, exista o no en el binario. La ADR-019 lo usa para decidir si
+/// el arranque puede continuar: lo que queda fuera de <see cref="Active"/> por
+/// no estar declarado es, precisamente, lo que hay que nombrar al abortar.
+/// </param>
+public sealed record ModuleSyncResult(
+    IReadOnlyList<ActiveModule> Active,
+    IReadOnlyList<string> ActiveCodesInDatabase);
+
 /// <summary>
 /// Vuelca al schema <c>core</c> el catálogo de módulos que declara el código y
 /// devuelve cuáles están activos en esta instalación.
@@ -27,13 +39,21 @@ public sealed class ModuleSynchronizer(CoreDbContext database, ILogger<ModuleSyn
     /// Sincroniza catálogo y dependencias, garantiza una fila de activación por
     /// módulo y devuelve los módulos activos.
     /// </summary>
-    public async Task<IReadOnlyList<ActiveModule>> SynchronizeAsync(
+    public async Task<ModuleSyncResult> SynchronizeAsync(
         IReadOnlyList<IModule> declared,
         CancellationToken cancellationToken)
     {
         var stored = await database.Modules
             .Include(module => module.Activation)
             .ToDictionaryAsync(module => module.Code, cancellationToken);
+
+        // ADR-019: lo que la base ya marcaba activo, antes de tocar nada. Si el
+        // binario no lo trae, el arranque tiene que abortar más abajo — aquí
+        // solo se recoge el dato, sin decidir nada todavía.
+        var activeCodesInDatabase = stored
+            .Where(entry => entry.Value.Activation?.IsActive == true)
+            .Select(entry => entry.Key)
+            .ToList();
 
         SynchronizeCatalog(declared, stored);
         WarnAboutUnknown(declared, stored);
@@ -50,7 +70,8 @@ public sealed class ModuleSynchronizer(CoreDbContext database, ILogger<ModuleSyn
 
         await MarkOrphanMediaAsync(declared, cancellationToken);
 
-        return await ReadActiveAsync(declared, cancellationToken);
+        var active = await ReadActiveAsync(declared, cancellationToken);
+        return new ModuleSyncResult(active, activeCodesInDatabase);
     }
 
     /// <summary>

@@ -43,9 +43,20 @@
 
 .ui-table tbody tr:hover { background: var(--bg-sunken); }
 
-/* Dado de baja: atenuado, nunca oculto. Es eliminación lógica, y
-   desaparecerlo haría creer que se borró. */
-.ui-table tbody tr[data-dimmed='true'] { opacity: .55; }
+/* Dado de baja: se marca, nunca se oculta. Es eliminación lógica, y
+   desaparecerlo haría creer que se borró.
+
+   Sin `opacity`: diluía el texto de la fila hasta 2.14:1 (lo cazó axe-core
+   sobre una marca dada de baja). Es el mismo fallo que ya obligó a quitar el
+   `opacity` de `.mod.is-off` en las tarjetas de módulo — atenuar un
+   contenedor atenúa su texto, y el contraste no sobrevive.
+
+   Quién lo dice ahora: la insignia de estado de la propia fila, que lleva
+   TEXTO —«Oculta», «Desactivado»—, más el borde de la izquierda. El estado
+   no depende del color ni de la opacidad. */
+.ui-table tbody tr[data-dimmed='true'] {
+  box-shadow: inset 3px 0 0 var(--border-strong);
+}
 
 .ui-table__actions { text-align: right; white-space: nowrap; }
 
@@ -88,7 +99,7 @@
   position: fixed;
   inset: 0;
   z-index: 900;
-  background: color-mix(in srgb, var(--stone-900) 42%, transparent);
+  background: var(--velo-dialogo);
 }
 
 .ui-drawer {
@@ -151,7 +162,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--s5);
-  background: color-mix(in srgb, var(--stone-900) 42%, transparent);
+  background: var(--velo-dialogo);
 }
 
 .ui-dialog {

@@ -24,7 +24,7 @@ public class AdminUser
     /// </remarks>
     public required string PasswordHash { get; set; }
 
-    /// <summary>Rol. Ver <see cref="Values.AdminRole"/>.</summary>
+    /// <summary>Rol. Ver <see cref="Contracts.AdminRole"/>.</summary>
     public required string Role { get; set; }
 
     /// <summary>Teléfono de contacto.</summary>

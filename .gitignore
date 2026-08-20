@@ -42,3 +42,29 @@ temp/
 
 # Ajustes locales de Claude Code. Son de la máquina, no del producto.
 .claude/settings.local.json
+
+# e2e/: salida de cada corrida, nunca del producto. .env.e2e SÍ se versiona
+# (ver el propio archivo); esto es justo lo que regenera cada ejecución.
+/e2e/screenshots/
+/e2e/.media-e2e/
+/e2e/test-results/
+/e2e/playwright-report/
+
+# design-sync (claude.ai/design): herramienta convertidora y su salida
+# generada. Lo duradero (config.json, NOTES.md, conventions.md, previews/)
+# SÍ se versiona — ver .design-sync/NOTES.md.
+/.ds-sync/
+/ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
+
+# SILLAR-DISENO/ vive FUERA de este repositorio (PROTOCOLO-DISENO.md §7), y
+# desde el 18 de agosto está de verdad fuera: en C:\SILLAR-DISENO, hermana de
+# esta carpeta. Estuvo dentro un tiempo, sin rastrear y sin ignorar.
+#
+# Esta línea se queda como red por si vuelve a aparecer algo ahí. Ignorarla no
+# bastaba —protege del `git add -A` y de `rg`, pero no de `find` ni de abrir la
+# ruta directa— y lo que contiene es justo lo que el §1 prohíbe que entre: HTML
+# y bundles exportados por Claude Design. Por eso se movió además de ignorarse.
+/SILLAR-DISENO/

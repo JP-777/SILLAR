@@ -10,6 +10,18 @@ const FOCUSABLE = [
 ].join(', ');
 
 /**
+ * `:focus-visible` no basta aquí: el navegador juzga el foco inicial de un
+ * diálogo por la modalidad de la interacción que lo *abrió* (un clic), no
+ * por que el elemento enfocado sea nuevo y nadie lo haya tocado todavía.
+ * Comprobado con un clic real, no con `page.click()` de Playwright: al
+ * abrir con ratón, `:focus-visible` da `false` en el primer control.
+ * `PROTOCOLO-DISENO.md` §4.6 exige el anillo pase lo que pase, así que se
+ * fuerza con esta clase y se suelta en cuanto el foco se mueve por
+ * cualquier motivo — desde ahí manda `:focus-visible` otra vez.
+ */
+export const FORCE_FOCUS_RING_CLASS = 'ui-force-focus-ring';
+
+/**
  * Atrapa el foco dentro de un elemento mientras está abierto.
  *
  * Sin esto, tabular desde un diálogo lleva al contenido de detrás, que está
@@ -34,7 +46,14 @@ export function useFocusTrap(
 
     // Al primer control, o al contenedor si no hay ninguno.
     const first = element?.querySelector<HTMLElement>(FOCUSABLE);
-    (first ?? element)?.focus();
+    const target = first ?? element;
+    target?.focus();
+
+    target?.classList.add(FORCE_FOCUS_RING_CLASS);
+    function releaseForcedRing() {
+      target?.classList.remove(FORCE_FOCUS_RING_CLASS);
+    }
+    target?.addEventListener('blur', releaseForcedRing, { once: true });
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
@@ -71,6 +90,8 @@ export function useFocusTrap(
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown, true);
+      target?.removeEventListener('blur', releaseForcedRing);
+      releaseForcedRing();
       previous?.focus?.();
     };
   }, [container, open, onEscape]);

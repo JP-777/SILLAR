@@ -1,9 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using Sillar.Core.Auditing;
 using Sillar.Core.Authentication;
+using Sillar.Core.Contracts;
 using Sillar.Core.Data;
 using Sillar.Core.Domain;
-using Sillar.Core.Domain.Values;
 
 namespace Sillar.Core.Services;
 

@@ -59,7 +59,7 @@ export function ModuleCard({
       <div className="mod__top">
         <div>
           <div className="mod__code">{module.code}</div>
-          <h3 className="mod__name">{module.displayName}</h3>
+          <h2 className="mod__name">{module.displayName}</h2>
         </div>
 
         {/* CORE no lleva interruptor. No es uno deshabilitado: es que no lo

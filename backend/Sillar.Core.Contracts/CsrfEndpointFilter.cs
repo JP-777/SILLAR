@@ -1,7 +1,6 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 
-namespace Sillar.Core.Authentication;
+namespace Sillar.Core.Contracts;
 
 /// <summary>
 /// Exige el token CSRF en toda petición que modifique datos.
@@ -13,11 +12,23 @@ namespace Sillar.Core.Authentication;
 ///
 /// <c>SameSite=Strict</c> ayuda mucho, pero no es suficiente por sí solo: no
 /// cubre subdominios comprometidos ni navegadores que lo apliquen de forma laxa.
+///
+/// Vive en <c>Sillar.Core.Contracts</c> y no dentro de CORE: todo módulo con
+/// endpoints de escritura lo necesita —el SPEC de M01 §8 lo exige igual que
+/// CORE—, y <c>AddEndpointFilter&lt;T&gt;()</c> necesita el tipo concreto, no
+/// una interfaz resoluble por inyección. Es el mismo motivo que ya puso
+/// <c>ICurrentUser</c> aquí.
 /// </remarks>
-internal sealed class CsrfEndpointFilter : IEndpointFilter
+public sealed class CsrfEndpointFilter : IEndpointFilter
 {
     /// <summary>Cabecera donde viaja el token.</summary>
     public const string HeaderName = "X-CSRF-Token";
+
+    /// <summary>
+    /// Tipo del claim donde viaja el hash del token CSRF de la sesión, para que
+    /// este filtro no vuelva a consultar la base de datos.
+    /// </summary>
+    public const string ClaimType = "sillar:csrf_hash";
 
     /// <inheritdoc />
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
@@ -34,7 +45,7 @@ internal sealed class CsrfEndpointFilter : IEndpointFilter
         }
 
         var sent = request.Headers[HeaderName].ToString();
-        var expected = context.HttpContext.User.FindFirst(SessionClaims.CsrfTokenHash)?.Value;
+        var expected = context.HttpContext.User.FindFirst(ClaimType)?.Value;
 
         // Comparación en tiempo constante: un cortocircuito al primer carácter
         // distinto permitiría reconstruir el token a base de intentos.

@@ -3,6 +3,7 @@ import { useCapability } from '../capabilities/useCapability';
 import { useSession } from '../session';
 import { usePublicSettings } from '../platform/usePublicSettings';
 import { Button } from '../shared/ui';
+import { ThemeToggle } from '../shared/ui/ThemeToggle';
 import { visibleNavigation } from './navigation';
 import './layout.css';
 
@@ -72,6 +73,8 @@ export function AdminShell() {
             </span>
           </div>
 
+          <ThemeToggle />
+
           {/* Cambiar la contraseña cuelga de aquí y no del menú lateral: es una
               acción sobre uno mismo, no administración de otros. */}
           <NavLink to="/admin/mi-contrasena" className="ly-topbar__link">
@@ -84,7 +87,13 @@ export function AdminShell() {
         </div>
       </header>
 
-      <main className="ly-main">
+      {/* `tabIndex={-1}` va **en el marcado**, no puesto por `RouteFocus`.
+          Ése no actúa en la carga inicial —y hace bien—, así que en la
+          primera pantalla el `main` no era enfocable y «Saltar al contenido»
+          cambiaba el hash sin mover el foco: el salto no funcionaba
+          justamente la vez que más se usa. No entra en el recorrido de Tab:
+          -1 solo lo hace enfocable por código o por fragmento. */}
+      <main className="ly-main" id="contenido" tabIndex={-1}>
         <Outlet />
       </main>
     </div>

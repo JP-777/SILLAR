@@ -115,6 +115,13 @@ la frase del reinicio a partir de ese dato, no de una suposición.
   `projectId`. Si un re-sync empieza con el proyecto pinneado devolviendo 404,
   **antes de crear un proyecto nuevo**, pedirle a la persona que confirme con
   qué cuenta está conectada en claude.ai/design.
+- **POR CONFIRMAR en el próximo re-sync: ¿las capturas de graduación son solo de tema
+  claro?** Al re-afirmar los componentes se dijo que el claro «es el único que capturamos». Si
+  es así, **un componente roto en oscuro graduaría bien igual**. No es riesgo de enviar algo
+  roto —en la aplicación `axe` corre en los dos temas, ver `e2e/fixtures/themes.ts:65-66`— sino
+  de que Design proponga algo que se ve bien en la vista previa y falle en oscuro. Sin
+  confirmar: mirar `package-capture.mjs` la próxima vez y, si se confirma, anotarlo aquí como
+  limitación conocida.
 - **Los tokens cambian sin que el bundle se entere.** El 18 de agosto
   `tokens.css` ganó `--link` y `--on-danger` —dos roles nuevos que salieron de
   fallos de contraste reales— y el bundle siguió sirviendo la versión anterior

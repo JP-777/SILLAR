@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Sillar.Core.Contracts;
 using Sillar.Core.Domain;
-using Sillar.Core.Domain.Values;
 
 namespace Sillar.Core.Data.Configurations;
 

@@ -1,0 +1,19 @@
+{
+  "name": "sillar-e2e",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Arnés de extremo a extremo: backend y frontend juntos, en un stack docker efímero propio.",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "stack:down": "docker compose -p sillar_e2e --env-file ./.env.e2e -f ../docker-compose.yml down -v",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.55.1",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
+  }
+}

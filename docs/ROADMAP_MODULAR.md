@@ -24,8 +24,11 @@ Cada módulo recorre siempre los mismos cinco pasos, en orden:
 | **1** | SPEC | Especificación: propósito, dependencias, tablas, contrato, endpoints, eventos, criterios de aceptación | **Este chat** |
 | **2** | DATOS | Diccionario del módulo, ER del módulo, migraciones EF Core, `02_seed.sql`, `99_drop.sql` | Se diseña aquí, se implementa en **Claude Code** |
 | **3** | API | Proyecto del módulo, `DbContext`, modelos, DTOs, endpoints, validaciones, Swagger | **Claude Code** |
+| **3.5** | DISEÑO | Las pantallas del §9 del SPEC **con sus estados** —vacío, con datos, cargando, conflicto— en claro y oscuro, móvil y escritorio | **JP en Claude Design.** Ver `PROTOCOLO-DISENO.md` |
 | **4** | UI | Componentes, páginas, rutas, servicios HTTP, integración con capacidades | **Claude Code** |
 | **5** | CIERRE | Documentación del módulo, prueba de montaje y desmontaje, entrega | **Este chat** |
+
+**El paso 3.5 va donde va por dos razones.** Se diseña **después** del 3 porque hasta que el contrato no existe no se sabe qué datos hay que mostrar, y **antes** del 4 porque construir una pantalla que nadie dibujó produce una pantalla que hay que rehacer. Además cae justo cuando Claude Code está parado, y Claude Design consume del mismo cupo (`PROTOCOLO-DISENO.md` §6).
 
 **Criterio de cierre innegociable, igual para todos los módulos:** el módulo se instala y se desinstala sin romper nada del resto del sistema. Si al desactivarlo aparece un enlace roto, una ruta muerta, un hueco visual o un error en el arranque, el módulo no está terminado.
 
