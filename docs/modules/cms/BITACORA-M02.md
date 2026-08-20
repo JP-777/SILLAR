@@ -148,7 +148,7 @@ Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base
 Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base `sillar_m02`, puerto host `55442`; host de prueba en `127.0.0.1:5082`.
 
 - **Línea base y host:** con CMS inactivo, `/api/cms/banners` devolvió 404. Activado y reiniciado, el host declaró `core, cms` activos y `catalog` inactivo. Las cinco rutas públicas devolvieron 200.
-- **Vigencia:** se crearon cinco banners. El futuro y el caducado aparecieron en administración con `isCurrent=false`, no en público; antes de retirar su medio, público devolvió únicamente `Actual con imagen`.
+- **Vigencia:** se crearon cinco banners. El futuro y el caducado aparecieron en administración con `isCurrent=false`, no en público; el caducado se editó y devolvió 200 conservando `isCurrent=false`. Antes de retirar su medio, público devolvió únicamente `Actual con imagen`.
 - **Validación:** imagen presente con `altText=null` devolvió 400 y «Escribe el texto alternativo de la imagen»; sin imagen y texto nulo devolvió 201. Fechas 28-febrero → 1-febrero devolvieron 400 y «La fecha de fin debe ser posterior a la fecha de inicio», no un error de PostgreSQL.
 - **Orden atómico:** `editor` creó cinco banners y reordenó `[8,7,6,5,4]`; el listado devolvió exactamente `8,7,6,5,4`. Sustituir un ID por `999999` devolvió 400 y el listado posterior conservó el mismo orden. La auditoría dejó cinco `create:banner` y un `update:banner` de orden.
 - **Roles y CSRF:** `editor` obtuvo 403 al desactivar un banner; `super_admin` desactivó promociones, trabajos y redes con 200. Una escritura autenticada sin cabecera CSRF devolvió 403 con la frase que pide `X-CSRF-Token`.
