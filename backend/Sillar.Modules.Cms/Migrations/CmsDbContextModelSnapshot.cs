@@ -25,10 +25,10 @@ internal sealed class CmsDbContextModelSnapshot : ModelSnapshot
         modelBuilder.Entity("Sillar.Modules.Cms.Domain.Banner", b =>
         {
             MapCommon(b, "pk_banners");
-            b.Property<string>("AltText").IsRequired().HasColumnType("text").HasColumnName("alt_text");
+            b.Property<string>("AltText").HasColumnType("text").HasColumnName("alt_text");
             b.Property<int>("DisplayOrder").HasColumnType("integer").HasDefaultValue(0).HasColumnName("display_order");
             b.Property<DateTimeOffset?>("EndsAt").HasColumnType("timestamptz").HasColumnName("ends_at");
-            b.Property<Guid>("ImageDesktopId").HasColumnType("uuid").HasColumnName("image_desktop_id");
+            b.Property<Guid?>("ImageDesktopId").HasColumnType("uuid").HasColumnName("image_desktop_id");
             b.Property<Guid?>("ImageMobileId").HasColumnType("uuid").HasColumnName("image_mobile_id");
             b.Property<string>("LinkLabel").HasColumnType("text").HasColumnName("link_label");
             b.Property<string>("LinkUrl").HasColumnType("text").HasColumnName("link_url");
@@ -38,7 +38,8 @@ internal sealed class CmsDbContextModelSnapshot : ModelSnapshot
             b.HasIndex("IsActive", "StartsAt", "EndsAt").HasDatabaseName("idx_banners_publicados");
             b.ToTable("banners", "cms", t =>
             {
-                t.HasCheckConstraint("ck_banners_alt_text_no_vacio", "btrim(alt_text) <> ''");
+                t.HasCheckConstraint("ck_banners_alt_text_no_vacio", "alt_text IS NULL OR btrim(alt_text) <> ''");
+                t.HasCheckConstraint("ck_banners_alt_text_si_hay_imagen", "(image_desktop_id IS NULL AND image_mobile_id IS NULL) OR alt_text IS NOT NULL");
                 t.HasCheckConstraint("ck_banners_display_order", "display_order >= 0");
                 t.HasCheckConstraint("ck_banners_enlace", "link_url IS NULL OR (link_label IS NOT NULL AND btrim(link_label) <> '')");
                 t.HasCheckConstraint("ck_banners_link_url", "link_url IS NULL OR link_url COLLATE \"C\" ~ '^(/|https?://)'");
@@ -50,7 +51,7 @@ internal sealed class CmsDbContextModelSnapshot : ModelSnapshot
         modelBuilder.Entity("Sillar.Modules.Cms.Domain.Promotion", b =>
         {
             MapCommon(b, "pk_promotions");
-            b.Property<string>("AltText").IsRequired().HasColumnType("text").HasColumnName("alt_text");
+            b.Property<string>("AltText").HasColumnType("text").HasColumnName("alt_text");
             b.Property<string>("BadgeText").HasMaxLength(20).HasColumnType("text").HasColumnName("badge_text");
             b.Property<string>("Description").HasColumnType("text").HasColumnName("description");
             b.Property<int>("DisplayOrder").HasColumnType("integer").HasDefaultValue(0).HasColumnName("display_order");
@@ -63,7 +64,8 @@ internal sealed class CmsDbContextModelSnapshot : ModelSnapshot
             b.Property<string>("Title").HasColumnType("text").HasColumnName("title");
             b.ToTable("promotions", "cms", t =>
             {
-                t.HasCheckConstraint("ck_promotions_alt_text_no_vacio", "btrim(alt_text) <> ''");
+                t.HasCheckConstraint("ck_promotions_alt_text_no_vacio", "alt_text IS NULL OR btrim(alt_text) <> ''");
+                t.HasCheckConstraint("ck_promotions_alt_text_si_hay_imagen", "image_id IS NULL OR alt_text IS NOT NULL");
                 t.HasCheckConstraint("ck_promotions_badge_text", "badge_text IS NULL OR (btrim(badge_text) <> '' AND char_length(badge_text) <= 20)");
                 t.HasCheckConstraint("ck_promotions_display_order", "display_order >= 0");
                 t.HasCheckConstraint("ck_promotions_enlace", "link_url IS NULL OR (link_label IS NOT NULL AND btrim(link_label) <> '')");
@@ -95,14 +97,15 @@ internal sealed class CmsDbContextModelSnapshot : ModelSnapshot
         modelBuilder.Entity("Sillar.Modules.Cms.Domain.FeaturedProject", b =>
         {
             MapCommon(b, "pk_featured_projects");
-            b.Property<string>("AltText").IsRequired().HasColumnType("text").HasColumnName("alt_text");
+            b.Property<string>("AltText").HasColumnType("text").HasColumnName("alt_text");
             b.Property<string>("Description").HasColumnType("text").HasColumnName("description");
             b.Property<int>("DisplayOrder").HasColumnType("integer").HasDefaultValue(0).HasColumnName("display_order");
-            b.Property<Guid>("ImageId").HasColumnType("uuid").HasColumnName("image_id");
+            b.Property<Guid?>("ImageId").HasColumnType("uuid").HasColumnName("image_id");
             b.Property<string>("Title").IsRequired().HasColumnType("text").HasColumnName("title");
             b.ToTable("featured_projects", "cms", t =>
             {
-                t.HasCheckConstraint("ck_featured_projects_alt_text_no_vacio", "btrim(alt_text) <> ''");
+                t.HasCheckConstraint("ck_featured_projects_alt_text_no_vacio", "alt_text IS NULL OR btrim(alt_text) <> ''");
+                t.HasCheckConstraint("ck_featured_projects_alt_text_si_hay_imagen", "image_id IS NULL OR alt_text IS NOT NULL");
                 t.HasCheckConstraint("ck_featured_projects_display_order", "display_order >= 0");
                 t.HasCheckConstraint("ck_featured_projects_title_no_vacio", "btrim(title) <> ''");
             });

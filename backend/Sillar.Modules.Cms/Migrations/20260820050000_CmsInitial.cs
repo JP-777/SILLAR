@@ -29,9 +29,9 @@ public sealed class CmsInitial : Migration
                     .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
                 title = table.Column<string>(type: "text", nullable: true),
                 subtitle = table.Column<string>(type: "text", nullable: true),
-                image_desktop_id = table.Column<Guid>(type: "uuid", nullable: false),
+                image_desktop_id = table.Column<Guid>(type: "uuid", nullable: true),
                 image_mobile_id = table.Column<Guid>(type: "uuid", nullable: true),
-                alt_text = table.Column<string>(type: "text", nullable: false),
+                alt_text = table.Column<string>(type: "text", nullable: true),
                 link_url = table.Column<string>(type: "text", nullable: true),
                 link_label = table.Column<string>(type: "text", nullable: true),
                 display_order = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
@@ -44,7 +44,8 @@ public sealed class CmsInitial : Migration
             constraints: table =>
             {
                 table.PrimaryKey("pk_banners", x => x.id);
-                table.CheckConstraint("ck_banners_alt_text_no_vacio", "btrim(alt_text) <> ''");
+                table.CheckConstraint("ck_banners_alt_text_no_vacio", "alt_text IS NULL OR btrim(alt_text) <> ''");
+                table.CheckConstraint("ck_banners_alt_text_si_hay_imagen", "(image_desktop_id IS NULL AND image_mobile_id IS NULL) OR alt_text IS NOT NULL");
                 table.CheckConstraint("ck_banners_display_order", "display_order >= 0");
                 table.CheckConstraint("ck_banners_enlace", "link_url IS NULL OR (link_label IS NOT NULL AND btrim(link_label) <> '')");
                 table.CheckConstraint("ck_banners_link_url", "link_url IS NULL OR link_url COLLATE \"C\" ~ '^(/|https?://)'");
@@ -62,7 +63,7 @@ public sealed class CmsInitial : Migration
                 title = table.Column<string>(type: "text", nullable: true),
                 subtitle = table.Column<string>(type: "text", nullable: true),
                 image_id = table.Column<Guid>(type: "uuid", nullable: true),
-                alt_text = table.Column<string>(type: "text", nullable: false),
+                alt_text = table.Column<string>(type: "text", nullable: true),
                 link_url = table.Column<string>(type: "text", nullable: true),
                 link_label = table.Column<string>(type: "text", nullable: true),
                 display_order = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
@@ -77,7 +78,8 @@ public sealed class CmsInitial : Migration
             constraints: table =>
             {
                 table.PrimaryKey("pk_promotions", x => x.id);
-                table.CheckConstraint("ck_promotions_alt_text_no_vacio", "btrim(alt_text) <> ''");
+                table.CheckConstraint("ck_promotions_alt_text_no_vacio", "alt_text IS NULL OR btrim(alt_text) <> ''");
+                table.CheckConstraint("ck_promotions_alt_text_si_hay_imagen", "image_id IS NULL OR alt_text IS NOT NULL");
                 table.CheckConstraint("ck_promotions_badge_text", "badge_text IS NULL OR (btrim(badge_text) <> '' AND char_length(badge_text) <= 20)");
                 table.CheckConstraint("ck_promotions_display_order", "display_order >= 0");
                 table.CheckConstraint("ck_promotions_enlace", "link_url IS NULL OR (link_label IS NOT NULL AND btrim(link_label) <> '')");
@@ -122,8 +124,8 @@ public sealed class CmsInitial : Migration
                     .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
                 title = table.Column<string>(type: "text", nullable: false),
                 description = table.Column<string>(type: "text", nullable: true),
-                image_id = table.Column<Guid>(type: "uuid", nullable: false),
-                alt_text = table.Column<string>(type: "text", nullable: false),
+                image_id = table.Column<Guid>(type: "uuid", nullable: true),
+                alt_text = table.Column<string>(type: "text", nullable: true),
                 display_order = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                 is_active = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                 created_at = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false, defaultValueSql: "now()"),
@@ -132,7 +134,8 @@ public sealed class CmsInitial : Migration
             constraints: table =>
             {
                 table.PrimaryKey("pk_featured_projects", x => x.id);
-                table.CheckConstraint("ck_featured_projects_alt_text_no_vacio", "btrim(alt_text) <> ''");
+                table.CheckConstraint("ck_featured_projects_alt_text_no_vacio", "alt_text IS NULL OR btrim(alt_text) <> ''");
+                table.CheckConstraint("ck_featured_projects_alt_text_si_hay_imagen", "image_id IS NULL OR alt_text IS NOT NULL");
                 table.CheckConstraint("ck_featured_projects_display_order", "display_order >= 0");
                 table.CheckConstraint("ck_featured_projects_title_no_vacio", "btrim(title) <> ''");
             });
@@ -182,7 +185,7 @@ public sealed class CmsInitial : Migration
             ALTER TABLE cms.banners
                 ADD CONSTRAINT fk_banners_image_desktop_id
                 FOREIGN KEY (image_desktop_id) REFERENCES core.media_assets (media_asset_id)
-                ON DELETE RESTRICT;
+                ON DELETE SET NULL;
             ALTER TABLE cms.banners
                 ADD CONSTRAINT fk_banners_image_mobile_id
                 FOREIGN KEY (image_mobile_id) REFERENCES core.media_assets (media_asset_id)
@@ -198,7 +201,7 @@ public sealed class CmsInitial : Migration
             ALTER TABLE cms.featured_projects
                 ADD CONSTRAINT fk_featured_projects_image_id
                 FOREIGN KEY (image_id) REFERENCES core.media_assets (media_asset_id)
-                ON DELETE RESTRICT;
+                ON DELETE SET NULL;
             """);
 
         // product_id queda deliberadamente sin FK: catalog es dependencia blanda.

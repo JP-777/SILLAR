@@ -10,7 +10,7 @@
 
 ## Decidido durante el encargo
 
-- **Reversible — referencias obligatorias a medios:** `RESTRICT` ante borrado físico; las opcionales usan `SET NULL`. CORE hace baja lógica, por lo que la regla normal de desactivación no depende de un borrado físico.
+- **Reversible — referencias obligatorias a medios (superada en el encargo 02):** la primera versión usó `RESTRICT` ante borrado físico. La corrección posterior hizo opcionales todas las imágenes y cambió las cinco FK a `SET NULL`.
 - **Reversible — retirada de la integración:** `cms_catalog_drop.sql` anula todas las referencias `product_id`, no solo las ya huérfanas. Así un `product_id` válido no se convierte en huérfano durante la desinstalación posterior de M01; los snapshots permanecen.
 - **Reversible — promoción sin imagen:** se conservó `alt_text` obligatorio porque el SPEC dice que las promociones tienen los mismos campos que banners salvo la imagen nullable. Es una tensión con la frase «puede ser solo texto» y debe revisarse antes del endpoint de creación.
 - **Reversible — formato de enlaces:** las rutas internas empiezan por `/` y las URL absolutas admitidas por el esquema son HTTP o HTTPS.
@@ -42,4 +42,43 @@ Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base
 
 - Endpoints y frontend: pertenecen a los pasos 3 y 4; este encargo entrega solo el esquema.
 - `Dockerfile`: M02 todavía no viajará en la imagen. Se deja intacto por instrucción de la ADR-019 y se resolverá al fusionar con el trabajo que ya lo modifica.
-- Revisar antes del paso 3 si `promotions.alt_text` debe ser nullable cuando `image_id` es null; no se cambió el SPEC ni se inventó una regla distinta en este encargo.
+- La obligatoriedad condicional de `alt_text` quedó resuelta en el encargo 02 antes del paso 3.
+
+---
+
+# Encargo 02 — correcciones previas al paso 3
+
+## Construido
+
+- Se corrigieron entidades, configuraciones, migración inicial escrita a mano y snapshot: todas las imágenes de CMS son nullable y las cinco FK hacia `core.media_assets` usan `ON DELETE SET NULL`.
+- `alt_text` pasó a ser nullable en banners, promociones y trabajos destacados. Cada tabla combina un `CHECK` que lo exige cuando hay imagen con otro que rechaza texto vacío si se proporciona.
+- Se creó `docs/modules/cms/DATOS.md` como diccionario físico y modelo ER del schema, siguiendo la estructura de la ficha de Catálogo.
+
+## Decidido durante el encargo
+
+- **Reversible — banner con dos imágenes:** cualquiera de `image_desktop_id` o `image_mobile_id` obliga a proporcionar `alt_text`; un banner sin ninguna imagen puede guardarlo nulo.
+- **Reversible — texto alternativo vacío:** la condición solicitada distingue `NULL`, pero se conservó además la prohibición previa de cadenas vacías. Así, hacer nullable el campo no permite sustituir la descripción accesible por espacios.
+- **Reversible — una sola migración:** se editó `20260820050000_CmsInitial` y su snapshot, sin crear una migración incremental, porque no existe una instalación desplegada que conservar.
+
+## Encontrado roto o discrepante
+
+- El SPEC corregido de JP todavía no está visible en ninguno de los dos worktrees. En `m02`, `docs/modules/SPEC.md` y `docs/modules/cms/SPEC.md` tienen el mismo hash y ambos conservan la versión antigua; en `main` no existe aún la carpeta `docs/modules/cms`. Por instrucción expresa no se editó ni se trasladó el contenido antiguo.
+- La línea base de API de M01 —contratos de Catálogo y contratos compartidos de autorización, CSRF y auditoría— continúa solo como cambios sin commit en `main`. No se copiaron ni reprodujeron; la API de M02 espera a que se integren mediante `origin/main`.
+
+## Verificación de las correcciones
+
+Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base `sillar_m02`, puerto host `55442`, volumen `sillar_m02_db_data`.
+
+- Se comprobó el objetivo y después se ejecutó `docker compose down -v`: solo desaparecieron el contenedor, red y volumen cuyo nombre empieza por `sillar_m02`. El clúster se recreó vacío.
+- CORE, Catálogo y CMS aplicaron sus migraciones. CMS creó el schema y la migración `20260820050000_CmsInitial` terminó correctamente.
+- Las ocho columnas observadas de imagen o texto alternativo fueron nullable y de tipo `uuid`/`text` según corresponde. Las cinco FK de medios mostraron `ON DELETE SET NULL`.
+- Sin imagen, las inserciones de banner, promoción y trabajo con `alt_text = NULL` terminaron con código 0.
+- Con imagen real y `alt_text = NULL`, las tres inserciones terminaron con código 1 y nombraron su `ck_*_alt_text_si_hay_imagen`.
+- Se insertó un medio real, se enlazó desde un banner y se borró desde CORE: el `DELETE` terminó con código 0 y el banner permaneció con `image_desktop_id = NULL`.
+- Todas las pruebas de base se ejecutaron en transacciones con `ROLLBACK`; las cinco tablas CMS terminaron con cero filas.
+- EF Core respondió que modelo y snapshot no tienen cambios pendientes. `dotnet build` terminó con 0 advertencias y 0 errores; `dotnet test` superó 187 de 187 pruebas.
+
+## Abierto
+
+- Trasladar y versionar sin editar el SPEC corregido cuando JP lo deje disponible.
+- Integrar la línea base confirmada de M01 desde `origin/main` y continuar con los endpoints del paso 3.
