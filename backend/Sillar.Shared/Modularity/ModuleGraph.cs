@@ -164,6 +164,33 @@ public static partial class ModuleGraph
     }
 
     /// <summary>
+    /// Códigos activos en la base que el binario no declara (ADR-019).
+    /// </summary>
+    /// <remarks>
+    /// Distinto de <see cref="ValidateActivations"/>: aquello comprueba
+    /// coherencia entre módulos que sí existen los dos lados. Esto comprueba
+    /// que lo que la base dice activo siga estando en el binario — si no, es
+    /// un despliegue incompleto, no una instalación degradada, y el host tiene
+    /// que abortar en vez de servir el producto sin ese módulo en silencio.
+    /// </remarks>
+    /// <param name="modules">Módulos que el binario trae.</param>
+    /// <param name="activeCodesInDatabase">
+    /// Códigos marcados activos en <c>core.module_activations</c>, tal como
+    /// estaban antes de sincronizar — sin filtrar todavía contra el binario.
+    /// </param>
+    public static IReadOnlyList<string> ActiveButUndeclared(
+        IReadOnlyList<IModule> modules,
+        IEnumerable<string> activeCodesInDatabase)
+    {
+        var declared = modules.Select(module => module.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return [.. activeCodesInDatabase
+            .Where(code => !declared.Contains(code))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Order(StringComparer.Ordinal)];
+    }
+
+    /// <summary>
     /// Devuelve los módulos activos que dependen de forma dura del indicado.
     /// </summary>
     /// <remarks>
