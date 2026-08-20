@@ -63,7 +63,7 @@ Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base
 ## Encontrado roto o discrepante
 
 - El SPEC corregido de JP todavía no está visible en ninguno de los dos worktrees. En `m02`, `docs/modules/SPEC.md` y `docs/modules/cms/SPEC.md` tienen el mismo hash y ambos conservan la versión antigua; en `main` no existe aún la carpeta `docs/modules/cms`. Por instrucción expresa no se editó ni se trasladó el contenido antiguo.
-- La línea base de API de M01 —contratos de Catálogo y contratos compartidos de autorización, CSRF y auditoría— continúa solo como cambios sin commit en `main`. No se copiaron ni reprodujeron; la API de M02 espera a que se integren mediante `origin/main`.
+- `origin/main` publicó y la rama `m02` integró el commit `ccf939f` con `Sillar.Modules.Catalog.Contracts` e `ISchemaExamples`. El contrato publicado resuelve variantes, pero todavía no expone el slug ni la imagen principal del producto que M02 debe copiar al destacar. Los contratos compartidos de autorización, CSRF y auditoría continúan solo como cambios sin commit en el worktree de M01. No se copiaron ni reprodujeron.
 
 ## Verificación de las correcciones
 
@@ -81,4 +81,4 @@ Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base
 ## Abierto
 
 - Trasladar y versionar sin editar el SPEC corregido cuando JP lo deje disponible.
-- Integrar la línea base confirmada de M01 desde `origin/main` y continuar con los endpoints del paso 3.
+- Esperar el contrato de Catálogo que exponga nombre, slug e imagen principal del producto, y la publicación de los contratos compartidos de administración; después continuar con los endpoints del paso 3.
