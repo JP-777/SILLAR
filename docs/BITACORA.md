@@ -275,6 +275,16 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
   prueba inestable. Censadas 73 aserciones de ausencia: **49 tienen ancla positiva a menos de seis
   líneas**; de las 24 restantes, la mayoría son un cajón que la prueba acaba de rellenar —anclado
   por la propia interacción— y **media docena son las de verdad**, sobre contenido asíncrono.
+- **Una ruta absoluta en un documento no falla en otra máquina: no encuentra nada.** Y no
+  encontrar nada se parece demasiado a que no haya nada. El diagrama de `PROTOCOLO-DISENO.md`
+  llevaba `C:\` dentro, cuando lo que fija es **la relación** —dos carpetas hermanas—, no dónde
+  viven. Es la misma familia que el `.env` que carga en silencio: **algo que solo funciona aquí y
+  no lo dice**.
+- **Un clasificador automático da falsos positivos en las dos direcciones, y hay que decirlo en
+  las dos.** El mío marcó 24 aserciones sin ancla; al leerlas, la mayoría eran cajones anclados
+  por la propia interacción y una —`configuracion:73`— estaba anclada con `toBeEnabled()`, que
+  mi expresión no reconocía. Es fácil corregir el clasificador cuando exagera el trabajo; hay que
+  corregirlo igual cuando lo esconde.
 - **Un arreglo que parece correcto también hay que mirarlo por fuera.** No basta con que la causa
   encontrada fuera real: hay que comprobar que **lo que sale ahora** es lo que se quería. El
   arreglo del 401 tenía la causa bien —«quién soy» pedía autorización— y seguía sin funcionar,
@@ -519,7 +529,7 @@ esto es lo único que las sostiene.
 | **Falta `E2E_KEEP_STACK`** | Cuando la suite de `e2e/` falla, el stack se desmonta y hay que reproducir el fallo desde cero para mirarlo. Una variable que conserve la base levantada al fallar |
 | **`:focus-visible` en diálogo, con clic de ratón** | Comprobar en un navegador de verdad si el anillo nativo se pinta cuando el foco cae en un elemento **distinto** del que se clicó. De las que no se resuelven leyendo |
 
-**Bibliotecas evaluadas y descartadas** (18 ago, informes en `C:\SILLAR-DISENO\investigacion\` — **fuera del repositorio**, ver `PROTOCOLO-DISENO.md` §7). Se anotan aquí para no volver a investigarlas sin tener que abrir esa carpeta:
+**Bibliotecas evaluadas y descartadas** (18 ago, informes en `SILLAR-DISENO/investigacion/`, carpeta hermana de ésta — **fuera del repositorio**, ver `PROTOCOLO-DISENO.md` §7). Se anotan aquí para no volver a investigarlas sin tener que abrir esa carpeta:
 
 | | Por qué no |
 |---|---|
@@ -856,3 +866,14 @@ la regla del segundo caso sigue en pie y M02 va a ser el primer caso. Queda escr
 **Una puerta que nunca se pone roja no está vigilando nada** — es la misma vacuidad de las
 aserciones, un piso más arriba. Este registro queda escrito para el día que lleve dos semanas en
 verde: entonces dirá si es que ya no hay fallos o si es que dejó de mirar.
+
+**21 ago · la pared de sillares y la puerta de animaciones: no existen en este repositorio.**
+Buscadas por nombre en `frontend/src`, `e2e/`, `docs/` y **en todo el historial**
+(`git log -S "sillares"` no devuelve nada). No es que estén sin verificar: es que nunca entraron.
+Vienen de otra conversación, igual que la doctrina de animaciones, que también hubo que escribir
+desde cero cuando se pidió.
+
+**Lo que sí existe y sí corre**: el proyecto `chromium-movimiento-reducido`, 9 pruebas sobre
+`transversal.spec.ts`, en **cada** corrida de la puerta. Y afirma algo: quitando
+`animation: none` de la regla global (`base.css:87`), se pone roja con el motivo escrito —«el
+anillo sigue animándose con movimiento reducido: 0.7s»—. Restaurada y verde.

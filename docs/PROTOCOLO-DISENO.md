@@ -164,14 +164,19 @@ no se aplica: se plantea, se decide, y si procede se enmienda el SPEC y se regis
 El equipo de diseño trabaja en una **carpeta aparte, fuera de este repositorio**:
 
 ```
-C:\
-├── SILLAR\              ← producto. Es el repositorio
-└── SILLAR-DISENO\       ← diseño. Design, investigación y auxiliar
-    ├── referencias\     ← sitios, capturas y bibliotecas que recopila JP
-    ├── investigacion\   ← qué hace cada biblioteca, qué cuesta, alternativas
-    ├── propuestas\      ← lo que sale de Claude Design, por módulo
-    └── ENTREGA\         ← lo único que cruza
+<donde-trabajes>/
+├── SILLAR/              ← producto. Es el repositorio
+└── SILLAR-DISENO/       ← diseño. Design, investigación y auxiliar
+    ├── referencias/     ← sitios, capturas y bibliotecas que recopila JP
+    ├── investigacion/   ← qué hace cada biblioteca, qué cuesta, alternativas
+    ├── propuestas/      ← lo que sale de Claude Design, por módulo
+    └── ENTREGA/         ← lo único que cruza
 ```
+
+**Sin letra de unidad a propósito.** Lo que fija este dibujo es **la relación** —hermanas, al
+mismo nivel—, no dónde vive la carpeta: el desarrollo alterna entre Windows y Arch Linux
+(ADR-006), y una ruta absoluta escrita aquí **no falla** en otra máquina, que sería lo útil:
+sencillamente no encuentra nada.
 
 **Hermanas, no anidadas.** Estuvo dentro de `SILLAR/` hasta el 18 de agosto, sin rastrear y
 sin ignorar: bastaba un `git add -A` para meter en el repositorio del producto los bundles que
