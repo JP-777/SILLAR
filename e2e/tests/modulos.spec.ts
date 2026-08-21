@@ -58,6 +58,12 @@ test('CORE aparece sin interruptor, no con uno deshabilitado', async ({ page }) 
   await loginAsE2eAdmin(page);
   await page.goto('/admin/modulos');
 
+  // **El contraste va primero**, y no solo porque explique mejor: sin él, la
+  // ausencia del interruptor de CORE se cumple sola en una pantalla que aún no
+  // ha pintado sus tarjetas. Que otra tarjeta sí lo tenga es la prueba de que
+  // hay tarjetas que mirar.
+  await expect(page.locator('#modulo-demo_catalog').getByRole('switch')).toBeVisible();
+
   // No es "hay un interruptor, pero deshabilitado": la tarjeta de CORE no
   // monta ningún elemento con role="switch". Es una operación que no existe,
   // no una que está bloqueada.
@@ -210,8 +216,11 @@ test('El 409 al desactivar nombra quién bloquea y no reinicia nada', async ({ p
 
   // No reinicia nada: nunca aparece el estado de reconexión, y la tarjeta
   // sigue mostrando el módulo activo, no a medio camino.
-  await expect(page.getByRole('alertdialog', { name: 'Aplicando el cambio' })).toHaveCount(0);
+  // Primero lo que sí tiene que estar: la tarjeta sigue diciendo que el módulo
+  // está activo. Sin eso, «no apareció el estado de reconexión» se cumple sola
+  // mientras la pantalla no haya pintado nada.
   await expect(page.locator('#modulo-demo_catalog')).toContainText('Activo');
+  await expect(page.getByRole('alertdialog', { name: 'Aplicando el cambio' })).toHaveCount(0);
 
   await page.unroute('**/api/admin/modules');
 });

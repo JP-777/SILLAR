@@ -50,6 +50,11 @@ test('El momento: los valores se quedan, se anuncia con palabras y el cursor va 
 
   const ficha = await abrirFicha(page, 'Plumón de pizarra', '4.90', 'PLU-ART-PG');
 
+  // **Con la ficha ya cargada**: que el drawer sea visible no dice que sus
+  // campos hayan llegado, y sobre una ficha en blanco «no aparece la palabra
+  // variante» se cumple sola.
+  await expect(ficha.getByLabel('Código', { exact: true })).toHaveValue('PLU-ART-PG');
+
   // Antes de pulsar, la palabra no existe.
   await expect(ficha).not.toContainText(/variante/i);
 
@@ -333,6 +338,12 @@ test('A 390 px la tabla es una tarjeta por presentación, sin perder campos ni a
 
   // 1 · Deja de ser tabla: la cabecera de columnas no se pinta, porque cada
   //     celda se titula sola.
+  //
+  //     **Primero que exista, y luego que esté escondida.** `toBeHidden()` se
+  //     cumple también con el elemento ausente del DOM —comprobado—, así que
+  //     sin esto la afirmación pasaría igual si la tabla no se hubiera
+  //     renderizado nunca, que es justo el fallo que buscaría.
+  await expect(ficha.locator('.cat-variants__row--head')).toBeAttached();
   await expect(ficha.locator('.cat-variants__row--head')).toBeHidden();
 
   // 2 · **No se pierde ningún campo.** Los cinco de cada presentación siguen

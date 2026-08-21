@@ -275,6 +275,13 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
   prueba inestable. Censadas 73 aserciones de ausencia: **49 tienen ancla positiva a menos de seis
   líneas**; de las 24 restantes, la mayoría son un cajón que la prueba acaba de rellenar —anclado
   por la propia interacción— y **media docena son las de verdad**, sobre contenido asíncrono.
+- **Un arreglo que parece correcto también hay que mirarlo por fuera.** No basta con que la causa
+  encontrada fuera real: hay que comprobar que **lo que sale ahora** es lo que se quería. El
+  arreglo del 401 tenía la causa bien —«quién soy» pedía autorización— y seguía sin funcionar,
+  porque `Results.Ok(null)` y `Results.Json(null)` **no llegan a escribir el `null`**: los dos
+  mandan `Content-Length: 0`, el cliente lo recibía como `undefined` y seguía pidiendo el token
+  CSRF. Se vio con `curl -i`, no leyendo el código. **La firma dice qué devuelve el método; la
+  cabecera dice qué recibe quien lo lee.**
 - **No hay ancla para «no hay error»: lo que se puede esperar es el éxito.** Es la salida general
   de toda la familia de aserciones vacías. Una negación no tiene a qué agarrarse —cualquier
   instante antes de que la cosa aparezca la cumple— mientras que **el desenlace bueno sí se puede
