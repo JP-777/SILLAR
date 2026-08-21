@@ -43,4 +43,8 @@ public sealed class ContratosHttpTests
             Assert.Null(request.GetProperty("DisplayOrder"));
         }
     }
+
+    [Fact]
+    public void Administracion_de_trabajos_distingue_los_incompletos() =>
+        Assert.NotNull(typeof(FeaturedProjectAdminResponse).GetProperty("IsComplete"));
 }

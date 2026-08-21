@@ -5,8 +5,8 @@ public sealed record FeaturedProjectResponse(
     int Id,
     string Title,
     string? Description,
-    string? ImageUrl,
-    string? AltText);
+    string ImageUrl,
+    string AltText);
 
 /// <summary>Un trabajo visto desde administración.</summary>
 public sealed record FeaturedProjectAdminResponse(
@@ -17,7 +17,8 @@ public sealed record FeaturedProjectAdminResponse(
     string? ImageUrl,
     string? AltText,
     int DisplayOrder,
-    bool IsActive);
+    bool IsActive,
+    bool IsComplete);
 
 /// <summary>Crea un trabajo destacado.</summary>
 public sealed record CreateFeaturedProjectRequest(

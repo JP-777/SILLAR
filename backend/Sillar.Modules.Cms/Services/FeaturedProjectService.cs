@@ -16,17 +16,29 @@ internal sealed class FeaturedProjectService(
         CancellationToken cancellationToken)
     {
         var projects = await database.FeaturedProjects.AsNoTracking()
-            .Where(project => project.IsActive)
+            .Where(project => project.IsActive && project.ImageId != null)
             .OrderBy(project => project.DisplayOrder)
             .ThenBy(project => project.Id)
             .ToListAsync(cancellationToken);
 
-        return [.. projects.Select(project => new FeaturedProjectResponse(
-            project.Id,
-            project.Title,
-            project.Description,
-            MediaUrl(project.ImageId),
-            project.AltText))];
+        var published = new List<FeaturedProjectResponse>(projects.Count);
+        foreach (var project in projects)
+        {
+            var imageUrl = MediaUrl(project.ImageId);
+            if (!FeaturedProjectRules.IsComplete(project, imageUrl))
+            {
+                continue;
+            }
+
+            published.Add(new FeaturedProjectResponse(
+                project.Id,
+                project.Title,
+                project.Description,
+                imageUrl!,
+                project.AltText!));
+        }
+
+        return published;
     }
 
     internal async Task<IReadOnlyList<FeaturedProjectAdminResponse>> ListAsync(
@@ -155,15 +167,20 @@ internal sealed class FeaturedProjectService(
 
     private string? MediaUrl(Guid? id) => id is { } value ? media.GetPublicUrl(value) : null;
 
-    private FeaturedProjectAdminResponse Project(FeaturedProject project) => new(
-        project.Id,
-        project.Title,
-        project.Description,
-        project.ImageId,
-        MediaUrl(project.ImageId),
-        project.AltText,
-        project.DisplayOrder,
-        project.IsActive);
+    private FeaturedProjectAdminResponse Project(FeaturedProject project)
+    {
+        var imageUrl = MediaUrl(project.ImageId);
+        return new FeaturedProjectAdminResponse(
+            project.Id,
+            project.Title,
+            project.Description,
+            project.ImageId,
+            imageUrl,
+            project.AltText,
+            project.DisplayOrder,
+            project.IsActive,
+            FeaturedProjectRules.IsComplete(project, imageUrl));
+    }
 
     private static CmsOperation<FeaturedProjectAdminResponse> Invalid(string error)
         => new(CmsOutcome.Invalid, error);

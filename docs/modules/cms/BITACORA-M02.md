@@ -164,3 +164,42 @@ Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base
 
 - CMS queda inactivo en la base exclusiva; su schema y sus datos de verificación permanecen. Catálogo queda inactivo y desinstalado como resultado de la casilla que exigía comprobar su desinstalación.
 - Falta que coordinación publique en M01 el contrato de selección descrito por el SPEC. Una vez integrado, se montan búsqueda, alta y reenlace de destacados y se repite Swagger/HTTP para cerrar el paso 3.
+
+---
+
+## Encargo sustitutivo — cierre de lo implementable
+
+### Línea base y corrección
+
+- `git fetch origin` confirmó que `origin/main` sigue en `e0e96c6`, ya contenido en la rama por el merge `03c47fd`; no hubo un segundo merge ni conflictos nuevos.
+- Se corrigió la publicación de trabajos destacados: una fila activa solo sale en público cuando conserva una imagen resoluble y texto alternativo. Administración conserva la fila y devuelve `isComplete=false` cuando falta cualquiera de esos elementos.
+- La regla de completitud vive en `FeaturedProjectRules` y la respuesta pública hace no nulos `imageUrl` y `altText`, porque una fila incompleta ya no puede alcanzar ese contrato.
+- Se añadieron tres pruebas de lógica con nombres en español para trabajo sin imagen, medio inactivo y trabajo completo, más una prueba de contrato para el indicador administrativo.
+
+### Decidido durante este cierre
+
+- **Reversible — completitud del trabajo como regla de aplicación:** se mantuvo nullable la imagen en el esquema y se concentró la publicabilidad en una regla pura. Permite conservar y editar borradores sin imagen sin debilitar el contrato público.
+- **Reversible — contrato público estricto:** `FeaturedProjectResponse.ImageUrl` y `AltText` son no nulos. Si en el futuro se decide publicar una tarjeta sin imagen, el cambio queda localizado en la regla, el servicio y ese DTO.
+- **Reversible — selector de productos ausente:** se mantienen fuera búsqueda, alta y reenlace administrativo de destacados. No se reprodujo `ProductPickerItem`, no se amplió `ItemSnapshot` y no se tocó Catálogo.
+
+### Verificación adicional observada
+
+Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base `sillar_m02`, puerto host `55442`; host HTTP en `127.0.0.1:5082`.
+
+- **Trabajo incompleto:** `POST /api/admin/cms/featured-projects` como `editor` devolvió 201 para el ID 4 con `isComplete=false`. El listado administrativo devolvió ese ID con el mismo indicador; `GET /api/cms/featured-projects` devolvió 200 y no contuvo el ID 4.
+- **Enlace inválido:** crear un banner con `linkUrl=/destino` y `linkLabel=null` devolvió 400 con «Escribe el texto que se mostrará en el enlace.». La misma escritura autenticada sin `X-CSRF-Token` devolvió 403.
+- **Auditoría de ciclo completo:** el trabajo 4 se creó, editó y desactivó por HTTP con estados 201, 200 y 200. La consulta posterior de `core.audit_log` devolvió exactamente las acciones `create`, `update` y `delete` para `module_code=cms`, `entity_type=featured_project`, `entity_id=4`. Una baja adicional de banner como `super_admin` devolvió 200 y dejó el conjunto observable de auditoría de banners en cinco `create`, dos `update` y un `delete`; promociones, trabajos y redes también conservaron las tres acciones en el registro.
+- **Dependencia blanda:** con Catálogo inactivo y sin su schema, `GET /api/cms/featured-products` devolvió 200 y `[]`.
+- **Swagger:** en entorno Development devolvió 200, 34 operaciones CMS y cero operaciones sin resumen. Las tres operaciones que faltan para el conjunto del SPEC siguen siendo búsqueda, alta y reenlace dependientes del selector de Catálogo no publicado.
+- **M02 inactivo:** después de desactivar y reiniciar, el host declaró solo CORE activo, sin avisos. Las cinco rutas públicas CMS devolvieron 404 y `/api/capabilities` devolvió solo `core`. La consulta final de activaciones dejó `core=true`, `catalog=false` y `cms=false`.
+- **Cierre técnico:** EF Core respondió «No changes have been made to the model since the last migration». La compilación Release terminó con 0 advertencias y 0 errores. Se superaron 258/258 pruebas: 132 CORE, 54 Shared, 41 Catálogo y 31 CMS.
+
+### Incidencia durante la verificación
+
+- En un primer reinicio se escribió por error `ConnectionStrings__DefaultConnection` en vez de la clave correcta `ConnectionStrings__Default`. El host alcanzó la conexión predeterminada del entorno, descubrió CMS y sincronizó su entrada como inactiva; se detuvo inmediatamente y no se envió ninguna petición de negocio. No se intentó revertir esa base porque está fuera del stack autorizado. Toda verificación y toda mutación posteriores usaron explícitamente `127.0.0.1:55442/sillar_m02`.
+
+### Pendiente y congelado
+
+- `Sillar.Modules.Catalog.Contracts` todavía no publica `ProductPickerItem` ni su búsqueda. El paso 3 queda implementado y verificado salvo las tres rutas administrativas que dependen de ese contrato.
+- El `Dockerfile` recibido de `main` sigue sin CMS. Permanece intacto por instrucción y queda pendiente de la fusión final; mientras CMS esté inactivo, ADR-019 evita un arranque inconsistente.
+- Frontend, E2E y paso 4 no se tocaron.
