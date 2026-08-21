@@ -285,6 +285,26 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
   por la propia interacción y una —`configuracion:73`— estaba anclada con `toBeEnabled()`, que
   mi expresión no reconocía. Es fácil corregir el clasificador cuando exagera el trabajo; hay que
   corregirlo igual cuando lo esconde.
+- **Un documento desactualizado no es neutral: fabrica errores.** El `ROADMAP_MODULAR.md` decía
+  que la búsqueda de M01 iba con `pg_trgm` y `unaccent`. Es falso —va por `to_tsvector('spanish')`
+  sobre índice GIN, porque el nombre lleva colación no determinista y PostgreSQL no admite esas
+  operaciones sobre ella— y la cadena completa es la que importa: **estaba escrito, alguien lo
+  leyó, lo repitió en un encargo, y hubo que corregir el mecanismo antes de implementar el
+  selector de productos.** El argumento de que «ese documento no lo lee nadie» es falso por
+  construcción: si de verdad no lo leyera nadie, no habría llegado a un encargo.
+- **El momento que tiene tiempo no tiene navegador; el momento que tiene navegador no tiene
+  tiempo.** Salió al buscar dónde vivía una animación de marca, y vale para cualquier cosa que
+  quiera acompañar una espera. Medido:
+
+  | Momento | Tiempo | Quién lo ve | Fases nombrables |
+  |---|---|---|---|
+  | Inicio de sesión | **903 ms** | Todo el mundo, cada día | Por debajo del umbral: no debe verse nada |
+  | Reinicio por activación de módulo | 10–90 s | Casi nadie, y solo quien administra | El navegador no puede preguntar: no hay servidor con quien hablar |
+  | Instalación | **17,2 s** | **Nadie: todavía no hay navegador** | Reales, pero ocurren antes de que exista interfaz |
+
+  La instalación parecía la buena hasta que se lee cómo ocurre: **las migraciones crean la base que
+  la API necesita para arrancar, y la API es quien serviría la pantalla** (`ModuleBootstrapper.cs:138`
+  aborta sin base). Huevo y gallina. Moverlas dentro del arranque contradiría la ADR-009.
 - **Un arreglo que parece correcto también hay que mirarlo por fuera.** No basta con que la causa
   encontrada fuera real: hay que comprobar que **lo que sale ahora** es lo que se quería. El
   arreglo del 401 tenía la causa bien —«quién soy» pedía autorización— y seguía sin funcionar,
