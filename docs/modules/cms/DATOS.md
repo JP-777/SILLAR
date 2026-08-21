@@ -77,11 +77,15 @@ El historial de EF Core vive en `cms.__migrations`, separado del historial de CO
 | `product_name` | `text` | no | Snapshot; `ck_featured_products_product_name_no_vacio` |
 | `product_slug` | `text` | sí | Snapshot; `ck_featured_products_product_slug_no_vacio` si está presente |
 | `image_id` | `uuid` | sí | Snapshot; `fk_featured_products_image_id` → `core.media_assets.media_asset_id`, `ON DELETE SET NULL` |
+| `product_price` | `numeric(10,2)` | sí | Snapshot; `NULL` = a consultar, `0` = gratis, valor positivo = importe; `ck_featured_products_product_price` |
+| `product_price_varies` | `boolean` | no | Snapshot; indica que las presentaciones tienen precios distintos |
+| `product_category` | `text` | sí | Categoría efectiva; `NULL` cuando el producto no tiene ninguna; no vacía si está presente |
+| `product_is_public` | `boolean` | no | Snapshot del estado público de M01; falso impide publicar el destacado |
 | `display_order` | `integer` | no | `ck_featured_products_display_order` (`>= 0`), default `0` |
 | `starts_at` | `timestamptz` | sí | `ck_featured_products_vigencia` |
 | `ends_at` | `timestamptz` | sí | posterior a `starts_at` cuando ambas existen |
 
-`product_name`, `product_slug` e `image_id` son el snapshot editorial. El producto puede quedar sin enlace vivo y conservar esos datos.
+`product_name`, `product_slug`, `image_id`, precio, categoría y estado público forman el snapshot editorial. El producto puede quedar sin enlace vivo y conservar esos datos.
 
 **Integración opcional:** `database/integrations/cms_catalog.sql` añade `fk_featured_products_product_id` → `catalog.products.id` con `ON DELETE SET NULL` cuando ambos módulos están instalados. La migración inicial de CMS no contiene esa FK.
 
@@ -143,6 +147,10 @@ erDiagram
         text product_name
         text product_slug
         uuid image_id FK
+        numeric product_price
+        boolean product_price_varies
+        text product_category
+        boolean product_is_public
         integer display_order
     }
     featured_projects {

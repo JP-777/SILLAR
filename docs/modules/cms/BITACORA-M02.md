@@ -203,3 +203,48 @@ Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base
 - `Sillar.Modules.Catalog.Contracts` todavía no publica `ProductPickerItem` ni su búsqueda. El paso 3 queda implementado y verificado salvo las tres rutas administrativas que dependen de ese contrato.
 - El `Dockerfile` recibido de `main` sigue sin CMS. Permanece intacto por instrucción y queda pendiente de la fusión final; mientras CMS esté inactivo, ADR-019 evita un arranque inconsistente.
 - Frontend, E2E y paso 4 no se tocaron.
+
+---
+
+## Encargo 03 — ampliación del snapshot de destacados
+
+### Blindaje del entorno local
+
+- La configuración ignorada del worktree quedó aislada en el proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base `sillar_m02` y puerto host `55442`. Se corrigieron `.env` y `backend/Sillar.Api/appsettings.Development.json`; ninguno se versiona porque ambos pueden contener credenciales locales.
+- Se detuvo exclusivamente `sillar_m02_db`, se eliminó del proceso `ConnectionStrings__Default` y se arrancó el host con la variable errónea `ConnectionStrings__DefaultConnection`. El proceso descubrió los tres ensamblados, abortó con «No se pudo conectar con PostgreSQL» y no alcanzó la fase que sincroniza módulos. Así se observó que el fallback apunta al puerto propio detenido y no a una base disponible fuera del worktree.
+
+### Construido
+
+- `cms.featured_products` incorpora `product_price numeric(10,2) NULL`, `product_price_varies boolean NOT NULL`, `product_category text NULL` y `product_is_public boolean NOT NULL`. Se editó la migración inicial, su snapshot EF, entidad, configuración y `DATOS.md`; no se añadió una migración incremental.
+- `ck_featured_products_product_price` acepta precio nulo o no negativo y `ck_featured_products_product_category_no_vacia` permite categoría nula pero no texto vacío.
+- El precio permanece como `decimal?` en los DTO: `null` significa a consultar, `0` significa gratis y un valor positivo es el importe. `productPriceVaries` viaja por separado y no existe ningún campo de precio formateado.
+- El listado público combina la vigencia compartida con una expresión que exige `product_id` vivo y `product_is_public=true`. Administración no aplica ese filtro.
+- Alta y reenlace internos ya reciben y sobrescriben los cuatro campos nuevos junto con nombre, slug e imagen; siguen sin montarse por HTTP hasta que M01 publique el selector.
+
+### Decidido durante este encargo
+
+- **Reversible — precio sin estado textual adicional:** se conservó `decimal?` de extremo a extremo. No se añadió un enum ni una etiqueta porque los tres estados ya se representan sin pérdida y la presentación pertenece a la interfaz.
+- **Reversible — booleanos sin default SQL:** `product_price_varies` y `product_is_public` son obligatorios y cada snapshot debe escribirlos. Esto evita que una carga incompleta publique por accidente; EF escribe sus valores explícitos.
+- **Reversible — categoría efectiva opcional:** `NULL` es un estado normal; si hay texto, el modelo y PostgreSQL rechazan que esté vacío.
+- **Reversible — filtro traducible por EF:** la condición de producto enlazado y público vive en una expresión reutilizable por la consulta y las pruebas, separada de la vigencia compartida.
+
+### Verificación observada
+
+- **Fallo seguro de configuración:** con la base propia detenida y la variable mal escrita, el host terminó antes de sincronizar. Al volver a levantar Compose, el recurso resuelto siguió siendo `sillar_m02_db` en `55442`, base `sillar_m02`.
+- **Migración desde cero:** se verificaron los destinos exactos por etiquetas y se ejecutó `docker compose down -v`; solo desaparecieron `sillar_m02_db`, `sillar_m02_default` y `sillar_m02_db_data`. CORE, Catálogo y CMS aplicaron sus migraciones sobre el volumen nuevo.
+- **Columnas reales:** PostgreSQL devolvió `numeric(10,2) NULL`, `boolean NOT NULL`, `text NULL` y `boolean NOT NULL` para los cuatro campos nuevos. Una inserción con `product_price=-0.01` terminó con código 1, nombró `ck_featured_products_product_price` y dejó cero filas con ese nombre.
+- **Desinstalación:** antes del drop existían exactamente 10 tablas CORE, 7 de Catálogo y 6 CMS. `99_drop.sql` dejó las mismas 10 y 7 tablas, eliminó el schema CMS y luego la migración inicial se reaplicó correctamente.
+- **Publicación:** con Catálogo y CMS activos se insertaron cuatro snapshots vigentes. El ID 2 con `product_is_public=false` apareció en administración y no en público. Como control, al cambiarlo temporalmente a `true` apareció en público; al devolverlo a `false` volvió a desaparecer. Ambas peticiones devolvieron 200.
+- **Tres estados de precio:** la respuesta pública observada devolvió `productPrice:null`, `productPrice:0.00` y `productPrice:8.00`; el último llevaba `productPriceVaries:true`. Los dos primeros productos tenían `productCategory:null` y la respuesta terminó en 200.
+- **Sin precio formateado:** la respuesta HTTP solo incluyó `productPrice` numérico nullable y `productPriceVaries`; la inspección de propiedades no encontró `PriceText`, `Formatted` ni `Label`.
+- **Pruebas:** la primera parametrización decimal falló dos casos porque xUnit no convierte `InlineData` entero a `decimal?`; se sustituyó por literales decimales dentro de una prueba. La corrida posterior superó 264/264 pruebas: 132 CORE, 54 Shared, 41 Catálogo y 37 CMS. La compilación terminó con 0 advertencias y 0 errores, y EF informó que modelo y snapshot no tienen cambios pendientes.
+- **Estado final de la base:** después de las verificaciones, CMS y Catálogo quedaron inactivos; CORE quedó activo.
+
+### Discrepancias y pendiente
+
+- El `docs/modules/cms/SPEC.md` nuevo llegó al worktree durante la verificación. Se conservó sin editar, con SHA-256 `BCE954153BE4AAA68371FAA275A2661B2168D0416695672C2DAAAD29469A8891`; ya documenta los cuatro campos, los dos eventos y la reconciliación manual.
+- El SPEC entregado conserva dos discrepancias internas que coordinación debe resolver: el ejemplo de `ProductPickerItem` todavía solo lleva identificador, nombre, slug e imagen aunque el snapshot nuevo necesita también precio, variación, categoría y publicación; además repite dos veces el párrafo «M02 sería el primer consumidor del bus interno». No se corrigió el archivo mantenido por JP.
+- El encargo llama a `product_is_public` un renombrado de `product_is_published`, pero el padre `ac9c64d` no contenía ninguna propiedad ni columna con ese nombre anterior. Como no hay despliegues y se edita la migración inicial, se creó directamente `product_is_public`; no se inventó una operación de renombrado sobre una columna inexistente.
+- `git fetch origin` dejó `origin/main` en `e0e96c6`; `Sillar.Modules.Catalog.Contracts` todavía no publica `ProductPickerItem`, `BuscarParaSeleccionAsync` ni `ObtenerParaSeleccionAsync`.
+- Quedan fuera búsqueda, alta, reenlace y reconciliación HTTP, además de los handlers de `ProductoActualizado` y `ProductoDesactivado`. No se suscribió a eventos finos de variantes ni se tocó Catálogo.
+- `Dockerfile`, frontend, E2E, ADR y paso 4 permanecen congelados.

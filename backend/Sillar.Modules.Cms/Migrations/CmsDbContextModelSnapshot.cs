@@ -81,14 +81,20 @@ internal sealed class CmsDbContextModelSnapshot : ModelSnapshot
             b.Property<int>("DisplayOrder").HasColumnType("integer").HasDefaultValue(0).HasColumnName("display_order");
             b.Property<DateTimeOffset?>("EndsAt").HasColumnType("timestamptz").HasColumnName("ends_at");
             b.Property<Guid?>("ImageId").HasColumnType("uuid").HasColumnName("image_id");
+            b.Property<string>("ProductCategory").HasColumnType("text").HasColumnName("product_category");
             b.Property<Guid?>("ProductId").HasColumnType("uuid").HasColumnName("product_id");
+            b.Property<bool>("ProductIsPublic").HasColumnType("boolean").HasColumnName("product_is_public");
             b.Property<string>("ProductName").IsRequired().HasColumnType("text").HasColumnName("product_name");
+            b.Property<decimal?>("ProductPrice").HasPrecision(10, 2).HasColumnType("numeric(10,2)").HasColumnName("product_price");
+            b.Property<bool>("ProductPriceVaries").HasColumnType("boolean").HasColumnName("product_price_varies");
             b.Property<string>("ProductSlug").HasColumnType("text").HasColumnName("product_slug");
             b.Property<DateTimeOffset?>("StartsAt").HasColumnType("timestamptz").HasColumnName("starts_at");
             b.ToTable("featured_products", "cms", t =>
             {
                 t.HasCheckConstraint("ck_featured_products_display_order", "display_order >= 0");
+                t.HasCheckConstraint("ck_featured_products_product_category_no_vacia", "product_category IS NULL OR btrim(product_category) <> ''");
                 t.HasCheckConstraint("ck_featured_products_product_name_no_vacio", "btrim(product_name) <> ''");
+                t.HasCheckConstraint("ck_featured_products_product_price", "product_price IS NULL OR product_price >= 0");
                 t.HasCheckConstraint("ck_featured_products_product_slug_no_vacio", "product_slug IS NULL OR btrim(product_slug) <> ''");
                 t.HasCheckConstraint("ck_featured_products_vigencia", "starts_at IS NULL OR ends_at IS NULL OR ends_at > starts_at");
             });

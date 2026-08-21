@@ -16,7 +16,7 @@ public static class FeaturedProductEndpoints
     {
         endpoints.MapGet("/api/cms/featured-products", ListPublic)
             .WithTags("Contenido — Productos destacados").WithName("ListPublicCmsFeaturedProducts")
-            .WithSummary("Productos destacados vigentes; sin Catálogo activo devuelve una lista vacía.")
+            .WithSummary("Productos destacados vigentes y públicos; sin Catálogo activo devuelve una lista vacía.")
             .Produces<IReadOnlyList<FeaturedProductResponse>>();
 
         var admin = endpoints.MapGroup("/api/admin/cms/featured-products")
@@ -30,7 +30,7 @@ public static class FeaturedProductEndpoints
             .WithSummary("Obtiene un producto destacado para editar.")
             .Produces<FeaturedProductAdminResponse>().Produces(StatusCodes.Status404NotFound);
         admin.MapPut("/{id:int}", Update).WithName("UpdateCmsFeaturedProduct")
-            .WithSummary("Modifica solo la vigencia; nunca refresca el snapshot automáticamente.")
+            .WithSummary("Modifica solo la vigencia; este endpoint no altera el snapshot.")
             .Produces<FeaturedProductAdminResponse>().ProducesValidationProblem().Produces(StatusCodes.Status404NotFound);
         admin.MapPut("/order", Reorder).WithName("ReorderCmsFeaturedProducts")
             .WithSummary("Sustituye atómicamente el orden completo de los productos destacados.")
@@ -42,7 +42,7 @@ public static class FeaturedProductEndpoints
         return endpoints;
     }
 
-    /// <summary>Lista snapshots vigentes solo cuando el contrato de Catálogo está disponible.</summary>
+    /// <summary>Lista snapshots vigentes y públicos solo cuando el contrato de Catálogo está disponible.</summary>
     private static async Task<IResult> ListPublic(
         IServiceProvider services,
         FeaturedProductService service,

@@ -143,6 +143,10 @@ La selección curada de la decisión 4.2.
 | `product_id` | `uuid` | sí | **sin FK en el script base** | Dependencia blanda hacia M01 |
 | `product_name` | `text` | no | | **Snapshot** del nombre al destacarlo |
 | `product_slug` | `text` | sí | | **Snapshot**, para el enlace |
+| `product_price` | `numeric(10,2)` | sí | | **Snapshot**. Nulo = a consultar · **`0` = gratis** · `>0` = el precio |
+| `product_category` | `text` | sí | | **Snapshot** de la categoría **efectiva**, para la tarjeta sin foto. Nula si el producto no tiene ninguna |
+| `product_price_varies` | `boolean` | no | | Si las presentaciones cuestan distinto → «Desde» |
+| `product_is_public` | `boolean` | no | | **Snapshot**. Si es falso, no se publica |
 | `image_id` | `uuid` | sí | FK → `core.media_assets` | Imagen elegida para la portada |
 | `display_order` | `integer` | no | | `>= 0` |
 | `starts_at` / `ends_at` | `timestamptz` | sí | | Misma vigencia que un banner |
@@ -194,7 +198,38 @@ Lo único que el seed crea, si hace falta, son claves de configuración propias 
 El proyecto de contratos existe igual, vacío, para no cambiar la forma de la solución cuando aparezca el primer consumidor real.
 
 **Eventos publicados:** ninguno.
-**Eventos consumidos:** ninguno. Si M01 desactiva un producto destacado, el panel lo señala al mirarlo; suscribirse a `ProductoDesactivado` para tacharlo en el momento es trabajo sin caso.
+
+**Eventos consumidos: `ProductoActualizado` y `ProductoDesactivado`.** Refrescan el snapshot de los destacados.
+
+M01 emite `ProductoActualizado` siempre que cambia algo que altere lo que publica de ese producto —sus presentaciones, sus categorías, lo que venga después—. Los eventos finos de variante existen y significan otra cosa; **no son de M02**.
+
+La razón está en la naturaleza del snapshot: guarda **valores derivados** —el precio efectivo sale de las presentaciones, la categoría efectiva de qué categorías siguen activas— y un valor derivado cambia cuando cambia su entrada, no cuando cambia la fila del producto.
+
+### El handler vuelve a leer, no aplica el evento
+
+**El handler toma el identificador del producto, se lo pregunta a M01 y sobrescribe el snapshot entero.** No aplica los campos que trae el evento.
+
+Es lo que lo hace idempotente, y hace falta que lo sea: guardar la tabla de presentaciones desde el panel de M01 llama a varios endpoints seguidos, así que **una sola pulsación de «Guardar» puede emitir tres o cuatro `ProductoActualizado`**. Refrescar cuatro veces tiene que dar lo mismo que refrescar una.
+
+Aplicar el contenido del evento, en cambio, hace que el resultado dependa del orden de llegada, y ese orden no es una garantía sobre la que convenga construir.
+
+**El handler serializa por producto**, con independencia de cómo despache el bus hoy. Que sea en serie es un detalle de implementación de `InProcessEventBus`, no una promesa de su contrato; construir sobre un detalle no prometido es lo mismo que construir sobre una casualidad.
+
+### Reconciliación: el cuarto momento
+
+Los eventos son en proceso y no se reintentan. Si un handler falla, si el host cae entre la emisión y el consumo, o si M01 estuvo desactivado mientras algo cambió, **el snapshot se queda desfasado para siempre y nadie se entera**: la portada seguiría enseñando el precio de ayer sin ninguna señal.
+
+Por eso el panel ofrece **actualizar los datos de un destacado**, y de todos a la vez. Es el mismo refresco del handler, disparado por una persona en lugar de por un evento.
+
+No hace falta nada nuevo del contrato de M01: es la misma lectura por identificador. Y como el refresco es idempotente, ejecutarlo de más no cuesta nada.
+
+**M02 sería el primer consumidor del bus interno**, que hasta hoy publica sin suscriptores. Contar con que la primera vez aparezca algo.
+
+Es una corrección de este SPEC. La versión anterior decía que suscribirse era trabajo sin caso, y se equivocaba: **el slug de M01 se puede corregir a mano**, y un snapshot que no se entera deja el enlace de la portada apuntando a un 404. Es el mismo daño contra el que existe la regla del slug en M01, en otra superficie.
+
+Lo que se refresca son **los datos** del producto destacado. **Lo que nunca cambia solo es cuál está destacado**: eso es la decisión editorial, y solo la toma una persona.
+
+**M02 sería el primer consumidor del bus interno**, que hasta hoy publica sin suscriptores. Contar con que la primera vez aparezca algo.
 
 ---
 
@@ -239,7 +274,7 @@ Cada pantalla declara las dos cosas. Un SPEC que solo describe estados produce l
 |---|---|---|
 | Banners | Vigente, programado, caducado, inactivo, sin imagen de móvil | Crear, editar, **reordenar arrastrando**, programar, previsualizar en móvil y escritorio, desactivar |
 | Promociones | Vigente, programada, caducada, inactiva | Crear, editar, reordenar, desactivar |
-| Destacados | Vigente, programado, **producto renombrado**, **producto desactivado en M01**, huérfano | **Elegir producto del catálogo**, reordenar, actualizar el snapshot, quitar de la portada |
+| Destacados | Vigente, programado, **producto no publicado**, **producto desactivado en M01**, pendiente de reenlace | **Elegir producto del catálogo**, reordenar, **actualizar datos** (uno o todos), volver a enlazar, quitar de la portada |
 | Trabajos | Activo, inactivo | Crear, editar, reordenar, desactivar |
 | Redes | Activa, inactiva | Añadir, editar, reordenar, desactivar |
 
@@ -254,8 +289,11 @@ Cada pantalla declara las dos cosas. Un SPEC que solo describe estados produce l
 3. **`link_url` sin `link_label` se rechaza.** Un botón sin texto es un botón que nadie pulsa.
 4. Reordenar es atómico: se recibe la lista entera y se escribe en una transacción.
 5. **Al destacar un producto se copia su nombre, su slug y su imagen.** No se leen en cada petición: la portada pública no debe depender de que M01 responda.
-6. Si el snapshot y el producto vivo difieren, el panel lo dice y ofrece actualizar. **Nunca se actualiza solo.**
+6. **El snapshot se refresca con los eventos de M01**: nombre, slug, imagen, precio y publicación. Lo que nunca cambia solo es **qué producto está destacado**. Sin M01, dejan de llegar eventos y el snapshot se queda como estaba.
 7. Con M01 inactivo, la sección de destacados no se ofrece en el panel y su endpoint público devuelve lista vacía. **No falla.**
+7b. **Un destacado cuyo producto no está publicado no se publica**, aunque su vigencia esté abierta. Se puede preparar la portada con antelación; lo que no se puede es enlazar a algo que responde 404.
+7c. **El precio tiene tres estados y ninguno se confunde con otro: nulo es «a consultar», cero es «gratis», y cualquier otro es el precio.** Tratar el cero como vacío es el defecto que M01 ya sufrió en su tarjeta pública. El importe se copia tal cual lo devuelve `ItemPricing.ForCard` de M01: **M02 no vuelve a derivar la regla**, porque derivarla otra vez es tener dos versiones de ella.
+7d. **El precio del snapshot se guarda como importe más marca de variación, no como texto ya formateado.** «Desde S/ 12.50» es presentación: la moneda y el idioma son del frontend, y congelarlos en la base los deja fijos para siempre.
 8. Al borrar un medio en CORE que un banner usa, el banner queda sin imagen y **no se rompe**: misma conducta que M01 verificó en `medios-compartidos.spec.ts`. Un banner sin imagen no se publica, y el panel lo muestra como incompleto en vez de esconderlo.
 8b. Un destacado sin `product_id` pero con snapshot está **pendiente de volver a enlazar**. Se muestra en el panel, no se publica, y ofrece elegir producto de nuevo.
 9. `platform` se valida contra la lista cerrada. Una red nueva es una migración, no un texto libre.
@@ -274,7 +312,18 @@ Cada pantalla declara las dos cosas. Un SPEC que solo describe estados produce l
 - [ ] Reordenar cinco banners y recargar devuelve el mismo orden; una petición interrumpida no deja dos en la misma posición
 - [ ] Dos enlaces de la misma red se rechazan, sin distinguir mayúsculas
 - [ ] **Con M01 desinstalado, los destacados conservan nombre e imagen y la portada no muestra enlaces rotos**
-- [ ] Renombrar un producto destacado no cambia la portada, y el panel señala la diferencia
+- [ ] Renombrar un producto destacado actualiza su tarjeta en la portada, sin que nadie toque M02
+- [ ] Corregir a mano el slug de un producto destacado deja el enlace de la portada apuntando al sitio correcto
+- [ ] Desactivar un producto en M01 lo retira de la portada y lo deja visible en el panel
+- [ ] Destacar un producto activo pero no publicado se permite, se avisa en el buscador, y **no** aparece en el endpoint público hasta que se publique
+- [ ] Un producto con presentaciones de distinto precio muestra «Desde»; uno sin precio, «a consultar»
+- [ ] **Un producto gratis muestra «Gratis», y uno con una presentación gratis y otra de pago no dice que sea gratis**
+- [ ] Retirar la presentación más cara de un producto destacado actualiza el precio de la portada
+- [ ] Editar el precio de una presentación de un producto destacado actualiza el de la portada
+- [ ] Desactivar la categoría principal de un producto destacado actualiza la categoría de su tarjeta
+- [ ] Un destacado sin foto muestra el nombre con su categoría encima, igual que la tarjeta del catálogo
+- [ ] Con un evento perdido a propósito, «actualizar datos» deja el snapshot al día
+- [ ] Dos refrescos simultáneos del mismo producto no dejan el valor viejo
 - [ ] Tras retirar la integración, los destacados aparecen en el panel como «pendiente de volver a enlazar», con su nombre, y se pueden reasignar
 - [ ] Borrar en CORE un medio usado por un banner **no falla**: el banner queda sin imagen y deja de publicarse
 - [ ] Desactivar en CORE un medio usado por un banner deja el banner sin imagen y ninguna operación falla

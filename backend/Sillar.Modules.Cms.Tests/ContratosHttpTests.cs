@@ -47,4 +47,22 @@ public sealed class ContratosHttpTests
     [Fact]
     public void Administracion_de_trabajos_distingue_los_incompletos() =>
         Assert.NotNull(typeof(FeaturedProjectAdminResponse).GetProperty("IsComplete"));
+
+    [Fact]
+    public void Destacados_exponen_el_snapshot_sin_precio_formateado()
+    {
+        Type[] responses = [typeof(FeaturedProductResponse), typeof(FeaturedProductAdminResponse)];
+
+        foreach (var response in responses)
+        {
+            Assert.Equal(typeof(decimal?), response.GetProperty("ProductPrice")?.PropertyType);
+            Assert.Equal(typeof(bool), response.GetProperty("ProductPriceVaries")?.PropertyType);
+            Assert.Equal(typeof(string), response.GetProperty("ProductCategory")?.PropertyType);
+            Assert.Equal(typeof(bool), response.GetProperty("ProductIsPublic")?.PropertyType);
+            Assert.DoesNotContain(
+                response.GetProperties(),
+                property => property.PropertyType == typeof(string)
+                            && property.Name.Contains("Price", StringComparison.Ordinal));
+        }
+    }
 }

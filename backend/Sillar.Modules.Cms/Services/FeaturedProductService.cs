@@ -22,7 +22,7 @@ internal sealed class FeaturedProductService(
     {
         var featured = await database.FeaturedProducts.AsNoTracking()
             .Where(PublicationWindow.CurrentAt<FeaturedProduct>(clock.GetUtcNow()))
-            .Where(item => item.ProductId != null)
+            .Where(FeaturedProductRules.HasPublicProduct())
             .OrderBy(item => item.DisplayOrder)
             .ThenBy(item => item.Id)
             .ToListAsync(cancellationToken);
@@ -31,7 +31,11 @@ internal sealed class FeaturedProductService(
             item.Id,
             item.ProductName,
             item.ProductSlug,
-            MediaUrl(item.ImageId)))];
+            MediaUrl(item.ImageId),
+            item.ProductPrice,
+            item.ProductPriceVaries,
+            item.ProductCategory,
+            item.ProductIsPublic))];
     }
 
     internal async Task<IReadOnlyList<FeaturedProductAdminResponse>> ListAsync(
@@ -59,9 +63,13 @@ internal sealed class FeaturedProductService(
         string productName,
         string productSlug,
         Guid? primaryImageId,
+        decimal? productPrice,
+        bool productPriceVaries,
+        string? productCategory,
+        bool productIsPublic,
         CancellationToken cancellationToken)
     {
-        var error = ValidateSelection(request.ProductId, productName, productSlug, primaryImageId)
+        var error = ValidateSelection(request.ProductId, productName, productSlug, primaryImageId, productPrice, productCategory)
                     ?? CmsContentRules.ValidatePeriod(request.StartsAt, request.EndsAt);
         if (error is not null)
         {
@@ -77,6 +85,10 @@ internal sealed class FeaturedProductService(
             ProductName = productName.Trim(),
             ProductSlug = productSlug.Trim(),
             ImageId = primaryImageId,
+            ProductPrice = productPrice,
+            ProductPriceVaries = productPriceVaries,
+            ProductCategory = productCategory?.Trim(),
+            ProductIsPublic = productIsPublic,
             DisplayOrder = lastOrder + 1,
             StartsAt = request.StartsAt,
             EndsAt = request.EndsAt,
@@ -90,7 +102,7 @@ internal sealed class FeaturedProductService(
             Value: Project(featured, clock.GetUtcNow()));
     }
 
-    /// <summary>Actualiza solo fechas; el snapshot no cambia por observar M01.</summary>
+    /// <summary>Actualiza solo fechas; este comando no modifica el snapshot.</summary>
     internal async Task<CmsOperation<FeaturedProductAdminResponse>> UpdateAsync(
         int id,
         UpdateFeaturedProductRequest request,
@@ -119,7 +131,7 @@ internal sealed class FeaturedProductService(
     }
 
     /// <summary>
-    /// Reenlaza o refresca el snapshot únicamente por una acción explícita del panel.
+    /// Reenlaza el snapshot a partir de la selección resuelta por el panel.
     /// </summary>
     internal async Task<CmsOperation<FeaturedProductAdminResponse>> RelinkAsync(
         int id,
@@ -127,9 +139,13 @@ internal sealed class FeaturedProductService(
         string productName,
         string productSlug,
         Guid? primaryImageId,
+        decimal? productPrice,
+        bool productPriceVaries,
+        string? productCategory,
+        bool productIsPublic,
         CancellationToken cancellationToken)
     {
-        var error = ValidateSelection(request.ProductId, productName, productSlug, primaryImageId);
+        var error = ValidateSelection(request.ProductId, productName, productSlug, primaryImageId, productPrice, productCategory);
         if (error is not null)
         {
             return Invalid(error);
@@ -147,6 +163,10 @@ internal sealed class FeaturedProductService(
         featured.ProductName = productName.Trim();
         featured.ProductSlug = productSlug.Trim();
         featured.ImageId = primaryImageId;
+        featured.ProductPrice = productPrice;
+        featured.ProductPriceVaries = productPriceVaries;
+        featured.ProductCategory = productCategory?.Trim();
+        featured.ProductIsPublic = productIsPublic;
         await database.SaveChangesAsync(cancellationToken);
 
         return new CmsOperation<FeaturedProductAdminResponse>(
@@ -190,7 +210,9 @@ internal sealed class FeaturedProductService(
         Guid? productId,
         string productName,
         string productSlug,
-        Guid? primaryImageId)
+        Guid? primaryImageId,
+        decimal? productPrice,
+        string? productCategory)
     {
         if (productId is null)
         {
@@ -200,6 +222,12 @@ internal sealed class FeaturedProductService(
         if (string.IsNullOrWhiteSpace(productName) || string.IsNullOrWhiteSpace(productSlug))
         {
             return "El producto elegido no tiene nombre y dirección pública completos.";
+        }
+
+        var snapshotError = FeaturedProductRules.ValidateSnapshotValues(productPrice, productCategory);
+        if (snapshotError is not null)
+        {
+            return snapshotError;
         }
 
         return primaryImageId is not null && MediaUrl(primaryImageId) is null
@@ -216,6 +244,10 @@ internal sealed class FeaturedProductService(
         featured.ProductSlug,
         featured.ImageId,
         MediaUrl(featured.ImageId),
+        featured.ProductPrice,
+        featured.ProductPriceVaries,
+        featured.ProductCategory,
+        featured.ProductIsPublic,
         featured.DisplayOrder,
         featured.StartsAt,
         featured.EndsAt,

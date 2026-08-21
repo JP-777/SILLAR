@@ -2,8 +2,9 @@
 -- SILLAR · Retirada de la integración blanda M02 CMS → M01 Catálogo
 --
 -- Antes de retirar la FK se anulan todas las referencias vivas. Los snapshots
--- product_name, product_slug e image_id permanecen, así que la portada conserva
--- el contenido editorial sin apuntar a filas que dejarán de existir.
+-- product_name, product_slug, image_id, precio, categoría y estado público
+-- permanecen, así que el contenido editorial sobrevive sin apuntar a filas
+-- que dejarán de existir.
 --
 -- Idempotente y seguro si cms ya fue desinstalado.
 -- ============================================================================

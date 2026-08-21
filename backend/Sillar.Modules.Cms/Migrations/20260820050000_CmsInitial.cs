@@ -99,6 +99,10 @@ public sealed class CmsInitial : Migration
                 product_name = table.Column<string>(type: "text", nullable: false),
                 product_slug = table.Column<string>(type: "text", nullable: true),
                 image_id = table.Column<Guid>(type: "uuid", nullable: true),
+                product_price = table.Column<decimal>(type: "numeric(10,2)", nullable: true),
+                product_price_varies = table.Column<bool>(type: "boolean", nullable: false),
+                product_category = table.Column<string>(type: "text", nullable: true),
+                product_is_public = table.Column<bool>(type: "boolean", nullable: false),
                 display_order = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                 starts_at = table.Column<DateTimeOffset>(type: "timestamptz", nullable: true),
                 ends_at = table.Column<DateTimeOffset>(type: "timestamptz", nullable: true),
@@ -110,7 +114,9 @@ public sealed class CmsInitial : Migration
             {
                 table.PrimaryKey("pk_featured_products", x => x.id);
                 table.CheckConstraint("ck_featured_products_display_order", "display_order >= 0");
+                table.CheckConstraint("ck_featured_products_product_category_no_vacia", "product_category IS NULL OR btrim(product_category) <> ''");
                 table.CheckConstraint("ck_featured_products_product_name_no_vacio", "btrim(product_name) <> ''");
+                table.CheckConstraint("ck_featured_products_product_price", "product_price IS NULL OR product_price >= 0");
                 table.CheckConstraint("ck_featured_products_product_slug_no_vacio", "product_slug IS NULL OR btrim(product_slug) <> ''");
                 table.CheckConstraint("ck_featured_products_vigencia", "starts_at IS NULL OR ends_at IS NULL OR ends_at > starts_at");
             });
