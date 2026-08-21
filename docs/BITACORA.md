@@ -255,6 +255,21 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
   `InProcessEventBus` dice que no hay orden garantizado, así que quien construya encima sabe que
   se lo está jugando. Los otros dos no lo estaban, y uno era un hueco. El `<remarks>` del bus es
   el modelo a copiar.
+- **Una conducta escrita para un caso y no para su simétrico es la forma del hueco.** Se buscó el
+  simétrico de la baja —¿reactivar avisa?— porque editar una presentación no avisaba y su
+  simétrico, desactivarla, sí. Esta vez no había hueco: reactivar pasa por `UpdateAsync`, que
+  emite sin condición (`ProductService.cs:463`). **Pero la sospecha valía igual**, y ahora hay
+  una prueba que lo fija en vez de una lectura que lo supone.
+- **Una vía de investigación puede estar cerrada por no haberse grabado nunca, no por haberse
+  perdido.** Los registros de PostgreSQL del contenedor **sí** cubren la ventana del incidente
+  —llegan al 20/08 06:31— y aun así no contienen nada: `log_connections`, `log_disconnections` y
+  `log_statement` están en `off`/`none`, así que una conexión que escribe una fila sin error no
+  deja rastro. Distinguirlo importa: no se perdió la prueba, no se tomó.
+- **El historial de PowerShell no ve lo que hacen los agentes.** PSReadLine solo graba consolas
+  interactivas, y las herramientas de los dos agentes lanzan `powershell.exe -NonInteractive`,
+  que no escribe historial — comprobado: la última escritura del archivo es del 20/08 19:17 UTC,
+  once horas antes del incidente, pese a haber corrido decenas de comandos desde entonces.
+  **Buscar ahí solo puede encontrar lo que tecleó una persona.**
 - **Un contrato está cerrado cuando un uso nuevo no lo amplía.** El de selección de M01 se dio
   por cerrado con las tres respuestas de su primer consumidor, y el **segundo uso** —releer para
   refrescar un snapshot— le añadió un campo: `IsActive`, porque `null` estaba significando dos

@@ -96,6 +96,20 @@ internal static class ModuleBootstrapper
             host,
             puerto);
 
+        // **Y si el archivo dice una cosa y el entorno otra, que se sepa.** Una
+        // variable heredada de la consola gana sobre el `.env` en silencio, y
+        // entonces el archivo que todo el mundo mira no es el que manda. Solo
+        // los nombres: lo descartado puede ser una contraseña.
+        if (DotEnv.IgnoredKeys.Count > 0)
+        {
+            logger.LogWarning(
+                "El entorno del proceso ya traía {Cuantas} clave(s) que {Archivo} también define, "
+                + "así que manda el entorno y no el archivo: {Claves}.",
+                DotEnv.IgnoredKeys.Count,
+                DotEnv.LoadedFrom ?? "(sin .env)",
+                string.Join(", ", DotEnv.IgnoredKeys));
+        }
+
         // El nodo se lee de la configuración igual que hará el contenedor más
         // abajo: este contexto de vida corta no escribe en ninguna tabla
         // replicada, pero el constructor lo exige (ADR-018).
