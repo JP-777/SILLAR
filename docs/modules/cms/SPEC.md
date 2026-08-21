@@ -69,11 +69,23 @@ Es la única dependencia hacia M01, y es **blanda**: se resuelve con columna nul
 
 ```csharp
 public sealed record ProductPickerItem(
-    Guid ProductId, string Name, string Slug, Guid? PrimaryImageId);
+    Guid ProductId,
+    string Name,
+    string Slug,
+    Guid? PrimaryImageId,
+    string? PrimaryCategoryName,   // la categoría EFECTIVA, nula si no tiene
+    decimal? Price,                // null = a consultar · 0 = GRATIS · >0 = precio
+    bool PriceVaries,              // true = «Desde»
+    bool IsPublic);                // false = se puede destacar, no se publica
 
 Task<IReadOnlyList<ProductPickerItem>> BuscarParaSeleccionAsync(
     string texto, int limite, CancellationToken ct);
+
+Task<ProductPickerItem?> ObtenerParaSeleccionAsync(
+    Guid productId, CancellationToken ct);
 ```
+
+`Price` y `PriceVaries` salen de `ItemPricing.ForCard` de M01. **M02 no vuelve a derivar la regla**, porque derivarla otra vez es tener dos versiones de ella, y la que se queda atrás es la que está más lejos de los casos reales.
 
 **No va dentro de `ItemSnapshot`.** Ese record es el congelado de la operación de venta y lo consumen M03 y M13; añadirle slug e imagen para una necesidad de la web lo convierte en el cajón de todos. Es un contrato aparte, de lectura para selección.
 
@@ -222,8 +234,6 @@ Los eventos son en proceso y no se reintentan. Si un handler falla, si el host c
 Por eso el panel ofrece **actualizar los datos de un destacado**, y de todos a la vez. Es el mismo refresco del handler, disparado por una persona en lugar de por un evento.
 
 No hace falta nada nuevo del contrato de M01: es la misma lectura por identificador. Y como el refresco es idempotente, ejecutarlo de más no cuesta nada.
-
-**M02 sería el primer consumidor del bus interno**, que hasta hoy publica sin suscriptores. Contar con que la primera vez aparezca algo.
 
 Es una corrección de este SPEC. La versión anterior decía que suscribirse era trabajo sin caso, y se equivocaba: **el slug de M01 se puede corregir a mano**, y un snapshot que no se entera deja el enlace de la portada apuntando a un 404. Es el mismo daño contra el que existe la regla del slug en M01, en otra superficie.
 
