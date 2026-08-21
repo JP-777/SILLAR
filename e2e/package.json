@@ -6,6 +6,8 @@
   "description": "Arnés de extremo a extremo: backend y frontend juntos, en un stack docker efímero propio.",
   "scripts": {
     "test": "playwright test",
+    "//typecheck": "Playwright transpila sin comprobar tipos, asi que un error de tipos en una spec no sale por ningun lado: la prueba corre igual. Este script es la unica forma de verlo.",
+    "typecheck": "tsc --noEmit",
     "test:headed": "playwright test --headed",
     "stack:down": "docker compose -p sillar_e2e --env-file ./.env.e2e -f ../docker-compose.yml down -v",
     "report": "playwright show-report"

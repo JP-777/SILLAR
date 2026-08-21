@@ -1,33 +1,39 @@
 import { Link } from 'react-router-dom';
 import { useCapability } from '../capabilities/useCapability';
 import { usePublicSettings } from './usePublicSettings';
+import { visibleHomeSections } from './homeSections';
 import { EmptyState } from '../shared/ui';
 import './platform.css';
 
 /**
- * Web pública.
+ * La portada de la web pública.
  *
- * Un contenedor vacío a propósito: no hay ningún módulo que la construya
- * todavía. Existirá de verdad con M02 Contenido Web, que traerá los banners y
- * las secciones.
+ * **El armazón no conoce a ningún módulo.** Recorre `HOME_SECTIONS`, se queda
+ * con las de los módulos activos y las pinta en el orden del array. Antes
+ * preguntaba `has('catalog')` con un `if` escrito a mano: correcto mientras
+ * hubo un solo módulo publicable, y un `if` por módulo en cuanto hubiera dos.
  *
- * A diferencia del panel, aquí sí mandará el tema del cliente cuando llegue.
+ * Lo que sí es del armazón es **la identidad del sitio**. El nombre del
+ * negocio encabeza la página, y ya lo hacía —las dos ramas del `if` anterior
+ * lo ponían de título—, así que nunca fue de ninguna sección: es de la web.
+ * Cada módulo pone lo suyo debajo.
+ *
+ * **Sin ninguna sección no se inventa nada**: se dice que el sitio está en
+ * construcción, que es la verdad. Y un módulo inactivo no deja hueco, ni
+ * aviso, ni sección vacía — sencillamente no está en la lista.
  */
 export function PublicSite() {
   const businessName = usePublicSettings().get('business_name');
   const configured = businessName && businessName !== 'PENDIENTE_DEFINIR';
-  const conCatalogo = useCapability().has('catalog');
+  const secciones = visibleHomeSections(useCapability().has);
 
-  // Con M01 activo, la portada lleva al catálogo. **Sin M01 no se renderiza
-  // esta sección en absoluto** — ni vacía, ni deshabilitada, ni con un aviso
-  // de que falta algo: un hueco que explica su ausencia sigue siendo un hueco.
-  if (conCatalogo) {
+  if (secciones.length === 0) {
     return (
       <main className="pf-centered" id="contenido" tabIndex={-1}>
         <EmptyState
-          title={configured ? businessName : 'Nuestra tienda'}
-          description="Mira todo lo que tenemos publicado."
-          action={<Link to="/catalogo">Ver el catálogo</Link>}
+          title={configured ? businessName : 'Sitio en construcción'}
+          description="Todavía no hay contenido publicado. Aparecerá cuando se active el módulo de contenido web."
+          action={<Link to="/admin">Ir al panel de administración</Link>}
         />
       </main>
     );
@@ -35,11 +41,15 @@ export function PublicSite() {
 
   return (
     <main className="pf-centered" id="contenido" tabIndex={-1}>
-      <EmptyState
-        title={configured ? businessName : 'Sitio en construcción'}
-        description="Todavía no hay contenido publicado. Aparecerá cuando se active el módulo de contenido web."
-        action={<Link to="/admin">Ir al panel de administración</Link>}
-      />
+      {/* **Sin nombre configurado no hay encabezado.** El encabezado *es* el
+          nombre del negocio; poner uno de reserva lo duplicaba con el título
+          de la primera sección, que en la portada del catálogo es «Nuestra
+          tienda». Un rótulo inventado no informa de nada. */}
+      {configured && <h1 className="pf-centered__brand">{businessName}</h1>}
+
+      {secciones.map(({ moduleCode, Component }) => (
+        <Component key={moduleCode} />
+      ))}
     </main>
   );
 }

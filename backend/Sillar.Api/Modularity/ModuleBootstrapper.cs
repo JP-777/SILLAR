@@ -89,6 +89,23 @@ internal static class ModuleBootstrapper
         var puerto = destino.TryGetValue("Port", out var p) ? p : "5432";
         var baseDatos = destino.TryGetValue("Database", out var d) ? d : "(sin base)";
 
+        // **Quién se conecta, dicho por el propio proceso.** PostgreSQL ya
+        // registra cada conexión, pero desde el anfitrión todas llegan con la
+        // misma IP de pasarela, así que el origen no distingue procesos: dos
+        // instalaciones en la misma máquina se ven idénticas. El nombre de
+        // aplicación sí las separa, y sale del código del nodo, que cada
+        // instalación ya tiene distinto para la replicación (ADR-018).
+        //
+        // No se pisa el que venga puesto: si alguien lo fijó en la cadena,
+        // sabrá por qué.
+        var nodeCode = builder.Configuration[NodeIdentity.SettingKey] ?? NodeIdentity.DefaultCode;
+
+        if (!destino.ContainsKey("Application Name") && !destino.ContainsKey("ApplicationName"))
+        {
+            destino["Application Name"] = $"SILLAR API ({nodeCode})";
+            connectionString = destino.ConnectionString;
+        }
+
         logger.LogInformation(
             "Configuración: {Origen} · base {Base} en {Host}:{Puerto}.",
             DotEnv.LoadedFrom ?? "sin .env (variables de entorno del proceso)",
@@ -113,7 +130,7 @@ internal static class ModuleBootstrapper
         // El nodo se lee de la configuración igual que hará el contenedor más
         // abajo: este contexto de vida corta no escribe en ninguna tabla
         // replicada, pero el constructor lo exige (ADR-018).
-        var node = new NodeIdentity(builder.Configuration[NodeIdentity.SettingKey] ?? NodeIdentity.DefaultCode);
+        var node = new NodeIdentity(nodeCode);
 
         await using var database = new CoreDbContext(
             CoreDataServiceExtensions.BuildOptions(connectionString), node, TimeProvider.System);

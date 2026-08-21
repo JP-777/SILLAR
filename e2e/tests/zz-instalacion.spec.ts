@@ -51,6 +51,7 @@ test('Todos los endpoints de M01 están en Swagger', async ({ page }) => {
 
   const doc = (await respuesta.json()) as {
     paths: Record<string, Record<string, { summary?: string; description?: string }>>;
+    components?: { schemas?: Record<string, { example?: unknown }> };
   };
 
   const faltan = RUTAS_M01.filter((ruta) => !(ruta in doc.paths));

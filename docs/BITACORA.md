@@ -268,6 +268,21 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
   nunca» llevan al mismo sitio y valen distinto: la segunda gradúa la confianza, la primera deja
   la duda abierta para siempre. Cerrar una vía vale tanto como abrirla, y hay que decir cuál de
   las dos cosas se hizo.
+- **Una aserción de ausencia se cumple sola en una página que aún no ha pintado.** «Con M01
+  desactivado el inicio no deja hueco» llevaba semanas en verde **y no afirmaba nada**: `goto()`
+  vuelve antes que React, y tanto `toHaveCount(0)` como `not.toContainText` pasan sobre un `body`
+  vacío. Se descubrió por accidente al romper una costura a propósito: la prueba seguía **verde
+  con el archivo entero y roja en solitario**, y la diferencia era cuánto tardaba la página, no
+  lo que enseñaba. **Antes de afirmar que algo no está, hay que esperar a que esté lo que sí
+  debe estar.** Es la tercera cara de la misma regla: `main` visible no es pantalla cargada.
+- **Playwright transpila sin comprobar tipos.** Un error de tipos en una spec **no sale por
+  ningún lado**: la prueba corre igual. Uno llevaba días dentro, introducido al ampliar la
+  comprobación de Swagger. Ahora hay `pnpm typecheck` en `e2e/`, que es la única forma de verlo.
+- **Romper de más da el mismo rojo por otra causa.** Al comprobar que una prueba afirma algo, hay
+  que quitar **exactamente** la línea de la que depende: quitar las tres emisiones de un archivo
+  habría puesto en rojo las mismas pruebas sin decir cuál de ellas sostenía cada aserción. Es la
+  misma familia que «provocar un fallo distinto del que se quiere probar da el mismo rojo», y por
+  eso se aísla con un ancla única.
 - **La mitad no probada de una tanda probada es la que menos se mira**, precisamente porque la
   tanda salió bien. Al romper una emisión a propósito, tres de cuatro pruebas se pusieron rojas y
   la cuarta se dio por buena — vivía en otro archivo y **ninguna de sus aserciones se había visto
@@ -378,6 +393,7 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
 | Arranque con base vacía | Revienta con `42P01` en crudo en vez de decir «faltan las migraciones». Es la primera pantalla que vería quien instale en una clienta |
 | **Probar el aborto de la ADR-019 en vivo** | La función pura está probada; que el host **se niegue a arrancar** no. Es el efecto observable, y es lo único que la decisión promete |
 | **La búsqueda no encuentra por prefijo** | `plainto_tsquery` exige la palabra entera: medido contra la base de demostración, `plum` → 0 y `plumon` → 1; `lapi` → 0 y `lapiz` → 1; `cuad` → 0. En un buscador donde se teclea a mano —y sobre todo en un selector que filtra mientras escribes— **está vacío casi todo el rato**, hasta que se termina cada palabra. El diagnóstico aparente era «une los términos con AND», que también es cierto (`cuaderno plumon` → 0) pero es lo que la gente espera de un buscador. Es conducta heredada de toda la búsqueda de M01 —`ProductService`, `CategoryService` y `CatalogService` usan la misma— así que cambiarla es su propio trabajo, no un arreglo suelto |
+| **El paquete que recibe un cliente lleva código de módulos que no ha licenciado** | Aunque no se rendericen: el armazón importa los componentes y la navegación de todos los módulos, así que entran al `bundle`. **Ya pasaba con el menú** (`layout/navigation.ts:46`), y la costura de la portada (`platform/homeSections.ts`) no lo empeora — es el mismo mecanismo. Es asunto de **licenciamiento, no de arquitectura**: el día que se decida, se decide para el menú y para la portada a la vez. Lo que hay que evitar entretanto es resolverlo a medias en uno de los dos |
 | Repaso visual de Swagger | Junto con la verificación del panel: las dos piden un navegador. **Los cuerpos de ejemplo ya no son parte de esto**: los dieciséis están puestos y probados (`zz-instalacion.spec.ts:44`) |
 | **Un visitante anónimo provoca peticiones a `/api/admin/`** | Visitar la tienda **sin sesión** deja cuatro 401 en consola: la aplicación pide `/admin/auth/me` y `/admin/auth/csrf` al arrancar en **cualquier** ruta (`SessionProvider.tsx:45` y `:53`). No es un fallo de seguridad —son 401 manejados a propósito con `allowUnauthorized`— pero es trabajo inútil en cada visita pública y ensucia la consola de quien mire. Nadie lo había visto porque **ninguna prueba visitaba la tienda sin sesión**. Sin tocar: es el arranque de CORE, y no pedir sesión en rutas públicas podría perderla al navegar de la tienda al panel sin recargar. **Lo hereda cualquier módulo que añada pantallas públicas** —M02 el primero—, así que conviene decidirlo antes de que se lo saque su puerta de cero errores como si fuera suyo |
 | Verificación visual del panel | Sigue pendiente: es lo único que separa a CORE de estar verificado de punta a punta |

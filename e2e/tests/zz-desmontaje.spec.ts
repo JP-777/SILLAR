@@ -137,9 +137,12 @@ test('Desactivar M01 no borra nada, y al volver el catálogo está donde lo deja
   // 4 · **La portada no renderiza la sección de productos.** No vacía, no
   //     deshabilitada, no con un aviso de que falta algo: un hueco que
   //     explica su ausencia sigue siendo un hueco.
+  // **Se espera al contenido de verdad, no a que `main` exista.** Las dos
+  // aserciones de abajo esperan ausencia, y una ausencia se cumple sola en una
+  // página a medio pintar: `main` es visible en cuanto aparece el armazón.
   await duringExpectedOutage(page, async () => {
     await page.goto('/');
-    await expect(page.locator('main')).toBeVisible();
+    await expect(page.getByText('Todavía no hay contenido publicado.')).toBeVisible();
   });
 
   await expect(page.getByRole('link', { name: 'Ver el catálogo' })).toHaveCount(0);
