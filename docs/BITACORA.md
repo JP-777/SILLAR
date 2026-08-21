@@ -247,6 +247,61 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
   cogía «Torta hereda consultar», de otra spec: la prueba despublicaba un producto y preguntaba
   por otro. El slug es la identidad; el nombre es una coincidencia. Es la misma regla de «no
   depender de la posición», aplicada a la búsqueda por API en vez de a la fila de una tabla.
+- **Declarar lo que NO se promete vale tanto como declarar lo que sí.** El mismo día salieron
+  tres accidentes de implementación que parecían garantías: el bus despacha los handlers en
+  serie, el frontend de M01 manda las peticiones de presentaciones en fila, y el
+  `if (isDeactivating)` hacía que emitir un evento dependiera de cuántas presentaciones tuviera
+  el producto. **El primero era inofensivo porque está declarado** — el `<remarks>` de
+  `InProcessEventBus` dice que no hay orden garantizado, así que quien construya encima sabe que
+  se lo está jugando. Los otros dos no lo estaban, y uno era un hueco. El `<remarks>` del bus es
+  el modelo a copiar.
+- **Un contrato está cerrado cuando un uso nuevo no lo amplía.** El de selección de M01 se dio
+  por cerrado con las tres respuestas de su primer consumidor, y el **segundo uso** —releer para
+  refrescar un snapshot— le añadió un campo: `IsActive`, porque `null` estaba significando dos
+  cosas a la vez, «lo dieron de baja» y «ya no existe», que piden respuestas distintas. Estaba
+  cerrado contra **un** uso, no cerrado. Barato hoy porque nadie lo consume todavía; el mes que
+  viene, no.
+- **Y de paso, el dato que M01 cerró sin poder tener:** mirar el contrato desde fuera dio dos
+  carencias —slug e imagen—; **usarlo de verdad ha dado cuatro más**: precio, publicación,
+  categoría y ahora la baja. Ninguna se vio al mirarlo. Mirar un contrato sirve para no
+  equivocarse en lo que hay; **no sustituye al primer cliente**.
+- **Demostrar que un mecanismo puede producir el efecto no demuestra que produjera éste.** Al
+  provocar el fallo del `.env` salió un mecanismo real —y contrario a lo que se creía— y se dio
+  por explicado el incidente con él. No podía serlo: la fila la escribió un binario que declara
+  `cms`, y **el de `main` no lo declara** — lo dijo el propio arranque al reiniciar
+  (`ModuleSynchronizer.cs:165`). Hay que comprobar que el caso concreto pasa por el mecanismo,
+  no solo que el mecanismo existe. Tercera de la familia, junto a «un detector mal parametrizado
+  da el mismo verde» y «provocar un fallo distinto da el mismo rojo».
+- **Gana el `.env` del árbol del binario, no el del directorio desde el que se lanza.**
+  `DotEnv.Load` prueba `AppContext.BaseDirectory` primero y solo mira el directorio de trabajo si
+  ahí no hay ninguno, y la búsqueda **sube por el árbol**. Comprobado provocándolo: ejecutando
+  desde una carpeta con su propio `.env`, cargó el del proyecto igualmente. Así llegó un módulo
+  en construcción a la base de la demostración —el 21 de agosto— sin que nadie se enterara en
+  días. **La carga era muda**, y una configuración equivocada se ve exactamente igual que una
+  correcta: levanta, conecta y funciona, contra la base de otro. Ahora el arranque dice de qué
+  archivo cargó y a qué base apunta, sin la contraseña.
+- **El worktree aísla lo que está en git; todo lo de fuera sigue compartido.** La base de datos,
+  el puerto 5080, `MEDIA_PATH` y las variables de entorno no los separa nadie. Es lo que hace que
+  dos ramas «aisladas» se pisen sin tocar un solo archivo del repositorio.
+- **Un valor derivado cambia cuando cambia su entrada, no cuando cambia la fila.** Formulación
+  de M02, y es la regla que gobierna cualquier snapshot: quien copia datos de otro módulo no
+  necesita saber en qué tabla vive cada campo, necesita enterarse cuando lo que copió deja de
+  ser cierto. De ahí que M01 emita `ProductoActualizado` al cambiar sus **presentaciones** o sus
+  **categorías**, no solo al editar la fila del producto.
+- **Un arreglo bueno hace visible un hueco que llevaba ahí desde siempre.** El contrato atómico
+  de 04D —que el `PUT` del producto acepte código y precio cuando hay una sola presentación—
+  destapó que el otro camino estaba mudo: **el mismo cambio observable emitía evento o no según
+  cuántas presentaciones tuviera el producto**. Con una, por el `PUT`, que emitía; con tres, por
+  `items/{itemId}`, que no. Nadie de fuera puede deducir esa diferencia, y no era una decisión
+  de diseño: el `if (isDeactivating)` cubría el caso raro y dejaba fuera el frecuente —cambiar
+  un precio.
+- **Una precisión que abarata un problema hay que medirla antes de creérsela.** Se propuso emitir
+  solo por los productos «cuya principal se desactiva y tienen otra activa», suponiendo un
+  conjunto pequeño. Medido con la regla real de `ChooseTarget` (`Breadcrumb.cs:29`) contra los
+  veinte productos de demostración, **cambian su categoría efectiva casi todos los de la
+  categoría**: 4 de 4 en Oficina, 3 de 3 en Cuadernos. Faltaban dos casos —quien la tiene de
+  principal y **no** tiene otra activa pasa a no tener ninguna, que también es un cambio; y quien
+  la tiene de secundaria siendo la elegida porque su principal está inactiva.
 - **Antes de arreglar lo que un detector señala, comprobar que el detector mira donde debe.** Un
   detector de desbordamiento listó cuatro pantallas rotas a 390 px por su tabla: eran falsos
   positivos, porque una tabla dentro de una caja con `overflow-x: auto` **no desborda la
@@ -289,6 +344,7 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
 | ~~Sin decidir: qué precio enseña la tarjeta con variantes de precios distintos~~ | **Decidido y hecho en 04D (20 ago).** Enseña el **mínimo efectivo** —contando lo que se hereda, no solo los `price_override`— y lo dice con «Desde S/ 4,90». **Y si alguna presentación es «a consultar», toda la tarjeta lo es**, porque «desde» promete una cota y una presentación sin precio puede costar cualquier cosa. `ItemPricing.ForCard`, con las dos proyecciones —`ProductService.cs:94` y `CategoryService.cs:124`— probadas por separado |
 | Arranque con base vacía | Revienta con `42P01` en crudo en vez de decir «faltan las migraciones». Es la primera pantalla que vería quien instale en una clienta |
 | **Probar el aborto de la ADR-019 en vivo** | La función pura está probada; que el host **se niegue a arrancar** no. Es el efecto observable, y es lo único que la decisión promete |
+| **La búsqueda no encuentra por prefijo** | `plainto_tsquery` exige la palabra entera: medido contra la base de demostración, `plum` → 0 y `plumon` → 1; `lapi` → 0 y `lapiz` → 1; `cuad` → 0. En un buscador donde se teclea a mano —y sobre todo en un selector que filtra mientras escribes— **está vacío casi todo el rato**, hasta que se termina cada palabra. El diagnóstico aparente era «une los términos con AND», que también es cierto (`cuaderno plumon` → 0) pero es lo que la gente espera de un buscador. Es conducta heredada de toda la búsqueda de M01 —`ProductService`, `CategoryService` y `CatalogService` usan la misma— así que cambiarla es su propio trabajo, no un arreglo suelto |
 | Repaso visual de Swagger | Junto con la verificación del panel: las dos piden un navegador. **Los cuerpos de ejemplo ya no son parte de esto**: los dieciséis están puestos y probados (`zz-instalacion.spec.ts:44`) |
 | **Un visitante anónimo provoca peticiones a `/api/admin/`** | Visitar la tienda **sin sesión** deja cuatro 401 en consola: la aplicación pide `/admin/auth/me` y `/admin/auth/csrf` al arrancar en **cualquier** ruta (`SessionProvider.tsx:45` y `:53`). No es un fallo de seguridad —son 401 manejados a propósito con `allowUnauthorized`— pero es trabajo inútil en cada visita pública y ensucia la consola de quien mire. Nadie lo había visto porque **ninguna prueba visitaba la tienda sin sesión**. Sin tocar: es el arranque de CORE, y no pedir sesión en rutas públicas podría perderla al navegar de la tienda al panel sin recargar. **Lo hereda cualquier módulo que añada pantallas públicas** —M02 el primero—, así que conviene decidirlo antes de que se lo saque su puerta de cero errores como si fuera suyo |
 | Verificación visual del panel | Sigue pendiente: es lo único que separa a CORE de estar verificado de punta a punta |

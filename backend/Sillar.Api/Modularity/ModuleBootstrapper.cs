@@ -3,6 +3,7 @@ using Sillar.Core;
 using Sillar.Core.Authentication;
 using Sillar.Core.Data;
 using Sillar.Core.Modularity;
+using Sillar.Shared.Configuration;
 using Sillar.Shared.Modularity;
 using Sillar.Shared.Replication;
 
@@ -73,6 +74,27 @@ internal static class ModuleBootstrapper
                 $"Falta la cadena de conexión '{CoreModule.ConnectionStringName}'. " +
                 "Se define en el archivo .env de la raíz como ConnectionStrings__Default.");
         }
+
+        // **De dónde vino esta configuración, y a qué base apunta.** Una
+        // configuración mal puesta tiene que poder verse: un `.env` equivocado
+        // levanta, se conecta y funciona — contra la base de otro. La búsqueda
+        // de `.env` sube por el árbol de directorios, así que lanzar el proceso
+        // desde el sitio equivocado basta para cargar el de al lado, y hasta
+        // hoy eso ocurría en silencio.
+        //
+        // **Host, puerto y base; nunca la cadena entera.** La contraseña no va
+        // a los registros (CLAUDE.md, «Seguridad»).
+        var destino = new System.Data.Common.DbConnectionStringBuilder { ConnectionString = connectionString };
+        var host = destino.TryGetValue("Host", out var h) ? h : "(sin host)";
+        var puerto = destino.TryGetValue("Port", out var p) ? p : "5432";
+        var baseDatos = destino.TryGetValue("Database", out var d) ? d : "(sin base)";
+
+        logger.LogInformation(
+            "Configuración: {Origen} · base {Base} en {Host}:{Puerto}.",
+            DotEnv.LoadedFrom ?? "sin .env (variables de entorno del proceso)",
+            baseDatos,
+            host,
+            puerto);
 
         // El nodo se lee de la configuración igual que hará el contenedor más
         // abajo: este contexto de vida corta no escribe en ninguna tabla
