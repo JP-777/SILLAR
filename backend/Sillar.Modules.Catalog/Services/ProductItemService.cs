@@ -125,7 +125,12 @@ internal sealed class ProductItemService(
         await AuditAsync(AuditAction.Create, actingUserId, actingEmail, item,
             $"Alta de la variante «{item.VariantValue}».", cancellationToken);
 
+        // **El fino y el grueso, no uno u otro.** `VarianteCreada` significa «se
+        // creó una presentación», que le sirve a inventario; `ProductoActualizado`
+        // significa «cambió lo que publico de este producto», que es lo que
+        // necesita cualquiera que guarde un snapshot.
         await events.PublishAsync(new VarianteCreada(item.Id, productId, clock.GetUtcNow()), cancellationToken);
+        await events.PublishAsync(new ProductoActualizado(productId, clock.GetUtcNow()), cancellationToken);
 
         return new ProductItemOperation(ProductItemOutcome.Ok, Item: Project(item, product.ListPrice));
     }
@@ -202,6 +207,17 @@ internal sealed class ProductItemService(
             await events.PublishAsync(new VarianteDesactivada(item.Id, item.ProductId, clock.GetUtcNow()), cancellationToken);
         }
 
+        // **Editar una presentación emite, se desactive o no.** Este era el
+        // camino mudo, y el más frecuente que existe en un catálogo: cambiar un
+        // `price_override` de 8 a 5 no es crear ni desactivar, es editar.
+        //
+        // Y aquí estaba la asimetría que lo delató: con **una sola**
+        // presentación, el código y el precio se editan por el `PUT` del
+        // producto, que sí emitía; con **varias**, por aquí, que no. El mismo
+        // cambio observable emitía o no según la forma interna del producto,
+        // que es algo que nadie de fuera puede deducir.
+        await events.PublishAsync(new ProductoActualizado(item.ProductId, clock.GetUtcNow()), cancellationToken);
+
         var listPrice = await database.Products.Where(p => p.Id == item.ProductId).Select(p => p.ListPrice).FirstAsync(cancellationToken);
         return new ProductItemOperation(ProductItemOutcome.Ok, Item: Project(item, listPrice));
     }
@@ -242,6 +258,7 @@ internal sealed class ProductItemService(
             $"Baja de la variante «{item.VariantValue ?? "(única)"}».", cancellationToken);
 
         await events.PublishAsync(new VarianteDesactivada(item.Id, item.ProductId, clock.GetUtcNow()), cancellationToken);
+        await events.PublishAsync(new ProductoActualizado(item.ProductId, clock.GetUtcNow()), cancellationToken);
 
         return new ProductItemOperation(ProductItemOutcome.Ok, Item: Project(item, listPrice));
     }

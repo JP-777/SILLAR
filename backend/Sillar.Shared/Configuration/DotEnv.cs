@@ -18,17 +18,48 @@ public static class DotEnv
     private const string FileName = ".env";
 
     /// <summary>
+    /// De qué archivo se cargó la configuración, o <c>null</c> si no se
+    /// encontró ninguno.
+    /// </summary>
+    /// <remarks>
+    /// Existe para que el arranque pueda <b>decirlo</b>. Un
+    /// <c>.env</c> equivocado se ve exactamente igual que uno correcto: el
+    /// proceso levanta, se conecta y funciona — contra la base de otro. La
+    /// búsqueda sube por el árbol de directorios, así que basta lanzar el
+    /// proceso desde el sitio equivocado para cargar el de al lado.
+    /// <para>
+    /// Pasó de verdad el 21 de agosto de 2026: un módulo en construcción se
+    /// registró en la base de la demostración y nadie lo supo hasta días
+    /// después. La carga era muda.
+    /// </para>
+    /// </remarks>
+    public static string? LoadedFrom { get; private set; }
+
+    /// <summary>
     /// Busca <c>.env</c> hacia arriba desde el directorio del ejecutable y desde
     /// el directorio de trabajo, y publica sus claves en el entorno del proceso.
     /// </summary>
     /// <returns>Ruta del archivo cargado, o <c>null</c> si no se encontró.</returns>
     /// <remarks>
+    /// <para>
     /// Debe llamarse <b>antes</b> de construir el host: el proveedor de
     /// configuración por variables de entorno lee una sola vez, al arrancar.
+    /// </para>
+    /// <para>
+    /// <b>Gana el árbol del binario, no el directorio desde el que se lanza.</b>
+    /// Se prueba <c>AppContext.BaseDirectory</c> primero, y solo si ahí no hay
+    /// ninguno se mira el directorio de trabajo. Comprobado provocándolo:
+    /// ejecutando desde una carpeta con su propio <c>.env</c>, se cargó el del
+    /// árbol del proyecto igualmente. Por eso el arranque <b>dice de dónde
+    /// cargó y a qué base apunta</b> — es lo único que distingue una
+    /// configuración correcta de una que se ve igual y va a otro sitio.
+    /// </para>
     /// </remarks>
     public static string? Load()
     {
         var path = Find(AppContext.BaseDirectory) ?? Find(Directory.GetCurrentDirectory());
+        LoadedFrom = path;
+
         if (path is null)
         {
             return null;

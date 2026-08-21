@@ -56,6 +56,31 @@ internal sealed class CatalogService(CatalogDbContext database) : ICatalogServic
         => database.ProductItems.AnyAsync(item => item.Id == itemId && item.IsActive, ct);
 
     /// <summary>Una variante junto con su producto, sin proyectar todavía.</summary>
+    /// <summary>
+    /// Tope de resultados de <see cref="BuscarParaSeleccionAsync"/>.
+    /// </summary>
+    /// <remarks>
+    /// <b>Un límite que llega de fuera se acota, no se obedece</b>, igual que
+    /// el <c>pageSize</c> de los listados. Es un selector para elegir un puñado
+    /// de productos: pedir quinientos no es un caso de uso, es un descuido o un
+    /// abuso, y como es una lectura no se pierde nada al recortar.
+    /// </remarks>
+    private const int TopeSeleccion = 50;
+
+    /// <summary>
+    /// Acota el límite pedido al de la casa.
+    /// </summary>
+    /// <remarks>
+    /// Está aparte del método que consulta para que <b>lo pueda afirmar una
+    /// prueba</b>: el tope superior no se puede comprobar contra la base de
+    /// demostración, que tiene veinte productos y nunca llegaría a cincuenta.
+    /// Una regla que solo se comprueba cuando los datos dan la casualidad de
+    /// alcanzarla no está comprobada.
+    /// </remarks>
+    /// <param name="limite">Lo que pidió quien llama.</param>
+    /// <returns>Entre 1 y <see cref="TopeSeleccion"/>.</returns>
+    internal static int AcotarSeleccion(int limite) => Math.Clamp(limite, 1, TopeSeleccion);
+
     private sealed record Row(ProductItem Item, Product Product);
 
     private IQueryable<Row> Rows()
@@ -65,6 +90,119 @@ internal sealed class CatalogService(CatalogDbContext database) : ICatalogServic
                 item => item.ProductId,
                 product => product.Id,
                 (item, product) => new Row(item, product));
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ProductPickerItem>> BuscarParaSeleccionAsync(
+        string texto,
+        int limite,
+        CancellationToken ct)
+    {
+        var cuantos = AcotarSeleccion(limite);
+
+        return await SeleccionAsync(
+            database.Products.AsNoTracking()
+                .Where(product => product.IsActive
+                    && EF.Functions.ToTsVector("spanish", product.Name)
+                        .Matches(EF.Functions.PlainToTsQuery("spanish", texto)))
+                .OrderBy(product => product.Name)
+                .Take(cuantos),
+            ct);
+    }
+
+    /// <inheritdoc />
+    public async Task<ProductPickerItem?> ObtenerParaSeleccionAsync(Guid productId, CancellationToken ct)
+    {
+        // **Aquí no se filtra por activo, y en la búsqueda sí.** Es deliberado
+        // y por eso está escrito: no se puede *elegir* un producto de baja,
+        // pero quien ya lo eligió necesita distinguir «lo dieron de baja» de
+        // «ya no existe» — dos estados con dos respuestas distintas en su
+        // panel. La baja vuelve marcada con `IsActive` en falso; `null` queda
+        // para lo que de verdad no está.
+        var encontrado = await SeleccionAsync(
+            database.Products.AsNoTracking().Where(product => product.Id == productId),
+            ct);
+
+        return encontrado.Count == 0 ? null : encontrado[0];
+    }
+
+    /// <summary>
+    /// Proyecta productos a <see cref="ProductPickerItem"/>.
+    /// </summary>
+    /// <remarks>
+    /// <b>Una sola composición para buscar y para releer.</b> Si cada uno
+    /// armara su resultado, el día que cambie cómo se elige la categoría o
+    /// cómo se resuelve el precio, uno de los dos se quedaría atrás — y el que
+    /// se queda atrás es siempre el que está más lejos de los casos reales.
+    ///
+    /// <b>El filtro de activo vive en cada llamador, no aquí.</b> Buscar
+    /// devuelve solo altas —no se elige lo que está de baja— y releer devuelve
+    /// también las bajas, marcadas. La asimetría es intencionada; tenerla en
+    /// los llamadores es lo que la deja a la vista de quien lee cada uno.
+    ///
+    /// Se traen los datos crudos y la categoría efectiva se resuelve fuera:
+    /// `ChooseTarget` es la regla del módulo y **se aplica una sola vez, en un
+    /// sitio** (`Breadcrumb.cs:29`). Reescribirla como SQL daría una segunda
+    /// versión de la misma regla.
+    /// </remarks>
+    private async Task<IReadOnlyList<ProductPickerItem>> SeleccionAsync(
+        IQueryable<Product> productos,
+        CancellationToken ct)
+    {
+        var filas = await productos
+            .Select(product => new
+            {
+                product.Id,
+                product.Name,
+                product.Slug,
+                product.IsPublic,
+                product.IsActive,
+                product.ListPrice,
+                product.PrimaryCategoryId,
+                PrimaryImageId = product.Images
+                    .OrderByDescending(image => image.IsPrimary)
+                    .ThenBy(image => image.SortOrder)
+                    .Select(image => (Guid?)image.MediaAssetId)
+                    .FirstOrDefault(),
+                // El precio de la tarjeta sale de las presentaciones activas,
+                // no del `list_price` a secas: con una que cueste distinto, el
+                // de lista es un número que no se cobra.
+                PriceOverrides = product.Items
+                    .Where(item => item.IsActive)
+                    .Select(item => item.PriceOverride)
+                    .ToList(),
+                Categorias = product.Categories
+                    .Select(link => new Breadcrumb.CategoryNode(
+                        link.Category!.Id,
+                        link.Category.Slug,
+                        link.Category.Name,
+                        link.Category.ParentId,
+                        link.Category.IsActive))
+                    .ToList()
+            })
+            .ToListAsync(ct);
+
+        return
+        [
+            .. filas.Select(fila =>
+            {
+                var (price, varies) = ItemPricing.ForCard(fila.PriceOverrides, fila.ListPrice);
+
+                var primary = fila.Categorias.FirstOrDefault(c => c.Id == fila.PrimaryCategoryId);
+                var others = fila.Categorias.Where(c => c.Id != fila.PrimaryCategoryId).ToList();
+
+                return new ProductPickerItem(
+                    fila.Id,
+                    fila.Name,
+                    fila.Slug,
+                    fila.PrimaryImageId,
+                    Breadcrumb.ChooseTarget(primary, others)?.Name,
+                    price,
+                    varies,
+                    fila.IsPublic,
+                    fila.IsActive);
+            })
+        ];
+    }
 
     private static readonly Expression<Func<Row, ItemSnapshot>> ToSnapshot = row => new ItemSnapshot(
         row.Item.Id,

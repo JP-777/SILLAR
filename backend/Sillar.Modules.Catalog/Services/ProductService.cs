@@ -550,6 +550,11 @@ internal sealed class ProductService(
         await AuditAsync(AuditAction.Update, actingUserId, actingEmail, product,
             $"Categorías de «{product.Name}» actualizadas.", cancellationToken);
 
+        // Cambiar las categorías **cambia lo que M01 publica** de este
+        // producto: la efectiva alimenta la miga de pan, y quien guarde un
+        // snapshot con ella se queda con un nombre que ya no es el suyo.
+        await events.PublishAsync(new ProductoActualizado(product.Id, clock.GetUtcNow()), cancellationToken);
+
         var updated = await database.Products
             .AsNoTracking()
             .Include(p => p.Items).Include(p => p.Images).Include(p => p.Categories)

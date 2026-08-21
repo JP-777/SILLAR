@@ -72,10 +72,19 @@ inventario**, y ahí no le falta nada. Para un módulo de contenido le faltaría
 - **La imagen**, que es lo que hace que un «producto destacado» sea algo más que una línea de
   texto.
 
-**No se han añadido a propósito.** La regla del segundo caso sigue en pie: se generaliza cuando
-hay un caso real, no antes. Cuando M02 necesite enlazar o ilustrar un producto, se decide con el
-caso delante — y entonces se sabrá si lo que hace falta es ampliar `ItemSnapshot` o exponer un
-`ProductSnapshot` aparte, que son dos respuestas distintas.
+**Ya no faltan: se decidieron con el caso delante.** M02 llegó pidiéndolos, y en vez de ampliar
+`ItemSnapshot` —que es el congelado de la venta, y meterle campos de presentación web contamina
+un registro transaccional— se expuso `ProductPickerItem` aparte, con
+`BuscarParaSeleccionAsync` para elegir y `ObtenerParaSeleccionAsync` para releer.
+
+Lleva más de lo que se había previsto mirándolo: además del slug y la imagen, **el precio ya
+resuelto, la categoría efectiva, si está publicado y si sigue de alta**. Cuatro campos que
+nadie vio al examinar el contrato desde fuera y que salieron de usarlo.
+
+Y una asimetría que conviene conocer antes de leer el código: **buscar esconde las bajas y
+releer las devuelve marcadas**. No se elige lo que está de baja, pero quien ya eligió necesita
+distinguir «lo dieron de baja, puede volver» de «ya no existe» — que es lo que significa `null`,
+y solo puede significar eso porque en SILLAR no hay borrado físico.
 
 ### Y antes de ampliar nada, la pregunta que cambia el diseño
 
