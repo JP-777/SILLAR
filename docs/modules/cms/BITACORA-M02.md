@@ -196,7 +196,7 @@ Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base
 
 ### Incidencia durante la verificación
 
-- En un primer reinicio se escribió por error `ConnectionStrings__DefaultConnection` en vez de la clave correcta `ConnectionStrings__Default`. El host alcanzó la conexión predeterminada del entorno, descubrió CMS y sincronizó su entrada como inactiva; se detuvo inmediatamente y no se envió ninguna petición de negocio. No se intentó revertir esa base porque está fuera del stack autorizado. Toda verificación y toda mutación posteriores usaron explícitamente `127.0.0.1:55442/sillar_m02`.
+- En un primer reinicio se escribió por error `ConnectionStrings__DefaultConnection` en vez de la clave correcta `ConnectionStrings__Default`. El proceso conservó o cargó una clave correcta desde una fuente que entonces no se identificó, alcanzó otro stack, descubrió CMS y sincronizó su entrada como inactiva; se detuvo inmediatamente y no se envió ninguna petición de negocio. No se intentó revertir esa base porque está fuera del stack autorizado. Toda verificación y toda mutación posteriores usaron explícitamente `127.0.0.1:55442/sillar_m02`.
 
 ### Pendiente y congelado
 
@@ -210,8 +210,10 @@ Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base
 
 ### Blindaje del entorno local
 
-- La configuración ignorada del worktree quedó aislada en el proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base `sillar_m02` y puerto host `55442`. Se corrigieron `.env` y `backend/Sillar.Api/appsettings.Development.json`; ninguno se versiona porque ambos pueden contener credenciales locales.
-- Se detuvo exclusivamente `sillar_m02_db`, se eliminó del proceso `ConnectionStrings__Default` y se arrancó el host con la variable errónea `ConnectionStrings__DefaultConnection`. El proceso descubrió los tres ensamblados, abortó con «No se pudo conectar con PostgreSQL» y no alcanzó la fase que sincroniza módulos. Así se observó que el fallback apunta al puerto propio detenido y no a una base disponible fuera del worktree.
+- **Corrección del diagnóstico (2026-08-21):** `appsettings.json` nunca tuvo una cadena predeterminada. La cadena añadida localmente a `backend/Sillar.Api/appsettings.Development.json` convertía un error de clave en un arranque silencioso y además duplicaba credenciales fuera de `.env`; como el archivo no contenía nada más, se eliminó entero. `.env` vuelve a ser la única fuente local de `ConnectionStrings__Default`.
+- Con `sillar_m02_db` levantada y saludable se cambió temporalmente la clave local por `ConnectionStrings__DefaultConnection`. El host descubrió los tres ensamblados y abortó antes de conectarse con «Falta la cadena de conexión 'Default'. Se define en el archivo .env de la raíz como ConnectionStrings__Default». Después se restauró `.env` y se comprobó su clave correcta.
+- Dos controles temporales de la implementación real de `DotEnv` se ejecutaron sin construir el host ni abrir PostgreSQL: el binario de M02 prioriza `C:\sillar-m02\.env` por `AppContext.BaseDirectory` aunque el directorio de trabajo sea `C:\SILLAR`; cuando esa primera búsqueda no encuentra un archivo, el fallback desde `C:\SILLAR\backend` sí resuelve `C:\SILLAR\.env`. Las dos aserciones pasaron y el archivo temporal se retiró. No hay scripts, tareas ni atajos versionados que cambien el directorio de trabajo.
+- Después de retirar el fallback, la solución compiló en Release con 0 advertencias y 0 errores y superó 264/264 pruebas: 132 CORE, 54 Shared, 41 Catálogo y 37 CMS.
 
 ### Construido
 
