@@ -9,6 +9,12 @@ namespace Sillar.Modules.Cms.Services;
 /// Serializa por producto la relectura completa de snapshots y abre un ámbito
 /// propio para que también pueda usarse desde manejadores singleton del bus.
 /// </summary>
+/// <remarks>
+/// La serialización es por proceso: dos instancias del API no comparten este
+/// candado y sus refrescos del mismo producto pueden solaparse. La operación
+/// sigue siendo tolerable porque cada ejecución relee M01 y sustituye el
+/// snapshot completo; no se promete un bloqueo distribuido.
+/// </remarks>
 internal sealed class FeaturedProductSnapshotCoordinator(IServiceScopeFactory scopes)
 {
     private readonly ConcurrentDictionary<Guid, SemaphoreSlim> gates = new();

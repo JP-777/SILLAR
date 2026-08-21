@@ -314,3 +314,13 @@ Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base
 - No se tocaron `PublicSite`, `frontend/shared`, `e2e`, `Dockerfile`, Catálogo, Shared, ADR ni el paso 4.
 - La advertencia de consulta de M01 y el comentario obsoleto del bus se reportan para sus dueños; corregirlos desde M02 violaría los archivos congelados.
 - El `Dockerfile` sigue sin CMS y queda pendiente de la fusión final.
+
+### Anotaciones de cierre del paso 3 — 2026-08-21
+
+- **Límite que caduca para la migración inicial:** mientras M02 no esté instalado en ningún entorno, se permite reescribir `20260820050000_CmsInitial.cs` y comprobarla recreando el schema. Desde la primera instalación de M02, esa autorización termina y las migraciones solo se añaden: modificar una ya aplicada dejaría bases que creen estar al día aunque su esquema no lo esté. `product_is_active` entró antes de esa frontera.
+- **Alcance de la serialización:** el candado por UUID de `FeaturedProductSnapshotCoordinator` pertenece a un solo proceso. Con más de una instancia del API, dos refrescos del mismo producto pueden solaparse; la relectura completa y sustitución idempotente del snapshot los hace tolerables, pero no existe garantía de bloqueo distribuido. Se declara el límite y no se inventa una solución para un despliegue que hoy no existe.
+- **Catálogo inactivo en el paso 4:** el selector responde correctamente `404` cuando falta `ICatalogService`, pero el panel no debe usar ese error como detección. Debe consultar capacidades, no ofrecer destacar, buscar ni reenlazar, y explicar que la acción requiere Catálogo activo.
+- **Reactivación confirmada en M01:** dar de baja emite solo `ProductoDesactivado`; reactivar emite `ProductoActualizado`, comprobado por efecto en M01 con un publicador espía y fijado en pruebas permanentes vistas en rojo. El refresco manual permanece como red ante eventos perdidos y ya se verificó que por sí solo puede devolver `product_is_active` a `true`.
+- **Búsqueda sin prefijos en M01:** se midió `plum → 0`, `plumon → 1`; `lapi → 0`, `lapiz → 1`; `cuad → 0`. El selector del paso 4 debe advertir que se escriba la palabra completa en vez de presentar un vacío que parezca «no existe».
+- Estas anotaciones no cambian comportamiento del paso 3. `PublicSite`, `frontend/shared` y `e2e` siguen sin tocarse mientras M01 termina la costura declarativa de la portada.
+- **Validación posterior:** `git diff --check` no encontró errores; la solución compiló en Release con 0 advertencias y 0 errores. Pasaron 274 pruebas (132 CORE, 54 Shared, 47 Catálogo y 41 CMS) y quedaron omitidas las 2 pruebas de Catálogo que requieren su colación SQL auxiliar.

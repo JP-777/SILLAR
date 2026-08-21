@@ -219,6 +219,8 @@ El proyecto de contratos existe igual, vacío, para no cambiar la forma de la so
 
 Cuando cambian los datos de un producto —incluida su asignación de categorías mediante `SetCategoriesAsync`— M01 emite `ProductoActualizado` para ese producto. Los eventos finos de variante existen y significan otra cosa; **no son de M02**.
 
+Reactivar un producto también emite `ProductoActualizado`: el destacado vuelve a publicarse automáticamente cuando la relectura confirma `IsActive = true`. El botón **actualizar datos** sigue siendo la red ante eventos perdidos o M01 temporalmente inactivo, no el camino principal de reactivación.
+
 Cuando se da de baja una categoría entera, M01 emite un solo `CategoriaDesactivada`, sin una ráfaga proporcional al catálogo. Como el snapshot conserva el nombre efectivo y no el identificador de categoría, M02 relee todos sus destacados sin intentar adivinar cuáles cambiaron. **La ráfaga sería proporcional al catálogo; esta relectura es proporcional a la portada.** La decisión vale mientras el conjunto de destacados esté acotado por lo que cabe en una portada; si deja de tener límite, hay que revisarla.
 
 La razón está en la naturaleza del snapshot: guarda **valores derivados** —el precio efectivo sale de las presentaciones, la categoría efectiva de qué categorías siguen activas— y un valor derivado cambia cuando cambia su entrada, no cuando cambia la fila del producto.
@@ -294,6 +296,10 @@ Cada pantalla declara las dos cosas. Un SPEC que solo describe estados produce l
 | Trabajos | Activo, inactivo | Crear, editar, reordenar, desactivar |
 | Redes | Activa, inactiva | Añadir, editar, reordenar, desactivar |
 
+**Con Catálogo inactivo, el panel no llama al selector para recuperarse de su `404`.** Consulta la capacidad antes de ofrecer la acción, oculta destacar, buscar y reenlazar, y muestra una frase que explique que hay que activar Catálogo. Un `404` tratado después de llamar sería indistinguible de una ruta mal escrita y acabaría como un error genérico.
+
+**El selector heredado de M01 no busca por prefijo.** En la comprobación por efecto, `plum` devolvió 0 resultados y `plumon` 1; `lapi` devolvió 0 y `lapiz` 1; `cuad` devolvió 0. Mientras esa conducta se mantenga, el estado vacío del paso 4 debe avisar que hay que escribir la palabra completa; no puede aparentar que el producto no existe mientras la persona todavía escribe.
+
 **Previsualizar es una acción, no una decoración.** Un banner con la foto mal recortada solo se ve en su proporción real, y el paso 4 tiene que ofrecerlo antes de publicar.
 
 ---
@@ -340,6 +346,8 @@ Cada pantalla declara las dos cosas. Un SPEC que solo describe estados produce l
 - [ ] Un destacado sin foto muestra el nombre con su categoría encima, igual que la tarjeta del catálogo
 - [ ] Con un evento perdido a propósito, «actualizar datos» deja el snapshot al día
 - [ ] Dos refrescos simultáneos del mismo producto no dejan el valor viejo
+- [ ] Con Catálogo inactivo, el panel no solicita el selector: oculta destacar, buscar y reenlazar, y explica que hay que activar Catálogo
+- [ ] Mientras la búsqueda de M01 exija palabras completas, escribir `plum`, `lapi` o `cuad` no deja un vacío mudo: el selector explica que hay que completar la palabra
 - [ ] Tras retirar la integración, los destacados aparecen en el panel como «pendiente de volver a enlazar», con su nombre, y se pueden reasignar
 - [ ] Borrar en CORE un medio usado por un banner **no falla**: el banner queda sin imagen y deja de publicarse
 - [ ] Desactivar en CORE un medio usado por un banner deja el banner sin imagen y ninguna operación falla
