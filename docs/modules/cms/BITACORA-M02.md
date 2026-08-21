@@ -253,3 +253,64 @@ Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base
 - `git fetch origin` dejó `origin/main` en `e0e96c6`; `Sillar.Modules.Catalog.Contracts` todavía no publica `ProductPickerItem`, `BuscarParaSeleccionAsync` ni `ObtenerParaSeleccionAsync`.
 - Quedan fuera búsqueda, alta, reenlace y reconciliación HTTP, además de los handlers de `ProductoActualizado` y `ProductoDesactivado`. No se suscribió a eventos finos de variantes ni se tocó Catálogo.
 - `Dockerfile`, frontend, E2E, ADR y paso 4 permanecen congelados.
+
+---
+
+## Encargo 04 — cierre del bloque de productos destacados
+
+### Línea base y contradicciones encontradas antes de escribir código
+
+- Se integró `origin/main` en `b2ea894`; el merge propio `99fc295` conserva M01 y M02. La solución de partida compiló con 0 advertencias y 0 errores y superó 270 pruebas, con 2 pruebas de colación de Catálogo omitidas.
+- **Distinción ausente en el modelo:** `ProductPickerItem` separa `IsActive` (el producto existe pero está dado de baja) de `IsPublic` (existe y se puede elegir, pero no se publica). El snapshot solo conservaba el segundo y no podía pintar esa diferencia con M01 desinstalado. Se añadió `product_is_active` en vez de reutilizar `product_is_public` o anular `product_id`: las dos alternativas confunden estados que el contrato distingue.
+- **Dos cambios de categoría mezclados:** se comprobó antes de implementar que `ProductService.SetCategoriesAsync` publica `ProductoActualizado`, mientras `CategoryService.DeactivateAsync` publica un único `CategoriaDesactivada` y no una ráfaga por producto. El SPEC se partió en ambos casos; M02 relee un producto para el primero y todos sus destacados enlazados para el segundo.
+- **Texto antiguo incompatible con el refresco:** el SPEC todavía decía que el snapshot impedía que un renombrado reescribiera la portada. Eso contradice el handler y el criterio observable que exigen actualizar nombre y slug. Se precisó que el snapshot evita la dependencia durante cada petición y que eventos/reconciliación lo sustituyen explícitamente.
+
+### Construido
+
+- `cms.featured_products` incorpora `product_is_active boolean NOT NULL DEFAULT true`. Entidad, configuración, migración inicial, snapshot EF, DTO públicos/administrativos y diccionario usan el mismo nombre que identifica al dueño del estado.
+- `FeaturedProductAdminResponse.ProductIsActive` describe el estado de alta del producto en M01; `FeaturedProductAdminResponse.IsActive` describe la baja editorial del destacado en CMS. Ambos están documentados en el DTO donde los consume el panel.
+- El filtro público exige enlace vivo, vigencia, alta editorial, `product_is_public=true` y `product_is_active=true`. Administración conserva y distingue productos no publicados, dados de baja y pendientes de reenlace.
+- Se montaron búsqueda de productos activos, alta, reenlace, refresco individual y reconciliación total. Alta y reenlace vuelven a resolver el UUID en M01 y copian nombre, slug, imagen, precio, variación, categoría efectiva, publicación y alta; el selector resuelve URL de imagen y no expone el UUID del medio.
+- `FeaturedProductSnapshotCoordinator` centraliza la relectura completa, serializa por producto y abre scopes propios. Los caminos manual y de eventos llaman al mismo código; `null` anula solo `product_id` y conserva el snapshot para reenlace.
+- CMS consume `ProductoActualizado`, `ProductoDesactivado` y `CategoriaDesactivada`. Los dos primeros releen el producto del evento; el tercero relee todos los UUID enlazados. Los tres manejadores son singleton porque el bus también se resuelve desde el contenedor raíz.
+- Se añadieron pruebas en español para la distinción de estados, publicación, precio, idempotencia del snapshot, contratos HTTP y vida útil de los tres manejadores.
+
+### Verificación observada — PostgreSQL y HTTP reales
+
+Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base `sillar_m02`, puerto host `55442`; host HTTP en `127.0.0.1:5082`. Cada arranque informó `C:\sillar-m02\.env · base sillar_m02 en 127.0.0.1:55442` antes de recibir peticiones.
+
+- **Migración:** se recreó el volumen propio y la migración inicial produjo `product_is_active boolean NOT NULL DEFAULT true`. Había exactamente 0 filas en `cms.featured_products`, por lo que no correspondía reconciliar snapshots envejecidos durante la migración.
+- **Drop/reaplicación:** antes del drop había 10 tablas CORE, 7 de Catálogo y 6 CMS. `99_drop.sql` dejó 0 tablas CMS y conservó, nombre por nombre, las mismas 17 tablas ajenas (`DIFFERENCES=0`); reaplicar la migración restauró 6 tablas CMS y EF respondió que no había cambios pendientes.
+- **Selector y alta:** un producto activo con `is_public=false` apareció en el selector como `False/True`, se destacó con 201 y no apareció en público. Tras publicarlo en M01, el evento actualizó el snapshot y la misma fila apareció en público.
+- **Idempotencia de producto:** se capturó el snapshot después de un `ProductoActualizado`; cuatro actualizaciones idénticas adicionales dejaron exactamente la misma firma de nombre, slug, precio, categoría, publicación, alta, enlace y estado de reenlace.
+- **Categorías, los dos casos:** cambiar la principal mediante `SetCategoriesAsync` movió el snapshot de «Categoría Principal M02» a «Categoría Alterna M02» por `ProductoActualizado`. Dar de baja la principal hizo la misma sustitución mediante `CategoriaDesactivada`; reactivarla y volver a emitir la baja dejó la misma firma que la primera vez.
+- **Baja de producto:** `ProductoDesactivado` dejó `productIsActive=false`, `pendingRelink=false` y el UUID vivo en administración; el público quedó sin esa fila y el selector dejó de ofrecerla.
+- **Reactivación manual suficiente:** se devolvió `catalog.products.is_active` a `true` directamente, sin evento. CMS continuó mostrando `false` hasta `PUT .../{id}/refresh`; después mostró `true` y la fila volvió al público. El camino manual no depende de que M01 emita un evento de reactivación.
+- **Evento perdido y reconciliación:** nombre, slug, precio y publicación se cambiaron directamente en Catálogo. CMS conservó el valor anterior; `PUT .../refresh` respondió `refreshedCount=1`, `pendingRelinkCount=0` y sustituyó el snapshot por los valores nuevos.
+- **Tres estados de precio y categoría opcional:** altas resueltas desde M01 conservaron `12.50`, `null` y `0.00` como tres estados distintos. El producto sin categoría devolvió `primaryCategoryName=null` y se pudo destacar; ningún contrato devolvió precio formateado.
+- **Retirada y reenlace:** `cms_catalog_drop.sql` dejó los tres destacados con `productId=null`, `pendingRelink=true` y público vacío. Reenlazar el ID 1 a «Producto Sin Categoría M02» sustituyó todo el snapshot y lo devolvió al público.
+- **Producto inexistente:** sin FK de integración se colocó un UUID inexistente y se pidió refrescar. M01 devolvió `null`; CMS anuló el enlace, conservó «Producto Gratis M02» y marcó `pendingRelink=true`, sin error HTTP.
+- **Concurrencia:** tras cambiar un nombre directamente en M01, dos refrescos simultáneos del mismo destacado terminaron en 200 y administración devolvió «Concurrente Final M02», nunca el valor viejo.
+- **Dependencia blanda:** con Catálogo inactivo y CMS activo, público respondió exactamente `200 []`; administración siguió listando snapshots; el selector respondió 404 y Swagger omitió búsqueda, alta, reenlace y ambos refrescos dependientes.
+- **Swagger y auditoría:** con ambos módulos activos Swagger publicó 39 operaciones CMS y ninguna carecía de resumen; incluyó selector, alta, reenlace y ambos refrescos. La corrida dejó auditoría de altas y actualizaciones de destacados.
+- **Pruebas y compilación:** la solución compiló con 0 advertencias y 0 errores. Pasaron 274 pruebas (132 CORE, 54 Shared, 47 Catálogo y 41 CMS); quedaron omitidas las 2 pruebas de Catálogo que requieren su colación SQL auxiliar.
+- **Estado final de la base:** la FK de integración quedó aplicada; hay tres snapshots de verificación. CORE quedó activo y Catálogo/CMS inactivos; el host de prueba quedó detenido.
+
+### Encontrado al estrenar el bus interno
+
+- Cada relectura de `CatalogService.ObtenerParaSeleccionAsync` emitió `Microsoft.EntityFrameworkCore.Query[20504] MultipleCollectionIncludeWarning`: la proyección materializa las colecciones `product.Items` y `product.Categories` en una sola consulta. El origen está en `CatalogService.SeleccionAsync`; se reporta y no se rodea porque el proyecto de Catálogo está congelado para M02.
+- `Sillar.Shared.Events.IEventPublisher` todavía afirma en su comentario que «hoy nadie escucha». Ya no es cierto después de estos handlers, pero `shared/` está congelado por coordinación; queda para la costura común.
+
+### Decisiones de este encargo
+
+- **DECIDÍ:** no tomar decisiones irreversibles.
+- **DECIDÍ:** guardar `product_is_active` junto a `product_is_public`. **DESCARTÉ:** reutilizar el segundo o anular `product_id` al dar de baja. **POR QUÉ:** publicación, baja e inexistencia producen tres mensajes y acciones distintas incluso sin M01. **REVERSIBLE:** sí; es una columna de snapshot añadida antes de despliegues.
+- **DECIDÍ:** releer todos los destacados ante `CategoriaDesactivada`. **DESCARTÉ:** pedir otro contrato o forzar una ráfaga por producto en M01. **POR QUÉ:** el coste queda acotado por la portada y no crece con el catálogo. **REVERSIBLE:** sí; debe revisarse si los destacados dejan de estar acotados.
+- **DECIDÍ:** compartir coordinador entre eventos y botones y serializar por UUID. **DESCARTÉ:** aplicar datos del evento o duplicar lógica por endpoint. **POR QUÉ:** la relectura completa es idempotente y no depende del orden de entrega. **REVERSIBLE:** sí.
+- **DECIDÍ:** montar las cinco rutas dependientes solo cuando el contenedor registra `ICatalogService`. **DESCARTÉ:** comprobar el código del módulo. **POR QUÉ:** la disponibilidad se expresa por el contrato opcional, no por conocimiento de activaciones ajenas. **REVERSIBLE:** sí.
+
+### Fuera y congelado
+
+- No se tocaron `PublicSite`, `frontend/shared`, `e2e`, `Dockerfile`, Catálogo, Shared, ADR ni el paso 4.
+- La advertencia de consulta de M01 y el comentario obsoleto del bus se reportan para sus dueños; corregirlos desde M02 violaría los archivos congelados.
+- El `Dockerfile` sigue sin CMS y queda pendiente de la fusión final.

@@ -59,10 +59,20 @@ public sealed class ContratosHttpTests
             Assert.Equal(typeof(bool), response.GetProperty("ProductPriceVaries")?.PropertyType);
             Assert.Equal(typeof(string), response.GetProperty("ProductCategory")?.PropertyType);
             Assert.Equal(typeof(bool), response.GetProperty("ProductIsPublic")?.PropertyType);
+            Assert.Equal(typeof(bool), response.GetProperty("ProductIsActive")?.PropertyType);
             Assert.DoesNotContain(
                 response.GetProperties(),
                 property => property.PropertyType == typeof(string)
                             && property.Name.Contains("Price", StringComparison.Ordinal));
         }
+    }
+
+    [Fact]
+    public void Administracion_distingue_el_estado_del_producto_del_estado_del_destacado()
+    {
+        var response = typeof(FeaturedProductAdminResponse);
+
+        Assert.Equal(typeof(bool), response.GetProperty("ProductIsActive")?.PropertyType);
+        Assert.Equal(typeof(bool), response.GetProperty("IsActive")?.PropertyType);
     }
 }

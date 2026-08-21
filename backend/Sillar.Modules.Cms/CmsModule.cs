@@ -2,9 +2,12 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Sillar.Modules.Catalog.Contracts.Events;
 using Sillar.Modules.Cms.Data;
 using Sillar.Modules.Cms.Endpoints;
+using Sillar.Modules.Cms.Events;
 using Sillar.Modules.Cms.Services;
+using Sillar.Shared.Events;
 using Sillar.Shared.Modularity;
 
 namespace Sillar.Modules.Cms;
@@ -40,6 +43,10 @@ public sealed class CmsModule : IModule
         services.AddScoped<BannerService>();
         services.AddScoped<PromotionService>();
         services.AddScoped<FeaturedProductService>();
+        services.AddSingleton<FeaturedProductSnapshotCoordinator>();
+        services.AddSingleton<IEventHandler<ProductoActualizado>, ProductoActualizadoHandler>();
+        services.AddSingleton<IEventHandler<ProductoDesactivado>, ProductoDesactivadoHandler>();
+        services.AddSingleton<IEventHandler<CategoriaDesactivada>, CategoriaDesactivadaHandler>();
         services.AddScoped<FeaturedProjectService>();
         services.AddScoped<SocialLinkService>();
     }

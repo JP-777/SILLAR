@@ -103,6 +103,7 @@ public sealed class CmsInitial : Migration
                 product_price_varies = table.Column<bool>(type: "boolean", nullable: false),
                 product_category = table.Column<string>(type: "text", nullable: true),
                 product_is_public = table.Column<bool>(type: "boolean", nullable: false),
+                product_is_active = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                 display_order = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                 starts_at = table.Column<DateTimeOffset>(type: "timestamptz", nullable: true),
                 ends_at = table.Column<DateTimeOffset>(type: "timestamptz", nullable: true),

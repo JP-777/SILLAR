@@ -6,11 +6,14 @@ namespace Sillar.Modules.Cms.Domain;
 internal static class FeaturedProductRules
 {
     /// <summary>
-    /// Un snapshot solo puede publicarse si conserva el enlace vivo y M01 lo
-    /// declaró público. La vigencia se aplica aparte con PublicationWindow.
+    /// Un snapshot solo puede publicarse si conserva el enlace vivo y M01
+    /// mantiene el producto de alta y público. La vigencia se aplica aparte
+    /// con PublicationWindow.
     /// </summary>
     internal static Expression<Func<FeaturedProduct, bool>> HasPublicProduct()
-        => featured => featured.ProductId != null && featured.ProductIsPublic;
+        => featured => featured.ProductId != null
+            && featured.ProductIsPublic
+            && featured.ProductIsActive;
 
     internal static bool IsPendingRelink(FeaturedProduct featured)
         => featured.ProductId is null && !string.IsNullOrWhiteSpace(featured.ProductName);

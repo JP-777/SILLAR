@@ -27,6 +27,7 @@ internal sealed class FeaturedProductConfiguration : IEntityTypeConfiguration<Fe
         builder.Property(x => x.ProductPriceVaries).HasColumnName("product_price_varies");
         builder.Property(x => x.ProductCategory).HasColumnName("product_category");
         builder.Property(x => x.ProductIsPublic).HasColumnName("product_is_public");
+        builder.Property(x => x.ProductIsActive).HasColumnName("product_is_active").HasDefaultValue(true);
         builder.Property(x => x.DisplayOrder).HasColumnName("display_order").HasDefaultValue(0);
         builder.Property(x => x.StartsAt).HasColumnName("starts_at").HasColumnType("timestamptz");
         builder.Property(x => x.EndsAt).HasColumnName("ends_at").HasColumnType("timestamptz");

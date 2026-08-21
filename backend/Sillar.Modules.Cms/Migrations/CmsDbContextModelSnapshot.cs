@@ -83,6 +83,7 @@ internal sealed class CmsDbContextModelSnapshot : ModelSnapshot
             b.Property<Guid?>("ImageId").HasColumnType("uuid").HasColumnName("image_id");
             b.Property<string>("ProductCategory").HasColumnType("text").HasColumnName("product_category");
             b.Property<Guid?>("ProductId").HasColumnType("uuid").HasColumnName("product_id");
+            b.Property<bool>("ProductIsActive").HasColumnType("boolean").HasDefaultValue(true).HasColumnName("product_is_active");
             b.Property<bool>("ProductIsPublic").HasColumnType("boolean").HasColumnName("product_is_public");
             b.Property<string>("ProductName").IsRequired().HasColumnType("text").HasColumnName("product_name");
             b.Property<decimal?>("ProductPrice").HasPrecision(10, 2).HasColumnType("numeric(10,2)").HasColumnName("product_price");

@@ -81,11 +81,12 @@ El historial de EF Core vive en `cms.__migrations`, separado del historial de CO
 | `product_price_varies` | `boolean` | no | Snapshot; indica que las presentaciones tienen precios distintos |
 | `product_category` | `text` | sí | Categoría efectiva; `NULL` cuando el producto no tiene ninguna; no vacía si está presente |
 | `product_is_public` | `boolean` | no | Snapshot del estado público de M01; falso impide publicar el destacado |
+| `product_is_active` | `boolean` | no | Snapshot del estado de alta en M01; falso retira el destacado del público; default `true` |
 | `display_order` | `integer` | no | `ck_featured_products_display_order` (`>= 0`), default `0` |
 | `starts_at` | `timestamptz` | sí | `ck_featured_products_vigencia` |
 | `ends_at` | `timestamptz` | sí | posterior a `starts_at` cuando ambas existen |
 
-`product_name`, `product_slug`, `image_id`, precio, categoría y estado público forman el snapshot editorial. El producto puede quedar sin enlace vivo y conservar esos datos.
+`product_name`, `product_slug`, `image_id`, precio, categoría, estado público y estado de alta del producto forman el snapshot editorial. El producto puede quedar sin enlace vivo y conservar esos datos.
 
 **Integración opcional:** `database/integrations/cms_catalog.sql` añade `fk_featured_products_product_id` → `catalog.products.id` con `ON DELETE SET NULL` cuando ambos módulos están instalados. La migración inicial de CMS no contiene esa FK.
 
@@ -151,6 +152,7 @@ erDiagram
         boolean product_price_varies
         text product_category
         boolean product_is_public
+        boolean product_is_active
         integer display_order
     }
     featured_projects {

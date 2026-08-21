@@ -16,5 +16,6 @@ public sealed class FeaturedProduct : ScheduledCmsEntity
     public bool ProductPriceVaries { get; set; }
     public string? ProductCategory { get; set; }
     public bool ProductIsPublic { get; set; }
+    public bool ProductIsActive { get; set; } = true;
     public int DisplayOrder { get; set; }
 }

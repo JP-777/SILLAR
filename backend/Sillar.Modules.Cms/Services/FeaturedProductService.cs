@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Sillar.Core.Contracts;
+using Sillar.Modules.Catalog.Contracts;
 using Sillar.Modules.Cms.Data;
 using Sillar.Modules.Cms.Domain;
 using Sillar.Modules.Cms.Dtos;
@@ -35,7 +36,8 @@ internal sealed class FeaturedProductService(
             item.ProductPrice,
             item.ProductPriceVaries,
             item.ProductCategory,
-            item.ProductIsPublic))];
+            item.ProductIsPublic,
+            item.ProductIsActive))];
     }
 
     internal async Task<IReadOnlyList<FeaturedProductAdminResponse>> ListAsync(
@@ -60,16 +62,10 @@ internal sealed class FeaturedProductService(
 
     internal async Task<CmsOperation<FeaturedProductAdminResponse>> CreateAsync(
         CreateFeaturedProductRequest request,
-        string productName,
-        string productSlug,
-        Guid? primaryImageId,
-        decimal? productPrice,
-        bool productPriceVaries,
-        string? productCategory,
-        bool productIsPublic,
+        ProductPickerItem product,
         CancellationToken cancellationToken)
     {
-        var error = ValidateSelection(request.ProductId, productName, productSlug, primaryImageId, productPrice, productCategory)
+        var error = ValidateSelection(request.ProductId, product)
                     ?? CmsContentRules.ValidatePeriod(request.StartsAt, request.EndsAt);
         if (error is not null)
         {
@@ -82,18 +78,13 @@ internal sealed class FeaturedProductService(
         var featured = new FeaturedProduct
         {
             ProductId = request.ProductId!.Value,
-            ProductName = productName.Trim(),
-            ProductSlug = productSlug.Trim(),
-            ImageId = primaryImageId,
-            ProductPrice = productPrice,
-            ProductPriceVaries = productPriceVaries,
-            ProductCategory = productCategory?.Trim(),
-            ProductIsPublic = productIsPublic,
+            ProductName = product.Name.Trim(),
             DisplayOrder = lastOrder + 1,
             StartsAt = request.StartsAt,
             EndsAt = request.EndsAt,
             IsActive = true
         };
+        ApplySnapshot(featured, product);
 
         database.FeaturedProducts.Add(featured);
         await database.SaveChangesAsync(cancellationToken);
@@ -136,16 +127,10 @@ internal sealed class FeaturedProductService(
     internal async Task<CmsOperation<FeaturedProductAdminResponse>> RelinkAsync(
         int id,
         RelinkFeaturedProductRequest request,
-        string productName,
-        string productSlug,
-        Guid? primaryImageId,
-        decimal? productPrice,
-        bool productPriceVaries,
-        string? productCategory,
-        bool productIsPublic,
+        ProductPickerItem product,
         CancellationToken cancellationToken)
     {
-        var error = ValidateSelection(request.ProductId, productName, productSlug, primaryImageId, productPrice, productCategory);
+        var error = ValidateSelection(request.ProductId, product);
         if (error is not null)
         {
             return Invalid(error);
@@ -159,14 +144,7 @@ internal sealed class FeaturedProductService(
             return new CmsOperation<FeaturedProductAdminResponse>(CmsOutcome.NotFound);
         }
 
-        featured.ProductId = request.ProductId!.Value;
-        featured.ProductName = productName.Trim();
-        featured.ProductSlug = productSlug.Trim();
-        featured.ImageId = primaryImageId;
-        featured.ProductPrice = productPrice;
-        featured.ProductPriceVaries = productPriceVaries;
-        featured.ProductCategory = productCategory?.Trim();
-        featured.ProductIsPublic = productIsPublic;
+        ApplySnapshot(featured, product);
         await database.SaveChangesAsync(cancellationToken);
 
         return new CmsOperation<FeaturedProductAdminResponse>(
@@ -206,33 +184,96 @@ internal sealed class FeaturedProductService(
             (featured, position) => featured.DisplayOrder = position,
             cancellationToken);
 
-    private string? ValidateSelection(
-        Guid? productId,
-        string productName,
-        string productSlug,
-        Guid? primaryImageId,
-        decimal? productPrice,
-        string? productCategory)
+    internal Task<bool> HasLinkedProductAsync(Guid productId, CancellationToken cancellationToken)
+        => database.FeaturedProducts.AnyAsync(
+            featured => featured.ProductId == productId,
+            cancellationToken);
+
+    internal async Task<IReadOnlyList<Guid>> ListLinkedProductIdsAsync(CancellationToken cancellationToken)
+        => await database.FeaturedProducts.AsNoTracking()
+            .Where(featured => featured.ProductId != null)
+            .Select(featured => featured.ProductId!.Value)
+            .Distinct()
+            .OrderBy(productId => productId)
+            .ToListAsync(cancellationToken);
+
+    internal async Task<FeaturedProductRefreshResponse> RefreshLinkedProductAsync(
+        Guid productId,
+        ProductPickerItem? product,
+        CancellationToken cancellationToken)
+    {
+        var featured = await database.FeaturedProducts
+            .Where(item => item.ProductId == productId)
+            .ToListAsync(cancellationToken);
+        if (featured.Count == 0)
+        {
+            return new FeaturedProductRefreshResponse(0, 0);
+        }
+
+        if (product is null)
+        {
+            foreach (var item in featured)
+            {
+                item.ProductId = null;
+            }
+
+            await database.SaveChangesAsync(cancellationToken);
+            return new FeaturedProductRefreshResponse(featured.Count, featured.Count);
+        }
+
+        foreach (var item in featured)
+        {
+            ApplySnapshot(item, product);
+        }
+
+        await database.SaveChangesAsync(cancellationToken);
+        return new FeaturedProductRefreshResponse(featured.Count, 0);
+    }
+
+    private string? ValidateSelection(Guid? productId, ProductPickerItem product)
     {
         if (productId is null)
         {
             return "Elige un producto del catálogo.";
         }
 
-        if (string.IsNullOrWhiteSpace(productName) || string.IsNullOrWhiteSpace(productSlug))
+        if (productId != product.ProductId)
+        {
+            return "El producto resuelto no coincide con el que se eligió.";
+        }
+
+        if (!product.IsActive)
+        {
+            return "El producto elegido está dado de baja y no se puede destacar.";
+        }
+
+        if (string.IsNullOrWhiteSpace(product.Name) || string.IsNullOrWhiteSpace(product.Slug))
         {
             return "El producto elegido no tiene nombre y dirección pública completos.";
         }
 
-        var snapshotError = FeaturedProductRules.ValidateSnapshotValues(productPrice, productCategory);
+        var snapshotError = FeaturedProductRules.ValidateSnapshotValues(product.Price, product.PrimaryCategoryName);
         if (snapshotError is not null)
         {
             return snapshotError;
         }
 
-        return primaryImageId is not null && MediaUrl(primaryImageId) is null
+        return product.PrimaryImageId is not null && MediaUrl(product.PrimaryImageId) is null
             ? "La imagen principal del producto ya no existe o no está activa."
             : null;
+    }
+
+    internal static void ApplySnapshot(FeaturedProduct featured, ProductPickerItem product)
+    {
+        featured.ProductId = product.ProductId;
+        featured.ProductName = product.Name.Trim();
+        featured.ProductSlug = product.Slug.Trim();
+        featured.ImageId = product.PrimaryImageId;
+        featured.ProductPrice = product.Price;
+        featured.ProductPriceVaries = product.PriceVaries;
+        featured.ProductCategory = product.PrimaryCategoryName?.Trim();
+        featured.ProductIsPublic = product.IsPublic;
+        featured.ProductIsActive = product.IsActive;
     }
 
     private string? MediaUrl(Guid? id) => id is { } value ? media.GetPublicUrl(value) : null;
@@ -248,6 +289,7 @@ internal sealed class FeaturedProductService(
         featured.ProductPriceVaries,
         featured.ProductCategory,
         featured.ProductIsPublic,
+        featured.ProductIsActive,
         featured.DisplayOrder,
         featured.StartsAt,
         featured.EndsAt,
