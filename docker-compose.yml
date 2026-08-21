@@ -7,6 +7,22 @@ services:
       - "postgres"
       - "-c"
       - "default_text_search_config=pg_catalog.spanish"
+      # Quién se conecta y cuándo. **Es de desarrollo, y aquí hace falta.**
+      #
+      # Con esto apagado, un proceso que se conecta y escribe una fila sin
+      # provocar ningún error **no deja rastro ninguno**: solo se registran los
+      # fallos. Eso es exactamente lo que impidió reconstruir cómo llegó un
+      # módulo en construcción a esta base el 21 de agosto de 2026 — los
+      # registros del contenedor cubrían la ventana y no contenían nada, porque
+      # nunca se grabó.
+      #
+      # Y no hay otro rastro que sirva: el historial de PowerShell solo graba
+      # consolas interactivas, así que **no ve nada de lo que hacen los agentes**,
+      # que es la mayor parte de lo que toca esta máquina.
+      - "-c"
+      - "log_connections=on"
+      - "-c"
+      - "log_disconnections=on"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD en .env}

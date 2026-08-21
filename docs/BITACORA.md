@@ -255,6 +255,24 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
   `InProcessEventBus` dice que no hay orden garantizado, así que quien construya encima sabe que
   se lo está jugando. Los otros dos no lo estaban, y uno era un hueco. El `<remarks>` del bus es
   el modelo a copiar.
+- **Una comprobación que modifica lo que mide no comprueba: contamina.** Y su pariente: **una
+  prueba que presupone el estado que se investiga no lo descarta** — mirar si una variable está
+  definida *ahora* no dice nada de si lo estaba entonces, y peor, tocar el entorno para
+  averiguarlo destruye la respuesta.
+- **Un arreglo sobre la causa equivocada deja el caso con aspecto de cerrado.** Es peor que no
+  arreglar nada, porque quita las ganas de seguir buscando. De ahí que convenga escribir «causa
+  sin establecer» cuando lo es, aunque el síntoma ya no esté.
+- **Una corrección se verifica con el mismo rigor que el fallo que corrige.** Lo que llega
+  etiquetado como arreglo entra sin que nadie lo mire, que es exactamente cuando no debería.
+- **Una vía cerrada no es una vía sin explorar.** «No encontramos nada» y «esto no pudo grabarse
+  nunca» llevan al mismo sitio y valen distinto: la segunda gradúa la confianza, la primera deja
+  la duda abierta para siempre. Cerrar una vía vale tanto como abrirla, y hay que decir cuál de
+  las dos cosas se hizo.
+- **La mitad no probada de una tanda probada es la que menos se mira**, precisamente porque la
+  tanda salió bien. Al romper una emisión a propósito, tres de cuatro pruebas se pusieron rojas y
+  la cuarta se dio por buena — vivía en otro archivo y **ninguna de sus aserciones se había visto
+  fallar**. Hubo que romper el segundo archivo aparte. Una tanda no está verificada hasta que
+  cada aserción ha fallado una vez.
 - **Una conducta escrita para un caso y no para su simétrico es la forma del hueco.** Se buscó el
   simétrico de la baja —¿reactivar avisa?— porque editar una presentación no avisaba y su
   simétrico, desactivarla, sí. Esta vez no había hueco: reactivar pasa por `UpdateAsync`, que
@@ -372,6 +390,41 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
 | Datos administrativos de Bsale | Certificado, costo, volumen, series y correlativos. Preguntas 7 a 10 de la guía de observación |
 
 Aplazados por decisión, no pendientes: retención de auditoría, vectoriales en medios, permisos granulares, vencimiento de licencias, marca blanca.
+
+### Cerrado sin resolver: cómo llegó `cms` a la base del MVP (21 ago)
+
+El 21 de agosto apareció una fila del módulo `cms` en `core.modules` de `sillar_dev`, la base de
+la demostración. La escribió el sincronizador de módulos de un binario que declara `cms`, o sea
+el de M02, apuntando a la base equivocada.
+
+**Estado: mecanismo probado, causa sin establecer. Contenido pero no resuelto.**
+
+- **Contenido:** la fila se borró con el host parado, y el arranque volvió limpio. No hacía daño
+  —la pantalla de módulos itera sobre el binario, no sobre las filas (`ModuleActivationService.cs:88`),
+  así que nunca hubo tarjeta rota— pero dejaba un aviso permanente en cada arranque, y un aviso
+  permanente sobre algo que no se va a arreglar entrena a la gente a ignorar los avisos.
+- **Mecanismo probado:** una variable `ConnectionStrings__Default` heredada del entorno gana
+  sobre el `.env`, en silencio. M02 lo demostró. **Pero demostrar que un mecanismo puede producir
+  el efecto no demuestra que produjera éste.**
+
+**Por qué cada vía está cerrada** — que no es lo mismo que no haber dado nada:
+
+| Vía | Por qué se cierra |
+|---|---|
+| ¿Lo escribió nuestro binario? | **No pudo.** `main` nunca declaró `cms`: `git log -S "cms"` da tres commits y ninguno añade un módulo —documentación, un ejemplo en Markdown y un `WHERE nspname IN (…)`—, y hoy no hay ningún `"cms"` en C# |
+| ¿Cayó `DotEnv` al directorio de trabajo? | **No.** El `.env` de M02 existía veintitantas horas antes de la fila, así que la primera búsqueda —la del árbol del binario— encontraba el suyo |
+| Los registros de PostgreSQL | **Cubrían la ventana y no contenían nada.** `log_connections`, `log_disconnections` y `log_statement` estaban en `off`/`none`: una conexión que escribe una fila sin error no dejaba rastro. **No se perdió la prueba: no se tomó.** Corregido para la próxima |
+| El historial de PowerShell | **No puede verlo.** PSReadLine solo graba consolas interactivas, y los dos agentes lanzan `powershell.exe -NonInteractive`. Cero coincidencias de `ConnectionStrings`, y la última escritura del archivo es de once horas antes del incidente pese a decenas de comandos por medio |
+| El entorno de M02 hoy | Sin ninguna variable así definida, ni de usuario ni de máquina. La consola de aquel día ya no existe |
+
+Lo que queda hecho: el registro de conexiones encendido en desarrollo
+(`docker-compose.yml:22-25`) y el arranque diciendo de qué `.env` cargó, a qué base apunta y qué
+claves le ganó el entorno. **La próxima vez habrá rastro.**
+
+Y una propuesta sin hacer: que cada árbol ponga su propio `Application Name` en la cadena de
+conexión. Desde el anfitrión todas las conexiones llegan con la misma IP de pasarela
+—`172.18.0.1`—, así que el origen no distingue procesos; el nombre de aplicación sí lo haría, y
+sale gratis.
 
 ### Defecto abierto: la auditoría enseña identificadores (18 ago)
 
