@@ -268,6 +268,14 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
   nunca» llevan al mismo sitio y valen distinto: la segunda gradúa la confianza, la primera deja
   la duda abierta para siempre. Cerrar una vía vale tanto como abrirla, y hay que decir cuál de
   las dos cosas se hizo.
+- **`toBeHidden()` es vacuo igual que los demás, y peor porque parece que espera.** Medido, no
+  supuesto: sobre una página en blanco, `toBeHidden()` **pasa** con un selector que no ha
+  existido nunca — se cumple con el elemento ausente del DOM. Los dos creíamos lo contrario esta
+  mañana. Va con las demás aserciones de ausencia, sin excepción.
+- **Un `tbody` vacío no tiene cero filas.** `Table` pinta el estado vacío como una fila más
+  (`patterns.tsx:279`), así que `tbody tr` da **1** con la tabla vacía. Tres pruebas exigían
+  `toBe(0)` y pasaban: contaban antes de que la página pintara. **No habrían pasado nunca sobre
+  una tabla pintada, ni vacía ni llena** — una aserción imposible que vivía de la vacuidad.
 - **Una aserción de ausencia se cumple sola en una página que aún no ha pintado.** «Con M01
   desactivado el inicio no deja hueco» llevaba semanas en verde **y no afirmaba nada**: `goto()`
   vuelve antes que React, y tanto `toHaveCount(0)` como `not.toContainText` pasan sobre un `body`
@@ -394,6 +402,7 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
 | **Probar el aborto de la ADR-019 en vivo** | La función pura está probada; que el host **se niegue a arrancar** no. Es el efecto observable, y es lo único que la decisión promete |
 | **La búsqueda no encuentra por prefijo** | `plainto_tsquery` exige la palabra entera: medido contra la base de demostración, `plum` → 0 y `plumon` → 1; `lapi` → 0 y `lapiz` → 1; `cuad` → 0. En un buscador donde se teclea a mano —y sobre todo en un selector que filtra mientras escribes— **está vacío casi todo el rato**, hasta que se termina cada palabra. El diagnóstico aparente era «une los términos con AND», que también es cierto (`cuaderno plumon` → 0) pero es lo que la gente espera de un buscador. Es conducta heredada de toda la búsqueda de M01 —`ProductService`, `CategoryService` y `CatalogService` usan la misma— así que cambiarla es su propio trabajo, no un arreglo suelto |
 | **El paquete que recibe un cliente lleva código de módulos que no ha licenciado** | Aunque no se rendericen: el armazón importa los componentes y la navegación de todos los módulos, así que entran al `bundle`. **Ya pasaba con el menú** (`layout/navigation.ts:46`), y la costura de la portada (`platform/homeSections.ts`) no lo empeora — es el mismo mecanismo. Es asunto de **licenciamiento, no de arquitectura**: el día que se decida, se decide para el menú y para la portada a la vez. Lo que hay que evitar entretanto es resolverlo a medias en uno de los dos |
+| **`MultipleCollectionIncludeWarning` en el selector de productos** | `CatalogService.SeleccionAsync` proyecta dos colecciones —los precios de las presentaciones y las categorías— en un mismo `Select`, y EF avisa de que puede multiplicar filas. **Medido: es un factor constante y acotado, no crece con el catálogo.** El peor producto realista de una librería —6 presentaciones × 3 categorías— pide 18 filas en vez de 9; con los datos de hoy el máximo es 3. Y la consulta lleva `Take(50)`, así que el techo es 50 × (presentaciones × categorías) pase lo que pase. **Molestia declarada, no defecto.** Lo que no se ha medido es si EF parte la consulta o hace el producto cartesiano de verdad: eso pide leer el SQL generado, y no cambia la cota |
 | Repaso visual de Swagger | Junto con la verificación del panel: las dos piden un navegador. **Los cuerpos de ejemplo ya no son parte de esto**: los dieciséis están puestos y probados (`zz-instalacion.spec.ts:44`) |
 | **Un visitante anónimo provoca peticiones a `/api/admin/`** | Visitar la tienda **sin sesión** deja cuatro 401 en consola: la aplicación pide `/admin/auth/me` y `/admin/auth/csrf` al arrancar en **cualquier** ruta (`SessionProvider.tsx:45` y `:53`). No es un fallo de seguridad —son 401 manejados a propósito con `allowUnauthorized`— pero es trabajo inútil en cada visita pública y ensucia la consola de quien mire. Nadie lo había visto porque **ninguna prueba visitaba la tienda sin sesión**. Sin tocar: es el arranque de CORE, y no pedir sesión en rutas públicas podría perderla al navegar de la tienda al panel sin recargar. **Lo hereda cualquier módulo que añada pantallas públicas** —M02 el primero—, así que conviene decidirlo antes de que se lo saque su puerta de cero errores como si fuera suyo |
 | Verificación visual del panel | Sigue pendiente: es lo único que separa a CORE de estar verificado de punta a punta |
@@ -502,9 +511,15 @@ verdad costaba a mano.
 
 ### Riesgo abierto: el cajón del producto tras asociar una imagen (20 ago)
 
-**Observado una vez**, en una vuelta de la suite entera: en `recorrido.spec.ts`, pulsar «Guardar
-cambios» justo después de asociar una imagen dejó el cajón abierto **y sin ningún aviso**. No se
-ha vuelto a reproducir en seis intentos, ni aislado ni acompañado.
+**Observado dos veces**, las dos en una vuelta de la suite entera: en `recorrido.spec.ts`,
+pulsar «Guardar cambios» justo después de asociar una imagen deja el cajón abierto **y sin ningún
+aviso**. Entre una y otra no se reprodujo en seis intentos, ni aislado ni acompañado.
+
+La segunda vez fue el 21 de agosto, **justo después de envolver `page.goto` para que espere al
+armazón**. Eso cambió el ritmo de toda la suite, así que no se puede afirmar que sea la misma
+carrera: puede serlo, o puede ser una interacción nueva. Lo que sí cambia es el estado del
+riesgo — **dos apariciones ya no son una anécdota**, y toca investigarlo con la siguiente que
+salga en vez de esperar a que se repita.
 
 La carrera existe y se puede señalar: asociar una imagen recarga la ficha con el cajón abierto
 (`ProductsPage.tsx:197` llama a `abrirFicha`), así que hay un momento en que el formulario se

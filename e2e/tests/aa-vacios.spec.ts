@@ -16,6 +16,22 @@ import { themeRecorder } from '../fixtures/themes.js';
  * correr primero, y por eso se dice en el nombre del fichero.
  */
 
+/**
+ * Las filas **con datos**, que no son todas las del `tbody`.
+ *
+ * `Table` pinta el estado vacío como una fila más —un `<tr>` con un `<td
+ * class="ui-table__state">` (`patterns.tsx:279-281`)—, así que contar
+ * `tbody tr` da **1** con la tabla vacía, no 0.
+ *
+ * Estas tres pruebas exigían `toBe(0)` y pasaban igualmente: contaban antes
+ * de que la página pintara, cuando no había ninguna fila de nada. **Nunca
+ * habrían pasado sobre una tabla pintada, ni vacía ni llena**, y solo se vio
+ * al hacer que navegar esperara al armazón.
+ */
+function filasConDatos(page: import('@playwright/test').Page) {
+  return page.locator('tbody tr').filter({ hasNot: page.locator('.ui-table__state') });
+}
+
 const MARCAS = '/admin/catalogo/marcas';
 const CATEGORIAS = '/admin/catalogo/categorias';
 const PRODUCTOS = '/admin/catalogo/productos';
@@ -25,7 +41,7 @@ test('Sin marcas, la pantalla invita a crear la primera', async ({ page }) => {
   await loginAsE2eAdmin(page);
   await page.goto(MARCAS);
 
-  const filas = page.locator('tbody tr');
+  const filas = filasConDatos(page);
 
   // Si esto falla, no es que el estado vacío esté roto: es que otra prueba
   // creó marcas antes. Se dice explícitamente en vez de dejar que la
@@ -49,7 +65,7 @@ test('Sin categorías, la pantalla invita a crear la primera', async ({ page }) 
   await page.goto(CATEGORIAS);
 
   expect(
-    await page.locator('tbody tr').count(),
+    await filasConDatos(page).count(),
     'esta prueba necesita empezar sin categorías — ¿otra las creó antes?',
   ).toBe(0);
 
@@ -66,7 +82,7 @@ test('Sin productos, la pantalla invita a crear el primero', async ({ page }) =>
   await page.goto(PRODUCTOS);
 
   expect(
-    await page.locator('tbody tr').count(),
+    await filasConDatos(page).count(),
     'esta prueba necesita empezar sin productos — ¿otra los creó antes?',
   ).toBe(0);
 

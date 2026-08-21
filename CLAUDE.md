@@ -244,6 +244,23 @@ No se delega, aunque se puede reducir:
   la lista de reglas que el sistema garantiza.
 - Las pruebas de lógica no tocan la base de datos.
 
+## La puerta
+
+Antes de dar algo por terminado:
+
+```bash
+node scripts/verificar.mjs
+```
+
+Tipos del frontend, tipos del arnés, compilación y pruebas del backend, y la suite e2e — en ese
+orden, de barata a cara, diciendo en qué etapa murió. **Está escrito como script y no como regla
+a propósito:** una regla hay que acordarse de cumplirla, un comando o pasa o no pasa. Antes de
+existir, había tres comprobaciones lanzándose a mano y un error de tipos vivió días dentro de una
+prueba sin salir por ningún lado.
+
+Comprueba también que **ninguna prueba se saltó sin declararlo**: la lista de omitidas esperadas
+está en el propio script, y falla si el conjunto no coincide —más, menos o distintas.
+
 ## Criterio de terminado
 
 Un módulo está terminado cuando **se puede instalar y desinstalar sin romper nada del resto del sistema**. Si al desactivarlo aparece un enlace roto, una ruta muerta, un hueco visual o un fallo al arrancar, no está terminado.
