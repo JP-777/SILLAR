@@ -1,5 +1,5 @@
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
-import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
+import { expect, test } from '../fixtures/base.js';
 import { themeRecorder } from '../fixtures/themes.js';
 
 /**
@@ -112,16 +112,12 @@ test('El sitio recién instalado tiene nombre, sin que nadie lo escriba dos vece
     'el ajuste público business_name se quedó en el marcador del seed',
   ).not.toBe('PENDIENTE_DEFINIR');
 
-  // Sin sesión, que es como llega quien visita la tienda — y por eso hay que
-  // apartar dos 401: la aplicación pide `/admin/auth/me` y `/admin/auth/csrf`
-  // al arrancar en cualquier ruta y los maneja a propósito. Está en Pendientes
-  // como lo que es: un visitante anónimo no debería provocar peticiones a
-  // `/api/admin/`, y quitarlas es tocar el arranque de CORE.
-  await duringExpectedOutage(page, async () => {
-    await page.goto('/');
-    await expect(
-      page.getByRole('heading', { level: 1 }),
-      'la portada de un sitio instalado no enseña el nombre del negocio',
-    ).toBeVisible();
-  });
+  // **Sin sesión y sin válvula.** Visitar la tienda como visitante anónimo ya
+  // no deja ningún error de consola: «quién soy» responde 200 con nulo, y el
+  // token CSRF solo se pide cuando hay sesión.
+  await page.goto('/');
+  await expect(
+    page.getByRole('heading', { level: 1 }),
+    'la portada de un sitio instalado no enseña el nombre del negocio',
+  ).toBeVisible();
 });

@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
-import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
+import { expect, test } from '../fixtures/base.js';
 
 /**
  * **El repaso sistemático de móvil y teclado.**
@@ -122,27 +122,19 @@ test('A 390 px, ninguna pantalla pública se sale por la derecha', async ({ page
 
   const rotas: string[] = [];
 
-  // **Sin sesión, que es como llega quien visita la tienda.** Y por eso hace
-  // falta apartar unos errores de consola: al arrancar, la aplicación pide
-  // `/admin/auth/me` y `/admin/auth/csrf` con `allowUnauthorized`
-  // (`SessionProvider.tsx:45` y `:53`) para saber si hay sesión, y sin ella
-  // el navegador registra dos 401 —cuatro en desarrollo, que invoca el efecto
-  // dos veces—. La aplicación los maneja a propósito y no se ve nada roto.
-  //
-  // **Es un hallazgo de este repaso, no una excusa**: ninguna prueba visitaba
-  // la tienda sin sesión, así que nadie lo había visto. Queda anotado en la
-  // bitácora: un visitante anónimo no debería provocar peticiones a
-  // `/api/admin/`, y quitarlas es tocar el arranque, que no es de M01.
-  await duringExpectedOutage(page, async () => {
-    for (const pantalla of TIENDA) {
-      await abrir(page, pantalla.path);
+  // **Sin sesión, que es como llega quien visita la tienda.** Y sin válvula:
+  // visitar la tienda sin sesión dejaba cuatro errores de consola —«quién
+  // soy» y el token CSRF respondían 401— y eso obligaba a apartarlos aquí, en
+  // `aa-vacios` y en la ficha de abajo. **Tres sitios donde una regresión de
+  // esa área no se habría visto.** Arreglado en el origen.
+  for (const pantalla of TIENDA) {
+    await abrir(page, pantalla.path);
 
-      const culpables = await loQueSeSale(page);
-      if (culpables.length > 0) {
-        rotas.push(`${pantalla.name}: ${culpables.join(', ')}`);
-      }
+    const culpables = await loQueSeSale(page);
+    if (culpables.length > 0) {
+      rotas.push(`${pantalla.name}: ${culpables.join(', ')}`);
     }
-  });
+  }
 
   expect(rotas, `se salen a 390 px:\n  ${rotas.join('\n  ')}`).toHaveLength(0);
 
@@ -153,11 +145,8 @@ test('A 390 px, ninguna pantalla pública se sale por la derecha', async ({ page
   };
 
   if (listado.items.length > 0) {
-    // Sigue sin sesión: mismo motivo que arriba.
-    const culpables = await duringExpectedOutage(page, async () => {
-      await abrir(page, `/producto/${listado.items[0].slug}`);
-      return loQueSeSale(page);
-    });
+    await abrir(page, `/producto/${listado.items[0].slug}`);
+    const culpables = await loQueSeSale(page);
 
     expect(culpables, `la ficha se sale a 390 px: ${culpables.join(', ')}`).toHaveLength(0);
   }

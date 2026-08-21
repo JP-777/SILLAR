@@ -275,6 +275,20 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
   prueba inestable. Censadas 73 aserciones de ausencia: **49 tienen ancla positiva a menos de seis
   líneas**; de las 24 restantes, la mayoría son un cajón que la prueba acaba de rellenar —anclado
   por la propia interacción— y **media docena son las de verdad**, sobre contenido asíncrono.
+- **No hay ancla para «no hay error»: lo que se puede esperar es el éxito.** Es la salida general
+  de toda la familia de aserciones vacías. Una negación no tiene a qué agarrarse —cualquier
+  instante antes de que la cosa aparezca la cumple— mientras que **el desenlace bueno sí se puede
+  esperar**, y su fallo trae el motivo. Donde se quiera afirmar que algo no salió mal, se afirma
+  que salió bien.
+- **Lo que instalas para ver tampoco se mira solo: un diagnóstico se verifica.** Es la regla de
+  «una corrección se verifica con el mismo rigor que el fallo que corrige», aplicada al
+  instrumento. La línea que se puso para explicar por qué un cajón no se cerraba **tenía el mismo
+  defecto que investigaba**, así que las dos veces que ocurrió la prueba murió sin decir nada.
+- **Tres válvulas por la misma causa dejan de ser excepción y son una zona ciega.**
+  `duringExpectedOutage` es la única forma de descontar errores de consola, y llegó a usarse en
+  tres sitios por los mismos cuatro 401 — o sea **tres pruebas escritas para tolerar una
+  regresión de esa área**. El criterio de terminado no era que el 401 desapareciera: era que las
+  tres válvulas se pudieran quitar. Se quitaron.
 - **La aserción de diagnóstico también puede ser vacua, y entonces el fallo se queda mudo.** Puse
   `expect(getByRole('alert')).toHaveCount(0)` antes de `expect(ficha).toBeHidden()` justamente
   para saber *por qué* un cajón no se cerraba. Corría antes de que el aviso pudiera renderizarse,
@@ -418,7 +432,7 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
 | **El paquete que recibe un cliente lleva código de módulos que no ha licenciado** | Aunque no se rendericen: el armazón importa los componentes y la navegación de todos los módulos, así que entran al `bundle`. **Ya pasaba con el menú** (`layout/navigation.ts:46`), y la costura de la portada (`platform/homeSections.ts`) no lo empeora — es el mismo mecanismo. Es asunto de **licenciamiento, no de arquitectura**: el día que se decida, se decide para el menú y para la portada a la vez. Lo que hay que evitar entretanto es resolverlo a medias en uno de los dos |
 | **`MultipleCollectionIncludeWarning` en el selector de productos** | `CatalogService.SeleccionAsync` proyecta dos colecciones —los precios de las presentaciones y las categorías— en un mismo `Select`, y EF avisa de que puede multiplicar filas. **Medido: es un factor constante y acotado, no crece con el catálogo.** El peor producto realista de una librería —6 presentaciones × 3 categorías— pide 18 filas en vez de 9; con los datos de hoy el máximo es 3. Y la consulta lleva `Take(50)`, así que el techo es 50 × (presentaciones × categorías) pase lo que pase. **Molestia declarada, no defecto.** Lo que no se ha medido es si EF parte la consulta o hace el producto cartesiano de verdad: eso pide leer el SQL generado, y no cambia la cota |
 | Repaso visual de Swagger | Junto con la verificación del panel: las dos piden un navegador. **Los cuerpos de ejemplo ya no son parte de esto**: los dieciséis están puestos y probados (`zz-instalacion.spec.ts:44`) |
-| **Un visitante anónimo provoca peticiones a `/api/admin/`** | Visitar la tienda **sin sesión** deja cuatro 401 en consola: la aplicación pide `/admin/auth/me` y `/admin/auth/csrf` al arrancar en **cualquier** ruta (`SessionProvider.tsx:45` y `:53`). No es un fallo de seguridad —son 401 manejados a propósito con `allowUnauthorized`— pero es trabajo inútil en cada visita pública y ensucia la consola de quien mire. Nadie lo había visto porque **ninguna prueba visitaba la tienda sin sesión**. Sin tocar: es el arranque de CORE, y no pedir sesión en rutas públicas podría perderla al navegar de la tienda al panel sin recargar. **Lo hereda cualquier módulo que añada pantallas públicas** —M02 el primero—, así que conviene decidirlo antes de que se lo saque su puerta de cero errores como si fuera suyo |
+| ~~Un visitante anónimo provoca peticiones a `/api/admin/`~~ | **Cerrado el 21 ago.** «Quién soy» responde ahora 200 con `null` escrito —`AllowAnonymous`, porque preguntarlo sin sesión no es un error— y el token CSRF solo se pide cuando hay sesión. **No se cambió cuándo se pregunta sino qué se responde**: hacerlo solo en el panel obligaría a volver a preguntarlo al navegar de la tienda al panel sin recargar, y ahí sí se pierde la sesión. Y el criterio de cierre fue **quitar las tres válvulas** que lo descontaban, no que el número bajara | Visitar la tienda **sin sesión** deja cuatro 401 en consola: la aplicación pide `/admin/auth/me` y `/admin/auth/csrf` al arrancar en **cualquier** ruta (`SessionProvider.tsx:45` y `:53`). No es un fallo de seguridad —son 401 manejados a propósito con `allowUnauthorized`— pero es trabajo inútil en cada visita pública y ensucia la consola de quien mire. Nadie lo había visto porque **ninguna prueba visitaba la tienda sin sesión**. Sin tocar: es el arranque de CORE, y no pedir sesión en rutas públicas podría perderla al navegar de la tienda al panel sin recargar. **Lo hereda cualquier módulo que añada pantallas públicas** —M02 el primero—, así que conviene decidirlo antes de que se lo saque su puerta de cero errores como si fuera suyo |
 | Verificación visual del panel | Sigue pendiente: es lo único que separa a CORE de estar verificado de punta a punta |
 
 | Tu `.env` local está desfasado | Le faltan `API_PORT` y `MEDIA_PATH`, que sí están en `.env.example`. Sin ellos, `docker compose --profile full up -d` no levanta el API |
@@ -822,3 +836,16 @@ M02, no le falta nada para el mostrador ni para el inventario, y le faltan dos c
 contenido — el `slug`, que es lo único con lo que se enlaza, y la imagen. **No se han añadido**:
 la regla del segundo caso sigue en pie y M02 va a ser el primer caso. Queda escrito en
 `docs/modules/catalog/README.md` §2 para que se decida con él delante.
+
+**21 ago · la puerta, su primer día.** `scripts/verificar.mjs` corrió seis veces y **falló cuatro**:
+
+| Corrida | Qué la puso roja |
+|---|---|
+| 2 | El filtro de `homeSections`, roto a propósito para comprobar que la costura se afirma |
+| 3 | Tres aserciones de `aa-vacios` que **no habrían pasado nunca sobre una tabla pintada** |
+| 4 | Los cuatro 401 del visitante anónimo, en una prueba nueva |
+| 5 | Los mismos 401, ya sin las válvulas que los descontaban |
+
+**Una puerta que nunca se pone roja no está vigilando nada** — es la misma vacuidad de las
+aserciones, un piso más arriba. Este registro queda escrito para el día que lleve dos semanas en
+verde: entonces dirá si es que ya no hay fallos o si es que dejó de mirar.
