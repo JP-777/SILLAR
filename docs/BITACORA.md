@@ -268,6 +268,19 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
   nunca» llevan al mismo sitio y valen distinto: la segunda gradúa la confianza, la primera deja
   la duda abierta para siempre. Cerrar una vía vale tanto como abrirla, y hay que decir cuál de
   las dos cosas se hizo.
+- **Una aserción de ausencia necesita un ancla de su misma carga, no del armazón.** Envolver
+  `goto` para esperar al armazón cierra la clase «página en blanco», pero **no la de contenido que
+  llega por petición**: entre el armazón pintado y la respuesta del servidor sigue habiendo una
+  ventana, más estrecha y por eso peor —falla una de cada veinte corridas y se acaba llamando
+  prueba inestable. Censadas 73 aserciones de ausencia: **49 tienen ancla positiva a menos de seis
+  líneas**; de las 24 restantes, la mayoría son un cajón que la prueba acaba de rellenar —anclado
+  por la propia interacción— y **media docena son las de verdad**, sobre contenido asíncrono.
+- **La aserción de diagnóstico también puede ser vacua, y entonces el fallo se queda mudo.** Puse
+  `expect(getByRole('alert')).toHaveCount(0)` antes de `expect(ficha).toBeHidden()` justamente
+  para saber *por qué* un cajón no se cerraba. Corría antes de que el aviso pudiera renderizarse,
+  así que pasaba siempre, y las dos veces que el cajón se quedó abierto la prueba murió en la
+  línea siguiente sin decir nada. **Se pregunta por el desenlace y se exige el bueno**, en vez de
+  negar el malo: así el mensaje trae el motivo.
 - **`toBeHidden()` es vacuo igual que los demás, y peor porque parece que espera.** Medido, no
   supuesto: sobre una página en blanco, `toBeHidden()` **pasa** con un selector que no ha
   existido nunca — se cumple con el elemento ausente del DOM. Los dos creíamos lo contrario esta
@@ -401,6 +414,7 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
 | Arranque con base vacía | Revienta con `42P01` en crudo en vez de decir «faltan las migraciones». Es la primera pantalla que vería quien instale en una clienta |
 | **Probar el aborto de la ADR-019 en vivo** | La función pura está probada; que el host **se niegue a arrancar** no. Es el efecto observable, y es lo único que la decisión promete |
 | **La búsqueda no encuentra por prefijo** | `plainto_tsquery` exige la palabra entera: medido contra la base de demostración, `plum` → 0 y `plumon` → 1; `lapi` → 0 y `lapiz` → 1; `cuad` → 0. En un buscador donde se teclea a mano —y sobre todo en un selector que filtra mientras escribes— **está vacío casi todo el rato**, hasta que se termina cada palabra. El diagnóstico aparente era «une los términos con AND», que también es cierto (`cuaderno plumon` → 0) pero es lo que la gente espera de un buscador. Es conducta heredada de toda la búsqueda de M01 —`ProductService`, `CategoryService` y `CatalogService` usan la misma— así que cambiarla es su propio trabajo, no un arreglo suelto |
+| ~~El nombre del negocio se pedía dos veces y el público se quedaba atrás~~ | **Cerrado el 21 ago.** La instalación escribe también el ajuste `business_name` (`SetupService.cs`), con el nombre que ya obliga a teclear. Antes iba solo a la fila de instalación y el ajuste —el que lee la tienda— se quedaba en `PENDIENTE_DEFINIR`: **un sitio recién instalado salía sin nombre.** La base de la demostración, ya instalada, **no se arregla sola**: se corrigió a mano con el nombre de su propia instalación |
 | **El paquete que recibe un cliente lleva código de módulos que no ha licenciado** | Aunque no se rendericen: el armazón importa los componentes y la navegación de todos los módulos, así que entran al `bundle`. **Ya pasaba con el menú** (`layout/navigation.ts:46`), y la costura de la portada (`platform/homeSections.ts`) no lo empeora — es el mismo mecanismo. Es asunto de **licenciamiento, no de arquitectura**: el día que se decida, se decide para el menú y para la portada a la vez. Lo que hay que evitar entretanto es resolverlo a medias en uno de los dos |
 | **`MultipleCollectionIncludeWarning` en el selector de productos** | `CatalogService.SeleccionAsync` proyecta dos colecciones —los precios de las presentaciones y las categorías— en un mismo `Select`, y EF avisa de que puede multiplicar filas. **Medido: es un factor constante y acotado, no crece con el catálogo.** El peor producto realista de una librería —6 presentaciones × 3 categorías— pide 18 filas en vez de 9; con los datos de hoy el máximo es 3. Y la consulta lleva `Take(50)`, así que el techo es 50 × (presentaciones × categorías) pase lo que pase. **Molestia declarada, no defecto.** Lo que no se ha medido es si EF parte la consulta o hace el producto cartesiano de verdad: eso pide leer el SQL generado, y no cambia la cota |
 | Repaso visual de Swagger | Junto con la verificación del panel: las dos piden un navegador. **Los cuerpos de ejemplo ya no son parte de esto**: los dieciséis están puestos y probados (`zz-instalacion.spec.ts:44`) |

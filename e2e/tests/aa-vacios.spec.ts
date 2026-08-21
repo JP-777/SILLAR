@@ -1,5 +1,5 @@
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
-import { expect, test } from '../fixtures/base.js';
+import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
 import { themeRecorder } from '../fixtures/themes.js';
 
 /**
@@ -91,4 +91,37 @@ test('Sin productos, la pantalla invita a crear el primero', async ({ page }) =>
   await expect(page.getByRole('alert')).toHaveCount(0);
 
   await record('productos-sin-ninguno-todavia');
+});
+
+test('El sitio recién instalado tiene nombre, sin que nadie lo escriba dos veces', async ({
+  page,
+}) => {
+  // **La instalación obliga a poner el nombre del negocio, así que la portada
+  // no puede salir sin él.** Hasta hoy sí podía: el nombre iba a la fila de la
+  // instalación y el ajuste público se quedaba en `PENDIENTE_DEFINIR` hasta
+  // que alguien lo editara en Configuración — el mismo dato en dos sitios, y
+  // el que se quedaba atrás era el que ve el público.
+  //
+  // Esta prueba existe para que esa rama vuelva a ser inalcanzable: si alguien
+  // separa otra vez los dos caminos, la portada se queda sin encabezado y esto
+  // se pone rojo.
+  const ajuste = await (await page.request.get('/api/settings/public')).json();
+
+  expect(
+    (ajuste as Record<string, string>).business_name,
+    'el ajuste público business_name se quedó en el marcador del seed',
+  ).not.toBe('PENDIENTE_DEFINIR');
+
+  // Sin sesión, que es como llega quien visita la tienda — y por eso hay que
+  // apartar dos 401: la aplicación pide `/admin/auth/me` y `/admin/auth/csrf`
+  // al arrancar en cualquier ruta y los maneja a propósito. Está en Pendientes
+  // como lo que es: un visitante anónimo no debería provocar peticiones a
+  // `/api/admin/`, y quitarlas es tocar el arranque de CORE.
+  await duringExpectedOutage(page, async () => {
+    await page.goto('/');
+    await expect(
+      page.getByRole('heading', { level: 1 }),
+      'la portada de un sitio instalado no enseña el nombre del negocio',
+    ).toBeVisible();
+  });
 });

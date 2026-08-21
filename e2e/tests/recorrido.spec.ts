@@ -144,11 +144,41 @@ test('El recorrido de la demostración, de entrar al panel a verlo en la tienda'
   await page.waitForLoadState('networkidle');
   await ficha.getByRole('button', { name: 'Guardar cambios' }).click();
 
-  // Si el cajón no se cierra, lo que importa es **por qué**: un cajón que se
-  // queda abierto sin decir nada es el fallo mudo que hay que evitar delante
-  // de gente. Se mira toda la página y no solo el cajón, porque un fallo
-  // puede avisar por un mensaje flotante que vive fuera de él.
-  await expect(page.getByRole('alert')).toHaveCount(0);
+  // **Se espera al desenlace, no a la ausencia de uno.**
+  //
+  // Aquí había `expect(getByRole('alert')).toHaveCount(0)` seguido de
+  // `expect(ficha).toBeHidden()`, y era el fallo que este arnés lleva todo el
+  // día persiguiendo, en mi propia línea de diagnóstico: **la aserción de que
+  // no hay error corría antes de que el error pudiera renderizarse**, así que
+  // pasaba siempre. Cuando el cajón se quedaba abierto —dos veces— la prueba
+  // moría en la línea siguiente sin decir por qué, que es justo lo que esa
+  // línea existía para evitar.
+  //
+  // Ahora se pregunta cómo acabó el guardado y se exige que acabara bien. Si
+  // acabó mal, **el mensaje trae el motivo**.
+  await expect
+    .poll(
+      async () => {
+        const guardado = page
+          .locator('.ui-toast')
+          .filter({ hasText: 'Se guardaron los cambios' });
+
+        if ((await guardado.count()) > 0) {
+          return 'guardado';
+        }
+
+        const alerta = page.getByRole('alert');
+
+        if ((await alerta.count()) > 0) {
+          return `el guardado falló: ${(await alerta.first().innerText()).trim()}`;
+        }
+
+        return 'sin desenlace todavía';
+      },
+      { message: 'tras pulsar «Guardar cambios», el producto no llegó a guardarse' },
+    )
+    .toBe('guardado');
+
   await expect(ficha).toBeHidden();
 
   await record('recorrido-producto-completo');
