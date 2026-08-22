@@ -55,7 +55,7 @@ No es vendible ni desmontable. Es la base sobre la que se enchufa todo lo demás
 |---|---|---|---|---|
 | **M01** | Catálogo de Productos | `catalog` | CORE | MVP |
 | **M02** | Contenido Web / CMS | `cms` | CORE | MVP |
-| **M03** | Ventas Online | `sales` | M01 (dura), M04 (blanda) | MVP |
+| **M03** | Ventas Online | `sales` | M01 (dura), **M04 (dura)** | MVP |
 | **M04** | Clientes y Contacto | `crm` | CORE | MVP |
 | **M05a** | Servicios — Vitrina | `services` | CORE | MVP |
 | **M05b** | Servicios — Órdenes | `services` | M05a (dura), M04 (blanda) | Fase 2 |
@@ -78,7 +78,11 @@ No es vendible ni desmontable. Es la base sobre la que se enchufa todo lo demás
 
 **M02 — Contenido Web / CMS.** Banners, promociones, trabajos destacados, redes sociales, páginas institucionales. **Totalmente independiente**: un negocio puede comprar solo esto y tener una web administrable sin catálogo ni ventas.
 
-**M03 — Ventas Online.** Carrito, pedidos, detalle de pedido, estados de pedido, checkout y confirmación. Depende duro de M01 porque no se vende lo que no está catalogado. Depende **blando** de M04: si Clientes no está instalado, el pedido guarda los datos de contacto como snapshot y funciona igual.
+**M03 — Ventas Online.** Carrito, pedidos, detalle de pedido, estados de pedido, checkout y confirmación. Depende duro de M01 porque no se vende lo que no está catalogado.
+
+**Y depende duro de M04, desde el 21 de agosto de 2026.** Estaba declarado como blando —«si Clientes no está instalado, el pedido guarda los datos de contacto como snapshot y funciona igual»— y **la cuenta obligatoria para comprar lo convierte en duro**: si hay que tener cuenta, el módulo que guarda al cliente tiene que estar. Lo que sigue siendo cierto es el snapshot: el pedido conserva nombre y dirección de entrega del momento, porque un cliente que se muda no cambia adónde se entregó lo de antes.
+
+> **La identidad del cliente vive en M04, no en CORE.** `core.admin_users` es del personal: su rol es obligatorio y la base lo restringe a los tres de administración (`ck_admin_users_role`), la tabla se llama así, y no hay registro propio ni recuperación de contraseña. Meter clientela ahí exige una migración y hace que «usuarios» signifique dos cosas en el panel.
 
 > Nota: los campos snapshot que ya se añadieron en la v2 del script (`customer_full_name`, `customer_phone`, `customer_email`, `delivery_address`, `delivery_reference`) son exactamente lo que hace posible esta independencia. Ese ajuste, hecho por otra razón, resultó ser la pieza clave del desacople.
 
@@ -193,12 +197,12 @@ sales.orders.order_status_id        → sales.order_statuses      (interna)
 crm.contact_messages.customer_id    → crm.customers             (interna)
 tracking.service_status_history.service_order_id → services.service_orders  (cruzada, M06→M05b)
 inventory.inventory_movements.product_id → catalog.products     (cruzada, M09→M01)
+sales.orders.customer_id            → crm.customers             (cruzada, M03→M04)
 ```
 
 **Prohibidas en el script base (dependencia blanda, van en script de integración):**
 
 ```
-sales.orders.customer_id            → crm.customers             (M03 ⟶ M04)
 b2b.special_order_leads.customer_id → crm.customers             (M07 ⟶ M04)
 b2b.institution_requests.customer_id→ crm.customers             (M07 ⟶ M04)
 portal.customer_profiles.customer_id→ crm.customers             (M08 ⟶ M04, dura pero cross-schema)
@@ -207,11 +211,15 @@ portal.customer_profiles.customer_id→ crm.customers             (M08 ⟶ M04, 
 Estas columnas se crean **nullable y sin FK**. La restricción se añade después mediante:
 
 ```
-database/integrations/sales_crm.sql
 database/integrations/b2b_crm.sql
 ```
 
 que solo se ejecutan si ambos módulos están activos en la instalación.
+
+> **`sales_crm.sql` ya no está en esa lista.** Al pasar M03 a depender duro de M04, su FK a
+> `crm.customers` va en la migración base de M03, no en un script de integración: una dependencia
+> dura no se desmonta por separado. Los ejemplos de más abajo lo siguen nombrando **porque
+> explican el mecanismo**, no porque ese archivo tenga que existir.
 
 ### Estructura de scripts
 

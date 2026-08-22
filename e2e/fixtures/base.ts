@@ -16,6 +16,9 @@ const collectors = new WeakMap<Page, Collector>();
  * podría olvidar llamar. La única excepción es {@link duringExpectedOutage},
  * angosta y documentada ahí mismo.
  */
+/** Salto de línea. Aparte, para que ningún escape se pierda al editar. */
+const SALTO = String.fromCharCode(10);
+
 export const test = base.extend({
   page: async ({ page }, use, testInfo) => {
     const collector: Collector = { errors: [], paused: false };
@@ -32,6 +35,51 @@ export const test = base.extend({
         collector.errors.push(`[excepción sin capturar] ${error.message}`);
       }
     });
+
+    // --- Navegar es ir **y esperar a que la aplicación haya pintado** ------
+    //
+    // `page.goto()` vuelve cuando el documento carga, que es **antes de que
+    // React monte nada**. Sobre ese hueco, cualquier aserción de ausencia
+    // —`toHaveCount(0)`, `not.toContainText`, `toBeHidden`— se cumple sola: el
+    // `body` está vacío. Comprobado: `toBeHidden` pasa incluso con un selector
+    // que no ha existido nunca.
+    //
+    // Costó descubrirlo porque **depende de la velocidad**: la misma prueba
+    // pasaba vacía con el archivo entero y fallaba en solitario, sin que nadie
+    // tocara nada. O sea que un archivo puede afirmar hoy y no afirmar mañana.
+    //
+    // **Se envuelve `goto` en vez de ofrecer un ayudante.** Un ayudante hay
+    // que acordarse de usarlo, y la prueba número 82 la escribe alguien que no
+    // ha leído esto. Así no hay forma de llegar al estado malo.
+    //
+    // El ancla es el enlace de salto (`App.tsx:125`): lo pinta el armazón en
+    // **toda** pantalla, panel y tienda, y solo existe cuando la aplicación ha
+    // terminado de arrancar. No dice que los datos de la pantalla hayan
+    // llegado —eso es de cada prueba— pero sí que hay algo pintado contra lo
+    // que afirmar.
+    const irDeVerdad = page.goto.bind(page);
+
+    page.goto = async (url, opciones) => {
+        const respuesta = await irDeVerdad(url, opciones);
+
+        // La pantalla de instalación se renderiza antes que los proveedores y
+        // no lleva enlace de salto: es la única del producto que no lo tiene.
+        await page
+          .locator('a.pf-skip, [data-pantalla="instalacion"]')
+          .first()
+          .waitFor({ state: 'attached', timeout: 15_000 })
+          .catch(() => {
+            throw new Error(
+              [
+                `Se navegó a «${url}» y la aplicación no llegó a pintar en 15 s.`,
+                'El ancla es `a.pf-skip`, que el armazón monta en toda pantalla.',
+                'Si esta ruta no debe tenerlo, es un caso nuevo y hay que declararlo aquí.',
+              ].join(SALTO),
+            );
+          });
+
+        return respuesta;
+      };
 
     await use(page);
 

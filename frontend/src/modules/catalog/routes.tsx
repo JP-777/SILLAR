@@ -1,5 +1,7 @@
-import { Route } from 'react-router-dom';
+import { Link, Route } from 'react-router-dom';
 import type { ModuleNavigation } from '../../layout/navigation';
+import type { HomeSection } from '../../platform/homeSections';
+import { EmptyState } from '../../shared/ui';
 import { RequireRole } from '../../session';
 import { BrandsPage } from './pages/BrandsPage';
 import { CategoriesPage } from './pages/CategoriesPage';
@@ -28,6 +30,33 @@ export const catalogNavigation: ModuleNavigation = {
     { to: '/admin/catalogo/marcas', label: 'Marcas', minimumRole: 'editor' },
   ],
 };
+
+/**
+ * Lo que M01 aporta a la portada pública.
+ *
+ * Estaba escrito a mano en el armazón, con un `if` sobre el código del módulo
+ * (`PublicSite.tsx`, antes de esta extracción). Vive aquí por lo mismo que la
+ * navegación: **el armazón no conoce a ningún módulo**, y si M01 se desactiva
+ * esta sección no se renderiza — ni vacía, ni con un aviso de que falta.
+ *
+ * El orden en la portada no se decide aquí: lo da la posición en
+ * `HOME_SECTIONS`, porque es decisión de producto y no de este módulo.
+ */
+export const catalogHome: HomeSection = {
+  moduleCode: 'catalog',
+  Component: CatalogHomeSection,
+};
+
+/** La invitación a ver el catálogo. */
+function CatalogHomeSection() {
+  return (
+    <EmptyState
+      title="Nuestra tienda"
+      description="Mira todo lo que tenemos publicado."
+      action={<Link to="/catalogo">Ver el catálogo</Link>}
+    />
+  );
+}
 
 /**
  * Rutas del módulo.

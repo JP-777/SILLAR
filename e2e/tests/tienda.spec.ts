@@ -392,7 +392,16 @@ test('Con M01 desactivado, las rutas públicas desaparecen y el inicio no deja h
   // Y el inicio **no renderiza la sección en absoluto** — ni vacía, ni con un
   // aviso de que falta algo. Un hueco que explica su ausencia sigue siendo un
   // hueco.
+  //
+  // **Primero se espera a que la portada haya renderizado algo.** Las dos
+  // aserciones de abajo esperan ausencia, y una ausencia se cumple sola en una
+  // página que todavía no ha pintado: pasaban vacuamente si el `goto` volvía
+  // antes que React. Se vio porque al romper el filtro a propósito la prueba
+  // seguía verde con el archivo entero y roja en solitario — la diferencia era
+  // cuánto tardaba la página, no lo que enseñaba.
   await page.goto('/');
+  await expect(page.getByText('Todavía no hay contenido publicado.')).toBeVisible();
+
   await expect(page.getByRole('link', { name: 'Ver el catálogo' })).toHaveCount(0);
   await expect(page.locator('body')).not.toContainText(/cat[áa]logo/i);
 

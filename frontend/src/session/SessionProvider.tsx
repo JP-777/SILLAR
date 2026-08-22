@@ -42,14 +42,28 @@ export const SessionContext = createContext<SessionValue | null>(null);
  */
 export async function fetchSession(): Promise<AuthenticatedUser | null> {
   try {
-    const user = await http.get<AuthenticatedUser>('/admin/auth/me', {
+    // **Responde siempre 200**, con el usuario o con nulo: preguntar «quién
+    // soy» sin sesión no es un error, y un 401 aquí dejaba un error de consola
+    // en cada visita a la tienda.
+    const user = await http.get<AuthenticatedUser | null>('/admin/auth/me', {
       allowUnauthorized: true,
     });
+
+    // Falsy y no `=== null`: un cuerpo vacío llega como `undefined`, y
+    // «no hay sesión» es lo mismo de las dos formas.
+    if (!user) {
+      http.setCsrfToken(null);
+      return null;
+    }
 
     // El token CSRF también hay que recuperarlo: vive en memoria y una recarga
     // se la lleva. Desde la entrega 2.1 pedirlo es idempotente y devuelve
     // siempre el mismo valor (ADR-012), así que esto no invalida nada ni pelea
     // con otras pestañas.
+    //
+    // **Solo si hay sesión.** Sin ella devolvería 401, que es correcto —el
+    // token es de una sesión— pero pedirlo sabiendo que no la hay es provocar
+    // un error a propósito.
     const { csrfToken } = await http.get<{ csrfToken: string }>('/admin/auth/csrf', {
       allowUnauthorized: true,
     });

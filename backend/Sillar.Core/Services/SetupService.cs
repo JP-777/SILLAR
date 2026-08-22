@@ -79,6 +79,25 @@ internal sealed class SetupService(
             IsSetupComplete = true
         });
 
+        // **El nombre del negocio también al ajuste público.**
+        //
+        // Se pedía en la instalación y se guardaba solo en la fila de la
+        // instalación, mientras el ajuste `business_name` —que es el que lee la
+        // web pública— se quedaba en el `PENDIENTE_DEFINIR` del seed hasta que
+        // alguien lo editara en Configuración. **El mismo dato en dos sitios, y
+        // el que se quedaba atrás era justo el que ve el público**: un sitio
+        // recién instalado salía sin nombre.
+        //
+        // Se pide una vez y sirve para las dos cosas. Configuración lo cambia
+        // después, que es donde corresponde.
+        var nombrePublico = await database.SiteSettings
+            .FirstOrDefaultAsync(setting => setting.SettingKey == "business_name", cancellationToken);
+
+        if (nombrePublico is not null)
+        {
+            nombrePublico.SettingValue = request.BusinessName!.Trim();
+        }
+
         var user = new AdminUser
         {
             FullName = admin.FullName!.Trim(),

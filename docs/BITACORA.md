@@ -255,6 +255,126 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
   `InProcessEventBus` dice que no hay orden garantizado, así que quien construya encima sabe que
   se lo está jugando. Los otros dos no lo estaban, y uno era un hueco. El `<remarks>` del bus es
   el modelo a copiar.
+- **Una comprobación que modifica lo que mide no comprueba: contamina.** Y su pariente: **una
+  prueba que presupone el estado que se investiga no lo descarta** — mirar si una variable está
+  definida *ahora* no dice nada de si lo estaba entonces, y peor, tocar el entorno para
+  averiguarlo destruye la respuesta.
+- **Un arreglo sobre la causa equivocada deja el caso con aspecto de cerrado.** Es peor que no
+  arreglar nada, porque quita las ganas de seguir buscando. De ahí que convenga escribir «causa
+  sin establecer» cuando lo es, aunque el síntoma ya no esté.
+- **Una corrección se verifica con el mismo rigor que el fallo que corrige.** Lo que llega
+  etiquetado como arreglo entra sin que nadie lo mire, que es exactamente cuando no debería.
+- **Una vía cerrada no es una vía sin explorar.** «No encontramos nada» y «esto no pudo grabarse
+  nunca» llevan al mismo sitio y valen distinto: la segunda gradúa la confianza, la primera deja
+  la duda abierta para siempre. Cerrar una vía vale tanto como abrirla, y hay que decir cuál de
+  las dos cosas se hizo.
+- **Una aserción de ausencia necesita un ancla de su misma carga, no del armazón.** Envolver
+  `goto` para esperar al armazón cierra la clase «página en blanco», pero **no la de contenido que
+  llega por petición**: entre el armazón pintado y la respuesta del servidor sigue habiendo una
+  ventana, más estrecha y por eso peor —falla una de cada veinte corridas y se acaba llamando
+  prueba inestable. Censadas 73 aserciones de ausencia: **49 tienen ancla positiva a menos de seis
+  líneas**; de las 24 restantes, la mayoría son un cajón que la prueba acaba de rellenar —anclado
+  por la propia interacción— y **media docena son las de verdad**, sobre contenido asíncrono.
+- **Una ruta absoluta en un documento no falla en otra máquina: no encuentra nada.** Y no
+  encontrar nada se parece demasiado a que no haya nada. El diagrama de `PROTOCOLO-DISENO.md`
+  llevaba `C:\` dentro, cuando lo que fija es **la relación** —dos carpetas hermanas—, no dónde
+  viven. Es la misma familia que el `.env` que carga en silencio: **algo que solo funciona aquí y
+  no lo dice**.
+- **Un clasificador automático da falsos positivos en las dos direcciones, y hay que decirlo en
+  las dos.** El mío marcó 24 aserciones sin ancla; al leerlas, la mayoría eran cajones anclados
+  por la propia interacción y una —`configuracion:73`— estaba anclada con `toBeEnabled()`, que
+  mi expresión no reconocía. Es fácil corregir el clasificador cuando exagera el trabajo; hay que
+  corregirlo igual cuando lo esconde.
+- **Un documento desactualizado no es neutral: fabrica errores.** El `ROADMAP_MODULAR.md` decía
+  que la búsqueda de M01 iba con `pg_trgm` y `unaccent`. Es falso —va por `to_tsvector('spanish')`
+  sobre índice GIN, porque el nombre lleva colación no determinista y PostgreSQL no admite esas
+  operaciones sobre ella— y la cadena completa es la que importa: **estaba escrito, alguien lo
+  leyó, lo repitió en un encargo, y hubo que corregir el mecanismo antes de implementar el
+  selector de productos.** El argumento de que «ese documento no lo lee nadie» es falso por
+  construcción: si de verdad no lo leyera nadie, no habría llegado a un encargo.
+- **El momento que tiene tiempo no tiene navegador; el momento que tiene navegador no tiene
+  tiempo.** Salió al buscar dónde vivía una animación de marca, y vale para cualquier cosa que
+  quiera acompañar una espera. Medido:
+
+  | Momento | Tiempo | Quién lo ve | Fases nombrables |
+  |---|---|---|---|
+  | Inicio de sesión | **903 ms** | Todo el mundo, cada día | Por debajo del umbral: no debe verse nada |
+  | Reinicio por activación de módulo | 10–90 s | Casi nadie, y solo quien administra | El navegador no puede preguntar: no hay servidor con quien hablar |
+  | Instalación | **17,2 s** | **Nadie: todavía no hay navegador** | Reales, pero ocurren antes de que exista interfaz |
+
+  La instalación parecía la buena hasta que se lee cómo ocurre: **las migraciones crean la base que
+  la API necesita para arrancar, y la API es quien serviría la pantalla** (`ModuleBootstrapper.cs:138`
+  aborta sin base). Huevo y gallina. Moverlas dentro del arranque contradiría la ADR-009.
+- **Un arreglo que parece correcto también hay que mirarlo por fuera.** No basta con que la causa
+  encontrada fuera real: hay que comprobar que **lo que sale ahora** es lo que se quería. El
+  arreglo del 401 tenía la causa bien —«quién soy» pedía autorización— y seguía sin funcionar,
+  porque `Results.Ok(null)` y `Results.Json(null)` **no llegan a escribir el `null`**: los dos
+  mandan `Content-Length: 0`, el cliente lo recibía como `undefined` y seguía pidiendo el token
+  CSRF. Se vio con `curl -i`, no leyendo el código. **La firma dice qué devuelve el método; la
+  cabecera dice qué recibe quien lo lee.**
+- **No hay ancla para «no hay error»: lo que se puede esperar es el éxito.** Es la salida general
+  de toda la familia de aserciones vacías. Una negación no tiene a qué agarrarse —cualquier
+  instante antes de que la cosa aparezca la cumple— mientras que **el desenlace bueno sí se puede
+  esperar**, y su fallo trae el motivo. Donde se quiera afirmar que algo no salió mal, se afirma
+  que salió bien.
+- **Lo que instalas para ver tampoco se mira solo: un diagnóstico se verifica.** Es la regla de
+  «una corrección se verifica con el mismo rigor que el fallo que corrige», aplicada al
+  instrumento. La línea que se puso para explicar por qué un cajón no se cerraba **tenía el mismo
+  defecto que investigaba**, así que las dos veces que ocurrió la prueba murió sin decir nada.
+- **Tres válvulas por la misma causa dejan de ser excepción y son una zona ciega.**
+  `duringExpectedOutage` es la única forma de descontar errores de consola, y llegó a usarse en
+  tres sitios por los mismos cuatro 401 — o sea **tres pruebas escritas para tolerar una
+  regresión de esa área**. El criterio de terminado no era que el 401 desapareciera: era que las
+  tres válvulas se pudieran quitar. Se quitaron.
+- **La aserción de diagnóstico también puede ser vacua, y entonces el fallo se queda mudo.** Puse
+  `expect(getByRole('alert')).toHaveCount(0)` antes de `expect(ficha).toBeHidden()` justamente
+  para saber *por qué* un cajón no se cerraba. Corría antes de que el aviso pudiera renderizarse,
+  así que pasaba siempre, y las dos veces que el cajón se quedó abierto la prueba murió en la
+  línea siguiente sin decir nada. **Se pregunta por el desenlace y se exige el bueno**, en vez de
+  negar el malo: así el mensaje trae el motivo.
+- **`toBeHidden()` es vacuo igual que los demás, y peor porque parece que espera.** Medido, no
+  supuesto: sobre una página en blanco, `toBeHidden()` **pasa** con un selector que no ha
+  existido nunca — se cumple con el elemento ausente del DOM. Los dos creíamos lo contrario esta
+  mañana. Va con las demás aserciones de ausencia, sin excepción.
+- **Un `tbody` vacío no tiene cero filas.** `Table` pinta el estado vacío como una fila más
+  (`patterns.tsx:279`), así que `tbody tr` da **1** con la tabla vacía. Tres pruebas exigían
+  `toBe(0)` y pasaban: contaban antes de que la página pintara. **No habrían pasado nunca sobre
+  una tabla pintada, ni vacía ni llena** — una aserción imposible que vivía de la vacuidad.
+- **Una aserción de ausencia se cumple sola en una página que aún no ha pintado.** «Con M01
+  desactivado el inicio no deja hueco» llevaba semanas en verde **y no afirmaba nada**: `goto()`
+  vuelve antes que React, y tanto `toHaveCount(0)` como `not.toContainText` pasan sobre un `body`
+  vacío. Se descubrió por accidente al romper una costura a propósito: la prueba seguía **verde
+  con el archivo entero y roja en solitario**, y la diferencia era cuánto tardaba la página, no
+  lo que enseñaba. **Antes de afirmar que algo no está, hay que esperar a que esté lo que sí
+  debe estar.** Es la tercera cara de la misma regla: `main` visible no es pantalla cargada.
+- **Playwright transpila sin comprobar tipos.** Un error de tipos en una spec **no sale por
+  ningún lado**: la prueba corre igual. Uno llevaba días dentro, introducido al ampliar la
+  comprobación de Swagger. Ahora hay `pnpm typecheck` en `e2e/`, que es la única forma de verlo.
+- **Romper de más da el mismo rojo por otra causa.** Al comprobar que una prueba afirma algo, hay
+  que quitar **exactamente** la línea de la que depende: quitar las tres emisiones de un archivo
+  habría puesto en rojo las mismas pruebas sin decir cuál de ellas sostenía cada aserción. Es la
+  misma familia que «provocar un fallo distinto del que se quiere probar da el mismo rojo», y por
+  eso se aísla con un ancla única.
+- **La mitad no probada de una tanda probada es la que menos se mira**, precisamente porque la
+  tanda salió bien. Al romper una emisión a propósito, tres de cuatro pruebas se pusieron rojas y
+  la cuarta se dio por buena — vivía en otro archivo y **ninguna de sus aserciones se había visto
+  fallar**. Hubo que romper el segundo archivo aparte. Una tanda no está verificada hasta que
+  cada aserción ha fallado una vez.
+- **Una conducta escrita para un caso y no para su simétrico es la forma del hueco.** Se buscó el
+  simétrico de la baja —¿reactivar avisa?— porque editar una presentación no avisaba y su
+  simétrico, desactivarla, sí. Esta vez no había hueco: reactivar pasa por `UpdateAsync`, que
+  emite sin condición (`ProductService.cs:463`). **Pero la sospecha valía igual**, y ahora hay
+  una prueba que lo fija en vez de una lectura que lo supone.
+- **Una vía de investigación puede estar cerrada por no haberse grabado nunca, no por haberse
+  perdido.** Los registros de PostgreSQL del contenedor **sí** cubren la ventana del incidente
+  —llegan al 20/08 06:31— y aun así no contienen nada: `log_connections`, `log_disconnections` y
+  `log_statement` están en `off`/`none`, así que una conexión que escribe una fila sin error no
+  deja rastro. Distinguirlo importa: no se perdió la prueba, no se tomó.
+- **El historial de PowerShell no ve lo que hacen los agentes.** PSReadLine solo graba consolas
+  interactivas, y las herramientas de los dos agentes lanzan `powershell.exe -NonInteractive`,
+  que no escribe historial — comprobado: la última escritura del archivo es del 20/08 19:17 UTC,
+  once horas antes del incidente, pese a haber corrido decenas de comandos desde entonces.
+  **Buscar ahí solo puede encontrar lo que tecleó una persona.**
 - **Un contrato está cerrado cuando un uso nuevo no lo amplía.** El de selección de M01 se dio
   por cerrado con las tres respuestas de su primer consumidor, y el **segundo uso** —releer para
   refrescar un snapshot— le añadió un campo: `IsActive`, porque `null` estaba significando dos
@@ -345,8 +465,11 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
 | Arranque con base vacía | Revienta con `42P01` en crudo en vez de decir «faltan las migraciones». Es la primera pantalla que vería quien instale en una clienta |
 | **Probar el aborto de la ADR-019 en vivo** | La función pura está probada; que el host **se niegue a arrancar** no. Es el efecto observable, y es lo único que la decisión promete |
 | **La búsqueda no encuentra por prefijo** | `plainto_tsquery` exige la palabra entera: medido contra la base de demostración, `plum` → 0 y `plumon` → 1; `lapi` → 0 y `lapiz` → 1; `cuad` → 0. En un buscador donde se teclea a mano —y sobre todo en un selector que filtra mientras escribes— **está vacío casi todo el rato**, hasta que se termina cada palabra. El diagnóstico aparente era «une los términos con AND», que también es cierto (`cuaderno plumon` → 0) pero es lo que la gente espera de un buscador. Es conducta heredada de toda la búsqueda de M01 —`ProductService`, `CategoryService` y `CatalogService` usan la misma— así que cambiarla es su propio trabajo, no un arreglo suelto |
+| ~~El nombre del negocio se pedía dos veces y el público se quedaba atrás~~ | **Cerrado el 21 ago.** La instalación escribe también el ajuste `business_name` (`SetupService.cs`), con el nombre que ya obliga a teclear. Antes iba solo a la fila de instalación y el ajuste —el que lee la tienda— se quedaba en `PENDIENTE_DEFINIR`: **un sitio recién instalado salía sin nombre.** La base de la demostración, ya instalada, **no se arregla sola**: se corrigió a mano con el nombre de su propia instalación |
+| **El paquete que recibe un cliente lleva código de módulos que no ha licenciado** | Aunque no se rendericen: el armazón importa los componentes y la navegación de todos los módulos, así que entran al `bundle`. **Ya pasaba con el menú** (`layout/navigation.ts:46`), y la costura de la portada (`platform/homeSections.ts`) no lo empeora — es el mismo mecanismo. Es asunto de **licenciamiento, no de arquitectura**: el día que se decida, se decide para el menú y para la portada a la vez. Lo que hay que evitar entretanto es resolverlo a medias en uno de los dos |
+| **`MultipleCollectionIncludeWarning` en el selector de productos** | `CatalogService.SeleccionAsync` proyecta dos colecciones —los precios de las presentaciones y las categorías— en un mismo `Select`, y EF avisa de que puede multiplicar filas. **Medido: es un factor constante y acotado, no crece con el catálogo.** El peor producto realista de una librería —6 presentaciones × 3 categorías— pide 18 filas en vez de 9; con los datos de hoy el máximo es 3. Y la consulta lleva `Take(50)`, así que el techo es 50 × (presentaciones × categorías) pase lo que pase. **Molestia declarada, no defecto.** Lo que no se ha medido es si EF parte la consulta o hace el producto cartesiano de verdad: eso pide leer el SQL generado, y no cambia la cota |
 | Repaso visual de Swagger | Junto con la verificación del panel: las dos piden un navegador. **Los cuerpos de ejemplo ya no son parte de esto**: los dieciséis están puestos y probados (`zz-instalacion.spec.ts:44`) |
-| **Un visitante anónimo provoca peticiones a `/api/admin/`** | Visitar la tienda **sin sesión** deja cuatro 401 en consola: la aplicación pide `/admin/auth/me` y `/admin/auth/csrf` al arrancar en **cualquier** ruta (`SessionProvider.tsx:45` y `:53`). No es un fallo de seguridad —son 401 manejados a propósito con `allowUnauthorized`— pero es trabajo inútil en cada visita pública y ensucia la consola de quien mire. Nadie lo había visto porque **ninguna prueba visitaba la tienda sin sesión**. Sin tocar: es el arranque de CORE, y no pedir sesión en rutas públicas podría perderla al navegar de la tienda al panel sin recargar. **Lo hereda cualquier módulo que añada pantallas públicas** —M02 el primero—, así que conviene decidirlo antes de que se lo saque su puerta de cero errores como si fuera suyo |
+| ~~Un visitante anónimo provoca peticiones a `/api/admin/`~~ | **Cerrado el 21 ago.** «Quién soy» responde ahora 200 con `null` escrito —`AllowAnonymous`, porque preguntarlo sin sesión no es un error— y el token CSRF solo se pide cuando hay sesión. **No se cambió cuándo se pregunta sino qué se responde**: hacerlo solo en el panel obligaría a volver a preguntarlo al navegar de la tienda al panel sin recargar, y ahí sí se pierde la sesión. Y el criterio de cierre fue **quitar las tres válvulas** que lo descontaban, no que el número bajara | Visitar la tienda **sin sesión** deja cuatro 401 en consola: la aplicación pide `/admin/auth/me` y `/admin/auth/csrf` al arrancar en **cualquier** ruta (`SessionProvider.tsx:45` y `:53`). No es un fallo de seguridad —son 401 manejados a propósito con `allowUnauthorized`— pero es trabajo inútil en cada visita pública y ensucia la consola de quien mire. Nadie lo había visto porque **ninguna prueba visitaba la tienda sin sesión**. Sin tocar: es el arranque de CORE, y no pedir sesión en rutas públicas podría perderla al navegar de la tienda al panel sin recargar. **Lo hereda cualquier módulo que añada pantallas públicas** —M02 el primero—, así que conviene decidirlo antes de que se lo saque su puerta de cero errores como si fuera suyo |
 | Verificación visual del panel | Sigue pendiente: es lo único que separa a CORE de estar verificado de punta a punta |
 
 | Tu `.env` local está desfasado | Le faltan `API_PORT` y `MEDIA_PATH`, que sí están en `.env.example`. Sin ellos, `docker compose --profile full up -d` no levanta el API |
@@ -357,6 +480,41 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
 | Datos administrativos de Bsale | Certificado, costo, volumen, series y correlativos. Preguntas 7 a 10 de la guía de observación |
 
 Aplazados por decisión, no pendientes: retención de auditoría, vectoriales en medios, permisos granulares, vencimiento de licencias, marca blanca.
+
+### Cerrado sin resolver: cómo llegó `cms` a la base del MVP (21 ago)
+
+El 21 de agosto apareció una fila del módulo `cms` en `core.modules` de `sillar_dev`, la base de
+la demostración. La escribió el sincronizador de módulos de un binario que declara `cms`, o sea
+el de M02, apuntando a la base equivocada.
+
+**Estado: mecanismo probado, causa sin establecer. Contenido pero no resuelto.**
+
+- **Contenido:** la fila se borró con el host parado, y el arranque volvió limpio. No hacía daño
+  —la pantalla de módulos itera sobre el binario, no sobre las filas (`ModuleActivationService.cs:88`),
+  así que nunca hubo tarjeta rota— pero dejaba un aviso permanente en cada arranque, y un aviso
+  permanente sobre algo que no se va a arreglar entrena a la gente a ignorar los avisos.
+- **Mecanismo probado:** una variable `ConnectionStrings__Default` heredada del entorno gana
+  sobre el `.env`, en silencio. M02 lo demostró. **Pero demostrar que un mecanismo puede producir
+  el efecto no demuestra que produjera éste.**
+
+**Por qué cada vía está cerrada** — que no es lo mismo que no haber dado nada:
+
+| Vía | Por qué se cierra |
+|---|---|
+| ¿Lo escribió nuestro binario? | **No pudo.** `main` nunca declaró `cms`: `git log -S "cms"` da tres commits y ninguno añade un módulo —documentación, un ejemplo en Markdown y un `WHERE nspname IN (…)`—, y hoy no hay ningún `"cms"` en C# |
+| ¿Cayó `DotEnv` al directorio de trabajo? | **No.** El `.env` de M02 existía veintitantas horas antes de la fila, así que la primera búsqueda —la del árbol del binario— encontraba el suyo |
+| Los registros de PostgreSQL | **Cubrían la ventana y no contenían nada.** `log_connections`, `log_disconnections` y `log_statement` estaban en `off`/`none`: una conexión que escribe una fila sin error no dejaba rastro. **No se perdió la prueba: no se tomó.** Corregido para la próxima |
+| El historial de PowerShell | **No puede verlo.** PSReadLine solo graba consolas interactivas, y los dos agentes lanzan `powershell.exe -NonInteractive`. Cero coincidencias de `ConnectionStrings`, y la última escritura del archivo es de once horas antes del incidente pese a decenas de comandos por medio |
+| El entorno de M02 hoy | Sin ninguna variable así definida, ni de usuario ni de máquina. La consola de aquel día ya no existe |
+
+Lo que queda hecho: el registro de conexiones encendido en desarrollo
+(`docker-compose.yml:22-25`) y el arranque diciendo de qué `.env` cargó, a qué base apunta y qué
+claves le ganó el entorno. **La próxima vez habrá rastro.**
+
+Y una propuesta sin hacer: que cada árbol ponga su propio `Application Name` en la cadena de
+conexión. Desde el anfitrión todas las conexiones llegan con la misma IP de pasarela
+—`172.18.0.1`—, así que el origen no distingue procesos; el nombre de aplicación sí lo haría, y
+sale gratis.
 
 ### Defecto abierto: la auditoría enseña identificadores (18 ago)
 
@@ -391,7 +549,7 @@ esto es lo único que las sostiene.
 | **Falta `E2E_KEEP_STACK`** | Cuando la suite de `e2e/` falla, el stack se desmonta y hay que reproducir el fallo desde cero para mirarlo. Una variable que conserve la base levantada al fallar |
 | **`:focus-visible` en diálogo, con clic de ratón** | Comprobar en un navegador de verdad si el anillo nativo se pinta cuando el foco cae en un elemento **distinto** del que se clicó. De las que no se resuelven leyendo |
 
-**Bibliotecas evaluadas y descartadas** (18 ago, informes en `C:\SILLAR-DISENO\investigacion\` — **fuera del repositorio**, ver `PROTOCOLO-DISENO.md` §7). Se anotan aquí para no volver a investigarlas sin tener que abrir esa carpeta:
+**Bibliotecas evaluadas y descartadas** (18 ago, informes en `SILLAR-DISENO/investigacion/`, carpeta hermana de ésta — **fuera del repositorio**, ver `PROTOCOLO-DISENO.md` §7). Se anotan aquí para no volver a investigarlas sin tener que abrir esa carpeta:
 
 | | Por qué no |
 |---|---|
@@ -418,9 +576,15 @@ verdad costaba a mano.
 
 ### Riesgo abierto: el cajón del producto tras asociar una imagen (20 ago)
 
-**Observado una vez**, en una vuelta de la suite entera: en `recorrido.spec.ts`, pulsar «Guardar
-cambios» justo después de asociar una imagen dejó el cajón abierto **y sin ningún aviso**. No se
-ha vuelto a reproducir en seis intentos, ni aislado ni acompañado.
+**Observado dos veces**, las dos en una vuelta de la suite entera: en `recorrido.spec.ts`,
+pulsar «Guardar cambios» justo después de asociar una imagen deja el cajón abierto **y sin ningún
+aviso**. Entre una y otra no se reprodujo en seis intentos, ni aislado ni acompañado.
+
+La segunda vez fue el 21 de agosto, **justo después de envolver `page.goto` para que espere al
+armazón**. Eso cambió el ritmo de toda la suite, así que no se puede afirmar que sea la misma
+carrera: puede serlo, o puede ser una interacción nueva. Lo que sí cambia es el estado del
+riesgo — **dos apariciones ya no son una anécdota**, y toca investigarlo con la siguiente que
+salga en vez de esperar a que se repita.
 
 La carrera existe y se puede señalar: asociar una imagen recarga la ficha con el cajón abierto
 (`ProductsPage.tsx:197` llama a `abrirFicha`), así que hay un momento en que el formulario se
@@ -709,3 +873,27 @@ M02, no le falta nada para el mostrador ni para el inventario, y le faltan dos c
 contenido — el `slug`, que es lo único con lo que se enlaza, y la imagen. **No se han añadido**:
 la regla del segundo caso sigue en pie y M02 va a ser el primer caso. Queda escrito en
 `docs/modules/catalog/README.md` §2 para que se decida con él delante.
+
+**21 ago · la puerta, su primer día.** `scripts/verificar.mjs` corrió seis veces y **falló cuatro**:
+
+| Corrida | Qué la puso roja |
+|---|---|
+| 2 | El filtro de `homeSections`, roto a propósito para comprobar que la costura se afirma |
+| 3 | Tres aserciones de `aa-vacios` que **no habrían pasado nunca sobre una tabla pintada** |
+| 4 | Los cuatro 401 del visitante anónimo, en una prueba nueva |
+| 5 | Los mismos 401, ya sin las válvulas que los descontaban |
+
+**Una puerta que nunca se pone roja no está vigilando nada** — es la misma vacuidad de las
+aserciones, un piso más arriba. Este registro queda escrito para el día que lleve dos semanas en
+verde: entonces dirá si es que ya no hay fallos o si es que dejó de mirar.
+
+**21 ago · la pared de sillares y la puerta de animaciones: no existen en este repositorio.**
+Buscadas por nombre en `frontend/src`, `e2e/`, `docs/` y **en todo el historial**
+(`git log -S "sillares"` no devuelve nada). No es que estén sin verificar: es que nunca entraron.
+Vienen de otra conversación, igual que la doctrina de animaciones, que también hubo que escribir
+desde cero cuando se pidió.
+
+**Lo que sí existe y sí corre**: el proyecto `chromium-movimiento-reducido`, 9 pruebas sobre
+`transversal.spec.ts`, en **cada** corrida de la puerta. Y afirma algo: quitando
+`animation: none` de la regla global (`base.css:87`), se pone roja con el motivo escrito —«el
+anillo sigue animándose con movimiento reducido: 0.7s»—. Restaurada y verde.

@@ -130,6 +130,52 @@ test('Ningún endpoint de M01 revienta al traducir su consulta a SQL', async ({ 
   ).toEqual([]);
 });
 
+/** Salto de línea, aparte para que ningún escape se pierda al editar. */
+const SALTO = String.fromCharCode(10);
+
+test('Ningún endpoint responde 200 con el cuerpo vacío', async ({ page }) => {
+  test.setTimeout(120_000);
+
+  // **Un cuerpo vacío no dice «no hay nada», dice «no hay respuesta».** Es la
+  // misma regla que la `url` vacía de la galería, dos capas más abajo, y mordió
+  // de verdad: «quién soy» devolvía 200 sin escribir nada —ni `Results.Ok(null)`
+  // ni `Results.Json(null)` llegan a escribir el `null`—, el cliente lo recibía
+  // como `undefined` en vez de `null`, y el arreglo del 401 quedó a medias sin
+  // que nada se pusiera rojo.
+  //
+  // **Se mira lo que sale por el cable, no la firma del método.** La firma dice
+  // qué devuelve el código; el cuerpo dice qué recibe quien lo lee.
+  //
+  // El 204 es distinto y no entra: ahí la ausencia de cuerpo *es* el contrato.
+  await loginAsE2eAdmin(page);
+
+  const mudos: string[] = [];
+  let revisados = 0;
+
+  for (const llamada of ENDPOINTS) {
+    const respuesta = await llamar(page.request, llamada);
+
+    if (respuesta.status() !== 200) {
+      continue;
+    }
+
+    revisados += 1;
+
+    if ((await respuesta.text()).trim() === '') {
+      mudos.push(`${llamada.metodo} ${llamada.ruta}`);
+    }
+  }
+
+  // **Un detector que no miró nada cuenta cero igual que uno que miró todo.**
+  // Si ninguna llamada devolviera 200 —por un cambio de rutas, por una sesión
+  // que caducó—, la lista de mudos saldría vacía y esto pasaría sin haber
+  // comprobado un solo cuerpo.
+  expect(revisados, 'ninguna llamada devolvió 200: el detector no revisó nada').toBeGreaterThan(0);
+
+  expect(mudos, ['responden 200 sin escribir nada:', ...mudos].join(SALTO)).toEqual([]);
+});
+
+
 test('La lista de endpoints vigilados no se queda corta', async ({ page }) => {
   // La prueba de arriba solo vale si la lista está completa. Este recuento es
   // la parte que se olvida: si alguien añade un endpoint a M01 y no lo mete

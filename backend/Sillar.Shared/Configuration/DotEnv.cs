@@ -36,6 +36,30 @@ public static class DotEnv
     public static string? LoadedFrom { get; private set; }
 
     /// <summary>
+    /// Las claves que estaban en el <c>.env</c> y <b>no se aplicaron</b>,
+    /// porque ya venían definidas en el entorno del proceso.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Que el entorno mande es correcto y no se cambia: permite sobrescribir un
+    /// valor puntual sin editar el archivo. Lo que no puede ser es que sea
+    /// <b>mudo</b>. Una variable heredada de la consola —de otra rama, de otra
+    /// prueba, de hace dos horas— gana silenciosamente sobre el archivo que
+    /// todo el mundo mira, y entonces el <c>.env</c> dice una cosa y el proceso
+    /// hace otra.
+    /// </para>
+    /// <para>
+    /// Es la otra mitad de la señal: <see cref="LoadedFrom"/> dice el destino,
+    /// esto dice que el origen no fue el que parece.
+    /// </para>
+    /// <para>
+    /// <b>Solo los nombres, nunca los valores.</b> Lo descartado puede ser una
+    /// contraseña, y las contraseñas no van a los registros.
+    /// </para>
+    /// </remarks>
+    public static IReadOnlyList<string> IgnoredKeys { get; private set; } = [];
+
+    /// <summary>
     /// Busca <c>.env</c> hacia arriba desde el directorio del ejecutable y desde
     /// el directorio de trabajo, y publica sus claves en el entorno del proceso.
     /// </summary>
@@ -59,11 +83,14 @@ public static class DotEnv
     {
         var path = Find(AppContext.BaseDirectory) ?? Find(Directory.GetCurrentDirectory());
         LoadedFrom = path;
+        IgnoredKeys = [];
 
         if (path is null)
         {
             return null;
         }
+
+        var ignoradas = new List<string>();
 
         foreach (var line in File.ReadLines(path))
         {
@@ -91,13 +118,19 @@ public static class DotEnv
             var value = Unquote(trimmed[(separator + 1)..].Trim());
 
             // Lo que ya viene del entorno manda: permite sobreescribir un valor
-            // puntual sin editar el archivo.
+            // puntual sin editar el archivo. **Pero se anota**: ver
+            // `IgnoredKeys`.
             if (Environment.GetEnvironmentVariable(key) is null)
             {
                 Environment.SetEnvironmentVariable(key, value);
             }
+            else
+            {
+                ignoradas.Add(key);
+            }
         }
 
+        IgnoredKeys = ignoradas;
         return path;
     }
 

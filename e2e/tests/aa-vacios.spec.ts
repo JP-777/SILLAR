@@ -16,6 +16,22 @@ import { themeRecorder } from '../fixtures/themes.js';
  * correr primero, y por eso se dice en el nombre del fichero.
  */
 
+/**
+ * Las filas **con datos**, que no son todas las del `tbody`.
+ *
+ * `Table` pinta el estado vacío como una fila más —un `<tr>` con un `<td
+ * class="ui-table__state">` (`patterns.tsx:279-281`)—, así que contar
+ * `tbody tr` da **1** con la tabla vacía, no 0.
+ *
+ * Estas tres pruebas exigían `toBe(0)` y pasaban igualmente: contaban antes
+ * de que la página pintara, cuando no había ninguna fila de nada. **Nunca
+ * habrían pasado sobre una tabla pintada, ni vacía ni llena**, y solo se vio
+ * al hacer que navegar esperara al armazón.
+ */
+function filasConDatos(page: import('@playwright/test').Page) {
+  return page.locator('tbody tr').filter({ hasNot: page.locator('.ui-table__state') });
+}
+
 const MARCAS = '/admin/catalogo/marcas';
 const CATEGORIAS = '/admin/catalogo/categorias';
 const PRODUCTOS = '/admin/catalogo/productos';
@@ -25,7 +41,7 @@ test('Sin marcas, la pantalla invita a crear la primera', async ({ page }) => {
   await loginAsE2eAdmin(page);
   await page.goto(MARCAS);
 
-  const filas = page.locator('tbody tr');
+  const filas = filasConDatos(page);
 
   // Si esto falla, no es que el estado vacío esté roto: es que otra prueba
   // creó marcas antes. Se dice explícitamente en vez de dejar que la
@@ -49,7 +65,7 @@ test('Sin categorías, la pantalla invita a crear la primera', async ({ page }) 
   await page.goto(CATEGORIAS);
 
   expect(
-    await page.locator('tbody tr').count(),
+    await filasConDatos(page).count(),
     'esta prueba necesita empezar sin categorías — ¿otra las creó antes?',
   ).toBe(0);
 
@@ -66,7 +82,7 @@ test('Sin productos, la pantalla invita a crear el primero', async ({ page }) =>
   await page.goto(PRODUCTOS);
 
   expect(
-    await page.locator('tbody tr').count(),
+    await filasConDatos(page).count(),
     'esta prueba necesita empezar sin productos — ¿otra los creó antes?',
   ).toBe(0);
 
@@ -75,4 +91,33 @@ test('Sin productos, la pantalla invita a crear el primero', async ({ page }) =>
   await expect(page.getByRole('alert')).toHaveCount(0);
 
   await record('productos-sin-ninguno-todavia');
+});
+
+test('El sitio recién instalado tiene nombre, sin que nadie lo escriba dos veces', async ({
+  page,
+}) => {
+  // **La instalación obliga a poner el nombre del negocio, así que la portada
+  // no puede salir sin él.** Hasta hoy sí podía: el nombre iba a la fila de la
+  // instalación y el ajuste público se quedaba en `PENDIENTE_DEFINIR` hasta
+  // que alguien lo editara en Configuración — el mismo dato en dos sitios, y
+  // el que se quedaba atrás era el que ve el público.
+  //
+  // Esta prueba existe para que esa rama vuelva a ser inalcanzable: si alguien
+  // separa otra vez los dos caminos, la portada se queda sin encabezado y esto
+  // se pone rojo.
+  const ajuste = await (await page.request.get('/api/settings/public')).json();
+
+  expect(
+    (ajuste as Record<string, string>).business_name,
+    'el ajuste público business_name se quedó en el marcador del seed',
+  ).not.toBe('PENDIENTE_DEFINIR');
+
+  // **Sin sesión y sin válvula.** Visitar la tienda como visitante anónimo ya
+  // no deja ningún error de consola: «quién soy» responde 200 con nulo, y el
+  // token CSRF solo se pide cuando hay sesión.
+  await page.goto('/');
+  await expect(
+    page.getByRole('heading', { level: 1 }),
+    'la portada de un sitio instalado no enseña el nombre del negocio',
+  ).toBeVisible();
 });

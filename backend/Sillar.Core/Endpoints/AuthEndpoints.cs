@@ -50,9 +50,25 @@ public static class AuthEndpoints
             .WithDescription("Revoca la fila en base de datos y borra la cookie. Lo que cierra la sesión es la revocación.")
             .Produces(StatusCodes.Status204NoContent);
 
+        // **«Quién soy» se responde siempre, y «nadie» es una respuesta.**
+        //
+        // Estaba dentro del grupo autorizado, así que un visitante sin sesión
+        // recibía 401 — y el navegador lo apunta como error de consola pase lo
+        // que pase, porque es la respuesta HTTP y no algo que el código pueda
+        // tragarse. La aplicación pregunta esto **al arrancar en cualquier
+        // ruta**, así que **cada visita a la tienda dejaba errores** por una
+        // pregunta cuya respuesta correcta era «no hay sesión».
+        //
+        // No se cambia cuándo se pregunta —hacerlo solo en el panel obligaría
+        // a volver a preguntarlo al navegar de la tienda al panel sin
+        // recargar, y ahí se pierde la sesión— sino qué se responde.
+        //
+        // No revela nada: quien pregunta ya trae la cookie, y lo único que
+        // averigua es si la suya vale.
         session.MapGet("/me", Me)
+            .AllowAnonymous()
             .WithName("Me")
-            .WithSummary("Devuelve el usuario en sesión y su rol.")
+            .WithSummary("Devuelve el usuario en sesión, o nulo si no hay ninguna.")
             .Produces<AuthenticatedUserResponse>(StatusCodes.Status200OK);
 
         session.MapGet("/csrf", Csrf)
@@ -151,11 +167,20 @@ public static class AuthEndpoints
     /// <param name="context">Petición en curso.</param>
     /// <returns>Identificador, nombre, correo y rol. Nunca el hash de la contraseña.</returns>
     private static IResult Me(CurrentUser currentUser, HttpContext context)
-        => Results.Ok(new AuthenticatedUserResponse(
-            currentUser.AdminUserId!.Value,
-            context.User.Identity?.Name ?? string.Empty,
-            currentUser.Email!,
-            currentUser.Role!));
+        => currentUser.AdminUserId is null
+            // Sin sesión: 200 con un `null` **escrito**, no con cuerpo vacío.
+            // `Results.Ok(null)` manda `Content-Length: 0`, que para quien lee
+            // no es «no hay nadie» sino «no hay respuesta» — y el cliente lo
+            // recibía como `undefined` en vez de `null`.
+            // Escrito a mano porque ni `Results.Ok(null)` ni `Results.Json(null)`
+            // llegan a escribir nada: los dos mandan `Content-Length: 0`, y un
+            // cuerpo vacío no dice «no hay nadie», dice «no hay respuesta».
+            ? Results.Content("null", "application/json")
+            : Results.Ok(new AuthenticatedUserResponse(
+                currentUser.AdminUserId.Value,
+                context.User.Identity?.Name ?? string.Empty,
+                currentUser.Email!,
+                currentUser.Role!));
 
     /// <summary>Emite un token CSRF nuevo para la sesión activa.</summary>
     /// <param name="authentication">Servicio de autenticación.</param>
