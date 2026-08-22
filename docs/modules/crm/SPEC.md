@@ -132,8 +132,19 @@ las marcas de tiempo, y **las notas internas del negocio**.
 > filtra es de las cosas que cuestan un cliente.
 
 El correo es único ignorando mayúsculas y respetando tildes: **colación `core.es_ci`**, la misma
-que ya usa la identidad en el resto del producto. No `core.es_search`, que ignora tildes y serviría
-para buscar, no para distinguir.
+que ya usa la identidad en el resto del producto. **No `core.es_search`**, que ignora tildes: con
+ella `josé@` y `jose@` serían la misma cuenta, y eso no es un fallo de búsqueda — son dos personas
+compartiendo acceso.
+
+> **La colación se ocupa de la caja; de lo que manda el navegador no se ocupa nadie.** Con `es_ci`
+> el índice ya no distingue mayúsculas, pero **sigue distinguiendo cosas que una persona considera
+> el mismo correo**: un espacio al final —que los teclados de móvil pegan solos— y **la misma tilde
+> escrita de dos formas**, porque `é` puede llegar como un carácter o como `e` más un acento
+> combinado. Son cadenas distintas, **se ven idénticas**, y crearían dos cuentas que nadie puede
+> diferenciar mirando.
+>
+> **Se normaliza al guardar: recortar y unificar la forma Unicode** (`Normalize(NormalizationForm.FormC)`).
+> Antes de comparar, antes de insertar.
 
 ### `crm.customer_addresses` — las direcciones de entrega
 
@@ -152,9 +163,19 @@ Una puede ser la preferida.
 **No replican.** Un solo uso, con caducidad, y **solo el hash del testigo en la base**. Un token que
 se guarda en claro es un enlace de restablecimiento guardado en claro.
 
+> **Y esa asimetría hay que declararla, no dejarla en pie sin nombre:** *el testigo es del nodo que
+> lo emitió; la ficha viaja, el enlace no.* Hoy no molesta —cada instalación tiene su dirección—
+> pero **es exactamente la clase de accidente que parece una garantía** hasta el día que alguien
+> monte dos nodos detrás del mismo nombre y un enlace de recuperación deje de valer según a qué
+> máquina caiga la petición.
+
 ### Reglas transversales
 
 - **Contraseñas con BCrypt, factor 12 o más.** Nunca en registros ni en respuestas.
+- **Restablecer la contraseña cierra todas las sesiones abiertas de ese cliente.** Es lo que
+  convierte «recuperar» en recuperar de verdad: si alguien entró con la contraseña vieja, cambiarla
+  tiene que echarlo. **Cuesta una línea ahora y es incómodo después**, porque habría que decidirlo
+  con sesiones vivas delante.
 - **Baja lógica siempre.** Un cliente dado de baja conserva su ficha, y los pedidos de M03 la
   conservan por instantánea aunque la ficha cambie después.
 - `timestamptz`, `CHECK` para reglas de valor, `created_at`/`updated_at` con su trigger.
@@ -310,6 +331,9 @@ Se cierra cuando **todos** se pueden enseñar funcionando, no descritos:
 - [ ] Un visitante se registra, recibe el correo de verificación y verifica
 - [ ] Un cliente sin verificar entra y ve su perfil; el estado dice que le falta verificar
 - [ ] Recuperar la contraseña funciona, y **el enlace no sirve dos veces**
+- [ ] Se entra desde dos navegadores, se restablece en uno **y el otro deja de valer**
+- [ ] Registrarse con el correo de otra cuenta **escrito con un espacio al final** choca con el
+      índice único, no crea una segunda
 - [ ] La respuesta de recuperar **es idéntica** con un correo registrado y con uno que no existe
 - [ ] Los intentos fallidos **retrasan sin bloquear**, y una cuenta ajena no se puede dejar fuera
 - [ ] El personal crea una ficha sin cuenta e **invita**; la persona pone su contraseña con el enlace
