@@ -279,14 +279,33 @@ Para cada una de las cinco entidades: listar (incluidas las no vigentes), obtene
 
 ## 9. Interfaz
 
-**La composición de la portada es trabajo de M02, y es superficie compartida.** Hoy `platform/PublicSite.tsx` pregunta a mano si `catalog` está activo. Con M02 aparece el segundo caso, y por tanto el momento de extraer el registro declarativo — siguiendo el modelo de `layout/navigation.ts`, que ya lo hace bien para el menú. Copiar el `if` en vez de extraerlo convierte la regla del segundo caso en «se copió en el segundo, el tercero y el cuarto».
+### Composición pública
 
-Es del paso 4, toca armazón, y **no se hace hasta que M01 esté fusionado**. Se avisa antes de tocarlo.
+La plataforma ya compone la portada mediante el registro declarativo `HOME_SECTIONS`: `PublicSite` no pregunta directamente por Catálogo ni por ningún código de módulo. Filtra el registro por las capacidades activas y renderiza sus componentes en el orden del array central.
 
+M02 aporta **un único `HomeSection`**, `cmsHome`, con `moduleCode = 'cms'`. Dentro de su componente viven los cuatro bloques públicos de M02: banners, promociones, productos destacados y trabajos destacados. **Son cuatro bloques de una sola sección, no cuatro entradas distintas de `HOME_SECTIONS`.** Cada bloque consume su endpoint público y confía en las reglas de publicación resueltas por backend.
 
-**Qué aparece si el módulo está activo:** una entrada de menú «Contenido» en administración, con cinco secciones; y en la web pública, el carrusel de la portada, la rejilla de promociones, la tira de destacados, la galería de trabajos y los iconos del pie.
+M02 no declara su posición respecto de otros módulos. El orden de la portada es la posición de `cmsHome` en el array central `HOME_SECTIONS`, y decidirla pertenece a producto/plataforma, no al módulo.
 
-**Qué desaparece si se desactiva:** las cinco pantallas de administración y sus rutas, y las cinco secciones públicas. **La portada no queda con un hueco: la sección no se renderiza, no se renderiza vacía.** El pie pierde los iconos sociales sin dejar un espacio en blanco.
+**Qué aparece si el módulo está activo:** una entrada de menú «Contenido» en administración, con cinco pantallas; en la portada, el único `cmsHome` con sus cuatro bloques; y, cuando exista la costura compartida del footer, la contribución de enlaces sociales de M02.
+
+**Qué desaparece si se desactiva:** las cinco pantallas de administración y sus rutas, el `HomeSection` completo de CMS y su futura contribución al footer. **La portada no queda con un hueco:** `cmsHome` no se renderiza, no se renderiza vacío. El footer tampoco debe conservar un espacio en blanco.
+
+### Redes sociales y footer
+
+M02 ya posee `GET /api/cms/social-links`, que devuelve los enlaces activos y ordenados. Esta superficie es independiente de `cmsHome`: `HOME_SECTIONS` compone el contenido principal y no cubre el footer público.
+
+Hoy no existe una costura pública equivalente para que un módulo contribuya contenido al footer. M02 **no se convierte en propietario del footer**, y `PublicSite` o el shell público tampoco adquieren un `if (has('cms'))`. Resolverlo es una **costura compartida pendiente del paso 4**.
+
+**Propuesta pendiente, no contrato vigente ni decisión de arquitectura aprobada:** introducir `PublicFooterContribution`, un registro filtrado por módulos activos y un shell/footer que siga siendo propiedad de plataforma. La propuesta se valida antes de implementarse y no recibe número de ADR desde este módulo.
+
+### Frontera técnica del paso 4
+
+**Propio de M02:** clientes y servicios HTTP tipados; estados y reglas funcionales del panel; formularios funcionales; selector y reconciliación de productos; el componente `cmsHome`; y los datos o componente con que M02 contribuya sus enlaces sociales.
+
+**Costura compartida:** montaje de rutas; navegación; registro de `cmsHome` en `HOME_SECTIONS`; y la futura costura pública del footer.
+
+**Presentación:** layout visual, motion, animaciones, responsive fino, iconografía, tokens, copy definitivo y personalidad visual. Estas decisiones no cambian los contratos ni las reglas funcionales de M02.
 
 ### Estados y acciones
 
@@ -299,6 +318,8 @@ Cada pantalla declara las dos cosas. Un SPEC que solo describe estados produce l
 | Destacados | Vigente, programado, **producto no publicado** (`product_is_public=false`), **producto desactivado en M01** (`product_is_active=false`), pendiente de reenlace | **Elegir producto del catálogo**, reordenar, **actualizar datos** (uno o todos), volver a enlazar, quitar de la portada |
 | Trabajos | Activo, inactivo | Crear, editar, reordenar, desactivar |
 | Redes | Activa, inactiva | Añadir, editar, reordenar, desactivar, reactivar |
+
+En la administración de productos destacados, `productIsActive` describe si el **producto de M01** sigue de alta; `isActive` describe si el **destacado editorial de CMS** sigue de alta. Son estados de dueños distintos y el panel debe nombrarlos y tratarlos como tales. Ninguno sustituye a `productIsPublic` ni a `pendingRelink`.
 
 **Con Catálogo inactivo, el panel no llama al selector para recuperarse de su `404`.** Consulta la capacidad antes de ofrecer la acción, oculta destacar, buscar y reenlazar, y muestra una frase que explique que hay que activar Catálogo. Un `404` tratado después de llamar sería indistinguible de una ruta mal escrita y acabaría como un error genérico.
 

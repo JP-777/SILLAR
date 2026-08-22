@@ -379,3 +379,23 @@ Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base
 
 - No se implementó reactivación para banners, promociones, trabajos ni productos destacados.
 - No se tocaron frontend, `HOME_SECTIONS`, footer, navegación, Catálogo, Shared, migraciones, `uq_social_links_plataforma`, `.env.example`, E2E ni `verificar.mjs`.
+
+## Alineación documental previa al paso 4 — 2026-08-22
+
+### Arquitectura real incorporada al SPEC
+
+- La razón histórica para esperar a M01 ya quedó satisfecha: `PublicSite` dejó de preguntar directamente por Catálogo y recorre las entradas visibles de `HOME_SECTIONS` (`frontend/src/platform/PublicSite.tsx:11-14`, `:28`, `:50-52`). El registro filtra por módulo activo y su array central decide el orden (`frontend/src/platform/homeSections.ts:28-40`).
+- El SPEC sustituye la premisa histórica por el contrato vigente: M02 aportará un solo `cmsHome` con `moduleCode = 'cms'`; sus cuatro bloques públicos viven dentro del mismo componente y su posición no la decide M02.
+- La búsqueda del árbol integrado no encontró una costura pública de footer equivalente a `HOME_SECTIONS`. El endpoint público de redes ya existe, pero el registro de portada no cubre el pie. Queda pendiente validar una costura compartida; `PublicFooterContribution` con registro por módulos activos y shell/footer de plataforma se documenta solo como propuesta, no como ADR ni contrato vigente.
+- La frontera funcional queda dividida entre superficie propia de M02, costuras compartidas de plataforma y presentación. El SPEC conserva las decisiones ya verificadas sobre `publicationState`, reactivación de redes, búsqueda por palabras completas y la distinción entre `productIsActive` e `isActive`.
+
+### Congelación y autoría
+
+- La espera técnica por la costura de M01 terminó, pero **`frontend/src/**` continúa congelado para el agente M02**. Esta actualización documental no levanta ni relaja esa frontera.
+- Por esa regla, FullSCODEX propone los cambios frontend funcionales y de costura; coordinación decide y los aplica. No se editó ningún archivo de frontend ni se adelantó implementación del paso 4.
+
+### Decisiones y fuera de alcance
+
+- **DECIDÍ:** describir `PublicFooterContribution` únicamente como propuesta pendiente. **DESCARTÉ:** presentarla como contrato vigente o ADR aprobada. **POR QUÉ:** el segundo caso real existe, pero la costura todavía no está implementada ni aprobada. **REVERSIBLE:** sí; es documentación previa a la decisión.
+- No se decidió la posición de `cmsHome`, no se fijó CMS antes o después de Catálogo y no se diseñaron componentes visuales.
+- Solo cambiaron `docs/modules/cms/SPEC.md` y `docs/modules/cms/BITACORA-M02.md`; no se levantó host ni stack por ser un encargo exclusivamente documental.
