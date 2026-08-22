@@ -6,6 +6,7 @@ import { LoginPage } from '../platform/LoginPage';
 import { PublicSite } from '../platform/PublicSite';
 import { RequireAuth } from '../session';
 import { catalogPublicRoutes, catalogRoutes } from '../modules/catalog/routes';
+import { cmsRoutes } from '../modules/cms/routes';
 import { coreRoutes } from '../modules/core/routes';
 
 /**
@@ -35,6 +36,7 @@ export function AppRoutes() {
           <Route index element={<HomePage />} />
           {coreRoutes}
           {has('catalog') && catalogRoutes}
+          {has('cms') && cmsRoutes}
         </Route>
       </Route>
 
