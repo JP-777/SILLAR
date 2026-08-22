@@ -208,6 +208,7 @@ internal sealed class BannerService(
     private BannerAdminResponse Project(Banner banner, DateTimeOffset now)
     {
         var desktopUrl = MediaUrl(banner.ImageDesktopId);
+        var publicationState = PublicationWindow.StateAt(banner, now);
         return new BannerAdminResponse(
             banner.Id,
             banner.Title,
@@ -223,7 +224,8 @@ internal sealed class BannerService(
             banner.StartsAt,
             banner.EndsAt,
             banner.IsActive,
-            PublicationWindow.IsCurrent(banner, now),
+            publicationState == PublicationState.Current,
+            publicationState,
             desktopUrl is not null && !string.IsNullOrWhiteSpace(banner.AltText));
     }
 

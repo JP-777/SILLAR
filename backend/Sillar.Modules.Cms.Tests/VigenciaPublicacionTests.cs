@@ -30,6 +30,38 @@ public sealed class VigenciaPublicacionTests
     public void Dentro_del_intervalo_esta_vigente() =>
         Assert.True(EstaVigente(true, Ahora.AddDays(-1), Ahora.AddDays(1)));
 
+    public static TheoryData<bool, int?, int?, PublicationState> CasosDeEstado => new()
+    {
+        { false, null, null, PublicationState.Inactive },
+        { true, 1, null, PublicationState.Scheduled },
+        { true, -1, 1, PublicationState.Current },
+        { true, -2, -1, PublicationState.Expired },
+        { true, -1, null, PublicationState.Current },
+        { true, 0, 1, PublicationState.Current },
+        { true, -1, 0, PublicationState.Expired }
+    };
+
+    [Theory]
+    [MemberData(nameof(CasosDeEstado))]
+    public void Estado_administrativo_respeta_la_misma_ventana(
+        bool isActive,
+        int? startMinutes,
+        int? endMinutes,
+        PublicationState expected)
+    {
+        var content = new Banner
+        {
+            IsActive = isActive,
+            StartsAt = startMinutes is { } start ? Ahora.AddMinutes(start) : null,
+            EndsAt = endMinutes is { } end ? Ahora.AddMinutes(end) : null
+        };
+
+        var state = PublicationWindow.StateAt(content, Ahora);
+
+        Assert.Equal(expected, state);
+        Assert.Equal(PublicationWindow.IsCurrent(content, Ahora), state == PublicationState.Current);
+    }
+
     [Fact]
     public void Banners_promociones_y_destacados_usan_la_misma_expresion()
     {
@@ -41,6 +73,19 @@ public sealed class VigenciaPublicacionTests
         Assert.True(PublicationWindow.IsCurrent(
             new FeaturedProduct { ProductName = "Cuaderno", StartsAt = start, EndsAt = end },
             Ahora));
+    }
+
+    [Fact]
+    public void Banners_promociones_y_destacados_usan_la_misma_clasificacion()
+    {
+        var start = Ahora.AddMinutes(1);
+
+        Assert.Equal(PublicationState.Scheduled,
+            PublicationWindow.StateAt(new Banner { StartsAt = start }, Ahora));
+        Assert.Equal(PublicationState.Scheduled,
+            PublicationWindow.StateAt(new Promotion { StartsAt = start }, Ahora));
+        Assert.Equal(PublicationState.Scheduled,
+            PublicationWindow.StateAt(new FeaturedProduct { ProductName = "Cuaderno", StartsAt = start }, Ahora));
     }
 
     private static bool EstaVigente(

@@ -186,22 +186,27 @@ internal sealed class PromotionService(
 
     private string? MediaUrl(Guid? id) => id is { } value ? media.GetPublicUrl(value) : null;
 
-    private PromotionAdminResponse Project(Promotion promotion, DateTimeOffset now) => new(
-        promotion.Id,
-        promotion.Title,
-        promotion.Subtitle,
-        promotion.Description,
-        promotion.BadgeText,
-        promotion.ImageId,
-        MediaUrl(promotion.ImageId),
-        promotion.AltText,
-        promotion.LinkUrl,
-        promotion.LinkLabel,
-        promotion.DisplayOrder,
-        promotion.StartsAt,
-        promotion.EndsAt,
-        promotion.IsActive,
-        PublicationWindow.IsCurrent(promotion, now));
+    private PromotionAdminResponse Project(Promotion promotion, DateTimeOffset now)
+    {
+        var publicationState = PublicationWindow.StateAt(promotion, now);
+        return new PromotionAdminResponse(
+            promotion.Id,
+            promotion.Title,
+            promotion.Subtitle,
+            promotion.Description,
+            promotion.BadgeText,
+            promotion.ImageId,
+            MediaUrl(promotion.ImageId),
+            promotion.AltText,
+            promotion.LinkUrl,
+            promotion.LinkLabel,
+            promotion.DisplayOrder,
+            promotion.StartsAt,
+            promotion.EndsAt,
+            promotion.IsActive,
+            publicationState == PublicationState.Current,
+            publicationState);
+    }
 
     private static CmsOperation<PromotionAdminResponse> Invalid(string error)
         => new(CmsOutcome.Invalid, error);

@@ -18,4 +18,26 @@ internal static class PublicationWindow
     internal static bool IsCurrent<TEntity>(TEntity content, DateTimeOffset now)
         where TEntity : ScheduledCmsEntity
         => CurrentAt<TEntity>(now).Compile()(content);
+
+    /// <summary>
+    /// Clasifica el contenido para administración usando la misma evaluación
+    /// que decide si está vigente. El inicio es inclusivo y el final exclusivo.
+    /// </summary>
+    internal static PublicationState StateAt<TEntity>(TEntity content, DateTimeOffset now)
+        where TEntity : ScheduledCmsEntity
+    {
+        if (!content.IsActive)
+        {
+            return PublicationState.Inactive;
+        }
+
+        if (IsCurrent(content, now))
+        {
+            return PublicationState.Current;
+        }
+
+        return content.StartsAt is { } startsAt && startsAt > now
+            ? PublicationState.Scheduled
+            : PublicationState.Expired;
+    }
 }

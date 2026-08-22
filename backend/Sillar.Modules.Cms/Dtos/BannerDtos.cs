@@ -1,3 +1,5 @@
+using Sillar.Modules.Cms.Domain;
+
 namespace Sillar.Modules.Cms.Dtos;
 
 /// <summary>Un banner publicado en la portada.</summary>
@@ -36,6 +38,7 @@ public sealed record BannerAdminResponse(
     DateTimeOffset? EndsAt,
     bool IsActive,
     bool IsCurrent,
+    PublicationState PublicationState,
     bool IsComplete);
 
 /// <summary>Crea un banner. El orden se asigna al final de la sección.</summary>

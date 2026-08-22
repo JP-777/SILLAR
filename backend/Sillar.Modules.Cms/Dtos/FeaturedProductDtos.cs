@@ -1,3 +1,5 @@
+using Sillar.Modules.Cms.Domain;
+
 namespace Sillar.Modules.Cms.Dtos;
 
 /// <summary>Un producto destacado publicado desde su snapshot editorial.</summary>
@@ -38,6 +40,7 @@ public sealed record FeaturedProductResponse(
 /// <param name="EndsAt">Fin opcional de vigencia.</param>
 /// <param name="IsActive">Indica si el destacado editorial sigue de alta en CMS.</param>
 /// <param name="IsCurrent">Indica si su vigencia editorial está abierta ahora.</param>
+/// <param name="PublicationState">Estado temporal calculado por CMS: inactive, scheduled, current o expired.</param>
 /// <param name="PendingRelink">Indica que el producto ya no existe y hay que elegir otro.</param>
 public sealed record FeaturedProductAdminResponse(
     int Id,
@@ -56,6 +59,7 @@ public sealed record FeaturedProductAdminResponse(
     DateTimeOffset? EndsAt,
     bool IsActive,
     bool IsCurrent,
+    PublicationState PublicationState,
     bool PendingRelink);
 
 /// <summary>Destaca un producto elegido mediante el contrato de selección de M01.</summary>

@@ -278,24 +278,29 @@ internal sealed class FeaturedProductService(
 
     private string? MediaUrl(Guid? id) => id is { } value ? media.GetPublicUrl(value) : null;
 
-    private FeaturedProductAdminResponse Project(FeaturedProduct featured, DateTimeOffset now) => new(
-        featured.Id,
-        featured.ProductId,
-        featured.ProductName,
-        featured.ProductSlug,
-        featured.ImageId,
-        MediaUrl(featured.ImageId),
-        featured.ProductPrice,
-        featured.ProductPriceVaries,
-        featured.ProductCategory,
-        featured.ProductIsPublic,
-        featured.ProductIsActive,
-        featured.DisplayOrder,
-        featured.StartsAt,
-        featured.EndsAt,
-        featured.IsActive,
-        PublicationWindow.IsCurrent(featured, now),
-        FeaturedProductRules.IsPendingRelink(featured));
+    private FeaturedProductAdminResponse Project(FeaturedProduct featured, DateTimeOffset now)
+    {
+        var publicationState = PublicationWindow.StateAt(featured, now);
+        return new FeaturedProductAdminResponse(
+            featured.Id,
+            featured.ProductId,
+            featured.ProductName,
+            featured.ProductSlug,
+            featured.ImageId,
+            MediaUrl(featured.ImageId),
+            featured.ProductPrice,
+            featured.ProductPriceVaries,
+            featured.ProductCategory,
+            featured.ProductIsPublic,
+            featured.ProductIsActive,
+            featured.DisplayOrder,
+            featured.StartsAt,
+            featured.EndsAt,
+            featured.IsActive,
+            publicationState == PublicationState.Current,
+            publicationState,
+            FeaturedProductRules.IsPendingRelink(featured));
+    }
 
     private static CmsOperation<FeaturedProductAdminResponse> Invalid(string error)
         => new(CmsOutcome.Invalid, error);

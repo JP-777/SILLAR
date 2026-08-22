@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Sillar.Modules.Cms.Domain;
 using Sillar.Modules.Cms.Dtos;
 
 namespace Sillar.Modules.Cms.Tests;
@@ -74,5 +76,37 @@ public sealed class ContratosHttpTests
 
         Assert.Equal(typeof(bool), response.GetProperty("ProductIsActive")?.PropertyType);
         Assert.Equal(typeof(bool), response.GetProperty("IsActive")?.PropertyType);
+    }
+
+    [Fact]
+    public void Las_tres_respuestas_programables_exponen_un_estado_controlado()
+    {
+        var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        Type[] responses =
+        [
+            typeof(BannerAdminResponse),
+            typeof(PromotionAdminResponse),
+            typeof(FeaturedProductAdminResponse)
+        ];
+
+        foreach (var response in responses)
+        {
+            Assert.Equal(typeof(PublicationState), response.GetProperty("PublicationState")?.PropertyType);
+
+            var value = JsonSerializer.Deserialize("{\"publicationState\":\"scheduled\"}", response, jsonOptions);
+            var json = JsonSerializer.SerializeToElement(value, response, jsonOptions);
+            Assert.Equal("scheduled", json.GetProperty("publicationState").GetString());
+        }
+
+        Assert.Equal(
+            "\"scheduled\"",
+            JsonSerializer.Serialize(PublicationState.Scheduled, jsonOptions));
+    }
+
+    [Fact]
+    public void Trabajos_y_redes_no_exponen_estado_de_ventana()
+    {
+        Assert.Null(typeof(FeaturedProjectAdminResponse).GetProperty("PublicationState"));
+        Assert.Null(typeof(SocialLinkAdminResponse).GetProperty("PublicationState"));
     }
 }

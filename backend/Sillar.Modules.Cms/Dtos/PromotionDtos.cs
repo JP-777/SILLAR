@@ -1,3 +1,5 @@
+using Sillar.Modules.Cms.Domain;
+
 namespace Sillar.Modules.Cms.Dtos;
 
 /// <summary>Una promoción publicada.</summary>
@@ -28,7 +30,8 @@ public sealed record PromotionAdminResponse(
     DateTimeOffset? StartsAt,
     DateTimeOffset? EndsAt,
     bool IsActive,
-    bool IsCurrent);
+    bool IsCurrent,
+    PublicationState PublicationState);
 
 /// <summary>Crea una promoción. Puede ser solo texto.</summary>
 public sealed record CreatePromotionRequest(
