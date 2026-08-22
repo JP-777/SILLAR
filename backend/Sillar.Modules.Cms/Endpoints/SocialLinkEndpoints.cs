@@ -42,6 +42,10 @@ public static class SocialLinkEndpoints
             .WithSummary("Desactiva una red social sin borrarla.")
             .RequireAuthorization(AdminRole.Admin)
             .Produces<SocialLinkAdminResponse>().Produces(StatusCodes.Status404NotFound);
+        admin.MapPut("/{id:int}/reactivate", Reactivate).WithName("ReactivateCmsSocialLink")
+            .WithSummary("Reactiva una red social conservando su identidad, contenido y orden.")
+            .RequireAuthorization(AdminRole.Admin)
+            .Produces<SocialLinkAdminResponse>().Produces(StatusCodes.Status404NotFound);
         return endpoints;
     }
 
@@ -85,6 +89,16 @@ public static class SocialLinkEndpoints
         var operation = await service.DeactivateAsync(id, ct);
         if (operation.Outcome == CmsOutcome.Ok)
             await Audit(audit, user, AuditAction.Delete, id, "Baja de un enlace social.", ct);
+        return CmsEndpointSupport.Result(operation, "red social", Results.Ok);
+    }
+
+    /// <summary>Reactiva una red social; requiere rol administrador.</summary>
+    internal static async Task<IResult> Reactivate(int id, SocialLinkService service,
+        IAuditWriter audit, ICurrentUser user, CancellationToken ct)
+    {
+        var operation = await service.ReactivateAsync(id, ct);
+        if (operation.Outcome == CmsOutcome.Ok)
+            await Audit(audit, user, AuditAction.Activate, id, "Reactivación de un enlace social.", ct);
         return CmsEndpointSupport.Result(operation, "red social", Results.Ok);
     }
 

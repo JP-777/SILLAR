@@ -132,6 +132,27 @@ internal sealed class SocialLinkService(
         return new CmsOperation<SocialLinkAdminResponse>(CmsOutcome.Ok, Value: Project(link));
     }
 
+    internal async Task<CmsOperation<SocialLinkAdminResponse>> ReactivateAsync(
+        int id,
+        CancellationToken cancellationToken)
+    {
+        var link = await database.SocialLinks.FirstOrDefaultAsync(
+            candidate => candidate.Id == id,
+            cancellationToken);
+        if (link is null)
+        {
+            return new CmsOperation<SocialLinkAdminResponse>(CmsOutcome.NotFound);
+        }
+
+        if (!link.IsActive)
+        {
+            link.IsActive = true;
+            await database.SaveChangesAsync(cancellationToken);
+        }
+
+        return new CmsOperation<SocialLinkAdminResponse>(CmsOutcome.Ok, Value: Project(link));
+    }
+
     internal Task<CmsOperation<IReadOnlyList<int>>> ReorderAsync(
         ReorderCmsRequest request,
         CancellationToken cancellationToken)
