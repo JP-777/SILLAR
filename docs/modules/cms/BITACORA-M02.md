@@ -352,3 +352,30 @@ Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base
 ### Fuera de alcance
 
 - No se tocaron frontend, `HOME_SECTIONS`, `PublicSite`, navegación, rutas, footer, Catálogo, Shared, E2E, `verificar.mjs`, `.env.example`, migraciones ni base persistente M02.
+
+## Paso 4A — reactivación explícita de redes sociales — 2026-08-22
+
+### Defecto, mecanismo y decisión
+
+- La auditoría de ciclo de vida encontró un bloqueo administrativo: la baja lógica dejaba `is_active=false`, pero la unicidad permanente de `platform` impedía crear otra fila de la misma red. Instagram quedaba conservado en base y ausente del feed, sin operación que permitiera recuperarlo.
+- **DECIDÍ:** añadir `PUT /api/admin/cms/social-links/{id}/reactivate`, que busca la fila por identidad y cambia únicamente `IsActive` a `true`. Conserva plataforma, URL, orden e ID; devuelve 404 si la fila no existe y es idempotente si ya estaba activa. **DESCARTÉ:** introducir `isActive` en el DTO de edición. **POR QUÉ:** editar pertenece a `editor`, mientras desactivar y reactivar cambian el ciclo de vida y requieren `admin`. **REVERSIBLE:** sí; es una operación aditiva antes de que exista frontend consumidor.
+- No se cambió `uq_social_links_plataforma`: sigue expresando que solo existe una cuenta editorial por plataforma, activa o no. Reactivar la misma fila resuelve el bloqueo sin duplicar identidades ni alterar el esquema.
+- La ruta conserva la política `editor` del grupo y añade `admin`, igual que la baja. La jerarquía existente permite `admin` y `super_admin`, pero rechaza `editor`. La auditoría usa `AuditAction.Activate`.
+
+### Pruebas y evidencia observable
+
+- **Rojo deliberado:** se invirtió temporalmente la asignación de reactivación a `IsActive = false`. La prueba `Crear_desactivar_y_reactivar_instagram_recupera_la_misma_fila` falló con `Expected: True` y `Actual: False`; después se restauró `true` y el mismo filtro quedó verde. Los fallos posteriores al ampliar el arnés fueron de preparación del servicio HTTP y de datos preexistentes, no se presentan como el rojo deliberado.
+- **Específicas:** `ReactivacionRedSocialTests` pasó 3/3. Fija las políticas de la ruta, el ciclo crear → desactivar → reactivar sobre la misma fila, conservación de contenido y orden, retorno al feed, conflicto al intentar otro Instagram, auditoría `Activate`, idempotencia de una fila activa y 404 sin auditoría para un ID inexistente.
+- **HTTP real, base efímera:** `editor` recibió 403; `admin` y `super_admin` recibieron 200; una fila ya activa recibió 200; un ID inexistente recibió 404; el segundo Instagram recibió 409; la fila reactivada volvió al feed y las tres reactivaciones correctas observadas dejaron acción `activate` en auditoría.
+- **CMS completa:** 54/54 pruebas verdes.
+- **Puerta completa:** se sembraron los 20 productos canónicos mediante `scripts/demo/seed-demo.mjs` en `sillar_e2e`; `node scripts/verificar.mjs` terminó con `TODO EN VERDE — las 5 etapas pasaron`, sin omisiones. El arnés eliminó el stack efímero al terminar y no se conectó a la base persistente de M02.
+- Código y pruebas: `9c02678` (`Añade reactivación de redes sociales en CMS`). La documentación queda en el commit que contiene esta sección.
+
+### Deuda de ciclo de vida registrada, no resuelta
+
+- El reordenamiento actual carga el conjunto completo de cada entidad y exige exactamente todos sus identificadores; por tanto, las filas inactivas siguen participando obligatoriamente. Banners, promociones, trabajos y productos destacados pueden acumular bajas indefinidamente. No bloquea el paso 4, pero requiere una decisión de producto antes de excluir, archivar o purgar filas; este encargo no cambia esa semántica.
+
+### Fuera de alcance
+
+- No se implementó reactivación para banners, promociones, trabajos ni productos destacados.
+- No se tocaron frontend, `HOME_SECTIONS`, footer, navegación, Catálogo, Shared, migraciones, `uq_social_links_plataforma`, `.env.example`, E2E ni `verificar.mjs`.

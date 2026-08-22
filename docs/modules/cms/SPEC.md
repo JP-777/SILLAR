@@ -273,6 +273,8 @@ Para cada una de las cinco entidades: listar (incluidas las no vigentes), obtene
 
 `PUT /api/admin/cms/<entidad>/order` recibe la lista completa de identificadores en su nuevo orden. Reordenar mandando `display_order` uno por uno produce estados intermedios con dos elementos en la misma posición.
 
+`PUT /api/admin/cms/social-links/{id}/reactivate` reactiva una red social dada de baja y conserva su identidad, plataforma, URL y orden. Requiere rol `admin`, igual que la baja, y es idempotente si la fila ya está activa. La baja lógica de una red social no es terminal: la reactivación es una operación explícita y no forma parte del DTO de edición. Esta decisión no se generaliza a banners, promociones, trabajos ni productos destacados.
+
 ---
 
 ## 9. Interfaz
@@ -296,7 +298,7 @@ Cada pantalla declara las dos cosas. Un SPEC que solo describe estados produce l
 | Promociones | Vigente, programada, caducada, inactiva | Crear, editar, reordenar, desactivar |
 | Destacados | Vigente, programado, **producto no publicado** (`product_is_public=false`), **producto desactivado en M01** (`product_is_active=false`), pendiente de reenlace | **Elegir producto del catálogo**, reordenar, **actualizar datos** (uno o todos), volver a enlazar, quitar de la portada |
 | Trabajos | Activo, inactivo | Crear, editar, reordenar, desactivar |
-| Redes | Activa, inactiva | Añadir, editar, reordenar, desactivar |
+| Redes | Activa, inactiva | Añadir, editar, reordenar, desactivar, reactivar |
 
 **Con Catálogo inactivo, el panel no llama al selector para recuperarse de su `404`.** Consulta la capacidad antes de ofrecer la acción, oculta destacar, buscar y reenlazar, y muestra una frase que explique que hay que activar Catálogo. Un `404` tratado después de llamar sería indistinguible de una ruta mal escrita y acabaría como un error genérico.
 
@@ -335,6 +337,7 @@ Cada pantalla declara las dos cosas. Un SPEC que solo describe estados produce l
 - [ ] `link_url` sin `link_label` se rechaza
 - [ ] Reordenar cinco banners y recargar devuelve el mismo orden; una petición interrumpida no deja dos en la misma posición
 - [ ] Dos enlaces de la misma red se rechazan, sin distinguir mayúsculas
+- [ ] Desactivar y reactivar una red conserva la misma fila y la devuelve al feed público; `editor` recibe 403 y `admin` puede reactivarla
 - [ ] **Con M01 desinstalado, los destacados conservan nombre e imagen y la portada no muestra enlaces rotos**
 - [ ] Renombrar un producto destacado actualiza su tarjeta en la portada, sin que nadie toque M02
 - [ ] Corregir a mano el slug de un producto destacado deja el enlace de la portada apuntando al sitio correcto
