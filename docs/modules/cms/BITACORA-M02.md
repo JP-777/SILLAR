@@ -324,3 +324,31 @@ Stack exclusivo: proyecto Compose `sillar_m02`, contenedor `sillar_m02_db`, base
 - **Búsqueda sin prefijos en M01:** se midió `plum → 0`, `plumon → 1`; `lapi → 0`, `lapiz → 1`; `cuad → 0`. El selector del paso 4 debe advertir que se escriba la palabra completa en vez de presentar un vacío que parezca «no existe».
 - Estas anotaciones no cambian comportamiento del paso 3. `PublicSite`, `frontend/shared` y `e2e` siguen sin tocarse mientras M01 termina la costura declarativa de la portada.
 - **Validación posterior:** `git diff --check` no encontró errores; la solución compiló en Release con 0 advertencias y 0 errores. Pasaron 274 pruebas (132 CORE, 54 Shared, 47 Catálogo y 41 CMS) y quedaron omitidas las 2 pruebas de Catálogo que requieren su colación SQL auxiliar.
+
+## Paso 4A — estado de publicación administrado por backend — 2026-08-21
+
+### Hueco encontrado y decisión
+
+- El reconocimiento del paso 4 encontró que `isActive`, `isCurrent`, `startsAt` y `endsAt` no bastaban para que el panel distinguiera «programado» de «caducado» sin reconstruir `PublicationWindow` en JavaScript. La clasificación temporal pasa a ser propiedad de M02 backend.
+- **DECIDÍ:** un único enum `PublicationState`, propio de M02 y serializado como `inactive`, `scheduled`, `current` o `expired`. **DESCARTÉ:** tres cadenas calculadas por servicio y una abstracción en Shared. **POR QUÉ:** los tres DTO programables consumen una sola regla sin abrir contrato de plataforma. **REVERSIBLE:** sí; es una ampliación aditiva de respuestas aún no consumidas por frontend.
+- `PublicationWindow.StateAt` respeta la semántica existente: inactivo domina; `starts_at == now` es `current`; `ends_at == now` ya es `expired`; un inicio futuro es `scheduled`; el resto activo dentro de la ventana es `current`. `isCurrent` se conserva y cada proyección lo deriva del mismo `PublicationState`, calculado una vez.
+- `BannerAdminResponse`, `PromotionAdminResponse` y `FeaturedProductAdminResponse` incorporan `PublicationState`. Trabajos y redes no lo reciben porque no tienen ventana temporal.
+- El SPEC declara que el frontend consume `publicationState` y no compara fechas. No hubo migración ni cambio de base.
+
+### Archivos y commit
+
+- Regla y contrato: `Domain/PublicationState.cs`, `Domain/PublicationWindow.cs` y los DTO de banners, promociones y productos destacados.
+- Proyección: `BannerService.cs`, `PromotionService.cs` y `FeaturedProductService.cs`.
+- Pruebas: `VigenciaPublicacionTests.cs` y `ContratosHttpTests.cs`.
+- Código y pruebas quedaron en `a1e52b0` (`Añade estado de publicación calculado en CMS`).
+
+### Pruebas y evidencia
+
+- **Rojo deliberado:** se invirtió temporalmente la expectativa de `endsAt == now` a `Current` y se ejecutó `dotnet test backend/Sillar.Modules.Cms.Tests/Sillar.Modules.Cms.Tests.csproj --filter "FullyQualifiedName~Estado_administrativo_respeta_la_misma_ventana"`. Se observaron 7 casos: 6 verdes y 1 rojo, exactamente la frontera invertida, con `Expected: Current` y `Actual: Expired`. Se restauró `Expired` antes de continuar.
+- **Específicas:** el filtro conjunto de `VigenciaPublicacionTests` y `ContratosHttpTests` pasó 22/22. Fija inactivo, futuro, ventana abierta, caducado, inicio sin final, inicio inclusivo, final exclusivo, equivalencia con `isCurrent`, uso por las tres entidades, nombres JSON controlados y ausencia del campo en trabajos/redes.
+- **CMS completa:** 51/51 pruebas verdes.
+- **Puerta completa:** `node scripts/verificar.mjs` terminó `TODO EN VERDE — las 5 etapas pasaron`, sin pruebas omitidas. Para no usar `sillar_m02` en `55442`, el arnés levantó `sillar_e2e` en `55432`, se sembraron los 20 productos mediante `scripts/demo/seed-demo.mjs`, las pruebas de traducción apuntaron explícitamente a esa cadena efímera y la etapa E2E recreó y eliminó el stack. Al terminar no quedó ningún contenedor ni volumen `sillar_e2e`; la base persistente de M02 no se conectó ni se modificó.
+
+### Fuera de alcance
+
+- No se tocaron frontend, `HOME_SECTIONS`, `PublicSite`, navegación, rutas, footer, Catálogo, Shared, E2E, `verificar.mjs`, `.env.example`, migraciones ni base persistente M02.

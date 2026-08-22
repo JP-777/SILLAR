@@ -265,6 +265,8 @@ Lo que se refresca son **los datos** del producto destacado. **Lo que nunca camb
 
 **«Vigente» es una sola definición y vive en un solo sitio:** `is_active`, y `starts_at` nulo o pasado, y `ends_at` nulo o futuro, contra `now()`. Se escribe una vez y las tres tablas con vigencia la usan.
 
+Las respuestas administrativas de banners, promociones y productos destacados incluyen `publicationState`, calculado por M02 con esa misma definición: `inactive` si el contenido está dado de baja, `scheduled` si todavía no alcanza `starts_at`, `current` si está vigente y `expired` si alcanzó `ends_at`. El inicio es inclusivo y el final exclusivo. `isCurrent` se conserva por compatibilidad, pero el frontend consume `publicationState`: **no vuelve a comparar fechas ni reconstruye la ventana de publicación.**
+
 ### Administración — requieren sesión
 
 Para cada una de las cinco entidades: listar (incluidas las no vigentes), obtener, crear, actualizar, desactivar y **reordenar**. Rol `editor` para todo salvo desactivar, que es `admin`, igual que en M01.
