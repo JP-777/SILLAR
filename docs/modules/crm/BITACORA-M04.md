@@ -35,22 +35,56 @@ que se dé de baja conserva su correo para siempre**. Con el índice completo, e
 registrarse — y recibiría el mensaje genérico, porque la respuesta no puede revelar que la cuenta
 existe. **Un callejón sin salida disfrazado de mensaje neutro.**
 
-**Camino definido, y sin cambiar lo que ve el visitante:**
+#### La primera versión de esta decisión estaba mal, y por dónde se cayó
 
-1. Registrarse con el correo de una ficha de baja **da exactamente la misma respuesta** que
-   cualquier otro registro, y **se envía el correo de verificación igual**.
-2. **Al verificar** —que es la prueba de que esa persona controla ese correo— **se crea la cuenta y
-   se enlaza a la ficha existente**.
-3. **La ficha sigue de baja.** No se reactiva sola: darla de baja fue una decisión del negocio y no
-   la revierte quien se registra.
-4. **Quien administra ve la solicitud** en la ficha, con su fecha. Reactivar es suyo.
+Escribí que al verificar se crea la cuenta pero **la ficha sigue de baja**, defendiéndolo así:
 
-> **Por qué no se reactiva sola:** verificar el correo prueba que controla el buzón, no que el
-> negocio quiera volver a tenerlo de cliente. Y reactivar en silencio convertiría un formulario
-> público en una forma de deshacer una decisión del negocio.
+> *«Verificar el correo prueba que controla el buzón, no que el negocio quiera volver a tenerlo de
+> cliente.»*
 
-**Esto es una decisión de producto tomada por mí para desbloquear el esquema.** Es reversible —no
-cambia ninguna columna, solo qué se hace con ellas—, pero conviene que se mire.
+**La frase es correcta y la decisión no**, porque solo se sostiene si «de baja» significa que el
+negocio no lo quiere. Y estaba haciendo que ese estado cargara **dos significados distintos** que
+el propio SPEC ya separa en su §8:
+
+| Estado | Qué pasó |
+|---|---|
+| **De baja** | Ya no es cliente activo: limpieza, inactividad, o él mismo lo pidió |
+| **Bloqueada** | **El negocio decidió que no lo quiere** |
+
+> **Un estado que carga dos significados obliga a elegir el peor comportamiento para los dos.**
+
+Es la misma forma que ya se arregló tres veces: un `null` que significaba «de baja» y «no existe»,
+`IsActive` frente a `IsPublic`, y `product_is_active` naciendo porque «desactivado» y «no existe» se
+estorbaban.
+
+Y el precio de no separarlos era concreto: alguien de baja **verificaba su correo y luego no podía
+entrar**, con el mensaje genérico y sin explicación posible. **Había hecho todo bien y llegaba a una
+pared muda.** En el bloqueado eso es el precio deliberado del caso raro; en el de baja era un
+callejón para el caso normal.
+
+#### Lo que se hace, ya separado
+
+**Registrarse siempre da la misma respuesta y siempre envía el correo de verificación.** Lo que
+cambia es qué ocurre al verificar:
+
+| Estado de la ficha | Al verificar |
+|---|---|
+| **No existe** | Se crea ficha y cuenta |
+| **Existe sin cuenta** | Se enlaza la cuenta a la ficha existente |
+| **De baja** | **Se reactiva** y se enlaza la cuenta |
+| **Bloqueada** | **No entra.** Queda **solicitud registrada con su fecha**, y quien administra decide |
+
+**Por qué la de baja se reactiva:** «de baja» no era una decisión sobre esa persona, era que dejó de
+estar activa. Que vuelva y demuestre que controla su buzón es exactamente lo que revierte ese
+estado — y es el caso común, no el raro: quien vuelve a una tienda de barrio después de un año no
+es un problema de seguridad.
+
+**Por qué la bloqueada no:** ahí el negocio sí decidió, y un formulario público no deshace una
+decisión del negocio.
+
+> **Y la reactivación queda en la auditoría**: qué ficha, cuándo, y **que fue por verificación de
+> correo, no por mano de nadie**. Es un cambio de estado que ninguna persona autorizó, así que
+> tiene que poder leerse después.
 
 ### El documento es único **entre las fichas que lo tienen**
 
