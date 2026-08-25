@@ -26,7 +26,7 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   await composeUpDb();
   await waitDbHealthy();
 
-  console.log('[e2e] aplicando migraciones (CORE, Catalog)...');
+  console.log('[e2e] aplicando migraciones (CORE, Catalog, Cms)...');
   await migrate();
 
   console.log('[e2e] aplicando seeds (sin datos de negocio)...');
@@ -64,6 +64,14 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   // observable el estado vacío.
   console.log('[e2e] activando M01 catálogo...');
   await activateModule(session, 'catalog');
+
+  // M02 de verdad, por el mismo motivo que M01: tiene cinco pantallas propias
+  // y cuatro bloques de portada, y **sin activarlo la suite entera podía estar
+  // en verde sin haber cargado una sola de ellas**. Arranca vacío —su seed no
+  // trae contenido (SPEC de M02 §6.6)—, que es lo que hace observable el
+  // estado vacío de `aa-vacios.spec.ts`.
+  console.log('[e2e] activando M02 contenido...');
+  await activateModule(session, 'cms');
 
   console.log('[e2e] entorno listo.');
 }
