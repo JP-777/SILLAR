@@ -136,15 +136,22 @@ que ya usa la identidad en el resto del producto. **No `core.es_search`**, que i
 ella `josé@` y `jose@` serían la misma cuenta, y eso no es un fallo de búsqueda — son dos personas
 compartiendo acceso.
 
-> **La colación se ocupa de la caja; de lo que manda el navegador no se ocupa nadie.** Con `es_ci`
-> el índice ya no distingue mayúsculas, pero **sigue distinguiendo cosas que una persona considera
-> el mismo correo**: un espacio al final —que los teclados de móvil pegan solos— y **la misma tilde
-> escrita de dos formas**, porque `é` puede llegar como un carácter o como `e` más un acento
-> combinado. Son cadenas distintas, **se ven idénticas**, y crearían dos cuentas que nadie puede
-> diferenciar mirando.
+> **La colación se ocupa de la caja y de la forma Unicode; del resto no se ocupa
+> nadie.** Con `es_ci` el índice no distingue mayúsculas, y **tampoco distingue la
+> misma tilde escrita de dos formas** —`é` como un carácter o como `e` más acento
+> combinado—: ICU normaliza al construir la clave de colación, así que las dos
+> formas chocan en el índice único. *Comprobado por efecto contra la colación real
+> del proyecto: 11 bytes contra 12, y el índice rechaza la segunda.*
 >
-> **Se normaliza al guardar: recortar y unificar la forma Unicode** (`Normalize(NormalizationForm.FormC)`).
-> Antes de comparar, antes de insertar.
+> **Lo que sí distingue es el espacio**, que los teclados de móvil pegan solos:
+> `a@x.com` y `a@x.com ` son dos correos para el índice, y se ven idénticos.
+>
+> **Se normaliza al guardar igualmente: recortar y unificar la forma Unicode**
+> (`Normalize(NormalizationForm.FormC)`). El recorte es una garantía; la
+> normalización a NFC ya no lo es, pero se mantiene porque **la base almacena la
+> última forma escrita, no la canónica** —un `UPDATE` con otra forma equivalente
+> cambia los bytes guardados sin que la colación lo considere un cambio— y sin ella
+> el valor almacenado depende de qué teclado lo escribió.
 
 ### `crm.customer_addresses` — las direcciones de entrega
 
@@ -153,6 +160,25 @@ referencia se queda apuntando a otra cosa** sin que salte ninguna violación, y 
 mismo que el del catálogo sin fotos — un cliente sin direcciones en el otro nodo.
 
 Una puede ser la preferida.
+
+### `crm.contact_messages` — mensajes del formulario de contacto
+
+M04 también es dueño de la captación del formulario de contacto, como establece
+`ARQUITECTURA_MODULAR.md`. Esta tabla es local a WEB y **no replica**: la ficha del
+cliente forma parte de los datos compartidos, pero la captación pertenece a lo
+que ADR-017 deja exclusivamente del lado WEB.
+
+Un mensaje puede existir sin ficha, por lo que `customer_id` es opcional. Si se
+conoce o posteriormente se vincula a una ficha, la FK interna apunta a
+`crm.customers`. El mensaje conserva además el nombre y los medios de contacto
+recibidos en el formulario como datos propios: no depende de que la ficha cambie.
+
+Lleva nombre, correo opcional, teléfono opcional, asunto opcional, mensaje,
+baja lógica y marcas de tiempo. Debe existir al menos correo o teléfono.
+
+No lleva estado de atención en esta primera entrega: lectura, asignación o
+resolución pertenecen al comportamiento de la bandeja y se decidirán cuando
+exista esa pantalla, no dentro del esquema por anticipado.
 
 ### `crm.customer_sessions` — las sesiones
 

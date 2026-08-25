@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ==========================================================================
+       Pruebas de persistencia de Sillar.Modules.Crm (M04 Paso 2 · DATOS).
+
+       Estas pruebas cruzan la frontera con PostgreSQL real: no usan EF
+       InMemory, ni metadata de EF, ni inspección de código. Cada verificación
+       ejecuta INSERT/UPDATE/DELETE contra una base de datos PostgreSQL 16 con
+       el schema crm ya migrado.
+
+       Requiere una base de datos accesible definida en ConnectionStrings__Default
+       (cargada desde .env por DotEnv). El schema crm debe estar migrado.
+       ========================================================================== -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Modules.Crm\Sillar.Modules.Crm.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

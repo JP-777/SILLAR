@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ==========================================================================
+       Sillar.Modules.Crm — M04 Clientes.
+
+       Solo persistencia (Paso 2 · DATOS). Sin endpoints, sin servicios de
+       aplicación, sin contratos públicos: Sillar.Modules.Crm.Contracts queda
+       deliberadamente fuera de esta unidad.
+
+       Referencia solo Sillar.Shared, Sillar.Core.Contracts: la colación
+       core.es_ci es dependencia dura de CORE, y CRM la consume sin definirla.
+       ========================================================================== -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
+    <ProjectReference Include="..\Sillar.Core.Contracts\Sillar.Core.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Sillar.Modules.Crm.Tests" />
+  </ItemGroup>
+
+</Project>

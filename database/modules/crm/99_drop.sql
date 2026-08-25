@@ -1,0 +1,24 @@
+-- ============================================================
+-- M04 Clientes — desinstalación
+--
+-- Elimina únicamente lo perteneciente a CRM:
+--   - el schema crm completo (tablas, triggers, funciones,
+--     __migrations y la configuración de búsqueda textual
+--     crm.spanish_unaccent)
+--   - las funciones crm.set_updated_at() y
+--     crm.invalidate_customer_email_verification()
+--
+-- Conserva intactos:
+--   - CORE (schema core, tablas, colaciones core.es_ci, core.es_search)
+--   - Catalog (schema catalog)
+--   - cualquier objeto de otro módulo
+--   - las extensiones pg_trgm y unaccent (compartidas; otro módulo
+--     puede estar usándolas)
+--
+-- DROP SCHEMA ... CASCADE elimina las tablas, los triggers (que
+-- pertenecen a las tablas), las funciones del schema y la configuración
+-- de text search crm.spanish_unaccent. El historial de migraciones
+-- crm.__migrations también desaparece.
+-- ============================================================
+
+DROP SCHEMA IF EXISTS crm CASCADE;
