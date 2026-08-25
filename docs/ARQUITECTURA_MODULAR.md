@@ -58,9 +58,9 @@ No es vendible ni desmontable. Es la base sobre la que se enchufa todo lo demás
 | **M03** | Ventas Online | `sales` | M01 (dura), **M04 (dura)** | MVP |
 | **M04** | Clientes y Contacto | `crm` | CORE | MVP |
 | **M05a** | Servicios — Vitrina | `services` | CORE | MVP |
-| **M05b** | Servicios — Órdenes | `services` | M05a (dura), M04 (blanda) | Fase 2 |
+| **M05b** | Servicios — Órdenes | `service_orders` | M05a (dura), M04 (blanda) | Fase 2 |
 | **M06** | Seguimiento de Servicios | `tracking` | M05b (dura) | Fase 2 |
-| **M07** | Solicitudes B2B y Especiales | `b2b` | M04 (blanda) | MVP |
+| **M07** | Solicitudes B2B y Especiales | `b2b` | **M01 (dura), M04 (dura)** | MVP |
 | **M08** | Portal del Cliente | `portal` | M04 (dura), M03/M06 (blandas) | Fase 3 |
 | **M09** | Inventario | `inventory` | M01 (dura) | Fase 4 |
 | **M10** | Reportes y Analítica | `reporting` | consume eventos | Fase 4 |
@@ -71,6 +71,23 @@ No es vendible ni desmontable. Es la base sobre la que se enchufa todo lo demás
 | **M16** | Sincronización entre nodos | `sync` | CORE | **ERP** |
 | **M17** | Sucursales | `branches` | CORE (dura) · M09, M13 (blandas) | **ERP** |
 | **M12** | Asistente conversacional | `assistant` | ninguna dura | Futuro |
+| **M18** | Campaña Escolar | `school_campaign` | M01 (dura) · M03, M04 | Fase 2 |
+
+> **Tres filas de esta tabla cambiaron el 24 de agosto de 2026, y el porqué no está aquí.**
+> Está razonado en `docs/modules/services/DECISIONES-PREVIAS-M05a.md` y en
+> `docs/modules/b2b/DECISIONES-PREVIAS-M07.md`, que es donde vive el argumento completo. Aquí
+> queda el resultado y una línea de cada uno:
+>
+> - **M05b deja de compartir schema con M05a.** Dos módulos en un mismo schema tienen un
+>   `99_drop.sql` cada uno, y **el de cualquiera de los dos se lleva por delante las tablas del
+>   otro**. Desinstalar M05b no puede vaciar la vitrina de servicios.
+> - **M07 pasa a depender duro de M01 y de M04.** Una solicitud exige cuenta, así que M04 deja de
+>   ser blanda — **el mismo criterio que movió a M03 el 21 de agosto**. Y M01 nunca estuvo
+>   declarado, aunque una solicitud especial nombra productos desde que existe.
+> - **M18 Campaña Escolar sale de M07.** Es operación de temporada —listas escolares atendidas por
+>   personal, con ofertas y, previsto, agentes de IA—, **no contenido publicado**. `BITACORA.md:781`
+>   la había aparcado dentro de M07 el 15 de agosto; con el alcance de M07 escrito se ve que no
+>   cabe.
 
 ### Detalle por módulo
 
@@ -176,7 +193,8 @@ Las 17 tablas del diseño original se reparten así. **Ninguna se pierde**; solo
 | `cms` | `banners`, `promotions`, `featured_projects`, `social_links` | `pages` (fase 2) |
 | `crm` | `customers`, `contact_messages` | — |
 | `sales` | `orders`, `order_items`, `order_statuses` | — |
-| `services` | `services` | `service_orders`, `service_order_items`, `service_order_statuses` |
+| `services` | `services` | — |
+| `service_orders` | — | `service_orders`, `service_order_items`, `service_order_statuses` |
 | `b2b` | `special_order_leads`, `institution_requests` | `quotes` (fase 2) |
 | `tracking` | — | `service_status_history` |
 | `portal` | — | `users`, `customer_profiles` |
@@ -195,31 +213,33 @@ sales.order_items.order_id          → sales.orders              (interna)
 sales.order_items.product_id        → catalog.products          (cruzada, M03→M01)
 sales.orders.order_status_id        → sales.order_statuses      (interna)
 crm.contact_messages.customer_id    → crm.customers             (interna)
-tracking.service_status_history.service_order_id → services.service_orders  (cruzada, M06→M05b)
+tracking.service_status_history.service_order_id → service_orders.service_orders  (cruzada, M06→M05b)
 inventory.inventory_movements.product_id → catalog.products     (cruzada, M09→M01)
 sales.orders.customer_id            → crm.customers             (cruzada, M03→M04)
+b2b.special_order_leads.customer_id → crm.customers             (cruzada, M07→M04)
+b2b.institution_requests.customer_id→ crm.customers             (cruzada, M07→M04)
 ```
 
 **Prohibidas en el script base (dependencia blanda, van en script de integración):**
 
 ```
-b2b.special_order_leads.customer_id → crm.customers             (M07 ⟶ M04)
-b2b.institution_requests.customer_id→ crm.customers             (M07 ⟶ M04)
 portal.customer_profiles.customer_id→ crm.customers             (M08 ⟶ M04, dura pero cross-schema)
 ```
 
 Estas columnas se crean **nullable y sin FK**. La restricción se añade después mediante:
 
-```
-database/integrations/b2b_crm.sql
-```
+Hoy no queda ninguno vivo en el plan. El mecanismo sigue siendo el de siempre: **un script por
+pareja, en `database/integrations/<a>_<b>.sql`, que solo se ejecuta si los dos módulos están
+instalados.**
 
-que solo se ejecutan si ambos módulos están activos en la instalación.
-
-> **`sales_crm.sql` ya no está en esa lista.** Al pasar M03 a depender duro de M04, su FK a
-> `crm.customers` va en la migración base de M03, no en un script de integración: una dependencia
-> dura no se desmonta por separado. Los ejemplos de más abajo lo siguen nombrando **porque
-> explican el mecanismo**, no porque ese archivo tenga que existir.
+> **Ni `sales_crm.sql` ni `b2b_crm.sql` están ya en esa lista**, y por el mismo motivo: M03 el 21
+> de agosto y M07 el 24 pasaron a depender **duro** de M04, así que sus FK a `crm.customers` van
+> en la migración base del módulo dependiente. **Una dependencia dura no se desmonta por
+> separado**, y un script de integración existe justamente para poder desmontarla. El de M07
+> está razonado en `docs/modules/b2b/DECISIONES-PREVIAS-M07.md`.
+>
+> Los ejemplos de más abajo siguen nombrando `sales_crm.sql` **porque explican el mecanismo**, no
+> porque ese archivo tenga que existir.
 
 ### Estructura de scripts
 
@@ -231,11 +251,11 @@ database/
 │   ├── cms/        { ... }
 │   ├── crm/        { ... }
 │   ├── sales/      { ... }
-│   ├── services/   { ... }
-│   └── b2b/        { ... }
+│   ├── services/        { ... }   M05a — vitrina
+│   ├── service_orders/  { ... }   M05b — su propio 99_drop.sql, que es el motivo del reparto
+│   └── b2b/             { ... }
 ├── integrations/
-│   ├── sales_crm.sql
-│   └── b2b_crm.sql
+│   └── sales_crm.sql    ← ejemplo del mecanismo. Ninguna pareja lo necesita hoy
 └── install.sql          orquestador: lee los módulos a instalar y ejecuta en orden
 ```
 
@@ -282,7 +302,8 @@ backend/
     ├── Sillar.Modules.Cms/
     ├── Sillar.Modules.Crm/
     ├── Sillar.Modules.Sales/
-    ├── Sillar.Modules.Services/
+    ├── Sillar.Modules.Services/        M05a — vitrina, schema "services"
+    ├── Sillar.Modules.ServiceOrders/   M05b — órdenes, schema "service_orders"
     ├── Sillar.Modules.Tracking/
     └── Sillar.Modules.B2B/
 ```
