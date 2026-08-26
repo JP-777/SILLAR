@@ -405,9 +405,34 @@ Comportamiento:
 
 ## 9. Alcance de la primera instalación
 
-Módulos: **CORE + M01 + M02 + M04 + M03 + M05a + M07**.
+Módulos: **CORE + M01 + M02 + M04 + M03 + M07**, y **M05a solo si llega a existir**.
 
-Esto cubre el backlog de alta prioridad de la primera instalación: homepage con banners, categorías y productos destacados, catálogo con buscador y filtros, ficha de producto, carrito, promociones, servicios visibles, colegios y empresas, pedidos especiales, WhatsApp, contacto, mapa, footer y panel básico de administración.
+> **M05a está condicionado, aquí y en el ROADMAP.** Sus dos ejemplos —anillado e impresión— ya
+> funcionan como productos de M01, y M01 fue diseñado para admitirlos. La pregunta abierta es qué
+> hace M05a que M01 no haga ya, y **se contesta en el mostrador, no aquí**:
+> `docs/modules/services/DECISIONES-PREVIAS-M05a.md` §3, con su disparador.
+>
+> Esta línea lo daba por hecho mientras `ROADMAP_MODULAR.md:69` decía que puede no llegar a existir.
+> **Dos frases del mismo repositorio diciendo cosas distintas**, y la que se lee al planificar el
+> alcance era la que no avisaba.
+
+Esto cubre el backlog de alta prioridad de la primera instalación: homepage con banners, categorías
+y productos destacados, catálogo con buscador y filtros, ficha de producto, carrito, promociones,
+servicios visibles, colegios y empresas, pedidos especiales y panel básico de administración.
+
+> **Cuatro de los que esta frase enumeraba no estaban donde parecía**, y se separan porque darlos por
+> hechos es lo que hace que nadie los construya. Comprobado el 26 de agosto de 2026:
+>
+> | | Estado | Dónde está |
+> |---|---|---|
+> | **WhatsApp** | **Cubierto** como dato | `cms.social_links` lo admite como plataforma (`docs/modules/cms/SPEC.md:194`), y vive ahí y no en `site_settings` **porque aparece en el pie** (`:200`) |
+> | **Footer** | **No existe** | Ningún `<footer>` de página en `frontend/src/`. Es construir el pie de plataforma por primera vez, con Social Links como primer contribuyente — `PENDIENTES.md` entrada 2 |
+> | **Contacto** | **Sin decidir** | `crm.contact_messages` está en el reparto de tablas (`:194` de este documento) y **no se menciona ni una vez en `docs/modules/crm/SPEC.md`**. Falta resolver si entra en la migración inicial de M04 o se difiere, y **la ventana del esquema tiene reloj** (`docs/modules/crm/BITACORA-M04.md:10`) |
+> | **Mapa** | **Sin dueño** | No aparece en el §9 de ningún SPEC ni en ninguna otra parte de `docs/modules/` — `PENDIENTES.md` entrada 15 |
+>
+> **Lo que la frase promete sigue siendo correcto como intención.** Lo que fallaba era el tiempo
+> verbal: «cubre» decía que ya estaba resuelto, y de estos cuatro solo uno lo está — y ese, a medias,
+> porque el dato existe y el sitio donde se enseña no.
 
 Quedan fuera de la primera entrega, por decisión explícita: órdenes de servicio, seguimiento kanban, portal del cliente, inventario, reportes y pagos.
 

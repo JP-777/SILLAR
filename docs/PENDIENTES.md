@@ -132,16 +132,14 @@ y la última fila del §10.
 
 ---
 
-## 7 · ¿Está M11 Pagos en la fase correcta?
+## 7 · ~~¿Está M11 Pagos en la fase correcta?~~ — **resuelta el 26 de agosto de 2026**
 
-**Qué pasa.** `ARQUITECTURA_MODULAR.md` pone M11 en Fase 4 / «Futuro». Pero el negocio va a cobrar
-**con tarjeta desde la web**, además de Yape con registro manual.
+Se decidió que no: M11 se queda en Fase 4 y M03 abre con Yape y efectivo. Está abajo, en «Resueltos
+recientemente», con la restricción que deja para el SPEC de M03.
 
-**Por qué importa y a quién.** No afecta a M07 —que solo registra el hecho del pago— sino a
-**M03 Ventas Online**, que es MVP y es lo siguiente después de M04. Si el checkout de M03 tiene que
-aceptar tarjeta desde el arranque, M11 no es futuro.
-
-**Disparador.** Antes de escribir el SPEC de M03. No después.
+**El número no se reutiliza y los de abajo no se renumeran.** Hay referencias a estas entradas desde
+`ARQUITECTURA_MODULAR.md` y desde los documentos de M07, y un número que cambia de dueño es peor que
+un hueco: el hueco se ve, la referencia movida no.
 
 ---
 
@@ -409,9 +407,60 @@ sujeto; y ponerle a algo transversal el nombre del único que lo usa hoy.
 
 ---
 
+## 15 · El mapa del negocio no tiene módulo dueño
+
+**Qué pasa.** El alcance del MVP lo prometía: hasta el 26 de agosto de 2026, la frase de
+`ARQUITECTURA_MODULAR.md:419` enumeraba «mapa» entre lo que la primera instalación cubre. Ese mismo
+día se le quitó, y **la tabla que lo sustituye (`:431`) dice lo que este pendiente arregla**: sin
+dueño. Porque **no está en el §9 de ningún SPEC**. Comprobado sobre
+`docs/modules/` entero el 26 de agosto de 2026: las dos únicas apariciones de la palabra son una
+metáfora (`catalog/README.md:8`, «el mapa, no el territorio») y un formato de imagen
+(`core/ENTREGA-03B-MEDIOS.md:17`, «mapa de bits»).
+
+**Prometido y sin dueño es la peor de las dos formas de no existir:** quien planifica lo da por
+cubierto y quien construye no lo ve en su SPEC, así que nadie lo echa de menos hasta que la web está
+en línea sin decir dónde está la tienda.
+
+**Las dos candidaturas, y no se decide aquí:**
+
+| | Si es… | Entonces vive en |
+|---|---|---|
+| **Identidad del sitio** | Un dato del negocio que se escribe una vez y casi nunca cambia, como `business_name` | `core.site_settings` |
+| **Contenido editable** | Algo que el personal cambia desde el panel junto a banners y redes | **M02** |
+
+**No es una elección de gusto:** decide quién puede editarlo, si desaparece al desactivar M02, y si
+un negocio que compra solo el catálogo tiene mapa o no. La segunda pregunta es la que más pesa —un
+mapa que se va al desactivar el CMS deja un hueco en la página de contacto.
+
+**Y hay un precedente que se le parece y conviene mirar antes de decidir:** `whatsapp` vive en
+`cms.social_links` y no en `site_settings`, **y el SPEC de M02 explica por qué** — «porque en el pie
+aparece junto a las demás» (`docs/modules/cms/SPEC.md:200`), mientras el número de contacto del
+negocio se queda en CORE. Mismo dato repartido según **dónde se enseña**, no según qué es.
+
+**Disparador.** Antes de cerrar la Fase 1, **o** cuando alguien pregunte por qué la web no enseña
+dónde está la tienda. Lo segundo va a pasar antes.
+
+---
+
 ## Resueltos recientemente
 
 *(se borran de arriba y se anotan aquí solo hasta que entren en la bitácora del módulo)*
+
+- **M11 Pagos se queda en Fase 4, y M03 no lo espera.** (26 ago 2026) La duda era si el checkout de
+  M03 tenía que aceptar tarjeta desde el arranque. **No:** la tienda abre cobrando con **Yape y
+  efectivo**, y la tarjeta llega con M11 sin adelantar nada de ella.
+
+  **Lo que queda de esta decisión no es un pendiente, es una restricción del SPEC de M03**, y va
+  escrita aquí hasta que ese SPEC exista:
+
+  - **El pago se guarda como hecho consumado** —cuándo, método, referencia y **el nombre** del
+    trabajador que lo registró—, **nunca una FK a `core.admin_users`**. Es exactamente lo que ya hace
+    `b2b.quotes` y por el mismo motivo: esa tabla no se replica, y el dato que hace falta dentro de un
+    año es **quién cobró**, que sobrevive a que la cuenta se dé de baja o se renombre.
+  - **El estado del pago y el estado del pedido son dos cosas distintas.** Fundirlos obliga a rehacer
+    la máquina de estados **con pedidos reales dentro** el día que entre la pasarela — y es el mismo
+    defecto que M04 corrigió con «de baja» y «bloqueada»: **un estado que carga dos significados
+    obliga a elegir el peor comportamiento para los dos.**
 
 - **La puerta no era reproducible.** `verificar.mjs` corría las pruebas del backend (`:126`) antes
   de la etapa e2e (`:157`), y dos pruebas de `ReactivacionRedSocialTests.cs:162` exigen la base
