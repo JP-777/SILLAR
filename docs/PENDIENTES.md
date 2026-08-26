@@ -121,7 +121,8 @@ decide ahora**: sin un tercer caso real sería inventar.
 
 **Disparador.** El tercer origen cotizable, o el SPEC de `quotes` de fase 2.
 
-**Detalle.** `docs/modules/b2b/SPEC.md` §4.3 y §10.
+**Detalle.** `docs/modules/b2b/SPEC.md`, tabla `b2b.quotes` del §4 —donde vive `ck_quotes_origen`—
+y la última fila del §10.
 
 ---
 
