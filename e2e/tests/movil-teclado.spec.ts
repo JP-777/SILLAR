@@ -164,9 +164,13 @@ test('A 390 px, el menú del panel sigue estando y lleva a todas partes', async 
   const menu = page.getByRole('navigation', { name: 'Secciones del panel' });
   await expect(menu).toBeVisible();
 
+  // **`exact`, y no es cosmético.** Sin él, «Productos» casa también con
+  // «Productos destacados» (`cms/routes.tsx:16`) y la aserción muere por modo
+  // estricto. La entrada de M02 es correcta; lo que se apoyaba en que nadie
+  // más usara esa palabra era esta prueba.
   for (const nombre of ['Módulos', 'Usuarios', 'Archivos', 'Marcas', 'Productos']) {
     await expect(
-      menu.getByRole('link', { name: nombre }),
+      menu.getByRole('link', { name: nombre, exact: true }),
       `a 390 px no se llega a «${nombre}»`,
     ).toBeVisible();
   }

@@ -1,6 +1,6 @@
 import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
-import { expect, test } from '../fixtures/base.js';
+import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
 import { themeRecorder } from '../fixtures/themes.js';
 
 /**
@@ -647,4 +647,86 @@ async function desactivarTodo(api: APIRequestContext, coleccion: string): Promis
       `desactivar ${coleccion}/${fila.id}: ${borrado.status()} ${await borrado.text()}`,
     ).toBe(true);
   }
+}
+
+/* ========================================================================
+ * 6 · El módulo activo que todavía no tiene nada publicado
+ * ===================================================================== */
+
+/**
+ * **El caso que dejaba la portada muda, anclado por lo que se ve.**
+ *
+ * `PublicSite` decidía «aquí no hay nada» contando secciones de módulos
+ * activos, que es contar **quién podría aportar**, no quién aportó. Con M02
+ * activo y sin contenido la cuenta daba uno, así que no salía el aviso — y los
+ * cuatro bloques devuelven `null` con la lista vacía. La portada se quedaba
+ * con el nombre del negocio y **nada debajo**: ni contenido, ni explicación.
+ *
+ * `catalogHome` lo tapaba sin querer, porque pinta siempre
+ * (`catalog/routes.tsx:51`). Por eso hay que apagar M01 para verlo: **mientras
+ * hubo un solo módulo publicable, el agujero no era alcanzable.**
+ *
+ * Y por eso esta prueba apaga un módulo en vez de afirmar sobre una pantalla
+ * quieta. Sale cara —el proceso se reinicia— y es el precio de que el arreglo
+ * no se pueda deshacer sin que nadie se entere.
+ */
+test('Con M02 activo y sin nada publicado, la portada lo dice en vez de quedarse muda', async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  await loginAsE2eAdmin(page);
+
+  // Llega aquí con la portada ya limpia: la prueba anterior retiró todo el
+  // contenido de M02. Lo que falta para el caso es que M01 deje de aportar.
+  await cambiarCatalogo(page, 'Desactivar');
+
+  try {
+    await page.goto('/');
+
+    // 1 · **El aviso se ve.** Es la afirmación entera: antes de este arreglo,
+    //     aquí no había absolutamente nada.
+    await expect(
+      page.getByText('Todavía no hay contenido publicado.'),
+      'la portada se quedó muda: ni contenido ni aviso',
+    ).toBeVisible();
+
+    // 2 · **Y no manda activar lo que ya está activo.** El texto viejo decía
+    //     «Aparecerá cuando se active el módulo de contenido web», y en este
+    //     caso el módulo está activo: era una instrucción imposible de seguir.
+    await expect(
+      page.getByText(/se active el módulo/),
+      'el aviso sigue pidiendo activar un módulo que ya está activo',
+    ).toHaveCount(0);
+
+    // 3 · **Y M02 sigue activo mientras se dice todo esto**, que es lo que
+    //     separa este caso del de «ningún módulo publicable». Sin esto, la
+    //     prueba pasaría igual con M02 apagado y no probaría nada nuevo.
+    const capacidades = (await (await page.request.get('/api/capabilities')).json()) as {
+      modules: { code: string }[];
+    };
+    expect(
+      capacidades.modules.map((modulo) => modulo.code),
+      'M02 no está activo: entonces esto es el caso de siempre, no el nuevo',
+    ).toContain('cms');
+  } finally {
+    // Se deja como se encontró, pase lo que pase arriba: si esta prueba falla
+    // y deja M01 apagado, las cuatro de después caen sin motivo propio.
+    await cambiarCatalogo(page, 'Activar');
+  }
+
+  await expect(page.locator('#modulo-catalog')).toContainText('Activo');
+});
+
+/** Mueve el interruptor de M01 y espera a que el proceso vuelva. */
+async function cambiarCatalogo(page: Page, accion: 'Activar' | 'Desactivar'): Promise<void> {
+  await page.goto('/admin/modulos');
+
+  await duringExpectedOutage(page, async () => {
+    await page.locator('#modulo-catalog').getByRole('switch').click();
+    await page.getByRole('alertdialog').getByRole('button', { name: new RegExp(`^${accion}`) }).click();
+
+    const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
+    await expect(overlay).toBeVisible();
+    await expect(overlay).toBeHidden({ timeout: 90_000 });
+  });
 }
