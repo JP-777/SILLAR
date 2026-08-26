@@ -369,6 +369,46 @@ Aplazados por decisión, no pendientes: retención de auditoría, vectoriales en
 
 ---
 
+## 14 · La regla que era cierta porque solo había uno
+
+**No es un pendiente: es una lección, y está aquí porque hay que tenerla delante al construir el
+módulo siguiente.** No lleva disparador porque no hay nada que hacer — hay algo que mirar.
+
+En una sola semana aparecieron **tres defectos con la misma forma**, y ninguno se parecía a los
+otros hasta que se pusieron en fila:
+
+| Dónde | La regla | Cierta hasta |
+|---|---|---|
+| `frontend/src/platform/PublicSite.tsx:30` | `secciones.length === 0` decidía «aquí no hay nada» | que un módulo pudiera estar **activo y sin publicar** |
+| `e2e/tests/zz-desmontaje.spec.ts:126` y `e2e/tests/movil-teclado.spec.ts:167` | «no queda rastro de M01» preguntado por la subcadena **«Productos»** | que otro módulo usara esa palabra con toda la razón |
+| `e2e/tests/zz-instalacion.spec.ts:44` | una comprobación **de plataforma** con nombre de módulo | que hubiera un módulo cuyo nombre no aparecía en el título |
+
+Las tres eran **correctas el día que se escribieron**, y las tres dejaron de serlo por lo mismo:
+contaban con que solo hubiera un módulo publicable, un módulo con pantallas, un módulo con cuerpos
+en Swagger.
+
+> **Y no es una casualidad de M02: M02 fue el primer segundo módulo.**
+
+Eso es lo que conviene no perder de vista, porque **la cuenta va a subir**. M04 trae la segunda
+identidad —dos cookies, dos esquemas de autenticación—, M07 el segundo consumidor del contrato de
+M01, y M18 va a usar la palabra «Productos» en sus etiquetas. Cada uno de ellos es el primer segundo
+de algo.
+
+### La pregunta que la reconoce en el primer minuto
+
+> **¿Esta regla es cierta porque el mundo es así, o porque hoy solo hay uno?**
+
+Se hace **al escribirla**, que es cuando cuesta diez segundos. Después cuesta lo de esta semana:
+ocho pruebas en rojo, dos sesiones de diagnóstico y un rato largo persiguiendo una cascada hasta dar
+con el único fallo que la causaba.
+
+**Tres señales de que estás delante de una:** contar elementos para deducir un estado en vez de
+preguntarle a cada uno; afirmar una ausencia por una palabra en vez de por lo que identifica al
+sujeto; y ponerle a algo transversal el nombre del único que lo usa hoy.
+
+
+---
+
 ## Resueltos recientemente
 
 *(se borran de arriba y se anotan aquí solo hasta que entren en la bitácora del módulo)*
