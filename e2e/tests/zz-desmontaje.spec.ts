@@ -121,9 +121,26 @@ test('Desactivar M01 no borra nada, y al volver el catálogo está donde lo deja
   await expect(page.locator('#modulo-catalog')).toContainText('Inactivo');
 
   // 1 · El panel sigue en pie y no queda rastro del módulo en el menú.
+  //
+  // **Por sus enlaces, no por una palabra.** Esto decía
+  // `not.toContainText('Productos')`, y M02 añadió «Productos destacados»:
+  // la aserción empezó a fallar con el módulo correctamente desmontado. La
+  // trampa es que cambiarla por otra subcadena solo muda la fragilidad al
+  // siguiente módulo que use la palabra — y M18 Campaña Escolar la va a usar.
+  //
+  // Se pregunta por lo que identifica a M01 sin ambigüedad: **sus tres
+  // destinos**. Un enlace a `/admin/catalogo/…` solo lo pone M01
+  // (`catalog/routes.tsx`), así que la afirmación sigue siendo cierta con
+  // cualquier número de módulos que hablen de productos.
   await page.goto('/admin');
   await expect(page.locator('main')).toBeVisible();
-  await expect(page.getByRole('navigation')).not.toContainText('Productos');
+
+  const menu = page.getByRole('navigation', { name: 'Secciones del panel' });
+  await expect(menu, 'el panel se quedó sin menú al desactivar M01').toBeVisible();
+  await expect(
+    menu.locator('a[href^="/admin/catalogo/"]'),
+    'quedó un enlace de M01 en el menú con el módulo desactivado',
+  ).toHaveCount(0);
 
   // 2 · Sus rutas no existen: quien escriba una a mano no encuentra una
   //     pantalla rota.
@@ -145,8 +162,23 @@ test('Desactivar M01 no borra nada, y al volver el catálogo está donde lo deja
     await expect(page.getByText('Todavía no hay contenido publicado.')).toBeVisible();
   });
 
-  await expect(page.getByRole('link', { name: 'Ver el catálogo' })).toHaveCount(0);
-  await expect(page.locator('main')).not.toContainText('catálogo');
+  // Y lo mismo en la tienda, por el mismo motivo: esto era
+  // `not.toContainText('catálogo')` sobre todo `main`, que es una palabra que
+  // cualquier módulo público puede usar con toda la razón. Lo que identifica a
+  // M01 aquí son **sus rutas públicas** —`/catalogo` y `/producto/…`
+  // (`catalog/routes.tsx`, `catalogPublicRoutes`)— y el título de su sección.
+  await expect(
+    page.locator('main a[href^="/catalogo"], main a[href^="/producto/"]'),
+    'la portada sigue enlazando a la tienda con M01 desactivado',
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('link', { name: 'Ver el catálogo', exact: true }),
+    'sigue el enlace de la sección de M01',
+  ).toHaveCount(0);
+  await expect(
+    page.getByText('Nuestra tienda', { exact: true }),
+    'la sección de M01 sigue pintándose con el módulo desactivado',
+  ).toHaveCount(0);
 
   // --- Se vuelve a activar ------------------------------------------------
   await cambiarModulo(page, 'Activar');

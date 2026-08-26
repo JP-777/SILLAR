@@ -102,15 +102,36 @@ el negocio que compra M07 para cotizar encargos no quiere nada de eso.
 
 `b2b.special_order_leads` usa exactamente la misma forma que ya está en el árbol:
 
-| Uso | Dónde | Estado |
-|---|---|---|
-| 1 | `cms.featured_products` — `ProductId` nulable + `ProductName` + `ProductSlug` (`backend/Sillar.Modules.Cms/Domain/FeaturedProduct.cs:5-7`) | **Construido** |
-| 2 | `sales.order_items` — el pedido conserva nombre y precio del momento (`CLAUDE.md:119`) | Especificado |
-| 3 | `b2b.special_order_leads` | Este SPEC |
+| Uso | Dónde | ¿Refresca o congela? | Estado |
+|---|---|---|---|
+| 1 | `cms.featured_products` — `ProductId` nulable + `ProductName` + `ProductSlug` (`backend/Sillar.Modules.Cms/Domain/FeaturedProduct.cs:5-7`) | **Refresca** | **Construido** |
+| 2 | `sales.order_items` — el pedido conserva nombre y precio del momento (`CLAUDE.md:119`) | **Congela** | Especificado |
+| 3 | `b2b.special_order_leads` | **Refresca** | Este SPEC |
 
 **Tres usos son un patrón, no una coincidencia**, y ya no hace falta volver a razonarlo cada vez:
 referencia viva para poder releer, copia para que la fila siga significando algo cuando el original
 desaparezca, y una marca —`pending_relink`— para que alguien lo arregle a mano cuando toque.
+
+### Pero son dos variedades, y elegir mal por parecido es el riesgo entero de la tabla
+
+La forma es la misma; **lo que se hace con la copia cuando el original cambia, no**:
+
+| | **Refresca** | **Congela** |
+|---|---|---|
+| Al cambiar el producto | Relee y sustituye la copia | **No vuelve a mirar** |
+| Para qué existe la copia | Que la fila siga significando algo si el original desaparece | **Guardar lo que pasó** |
+| Marca de reenlace | Sí — `pending_relink` | No: no hay nada que reenlazar |
+| Ejemplo de por qué | Un destacado con el nombre viejo enseña al público algo que ya no existe | **Un pedido conserva a dónde se envió aunque el cliente se mude** |
+
+`b2b.special_order_leads` **es de los que refrescan**, y por eso lleva `pending_relink`: la solicitud
+sigue viva y el personal necesita el producto de hoy para cotizar. `b2b.quote_lines` **es de los que
+congelan** —`catalog_price_at_quote` es el precio de aquel día y no se toca nunca—, lo que deja a M07
+usando **las dos variedades a la vez**, cada una donde toca.
+
+> **El cuarto caso tiene que elegir variedad antes que forma.** La pregunta no es «¿copio los
+> campos?» sino **«¿esta fila describe algo que sigue pasando, o registra algo que ya pasó?»**. Lo
+> primero refresca; lo segundo congela. Copiar la forma sin hacerse esa pregunta es cómo un registro
+> histórico acaba reescribiéndose solo.
 
 **Y M07 no tiene que escribir nada nuevo para consumirlo.** Lo que necesita ya es público en
 `Sillar.Modules.Catalog.Contracts`:
