@@ -22,7 +22,7 @@ internal sealed class CurrentAdmin(IHttpContextAccessor accessor) : ICurrentAdmi
 
     /// <summary>Identificador de la sesión en curso, para revocarla o conservarla.</summary>
     public Guid? SessionId
-        => Guid.TryParse(Find(SessionClaims.SessionId), out var id) ? id : null;
+        => Guid.TryParse(Find(AdminSessionClaims.SessionId), out var id) ? id : null;
 
     private string? Find(string claim) => accessor.HttpContext?.User.FindFirst(claim)?.Value;
 }

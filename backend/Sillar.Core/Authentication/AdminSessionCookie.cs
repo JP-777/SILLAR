@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Http;
 namespace Sillar.Core.Authentication;
 
 /// <summary>La cookie de sesión administrativa.</summary>
-public static class SessionCookie
+public static class AdminSessionCookie
 {
     /// <summary>Nombre de la cookie.</summary>
-    public const string Name = "sillar_session";
+    public const string Name = "sillar_panel";
 
     /// <summary>Opciones con las que se emite y se borra.</summary>
     /// <remarks>
@@ -39,7 +39,7 @@ public static class SessionCookie
 /// no aquí: es quien lo lee, y todo módulo con endpoints de escritura necesita
 /// el mismo nombre.
 /// </remarks>
-internal static class SessionClaims
+internal static class AdminSessionClaims
 {
     /// <summary>Identificador de la fila de sesión.</summary>
     public const string SessionId = "sillar:admin:session_id";

@@ -47,7 +47,7 @@ ser de esta decisión.
 criptografía pura —crear un testigo, calcular su SHA-256, compararlo en tiempo fijo— **sin ninguna
 tabla detrás**. Usarlo no ata a M04 a nada de CORE.
 
-**Lo que no se reutiliza** es `SessionAuthenticationHandler`, que es interno a `Sillar.Core` y lee
+**Lo que no se reutiliza** es `AdminSessionAuthenticationHandler`, que es interno a `Sillar.Core` y lee
 `core.admin_sessions`. M04 tiene el suyo, contra `crm.customer_sessions`.
 
 ## 3. Dos cookies, dos esquemas, y es la capa que faltaba
@@ -76,7 +76,7 @@ tenga que deducirlo:
 | Personal | `sillar_panel` |
 | Clientela | `sillar_tienda` |
 
-**Radio del cambio, comprobado antes de decidirlo:** la constante en `SessionCookie.cs:9`, un
+**Radio del cambio, comprobado antes de decidirlo:** la constante en `AdminSessionCookie.cs:9`, un
 literal en `scripts/demo/seed-demo.mjs:58`, y dos líneas de documentación
 (`backend/README.md:289`, `docs/modules/core/ENTREGA-02-AUTENTICACION.md:61`). El arnés `e2e/` no
 la menciona, y el frontend no puede: es `httpOnly`. **Cierra la sesión de todo el mundo una vez, y

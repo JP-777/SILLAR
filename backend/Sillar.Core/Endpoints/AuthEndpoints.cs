@@ -121,7 +121,7 @@ public static class AuthEndpoints
                     statusCode: StatusCodes.Status423Locked);
 
             case LoginOutcome.Granted:
-                context.Response.Cookies.Append(SessionCookie.Name, attempt.SessionToken!, SessionCookie.Options());
+                context.Response.Cookies.Append(AdminSessionCookie.Name, attempt.SessionToken!, AdminSessionCookie.Options());
 
                 var user = attempt.User!;
                 return Results.Ok(new LoginResponse(
@@ -157,7 +157,7 @@ public static class AuthEndpoints
             currentUser.Email!,
             cancellationToken);
 
-        context.Response.Cookies.Delete(SessionCookie.Name, SessionCookie.Options());
+        context.Response.Cookies.Delete(AdminSessionCookie.Name, AdminSessionCookie.Options());
 
         return Results.NoContent();
     }

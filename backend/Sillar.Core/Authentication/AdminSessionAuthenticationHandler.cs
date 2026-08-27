@@ -19,7 +19,7 @@ namespace Sillar.Core.Authentication;
 /// base de datos en cada petición. Es una consulta más por petición, y es
 /// exactamente lo que permite cerrar una sesión de verdad desde el panel.
 /// </remarks>
-public sealed class SessionAuthenticationHandler(
+public sealed class AdminSessionAuthenticationHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory loggerFactory,
     UrlEncoder encoder,
@@ -28,12 +28,12 @@ public sealed class SessionAuthenticationHandler(
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, loggerFactory, encoder)
 {
     /// <summary>Nombre del esquema de autenticación.</summary>
-    public const string SchemeName = "SillarSession";
+    public const string SchemeName = "SillarAdminSession";
 
     /// <inheritdoc />
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var token = Request.Cookies[SessionCookie.Name];
+        var token = Request.Cookies[AdminSessionCookie.Name];
 
         // Sin cookie no hay nada que decir: no es un fallo, es una petición
         // anónima. Los endpoints públicos siguen su curso.
@@ -78,7 +78,7 @@ public sealed class SessionAuthenticationHandler(
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Name, user.FullName),
             new Claim(ClaimTypes.Role, user.Role),
-            new Claim(SessionClaims.SessionId, session.AdminSessionId.ToString()),
+            new Claim(AdminSessionClaims.SessionId, session.AdminSessionId.ToString()),
             new Claim(CsrfEndpointFilter.ClaimType, session.CsrfTokenHash)
         ], SchemeName);
 

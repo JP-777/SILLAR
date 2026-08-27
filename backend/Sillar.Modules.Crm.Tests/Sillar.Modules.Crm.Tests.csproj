@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Sillar.Modules.Crm\Sillar.Modules.Crm.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Crm.Contracts\Sillar.Modules.Crm.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

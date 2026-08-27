@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ==========================================================================
+       Sillar.Modules.Crm.Contracts — frontera pública de M04 Clientes.
+
+       Solo contratos y piezas necesarias para consumir la identidad de cliente.
+       Ningún DbContext, entidad ni implementación de CRM sale por aquí.
+       ========================================================================== -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
+    <ProjectReference Include="..\Sillar.Core.Contracts\Sillar.Core.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

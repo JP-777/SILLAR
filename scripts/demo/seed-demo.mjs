@@ -55,7 +55,7 @@ async function api(metodo, ruta, cuerpo, { multipart } = {}) {
   const respuesta = await fetch(`${API}${ruta}`, { method: metodo, headers: cabeceras, body });
 
   const guardada = respuesta.headers.getSetCookie?.() ?? [];
-  const sesión = guardada.find((c) => c.startsWith('sillar_session='));
+  const sesión = guardada.find((c) => c.startsWith('sillar_panel='));
 
   if (sesión) {
     cookie = sesión.split(';')[0];

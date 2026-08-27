@@ -14,7 +14,7 @@ public class AdminClaimIsolationTests
     [Fact]
     public void Claims_administrativos_tienen_namespace_propio()
     {
-        Assert.Equal("sillar:admin:session_id", SessionClaims.SessionId);
+        Assert.Equal("sillar:admin:session_id", AdminSessionClaims.SessionId);
         Assert.Equal("sillar:admin:csrf_hash", CsrfEndpointFilter.ClaimType);
     }
 
@@ -57,7 +57,7 @@ public class AdminClaimIsolationTests
         var sessionId = Guid.CreateVersion7();
 
         var currentAdmin = CreateCurrentAdmin(
-            new Claim(SessionClaims.SessionId, sessionId.ToString()));
+            new Claim(AdminSessionClaims.SessionId, sessionId.ToString()));
 
         Assert.Equal(sessionId, currentAdmin.SessionId);
     }

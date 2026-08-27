@@ -286,7 +286,7 @@ curl -X POST http://localhost:5080/api/admin/auth/login -H 'Content-Type: applic
 
 ## Sesión y CSRF
 
-- Cookie `sillar_session`: `HttpOnly`, `Secure`, `SameSite=Strict`, sin `Max-Age`.
+- Cookie `sillar_panel`: `HttpOnly`, `Secure`, `SameSite=Strict`, sin `Max-Age`.
   Muere al cerrar el navegador; la autoridad sobre la vigencia es la fila de
   `core.admin_sessions`. **`Secure` también en desarrollo**: los navegadores
   tratan `localhost` como contexto seguro. Un problema de sesión en local nunca

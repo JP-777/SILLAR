@@ -73,9 +73,9 @@ public static class CoreServices
     /// </summary>
     public static IServiceCollection AddCoreAuthentication(this IServiceCollection services)
     {
-        services.AddAuthentication(SessionAuthenticationHandler.SchemeName)
-            .AddScheme<AuthenticationSchemeOptions, SessionAuthenticationHandler>(
-                SessionAuthenticationHandler.SchemeName,
+        services.AddAuthentication(AdminSessionAuthenticationHandler.SchemeName)
+            .AddScheme<AuthenticationSchemeOptions, AdminSessionAuthenticationHandler>(
+                AdminSessionAuthenticationHandler.SchemeName,
                 configureOptions: null);
 
         services.AddAuthorization(options =>

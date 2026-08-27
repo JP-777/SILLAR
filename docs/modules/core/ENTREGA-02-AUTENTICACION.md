@@ -58,7 +58,7 @@ Esto sigue la recomendación vigente del NIST: la longitud protege más que la c
 
 | Atributo | Valor |
 |---|---|
-| Nombre | `sillar_session` |
+| Nombre | `sillar_panel` |
 | `HttpOnly` | sí |
 | `Secure` | sí |
 | `SameSite` | `Strict` |

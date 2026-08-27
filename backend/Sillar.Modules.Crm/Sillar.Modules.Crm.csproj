@@ -3,9 +3,9 @@
   <!-- ==========================================================================
        Sillar.Modules.Crm — M04 Clientes.
 
-       Solo persistencia (Paso 2 · DATOS). Sin endpoints, sin servicios de
-       aplicación, sin contratos públicos: Sillar.Modules.Crm.Contracts queda
-       deliberadamente fuera de esta unidad.
+       Persistencia y frontera de identidad de cliente (Paso 3 · C1).
+       El contrato público vive en Sillar.Modules.Crm.Contracts; dominio y
+       acceso a datos permanecen internos al módulo.
 
        Referencia solo Sillar.Shared, Sillar.Core.Contracts: la colación
        core.es_ci es dependencia dura de CORE, y CRM la consume sin definirla.
@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
     <ProjectReference Include="..\Sillar.Core.Contracts\Sillar.Core.Contracts.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Crm.Contracts\Sillar.Modules.Crm.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
