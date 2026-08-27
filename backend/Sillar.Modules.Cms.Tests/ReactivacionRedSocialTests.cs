@@ -27,7 +27,7 @@ public sealed class ReactivacionRedSocialTests
         }
     }
 
-    private sealed class UsuarioPrueba : ICurrentUser
+    private sealed class UsuarioPrueba : ICurrentAdmin
     {
         public int? AdminUserId => 7;
         public string? Email => "admin-prueba@sillar.test";
@@ -42,7 +42,7 @@ public sealed class ReactivacionRedSocialTests
         builder.Services.AddAuthorization();
         builder.Services.AddScoped<SocialLinkService>();
         builder.Services.AddSingleton<IAuditWriter, AuditoriaEspia>();
-        builder.Services.AddSingleton<ICurrentUser, UsuarioPrueba>();
+        builder.Services.AddSingleton<ICurrentAdmin, UsuarioPrueba>();
         await using var app = builder.Build();
         app.MapSocialLinkEndpoints();
 

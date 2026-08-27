@@ -78,7 +78,7 @@ public static class MediaEndpoints
     private static async Task<IResult> Upload(
         HttpRequest request,
         MediaService media,
-        CurrentUser currentUser,
+        CurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         if (!request.HasFormContentType)
@@ -181,7 +181,7 @@ public static class MediaEndpoints
     private static async Task<IResult> Delete(
         Guid id,
         MediaService media,
-        CurrentUser currentUser,
+        CurrentAdmin currentUser,
         CancellationToken cancellationToken)
         => await media.DeleteAsync(id, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken)
             ? Results.NoContent()

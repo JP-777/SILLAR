@@ -297,7 +297,7 @@ public interface ISettingsReader
     IReadOnlyDictionary<string,string> GetPublic();
 }
 
-public interface ICurrentUser
+public interface ICurrentAdmin
 {
     int?    AdminUserId { get; }
     string? Email       { get; }

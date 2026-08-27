@@ -63,7 +63,7 @@ public static class SocialLinkEndpoints
 
     /// <summary>Crea una red social y audita el alta.</summary>
     private static async Task<IResult> Create(CreateSocialLinkRequest request, SocialLinkService service,
-        IAuditWriter audit, ICurrentUser user, CancellationToken ct)
+        IAuditWriter audit, ICurrentAdmin user, CancellationToken ct)
     {
         var operation = await service.CreateAsync(request, ct);
         if (operation.Outcome == CmsOutcome.Ok)
@@ -74,7 +74,7 @@ public static class SocialLinkEndpoints
 
     /// <summary>Modifica una red social y audita la edición.</summary>
     private static async Task<IResult> Update(int id, UpdateSocialLinkRequest request, SocialLinkService service,
-        IAuditWriter audit, ICurrentUser user, CancellationToken ct)
+        IAuditWriter audit, ICurrentAdmin user, CancellationToken ct)
     {
         var operation = await service.UpdateAsync(id, request, ct);
         if (operation.Outcome == CmsOutcome.Ok)
@@ -84,7 +84,7 @@ public static class SocialLinkEndpoints
 
     /// <summary>Desactiva una red social; requiere rol administrador.</summary>
     private static async Task<IResult> Deactivate(int id, SocialLinkService service,
-        IAuditWriter audit, ICurrentUser user, CancellationToken ct)
+        IAuditWriter audit, ICurrentAdmin user, CancellationToken ct)
     {
         var operation = await service.DeactivateAsync(id, ct);
         if (operation.Outcome == CmsOutcome.Ok)
@@ -94,7 +94,7 @@ public static class SocialLinkEndpoints
 
     /// <summary>Reactiva una red social; requiere rol administrador.</summary>
     internal static async Task<IResult> Reactivate(int id, SocialLinkService service,
-        IAuditWriter audit, ICurrentUser user, CancellationToken ct)
+        IAuditWriter audit, ICurrentAdmin user, CancellationToken ct)
     {
         var operation = await service.ReactivateAsync(id, ct);
         if (operation.Outcome == CmsOutcome.Ok)
@@ -104,7 +104,7 @@ public static class SocialLinkEndpoints
 
     /// <summary>Reordena todas las redes sociales en una transacción.</summary>
     private static async Task<IResult> Reorder(ReorderCmsRequest request, SocialLinkService service,
-        IAuditWriter audit, ICurrentUser user, CancellationToken ct)
+        IAuditWriter audit, ICurrentAdmin user, CancellationToken ct)
     {
         var operation = await service.ReorderAsync(request, ct);
         if (operation.Outcome == CmsOutcome.Ok)
@@ -113,7 +113,7 @@ public static class SocialLinkEndpoints
         return CmsEndpointSupport.Result(operation, "orden", Results.Ok);
     }
 
-    private static Task Audit(IAuditWriter audit, ICurrentUser user, string action, int id,
+    private static Task Audit(IAuditWriter audit, ICurrentAdmin user, string action, int id,
         string summary, CancellationToken ct)
         => CmsEndpointSupport.AuditAsync(audit, user, action, "social_link", id.ToString(), summary, ct);
 }

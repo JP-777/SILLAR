@@ -78,7 +78,7 @@ public static class BrandEndpoints
     private static async Task<IResult> Create(
         CreateBrandRequest request,
         BrandService brands,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await brands.CreateAsync(request, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken);
@@ -102,7 +102,7 @@ public static class BrandEndpoints
         Guid id,
         UpdateBrandRequest request,
         BrandService brands,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await brands.UpdateAsync(id, request, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken);
@@ -125,7 +125,7 @@ public static class BrandEndpoints
     private static async Task<IResult> Deactivate(
         Guid id,
         BrandService brands,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await brands.DeactivateAsync(id, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken);

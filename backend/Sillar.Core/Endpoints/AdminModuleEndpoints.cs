@@ -81,7 +81,7 @@ public static class AdminModuleEndpoints
         string code,
         ModuleActivationService modules,
         HostRestarter restarter,
-        CurrentUser currentUser,
+        CurrentAdmin currentUser,
         HttpContext context,
         CancellationToken cancellationToken)
         => SetActive(code, activate: true, modules, restarter, currentUser, context, cancellationToken);
@@ -98,7 +98,7 @@ public static class AdminModuleEndpoints
         string code,
         ModuleActivationService modules,
         HostRestarter restarter,
-        CurrentUser currentUser,
+        CurrentAdmin currentUser,
         HttpContext context,
         CancellationToken cancellationToken)
         => SetActive(code, activate: false, modules, restarter, currentUser, context, cancellationToken);
@@ -108,7 +108,7 @@ public static class AdminModuleEndpoints
         bool activate,
         ModuleActivationService modules,
         HostRestarter restarter,
-        CurrentUser currentUser,
+        CurrentAdmin currentUser,
         HttpContext context,
         CancellationToken cancellationToken)
     {

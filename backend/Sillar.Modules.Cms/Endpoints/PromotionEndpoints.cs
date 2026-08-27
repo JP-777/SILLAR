@@ -59,7 +59,7 @@ public static class PromotionEndpoints
 
     /// <summary>Crea una promoción y audita el alta.</summary>
     private static async Task<IResult> Create(CreatePromotionRequest request, PromotionService service,
-        IAuditWriter audit, ICurrentUser user, CancellationToken ct)
+        IAuditWriter audit, ICurrentAdmin user, CancellationToken ct)
     {
         var operation = await service.CreateAsync(request, ct);
         if (operation.Outcome == CmsOutcome.Ok)
@@ -70,7 +70,7 @@ public static class PromotionEndpoints
 
     /// <summary>Modifica una promoción y audita la edición.</summary>
     private static async Task<IResult> Update(int id, UpdatePromotionRequest request, PromotionService service,
-        IAuditWriter audit, ICurrentUser user, CancellationToken ct)
+        IAuditWriter audit, ICurrentAdmin user, CancellationToken ct)
     {
         var operation = await service.UpdateAsync(id, request, ct);
         if (operation.Outcome == CmsOutcome.Ok)
@@ -80,7 +80,7 @@ public static class PromotionEndpoints
 
     /// <summary>Desactiva una promoción; requiere rol administrador.</summary>
     private static async Task<IResult> Deactivate(int id, PromotionService service,
-        IAuditWriter audit, ICurrentUser user, CancellationToken ct)
+        IAuditWriter audit, ICurrentAdmin user, CancellationToken ct)
     {
         var operation = await service.DeactivateAsync(id, ct);
         if (operation.Outcome == CmsOutcome.Ok)
@@ -90,7 +90,7 @@ public static class PromotionEndpoints
 
     /// <summary>Reordena todas las promociones en una transacción.</summary>
     private static async Task<IResult> Reorder(ReorderCmsRequest request, PromotionService service,
-        IAuditWriter audit, ICurrentUser user, CancellationToken ct)
+        IAuditWriter audit, ICurrentAdmin user, CancellationToken ct)
     {
         var operation = await service.ReorderAsync(request, ct);
         if (operation.Outcome == CmsOutcome.Ok)
@@ -99,7 +99,7 @@ public static class PromotionEndpoints
         return CmsEndpointSupport.Result(operation, "orden", Results.Ok);
     }
 
-    private static Task Audit(IAuditWriter audit, ICurrentUser user, string action, int id,
+    private static Task Audit(IAuditWriter audit, ICurrentAdmin user, string action, int id,
         string summary, CancellationToken ct)
         => CmsEndpointSupport.AuditAsync(audit, user, action, "promotion", id.ToString(), summary, ct);
 }

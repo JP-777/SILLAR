@@ -38,7 +38,7 @@ M01 **solo**.
 
 - `IMediaStorage` para las imágenes. Las cuatro claves foráneas de M01 apuntan a
   `core.media_assets`, y por eso las tablas con imagen se replican como ella (ADR-018).
-- `IAuditWriter`, `ICurrentUser`, `ISettingsReader`.
+- `IAuditWriter`, `ICurrentAdmin`, `ISettingsReader`.
 
 **Quién va a depender de M01:** M03 clientes, M09 inventario, M13 mostrador, M15 compras. Todos a
 través de `Sillar.Modules.Catalog.Contracts`, nunca del `Domain` ni del `Data`.

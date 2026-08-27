@@ -165,7 +165,7 @@ Devuelve id, nombre, correo y rol. Nunca el hash.
 
 Roles jerárquicos: `super_admin` > `admin` > `editor`. Exigir `admin` acepta también a `super_admin`.
 
-Se implementa `ICurrentUser` del contrato de CORE. Ningún módulo consulta `core.admin_users` directamente.
+Se implementa `ICurrentAdmin` del contrato de CORE. Ningún módulo consulta `core.admin_users` directamente.
 
 ---
 

@@ -57,7 +57,7 @@ public static class FeaturedProjectEndpoints
 
     /// <summary>Crea un trabajo y audita el alta.</summary>
     private static async Task<IResult> Create(CreateFeaturedProjectRequest request, FeaturedProjectService service,
-        IAuditWriter audit, ICurrentUser user, CancellationToken ct)
+        IAuditWriter audit, ICurrentAdmin user, CancellationToken ct)
     {
         var operation = await service.CreateAsync(request, ct);
         if (operation.Outcome == CmsOutcome.Ok)
@@ -68,7 +68,7 @@ public static class FeaturedProjectEndpoints
 
     /// <summary>Modifica un trabajo y audita la edición.</summary>
     private static async Task<IResult> Update(int id, UpdateFeaturedProjectRequest request,
-        FeaturedProjectService service, IAuditWriter audit, ICurrentUser user, CancellationToken ct)
+        FeaturedProjectService service, IAuditWriter audit, ICurrentAdmin user, CancellationToken ct)
     {
         var operation = await service.UpdateAsync(id, request, ct);
         if (operation.Outcome == CmsOutcome.Ok)
@@ -78,7 +78,7 @@ public static class FeaturedProjectEndpoints
 
     /// <summary>Desactiva un trabajo; requiere rol administrador.</summary>
     private static async Task<IResult> Deactivate(int id, FeaturedProjectService service,
-        IAuditWriter audit, ICurrentUser user, CancellationToken ct)
+        IAuditWriter audit, ICurrentAdmin user, CancellationToken ct)
     {
         var operation = await service.DeactivateAsync(id, ct);
         if (operation.Outcome == CmsOutcome.Ok)
@@ -88,7 +88,7 @@ public static class FeaturedProjectEndpoints
 
     /// <summary>Reordena todos los trabajos en una transacción.</summary>
     private static async Task<IResult> Reorder(ReorderCmsRequest request, FeaturedProjectService service,
-        IAuditWriter audit, ICurrentUser user, CancellationToken ct)
+        IAuditWriter audit, ICurrentAdmin user, CancellationToken ct)
     {
         var operation = await service.ReorderAsync(request, ct);
         if (operation.Outcome == CmsOutcome.Ok)
@@ -97,7 +97,7 @@ public static class FeaturedProjectEndpoints
         return CmsEndpointSupport.Result(operation, "orden", Results.Ok);
     }
 
-    private static Task Audit(IAuditWriter audit, ICurrentUser user, string action, int id,
+    private static Task Audit(IAuditWriter audit, ICurrentAdmin user, string action, int id,
         string summary, CancellationToken ct)
         => CmsEndpointSupport.AuditAsync(audit, user, action, "featured_project", id.ToString(), summary, ct);
 }

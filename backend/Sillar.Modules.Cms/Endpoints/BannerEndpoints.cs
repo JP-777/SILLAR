@@ -64,7 +64,7 @@ public static class BannerEndpoints
         CreateBannerRequest request,
         BannerService service,
         IAuditWriter audit,
-        ICurrentUser user,
+        ICurrentAdmin user,
         CancellationToken ct)
     {
         var operation = await service.CreateAsync(request, ct);
@@ -84,7 +84,7 @@ public static class BannerEndpoints
         UpdateBannerRequest request,
         BannerService service,
         IAuditWriter audit,
-        ICurrentUser user,
+        ICurrentAdmin user,
         CancellationToken ct)
     {
         var operation = await service.UpdateAsync(id, request, ct);
@@ -102,7 +102,7 @@ public static class BannerEndpoints
         int id,
         BannerService service,
         IAuditWriter audit,
-        ICurrentUser user,
+        ICurrentAdmin user,
         CancellationToken ct)
     {
         var operation = await service.DeactivateAsync(id, ct);
@@ -120,7 +120,7 @@ public static class BannerEndpoints
         ReorderCmsRequest request,
         BannerService service,
         IAuditWriter audit,
-        ICurrentUser user,
+        ICurrentAdmin user,
         CancellationToken ct)
     {
         var operation = await service.ReorderAsync(request, ct);

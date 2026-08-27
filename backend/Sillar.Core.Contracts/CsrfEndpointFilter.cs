@@ -17,7 +17,7 @@ namespace Sillar.Core.Contracts;
 /// endpoints de escritura lo necesita —el SPEC de M01 §8 lo exige igual que
 /// CORE—, y <c>AddEndpointFilter&lt;T&gt;()</c> necesita el tipo concreto, no
 /// una interfaz resoluble por inyección. Es el mismo motivo que ya puso
-/// <c>ICurrentUser</c> aquí.
+/// <c>ICurrentAdmin</c> aquí.
 /// </remarks>
 public sealed class CsrfEndpointFilter : IEndpointFilter
 {

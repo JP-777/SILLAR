@@ -115,7 +115,7 @@ public static class CategoryEndpoints
     private static async Task<IResult> Create(
         CreateCategoryRequest request,
         CategoryService categories,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await categories.CreateAsync(request, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken);
@@ -139,7 +139,7 @@ public static class CategoryEndpoints
         Guid id,
         UpdateCategoryRequest request,
         CategoryService categories,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await categories.UpdateAsync(id, request, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken);
@@ -162,7 +162,7 @@ public static class CategoryEndpoints
     private static async Task<IResult> Deactivate(
         Guid id,
         CategoryService categories,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var (outcome, result) = await categories.DeactivateAsync(id, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken);

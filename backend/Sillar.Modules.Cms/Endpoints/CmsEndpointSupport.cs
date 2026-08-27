@@ -25,7 +25,7 @@ internal static class CmsEndpointSupport
 
     internal static Task AuditAsync(
         IAuditWriter audit,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         string action,
         string entityType,
         string? entityId,

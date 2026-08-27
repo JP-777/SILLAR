@@ -10,7 +10,7 @@ namespace Sillar.Core.Contracts;
 /// devuelve <c>false</c>. No lanza: preguntar quién eres cuando no eres nadie es
 /// una pregunta legítima.
 /// </remarks>
-public interface ICurrentUser
+public interface ICurrentAdmin
 {
     /// <summary>Identificador del administrador, o <c>null</c> si no hay sesión.</summary>
     int? AdminUserId { get; }

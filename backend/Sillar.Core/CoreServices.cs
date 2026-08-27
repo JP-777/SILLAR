@@ -95,8 +95,8 @@ public static class CoreServices
             }
         });
 
-        services.AddScoped<CurrentUser>();
-        services.AddScoped<ICurrentUser>(provider => provider.GetRequiredService<CurrentUser>());
+        services.AddScoped<CurrentAdmin>();
+        services.AddScoped<ICurrentAdmin>(provider => provider.GetRequiredService<CurrentAdmin>());
 
         services.AddScoped<AdminAuthenticationService>();
         services.AddScoped<AdminUserService>();

@@ -5,7 +5,7 @@ using Sillar.Core.Contracts;
 namespace Sillar.Core.Authentication;
 
 /// <summary>Lee del principal de la petición quién la está haciendo.</summary>
-internal sealed class CurrentUser(IHttpContextAccessor accessor) : ICurrentUser
+internal sealed class CurrentAdmin(IHttpContextAccessor accessor) : ICurrentAdmin
 {
     /// <inheritdoc />
     public int? AdminUserId

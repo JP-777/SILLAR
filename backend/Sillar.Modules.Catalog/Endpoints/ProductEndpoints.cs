@@ -165,7 +165,7 @@ public static class ProductEndpoints
     private static async Task<IResult> Create(
         CreateProductRequest request,
         ProductService products,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await products.CreateAsync(request, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken);
@@ -200,7 +200,7 @@ public static class ProductEndpoints
         Guid id,
         UpdateProductRequest request,
         ProductService products,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await products.UpdateAsync(id, request, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken);
@@ -223,7 +223,7 @@ public static class ProductEndpoints
     private static async Task<IResult> Deactivate(
         Guid id,
         ProductService products,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await products.DeactivateAsync(id, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken);
@@ -241,7 +241,7 @@ public static class ProductEndpoints
         Guid id,
         SetProductCategoriesRequest request,
         ProductService products,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await products.SetCategoriesAsync(id, request, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken);
@@ -265,7 +265,7 @@ public static class ProductEndpoints
         Guid id,
         AssociateProductImageRequest request,
         ProductImageService images,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await images.AssociateAsync(id, request, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken);
@@ -290,7 +290,7 @@ public static class ProductEndpoints
         Guid id,
         Guid imageId,
         ProductImageService images,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         CancellationToken cancellationToken)
         => await images.RemoveAsync(id, imageId, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken)
             ? Results.NoContent()
@@ -307,7 +307,7 @@ public static class ProductEndpoints
         Guid id,
         ReorderProductImagesRequest request,
         ProductImageService images,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await images.ReorderAsync(id, request, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken);

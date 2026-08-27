@@ -142,7 +142,7 @@ public static class AuthEndpoints
     /// <returns>204 siempre que hubiera sesión.</returns>
     private static async Task<IResult> Logout(
         AdminAuthenticationService authentication,
-        CurrentUser currentUser,
+        CurrentAdmin currentUser,
         HttpContext context,
         CancellationToken cancellationToken)
     {
@@ -166,7 +166,7 @@ public static class AuthEndpoints
     /// <param name="currentUser">Usuario en sesión.</param>
     /// <param name="context">Petición en curso.</param>
     /// <returns>Identificador, nombre, correo y rol. Nunca el hash de la contraseña.</returns>
-    private static IResult Me(CurrentUser currentUser, HttpContext context)
+    private static IResult Me(CurrentAdmin currentUser, HttpContext context)
         => currentUser.AdminUserId is null
             // Sin sesión: 200 con un `null` **escrito**, no con cuerpo vacío.
             // `Results.Ok(null)` manda `Content-Length: 0`, que para quien lee
@@ -189,7 +189,7 @@ public static class AuthEndpoints
     /// <returns>El token nuevo, o 401 si la sesión ya no vale.</returns>
     private static async Task<IResult> Csrf(
         AdminAuthenticationService authentication,
-        CurrentUser currentUser,
+        CurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var token = await authentication.RefreshCsrfTokenAsync(currentUser.SessionId!.Value, cancellationToken);
@@ -208,7 +208,7 @@ public static class AuthEndpoints
     private static async Task<IResult> ChangePassword(
         ChangePasswordRequest request,
         AdminAuthenticationService authentication,
-        CurrentUser currentUser,
+        CurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var error = await authentication.ChangePasswordAsync(

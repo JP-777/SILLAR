@@ -75,7 +75,7 @@ public static class SettingsEndpoints
         string key,
         UpdateSettingRequest request,
         SiteSettingService settings,
-        CurrentUser currentUser,
+        CurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         // La distinción de rol se resuelve aquí y no en la ruta porque depende

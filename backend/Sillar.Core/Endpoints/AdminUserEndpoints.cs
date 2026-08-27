@@ -84,7 +84,7 @@ public static class AdminUserEndpoints
     private static async Task<IResult> Create(
         CreateAdminUserRequest request,
         AdminUserService users,
-        CurrentUser currentUser,
+        CurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await users.CreateAsync(
@@ -112,7 +112,7 @@ public static class AdminUserEndpoints
         int id,
         UpdateAdminUserRequest request,
         AdminUserService users,
-        CurrentUser currentUser,
+        CurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await users.UpdateAsync(
@@ -140,7 +140,7 @@ public static class AdminUserEndpoints
     private static async Task<IResult> Deactivate(
         int id,
         AdminUserService users,
-        CurrentUser currentUser,
+        CurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await users.DeactivateAsync(
@@ -173,7 +173,7 @@ public static class AdminUserEndpoints
     private static async Task<IResult> RevokeSession(
         Guid id,
         AdminUserService users,
-        CurrentUser currentUser,
+        CurrentAdmin currentUser,
         CancellationToken cancellationToken)
         => await users.RevokeSessionAsync(id, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken)
             ? Results.NoContent()

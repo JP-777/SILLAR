@@ -82,7 +82,7 @@ public static class ProductItemEndpoints
         Guid id,
         CreateProductItemRequest request,
         ProductItemService items,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await items.CreateAsync(id, request, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken);
@@ -107,7 +107,7 @@ public static class ProductItemEndpoints
         Guid itemId,
         UpdateProductItemRequest request,
         ProductItemService items,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await items.UpdateAsync(itemId, request, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken);
@@ -130,7 +130,7 @@ public static class ProductItemEndpoints
     private static async Task<IResult> Deactivate(
         Guid itemId,
         ProductItemService items,
-        ICurrentUser currentUser,
+        ICurrentAdmin currentUser,
         CancellationToken cancellationToken)
     {
         var result = await items.DeactivateAsync(itemId, currentUser.AdminUserId!.Value, currentUser.Email!, cancellationToken);
