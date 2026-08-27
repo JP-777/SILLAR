@@ -25,10 +25,10 @@ public sealed class CsrfEndpointFilter : IEndpointFilter
     public const string HeaderName = "X-CSRF-Token";
 
     /// <summary>
-    /// Tipo del claim donde viaja el hash del token CSRF de la sesión, para que
+    /// Tipo del claim donde viaja el hash del token CSRF de la sesión administrativa, para que
     /// este filtro no vuelva a consultar la base de datos.
     /// </summary>
-    public const string ClaimType = "sillar:csrf_hash";
+    public const string ClaimType = "sillar:admin:csrf_hash";
 
     /// <inheritdoc />
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)

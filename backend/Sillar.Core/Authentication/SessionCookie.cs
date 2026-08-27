@@ -33,7 +33,7 @@ public static class SessionCookie
     };
 }
 
-/// <summary>Datos de la sesión que viajan en el principal de la petición.</summary>
+/// <summary>Datos de la sesión administrativa que viajan en el principal de la petición.</summary>
 /// <remarks>
 /// El claim del hash CSRF vive en <see cref="Contracts.CsrfEndpointFilter.ClaimType"/>,
 /// no aquí: es quien lo lee, y todo módulo con endpoints de escritura necesita
@@ -42,5 +42,5 @@ public static class SessionCookie
 internal static class SessionClaims
 {
     /// <summary>Identificador de la fila de sesión.</summary>
-    public const string SessionId = "sillar:session_id";
+    public const string SessionId = "sillar:admin:session_id";
 }
