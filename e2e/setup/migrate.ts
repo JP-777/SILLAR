@@ -29,6 +29,6 @@ export async function migrate(): Promise<void> {
 
 /** Los dos seeds del producto. Ninguno lleva datos de negocio (SPEC de M01 §6.9). */
 export async function seed(): Promise<void> {
-  await composeExec('db', ['psql', '-U', 'postgres', '-d', 'sillar_e2e', '-f', '/scripts/modules/core/02_seed.sql']);
-  await composeExec('db', ['psql', '-U', 'postgres', '-d', 'sillar_e2e', '-f', '/scripts/modules/catalog/02_seed.sql']);
+  await composeExec('db', ['psql', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres', '-d', 'sillar_e2e', '-f', '/scripts/modules/core/02_seed.sql']);
+  await composeExec('db', ['psql', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres', '-d', 'sillar_e2e', '-f', '/scripts/modules/catalog/02_seed.sql']);
 }

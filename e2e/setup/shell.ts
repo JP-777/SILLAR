@@ -5,12 +5,43 @@ interface RunOptions {
   env?: NodeJS.ProcessEnv;
 }
 
+/**
+ * Construye el entorno de un proceso hijo preservando las variables custom
+ * también cuando WSL lanza un ejecutable de Windows (por ejemplo dotnet.exe).
+ *
+ * WSL solo propaga de forma fiable esas variables al lado Windows cuando sus
+ * nombres están declarados en WSLENV. En Linux/macOS nativos WSLENV no tiene
+ * efecto, así que esta preparación es inocua fuera de WSL.
+ */
+function childEnv(extra?: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  if (!extra) {
+    return process.env;
+  }
+
+  const env = { ...process.env, ...extra };
+  const keys = Object.keys(extra);
+
+  if (keys.length === 0) {
+    return env;
+  }
+
+  const existing = (env.WSLENV ?? '').split(':').filter((entry) => entry.length > 0);
+  const existingNames = new Set(existing.map((entry) => entry.split('/')[0]));
+  const additions = keys.filter((key) => !existingNames.has(key));
+
+  if (additions.length > 0) {
+    env.WSLENV = [...existing, ...additions].join(':');
+  }
+
+  return env;
+}
+
 /** Ejecuta un comando y muestra su salida en vivo. Lanza si el código de salida no es 0. */
 export function run(command: string, args: string[], options: RunOptions = {}): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: options.cwd,
-      env: options.env ? { ...process.env, ...options.env } : process.env,
+      env: childEnv(options.env),
       stdio: 'inherit',
       shell: false,
     });
@@ -31,7 +62,7 @@ export function runCapture(command: string, args: string[], options: RunOptions 
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: options.cwd,
-      env: options.env ? { ...process.env, ...options.env } : process.env,
+      env: childEnv(options.env),
       shell: false,
     });
 

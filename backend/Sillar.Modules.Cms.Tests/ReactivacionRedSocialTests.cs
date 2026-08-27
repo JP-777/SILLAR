@@ -154,15 +154,33 @@ public sealed class ReactivacionRedSocialTests
         var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Default");
         if (string.IsNullOrWhiteSpace(connectionString))
         {
-            Assert.Skip("Sin ConnectionStrings__Default: no hay base para comprobar el ciclo de la red social.");
-            return null;
+            throw new InvalidOperationException(
+                "Las pruebas de persistencia CMS son destructivas y solo pueden ejecutarse " +
+                "contra la base efímera creada por scripts/verificar.mjs. " +
+                "Falta ConnectionStrings__Default en el entorno.");
         }
 
+        // La única autoridad para el nombre de la base es la puerta
+        // scripts/verificar.mjs, que pasa SILLAR_VERIFY_DATABASE al proceso
+        // backend. Estas pruebas escriben (crean/desactivan/reactivan redes
+        // sociales) y solo corren contra esa base efímera. Se comprueba
+        // coincidencia exacta —no un prefijo— para que la regla se defina
+        // una sola vez, aquí y en CRM. Si no coincide, falla inmediatamente.
+        var verifyDb = Environment.GetEnvironmentVariable("SILLAR_VERIFY_DATABASE");
         var builder = new NpgsqlConnectionStringBuilder(connectionString);
-        if (!string.Equals(builder.Database, "sillar_e2e", StringComparison.Ordinal))
+        if (string.IsNullOrWhiteSpace(verifyDb))
         {
-            Assert.Skip("La prueba de ciclo solo escribe dentro de la base efímera canónica sillar_e2e.");
-            return null;
+            throw new InvalidOperationException(
+                "Las pruebas de persistencia CMS son destructivas y solo pueden ejecutarse " +
+                "contra la base efímera creada por scripts/verificar.mjs. " +
+                "Falta SILLAR_VERIFY_DATABASE en el entorno.");
+        }
+        if (!string.Equals(builder.Database, verifyDb, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Las pruebas de persistencia CMS son destructivas y solo pueden ejecutarse " +
+                "contra la base efímera creada por scripts/verificar.mjs. " +
+                $"SILLAR_VERIFY_DATABASE='{verifyDb}' pero la conexión apunta a '{builder.Database}'.");
         }
 
         var options = new DbContextOptionsBuilder<CmsDbContext>()
@@ -173,8 +191,8 @@ public sealed class ReactivacionRedSocialTests
             || !await ExisteSchemaCmsAsync(database, ct))
         {
             await database.DisposeAsync();
-            Assert.Skip("La base efímera no responde o no tiene aplicada la migración de CMS.");
-            return null;
+            throw new InvalidOperationException(
+                "La base efímera no responde o no tiene aplicada la migración de CMS.");
         }
 
         return database;

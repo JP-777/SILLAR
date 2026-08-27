@@ -26,10 +26,11 @@ namespace Sillar.Modules.Catalog.Tests;
 /// composición que ahora comparten buscar y releer.
 /// </para>
 /// <para>
-/// <b>Se salta si no hay base</b>, en vez de fallar: la suite tiene que poder
-/// correr en una máquina sin Docker. La cadena sale del <c>.env</c>, la misma
-/// que usa el resto del proyecto. <b>Solo lee</b>: ninguna de estas pruebas
-/// escribe nada.
+/// <b>Se salta si no hay base</b>, en vez de fallar: la suite individual tiene
+/// que poder correr en una máquina sin Docker. La puerta canónica, en cambio,
+/// exige cero omisiones y siempre le proporciona una base PostgreSQL efímera.
+/// Las pruebas que necesitan un producto concreto crean su propio caso dentro
+/// de una transacción y hacen rollback; no dependen de seeds ni dejan datos.
 /// </para>
 /// </remarks>
 public class CatalogTranslationTests
@@ -103,22 +104,32 @@ public class CatalogTranslationTests
         await using var db = await AbrirODescartarAsync(ct);
         if (db is null) return;
 
-        var servicio = new CatalogService(db);
-        var encontrados = await servicio.BuscarParaSeleccionAsync("cuaderno", 5, ct);
+        await using var transaccion = await db.Database.BeginTransactionAsync(ct);
 
-        if (encontrados.Count == 0)
+        // La puerta migra una base vacía y deliberadamente no ejecuta seeds.
+        // Esta prueba crea exactamente el dato que necesita, lo consulta por los
+        // dos caminos y lo revierte al final: cero dependencia del catálogo demo.
+        var producto = new Domain.Product
         {
-            Assert.Skip("La base no tiene productos que casen: nada que releer.");
-            return;
-        }
+            Name = $"Cuaderno para prueba {Guid.NewGuid():N}",
+            Slug = $"cuaderno-prueba-{Guid.NewGuid():N}",
+            ListPrice = 12.50m,
+        };
+        producto.Items.Add(new Domain.ProductItem { VariantValue = null, SortOrder = 0 });
+        db.Products.Add(producto);
+        await db.SaveChangesAsync(ct);
 
-        var uno = encontrados[0];
-        var releido = await servicio.ObtenerParaSeleccionAsync(uno.ProductId, ct);
+        var servicio = new CatalogService(db);
+        var encontrados = await servicio.BuscarParaSeleccionAsync("cuaderno", 50, ct);
+        var uno = Assert.Single(encontrados.Where(item => item.ProductId == producto.Id));
+        var releido = await servicio.ObtenerParaSeleccionAsync(producto.Id, ct);
 
         // **Los dos caminos comparten composición, así que tienen que dar lo
         // mismo.** Si alguien los separa, esto se pone rojo — que es de lo que
         // sirve tenerlos juntos.
         Assert.Equal(uno, releido);
+
+        await transaccion.RollbackAsync(ct);
     }
 
     [Fact]
@@ -186,22 +197,33 @@ public class CatalogTranslationTests
         await using var db = await AbrirODescartarAsync(ct);
         if (db is null) return;
 
+        await using var transaccion = await db.Database.BeginTransactionAsync(ct);
+
+        var producto = new Domain.Product
+        {
+            Name = $"LÁPIZ para prueba {Guid.NewGuid():N}",
+            Slug = $"lapiz-prueba-{Guid.NewGuid():N}",
+            ListPrice = 2.50m,
+        };
+        producto.Items.Add(new Domain.ProductItem { VariantValue = null, SortOrder = 0 });
+        db.Products.Add(producto);
+        await db.SaveChangesAsync(ct);
+
         var servicio = new CatalogService(db);
 
-        var conTilde = await servicio.BuscarParaSeleccionAsync("LÁPIZ", 10, ct);
-        var sinTilde = await servicio.BuscarParaSeleccionAsync("lapiz", 10, ct);
-
-        if (conTilde.Count == 0 && sinTilde.Count == 0)
-        {
-            Assert.Skip("La base no tiene ningún lápiz: nada que comparar.");
-            return;
-        }
+        var conTilde = await servicio.BuscarParaSeleccionAsync("LÁPIZ", 50, ct);
+        var sinTilde = await servicio.BuscarParaSeleccionAsync("lapiz", 50, ct);
 
         // No va por la colación —PostgreSQL no admite estas operaciones sobre
         // `core.es_search`— sino por `spanish_stem` en el índice GIN. El efecto
-        // observable es el mismo y es lo que se afirma.
+        // observable es el mismo y es lo que se afirma. El producto propio
+        // garantiza que la comparación nunca sea vacía.
+        Assert.Contains(conTilde, p => p.ProductId == producto.Id);
+        Assert.Contains(sinTilde, p => p.ProductId == producto.Id);
         Assert.Equal(
             conTilde.Select(p => p.ProductId).OrderBy(id => id),
             sinTilde.Select(p => p.ProductId).OrderBy(id => id));
+
+        await transaccion.RollbackAsync(ct);
     }
 }
