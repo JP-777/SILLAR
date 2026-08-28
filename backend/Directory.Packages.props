@@ -25,6 +25,8 @@
     <!-- BCrypt para contraseñas. .NET no lo trae y CLAUDE.md lo exige con
          factor de trabajo 12 o más. -->
     <PackageVersion Include="BCrypt.Net-Next" Version="4.2.0" />
+    <!-- SMTP moderno con STARTTLS. Aprobado por SPEC M04 §6 bis. -->
+    <PackageVersion Include="MailKit" Version="4.17.0" />
   </ItemGroup>
 
   <!-- Solo para proyectos de pruebas. -->

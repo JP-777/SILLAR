@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Sillar.Modules.Crm.Authentication;
+using Sillar.Core.Contracts.Email;
 using Sillar.Modules.Crm.Contracts;
 using Sillar.Modules.Crm.Dtos;
 
@@ -40,9 +41,54 @@ public static class CustomerAuthEndpoints
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status403Forbidden);
 
+        endpoints.MapPost(
+                Prefix + "/password-reset/request",
+                (Delegate)RequestPasswordReset)
+            .AddEndpointFilter<AnonymousCsrfEndpointFilter>()
+            .WithName("CustomerPasswordResetRequest")
+            .WithTags(Tag)
+            .WithSummary("Solicita recuperación de contraseña.")
+            .WithDescription(
+                "La respuesta es idéntica exista o no la cuenta.")
+            .Produces<CustomerOperationResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+
+        endpoints.MapPost(
+                Prefix + "/password-reset/confirm",
+                (Delegate)ConfirmPasswordReset)
+            .AddEndpointFilter<AnonymousCsrfEndpointFilter>()
+            .WithName("CustomerPasswordResetConfirm")
+            .WithTags(Tag)
+            .WithSummary("Consume un token y cambia la contraseña.")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        endpoints.MapPost(
+                Prefix + "/email-verification/confirm",
+                (Delegate)ConfirmEmailVerification)
+            .AddEndpointFilter<AnonymousCsrfEndpointFilter>()
+            .WithName("CustomerEmailVerificationConfirm")
+            .WithTags(Tag)
+            .WithSummary("Consume un token y verifica el correo.")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        endpoints.MapPost(
+                Prefix + "/invitation/accept",
+                (Delegate)AcceptInvitation)
+            .AddEndpointFilter<AnonymousCsrfEndpointFilter>()
+            .WithName("CustomerInvitationAccept")
+            .WithTags(Tag)
+            .WithSummary("Acepta una invitación y crea la cuenta.")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
         // /me se autentica explícitamente con el esquema cliente porque es
         // anónimo por definición: 'no hay sesión' también es una respuesta.
-        endpoints.MapGet(Prefix + "/me", Me)
+        endpoints.MapGet(Prefix + "/me", (Delegate)Me)
             .AllowAnonymous()
             .WithName("CustomerMe")
             .WithTags(Tag)
@@ -52,6 +98,13 @@ public static class CustomerAuthEndpoints
             .WithTags(Tag)
             .RequireAuthorization(CustomerAuthorization.PolicyName)
             .AddEndpointFilter<CustomerCsrfEndpointFilter>();
+
+        session.MapPost(
+                "/email-verification/request",
+                RequestEmailVerification)
+            .WithName("CustomerEmailVerificationRequest")
+            .WithSummary("Reenvía la verificación del correo.")
+            .Produces<CustomerOperationResponse>(StatusCodes.Status200OK);
 
         session.MapPost("/logout", Logout)
             .WithName("CustomerLogout")
@@ -64,6 +117,9 @@ public static class CustomerAuthEndpoints
     private static async Task<IResult> Register(
         CustomerRegisterRequest request,
         CustomerRegistrationService registration,
+        CustomerAccountTokenService tokens,
+        IEmailSender email,
+        HttpContext context,
         CancellationToken cancellationToken)
     {
         var errors = ValidateRegistration(request);
@@ -81,6 +137,20 @@ public static class CustomerAuthEndpoints
             request.Password!,
             request.Phone,
             cancellationToken);
+
+        var verification = await tokens.IssueEmailVerificationAsync(
+            request.Email!,
+            cancellationToken);
+
+        if (verification is not null)
+        {
+            ScheduleEmail(
+                context,
+                email,
+                CustomerEmailComposer.Verification(
+                    verification,
+                    BaseUrl(context)));
+        }
 
         // Deliberadamente idéntica para Created, Linked y AlreadyRegistered.
         return Results.Ok(
@@ -128,6 +198,186 @@ public static class CustomerAuthEndpoints
         }
 
         return errors;
+    }
+
+    private static async Task<IResult> RequestPasswordReset(
+        CustomerPasswordResetRequest request,
+        CustomerAccountTokenService tokens,
+        IEmailSender email,
+        HttpContext context,
+        CancellationToken cancellationToken)
+    {
+        var candidate = request.Email?.Trim();
+
+        if (string.IsNullOrWhiteSpace(candidate)
+            || !System.Net.Mail.MailAddress.TryCreate(candidate, out _))
+        {
+            return Results.ValidationProblem(
+                new Dictionary<string, string[]>
+                {
+                    ["correo"] = ["Ingresa un correo válido."]
+                },
+                title: "Revisa el correo.");
+        }
+
+        var issued = await tokens.IssuePasswordResetAsync(
+            candidate,
+            cancellationToken);
+
+        if (issued is not null)
+        {
+            ScheduleEmail(
+                context,
+                email,
+                CustomerEmailComposer.PasswordReset(
+                    issued,
+                    BaseUrl(context)));
+        }
+
+        return Results.Ok(
+            new CustomerOperationResponse(
+                "Si la cuenta corresponde, la solicitud fue procesada."));
+    }
+
+    private static async Task<IResult> ConfirmPasswordReset(
+        CustomerPasswordResetConfirmRequest request,
+        CustomerAccountTokenService tokens,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Token))
+        {
+            return Results.Problem(
+                title: "El enlace de recuperación no es válido o ya caducó.",
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        var result = await tokens.ResetPasswordAsync(
+            request.Token,
+            request.NewPassword,
+            cancellationToken);
+
+        return result.Outcome switch
+        {
+            CustomerPasswordTokenOutcome.Success =>
+                Results.NoContent(),
+
+            CustomerPasswordTokenOutcome.InvalidPassword =>
+                Results.ValidationProblem(
+                    new Dictionary<string, string[]>
+                    {
+                        ["contrasena"] = [result.Error!]
+                    },
+                    title: "La nueva contraseña no es válida."),
+
+            _ => Results.Problem(
+                title: "El enlace de recuperación no es válido o ya caducó.",
+                statusCode: StatusCodes.Status400BadRequest)
+        };
+    }
+
+    private static async Task<IResult> ConfirmEmailVerification(
+        CustomerTokenRequest request,
+        CustomerAccountTokenService tokens,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Token)
+            || !await tokens.VerifyEmailAsync(
+                request.Token,
+                cancellationToken))
+        {
+            return Results.Problem(
+                title: "El enlace de verificación no es válido o ya caducó.",
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> RequestEmailVerification(
+        CurrentCustomer current,
+        CustomerAccountTokenService tokens,
+        IEmailSender email,
+        HttpContext context,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(current.Email))
+        {
+            return Results.Unauthorized();
+        }
+
+        var issued = await tokens.IssueEmailVerificationAsync(
+            current.Email,
+            cancellationToken);
+
+        if (issued is not null)
+        {
+            ScheduleEmail(
+                context,
+                email,
+                CustomerEmailComposer.Verification(
+                    issued,
+                    BaseUrl(context)));
+        }
+
+        return Results.Ok(
+            new CustomerOperationResponse(
+                "Solicitud de verificación procesada."));
+    }
+
+    private static async Task<IResult> AcceptInvitation(
+        CustomerInvitationAcceptRequest request,
+        CustomerAccountTokenService tokens,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Token))
+        {
+            return Results.Problem(
+                title: "La invitación no es válida o ya caducó.",
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        var result = await tokens.AcceptInvitationAsync(
+            request.Token,
+            request.Password,
+            cancellationToken);
+
+        return result.Outcome switch
+        {
+            CustomerPasswordTokenOutcome.Success =>
+                Results.NoContent(),
+
+            CustomerPasswordTokenOutcome.InvalidPassword =>
+                Results.ValidationProblem(
+                    new Dictionary<string, string[]>
+                    {
+                        ["contrasena"] = [result.Error!]
+                    },
+                    title: "La contraseña no es válida."),
+
+            _ => Results.Problem(
+                title: "La invitación no es válida o ya caducó.",
+                statusCode: StatusCodes.Status400BadRequest)
+        };
+    }
+
+    private static string BaseUrl(HttpContext context)
+        => $"{context.Request.Scheme}://{context.Request.Host}";
+
+    private static void ScheduleEmail(
+        HttpContext context,
+        IEmailSender sender,
+        OutgoingEmail message)
+    {
+        // El hecho ya quedó persistido. Se manda después de entregar la
+        // respuesta para que SMTP no forme parte de la transacción ni revele
+        // por latencia si una cuenta existe.
+        context.Response.OnCompleted(
+            async () =>
+            {
+                await sender.SendAsync(
+                    message,
+                    CancellationToken.None);
+            });
     }
 
     private static async Task<IResult> Login(

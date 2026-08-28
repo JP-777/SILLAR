@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Sillar.Core.Contracts;
 using Sillar.Core.Contracts.Events;
+using Sillar.Core.Contracts.Email;
 using Sillar.Core.Data;
 using Sillar.Core.Dtos;
 using Sillar.Core.Settings;
@@ -87,6 +88,14 @@ internal sealed class SiteSettingService(
         }
 
         var wantsVisibilityChange = request.IsPublic is { } requested && requested != setting.IsPublic;
+        var isMailSetting = EmailSettingsKeys.IsMailSetting(setting.SettingKey);
+
+        if (isMailSetting && !canChangeVisibility)
+        {
+            return new SettingOperation(
+                SettingOutcome.Forbidden,
+                "La configuración de correo exige el rol super_admin.");
+        }
 
         if (wantsVisibilityChange && !canChangeVisibility)
         {
@@ -103,6 +112,7 @@ internal sealed class SiteSettingService(
                 $"El valor no encaja con el tipo '{setting.ValueType}'. {invalid}");
         }
 
+        var previousValue = setting.SettingValue;
         setting.SettingValue = request.Value!.Trim();
 
         if (wantsVisibilityChange)
@@ -129,9 +139,11 @@ internal sealed class SiteSettingService(
                 // también credenciales de correo saliente, y la auditoría no se
                 // puede borrar (SPEC §8.15): registrarlos la convertiría en un
                 // almacén permanente de secretos en claro.
-                Summary = wantsVisibilityChange
-                    ? $"Configuración '{setting.SettingKey}' actualizada. Visibilidad pública: {setting.IsPublic}."
-                    : $"Configuración '{setting.SettingKey}' actualizada."
+                Summary = isMailSetting
+                    ? $"Configuración de correo '{setting.SettingKey}' actualizada: '{previousValue}' -> '{setting.SettingValue}'."
+                    : wantsVisibilityChange
+                        ? $"Configuración '{setting.SettingKey}' actualizada. Visibilidad pública: {setting.IsPublic}."
+                        : $"Configuración '{setting.SettingKey}' actualizada."
             },
             cancellationToken);
 

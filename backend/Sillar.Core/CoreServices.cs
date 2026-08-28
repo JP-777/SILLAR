@@ -5,10 +5,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Sillar.Core.Auditing;
 using Sillar.Core.Authentication;
 using Sillar.Core.Contracts;
+using Sillar.Core.Contracts.Email;
 using Sillar.Core.Data;
 using Sillar.Core.Modularity;
 using Sillar.Core.Services;
 using Sillar.Core.Media;
+using Sillar.Core.Email;
 using Sillar.Core.Settings;
 using Sillar.Shared.Events;
 using Sillar.Shared.Replication;
@@ -47,6 +49,7 @@ public static class CoreServices
         services.AddSingleton<IPasswordHasher>(_ => new BCryptPasswordHasher(workFactor));
 
         services.AddScoped<IAuditWriter, AuditWriter>();
+        services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<SetupService>();
 
         // También en modo instalación: completar la instalación es el otro caso

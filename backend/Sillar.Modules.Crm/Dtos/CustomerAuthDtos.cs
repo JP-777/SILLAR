@@ -22,3 +22,21 @@ public sealed record CustomerRegisterRequest(
 
 public sealed record CustomerRegistrationResponse(
     string Message);
+
+public sealed record CustomerTokenRequest(
+    string? Token);
+
+public sealed record CustomerPasswordResetRequest(
+    string? Email);
+
+public sealed record CustomerPasswordResetConfirmRequest(
+    string? Token,
+    string? NewPassword);
+
+public sealed record CustomerInvitationAcceptRequest(
+    string? Token,
+    string? Password);
+
+public sealed record CustomerOperationResponse(
+    string Message);
+

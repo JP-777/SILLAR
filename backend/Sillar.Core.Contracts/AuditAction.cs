@@ -30,7 +30,10 @@ public static class AuditAction
     /// <summary>Finalización del modo instalación.</summary>
     public const string Setup = "setup";
 
+    /// <summary>Intento de envío de correo.</summary>
+    public const string EmailSend = "email_send";
+
     /// <summary>Todos los valores admitidos.</summary>
     public static readonly string[] All =
-        [Create, Update, Delete, Activate, Deactivate, Login, LoginFailed, Logout, Setup];
+        [Create, Update, Delete, Activate, Deactivate, Login, LoginFailed, Logout, Setup, EmailSend];
 }

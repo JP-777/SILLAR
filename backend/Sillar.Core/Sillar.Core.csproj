@@ -15,6 +15,7 @@
   <ItemGroup>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="BCrypt.Net-Next" />
+    <PackageReference Include="MailKit" />
   </ItemGroup>
 
   <ItemGroup>

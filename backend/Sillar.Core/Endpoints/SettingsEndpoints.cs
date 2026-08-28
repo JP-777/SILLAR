@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Sillar.Core.Authentication;
 using Sillar.Core.Contracts;
+using Sillar.Core.Contracts.Email;
 using Sillar.Core.Dtos;
 using Sillar.Core.Services;
 
@@ -36,6 +37,15 @@ public static class SettingsEndpoints
                 "negocio todavía no ha configurado.")
             .Produces<IReadOnlyList<SettingResponse>>(StatusCodes.Status200OK);
 
+        admin.MapPost("/email/test", TestEmail)
+            .RequireAuthorization(AdminRole.SuperAdmin)
+            .WithName("TestOutgoingEmail")
+            .WithSummary("Prueba la configuración SMTP.")
+            .WithDescription(
+                "Solo super_admin. La contraseña se lee de SILLAR_SMTP_PASSWORD y nunca se devuelve.")
+            .Produces<TestEmailResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem();
+
         admin.MapPut("/{key}", Update)
             .WithName("UpdateSetting")
             .WithSummary("Cambia el valor de una configuración.")
@@ -63,6 +73,41 @@ public static class SettingsEndpoints
         SiteSettingService settings,
         CancellationToken cancellationToken)
         => Results.Ok(await settings.ListAsync(cancellationToken));
+
+    private static async Task<IResult> TestEmail(
+        TestEmailRequest request,
+        IEmailSender email,
+        CancellationToken cancellationToken)
+    {
+        var recipient = request.Recipient?.Trim();
+
+        if (string.IsNullOrWhiteSpace(recipient)
+            || !System.Net.Mail.MailAddress.TryCreate(recipient, out _))
+        {
+            return Results.ValidationProblem(
+                new Dictionary<string, string[]>
+                {
+                    ["correo"] = ["Ingresa un correo válido."]
+                },
+                title: "No se pudo probar el correo.");
+        }
+
+        var result = await email.SendAsync(
+            new OutgoingEmail(
+                recipient,
+                "SILLAR — correo de prueba",
+                "La configuración SMTP de SILLAR funciona correctamente.",
+                "smtp_test",
+                CoreModule.ModuleCode),
+            cancellationToken);
+
+        return Results.Ok(
+            new TestEmailResponse(
+                result.Success,
+                result.Success
+                    ? "Correo de prueba enviado."
+                    : result.Error ?? "El servidor SMTP rechazó el envío."));
+    }
 
     /// <summary>Cambia una configuración.</summary>
     /// <param name="key">Clave a modificar. Debe existir.</param>
