@@ -7,6 +7,7 @@ using Sillar.Modules.Crm.Authentication;
 using Sillar.Modules.Crm.Contracts;
 using Sillar.Modules.Crm.Data;
 using Sillar.Modules.Crm.Endpoints;
+using Sillar.Modules.Crm.Profiles;
 using Sillar.Shared.Modularity;
 using Sillar.Shared.Replication;
 
@@ -76,6 +77,8 @@ public sealed class CrmModule : IModule
         services.AddScoped<CustomerAuthenticationService>();
         services.AddScoped<CustomerRegistrationService>();
         services.AddScoped<CustomerAccountTokenService>();
+        services.AddScoped<CustomerProfileService>();
+        services.AddScoped<ICustomerSnapshotReader, CustomerSnapshotReader>();
         services.AddScoped<CurrentCustomer>();
         services.AddScoped<ICurrentCustomer>(
             provider => provider.GetRequiredService<CurrentCustomer>());
@@ -84,5 +87,6 @@ public sealed class CrmModule : IModule
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         endpoints.MapCustomerAuthEndpoints();
+        endpoints.MapCustomerProfileEndpoints();
     }
 }

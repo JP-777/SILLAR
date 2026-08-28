@@ -6,6 +6,7 @@ using Sillar.Modules.Crm.Authentication;
 using Sillar.Core.Contracts.Email;
 using Sillar.Modules.Crm.Contracts;
 using Sillar.Modules.Crm.Dtos;
+using Sillar.Modules.Crm.Profiles;
 
 namespace Sillar.Modules.Crm.Endpoints;
 
@@ -425,7 +426,10 @@ public static class CustomerAuthEndpoints
                 attempt.Session.CsrfToken));
     }
 
-    private static async Task<IResult> Me(HttpContext context)
+    private static async Task<IResult> Me(
+        HttpContext context,
+        CustomerProfileService profiles,
+        CancellationToken cancellationToken)
     {
         var authentication = await context.AuthenticateAsync(
             CustomerSessionAuthenticationHandler.SchemeName);
@@ -445,24 +449,21 @@ public static class CustomerAuthEndpoints
             return Results.Content("null", "application/json");
         }
 
-        var email =
-            principal.FindFirst(CustomerSessionClaims.Email)?.Value
-            ?? string.Empty;
+        var profile = await profiles.GetAsync(
+            customerId,
+            cancellationToken);
 
-        var verified = bool.TryParse(
-            principal.FindFirst(
-                CustomerSessionClaims.EmailVerified)?.Value,
-            out var isVerified)
-            && isVerified;
+        if (profile is null)
+        {
+            return Results.Content("null", "application/json");
+        }
 
-        // El nombre completo no vive en claims todavía. /me solo devuelve la
-        // identidad mínima; las pantallas de perfil vendrán en la siguiente unidad.
         return Results.Ok(
             new CustomerAuthenticatedResponse(
-                customerId,
-                string.Empty,
-                email,
-                verified));
+                profile.CustomerId,
+                profile.FullName,
+                profile.Email,
+                profile.EmailVerified));
     }
 
     private static async Task<IResult> Logout(

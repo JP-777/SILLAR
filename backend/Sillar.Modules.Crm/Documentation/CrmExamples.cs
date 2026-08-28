@@ -54,5 +54,27 @@ public sealed class CrmExamples : ISchemaExamples
               "password": "cambia-esto-por-una-tuya-de-varias-palabras"
             }
             """,
+
+        [typeof(UpdateCustomerProfileRequest)] = """
+            {
+              "fullName": "Cliente De Ejemplo",
+              "email": "cliente@ejemplo.test",
+              "phone": "+51 900 000 000",
+              "documentType": "dni",
+              "documentNumber": "12345678"
+            }
+            """,
+
+        [typeof(SaveCustomerAddressRequest)] = """
+            {
+              "label": "Casa",
+              "addressLine": "Av. Ejército 100",
+              "district": "Yanahuara",
+              "province": "Arequipa",
+              "department": "Arequipa",
+              "reference": "Frente al parque",
+              "isPreferred": true
+            }
+            """,
     };
 }
