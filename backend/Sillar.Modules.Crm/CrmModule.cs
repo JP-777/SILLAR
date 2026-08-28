@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Sillar.Modules.Crm.Administration;
 using Sillar.Modules.Crm.Authentication;
 using Sillar.Modules.Crm.Contracts;
 using Sillar.Modules.Crm.Data;
@@ -77,6 +78,7 @@ public sealed class CrmModule : IModule
         services.AddScoped<CustomerAuthenticationService>();
         services.AddScoped<CustomerRegistrationService>();
         services.AddScoped<CustomerAccountTokenService>();
+        services.AddScoped<CustomerAdminService>();
         services.AddScoped<CustomerProfileService>();
         services.AddScoped<ICustomerSnapshotReader, CustomerSnapshotReader>();
         services.AddScoped<CurrentCustomer>();
@@ -88,5 +90,6 @@ public sealed class CrmModule : IModule
     {
         endpoints.MapCustomerAuthEndpoints();
         endpoints.MapCustomerProfileEndpoints();
+        endpoints.MapCustomerAdminEndpoints();
     }
 }

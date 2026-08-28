@@ -76,5 +76,27 @@ public sealed class CrmExamples : ISchemaExamples
               "isPreferred": true
             }
             """,
+
+        [typeof(CreateAdminCustomerRequest)] = """
+            {
+              "fullName": "Cliente De Mostrador",
+              "email": "mostrador@ejemplo.test",
+              "phone": "+51 900 000 010",
+              "documentType": "dni",
+              "documentNumber": "87654321",
+              "internalNotes": "Prefiere coordinación por teléfono."
+            }
+            """,
+
+        [typeof(UpdateAdminCustomerRequest)] = """
+            {
+              "fullName": "Cliente De Mostrador",
+              "email": "mostrador@ejemplo.test",
+              "phone": "+51 900 000 010",
+              "documentType": "dni",
+              "documentNumber": "87654321",
+              "internalNotes": "Dato visible solo en el panel."
+            }
+            """,
     };
 }
