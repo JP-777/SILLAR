@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Sillar.Modules.Crm.Authentication;
 using Sillar.Modules.Crm.Contracts;
 using Sillar.Modules.Crm.Data;
+using Sillar.Modules.Crm.Endpoints;
 using Sillar.Shared.Modularity;
 using Sillar.Shared.Replication;
 
@@ -69,7 +70,10 @@ public sealed class CrmModule : IModule
                 });
         });
 
+        services.AddSingleton<CustomerPasswordHasher>();
+        services.AddSingleton<CustomerLoginThrottle>();
         services.AddScoped<CustomerSessionService>();
+        services.AddScoped<CustomerAuthenticationService>();
         services.AddScoped<CurrentCustomer>();
         services.AddScoped<ICurrentCustomer>(
             provider => provider.GetRequiredService<CurrentCustomer>());
@@ -77,7 +81,6 @@ public sealed class CrmModule : IModule
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
-        // C1 solo establece la frontera de identidad.
-        // Los endpoints de registro/login llegan en la siguiente unidad.
+        endpoints.MapCustomerAuthEndpoints();
     }
 }
