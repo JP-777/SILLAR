@@ -71,5 +71,11 @@ public sealed class CoreExamples : ISchemaExamples
               "isPublic": true
             }
             """,
+
+        [typeof(TestEmailRequest)] = """
+            {
+              "recipient": "administracion@ejemplo.test"
+            }
+            """,
     };
 }
