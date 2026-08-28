@@ -69,6 +69,7 @@ public sealed class CrmModule : IModule
                 });
         });
 
+        services.AddScoped<CustomerSessionService>();
         services.AddScoped<CurrentCustomer>();
         services.AddScoped<ICurrentCustomer>(
             provider => provider.GetRequiredService<CurrentCustomer>());
