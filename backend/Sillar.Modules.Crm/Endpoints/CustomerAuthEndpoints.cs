@@ -29,6 +29,17 @@ public static class CustomerAuthEndpoints
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden);
 
+        endpoints.MapPost(Prefix + "/register", (Delegate)Register)
+            .AddEndpointFilter<AnonymousCsrfEndpointFilter>()
+            .WithName("CustomerRegister")
+            .WithTags(Tag)
+            .WithSummary("Registra una cuenta de cliente.")
+            .WithDescription(
+                "Crea una ficha o enlaza una existente sin revelar si el correo ya estaba registrado.")
+            .Produces<CustomerRegistrationResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+
         // /me se autentica explícitamente con el esquema cliente porque es
         // anónimo por definición: 'no hay sesión' también es una respuesta.
         endpoints.MapGet(Prefix + "/me", Me)
@@ -48,6 +59,75 @@ public static class CustomerAuthEndpoints
             .Produces(StatusCodes.Status204NoContent);
 
         return endpoints;
+    }
+
+    private static async Task<IResult> Register(
+        CustomerRegisterRequest request,
+        CustomerRegistrationService registration,
+        CancellationToken cancellationToken)
+    {
+        var errors = ValidateRegistration(request);
+
+        if (errors.Count > 0)
+        {
+            return Results.ValidationProblem(
+                errors,
+                title: "Revisa los datos del registro.");
+        }
+
+        await registration.RegisterAsync(
+            request.FullName!,
+            request.Email!,
+            request.Password!,
+            request.Phone,
+            cancellationToken);
+
+        // Deliberadamente idéntica para Created, Linked y AlreadyRegistered.
+        return Results.Ok(
+            new CustomerRegistrationResponse(
+                "Solicitud de registro procesada."));
+    }
+
+    private static Dictionary<string, string[]> ValidateRegistration(
+        CustomerRegisterRequest request)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        var fullName = request.FullName?.Trim() ?? string.Empty;
+        var email = request.Email?.Trim() ?? string.Empty;
+
+        if (fullName.Length == 0)
+        {
+            errors["nombre"] = ["El nombre es obligatorio."];
+        }
+
+        if (email.Length == 0
+            || email.Length > 150
+            || !System.Net.Mail.MailAddress.TryCreate(email, out _))
+        {
+            errors["correo"] = ["Ingresa un correo válido."];
+        }
+
+        if (!errors.ContainsKey("correo")
+            && !errors.ContainsKey("nombre"))
+        {
+            var password = CustomerPasswordPolicy.Check(
+                request.Password,
+                email,
+                fullName);
+
+            if (!password.IsValid)
+            {
+                errors["contrasena"] = [password.Error!];
+            }
+        }
+        else if (string.IsNullOrWhiteSpace(request.Password))
+        {
+            errors["contrasena"] =
+                [$"La contraseña debe tener al menos {CustomerPasswordPolicy.MinimumLength} caracteres."];
+        }
+
+        return errors;
     }
 
     private static async Task<IResult> Login(

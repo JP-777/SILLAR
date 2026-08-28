@@ -74,6 +74,7 @@ public sealed class CrmModule : IModule
         services.AddSingleton<CustomerLoginThrottle>();
         services.AddScoped<CustomerSessionService>();
         services.AddScoped<CustomerAuthenticationService>();
+        services.AddScoped<CustomerRegistrationService>();
         services.AddScoped<CurrentCustomer>();
         services.AddScoped<ICurrentCustomer>(
             provider => provider.GetRequiredService<CurrentCustomer>());

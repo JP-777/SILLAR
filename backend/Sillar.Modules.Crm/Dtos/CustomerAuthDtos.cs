@@ -13,3 +13,12 @@ public sealed record CustomerAuthenticatedResponse(
 public sealed record CustomerLoginResponse(
     CustomerAuthenticatedResponse Customer,
     string CsrfToken);
+
+public sealed record CustomerRegisterRequest(
+    string? FullName,
+    string? Email,
+    string? Password,
+    string? Phone);
+
+public sealed record CustomerRegistrationResponse(
+    string Message);
