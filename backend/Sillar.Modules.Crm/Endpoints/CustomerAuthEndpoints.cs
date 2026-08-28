@@ -414,6 +414,14 @@ public static class CustomerAuthEndpoints
             attempt.Session!.SessionToken,
             CustomerSessionCookie.Options());
 
+        // Token CSRF separado de la credencial de sesión. La cookie de sesión
+        // permanece HttpOnly; esta segunda cookie permite reconstruir
+        // X-CSRF-Token tras recargar la SPA sin guardar el secreto en localStorage.
+        context.Response.Cookies.Append(
+            CustomerCsrfCookie.Name,
+            attempt.Session.CsrfToken,
+            CustomerCsrfCookie.Options());
+
         var customer = attempt.Customer!;
 
         return Results.Ok(
@@ -486,6 +494,10 @@ public static class CustomerAuthEndpoints
         context.Response.Cookies.Delete(
             CustomerSessionCookie.Name,
             CustomerSessionCookie.Options());
+
+        context.Response.Cookies.Delete(
+            CustomerCsrfCookie.Name,
+            CustomerCsrfCookie.Options());
 
         return Results.NoContent();
     }

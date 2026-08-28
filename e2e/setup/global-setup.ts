@@ -26,7 +26,7 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   await composeUpDb();
   await waitDbHealthy();
 
-  console.log('[e2e] aplicando migraciones (CORE, Catalog)...');
+  console.log('[e2e] aplicando migraciones (CORE, Catalog, CRM)...');
   await migrate();
 
   console.log('[e2e] aplicando seeds (sin datos de negocio)...');
@@ -64,6 +64,11 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   // observable el estado vacío.
   console.log('[e2e] activando M01 catálogo...');
   await activateModule(session, 'catalog');
+
+  // M04 real. Se activa en el arnés porque sus pruebas HTTP necesitan que el
+  // host registre el esquema de autenticación propio de clientes y sus rutas.
+  console.log('[e2e] activando M04 clientes y contacto...');
+  await activateModule(session, 'crm');
 
   console.log('[e2e] entorno listo.');
 }

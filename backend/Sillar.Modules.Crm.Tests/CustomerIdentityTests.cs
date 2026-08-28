@@ -41,6 +41,35 @@ public class CustomerIdentityTests
     }
 
     [Fact]
+    public void Cookie_csrf_de_cliente_es_legible_y_conserva_barreras()
+    {
+        Assert.Equal(
+            "sillar_tienda_csrf",
+            CustomerCsrfCookie.Name);
+
+        var options = CustomerCsrfCookie.Options();
+
+        Assert.False(options.HttpOnly);
+        Assert.True(options.Secure);
+        Assert.Equal(SameSiteMode.Strict, options.SameSite);
+        Assert.Equal("/", options.Path);
+        Assert.True(options.IsEssential);
+        Assert.Null(options.MaxAge);
+        Assert.Null(options.Expires);
+    }
+
+    [Fact]
+    public void Cookie_csrf_no_reemplaza_la_cookie_de_sesion()
+    {
+        Assert.NotEqual(
+            CustomerSessionCookie.Name,
+            CustomerCsrfCookie.Name);
+
+        Assert.True(CustomerSessionCookie.Options().HttpOnly);
+        Assert.False(CustomerCsrfCookie.Options().HttpOnly);
+    }
+
+    [Fact]
     public void CurrentCustomer_ignora_claims_administrativos()
     {
         var context = new DefaultHttpContext();

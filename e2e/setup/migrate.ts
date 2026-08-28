@@ -6,7 +6,7 @@ import { run } from './shell.js';
 const BACKEND = path.join(ROOT, 'backend');
 
 /**
- * Aplica las migraciones de CORE y Catalog contra la base e2e.
+ * Aplica las migraciones de CORE, Catalog y CRM contra la base e2e.
  *
  * `ConnectionStrings__Default` se pasa como variable de entorno real al
  * proceso `dotnet`, no por `.env`: `DotEnv.Load()` nunca sobreescribe lo que
@@ -25,6 +25,7 @@ async function applyMigrations(csproj: string): Promise<void> {
 export async function migrate(): Promise<void> {
   await applyMigrations('Sillar.Core');
   await applyMigrations('Sillar.Modules.Catalog');
+  await applyMigrations('Sillar.Modules.Crm');
 }
 
 /** Los dos seeds del producto. Ninguno lleva datos de negocio (SPEC de M01 §6.9). */

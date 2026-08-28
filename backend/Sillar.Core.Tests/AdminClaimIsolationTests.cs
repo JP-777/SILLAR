@@ -52,6 +52,27 @@ public class AdminClaimIsolationTests
     }
 
     [Fact]
+    public void CurrentAdmin_ignora_claims_de_cliente()
+    {
+        var customerId = Guid.CreateVersion7();
+
+        var currentAdmin = CreateCurrentAdmin(
+            new Claim(
+                "sillar:customer:customer_id",
+                customerId.ToString()),
+            new Claim(
+                "sillar:customer:session_id",
+                "44"),
+            new Claim(
+                "sillar:customer:csrf_hash",
+                "hash-cliente"));
+
+        Assert.Null(currentAdmin.SessionId);
+        Assert.Null(currentAdmin.AdminUserId);
+        Assert.Null(currentAdmin.Email);
+    }
+
+    [Fact]
     public void CurrentAdmin_lee_session_id_administrativo()
     {
         var sessionId = Guid.CreateVersion7();

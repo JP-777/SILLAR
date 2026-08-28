@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
 using Sillar.Core.Authentication;
+using Sillar.Core.Data;
 using Sillar.Core.Contracts;
 using Sillar.Core.Contracts.Email;
 using Sillar.Core.Dtos;
@@ -37,12 +39,21 @@ public static class SettingsEndpoints
                 "negocio todavía no ha configurado.")
             .Produces<IReadOnlyList<SettingResponse>>(StatusCodes.Status200OK);
 
+        admin.MapGet("/email/status", GetEmailTestStatus)
+            .RequireAuthorization(AdminRole.SuperAdmin)
+            .WithName("GetOutgoingEmailTestStatus")
+            .WithSummary("Devuelve el estado persistente de la última prueba SMTP.")
+            .WithDescription(
+                "Solo super_admin. Devuelve neverTested=true mientras no exista una prueba smtp_test auditada.")
+            .Produces<EmailTestStatusResponse>(StatusCodes.Status200OK);
+
         admin.MapPost("/email/test", TestEmail)
             .RequireAuthorization(AdminRole.SuperAdmin)
             .WithName("TestOutgoingEmail")
             .WithSummary("Prueba la configuración SMTP.")
             .WithDescription(
-                "Solo super_admin. La contraseña se lee de SILLAR_SMTP_PASSWORD y nunca se devuelve.")
+                "Solo super_admin. La contraseña se lee de SILLAR_SMTP_PASSWORD y nunca se devuelve. " +
+                "El resultado queda persistido en audit_log y puede consultarse en /email/status.")
             .Produces<TestEmailResponse>(StatusCodes.Status200OK)
             .ProducesValidationProblem();
 
@@ -73,6 +84,45 @@ public static class SettingsEndpoints
         SiteSettingService settings,
         CancellationToken cancellationToken)
         => Results.Ok(await settings.ListAsync(cancellationToken));
+
+    private static async Task<IResult> GetEmailTestStatus(
+        CoreDbContext database,
+        CancellationToken cancellationToken)
+    {
+        var latest = await database.AuditLogs
+            .AsNoTracking()
+            .Where(entry =>
+                entry.Action == AuditAction.EmailSend
+                && entry.ModuleCode == CoreModule.ModuleCode
+                && entry.EntityType == "email"
+                && entry.EntityId == "smtp_test")
+            .OrderByDescending(entry => entry.OccurredAt)
+            .Select(entry => new
+            {
+                entry.OccurredAt,
+                entry.Summary
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (latest is null)
+        {
+            return Results.Ok(
+                new EmailTestStatusResponse(
+                    NeverTested: true,
+                    LastTestedAt: null,
+                    LastSuccess: null));
+        }
+
+        var success = latest.Summary?.Contains(
+            ": enviado.",
+            StringComparison.Ordinal) == true;
+
+        return Results.Ok(
+            new EmailTestStatusResponse(
+                NeverTested: false,
+                LastTestedAt: latest.OccurredAt,
+                LastSuccess: success));
+    }
 
     private static async Task<IResult> TestEmail(
         TestEmailRequest request,
