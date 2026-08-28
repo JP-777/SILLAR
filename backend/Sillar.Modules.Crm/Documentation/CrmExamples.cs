@@ -98,5 +98,15 @@ public sealed class CrmExamples : ISchemaExamples
               "internalNotes": "Dato visible solo en el panel."
             }
             """,
+
+        [typeof(PublicContactRequest)] = """
+            {
+              "fullName": "Visitante De Ejemplo",
+              "email": "visitante@ejemplo.test",
+              "phone": "+51 900 000 020",
+              "subject": "Consulta comercial",
+              "message": "Quisiera recibir más información."
+            }
+            """,
     };
 }

@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Sillar.Modules.Crm.Administration;
 using Sillar.Modules.Crm.Authentication;
 using Sillar.Modules.Crm.Contracts;
+using Sillar.Modules.Crm.Contact;
 using Sillar.Modules.Crm.Data;
 using Sillar.Modules.Crm.Endpoints;
 using Sillar.Modules.Crm.Profiles;
@@ -74,6 +75,8 @@ public sealed class CrmModule : IModule
 
         services.AddSingleton<CustomerPasswordHasher>();
         services.AddSingleton<CustomerLoginThrottle>();
+        services.AddSingleton<ContactSubmissionThrottle>();
+        services.AddScoped<ContactMessageService>();
         services.AddScoped<CustomerSessionService>();
         services.AddScoped<CustomerAuthenticationService>();
         services.AddScoped<CustomerRegistrationService>();
@@ -91,5 +94,6 @@ public sealed class CrmModule : IModule
         endpoints.MapCustomerAuthEndpoints();
         endpoints.MapCustomerProfileEndpoints();
         endpoints.MapCustomerAdminEndpoints();
+        endpoints.MapContactMessageEndpoints();
     }
 }
