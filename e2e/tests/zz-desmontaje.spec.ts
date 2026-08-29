@@ -142,7 +142,11 @@ test('Desactivar M01 no borra nada, y al volver el catálogo está donde lo deja
   // página a medio pintar: `main` es visible en cuanto aparece el armazón.
   await duringExpectedOutage(page, async () => {
     await page.goto('/');
-    await expect(page.getByText('Todavía no hay contenido publicado.')).toBeVisible();
+    // CRM permanece activo: sirve como ancla positiva para demostrar que
+    // la portada terminó de renderizar aunque M01 esté apagado.
+    await expect(
+      page.getByText('Cuenta de cliente', { exact: true }),
+    ).toBeVisible();
   });
 
   await expect(page.getByRole('link', { name: 'Ver el catálogo' })).toHaveCount(0);
