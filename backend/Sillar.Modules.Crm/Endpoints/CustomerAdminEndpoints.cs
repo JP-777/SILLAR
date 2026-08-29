@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Sillar.Core.Contracts;
 using Sillar.Modules.Crm.Administration;
+using Sillar.Modules.Crm.Authentication;
 using Sillar.Modules.Crm.Dtos;
 
 namespace Sillar.Modules.Crm.Endpoints;
@@ -200,12 +201,13 @@ public static class CustomerAdminEndpoints
         Guid customerId,
         CustomerAdminService customers,
         ICurrentAdmin current,
+        CustomerPublicUrlResolver publicUrl,
         HttpContext context,
         CancellationToken cancellationToken)
     {
         var result = await customers.InviteAsync(
             customerId,
-            BaseUrl(context),
+            publicUrl.Resolve(context),
             current.AdminUserId!.Value,
             current.Email!,
             cancellationToken);
@@ -230,9 +232,6 @@ public static class CustomerAdminEndpoints
                 statusCode: StatusCodes.Status409Conflict)
         };
     }
-
-    private static string BaseUrl(HttpContext context)
-        => $"{context.Request.Scheme}://{context.Request.Host}";
 
     private static IResult Invalid(string error)
         => Results.ValidationProblem(

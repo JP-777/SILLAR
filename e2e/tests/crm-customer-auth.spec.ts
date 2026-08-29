@@ -24,7 +24,7 @@ test('M04 — registro, login y sesiones cliente/panel coexisten', async ({ page
   await page.getByLabel('Contraseña').fill(PASSWORD);
   await page.getByRole('button', { name: 'Entrar' }).click();
 
-  await expect(page).toHaveURL('/');
+  await expect(page).toHaveURL('/mi-cuenta');
 
   let cookies = await page.context().cookies();
   expect(cookies.some((cookie) => cookie.name === 'sillar_tienda')).toBe(true);

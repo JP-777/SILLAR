@@ -1,4 +1,6 @@
+using System.Net;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.OpenApi;
 using Sillar.Api.Documentation;
 using Sillar.Api.Modularity;
@@ -12,6 +14,34 @@ using Sillar.Shared.Platform;
 DotEnv.Load();
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Detrás de Traefik/otro reverse proxy, Scheme/Host/RemoteIpAddress deben
+// representar al visitante, no al contenedor proxy. Por seguridad los headers
+// solo se aceptan si la instalación los habilita y nombra proxies concretos.
+var forwardedHeadersEnabled =
+    builder.Configuration.GetValue<bool>("Sillar:Proxy:ForwardedHeadersEnabled");
+
+if (forwardedHeadersEnabled)
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders =
+            ForwardedHeaders.XForwardedFor
+            | ForwardedHeaders.XForwardedProto
+            | ForwardedHeaders.XForwardedHost;
+        options.ForwardLimit = 1;
+
+        foreach (var child in builder.Configuration
+                     .GetSection("Sillar:Proxy:KnownProxies")
+                     .GetChildren())
+        {
+            if (IPAddress.TryParse(child.Value, out var proxy))
+            {
+                options.KnownProxies.Add(proxy);
+            }
+        }
+    });
+}
 
 // El límite de tamaño se aplica TAMBIÉN aquí, no solo al validar el contenido.
 // Sin esto, alguien que anuncie dos gigabytes consigue que el servidor los
@@ -78,6 +108,11 @@ catch (StartupAbortedException exception)
 }
 
 var app = builder.Build();
+
+if (forwardedHeadersEnabled)
+{
+    app.UseForwardedHeaders();
+}
 
 if (app.Environment.IsDevelopment())
 {

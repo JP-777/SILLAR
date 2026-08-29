@@ -78,6 +78,10 @@ services:
       # Secreto SMTP: servidor/puerto/remitente viven en site_settings, la
       # contraseña solo entra al proceso mediante el entorno.
       SILLAR_SMTP_PASSWORD: ${SILLAR_SMTP_PASSWORD:-}
+      # URL pública y confianza explícita en el reverse proxy.
+      Sillar__PublicBaseUrl: ${Sillar__PublicBaseUrl:-}
+      Sillar__Proxy__ForwardedHeadersEnabled: ${Sillar__Proxy__ForwardedHeadersEnabled:-false}
+      Sillar__Proxy__KnownProxies__0: ${Sillar__Proxy__KnownProxies__0:-127.0.0.1}
     ports:
       - "${API_PORT:-5080}:8080"
     volumes:

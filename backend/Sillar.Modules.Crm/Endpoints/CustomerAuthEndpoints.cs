@@ -119,7 +119,8 @@ public static class CustomerAuthEndpoints
         CustomerRegisterRequest request,
         CustomerRegistrationService registration,
         CustomerAccountTokenService tokens,
-        IEmailSender email,
+        DeferredEmailDispatcher emails,
+        CustomerPublicUrlResolver publicUrl,
         HttpContext context,
         CancellationToken cancellationToken)
     {
@@ -145,12 +146,11 @@ public static class CustomerAuthEndpoints
 
         if (verification is not null)
         {
-            ScheduleEmail(
-                context,
-                email,
+            emails.Schedule(
+                context.Response,
                 CustomerEmailComposer.Verification(
                     verification,
-                    BaseUrl(context)));
+                    publicUrl.Resolve(context)));
         }
 
         // Deliberadamente idéntica para Created, Linked y AlreadyRegistered.
@@ -204,7 +204,8 @@ public static class CustomerAuthEndpoints
     private static async Task<IResult> RequestPasswordReset(
         CustomerPasswordResetRequest request,
         CustomerAccountTokenService tokens,
-        IEmailSender email,
+        DeferredEmailDispatcher emails,
+        CustomerPublicUrlResolver publicUrl,
         HttpContext context,
         CancellationToken cancellationToken)
     {
@@ -227,12 +228,11 @@ public static class CustomerAuthEndpoints
 
         if (issued is not null)
         {
-            ScheduleEmail(
-                context,
-                email,
+            emails.Schedule(
+                context.Response,
                 CustomerEmailComposer.PasswordReset(
                     issued,
-                    BaseUrl(context)));
+                    publicUrl.Resolve(context)));
         }
 
         return Results.Ok(
@@ -297,7 +297,8 @@ public static class CustomerAuthEndpoints
     private static async Task<IResult> RequestEmailVerification(
         CurrentCustomer current,
         CustomerAccountTokenService tokens,
-        IEmailSender email,
+        DeferredEmailDispatcher emails,
+        CustomerPublicUrlResolver publicUrl,
         HttpContext context,
         CancellationToken cancellationToken)
     {
@@ -312,12 +313,11 @@ public static class CustomerAuthEndpoints
 
         if (issued is not null)
         {
-            ScheduleEmail(
-                context,
-                email,
+            emails.Schedule(
+                context.Response,
                 CustomerEmailComposer.Verification(
                     issued,
-                    BaseUrl(context)));
+                    publicUrl.Resolve(context)));
         }
 
         return Results.Ok(
@@ -359,26 +359,6 @@ public static class CustomerAuthEndpoints
                 title: "La invitación no es válida o ya caducó.",
                 statusCode: StatusCodes.Status400BadRequest)
         };
-    }
-
-    private static string BaseUrl(HttpContext context)
-        => $"{context.Request.Scheme}://{context.Request.Host}";
-
-    private static void ScheduleEmail(
-        HttpContext context,
-        IEmailSender sender,
-        OutgoingEmail message)
-    {
-        // El hecho ya quedó persistido. Se manda después de entregar la
-        // respuesta para que SMTP no forme parte de la transacción ni revele
-        // por latencia si una cuenta existe.
-        context.Response.OnCompleted(
-            async () =>
-            {
-                await sender.SendAsync(
-                    message,
-                    CancellationToken.None);
-            });
     }
 
     private static async Task<IResult> Login(

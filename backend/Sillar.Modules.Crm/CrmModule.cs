@@ -75,6 +75,8 @@ public sealed class CrmModule : IModule
 
         services.AddSingleton<CustomerPasswordHasher>();
         services.AddSingleton<CustomerLoginThrottle>();
+        services.AddSingleton<DeferredEmailDispatcher>();
+        services.AddSingleton<CustomerPublicUrlResolver>();
         services.AddSingleton<ContactSubmissionThrottle>();
         services.AddScoped<ContactMessageService>();
         services.AddScoped<CustomerSessionService>();
