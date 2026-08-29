@@ -400,7 +400,11 @@ test('Con M01 desactivado, las rutas públicas desaparecen y el inicio no deja h
   // seguía verde con el archivo entero y roja en solitario — la diferencia era
   // cuánto tardaba la página, no lo que enseñaba.
   await page.goto('/');
-  await expect(page.getByText('Todavía no hay contenido publicado.')).toBeVisible();
+  // CRM sigue activo aunque catálogo esté apagado. Su sección sirve como
+  // ancla positiva para demostrar que la portada terminó de renderizar.
+  await expect(
+    page.getByText('Cuenta de cliente', { exact: true }),
+  ).toBeVisible();
 
   await expect(page.getByRole('link', { name: 'Ver el catálogo' })).toHaveCount(0);
   await expect(page.locator('body')).not.toContainText(/cat[áa]logo/i);
