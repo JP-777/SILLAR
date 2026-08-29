@@ -8,7 +8,7 @@ import { RequireAuth } from '../session';
 import { catalogPublicRoutes, catalogRoutes } from '../modules/catalog/routes';
 import { cmsRoutes } from '../modules/cms/routes';
 import { coreRoutes } from '../modules/core/routes';
-import { crmPublicRoutes } from '../modules/crm/routes';
+import { crmAdminRoutes, crmPublicRoutes } from '../modules/crm/routes';
 
 /**
  * Rutas de la aplicación.
@@ -39,6 +39,7 @@ export function AppRoutes() {
           {coreRoutes}
           {has('catalog') && catalogRoutes}
           {has('cms') && cmsRoutes}
+          {has('crm') && crmAdminRoutes}
         </Route>
       </Route>
 

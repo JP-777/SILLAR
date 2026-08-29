@@ -1,6 +1,8 @@
 import { Link, Route } from 'react-router-dom';
+import type { ModuleNavigation } from '../../layout/navigation';
 import type { HomeSection } from '../../platform/homeSections';
 import { EmptyState } from '../../shared/ui';
+import { RequireRole } from '../../session';
 import { CustomerEmailVerificationPage } from './pages/CustomerEmailVerificationPage';
 import { CustomerInvitationPage } from './pages/CustomerInvitationPage';
 import { CustomerLoginPage } from './pages/CustomerLoginPage';
@@ -8,7 +10,21 @@ import { CustomerPasswordResetConfirmPage } from './pages/CustomerPasswordResetC
 import { CustomerPasswordResetRequestPage } from './pages/CustomerPasswordResetRequestPage';
 import { CustomerRegisterPage } from './pages/CustomerRegisterPage';
 import { CustomerProfilePage } from './pages/CustomerProfilePage';
+import { AdminCustomerDetailPage } from './pages/AdminCustomerDetailPage';
+import { AdminCustomersPage } from './pages/AdminCustomersPage';
 import { RequireCustomerAuth, useCustomerSession } from './session';
+
+export const crmNavigation: ModuleNavigation = {
+  moduleCode: 'crm',
+  group: 'Clientes',
+  items: [
+    {
+      to: '/admin/clientes',
+      label: 'Clientes',
+      minimumRole: 'admin',
+    },
+  ],
+};
 
 export const crmHome: HomeSection = {
   moduleCode: 'crm',
@@ -34,6 +50,13 @@ function CrmHomeSection() {
     />
   );
 }
+
+export const crmAdminRoutes = (
+  <Route element={<RequireRole minimum="admin" />}>
+    <Route path="clientes" element={<AdminCustomersPage />} />
+    <Route path="clientes/:customerId" element={<AdminCustomerDetailPage />} />
+  </Route>
+);
 
 export const crmPublicRoutes = (
   <>

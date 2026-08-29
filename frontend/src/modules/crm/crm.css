@@ -120,3 +120,116 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* --- CRM administrativo ------------------------------------------------- */
+
+.crm-admin-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s3);
+  align-items: end;
+}
+
+.crm-admin-form__document {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s3);
+}
+
+.crm-admin-form__actions,
+.crm-admin-detail__top-actions {
+  display: flex;
+  gap: var(--s2);
+  flex-wrap: wrap;
+}
+
+.crm-textarea {
+  min-height: 116px;
+  resize: vertical;
+  height: auto;
+  padding-top: var(--s3);
+  padding-bottom: var(--s3);
+}
+
+.crm-admin-customer__name,
+.crm-admin-customer__open {
+  color: var(--link);
+  font-weight: 600;
+}
+
+.crm-admin-customer__secondary {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.crm-admin-detail__loading {
+  min-height: 50vh;
+  display: grid;
+  place-items: center;
+}
+
+.crm-admin-detail__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  gap: var(--s5);
+  align-items: start;
+}
+
+.crm-admin-detail__side,
+.crm-admin-status,
+.crm-admin-addresses {
+  display: grid;
+  gap: var(--s4);
+}
+
+.crm-admin-meta {
+  display: grid;
+  gap: var(--s3);
+  margin: 0;
+}
+
+.crm-admin-meta > div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: var(--s3);
+}
+
+.crm-admin-meta dt {
+  color: var(--text-muted);
+}
+
+.crm-admin-meta dd {
+  margin: 0;
+}
+
+.crm-admin-address {
+  display: grid;
+  gap: var(--s1);
+  padding-bottom: var(--s3);
+  border-bottom: 1px solid var(--border);
+}
+
+.crm-admin-address:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.crm-admin-address__title {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 860px) {
+  .crm-admin-detail__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .crm-admin-search,
+  .crm-admin-form__document {
+    grid-template-columns: 1fr;
+  }
+}

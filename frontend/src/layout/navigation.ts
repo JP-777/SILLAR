@@ -1,6 +1,7 @@
 import { catalogNavigation } from '../modules/catalog/routes';
 import { cmsNavigation } from '../modules/cms/routes';
 import { coreNavigation } from '../modules/core/routes';
+import { crmNavigation } from '../modules/crm/routes';
 import type { Role } from '../session/SessionProvider';
 
 /**
@@ -48,6 +49,7 @@ export const MODULE_NAVIGATION: readonly ModuleNavigation[] = [
   coreNavigation,
   catalogNavigation,
   cmsNavigation,
+  crmNavigation,
 ];
 
 /** Filtra la navegación por módulos activos y por rol. */
