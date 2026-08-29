@@ -75,6 +75,9 @@ services:
       # la tercera barrera de ENTREGA-04A §0. Solo e2e/ lo pone en true.
       Modules__IncludeDemoModules: ${MODULES_INCLUDE_DEMO:-false}
       Media__RootPath: /data/media
+      # Secreto SMTP: servidor/puerto/remitente viven en site_settings, la
+      # contraseña solo entra al proceso mediante el entorno.
+      SILLAR_SMTP_PASSWORD: ${SILLAR_SMTP_PASSWORD:-}
     ports:
       - "${API_PORT:-5080}:8080"
     volumes:

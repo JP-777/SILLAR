@@ -14,8 +14,35 @@ export interface Setting {
   updatedAt: string;
 }
 
+export interface EmailTestStatus {
+  neverTested: boolean;
+  lastTestedAt: string | null;
+  lastSuccess: boolean | null;
+}
+
+export interface TestEmailResponse {
+  success: boolean;
+  message: string;
+}
+
+export const MAIL_SETTING_KEYS = [
+  'smtp_server',
+  'smtp_port',
+  'smtp_from',
+] as const;
+
+export function isMailSettingKey(key: string): boolean {
+  return (MAIL_SETTING_KEYS as readonly string[]).includes(key);
+}
+
 export const settingsService = {
   list: () => http.get<Setting[]>('/admin/settings'),
+
+  emailStatus: () =>
+    http.get<EmailTestStatus>('/admin/settings/email/status'),
+
+  testEmail: (recipient: string) =>
+    http.post<TestEmailResponse>('/admin/settings/email/test', { recipient }),
 
   /**
    * Cambia el valor y, opcionalmente, la visibilidad.
@@ -63,6 +90,11 @@ export const SETTING_GROUPS: readonly SettingGroup[] = [
     title: 'Moneda',
     description: 'Cómo se muestran los precios.',
     keys: ['currency_code', 'currency_symbol'],
+  },
+  {
+    title: 'Correo saliente',
+    description: 'Servidor y remitente usados por verificaciones, recuperaciones e invitaciones.',
+    keys: MAIL_SETTING_KEYS,
   },
 ];
 

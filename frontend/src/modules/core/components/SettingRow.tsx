@@ -10,6 +10,9 @@ interface SettingRowProps {
   setting: Setting;
   /** Si quien mira puede cambiar la visibilidad. Solo `super_admin`. */
   canPublish: boolean;
+  canEdit?: boolean;
+  editHint?: string;
+  visibilityLockedReason?: string;
   busy: boolean;
   error: string | null;
   onSave: (value: string) => void;
@@ -26,6 +29,9 @@ interface SettingRowProps {
 export function SettingRow({
   setting,
   canPublish,
+  canEdit = true,
+  editHint,
+  visibilityLockedReason,
   busy,
   error,
   onSave,
@@ -54,18 +60,20 @@ export function SettingRow({
           setting={setting}
           value={draft}
           onChange={setDraft}
-          disabled={busy}
+          disabled={busy || !canEdit}
         />
 
         <Button
           size="sm"
           onClick={() => onSave(draft.trim())}
-          disabled={!changed || draft.trim() === ''}
+          disabled={!canEdit || !changed || draft.trim() === ''}
           loading={busy}
         >
           Guardar
         </Button>
       </div>
+
+      {editHint && <span className="set-row__hint">{editHint}</span>}
 
       {error && (
         <p className="set-row__error" role="alert">
@@ -79,7 +87,7 @@ export function SettingRow({
           onChange={onTogglePublic}
           // Deshabilitado con la razón, no oculto: ocultarlo haría creer que el
           // dato no es público cuando puede serlo.
-          disabled={!canPublish || busy}
+          disabled={!canPublish || busy || visibilityLockedReason !== undefined}
           label={
             setting.isPublic
               ? 'Visible en la web pública'
@@ -87,11 +95,13 @@ export function SettingRow({
           }
         />
 
-        {!canPublish && (
+        {visibilityLockedReason ? (
+          <span className="set-row__hint">{visibilityLockedReason}</span>
+        ) : !canPublish ? (
           <span className="set-row__hint">
             Cambiar esto exige el rol de administrador principal.
           </span>
-        )}
+        ) : null}
       </div>
     </div>
   );

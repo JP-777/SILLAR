@@ -97,6 +97,13 @@ internal sealed class SiteSettingService(
                 "La configuración de correo exige el rol super_admin.");
         }
 
+        if (isMailSetting && request.IsPublic == true)
+        {
+            return new SettingOperation(
+                SettingOutcome.Invalid,
+                "La configuración de correo saliente nunca puede publicarse.");
+        }
+
         if (wantsVisibilityChange && !canChangeVisibility)
         {
             return new SettingOperation(
@@ -112,10 +119,15 @@ internal sealed class SiteSettingService(
                 $"El valor no encaja con el tipo '{setting.ValueType}'. {invalid}");
         }
 
-        var previousValue = setting.SettingValue;
         setting.SettingValue = request.Value!.Trim();
 
-        if (wantsVisibilityChange)
+        if (isMailSetting)
+        {
+            // Defensa en profundidad: una fila antigua que hubiera quedado
+            // pública vuelve a privado al tocarse.
+            setting.IsPublic = false;
+        }
+        else if (wantsVisibilityChange)
         {
             setting.IsPublic = request.IsPublic!.Value;
         }
@@ -134,13 +146,11 @@ internal sealed class SiteSettingService(
                 ModuleCode = CoreModule.ModuleCode,
                 EntityType = "setting",
                 EntityId = setting.SettingKey,
-                // Sin el valor, ni el nuevo ni el anterior. Hoy todas las claves
-                // del seed son inocuas, pero esta tabla está pensada para alojar
-                // también credenciales de correo saliente, y la auditoría no se
-                // puede borrar (SPEC §8.15): registrarlos la convertiría en un
-                // almacén permanente de secretos en claro.
+                // Sin el valor, ni el nuevo ni el anterior. Aunque la contraseña
+                // SMTP nunca entra en esta tabla, host/remitente tampoco necesitan
+                // quedar replicados para siempre en una auditoría inmutable.
                 Summary = isMailSetting
-                    ? $"Configuración de correo '{setting.SettingKey}' actualizada: '{previousValue}' -> '{setting.SettingValue}'."
+                    ? $"Configuración de correo '{setting.SettingKey}' actualizada."
                     : wantsVisibilityChange
                         ? $"Configuración '{setting.SettingKey}' actualizada. Visibilidad pública: {setting.IsPublic}."
                         : $"Configuración '{setting.SettingKey}' actualizada."

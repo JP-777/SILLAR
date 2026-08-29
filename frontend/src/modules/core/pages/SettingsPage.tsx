@@ -6,8 +6,14 @@ import { Alert, Card, Spinner } from '../../../shared/ui';
 import { ConfirmDialog, Toasts, useToasts } from '../../../shared/ui/patterns';
 import { ForbiddenPage } from '../../../platform/ForbiddenPage';
 import { useSession } from '../../../session';
+import { EmailTestPanel } from '../components/EmailTestPanel';
 import { SettingRow } from '../components/SettingRow';
-import { groupSettings, settingsService, type Setting } from '../services/settings';
+import {
+  groupSettings,
+  isMailSettingKey,
+  settingsService,
+  type Setting,
+} from '../services/settings';
 import '../components/settings.css';
 
 /**
@@ -19,7 +25,7 @@ import '../components/settings.css';
 export function SettingsPage() {
   const load = useCallback(() => settingsService.list(), []);
   const { state, reload } = useResource(load, 'cargar la configuración');
-  const { hasRole } = useSession();
+  const { hasRole, user } = useSession();
   const { toasts, show } = useToasts();
 
   const canPublish = hasRole('super_admin');
@@ -83,20 +89,37 @@ export function SettingsPage() {
         groups.map((group) => (
           <Card key={group.title} title={group.title} subtitle={group.description}>
             <div className="set-group__items">
-              {group.items.map((setting) => (
-                <SettingRow
-                  key={setting.key}
-                  setting={setting}
-                  canPublish={canPublish}
-                  busy={busyKey === setting.key}
-                  error={errors[setting.key] || null}
-                  onSave={(value) => void save(setting, value)}
-                  onTogglePublic={() => setPendingVisibility(setting)}
-                />
-              ))}
+              {group.items.map((setting) => {
+                const mailSetting = isMailSettingKey(setting.key);
+
+                return (
+                  <SettingRow
+                    key={setting.key}
+                    setting={setting}
+                    canPublish={canPublish}
+                    canEdit={!mailSetting || canPublish}
+                    editHint={
+                      mailSetting && !canPublish
+                        ? 'Editar la configuración de correo exige el rol de administrador principal.'
+                        : undefined
+                    }
+                    visibilityLockedReason={
+                      mailSetting
+                        ? 'La configuración SMTP siempre es privada.'
+                        : undefined
+                    }
+                    busy={busyKey === setting.key}
+                    error={errors[setting.key] || null}
+                    onSave={(value) => void save(setting, value)}
+                    onTogglePublic={() => setPendingVisibility(setting)}
+                  />
+                );
+              })}
             </div>
           </Card>
         ))}
+
+      {canPublish && <EmailTestPanel defaultRecipient={user?.email ?? ''} />}
 
       <ConfirmDialog
         open={pendingVisibility !== null}

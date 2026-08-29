@@ -41,6 +41,24 @@ VALUES
     ('currency_symbol',    'S/',                'text',  'Símbolo de la moneda, para mostrar precios',          true, true)
 ON CONFLICT (setting_key) DO NOTHING;
 
+-- ----------------------------------------------------------------------------
+-- Correo saliente
+--
+-- Nunca públicas. La contraseña NO vive en site_settings: se inyecta mediante
+-- SILLAR_SMTP_PASSWORD. El puerto 587 es un valor inicial razonable; host y
+-- remitente deben configurarse para cada instalación.
+-- ----------------------------------------------------------------------------
+INSERT INTO core.site_settings (setting_key, setting_value, value_type, description, is_public, is_active)
+VALUES
+    ('smtp_server', 'PENDIENTE_DEFINIR', 'text',   'Servidor SMTP de correo saliente', false, true),
+    ('smtp_port',   '587',               'number', 'Puerto del servidor SMTP',          false, true),
+    ('smtp_from',   'PENDIENTE_DEFINIR', 'email',  'Correo remitente y usuario SMTP',   false, true)
+ON CONFLICT (setting_key) DO NOTHING;
+
+UPDATE core.site_settings
+SET is_public = false
+WHERE setting_key IN ('smtp_server', 'smtp_port', 'smtp_from');
+
 COMMIT;
 
 -- ----------------------------------------------------------------------------
@@ -49,5 +67,5 @@ COMMIT;
 --   SELECT setting_key, setting_value, is_public FROM core.site_settings
 --   ORDER BY setting_key;
 --
--- Deben aparecer 11 filas, todas con is_public = true.
+-- Deben aparecer 14 filas: 11 públicas y las 3 smtp_* privadas.
 -- ----------------------------------------------------------------------------
