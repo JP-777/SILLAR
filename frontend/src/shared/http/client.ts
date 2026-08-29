@@ -16,19 +16,30 @@ const CSRF_HEADER = 'X-CSRF-Token';
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 /**
- * Token CSRF de la sesión, en memoria.
+ * Estado privado de una población autenticada.
  *
- * Ni `localStorage` ni `sessionStorage`: el token de sesión es una cookie
- * `httpOnly` que JavaScript no debe tocar, y guardar el CSRF en el
- * almacenamiento del navegador desharía parte de esa protección.
- *
- * Desde la entrega 2.1 el valor es estable durante toda la sesión y sobrevive a
- * un reinicio del host, porque se deriva de la identidad de la sesión (ADR-012).
+ * Panel y tienda pueden estar abiertos simultáneamente en el mismo navegador:
+ * cada uno conserva su CSRF y su reacción a 401 sin pisar al otro.
  */
-let csrfToken: string | null = null;
+interface SessionState {
+  csrfToken: string | null;
+  onUnauthorized: (() => void) | null;
+}
 
-/** Qué hacer cuando el servidor dice que la sesión murió. */
-let onUnauthorized: (() => void) | null = null;
+const adminSessionState: SessionState = {
+  csrfToken: null,
+  onUnauthorized: null,
+};
+
+const customerSessionState: SessionState = {
+  csrfToken: null,
+  onUnauthorized: null,
+};
+
+const anonymousSessionState: SessionState = {
+  csrfToken: null,
+  onUnauthorized: null,
+};
 
 export interface RequestOptions {
   method?: string;
@@ -48,44 +59,51 @@ export interface RequestOptions {
   allowUnauthorized?: boolean;
 }
 
-export const http = {
-  /** Guarda el token CSRF de la sesión. */
-  setCsrfToken(token: string | null): void {
-    csrfToken = token;
-  },
+function createHttpClient(state: SessionState) {
+  return {
+    setCsrfToken(token: string | null): void {
+      state.csrfToken = token;
+    },
 
-  get csrfToken(): string | null {
-    return csrfToken;
-  },
+    get csrfToken(): string | null {
+      return state.csrfToken;
+    },
 
-  /** Registra qué hacer ante un 401 inesperado. */
-  onUnauthorized(handler: () => void): void {
-    onUnauthorized = handler;
-  },
+    onUnauthorized(handler: (() => void) | null): void {
+      state.onUnauthorized = handler;
+    },
 
-  get<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    return request<T>(path, { ...options, method: 'GET' });
-  },
+    get<T>(path: string, options: RequestOptions = {}): Promise<T> {
+      return request<T>(path, { ...options, method: 'GET' }, state);
+    },
 
-  post<T>(path: string, body?: unknown, options: RequestOptions = {}): Promise<T> {
-    return request<T>(path, { ...options, method: 'POST', body });
-  },
+    post<T>(path: string, body?: unknown, options: RequestOptions = {}): Promise<T> {
+      return request<T>(path, { ...options, method: 'POST', body }, state);
+    },
 
-  put<T>(path: string, body?: unknown, options: RequestOptions = {}): Promise<T> {
-    return request<T>(path, { ...options, method: 'PUT', body });
-  },
+    put<T>(path: string, body?: unknown, options: RequestOptions = {}): Promise<T> {
+      return request<T>(path, { ...options, method: 'PUT', body }, state);
+    },
 
-  delete<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    return request<T>(path, { ...options, method: 'DELETE' });
-  },
+    delete<T>(path: string, options: RequestOptions = {}): Promise<T> {
+      return request<T>(path, { ...options, method: 'DELETE' }, state);
+    },
 
-  /** Sube un archivo. El token CSRF también hace falta aquí. */
-  upload<T>(path: string, form: FormData, options: RequestOptions = {}): Promise<T> {
-    return request<T>(path, { ...options, method: 'POST', form });
-  },
-};
+    upload<T>(path: string, form: FormData, options: RequestOptions = {}): Promise<T> {
+      return request<T>(path, { ...options, method: 'POST', form }, state);
+    },
+  };
+}
 
-async function request<T>(path: string, options: RequestOptions): Promise<T> {
+export const http = createHttpClient(adminSessionState);
+export const customerHttp = createHttpClient(customerSessionState);
+export const anonymousHttp = createHttpClient(anonymousSessionState);
+
+async function request<T>(
+  path: string,
+  options: RequestOptions,
+  state: SessionState,
+): Promise<T> {
   const method = (options.method ?? 'GET').toUpperCase();
 
   // Durante un reinicio no sale nada. Fallarían todas y llenarían la consola de
@@ -111,8 +129,8 @@ async function request<T>(path: string, options: RequestOptions): Promise<T> {
   }
 
   // Subir un archivo es una escritura como cualquier otra: multipart no exime.
-  if (!SAFE_METHODS.has(method) && csrfToken) {
-    headers.set(CSRF_HEADER, csrfToken);
+  if (!SAFE_METHODS.has(method) && state.csrfToken) {
+    headers.set(CSRF_HEADER, state.csrfToken);
   }
 
   let response: Response;
@@ -143,7 +161,11 @@ async function request<T>(path: string, options: RequestOptions): Promise<T> {
     return (await readBody(response)) as T;
   }
 
-  throw await toApiError(response, options.allowUnauthorized ?? false);
+  throw await toApiError(
+    response,
+    options.allowUnauthorized ?? false,
+    state,
+  );
 }
 
 function buildUrl(path: string, query: RequestOptions['query']): string {
@@ -176,7 +198,11 @@ async function readBody(response: Response): Promise<unknown> {
 }
 
 /** Convierte una respuesta de error en un error tipado. */
-async function toApiError(response: Response, allowUnauthorized: boolean): Promise<ApiError> {
+async function toApiError(
+  response: Response,
+  allowUnauthorized: boolean,
+  state: SessionState,
+): Promise<ApiError> {
   const problem = await readProblem(response);
   const kind = kindOf(response.status, problem.errors !== null);
 
@@ -188,8 +214,8 @@ async function toApiError(response: Response, allowUnauthorized: boolean): Promi
   // token caducó»: significa que algo va mal de verdad, y esconderlo con un
   // reintento solo retrasaría el diagnóstico.
   if (kind === 'Unauthorized' && !allowUnauthorized) {
-    csrfToken = null;
-    onUnauthorized?.();
+    state.csrfToken = null;
+    state.onUnauthorized?.();
   }
 
   return new ApiError(

@@ -8,6 +8,7 @@ import { RequireAuth } from '../session';
 import { catalogPublicRoutes, catalogRoutes } from '../modules/catalog/routes';
 import { cmsRoutes } from '../modules/cms/routes';
 import { coreRoutes } from '../modules/core/routes';
+import { crmPublicRoutes } from '../modules/crm/routes';
 
 /**
  * Rutas de la aplicación.
@@ -30,6 +31,7 @@ export function AppRoutes() {
 
       {/* La tienda. Pública y fuera del panel: sin RequireAuth. */}
       {has('catalog') && catalogPublicRoutes}
+      {has('crm') && crmPublicRoutes}
 
       <Route element={<RequireAuth />}>
         <Route path="/admin" element={<AdminShell />}>

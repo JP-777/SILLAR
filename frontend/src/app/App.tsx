@@ -5,6 +5,11 @@ import { http } from '../shared/http/client';
 import { connection } from '../shared/http/connection';
 import { isApiError } from '../shared/http/errors';
 import { SessionProvider, fetchSession, type AuthenticatedUser } from '../session';
+import { CustomerSessionProvider } from '../modules/crm/session';
+import {
+  fetchCustomerSession,
+  type CustomerIdentity,
+} from '../modules/crm/services/customerAuth';
 import { PlatformErrorPage } from '../platform/PlatformErrorPage';
 import { RouteFocus } from '../shared/a11y/RouteFocus';
 import { ReconnectingOverlay } from '../platform/ReconnectingOverlay';
@@ -30,6 +35,7 @@ type Boot =
       phase: 'ready';
       capabilities: Capabilities;
       user: AuthenticatedUser | null;
+      customer: CustomerIdentity | null;
       settings: PublicSettings;
     };
 
@@ -75,9 +81,23 @@ export function App() {
     try {
       // Paso 2 y 3, más la configuración pública que necesita el armazón.
       const capabilities = await fetchCapabilities();
-      const [user, settings] = await Promise.all([fetchSession(), loadSettings()]);
+      const crmActive = capabilities.modules.some(
+        (module) => module.code === 'crm',
+      );
 
-      setBoot({ phase: 'ready', capabilities, user, settings });
+      const [user, customer, settings] = await Promise.all([
+        fetchSession(),
+        crmActive ? fetchCustomerSession() : Promise.resolve(null),
+        loadSettings(),
+      ]);
+
+      setBoot({
+        phase: 'ready',
+        capabilities,
+        user,
+        customer,
+        settings,
+      });
     } catch (error) {
       setBoot({
         phase: 'failed',
@@ -115,7 +135,8 @@ export function App() {
     <BrowserRouter>
       <CapabilitiesProvider initial={boot.capabilities}>
         <SessionProvider initialUser={boot.user}>
-          <PublicSettingsHost initial={boot.settings}>
+          <CustomerSessionProvider initialCustomer={boot.customer}>
+            <PublicSettingsHost initial={boot.settings}>
             {/* Montado UNA vez, en la raíz. El estado de reconexión vive fuera
                 de React, así que sigue ahí aunque el usuario navegue. */}
             {/* Enlace de salto: el primero del recorrido, invisible hasta
@@ -130,7 +151,8 @@ export function App() {
             <RouteFocus />
             <Wiring />
             <AppRoutes />
-          </PublicSettingsHost>
+            </PublicSettingsHost>
+          </CustomerSessionProvider>
         </SessionProvider>
       </CapabilitiesProvider>
     </BrowserRouter>
