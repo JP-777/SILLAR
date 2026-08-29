@@ -15,7 +15,7 @@ export function CustomerLoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   const returnTo =
-    (location.state as { from?: string } | null)?.from ?? '/';
+    (location.state as { from?: string } | null)?.from ?? '/mi-cuenta';
 
   async function submit(event: FormEvent) {
     event.preventDefault();

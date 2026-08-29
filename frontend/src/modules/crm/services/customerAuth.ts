@@ -124,3 +124,9 @@ export function acceptCustomerInvitation(
     { token, password },
   );
 }
+
+export function requestCustomerEmailVerification(): Promise<CustomerOperationResponse> {
+  return customerHttp.post<CustomerOperationResponse>(
+    '/customer/auth/email-verification/request',
+  );
+}

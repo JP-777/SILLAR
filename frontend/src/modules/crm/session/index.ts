@@ -5,3 +5,4 @@ export {
 } from './CustomerSessionProvider';
 
 export { useCustomerSession } from './useCustomerSession';
+export { RequireCustomerAuth } from './guards';

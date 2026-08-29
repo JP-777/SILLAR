@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { catalogHome } from '../modules/catalog/routes';
 import { cmsHome } from '../modules/cms/cmsHome';
+import { crmHome } from '../modules/crm/routes';
 
 /**
  * Una sección de la portada pública, aportada por un módulo.
@@ -34,7 +35,7 @@ export interface HomeSection {
  * armazón. Por eso no hay ningún campo `order` — con uno, dos módulos pueden
  * pelearse por el mismo hueco y nadie lo ve hasta que se instalan juntos.
  */
-export const HOME_SECTIONS: readonly HomeSection[] = [cmsHome, catalogHome];
+export const HOME_SECTIONS: readonly HomeSection[] = [cmsHome, catalogHome, crmHome];
 
 /** Las secciones de los módulos activos, en el orden del array. */
 export function visibleHomeSections(isActive: (code: string) => boolean): HomeSection[] {

@@ -1,0 +1,122 @@
+.crm-account {
+  width: min(1120px, calc(100% - (2 * var(--s5))));
+  margin: 0 auto;
+  padding: var(--s6) 0 var(--s8);
+  display: grid;
+  gap: var(--s5);
+}
+
+.crm-account--loading {
+  min-height: 60vh;
+  place-items: center;
+}
+
+.crm-account__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s5);
+}
+
+.crm-account__header h1 {
+  margin: var(--s2) 0 0;
+}
+
+.crm-account__lead,
+.crm-address__secondary,
+.crm-addresses__empty {
+  color: var(--text-muted);
+}
+
+.crm-account__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: var(--s5);
+  align-items: start;
+}
+
+.crm-account__document,
+.crm-address-form__location {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s3);
+}
+
+.crm-address-form__location {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.crm-addresses,
+.crm-addresses__list {
+  display: grid;
+  gap: var(--s4);
+}
+
+.crm-address {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--s4);
+  background: var(--bg-sunken);
+}
+
+.crm-address p {
+  margin: var(--s2) 0 0;
+}
+
+.crm-address__heading,
+.crm-address__actions,
+.crm-address-form__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex-wrap: wrap;
+}
+
+.crm-address__heading {
+  justify-content: space-between;
+}
+
+.crm-address__actions {
+  margin-top: var(--s4);
+}
+
+.crm-address-form {
+  border-top: 1px solid var(--border);
+  padding-top: var(--s5);
+}
+
+.crm-address-form h3 {
+  margin: 0;
+}
+
+.crm-address-form__preferred {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  color: var(--text);
+}
+
+@media (max-width: 820px) {
+  .crm-account__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .crm-account__header {
+    flex-direction: column;
+  }
+
+  .crm-address-form__location {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .crm-account {
+    width: min(100% - (2 * var(--s4)), 1120px);
+    padding-top: var(--s5);
+  }
+
+  .crm-account__document {
+    grid-template-columns: 1fr;
+  }
+}
