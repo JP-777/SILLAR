@@ -12,6 +12,9 @@ import { CustomerRegisterPage } from './pages/CustomerRegisterPage';
 import { CustomerProfilePage } from './pages/CustomerProfilePage';
 import { AdminCustomerDetailPage } from './pages/AdminCustomerDetailPage';
 import { AdminCustomersPage } from './pages/AdminCustomersPage';
+import { ContactPage } from './pages/ContactPage';
+import { AdminContactMessagesPage } from './pages/AdminContactMessagesPage';
+import { AdminContactMessageDetailPage } from './pages/AdminContactMessageDetailPage';
 import { RequireCustomerAuth, useCustomerSession } from './session';
 
 export const crmNavigation: ModuleNavigation = {
@@ -21,6 +24,11 @@ export const crmNavigation: ModuleNavigation = {
     {
       to: '/admin/clientes',
       label: 'Clientes',
+      minimumRole: 'admin',
+    },
+    {
+      to: '/admin/mensajes',
+      label: 'Mensajes',
       minimumRole: 'admin',
     },
   ],
@@ -43,9 +51,12 @@ function CrmHomeSection() {
           : 'Entra o crea una cuenta para guardar tus datos de compra.'
       }
       action={
-        <Link to={isAuthenticated ? '/mi-cuenta' : '/entrar'}>
-          {isAuthenticated ? 'Ir a mi cuenta' : 'Entrar'}
-        </Link>
+        <div className="crm-home-actions">
+          <Link to={isAuthenticated ? '/mi-cuenta' : '/entrar'}>
+            {isAuthenticated ? 'Ir a mi cuenta' : 'Entrar'}
+          </Link>
+          <Link to="/contacto">Contacto</Link>
+        </div>
       }
     />
   );
@@ -55,6 +66,11 @@ export const crmAdminRoutes = (
   <Route element={<RequireRole minimum="admin" />}>
     <Route path="clientes" element={<AdminCustomersPage />} />
     <Route path="clientes/:customerId" element={<AdminCustomerDetailPage />} />
+    <Route path="mensajes" element={<AdminContactMessagesPage />} />
+    <Route
+      path="mensajes/:contactMessageId"
+      element={<AdminContactMessageDetailPage />}
+    />
   </Route>
 );
 
@@ -75,6 +91,7 @@ export const crmPublicRoutes = (
       element={<CustomerEmailVerificationPage />}
     />
     <Route path="/activar-cuenta" element={<CustomerInvitationPage />} />
+    <Route path="/contacto" element={<ContactPage />} />
 
     <Route element={<RequireCustomerAuth />}>
       <Route path="/mi-cuenta" element={<CustomerProfilePage />} />
