@@ -308,33 +308,10 @@ investigarlas.
 
 ---
 
-## 12 · Riesgo abierto: el cajón del producto tras asociar una imagen (20 ago 2026)
+## 12 · ~~Riesgo abierto: el cajón del producto tras asociar una imagen~~ — **resuelto el 3 de septiembre de 2026**
 
-**Observado dos veces**, las dos en una vuelta de la suite entera: en `recorrido.spec.ts`,
-pulsar «Guardar cambios» justo después de asociar una imagen deja el cajón abierto **y sin ningún
-aviso**. Entre una y otra no se reprodujo en seis intentos, ni aislado ni acompañado.
-
-La segunda vez fue el 21 de agosto, **justo después de envolver `page.goto` para que espere al
-armazón**. Eso cambió el ritmo de toda la suite, así que no se puede afirmar que sea la misma
-carrera: puede serlo, o puede ser una interacción nueva. Lo que sí cambia es el estado del
-riesgo — **dos apariciones ya no son una anécdota**, y toca investigarlo con la siguiente que
-salga en vez de esperar a que se repita.
-
-La carrera existe y se puede señalar: asociar una imagen recarga la ficha con el cajón abierto
-(`ProductsPage.tsx:197` llama a `abrirFicha`), así que hay un momento en que el formulario se
-está re-renderizando. **Lo que no está demostrado es que esa sea la causa** — la prueba pulsa
-decenas de milisegundos después de ver la miniatura, que es algo que una persona no hace.
-
-Lo hecho: la prueba espera a que la recarga termine, y afirma sobre los avisos de **toda la
-página** y no solo del cajón, porque un fallo puede avisar por un mensaje flotante que vive
-fuera. Si vuelve a pasar, dirá más que la primera vez.
-
-Lo no hecho, y a propósito: no se ha tocado el producto. Arreglar una carrera que no se sabe
-reproducir es cambiar código por una hipótesis, y quedarse sin la única señal que hay.
-
-**Disparador.** **La tercera aparición.** Dos ya no son una anécdota, pero tampoco son un caso
-reproducible, y arreglar una carrera que no se sabe reproducir es cambiar código por una hipótesis.
-La prueba ya está preparada para que la próxima diga más que las dos anteriores.
+Se borra el contenido y se conserva el número: se cita desde `BITACORA.md` §7 y desde el propio
+arnés, y renumerar el resto rompería esas referencias. La resolución está en `BITACORA.md` §7.
 
 ---
 
@@ -452,6 +429,14 @@ dónde está la tienda. Lo segundo va a pasar antes.
 ## Resueltos recientemente
 
 *(se borran de arriba y se anotan aquí solo hasta que entren en la bitácora del módulo)*
+
+- **El cajón del producto no se cerraba tras asociar una imagen.** (3 sep 2026) Era el 12, y su
+  disparador —la tercera aparición— se cumplió en la puerta de la reconciliación. Ya no es un
+  riesgo: la carrera está reproducida a voluntad y cerrada. **Una carga de la ficha que ya no es
+  la vigente no puede escribir `editing`**, y las rutas que cierran el cajón invalidan lo que
+  esté en vuelo antes de cerrarlo (`ProductsPage.tsx`). La prueba que la provoca —reteniendo la
+  recarga con `page.route()` hasta después del guardado— está en
+  `e2e/tests/imagenes-asociadas.spec.ts`. Registrado entero en `BITACORA.md` §7.
 
 - **M11 Pagos se queda en Fase 4, y M03 no lo espera.** (26 ago 2026) La duda era si el checkout de
   M03 tenía que aceptar tarjeta desde el arranque. **No:** la tienda abre cobrando con **Yape y

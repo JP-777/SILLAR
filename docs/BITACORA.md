@@ -818,3 +818,51 @@ identificador del contenedor es **el mismo** antes y después —Docker reinicia
 lo recrea—, así que una identidad basada solo en él no habría detectado nada. Lo que cambia es
 la marca de arranque, y entre una y otra pasaron **12,3 segundos**: el triple de los cuatro que
 `auth.ts` reintentaba.
+
+---
+
+### El cajón que se reabría solo (pendiente 12, cerrado el 3 sep 2026)
+
+Llevaba abierto desde el 20 de agosto con un disparador explícito —**la tercera aparición**—
+porque dos veces no bastaban para arreglar una carrera que no se sabía reproducir. La tercera
+salió en la puerta de la reconciliación, y con ella la causa entera.
+
+**Lo que se veía.** Tras asociar una imagen a un producto y pulsar «Guardar cambios», el cajón
+seguía abierto. El guardado **sí ocurría** y el aviso de éxito salía, así que el síntoma no
+apuntaba al guardado: apuntaba a que el cajón no se cerraba. Intermitente, una de cada dos o
+tres vueltas de la suite entera, nunca a voluntad.
+
+**Lo que pasaba.** Asociar una imagen recarga la ficha con el cajón abierto, y esa recarga es un
+`GET` que puede seguir en vuelo cuando el usuario guarda. La secuencia:
+
+```
+ImageList.add()  → onChanged()  → onSaved('')  → abrirFicha(id)  → GET en vuelo
+                                    «Guardar cambios» → PUT → cerrar → setEditing(null)
+                                                              ← llega el GET → setEditing(product)
+```
+
+El guardado cerraba, y la recarga vieja **volvía a abrir**. No es que el cierre fallara: es que
+alguien escribía después.
+
+**Por qué no se veía leyendo.** `ProductsPage` ya distinguía las dos ramas de `onSaved` y ambas
+eran correctas por separado. Lo que no existía era el orden entre ellas.
+
+**El arreglo.** Cada carga de la ficha se numera al empezar y solo la más reciente puede escribir
+`editing`; las rutas que cierran el cajón para siempre —`onClose` y el guardado— invalidan lo que
+esté en vuelo **antes** de cerrar. El contador es un `ref` y no un estado a propósito:
+**comprobar `editing !== null` dentro de la promesa no habría servido**, porque esa closure ve el
+`editing` del render en que se creó, que es justamente el viejo.
+
+Lo que **no** cambió: asociar o quitar una imagen se sigue guardando en el acto, el cajón sigue
+abierto y la ficha se sigue recargando. Lo único que desaparece es que una recarga vieja gane.
+
+**La prueba provoca la carrera, no la espera.** `e2e/tests/imagenes-asociadas.spec.ts` retiene la
+recarga con `page.route()` hasta después de que el guardado haya cerrado, y entonces la suelta.
+Se comprobó que **falla contra el código anterior** —en esa aserción y solo en esa, con la
+asociación, el guardado, el aviso y el cierre ya pasados— y que pasa tres veces seguidas con el
+arreglo, junto a tres vueltas del `recorrido` completo.
+
+**El hábito que deja.** El `waitForLoadState('networkidle')` que se había puesto en
+`recorrido.spec.ts` quitaba la carrera **de la prueba** y dejaba intacta la del producto; su
+propio comentario lo decía por escrito. Una espera añadida a una prueba para que deje de fallar
+es una hipótesis sin verificar, y sobrevive hasta que alguien la lee en voz alta.

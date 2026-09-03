@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { PageContainer } from '../../../layout/PageContainer';
 import { describe, type Failure } from '../../../shared/errors/messages';
 import { useDelayedFlag } from '../../../shared/hooks/useDelayedFlag';
@@ -38,14 +38,53 @@ export function ProductsPage() {
   const result = state.status === 'ready' ? state.data : null;
   const showLoading = useDelayedFlag(state.status === 'loading');
 
+  // **La generación de la ficha.** Cada carga se numera al empezar, y solo la
+  // más reciente puede escribir `editing`.
+  //
+  // Sin esto la ficha se reabre sola. Asociar una imagen la recarga con el
+  // cajón abierto (`onSaved('')`, abajo), y esa recarga es un `GET` que sigue
+  // en vuelo mientras el usuario pulsa «Guardar cambios». El guardado cierra
+  // con `setEditing(null)`; si el `GET` de la imagen resuelve después, escribe
+  // `setEditing(product)` encima y el cajón vuelve. El guardado sí ocurrió y
+  // el aviso salió, así que no parece un fallo: parece que el cajón no se
+  // cierra. Era el pendiente 12 y falló dos veces en la puerta canónica.
+  //
+  // No vale comprobar `editing !== null` dentro de la promesa: esa closure ve
+  // el `editing` del render en que se creó, que es justamente el viejo. Lo
+  // que hay que comparar es un número que sobreviva a los renders, y por eso
+  // es un `ref` y no un estado.
+  const generaciónFicha = useRef(0);
+
   async function abrirFicha(id: string) {
+    const generación = ++generaciónFicha.current;
+
     // La ficha completa no está en el listado: se pide al abrir. El listado
     // lleva lo que se ve en una fila, y nada más.
     try {
-      setEditing(await productsService.get(id));
+      const producto = await productsService.get(id);
+
+      if (generaciónFicha.current !== generación) {
+        return;
+      }
+
+      setEditing(producto);
     } catch (error) {
+      // También el fallo se descarta si la carga ya no es la vigente: un aviso
+      // de «no se pudo abrir el producto» sobre una ficha que el usuario ya
+      // cerró no dice nada de lo que tiene delante.
+      if (generaciónFicha.current !== generación) {
+        return;
+      }
+
       setFailure(describe(error, 'abrir el producto'));
     }
+  }
+
+  /** Cierra la ficha para siempre: invalida lo que esté en vuelo y luego cierra. */
+  function cerrarFicha() {
+    generaciónFicha.current += 1;
+    setCreating(false);
+    setEditing(null);
   }
 
   async function deactivate() {
@@ -190,10 +229,7 @@ export function ProductsPage() {
           open
           key={editing?.id ?? 'nuevo'}
           product={editing}
-          onClose={() => {
-            setCreating(false);
-            setEditing(null);
-          }}
+          onClose={cerrarFicha}
           onSaved={(message) => {
             if (message === '') {
               // Cambió una imagen: la ficha se recarga y el panel sigue abierto.
@@ -203,8 +239,7 @@ export function ProductsPage() {
               return;
             }
 
-            setCreating(false);
-            setEditing(null);
+            cerrarFicha();
             show(message);
             void reload();
           }}

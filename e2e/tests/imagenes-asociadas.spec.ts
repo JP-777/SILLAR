@@ -133,3 +133,119 @@ test('Quitar la asociación de una imagen no borra el archivo, y otro producto l
   const archivoServido = await api.get(otro.images[0].url);
   expect(archivoServido.status(), 'el archivo ya no se sirve').toBe(200);
 });
+
+/**
+ * El pendiente 12, convertido en prueba.
+ *
+ * Asociar una imagen recarga la ficha con el cajón abierto, y esa recarga es
+ * un `GET` que puede seguir en vuelo cuando el usuario pulsa «Guardar
+ * cambios». El guardado cierra el cajón; si el `GET` viejo resuelve después,
+ * escribía `setEditing(product)` encima y **el cajón volvía**. Con el aviso de
+ * éxito ya en pantalla, así que no parecía un fallo del guardado: parecía que
+ * el cajón no se cierra.
+ *
+ * Aquí no se espera a que la carrera ocurra: **se provoca.** La recarga se
+ * retiene con `page.route()` hasta después de que el guardado haya cerrado, y
+ * entonces se suelta. Es el único orden que importa y el que en la puerta
+ * canónica salía una de cada dos o tres vueltas, nunca a voluntad.
+ */
+test('Una recarga de la ficha que llega tarde no reabre el cajón que el guardado cerró', async ({
+  page,
+}) => {
+  await loginAsE2eAdmin(page);
+  const api = page.request;
+  const sello = Date.now();
+
+  const { csrfToken } = (await (await api.get('/api/admin/auth/csrf')).json()) as {
+    csrfToken: string;
+  };
+  const cabeceras = { 'X-CSRF-Token': csrfToken };
+
+  const nombreArchivo = `tardia-${sello}.png`;
+  await subir(api, cabeceras, nombreArchivo);
+
+  const nombre = `Cuaderno recarga tardía ${sello}`;
+  const creado = await api.post('/api/admin/catalog/products', {
+    headers: cabeceras,
+    data: {
+      name: nombre,
+      slug: `cuaderno-recarga-tardia-${sello}`,
+      shortDescription: null,
+      description: null,
+      primaryCategoryId: null,
+      categoryIds: [],
+      brandId: null,
+      listPrice: 5,
+      saleUnit: null,
+      variantLabel: null,
+      code: null,
+      barcode: null,
+    },
+  });
+  expect(creado.ok(), `crear «${nombre}»: ${creado.status()}`).toBe(true);
+  const id = ((await creado.json()) as { id: string }).id;
+
+  await page.goto('/admin/catalogo/productos');
+  await page.getByLabel('Buscar').fill(nombre);
+  await page.locator('tbody tr').filter({ hasText: nombre }).getByRole('button', { name: 'Editar' }).click();
+
+  const ficha = page.getByRole('dialog');
+  await expect(ficha).toBeVisible();
+
+  // La retención se arma **después** de abrir: la carga que abre el cajón
+  // tiene que llegar, es la única que sí debe escribir.
+  let soltar: () => void = () => {};
+  const retenida = new Promise<void>((resolver) => {
+    soltar = resolver;
+  });
+  let recargas = 0;
+
+  // El patrón termina en el identificador, así que no atrapa
+  // `.../images`: la asociación de la imagen viaja sin estorbo.
+  await page.route(`**/api/admin/catalog/products/${id}`, async (ruta) => {
+    if (ruta.request().method() !== 'GET') {
+      await ruta.continue();
+      return;
+    }
+
+    recargas += 1;
+    await retenida;
+    await ruta.continue();
+  });
+
+  await ficha.getByRole('button', { name: nombreArchivo }).click();
+
+  // La recarga tiene que estar en vuelo antes de guardar: sin esto la prueba
+  // pasaría por no haber llegado a plantear la carrera.
+  await expect
+    .poll(() => recargas, { message: 'asociar la imagen no recargó la ficha' })
+    .toBe(1);
+
+  await ficha.getByRole('button', { name: 'Guardar cambios' }).click();
+
+  await expect(
+    page.locator('.ui-toast').filter({ hasText: 'Se guardaron los cambios' }),
+  ).toBeVisible();
+  await expect(ficha, 'el guardado no cerró el cajón').toBeHidden();
+
+  // Y ahora llega la recarga vieja.
+  const tardía = page.waitForResponse(
+    (respuesta) =>
+      respuesta.request().method() === 'GET' &&
+      respuesta.url().endsWith(`/api/admin/catalog/products/${id}`),
+  );
+  soltar();
+  await tardía;
+
+  // Dos cuadros para que React haya pintado lo que la respuesta provocara.
+  // No es una espera a ojo: es la barrera de render, y sin ella la aserción
+  // de abajo pasaría por preguntar demasiado pronto.
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolver) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolver()));
+      }),
+  );
+
+  await expect(ficha, 'una recarga anterior reabrió el cajón ya cerrado').toBeHidden();
+});

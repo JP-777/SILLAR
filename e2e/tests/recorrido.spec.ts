@@ -133,14 +133,17 @@ test('El recorrido de la demostración, de entrar al panel a verlo en la tienda'
   // producto tiene una imagen dentro.
   await expect(ficha.locator('img').first()).toBeVisible();
 
-  // **Y se espera a que la recarga termine antes de guardar.** Asociar una
-  // imagen recarga la ficha con el cajón abierto (`ProductsPage.tsx:197`), y
-  // una prueba pulsa «Guardar» decenas de milisegundos después de ver la
-  // miniatura — algo que una persona no hace. En una vuelta de la suite
-  // entera el cajón se quedó abierto aquí, sin ningún aviso, y no se ha
-  // vuelto a reproducir en seis intentos: la espera quita la carrera de la
-  // prueba, **no demuestra que no la haya en el producto**. Anotado como
-  // riesgo abierto en la bitácora.
+  // **Y se espera a que la recarga termine antes de guardar**, que es lo que
+  // hace una persona: mirar la miniatura y luego guardar. Este recorrido
+  // cuenta la demostración, no la carrera.
+  //
+  // La carrera existía —guardar con la recarga de la imagen todavía en vuelo
+  // reabría el cajón— y aquí se manifestó tres veces sin poder provocarla.
+  // **Ya no está**: se cerró en `ProductsPage.tsx` numerando las cargas de la
+  // ficha, y quien la provoca a voluntad es
+  // `imagenes-asociadas.spec.ts`, reteniendo la recarga hasta después del
+  // guardado. Esta espera se queda porque describe al usuario, no porque
+  // tape nada. Bitácora §7, «El cajón que se reabría solo».
   await page.waitForLoadState('networkidle');
   await ficha.getByRole('button', { name: 'Guardar cambios' }).click();
 
