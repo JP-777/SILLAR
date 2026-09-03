@@ -135,3 +135,71 @@ test('Antes de dar de baja un archivo se avisa sin contar cuántos lo usan', asy
   await dialogo.getByRole('button', { name: 'Cancelar' }).click();
   await expect(dialogo).toBeHidden();
 });
+
+/**
+ * **El resumen de auditoría de una subida no lleva el identificador dentro.**
+ *
+ * `MediaService.cs` escribía «Archivo subido para el módulo 'catalog':
+ * 019fff83-….png (image/png)», y ese nombre no es el que la persona subió: es
+ * el identificador generado más la extensión, porque la clave de un medio *es*
+ * el nombre del archivo (ADR-018, `MediaStorage.cs:56`). La columna «Resumen»
+ * de Auditoría acababa enseñando el `uuid` entero a quien no lo había pedido
+ * —la misma fuga que la columna «Entidad», por otra puerta— y ninguna prueba
+ * lo veía, porque la de `transversal.spec.ts` estaba marcada `fail` por lo
+ * otro.
+ *
+ * Las cuatro afirmaciones van juntas a propósito: quitar el identificador del
+ * resumen no puede costar ni la entrada, ni la trazabilidad, ni lo que el
+ * resumen sí tiene que decir.
+ */
+test('El resumen de una subida no contiene el identificador, y la entrada sigue completa', async ({
+  page,
+}) => {
+  await loginAsE2eAdmin(page);
+  const api = page.request;
+
+  const { csrfToken } = (await (await api.get('/api/admin/auth/csrf')).json()) as {
+    csrfToken: string;
+  };
+
+  const subida = await api.post('/api/admin/media', {
+    headers: { 'X-CSRF-Token': csrfToken },
+    multipart: {
+      ownerModuleCode: 'catalog',
+      file: { name: `rastro-${Date.now()}.png`, mimeType: 'image/png', buffer: PNG_1X1 },
+    },
+  });
+  expect(subida.ok(), `subir: ${subida.status()} ${await subida.text()}`).toBe(true);
+  const { mediaAssetId } = (await subida.json()) as { mediaAssetId: string };
+  expect(mediaAssetId, 'la subida no devolvió un uuid').toMatch(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  );
+
+  // Se busca **por su identificador**, no «la última entrada»: la suite corre
+  // en paralelo con lo que dejaron otras pruebas, y quedarse con la primera
+  // fila haría que esto pasara o fallara según quién subiera antes.
+  const auditoria = (await (
+    await api.get(`/api/admin/audit?entityType=media_asset&entityId=${mediaAssetId}`)
+  ).json()) as { items: { entityId: string | null; summary: string | null; moduleCode: string | null }[] };
+
+  // 1 · La entrada sigue registrándose.
+  expect(auditoria.items, 'subir un medio dejó de dejar entrada de auditoría').toHaveLength(1);
+  const entrada = auditoria.items[0];
+
+  // 2 · Y `entityId` sigue siendo el identificador completo, sin acortar.
+  expect(entrada.entityId, 'la auditoría perdió el identificador de la entidad').toBe(mediaAssetId);
+
+  // 3 · El resumen no lo lleva dentro — ni el `uuid` ni el nombre almacenado.
+  expect(
+    entrada.summary ?? '',
+    'el resumen de auditoría vuelve a contener el identificador del archivo',
+  ).not.toContain(mediaAssetId);
+  expect(
+    entrada.summary ?? '',
+    'el resumen de auditoría contiene el nombre almacenado, que es el identificador con extensión',
+  ).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+
+  // 4 · Pero sigue diciendo lo que sí se lee: para qué módulo y de qué tipo.
+  expect(entrada.summary ?? '', 'el resumen dejó de decir para qué módulo era').toContain('catalog');
+  expect(entrada.summary ?? '', 'el resumen dejó de decir de qué tipo era').toContain('image/png');
+});

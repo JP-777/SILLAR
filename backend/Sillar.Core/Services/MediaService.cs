@@ -75,7 +75,19 @@ internal sealed class MediaService(
                 ModuleCode = CoreModule.ModuleCode,
                 EntityType = "media_asset",
                 EntityId = row.MediaAssetId.ToString(),
-                Summary = $"Archivo subido para el módulo '{ownerModuleCode}': {row.StoredName} ({row.MimeType})."
+                // **Sin `StoredName`, y no es una pérdida de información.** Ese
+                // nombre no es el que la persona subió: es el identificador
+                // generado más la extensión (`MediaStorage.cs:56`), porque la
+                // clave de un medio *es* el nombre del archivo (ADR-018). Al
+                // ponerlo aquí, la columna «Resumen» de Auditoría enseñaba el
+                // `uuid` entero a quien no lo había pedido — la misma fuga que
+                // la columna «Entidad», por otra puerta.
+                //
+                // El identificador sigue en la entrada, en `EntityId`, y se
+                // consulta desplegando el detalle de la fila. Lo que se
+                // conserva aquí es lo que se lee: para qué módulo y de qué
+                // tipo.
+                Summary = $"Archivo subido para el módulo '{ownerModuleCode}' ({row.MimeType})."
             },
             cancellationToken);
 
