@@ -791,3 +791,11 @@ la portada vacía, porque `catalogHome` pinta siempre y la tapaba. Con M04 —qu
 siempre— el caso volvía a ser inalcanzable. **No se rebajó la afirmación: se apagan dos
 módulos.** Cambiarla por «se ve la sección de M04» habría dejado sin cubrir el agujero que ese
 archivo existe para vigilar, y la prueba habría seguido verde diciendo cada vez menos.
+
+**Y la primera puerta se puso roja por el arnés, no por la reconciliación.** Con tres módulos
+activos en vez de dos, el reinicio que provoca activar el último ya no cabía en los cuatro
+segundos de reintento del login, y la primera prueba de la suite se comía el 500 del proxy de
+Vite. `global-setup` declaraba «entorno listo» inmediatamente después de activar el módulo, sin
+esperar a que el host volviera. **Se arregló esperando de verdad —`waitApiReady()` tras la última
+activación— y no ampliando los reintentos de `auth.ts`**, que habría dejado a cada prueba
+absorbiendo el arranque del arnés y la carrera intacta para el día que M03 sea el cuarto módulo.
