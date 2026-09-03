@@ -64,3 +64,83 @@ export async function waitDbHealthy(timeoutMs = 60_000): Promise<void> {
 
   throw new Error('La base de datos e2e no llegó a "healthy" a tiempo.');
 }
+
+/**
+ * **Qué ejecución del servicio está corriendo ahora mismo**, como una cadena
+ * comparable: `<container-id>:<started-at>`.
+ *
+ * Las dos mitades hacen falta. El identificador cambia cuando Compose recrea
+ * el contenedor; la marca de arranque cambia cuando **el mismo** contenedor se
+ * reinicia, que es lo que hace Docker cuando el host se detiene solo. Con una
+ * sola de las dos, la mitad de los reinicios pasaría desapercibida.
+ *
+ * El identificador se pide a Compose por el **nombre del servicio**, nunca por
+ * el del contenedor: ese nombre lo compone Compose con el proyecto, y
+ * escribirlo a mano aquí lo rompería el día que cambie `PROJECT_NAME`.
+ *
+ * Devuelve cadena vacía si en este instante no hay nada que mirar —el
+ * contenedor entre dos vidas—, que durante un reinicio es un estado normal y
+ * no un error.
+ */
+export async function serviceRuntimeIdentity(service: string): Promise<string> {
+  const containerId = await runCapture('docker', [...BASE_ARGS, 'ps', '-q', service], { cwd: ROOT })
+    .then((salida) => salida.trim())
+    .catch(() => '');
+
+  if (!containerId) {
+    return '';
+  }
+
+  const startedAt = await runCapture(
+    'docker',
+    ['inspect', '--format', '{{.State.StartedAt}}', containerId],
+    { cwd: ROOT },
+  )
+    .then((salida) => salida.trim())
+    .catch(() => '');
+
+  return startedAt ? `${containerId}:${startedAt}` : '';
+}
+
+/**
+ * Espera a que el servicio esté corriendo **otra ejecución** distinta de la que
+ * se observó antes.
+ *
+ * **Es una pregunta a Docker, no una estimación.** La alternativa —esperar un
+ * rato, o dar por bueno que la API responde— no distingue el proceso viejo del
+ * nuevo: mientras el host anterior siga aceptando conexiones, cualquier sondeo
+ * contesta que todo va bien y el reinicio ni siquiera ha empezado.
+ *
+ * `previa` tiene que venir con algo. Comparar contra una cadena vacía daría
+ * por bueno el primer estado que apareciera, que es exactamente el error que
+ * esta función existe para no cometer.
+ */
+export async function waitServiceRestarted(
+  service: string,
+  previa: string,
+  timeoutMs = 120_000,
+): Promise<void> {
+  if (!previa) {
+    throw new Error(
+      `No se puede esperar el reinicio de '${service}': no se pudo leer su identidad antes.`,
+    );
+  }
+
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    const actual = await serviceRuntimeIdentity(service);
+
+    // Vacía significa «todavía no hay contenedor que mirar», que es justo lo
+    // que pasa en medio del reinicio. Se sigue esperando.
+    if (actual && actual !== previa) {
+      return;
+    }
+
+    await sleep(1000);
+  }
+
+  throw new Error(
+    `'${service}' no se reinició en ${timeoutMs / 1000} s: sigue en la ejecución ${previa}.`,
+  );
+}

@@ -1,3 +1,4 @@
+import { serviceRuntimeIdentity, waitServiceRestarted } from './docker.js';
 import { API_URL } from './env.js';
 import { sleep } from './shell.js';
 
@@ -142,8 +143,32 @@ export async function createLesserAdmin(session: Session): Promise<void> {
  * (`Modules:RestartAfterActivation=true` en `.env.e2e`), vuelva a estar listo
  * antes de devolver el control. La sesión sobrevive: vive en
  * `core.admin_sessions`, no en memoria del proceso.
+ *
+ * ---
+ *
+ * **Esa promesa era mentira hasta el 3 de septiembre de 2026, y se notó con el
+ * tercer módulo.** Aquí solo se llamaba a `waitApiReady()`, que da por buena la
+ * API en cuanto un `fetch` no lanza — y mientras el proceso viejo siga
+ * aceptando conexiones, eso contesta que sí **antes de que el reinicio
+ * empiece**. Es lo mismo que ya advertía `global-setup.ts` sobre
+ * `/api/setup/status`: relee la base en cada llamada, así que el proceso viejo
+ * puede responder por el nuevo.
+ *
+ * Con dos módulos no se veía: el reinicio cabía en los cuatro segundos que
+ * `fixtures/auth.ts` reintenta. Con tres dejó de caber, y la primera prueba de
+ * la suite empezó a fallar por el arranque del arnés.
+ *
+ * **Ahora se le pregunta a Docker qué ejecución está corriendo**, antes y
+ * después: si la identidad cambió, el reinicio ocurrió de verdad. No es una
+ * espera más larga ni un sondeo más insistente — es la diferencia entre
+ * estimar y saber.
+ *
+ * Y va aquí, no en quien llama: el día que M03 añada otra activación, recibe
+ * la garantía sin tener que acordarse de pedirla.
  */
 export async function activateModule(session: Session, code: string): Promise<void> {
+  const antes = await serviceRuntimeIdentity('api');
+
   const response = await fetch(`${API_URL}/api/admin/modules/${code}/activate`, {
     method: 'POST',
     headers: { Cookie: session.cookie, 'X-CSRF-Token': session.csrfToken },
@@ -153,5 +178,6 @@ export async function activateModule(session: Session, code: string): Promise<vo
     throw new Error(`Activar '${code}' devolvió ${response.status}: ${await response.text()}`);
   }
 
+  await waitServiceRestarted('api', antes);
   await waitApiReady();
 }

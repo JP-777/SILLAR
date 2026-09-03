@@ -799,3 +799,22 @@ Vite. `global-setup` declaraba «entorno listo» inmediatamente después de acti
 esperar a que el host volviera. **Se arregló esperando de verdad —`waitApiReady()` tras la última
 activación— y no ampliando los reintentos de `auth.ts`**, que habría dejado a cada prueba
 absorbiendo el arranque del arnés y la carrera intacta para el día que M03 sea el cuarto módulo.
+
+**Y la primera versión de ese arreglo no servía, lo que enseñó dónde iba de verdad.** Se añadió
+un `waitApiReady()` en `global-setup` sin mirar que `activateModule()` **ya lo llamaba**: la
+segunda puerta falló exactamente igual, misma prueba y misma línea. El defecto no era que
+faltara la espera, era que `waitApiReady()` **no distingue el proceso viejo del nuevo** —da por
+buena la API en cuanto un `fetch` no lanza, y el host anterior sigue aceptando conexiones
+mientras Docker no lo tumba—. Lo mismo que `global-setup` ya advertía sobre `/api/setup/status`,
+tres líneas más arriba de donde se puso el parche.
+
+La espera ahora **le pregunta a Docker qué ejecución está corriendo**, antes y después de
+activar: `<container-id>:<State.StartedAt>` (`docker.ts`). Y vive dentro de `activateModule()`,
+que es quien promete devolver el control con el host nuevo arriba, así que M03 la hereda sin
+tener que acordarse de pedirla.
+
+**Comprobado por separado antes de gastar otra puerta**, y la medición cambió el diseño: el
+identificador del contenedor es **el mismo** antes y después —Docker reinicia el contenedor, no
+lo recrea—, así que una identidad basada solo en él no habría detectado nada. Lo que cambia es
+la marca de arranque, y entre una y otra pasaron **12,3 segundos**: el triple de los cuatro que
+`auth.ts` reintentaba.

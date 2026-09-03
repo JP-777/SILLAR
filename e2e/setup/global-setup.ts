@@ -84,11 +84,5 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   console.log('[e2e] activando M04 clientes y contacto...');
   await activateModule(session, 'crm');
 
-  // **Activar un módulo reinicia el host, así que aquí todavía no está listo.**
-  // Declararlo antes de tiempo hace que la primera prueba pague el arranque, y
-  // esa espera es del arnés: no puede vivir en los fixtures, que se ejecutan
-  // una vez por prueba y sólo verían el síntoma.
-  await waitApiReady();
-
   console.log('[e2e] entorno listo.');
 }
