@@ -996,3 +996,31 @@ la primera, y no arreglar nada cumple la segunda. `medios.spec.ts` afirma que la
 registrando, que `entityId` sigue completo, que el resumen ya no lleva el identificador y que
 sigue diciendo módulo y tipo. `auditoria.spec.ts` cubre el filtro, creando y dando de baja a su
 propio administrador para no depender del orden de las specs.
+
+**Y había una tercera puerta, encontrada auditando antes del gate.** `ContactMessageService`
+escribía «Baja del mensaje de contacto **#42**.». No es un `uuid`: es la clave primaria entera de
+la fila, repetida dentro del texto que se lee.
+
+Que fuera un entero es justo lo que la hacía peligrosa. La regla de producto no habla de `uuid`,
+habla de **identificadores internos**, y un `#42` es tan interno como un `019fff83-…` — solo que
+**invisible para la prueba que vigila**: `transversal.spec.ts` busca la forma de un `uuid`, y un
+número le pasa por delante sin que salte nada.
+
+**Y no se puede arreglar ampliando la regex.** «Cualquier número» daría falsos positivos con
+fechas, cantidades, precios y teléfonos, que son números legítimos y frecuentes en estas
+pantallas. Convertir una heurística en definición de producto acabaría o con una prueba que grita
+por todo, o —peor— con la regla recortada a lo que la regex sabe reconocer. Así que quedan
+repartidas:
+
+- **La regla de producto cubre todos los identificadores internos**, del tipo que sean.
+- **La prueba transversal cubre la familia `uuid`**, que es la que puede reconocer sin
+  ambigüedad, y no pretende reconocer todas las claves primarias posibles.
+- **Cada productor con identificadores numéricos necesita su propia prueba semántica** cuando se
+  detecta. La de éste vive en `crm-contact.spec.ts`, sobre el flujo de baja que ya existía:
+  la entrada se sigue escribiendo, `entityId` sigue siendo el correcto, el resumen ya no lo
+  contiene y sigue diciendo qué pasó.
+
+La fila sigue identificándose por `EntityType` y `EntityId` y se consulta desplegando el detalle,
+igual que en el caso de los medios. **Esto no cierra el pendiente §16**: aquel pide que el resumen
+nombre la fila —«Baja del mensaje de Ana Quispe»—, y esto solo quita un identificador que no
+debería haber estado. Direcciones distintas.
