@@ -1,5 +1,5 @@
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
-import { expect, test } from '../fixtures/base.js';
+import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
 import { themeRecorder } from '../fixtures/themes.js';
 
 /**
@@ -172,3 +172,120 @@ test('Sin contenido publicado, la portada no enseña ningún bloque de M02', asy
     ).toHaveCount(0);
   }
 });
+
+/**
+ * **El catálogo vacío no promete un catálogo.**
+ *
+ * `catalogHome` pintaba siempre «Nuestra tienda — Mira todo lo que tenemos
+ * publicado» y declaraba siempre `'con-contenido'`, sin consultar nada. Con
+ * M01 activo y cero productos públicos eso era falso dos veces: invitaba a una
+ * lista vacía, y de paso impedía que la portada llegara nunca a su estado
+ * vacío, porque el resumen ya tenía un aporte.
+ *
+ * Vive aquí por lo mismo que el resto del archivo: **es el único momento de la
+ * suite en que el catálogo está de verdad vacío**. Afirmarlo después de que
+ * alguien publique un producto no lo comprueba, lo hace imposible.
+ */
+test('Con el catálogo vacío, la portada no invita a verlo', async ({ page }) => {
+  // El ancla positiva primero: cuatro aserciones de ausencia sobre una página
+  // a medio pintar pasan solas.
+  await page.goto('/');
+  await expect(
+    page.getByRole('heading', { level: 1 }),
+    'la portada no llegó a pintar, así que lo de abajo no afirma nada',
+  ).toBeVisible();
+
+  // Y que M01 **esté activo**: una sección ausente porque el módulo está
+  // apagado no dice nada sobre el catálogo vacío. Es lo que convierte las dos
+  // de abajo en una afirmación, y es justo lo que separa este caso del de
+  // `zz-desmontaje.spec.ts`.
+  const capacidades = (await (await page.request.get('/api/capabilities')).json()) as {
+    modules: { code: string }[];
+  };
+  expect(
+    capacidades.modules.map((modulo) => modulo.code),
+    'M01 no está activo: la sección faltaría por eso y no por estar vacío el catálogo',
+  ).toContain('catalog');
+
+  await expect(
+    page.getByText('Nuestra tienda', { exact: true }),
+    'la portada anuncia la tienda sin un solo producto publicado',
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('link', { name: 'Ver el catálogo', exact: true }),
+    'la portada enlaza a un catálogo vacío',
+  ).toHaveCount(0);
+
+  // **Y aun así la portada no se declara vacía**, porque M04 sí aporta. Es la
+  // otra mitad: que M01 deje de aportar no puede arrastrar a la portada al
+  // estado vacío mientras otro módulo tenga algo que enseñar.
+  await expect(
+    page.getByText('Cuenta de cliente', { exact: true }),
+    'M04 no está aportando: el caso de abajo no probaría nada',
+  ).toBeVisible();
+  await expect(
+    page.getByText('Todavía no hay contenido publicado.'),
+    'la portada se declara vacía mientras M04 pinta su sección',
+  ).toHaveCount(0);
+});
+
+/**
+ * Y el caso que solo existe desde que M01 puede decir «no tengo nada»: la
+ * portada llega a su estado vacío **con el catálogo instalado y activo**.
+ *
+ * Antes era inalcanzable sin desactivar M01, que es lo que hace el canario de
+ * `contenido.spec.ts`. La diferencia importa: con el módulo apagado la sección
+ * ni se monta, así que aquello no comprueba lo que `catalogHome` declara.
+ * Aquí sí, y es la única prueba que cazaría un `catalogHome` que dijera
+ * `'con-contenido'` sin pintar nada.
+ *
+ * Se apaga M04 y no M02: los cuatro bloques de M02 ya declaran vacío solos
+ * mientras no haya contenido publicado, y a esta altura de la suite no lo hay.
+ * El único que aporta sin depender de datos es M04.
+ */
+test('Con el catálogo vacío y nadie más aportando, la portada lo dice', async ({ page }) => {
+  test.setTimeout(180_000);
+
+  await loginAsE2eAdmin(page);
+  await cambiarModulo(page, 'crm', 'Desactivar');
+
+  try {
+    await page.goto('/');
+
+    await expect(
+      page.getByText('Todavía no hay contenido publicado.'),
+      'la portada se quedó muda: ni contenido ni aviso',
+    ).toBeVisible();
+
+    // **Con M01 activo mientras lo dice.** Sin esto la prueba pasaría igual
+    // con el catálogo desactivado y no probaría nada nuevo.
+    const capacidades = (await (await page.request.get('/api/capabilities')).json()) as {
+      modules: { code: string }[];
+    };
+    expect(
+      capacidades.modules.map((modulo) => modulo.code),
+      'M01 no está activo: el aviso saldría por eso y no por el catálogo vacío',
+    ).toContain('catalog');
+  } finally {
+    await cambiarModulo(page, 'crm', 'Activar');
+  }
+
+  await expect(page.locator('#modulo-crm')).toContainText('Activo');
+});
+
+async function cambiarModulo(
+  page: import('@playwright/test').Page,
+  codigo: string,
+  accion: 'Activar' | 'Desactivar',
+): Promise<void> {
+  await page.goto('/admin/modulos');
+
+  await duringExpectedOutage(page, async () => {
+    await page.locator(`#modulo-${codigo}`).getByRole('switch').click();
+    await page.getByRole('alertdialog').getByRole('button', { name: new RegExp(`^${accion}`) }).click();
+
+    const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
+    await expect(overlay).toBeVisible();
+    await expect(overlay).toBeHidden({ timeout: 90_000 });
+  });
+}

@@ -1,8 +1,11 @@
+import { useCallback } from 'react';
 import { Link, Route } from 'react-router-dom';
 import type { ModuleNavigation } from '../../layout/navigation';
-import { useHomeContribution } from '../../platform/homeContributions';
+import { useHomeContribution, type EstadoAporte } from '../../platform/homeContributions';
 import type { HomeSection } from '../../platform/homeSections';
+import { useResource, type ResourceState } from '../../shared/hooks/useResource';
 import { EmptyState } from '../../shared/ui';
+import { publicCatalog, type PublicCard, type PublicPage } from './services/publicCatalog';
 import { RequireRole } from '../../session';
 import { BrandsPage } from './pages/BrandsPage';
 import { CategoriesPage } from './pages/CategoriesPage';
@@ -48,15 +51,62 @@ export const catalogHome: HomeSection = {
   Component: CatalogHomeSection,
 };
 
-/** La invitación a ver el catálogo. */
-function CatalogHomeSection() {
-  // **Siempre pinta, así que siempre aporta contenido.** Esta sección no
-  // consulta nada: es una invitación fija, no un listado. Se declara igual
-  // porque el armazón no distingue secciones «que siempre pintan» de las que
-  // dependen de datos — y el día que ésta consulte productos, aquí es donde
-  // cambia, sin tocar la portada.
-  useHomeContribution('con-contenido');
+/**
+ * En qué queda la invitación, según lo que haya publicado de verdad.
+ *
+ * **Un fallo cuenta como contenido**, igual que en M02 (`cmsHome.tsx:28-32`) y
+ * por la misma regla: lo que se declara tiene que coincidir con lo que se
+ * pinta. Si la consulta falla no sabemos si hay catálogo — probablemente sí—,
+ * y la sección se sigue pintando; decir «todavía no hay contenido publicado»
+ * porque no pudimos *preguntar* sería una segunda explicación del mismo hueco,
+ * y la falsa debajo.
+ */
+function aporteDe(state: ResourceState<PublicPage<PublicCard>>): EstadoAporte {
+  if (state.status === 'loading') {
+    return 'cargando';
+  }
 
+  if (state.status === 'ready') {
+    return state.data.totalItems === 0 ? 'vacio' : 'con-contenido';
+  }
+
+  return 'con-contenido';
+}
+
+/**
+ * La invitación a ver el catálogo, **solo si hay catálogo que ver**.
+ *
+ * Antes pintaba siempre y declaraba siempre `'con-contenido'`. Con M01 activo
+ * y cero productos públicos, la portada afirmaba «Mira todo lo que tenemos
+ * publicado» y enlazaba a una lista vacía — y de paso impedía que la portada
+ * llegara nunca a su estado vacío, porque el resumen ya tenía un aporte.
+ *
+ * **Se pregunta por uno, no por todos**: `pageSize: 1` basta para saber si
+ * existe alguno, y `totalItems` lo dice sin traerse el catálogo entero a la
+ * portada. Es el mismo endpoint público que usa `/catalogo`
+ * (`publicCatalog.products`), no uno nuevo y no el de administración.
+ */
+function CatalogHomeSection() {
+  const load = useCallback(() => publicCatalog.products({ page: 1, pageSize: 1 }), []);
+  const { state } = useResource(load, 'mirar si hay catálogo publicado');
+
+  // Antes de cualquier salida temprana: un hook no puede quedar detrás de un
+  // `return`, y el estado que hay que declarar es justo el que las provoca.
+  useHomeContribution(aporteDe(state));
+
+  // **Mientras se espera no se pinta nada, y no hace falta más.** El armazón
+  // no afirma que la portada esté vacía mientras alguien siga cargando
+  // (`homeContributions.tsx:139-147`), así que el aviso no puede aparecer y
+  // desaparecer. Un indicador aquí sería ruido: la sección entera son tres
+  // líneas.
+  if (state.status !== 'ready') {
+    return state.status === 'loading' ? null : <Invitacion />;
+  }
+
+  return state.data.totalItems === 0 ? null : <Invitacion />;
+}
+
+function Invitacion() {
   return (
     <EmptyState
       title="Nuestra tienda"

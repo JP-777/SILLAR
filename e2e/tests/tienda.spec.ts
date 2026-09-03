@@ -368,8 +368,21 @@ test('Con M01 desactivado, las rutas públicas desaparecen y el inicio no deja h
 
   await loginAsE2eAdmin(page);
 
+  // **Con productos publicados, la invitación está y es verdad.** Es la mitad
+  // positiva del criterio: `catalogHome` ya no pinta siempre, pregunta si hay
+  // algo publicado (`catalog/routes.tsx`), así que verla aquí afirma que la
+  // consulta llegó y encontró catálogo. Este archivo publica productos, por eso
+  // el caso vive aquí y el contrario en `aa-vacios.spec.ts`.
   await page.goto('/');
   await expect(page.getByRole('link', { name: 'Ver el catálogo' })).toBeVisible();
+  await expect(page.getByText('Nuestra tienda', { exact: true })).toBeVisible();
+
+  // Y no las dos cosas a la vez: una portada que invita al catálogo **y**
+  // avisa de que no hay nada publicado se contradice.
+  await expect(
+    page.getByText('Todavía no hay contenido publicado.'),
+    'la portada avisa de que está vacía mientras invita al catálogo',
+  ).toHaveCount(0);
 
   await page.goto('/admin/modulos');
   await duringExpectedOutage(page, async () => {

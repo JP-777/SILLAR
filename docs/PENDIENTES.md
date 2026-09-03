@@ -15,30 +15,15 @@ Lo que está decidido pero no hecho, y lo que está aplazado a propósito.
 
 ---
 
-## 1 · `catalogHome` promete un catálogo que puede estar vacío
+## 1 · ~~`catalogHome` promete un catálogo que puede estar vacío~~ — **resuelto el 3 de septiembre de 2026**
 
-**Qué pasa.** Con M01 activo y **cero productos públicos**, la portada dice «Nuestra tienda — Mira
-todo lo que tenemos publicado» y enlaza al catálogo. El visitante llega a una lista vacía.
-`CatalogHomeSection` no consulta datos: devuelve un `EmptyState` fijo.
+Se borra el contenido y se conserva el número, por el mismo motivo que el 12: se cita desde la
+bitácora y renumerar rompería las referencias. La resolución está en `BITACORA.md` §7.
 
-**Dónde.** `frontend/src/modules/catalog/routes.tsx:51-67`, y su declaración de estado en el
-registro de la portada (`:58`, hoy `'con-contenido'` fijo).
-
-**Por qué está aplazado.** Es cambio de comportamiento de un módulo cerrado, y se descubrió
-mientras se cerraba M02. Meterlo ahí habría ensanchado un diff que tenía que quedarse estrecho.
-
-**Disparador.** Unidad propia, en cuanto M02 quede cerrado formalmente.
-
-**Nota que conviene no perder.** Que `catalogHome` pinte siempre es **lo que tapaba** el defecto
-de la portada: mientras hubo un solo módulo publicable y ese módulo pintaba pasara lo que pasara,
-el caso «activo y sin publicar» era inalcanzable. M02 no lo creó, lo hizo alcanzable.
-
-**Y `crmHome` no entra en este pendiente, aunque se le parezca.** También declara
-`'con-contenido'` fijo (`frontend/src/modules/crm/routes.tsx`), pero lo que promete —«entra o crea
-una cuenta»— **es cierto siempre**: no hay un listado detrás que pueda venir vacío. La diferencia
-es esa y no el patrón, así que arreglarlo «por analogía» el día que se toque el de M01 sería
-convertir en condicional algo que no depende de ningún dato. Lo que sí hizo M04 fue volver a
-tapar el caso de la portada muda, y por eso `contenido.spec.ts` apaga hoy dos módulos y no uno.
+**Lo único que no era de este pendiente y sigue vigente:** `crmHome` declara `'con-contenido'`
+fijo y **está bien que lo haga**. Lo que promete —«entra o crea una cuenta»— es cierto siempre;
+no hay un listado detrás que pueda venir vacío. Arreglarlo «por analogía» sería convertir en
+condicional algo que no depende de ningún dato.
 
 ---
 
@@ -429,6 +414,13 @@ dónde está la tienda. Lo segundo va a pasar antes.
 ## Resueltos recientemente
 
 *(se borran de arriba y se anotan aquí solo hasta que entren en la bitácora del módulo)*
+
+- **La portada ya no promete un catálogo vacío.** (3 sep 2026) Era el 1, y su disparador —el
+  cierre formal de M02— se cumplió. `catalogHome` pregunta al mismo endpoint público que usa
+  `/catalogo` si hay al menos un producto publicado, y declara `'cargando'`, `'vacio'` o
+  `'con-contenido'` según la respuesta (`catalog/routes.tsx`). Los casos vacíos viven en
+  `e2e/tests/aa-vacios.spec.ts`, que es el único momento de la suite en que el catálogo está
+  de verdad vacío. Registrado entero en `BITACORA.md` §7.
 
 - **El cajón del producto no se cerraba tras asociar una imagen.** (3 sep 2026) Era el 12, y su
   disparador —la tercera aparición— se cumplió en la puerta de la reconciliación. Ya no es un

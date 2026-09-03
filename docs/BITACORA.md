@@ -866,3 +866,63 @@ arreglo, junto a tres vueltas del `recorrido` completo.
 `recorrido.spec.ts` quitaba la carrera **de la prueba** y dejaba intacta la del producto; su
 propio comentario lo decía por escrito. Una espera añadida a una prueba para que deje de fallar
 es una hipótesis sin verificar, y sobrevive hasta que alguien la lee en voz alta.
+
+---
+
+### La portada que prometía un catálogo vacío (pendiente 1, cerrado el 3 sep 2026)
+
+**El síntoma.** Con M01 activo y cero productos públicos, la portada decía «Nuestra tienda —
+Mira todo lo que tenemos publicado» y enlazaba al catálogo. El visitante llegaba a una lista
+vacía. Y había un segundo daño, menos visible: esa sección declaraba `'con-contenido'` pasara lo
+que pasara, así que **la portada no podía llegar nunca a su estado vacío** mientras M01
+estuviera instalado.
+
+**La causa.** `CatalogHomeSection` no consultaba nada. Era un `EmptyState` fijo con un
+`useHomeContribution('con-contenido')` fijo debajo. Una sección que no pregunta no puede
+responder.
+
+**Por qué M02 lo volvió observable pero no lo creó.** Mientras hubo **un solo módulo publicable**
+y ese módulo pintaba pasara lo que pasara, el caso «activo y sin publicar» era inalcanzable: no
+existía una portada en la que M01 estuviera y no aportara. M02 trajo cuatro bloques que sí
+dependen de datos, y con ellos la pregunta «¿y si nadie aporta?» — que es la que destapó que uno
+de los aportes era una afirmación sin comprobar. El defecto llevaba ahí desde que se escribió la
+sección; lo que faltaba era un segundo módulo que hiciera visible la diferencia entre *poder*
+aportar y *aportar*.
+
+**La solución.** La sección pregunta al **mismo endpoint público que usa `/catalogo`**
+(`publicCatalog.products`), con `pageSize: 1`: `totalItems` dice si existe alguno sin traerse el
+catálogo a la portada. Ni endpoint nuevo, ni servicio administrativo en la web pública. Y declara
+lo que pinta:
+
+| Estado | Declara | Pinta |
+|---|---|---|
+| Cargando | `'cargando'` | nada |
+| Listo, sin productos | `'vacio'` | nada |
+| Listo, con productos | `'con-contenido'` | la invitación |
+| Error | `'con-contenido'` | la invitación |
+
+**El estado de carga no necesitó ampliar ningún contrato.** `EstadoAporte` ya tenía `'cargando'`
+y `useHomeState()` no afirma que la portada esté vacía mientras alguien siga esperando: el aviso
+no puede parpadear. Es exactamente el agujero para el que se diseñó ese tercer valor, usado ahora
+por segunda vez.
+
+**El error cuenta como contenido**, por la regla que M02 ya había fijado: lo que se declara tiene
+que coincidir con lo que se pinta. Si la consulta falla no sabemos si hay catálogo —lo normal es
+que sí—, la sección se sigue pintando, y decir «todavía no hay contenido publicado» porque no
+pudimos *preguntar* sería una segunda explicación del mismo hueco, con la falsa debajo.
+
+**El armazón no se enteró.** `PublicSite` sigue componiendo contribuciones sin saber que existe
+un módulo llamado catálogo. Quien sabe si tiene algo que aportar es M01, que es donde estaba el
+dato.
+
+**Las pruebas.** Los dos casos vacíos viven en `e2e/tests/aa-vacios.spec.ts`, que es el único
+momento de la suite en que el catálogo está de verdad vacío —afirmarlo después de que alguien
+publique un producto no lo comprueba, lo hace imposible—: que la portada no invita a un catálogo
+que no existe, y que **con M01 activo** llega a su estado vacío cuando nadie más aporta. Esa
+segunda es la única que cazaría un `catalogHome` que declarase contenido sin pintarlo: el canario
+de `contenido.spec.ts` no puede, porque apaga el módulo y entonces la sección ni se monta. El
+caso positivo está en `tienda.spec.ts`, que publica productos.
+
+**Lo que no se tocó, y por qué.** `crmHome` también declara `'con-contenido'` fijo, y está bien:
+lo que promete —«entra o crea una cuenta»— es cierto siempre, sin listado detrás que pueda venir
+vacío. La diferencia es esa, no el patrón.
