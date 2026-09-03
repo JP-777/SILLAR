@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
+import { useHomeContribution, type EstadoAporte } from '../../platform/homeContributions';
 import type { HomeSection } from '../../platform/homeSections';
 import { useDelayedFlag } from '../../shared/hooks/useDelayedFlag';
 import { Alert, Badge, Button, Spinner } from '../../shared/ui';
@@ -14,13 +15,33 @@ import {
   type PublicFeaturedProject,
 } from './services/featuredProjects';
 import { publicPromotionsService, type PublicPromotion } from './services/promotions';
-import { useResource } from '../../shared/hooks/useResource';
+import { useResource, type ResourceState } from '../../shared/hooks/useResource';
 
 /** La única contribución de M02 a la portada; el registro central decide su posición. */
 export const cmsHome: HomeSection = {
   moduleCode: 'cms',
   Component: CmsHomeSection,
 };
+
+/**
+ * En qué queda un bloque, para que la portada sepa si pintó algo.
+ *
+ * **Un fallo cuenta como contenido**, y no es un descuido: `FailedBlock` pinta
+ * una sección con su título y su aviso, así que la portada **no está vacía**.
+ * Enseñar además «todavía no hay contenido publicado» encima de un error sería
+ * dar dos explicaciones distintas del mismo hueco, y la falsa debajo.
+ */
+function aporteDe<T>(state: ResourceState<readonly T[]>): EstadoAporte {
+  if (state.status === 'loading') {
+    return 'cargando';
+  }
+
+  if (state.status === 'ready') {
+    return state.data.length === 0 ? 'vacio' : 'con-contenido';
+  }
+
+  return 'con-contenido';
+}
 
 /** Compone los cuatro bloques públicos de CMS sin convertirlos en cuatro HomeSection. */
 function CmsHomeSection() {
@@ -37,6 +58,11 @@ function CmsHomeSection() {
 function BannersBlock() {
   const { state, reload } = useResource(publicBannersService.list, 'cargar los banners publicados');
   const showLoading = useDelayedFlag(state.status === 'loading');
+
+  // Se declara **antes de cualquier salida temprana**: un hook no puede
+  // quedar detrás de un `return`, y además el estado que hay que declarar es
+  // justamente el que provoca esas salidas.
+  useHomeContribution(aporteDe(state));
 
   if (state.status === 'loading') {
     return showLoading
@@ -101,6 +127,11 @@ function PromotionsBlock() {
   );
   const showLoading = useDelayedFlag(state.status === 'loading');
 
+  // Se declara **antes de cualquier salida temprana**: un hook no puede
+  // quedar detrás de un `return`, y además el estado que hay que declarar es
+  // justamente el que provoca esas salidas.
+  useHomeContribution(aporteDe(state));
+
   if (state.status === 'loading') {
     return showLoading
       ? <LoadingBlock id="cms-promotions" title="Promociones" label="Cargando promociones" />
@@ -162,6 +193,11 @@ function FeaturedProductsBlock() {
     'cargar los productos destacados',
   );
   const showLoading = useDelayedFlag(state.status === 'loading');
+
+  // Se declara **antes de cualquier salida temprana**: un hook no puede
+  // quedar detrás de un `return`, y además el estado que hay que declarar es
+  // justamente el que provoca esas salidas.
+  useHomeContribution(aporteDe(state));
 
   if (state.status === 'loading') {
     return showLoading
@@ -230,6 +266,11 @@ function FeaturedProjectsBlock() {
     'cargar los trabajos destacados',
   );
   const showLoading = useDelayedFlag(state.status === 'loading');
+
+  // Se declara **antes de cualquier salida temprana**: un hook no puede
+  // quedar detrás de un `return`, y además el estado que hay que declarar es
+  // justamente el que provoca esas salidas.
+  useHomeContribution(aporteDe(state));
 
   if (state.status === 'loading') {
     return showLoading

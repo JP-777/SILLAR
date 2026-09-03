@@ -456,149 +456,18 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
 
 ## 5. Pendientes
 
-| Pendiente | Estado |
-|---|---|
-| ~~**`CategoryService.cs:147` devuelve 500**~~ | **Cerrado en 04B.** Materializar antes de proyectar, con su prueba. Y de ahí salió `api-traduccion.spec.ts`, que llama a cada endpoint una vez contra una base real: era el punto ciego de «las pruebas de lógica no tocan la base» |
-| ~~Verificación visual del panel completo~~ | **Cerrado el 18 ago.** El arnés absorbió las nueve secciones salvo tres juicios humanos de unos cinco minutos, y dos de ellos se hacen sobre la galería de capturas sin levantar nada. Ver `VERIFICACION-VISUAL-CORE.md` |
-| ~~Resincronizar el sistema de diseño~~ | **Cerrado el 18 ago.** El bundle lleva `--link` y `--on-danger`, y son **18 componentes**: los 17 de `src/shared/ui/` —`ThemeToggle` entró en esta pasada— más `ModuleCard`. Design ya ve los tokens vigentes |
-| ~~Sin decidir: qué precio enseña la tarjeta con variantes de precios distintos~~ | **Decidido y hecho en 04D (20 ago).** Enseña el **mínimo efectivo** —contando lo que se hereda, no solo los `price_override`— y lo dice con «Desde S/ 4,90». **Y si alguna presentación es «a consultar», toda la tarjeta lo es**, porque «desde» promete una cota y una presentación sin precio puede costar cualquier cosa. `ItemPricing.ForCard`, con las dos proyecciones —`ProductService.cs:94` y `CategoryService.cs:124`— probadas por separado |
-| Arranque con base vacía | Revienta con `42P01` en crudo en vez de decir «faltan las migraciones». Es la primera pantalla que vería quien instale en una clienta |
-| **Probar el aborto de la ADR-019 en vivo** | La función pura está probada; que el host **se niegue a arrancar** no. Es el efecto observable, y es lo único que la decisión promete |
-| **La búsqueda no encuentra por prefijo** | `plainto_tsquery` exige la palabra entera: medido contra la base de demostración, `plum` → 0 y `plumon` → 1; `lapi` → 0 y `lapiz` → 1; `cuad` → 0. En un buscador donde se teclea a mano —y sobre todo en un selector que filtra mientras escribes— **está vacío casi todo el rato**, hasta que se termina cada palabra. El diagnóstico aparente era «une los términos con AND», que también es cierto (`cuaderno plumon` → 0) pero es lo que la gente espera de un buscador. Es conducta heredada de toda la búsqueda de M01 —`ProductService`, `CategoryService` y `CatalogService` usan la misma— así que cambiarla es su propio trabajo, no un arreglo suelto |
-| ~~El nombre del negocio se pedía dos veces y el público se quedaba atrás~~ | **Cerrado el 21 ago.** La instalación escribe también el ajuste `business_name` (`SetupService.cs`), con el nombre que ya obliga a teclear. Antes iba solo a la fila de instalación y el ajuste —el que lee la tienda— se quedaba en `PENDIENTE_DEFINIR`: **un sitio recién instalado salía sin nombre.** La base de la demostración, ya instalada, **no se arregla sola**: se corrigió a mano con el nombre de su propia instalación |
-| **El paquete que recibe un cliente lleva código de módulos que no ha licenciado** | Aunque no se rendericen: el armazón importa los componentes y la navegación de todos los módulos, así que entran al `bundle`. **Ya pasaba con el menú** (`layout/navigation.ts:46`), y la costura de la portada (`platform/homeSections.ts`) no lo empeora — es el mismo mecanismo. Es asunto de **licenciamiento, no de arquitectura**: el día que se decida, se decide para el menú y para la portada a la vez. Lo que hay que evitar entretanto es resolverlo a medias en uno de los dos |
-| **`MultipleCollectionIncludeWarning` en el selector de productos** | `CatalogService.SeleccionAsync` proyecta dos colecciones —los precios de las presentaciones y las categorías— en un mismo `Select`, y EF avisa de que puede multiplicar filas. **Medido: es un factor constante y acotado, no crece con el catálogo.** El peor producto realista de una librería —6 presentaciones × 3 categorías— pide 18 filas en vez de 9; con los datos de hoy el máximo es 3. Y la consulta lleva `Take(50)`, así que el techo es 50 × (presentaciones × categorías) pase lo que pase. **Molestia declarada, no defecto.** Lo que no se ha medido es si EF parte la consulta o hace el producto cartesiano de verdad: eso pide leer el SQL generado, y no cambia la cota |
-| Repaso visual de Swagger | Junto con la verificación del panel: las dos piden un navegador. **Los cuerpos de ejemplo ya no son parte de esto**: los dieciséis están puestos y probados (`zz-instalacion.spec.ts:44`) |
-| ~~Un visitante anónimo provoca peticiones a `/api/admin/`~~ | **Cerrado el 21 ago.** «Quién soy» responde ahora 200 con `null` escrito —`AllowAnonymous`, porque preguntarlo sin sesión no es un error— y el token CSRF solo se pide cuando hay sesión. **No se cambió cuándo se pregunta sino qué se responde**: hacerlo solo en el panel obligaría a volver a preguntarlo al navegar de la tienda al panel sin recargar, y ahí sí se pierde la sesión. Y el criterio de cierre fue **quitar las tres válvulas** que lo descontaban, no que el número bajara | Visitar la tienda **sin sesión** deja cuatro 401 en consola: la aplicación pide `/admin/auth/me` y `/admin/auth/csrf` al arrancar en **cualquier** ruta (`SessionProvider.tsx:45` y `:53`). No es un fallo de seguridad —son 401 manejados a propósito con `allowUnauthorized`— pero es trabajo inútil en cada visita pública y ensucia la consola de quien mire. Nadie lo había visto porque **ninguna prueba visitaba la tienda sin sesión**. Sin tocar: es el arranque de CORE, y no pedir sesión en rutas públicas podría perderla al navegar de la tienda al panel sin recargar. **Lo hereda cualquier módulo que añada pantallas públicas** —M02 el primero—, así que conviene decidirlo antes de que se lo saque su puerta de cero errores como si fuera suyo |
-| Verificación visual del panel | Sigue pendiente: es lo único que separa a CORE de estar verificado de punta a punta |
+**Se mudaron a `docs/PENDIENTES.md`, y con ellos el criterio de que cada uno lleve su disparador.**
 
-| Tu `.env` local está desfasado | Le faltan `API_PORT` y `MEDIA_PATH`, que sí están en `.env.example`. Sin ellos, `docker compose --profile full up -d` no levanta el API |
-| Borrar `docs/BITACORA-SESION-2026-08-14.md` | Cumplió su función —traspasar contexto entre sesiones— y lo durable ya está en la ADR-012 y en las entregas. Dos bitácoras confunden cuál es la bitácora |
-| Tipografía y logo de SILLAR | La paleta está validada; lo demás no |
-| Dominio del producto | Sin registrar |
-| Nombres comerciales de las ediciones | Pendientes. No bloquean: son etiquetas de venta, no identificadores de código |
-| Datos administrativos de Bsale | Certificado, costo, volumen, series y correlativos. Preguntas 7 a 10 de la guía de observación |
+Estaban aquí, y aquí no se leían: cuatro pendientes vivos enterrados en la línea 457 de un documento
+de novecientas, cuya propia cabecera dice que sirve para saber **con qué criterio** se decide y **qué
+toca ahora** — narrativa, no lista de tareas. Uno llevaba desde el 18 de agosto sin que nadie lo
+mirara, y se redescubrió por un `test.fail` en la salida de la suite, no leyéndolo.
 
-Aplazados por decisión, no pendientes: retención de auditoría, vectoriales en medios, permisos granulares, vencimiento de licencias, marca blanca.
+Esta sección conserva su número porque hay referencias que apuntan aquí —§4 la nombra— y romperlas
+al mudarse habría sido cambiar un problema por otro.
 
-### Cerrado sin resolver: cómo llegó `cms` a la base del MVP (21 ago)
-
-El 21 de agosto apareció una fila del módulo `cms` en `core.modules` de `sillar_dev`, la base de
-la demostración. La escribió el sincronizador de módulos de un binario que declara `cms`, o sea
-el de M02, apuntando a la base equivocada.
-
-**Estado: mecanismo probado, causa sin establecer. Contenido pero no resuelto.**
-
-- **Contenido:** la fila se borró con el host parado, y el arranque volvió limpio. No hacía daño
-  —la pantalla de módulos itera sobre el binario, no sobre las filas (`ModuleActivationService.cs:88`),
-  así que nunca hubo tarjeta rota— pero dejaba un aviso permanente en cada arranque, y un aviso
-  permanente sobre algo que no se va a arreglar entrena a la gente a ignorar los avisos.
-- **Mecanismo probado:** una variable `ConnectionStrings__Default` heredada del entorno gana
-  sobre el `.env`, en silencio. M02 lo demostró. **Pero demostrar que un mecanismo puede producir
-  el efecto no demuestra que produjera éste.**
-
-**Por qué cada vía está cerrada** — que no es lo mismo que no haber dado nada:
-
-| Vía | Por qué se cierra |
-|---|---|
-| ¿Lo escribió nuestro binario? | **No pudo.** `main` nunca declaró `cms`: `git log -S "cms"` da tres commits y ninguno añade un módulo —documentación, un ejemplo en Markdown y un `WHERE nspname IN (…)`—, y hoy no hay ningún `"cms"` en C# |
-| ¿Cayó `DotEnv` al directorio de trabajo? | **No.** El `.env` de M02 existía veintitantas horas antes de la fila, así que la primera búsqueda —la del árbol del binario— encontraba el suyo |
-| Los registros de PostgreSQL | **Cubrían la ventana y no contenían nada.** `log_connections`, `log_disconnections` y `log_statement` estaban en `off`/`none`: una conexión que escribe una fila sin error no dejaba rastro. **No se perdió la prueba: no se tomó.** Corregido para la próxima |
-| El historial de PowerShell | **No puede verlo.** PSReadLine solo graba consolas interactivas, y los dos agentes lanzan `powershell.exe -NonInteractive`. Cero coincidencias de `ConnectionStrings`, y la última escritura del archivo es de once horas antes del incidente pese a decenas de comandos por medio |
-| El entorno de M02 hoy | Sin ninguna variable así definida, ni de usuario ni de máquina. La consola de aquel día ya no existe |
-
-Lo que queda hecho: el registro de conexiones encendido en desarrollo
-(`docker-compose.yml:22-25`) y el arranque diciendo de qué `.env` cargó, a qué base apunta y qué
-claves le ganó el entorno. **La próxima vez habrá rastro.**
-
-Y una propuesta sin hacer: que cada árbol ponga su propio `Application Name` en la cadena de
-conexión. Desde el anfitrión todas las conexiones llegan con la misma IP de pasarela
-—`172.18.0.1`—, así que el origen no distingue procesos; el nombre de aplicación sí lo haría, y
-sale gratis.
-
-### Defecto abierto: la auditoría enseña identificadores (18 ago)
-
-`AuditPage.tsx:71` pinta `entry.entityId` en crudo, y desde la ADR-018 los medios —y también
-las sesiones— llevan `uuid`. La columna «Entidad» acaba mostrando
-`01a016da-5b2e-722b-…` a la vista, contra la regla de `CLAUDE.md` de que **los identificadores
-nunca se muestran al usuario**. No es raro: **cada acceso** deja una entrada con el `uuid` de la
-sesión, así que la pantalla está llena.
-
-Está codificado como defecto conocido en `e2e/tests/transversal.spec.ts:113`, con `test.fail`:
-no cuesta un rojo permanente, y **si alguien lo arregla la prueba empieza a fallar** y obliga a
-venir a borrar la marca. Se prefirió eso a exentar la pantalla del recorrido, que lo habría
-escondido.
-
-**Lo que falta es la decisión de producto, no el arreglo:** la auditoría necesita identificar
-la fila exacta y a la vez no puede enseñar el identificador. Las salidas plausibles son un
-código corto derivado, mostrarlo solo al desplegar el detalle, o aceptar que la auditoría es
-una pantalla forense y documentar la excepción. Ninguna es obvia y las tres son baratas.
-
-### Heredado al fusionar los chats (18 ago)
-
-Seis cosas quedaron a medias cuando se retiró el chat de Frontend. **Ninguna estaba escrita en
-ningún sitio** —por la regla de un solo escritor, Frontend no tocaba esta bitácora— así que
-esto es lo único que las sostiene.
-
-| Pendiente | Qué falta exactamente |
-|---|---|
-| **Resincronizar el sistema de diseño** | Ya está en la tabla de arriba. **Es el que bloquea el paso 4**: los tokens cambiaron *después* de que Claude Design produjera las pantallas de M01 |
-| **`.design-sync/config.json` no incluye a `ModuleCard`** | 16 de 17 vistas previas listas. El componente vive en `modules/core/components` y la config solo apunta a `src/shared/ui`. **Lo que se extiende es la config, no el árbol de archivos**: mover el componente sería la abstracción por si acaso que prohíbe `CLAUDE.md`, y no hay segundo caso real |
-| **El selector de categorías N:M con principal no existe** | Y no es problema de código: **nadie ha dibujado** cómo se ve elegir varias categorías y marcar una como principal. Bloquea parte del paso 4 de M01 y pide pasar antes por el paso 3.5 |
-| **`BUILD_CONFIGURATION=Debug`: ¿es alcanzable en la imagen de producción?** | La regla de proceso ya se fijó —toda afirmación sobre código cita archivo y línea—; **la pregunta de hecho sigue abierta**. Se responde citando, no de memoria, que es justo como se falló la primera vez |
-| **Falta `E2E_KEEP_STACK`** | Cuando la suite de `e2e/` falla, el stack se desmonta y hay que reproducir el fallo desde cero para mirarlo. Una variable que conserve la base levantada al fallar |
-| **`:focus-visible` en diálogo, con clic de ratón** | Comprobar en un navegador de verdad si el anillo nativo se pinta cuando el foco cae en un elemento **distinto** del que se clicó. De las que no se resuelven leyendo |
-
-**Bibliotecas evaluadas y descartadas** (18 ago, informes en `SILLAR-DISENO/investigacion/`, carpeta hermana de ésta — **fuera del repositorio**, ver `PROTOCOLO-DISENO.md` §7). Se anotan aquí para no volver a investigarlas sin tener que abrir esa carpeta:
-
-| | Por qué no |
-|---|---|
-| **Morphicons** | Ignora `prefers-reduced-motion` por defecto: hay que corregirlo en cada uso, y un día se olvida. El efecto se reproduce en unas líneas |
-| **Sileo** | Colores propios, **la animación retrasa la acción**, y **el artefacto publicado no lleva el texto de la licencia**. Lo último basta solo: no se vende software con una dependencia cuya licencia no se puede señalar |
-| **Auragradients** | No es una biblioteca: es una técnica de menos de diez líneas de CSS. Y no va en el panel |
-| **react-loading-skeleton** | Se reproduce con poco CSS. Misma regla que tumbó a Auragradients: **si se escribe en un rato, no es una dependencia** |
-| **Motion** | Arranca con `prefers-reduced-motion` **desactivado**. Es el motivo exacto por el que cayó Morphicons |
-| **AutoAnimate** | Aporta un FLIP que sí es difícil a mano, así que estuvo cerca. Cae por dos cosas: **solo consulta la preferencia al inicializar y no escucha los cambios posteriores**, y al animar por JavaScript **la protección global de CSS no lo alcanza** — no se puede corregir desde fuera |
-
-**La conclusión que ordena las seis, y que es lo que hay que conservar: el movimiento se hace
-con la plataforma.** View Transitions, `@starting-style`, transiciones de `display` y
-esqueletos de CSS cubren los casos que han aparecido, y **degradan solos** a cambio instantáneo
-donde no hay soporte. `prefers-reduced-motion` se impone una vez en la hoja base
-(`base.css:66-74`) y reacciona en caliente.
-
-**La única grieta, y conviene tenerla escrita:** esa protección global es CSS, así que **no
-alcanza a lo que anima por JavaScript**. Una biblioteca que mueva cosas desde JS tiene que
-respetar la preferencia por su cuenta *y* reaccionar a sus cambios — y si no lo hace, no hay
-forma de arreglarlo desde fuera. Es lo que descartó a AutoAnimate teniendo lo único que de
-verdad costaba a mano.
-
----
-
-### Riesgo abierto: el cajón del producto tras asociar una imagen (20 ago)
-
-**Observado dos veces**, las dos en una vuelta de la suite entera: en `recorrido.spec.ts`,
-pulsar «Guardar cambios» justo después de asociar una imagen deja el cajón abierto **y sin ningún
-aviso**. Entre una y otra no se reprodujo en seis intentos, ni aislado ni acompañado.
-
-La segunda vez fue el 21 de agosto, **justo después de envolver `page.goto` para que espere al
-armazón**. Eso cambió el ritmo de toda la suite, así que no se puede afirmar que sea la misma
-carrera: puede serlo, o puede ser una interacción nueva. Lo que sí cambia es el estado del
-riesgo — **dos apariciones ya no son una anécdota**, y toca investigarlo con la siguiente que
-salga en vez de esperar a que se repita.
-
-La carrera existe y se puede señalar: asociar una imagen recarga la ficha con el cajón abierto
-(`ProductsPage.tsx:197` llama a `abrirFicha`), así que hay un momento en que el formulario se
-está re-renderizando. **Lo que no está demostrado es que esa sea la causa** — la prueba pulsa
-decenas de milisegundos después de ver la miniatura, que es algo que una persona no hace.
-
-Lo hecho: la prueba espera a que la recarga termine, y afirma sobre los avisos de **toda la
-página** y no solo del cajón, porque un fallo puede avisar por un mensaje flotante que vive
-fuera. Si vuelve a pasar, dirá más que la primera vez.
-
-Lo no hecho, y a propósito: no se ha tocado el producto. Arreglar una carrera que no se sabe
-reproducir es cambiar código por una hipótesis, y quedarse sin la única señal que hay.
-
----
+**La §6 de abajo no se mudó**, y es deliberado: no es trabajo aplazado, son unos cinco minutos de
+juicio humano que ninguna prueba puede dar.
 
 ## 6. Verificación manual pendiente
 
@@ -897,3 +766,28 @@ desde cero cuando se pidió.
 `transversal.spec.ts`, en **cada** corrida de la puerta. Y afirma algo: quitando
 `animation: none` de la regla global (`base.css:87`), se pone roja con el motivo escrito —«el
 anillo sigue animándose con movimiento reducido: 0.7s»—. Restaurada y verde.
+
+**2 sep · la reconciliación de `fase-a-b2b-m18` y `fx-eval`, y el conflicto que Git no marcó.**
+Las dos ramas salieron del mismo commit (`82e39a6`) y trabajaron once días sin verse: una cerró
+M04 Clientes, la otra arregló la portada, documentó M07 y metió M02 en el arnés. Git marcó tres
+conflictos —la bitácora de M04 y los dos archivos de `e2e/setup/`— y los tres se resolvieron
+conservando las dos intenciones, no eligiendo una rama.
+
+**El que importaba no llevaba marcadores.** `fx-eval` adaptó dos pruebas para que, con M01
+apagado, la portada se comprobara por la sección de M04 en vez de por el aviso «Todavía no hay
+contenido publicado.». Es correcto. Pero se escribió contra la portada vieja, que decidía
+contando módulos activos, y en `fase-a-b2b-m18` esa decisión pasó a tomarla el registro de
+contribuciones (`homeContributions.tsx`): **el aviso sale si nadie declaró contenido, no si no
+hay módulos**. `crmHome` estaba en `HOME_SECTIONS` sin declarar nada, así que al juntar las dos
+ramas la portada habría pintado la sección de M04 **y encima el aviso de que no hay nada**. Dos
+pruebas verdes, una portada que se contradice.
+
+El arreglo es una línea —`useHomeContribution('con-contenido')` en `crmHome`, igual que
+`catalogHome`— y el hallazgo es que **ninguna de las dos ramas estaba equivocada**: el defecto
+nace de juntarlas. Un merge sin conflictos no significa que el resultado afirme algo cierto.
+
+**Y el canario cantó, que es para lo que estaba.** `contenido.spec.ts` apaga M01 para llegar a
+la portada vacía, porque `catalogHome` pinta siempre y la tapaba. Con M04 —que también pinta
+siempre— el caso volvía a ser inalcanzable. **No se rebajó la afirmación: se apagan dos
+módulos.** Cambiarla por «se ve la sección de M04» habría dejado sin cubrir el agujero que ese
+archivo existe para vigilar, y la prueba habría seguido verde diciendo cada vez menos.

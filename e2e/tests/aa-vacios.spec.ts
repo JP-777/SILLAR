@@ -121,3 +121,54 @@ test('El sitio recién instalado tiene nombre, sin que nadie lo escriba dos vece
     'la portada de un sitio instalado no enseña el nombre del negocio',
   ).toBeVisible();
 });
+
+/**
+ * **La mitad vacía de la portada de M02.** Su mitad con datos vive en
+ * `contenido.spec.ts`, y la separación no es de estilo:
+ *
+ * Los cuatro bloques de `cmsHome.tsx` devuelven `null` cuando su lista llega
+ * vacía (`cmsHome.tsx:56`, `:120`, `:186`, `:249`). Afirmar eso **después** de
+ * que alguien cree un banner no lo comprueba: lo hace imposible. Y afirmarlo
+ * en el mismo archivo que crea los datos lo dejaría pasando en solitario y
+ * fallando en la suite, que es exactamente el fallo que dio nombre a este
+ * archivo.
+ */
+test('Sin contenido publicado, la portada no enseña ningún bloque de M02', async ({ page }) => {
+  // **Primero se ancla en algo positivo.** Sin esto la prueba entera es la
+  // clase de aserción de ausencia que este arnés ya cazó una vez: cuatro
+  // `toHaveCount(0)` sobre un `body` a medio pintar pasan solas.
+  await page.goto('/');
+  await expect(
+    page.getByRole('heading', { level: 1 }),
+    'la portada no llegó a pintar, así que lo de abajo no afirma nada',
+  ).toBeVisible();
+
+  // Y segundo: que M02 **esté activo**. Un bloque ausente porque el módulo
+  // está apagado no dice nada sobre el estado vacío. Esta es la comprobación
+  // que convierte las cuatro de abajo en una afirmación.
+  const capacidades = (await (await page.request.get('/api/capabilities')).json()) as {
+    modules: { code: string }[];
+  };
+  expect(
+    capacidades.modules.map((modulo) => modulo.code),
+    'M02 no está activo: los bloques faltarían por eso y no por estar vacíos',
+  ).toContain('cms');
+
+  for (const titulo of ['Novedades', 'Promociones', 'Productos destacados', 'Trabajos destacados']) {
+    await expect(
+      page.getByRole('heading', { name: titulo, level: 2 }),
+      `sin contenido, «${titulo}» no debería aparecer en la portada`,
+    ).toHaveCount(0);
+  }
+
+  // **Y ningún contenedor residual**, que es la otra mitad del criterio: un
+  // bloque puede desaparecer y dejar su `<section>` vacía ocupando su hueco
+  // vertical. Se cuentan las cuatro por su `aria-labelledby`, que es lo único
+  // que las identifica sin depender del texto.
+  for (const id of ['cms-banners', 'cms-promotions', 'cms-featured-products', 'cms-featured-projects']) {
+    await expect(
+      page.locator(`section[aria-labelledby="${id}-title"]`),
+      `«${id}» dejó su sección pintada sin contenido dentro`,
+    ).toHaveCount(0);
+  }
+});

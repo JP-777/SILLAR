@@ -67,6 +67,7 @@ Es una lista para tachar, no para leer de corrido. En una librería casi todos a
 - [ ] Precio por mayor o descuento porque «lleva varios». ¿Se puede? ¿Cuántos pasos?
 - [ ] Precio que la dueña ajusta a ojo para un cliente conocido.
 - [ ] Un artículo cuyo precio cambió y el sistema tiene el viejo.
+- [ ] El precio de un servicio —anillado, impresiones—. ¿Sale de una lista fija o de la cabeza de quien atiende? ¿De qué depende: hojas, tamaño, color, tapa? ¿Hay tramos por cantidad o es lineal?
 
 **El cobro**
 

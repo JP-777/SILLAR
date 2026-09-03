@@ -26,7 +26,7 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   await composeUpDb();
   await waitDbHealthy();
 
-  console.log('[e2e] aplicando migraciones (CORE, Catalog, CRM)...');
+  console.log('[e2e] aplicando migraciones (CORE, Catalog, Cms, CRM)...');
   await migrate();
 
   console.log('[e2e] aplicando seeds (sin datos de negocio)...');
@@ -65,8 +65,22 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   console.log('[e2e] activando M01 catálogo...');
   await activateModule(session, 'catalog');
 
+  // M02 de verdad, por el mismo motivo que M01: tiene cinco pantallas propias
+  // y cuatro bloques de portada, y **sin activarlo la suite entera podía estar
+  // en verde sin haber cargado una sola de ellas**. Arranca vacío —su seed no
+  // trae contenido (SPEC de M02 §6.6)—, que es lo que hace observable el
+  // estado vacío de `aa-vacios.spec.ts`.
+  console.log('[e2e] activando M02 contenido...');
+  await activateModule(session, 'cms');
+
   // M04 real. Se activa en el arnés porque sus pruebas HTTP necesitan que el
   // host registre el esquema de autenticación propio de clientes y sus rutas.
+  //
+  // **Los tres conviven a propósito.** M01 aporta una sección de portada que
+  // pinta siempre, M02 cuatro que dependen de lo publicado y M04 una más: es
+  // la única combinación donde el registro de contribuciones
+  // (`homeContributions.tsx`) decide de verdad, en vez de acertar porque solo
+  // había un candidato.
   console.log('[e2e] activando M04 clientes y contacto...');
   await activateModule(session, 'crm');
 

@@ -1,5 +1,6 @@
 import { Link, Route } from 'react-router-dom';
 import type { ModuleNavigation } from '../../layout/navigation';
+import { useHomeContribution } from '../../platform/homeContributions';
 import type { HomeSection } from '../../platform/homeSections';
 import { EmptyState } from '../../shared/ui';
 import { RequireRole } from '../../session';
@@ -40,6 +41,17 @@ export const crmHome: HomeSection = {
 };
 
 function CrmHomeSection() {
+  // **Siempre pinta, así que siempre aporta contenido**, igual que la sección
+  // de M01: es una invitación fija a entrar o crear la cuenta, no un listado
+  // que pueda venir vacío.
+  //
+  // Sin esta línea la portada se contradice a sí misma. `useHomeState()` no
+  // ve las secciones, solo lo que declaran: con M01 apagado y M02 sin nada
+  // publicado, los cuatro aportes de M02 dicen «vacío», nadie más habla, y el
+  // armazón concluye que no hay contenido — mientras esta sección se está
+  // pintando debajo del aviso que dice que no hay nada.
+  useHomeContribution('con-contenido');
+
   const { isAuthenticated } = useCustomerSession();
 
   return (

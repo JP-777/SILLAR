@@ -1,5 +1,6 @@
 import { Link, Route } from 'react-router-dom';
 import type { ModuleNavigation } from '../../layout/navigation';
+import { useHomeContribution } from '../../platform/homeContributions';
 import type { HomeSection } from '../../platform/homeSections';
 import { EmptyState } from '../../shared/ui';
 import { RequireRole } from '../../session';
@@ -49,6 +50,13 @@ export const catalogHome: HomeSection = {
 
 /** La invitación a ver el catálogo. */
 function CatalogHomeSection() {
+  // **Siempre pinta, así que siempre aporta contenido.** Esta sección no
+  // consulta nada: es una invitación fija, no un listado. Se declara igual
+  // porque el armazón no distingue secciones «que siempre pintan» de las que
+  // dependen de datos — y el día que ésta consulte productos, aquí es donde
+  // cambia, sin tocar la portada.
+  useHomeContribution('con-contenido');
+
   return (
     <EmptyState
       title="Nuestra tienda"

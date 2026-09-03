@@ -66,8 +66,8 @@ Módulos que entran en la primera entrega, en orden de construcción. El orden r
 | 3 | **M02 Contenido Web** | Banners: prioridad número uno declarada por la cliente. Es independiente, se puede construir en paralelo. |
 | 4 | **M04 Clientes** | Necesario para que Ventas tenga a quién asociar el pedido. **Y la identidad del cliente vive aquí, no en CORE**: `core.admin_users` es del personal —rol obligatorio y restringido a los tres de administración—, así que la cuenta de quien compra es de M04. |
 | 5 | **M03 Ventas Online** | Carrito y pedidos: prioridad número tres. **Requiere M01 y requiere M04**: la dependencia sobre Clientes era blanda y **la cuenta obligatoria para comprar la vuelve dura** (21 ago 2026). Este orden ya era el correcto; lo que estaba mal escrito era «aprovecha». |
-| 6 | **M05a Servicios (vitrina)** | El PRD insiste en que los servicios permanentes no queden escondidos. |
-| 7 | **M07 Solicitudes B2B** | Colegios, empresas y pedidos especiales: parte del valor diferencial del negocio. |
+| 6 | **M05a Servicios (vitrina)** | El PRD insiste en que los servicios permanentes no queden escondidos. **Su construcción está pendiente de una decisión de producto: puede no llegar a existir como módulo.** Ver `docs/modules/services/DECISIONES-PREVIAS-M05a.md` |
+| 7 | **M07 Solicitudes B2B** | Colegios, empresas y pedidos especiales: parte del valor diferencial del negocio. **Depende duro de M04, así que no puede empezar hasta que M04 cierre** (24 ago 2026). Ver `docs/modules/b2b/DECISIONES-PREVIAS-M07.md` |
 
 Al cerrar la Fase 1, la primera instalación tiene su web completa y el producto cuenta con siete módulos vendibles.
 
@@ -95,6 +95,7 @@ CORE es demasiado grande para un solo ciclo de cinco pasos, así que se parte en
 |---|---|---|
 | 8 | **M05b Servicios (órdenes)** | Órdenes de servicio reales. **No existe en el diseño previo, se construye desde cero.** |
 | 9 | **M06 Seguimiento** | Historial de estados y tablero kanban. Es la trazabilidad que pidió la cliente en la entrevista. |
+| 10 | **M18 Campaña Escolar** | Operación de temporada: listas escolares atendidas por personal, con ofertas y —previsto— agentes de IA. **No es contenido publicado**, y por eso sale de M07, donde `docs/BITACORA.md:781` la había aparcado el 15 de agosto. |
 
 Estos dos módulos son, comercialmente, el diferenciador más fuerte del producto: casi ningún sistema de este segmento ofrece seguimiento de trabajos personalizados.
 

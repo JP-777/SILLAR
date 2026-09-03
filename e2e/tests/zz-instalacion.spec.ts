@@ -41,7 +41,7 @@ const RUTAS_M01 = [
   '/api/admin/catalog/items/lookup',
 ] as const;
 
-test('Todos los endpoints de M01 están en Swagger', async ({ page }) => {
+test('Swagger lleva las rutas de M01, y ningún cuerpo de ningún módulo se queda sin ejemplo', async ({ page }) => {
   await loginAsE2eAdmin(page);
 
   // Contra la API directamente: el proxy de Vite solo reenvía `/api` y
@@ -78,6 +78,13 @@ test('Todos los endpoints de M01 están en Swagger', async ({ page }) => {
   // cuerpo es un `$ref` —que es siempre— el ejemplo vive en el esquema
   // referenciado. Buscarlo en el `requestBody` daba cero con los ejemplos ya
   // puestos: un detector mal parametrizado da el mismo rojo que uno bueno.
+  // **Esta mitad no es de M01, es de la plataforma**, y el nombre de la
+  // prueba lo decía mal hasta el 25 de agosto de 2026: recorre *todos* los
+  // `*Request` del documento, venga de donde venga. Se llamaba «Todos los
+  // endpoints de M01 están en Swagger», así que **nadie fue a mirarla cuando
+  // entró M02** — y los doce cuerpos de M02 llevaban desde el primer día sin
+  // ejemplo. Una comprobación de plataforma con nombre de módulo es una
+  // comprobación que solo se lee cuando toca ese módulo.
   const esquemas = doc.components?.schemas ?? {};
 
   const sinEjemplo = Object.keys(esquemas)

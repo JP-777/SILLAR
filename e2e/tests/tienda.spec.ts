@@ -406,6 +406,16 @@ test('Con M01 desactivado, las rutas públicas desaparecen y el inicio no deja h
     page.getByText('Cuenta de cliente', { exact: true }),
   ).toBeVisible();
 
+  // **Y el aviso de portada vacía no sale, porque no está vacía.** Aquí se
+  // afirmaba lo contrario antes de M04, y lo que cambió no es la regla sino
+  // quién aporta: `crmHome` declara contenido igual que `catalogHome`
+  // (`homeContributions.tsx`). El caso de la portada muda de verdad lo cubre
+  // `contenido.spec.ts`, que para llegar a él apaga los dos módulos.
+  await expect(
+    page.getByText('Todavía no hay contenido publicado.'),
+    'la portada avisa de que está vacía mientras pinta la sección de M04',
+  ).toHaveCount(0);
+
   await expect(page.getByRole('link', { name: 'Ver el catálogo' })).toHaveCount(0);
   await expect(page.locator('body')).not.toContainText(/cat[áa]logo/i);
 
