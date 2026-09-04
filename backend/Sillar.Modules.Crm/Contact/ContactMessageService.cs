@@ -159,8 +159,16 @@ internal sealed class ContactMessageService(
                 EntityType = "contact_message",
                 EntityId =
                     contact.ContactMessageId.ToString(),
-                Summary =
-                    $"Baja del mensaje de contacto #{contact.ContactMessageId}."
+                // **Sin el `#{id}`.** La regla de producto no habla de `uuid`, habla
+                // de identificadores internos: que éste sea un entero lo hace
+                // igual de interno y solo lo hace más difícil de detectar — la
+                // prueba transversal busca `uuid` y un `#42` le pasa por
+                // delante sin que salte nada.
+                //
+                // La fila sigue siendo identificable por `EntityType` y
+                // `EntityId`, que es donde vive el dato, y se consulta
+                // desplegando el detalle. El resumen dice qué pasó.
+                Summary = "Baja del mensaje de contacto."
             },
             cancellationToken);
 

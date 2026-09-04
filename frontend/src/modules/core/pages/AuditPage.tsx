@@ -11,6 +11,62 @@ import {
   type AuditEntry,
   type AuditQuery,
 } from '../services/audit';
+import { usersService } from '../services/users';
+
+/**
+ * Cómo se llama en castellano cada tipo de entidad que se audita.
+ *
+ * **Vive aquí, del lado de la lectura, y eso tiene fecha de caducidad.** Lo
+ * correcto a la larga es que la etiqueta viaje con la escritura, porque quien
+ * sabe cómo se llama un `product_item` es M01 y no esta pantalla. Se hace así
+ * hoy para no meter vocabulario de cuatro módulos en `Sillar.Core.Contracts`
+ * por una columna; el día que el mapa deje de caber de un vistazo, se mueve.
+ * Anotado con su disparador en `PENDIENTES.md`.
+ *
+ * Las palabras no son traducciones libres: son **las que el panel ya usa**.
+ * `social_link` es «Red social» porque el menú dice «Redes sociales», y
+ * `media_asset` es «Archivo» porque la pantalla se llama «Archivos». Inventar
+ * un segundo vocabulario para la auditoría obligaría a traducir dos veces al
+ * leerla.
+ */
+const ENTIDADES: Readonly<Record<string, string>> = {
+  // CORE
+  admin_session: 'Sesión',
+  admin_user: 'Usuario',
+  email: 'Correo',
+  installation: 'Instalación',
+  media_asset: 'Archivo',
+  module: 'Módulo',
+  setting: 'Ajuste',
+  // M01 · Catálogo
+  brand: 'Marca',
+  category: 'Categoría',
+  product: 'Producto',
+  product_image: 'Imagen de producto',
+  product_item: 'Presentación',
+  // M02 · Contenido web
+  banner: 'Banner',
+  featured_product: 'Producto destacado',
+  featured_project: 'Trabajo destacado',
+  promotion: 'Promoción',
+  social_link: 'Red social',
+  // M04 · Clientes y contacto
+  contact_message: 'Mensaje de contacto',
+  customer: 'Cliente',
+  customer_invitation: 'Invitación de cliente',
+};
+
+/**
+ * La etiqueta de un tipo, **o el tipo tal cual si no lo conocemos**.
+ *
+ * El caso desconocido no dice «Desconocido» ni se inventa una traducción: un
+ * módulo nuevo que empiece a auditar aparecerá aquí con su código técnico, que
+ * es feo y es cierto. Una etiqueta inventada sería bonita y falsa, y nadie
+ * vendría a añadir la buena.
+ */
+function etiquetaDe(entityType: string): string {
+  return ENTIDADES[entityType] ?? entityType;
+}
 
 /**
  * Registro de auditoría.
@@ -27,6 +83,14 @@ export function AuditPage() {
   const query = useMemo<AuditQuery>(() => ({ ...filters, page }), [filters, page]);
   const load = useCallback(() => auditService.query(query), [query]);
   const { state } = useResource(load, 'cargar la auditoría');
+
+  // **Los administradores, para poder filtrar por persona y no por número.**
+  // Se piden una sola vez: `usersService.list` es estable, así que no entra en
+  // el bucle de recargas del filtro. Vienen todos, también los dados de baja
+  // (`AdminUserService.cs:41-46` no filtra por `IsActive`), y tiene que ser
+  // así: lo que hizo alguien antes de que le dieran de baja **sigue en el
+  // registro**, y es justo lo que se va a buscar.
+  const { state: usuarios } = useResource(usersService.list, 'cargar los administradores');
 
   function apply(change: Partial<AuditQuery>) {
     setFilters((current) => ({ ...current, ...change }));
@@ -64,15 +128,7 @@ export function AuditPage() {
     {
       key: 'entity',
       header: 'Entidad',
-      render: (entry) =>
-        entry.entityType ? (
-          <span style={{ fontSize: '12.5px' }}>
-            {entry.entityType}
-            {entry.entityId && <span style={subtle}> · {entry.entityId}</span>}
-          </span>
-        ) : (
-          <span style={subtle}>—</span>
-        ),
+      render: (entry) => <Entidad entry={entry} />,
     },
     {
       key: 'summary',
@@ -120,16 +176,30 @@ export function AuditPage() {
             )}
           </Field>
 
-          <Field label="Usuario" hint="Su identificador numérico.">
+          <Field label="Usuario" hint={usuarios.status === 'error' ? usuarios.failure.message : undefined}>
             {(props) => (
-              <Input
+              <select
                 {...props}
-                type="number"
+                className="ui-input"
                 value={filters.adminUserId ?? ''}
+                // Mientras la lista no esté, el desplegable solo ofrece
+                // «Todos». **No se cae al campo numérico de antes**: un fallo
+                // al cargar una ayuda no es motivo para volver a pedirle a
+                // alguien que se sepa un identificador.
+                disabled={usuarios.status !== 'ready'}
                 onChange={(event) =>
                   apply({ adminUserId: event.target.value ? Number(event.target.value) : undefined })
                 }
-              />
+              >
+                <option value="">Todos</option>
+                {usuarios.status === 'ready' &&
+                  usuarios.data.map((usuario) => (
+                    <option key={usuario.id} value={usuario.id}>
+                      {usuario.fullName} — {usuario.email}
+                      {usuario.isActive ? '' : ' (inactivo)'}
+                    </option>
+                  ))}
+              </select>
             )}
           </Field>
 
@@ -201,6 +271,49 @@ export function AuditPage() {
         }
       />
     </PageContainer>
+  );
+}
+
+/**
+ * Qué se tocó, **y su identificador solo si alguien lo pide**.
+ *
+ * La columna enseñaba `entityType · entityId` en crudo, y desde la ADR-018 el
+ * identificador de un medio es un `uuid`: la tabla acababa mostrando
+ * `019fff83-a5d5-74b0-…` a la vista de cualquiera, contra la regla de que los
+ * identificadores nunca se muestran al usuario.
+ *
+ * **No es una excepción a la regla, es la diferencia entre presentar y
+ * responder.** Lo que la regla prohíbe es poner un identificador delante de
+ * alguien que no lo pidió. Aquí no se presenta nada: se ofrece «Ver detalle»,
+ * y quien está investigando una fila concreta lo despliega. El dato no se
+ * acorta, no se transforma y no se pierde — sigue entero en la base, en la
+ * entrada y en el API.
+ *
+ * `<details>` y no un botón propio: trae plegado/desplegado, foco y teclado
+ * hechos por el navegador, y su contenido plegado **no está en el texto
+ * renderizado**, así que la regla se cumple de verdad y no por ocultarlo con
+ * CSS.
+ */
+function Entidad({ entry }: { entry: AuditEntry }) {
+  if (!entry.entityType) {
+    return <span style={subtle}>—</span>;
+  }
+
+  return (
+    <div style={{ fontSize: '12.5px' }}>
+      {etiquetaDe(entry.entityType)}
+      {/* Sin identificador no hay detalle que ofrecer. Un desplegable que se
+          abre para decir «—» promete algo que no tiene. */}
+      {entry.entityId && (
+        <details>
+          <summary style={{ cursor: 'pointer' }}>Ver detalle</summary>
+          <div style={{ marginTop: 'var(--s2)' }}>
+            <div style={subtle}>Identificador</div>
+            <code style={{ wordBreak: 'break-all' }}>{entry.entityId}</code>
+          </div>
+        </details>
+      )}
+    </div>
   );
 }
 

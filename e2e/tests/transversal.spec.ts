@@ -111,26 +111,24 @@ test('Ninguna pantalla enseña un identificador al usuario', async ({ page }) =>
 });
 
 /**
- * DEFECTO ABIERTO, no una excepción a la regla.
+ * **La auditoría no presenta identificadores, y a la vez no los ha perdido.**
  *
- * `AuditPage.tsx:71` pinta `entry.entityId` en crudo, y desde la ADR-018 el
- * identificador de un medio es un `uuid`: la columna «Entidad» acaba
- * mostrando `019fff83-a5d5-74b0-…` a la vista, contra la regla de
- * `CLAUDE.md` de que los identificadores nunca se muestran al usuario.
+ * Fue un defecto abierto durante semanas, marcado con `test.fail` porque «qué
+ * mostrar en su lugar» era una decisión de producto sin tomar. Ya está tomada,
+ * y son dos cosas distintas: **presentar** es poner un identificador delante de
+ * quien no lo pidió; **responder** es dárselo a quien despliega la fila que
+ * está investigando. La regla prohíbe lo primero, no lo segundo.
  *
- * Se marca `fail` en vez de exentar la pantalla del bucle de arriba porque
- * son cosas distintas: exentarla escondería el defecto y nadie volvería a
- * mirarlo. Así queda escrito en código, no cuesta un rojo permanente que
- * enseñe a ignorar el rojo, y **si alguien lo arregla esta prueba empieza a
- * fallar** y obliga a venir aquí a borrar la marca.
+ * Las dos mitades se afirman en la misma prueba a propósito. Por separado, cada
+ * una tiene una forma barata y falsa de pasar: esconder el dato del todo
+ * cumpliría la primera, y no arreglar nada cumpliría la segunda.
  *
- * Qué debería mostrar en su lugar es una decisión de producto sin tomar: la
- * auditoría necesita identificar la fila exacta y a la vez no puede enseñar
- * el identificador. Anotado en `BITACORA.md` §5.
+ * **Y el alcance sigue siendo toda la pantalla**, no la columna «Entidad». Al
+ * arreglar la columna apareció una segunda fuga por «Resumen»: `MediaService`
+ * metía el nombre almacenado en el texto, y ese nombre es el identificador más
+ * la extensión (ADR-018). Reducir esta prueba a la columna la habría escondido.
  */
 test('La auditoría no enseña identificadores', async ({ page }) => {
-  test.fail(true, 'Defecto abierto: AuditPage.tsx:71 pinta entityId en crudo');
-
   await loginAsE2eAdmin(page);
 
   // La entrada con `uuid` se provoca aquí, no se espera a que esté: si esta
@@ -138,7 +136,15 @@ test('La auditoría no enseña identificadores', async ({ page }) => {
   // fallaría según el orden de ejecución. Una spec intermitente enseña a
   // ignorar el rojo. Subir un medio deja una entrada de auditoría cuya
   // entidad es un `uuid` desde la ADR-018.
+  //
+  // **Y se captura la respuesta**, que es de dónde sale el identificador
+  // exacto: escribirlo a mano sería un valor inventado que no corresponde a
+  // ninguna fila.
   await page.goto('/admin/archivos');
+  const subida = page.waitForResponse(
+    (respuesta) =>
+      respuesta.request().method() === 'POST' && respuesta.url().endsWith('/api/admin/media'),
+  );
   await page.setInputFiles('.gal-drop input[type="file"]', {
     name: 'rastro-auditoria.png',
     mimeType: 'image/png',
@@ -149,9 +155,43 @@ test('La auditoría no enseña identificadores', async ({ page }) => {
   });
   await expect(page.getByRole('status').first()).toBeVisible();
 
+  const { mediaAssetId } = (await (await subida).json()) as { mediaAssetId: string };
+  expect(mediaAssetId, 'la subida no devolvió un uuid con el que comprobar nada').toMatch(UUID);
+
+  // --- 1 · Por defecto no se presenta ninguno -----------------------------
   const found = await identificadorVisible(page, '/admin/auditoria');
 
   expect(found, `Auditoría muestra un identificador: ${found}`).toBeNull();
+
+  // Y la columna dice qué se tocó **en castellano**, que es lo que sustituyó
+  // al identificador. Sin esto, una columna «Entidad» vacía pasaría igual.
+  const fila = page
+    .locator('tbody tr')
+    .filter({ has: page.locator('code', { hasText: mediaAssetId }) });
+
+  await expect(fila, 'no se encuentra la fila de auditoría de la subida').toHaveCount(1);
+  await expect(fila, 'la columna «Entidad» no traduce el tipo').toContainText('Archivo');
+
+  // --- 2 · Y desplegando la fila, el identificador entero sigue ahí --------
+  const detalle = fila.locator('details');
+  const identificador = detalle.locator('code');
+
+  // Plegado: está en el DOM pero no a la vista. Es justo lo que hace que la
+  // comprobación de arriba sea cierta sin haber escondido el dato.
+  await expect(identificador, 'el identificador se ve sin desplegar nada').toBeHidden();
+
+  await detalle.getByText('Ver detalle').click();
+
+  await expect(identificador, 'desplegar el detalle no enseña el identificador').toBeVisible();
+  await expect(
+    identificador,
+    'el identificador del detalle no es el de la entidad, o está recortado',
+  ).toHaveText(mediaAssetId);
+  await expect(detalle, 'el detalle no dice qué es ese valor').toContainText('Identificador');
+
+  // --- 3 · Y al replegar vuelve a desaparecer -----------------------------
+  await detalle.getByText('Ver detalle').click();
+  await expect(identificador, 'replegar el detalle no vuelve a ocultar el identificador').toBeHidden();
 });
 
 /**

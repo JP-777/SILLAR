@@ -926,3 +926,101 @@ caso positivo está en `tienda.spec.ts`, que publica productos.
 **Lo que no se tocó, y por qué.** `crmHome` también declara `'con-contenido'` fijo, y está bien:
 lo que promete —«entra o crea una cuenta»— es cierto siempre, sin listado detrás que pueda venir
 vacío. La diferencia es esa, no el patrón.
+
+---
+
+### La auditoría dejó de enseñar identificadores (pendiente 10, cerrado el 3 sep 2026)
+
+**El problema.** La columna «Entidad» pintaba `entityType · entityId` en crudo, y desde la ADR-018
+el identificador de un medio o de una sesión es un `uuid`. Como **cada acceso** deja una entrada
+con el `uuid` de su sesión, la pantalla estaba llena de `01a016da-5b2e-722b-…`, contra la regla de
+que los identificadores nunca se muestran al usuario. Y el filtro «Usuario» pedía un número, con
+la ayuda «Su identificador numérico»: para buscar lo que había hecho alguien había que averiguar
+antes su `adminUserId`. Un dato interno convertido en requisito para trabajar.
+
+**La decisión de producto.** No se crea una excepción a la regla. Lo que se separa son dos cosas
+que se estaban confundiendo: **presentar** es poner un identificador delante de quien no lo pidió;
+**responder** es dárselo a quien despliega la fila que está investigando. La regla prohíbe lo
+primero. La tabla no presenta ninguno; el detalle responde con el identificador entero, sin
+acortar ni transformar. En la base, en la entrada y en el API no cambia nada.
+
+**Y había una segunda fuga, que solo apareció al tapar la primera.** `MediaService` escribía
+«Archivo subido para el módulo 'catalog': 019fff83-….png (image/png)». Ese nombre no es el que la
+persona subió: es el identificador generado más la extensión (`MediaStorage.cs:56`), porque la
+clave de un medio **es** el nombre del archivo. Así que arreglar la columna «Entidad» habría
+dejado el mismo `uuid` a la vista por la columna «Resumen», y la prueba transversal habría seguido
+en rojo señalando un sitio distinto del que se acababa de arreglar.
+
+**Es la lección, más que el arreglo.** El defecto tenía dos puertas y el `test.fail` que lo
+documentaba solo nombraba una. Mientras la prueba estuvo marcada, la segunda no podía descubrirla
+nadie: una prueba que se sabe roja no informa de por qué está roja. Se buscaron todos los
+resúmenes del backend que interpolan un identificador —evidencia conservada antes y después del
+cambio— y `MediaService` era el único con un `uuid`.
+
+**Traducción de tipos, y su honestidad.** `entityType` se traduce en el frontend de la pantalla,
+con las palabras **que el panel ya usa**: `social_link` es «Red social» porque el menú dice «Redes
+sociales», y `media_asset` es «Archivo» porque la pantalla se llama «Archivos». Inventar un
+segundo vocabulario obligaría a traducir dos veces al leer. Un tipo desconocido se muestra **con
+su código técnico tal cual**: ni «Desconocido», ni una traducción inventada. Lo feo y cierto avisa
+de que falta algo; lo bonito y falso hace que nadie venga a arreglarlo.
+
+**El mapa nació ya pasado de su umbral, y está medido.** Se inventariaron los tipos que hoy se
+escriben de verdad: **20**. El criterio era «más de un puñado y la etiqueta pertenece a la
+escritura». Veinte no es un puñado. No se movió porque implica tocar `Sillar.Core.Contracts`, una
+costura compartida que no cabía aquí — pero se registró como **disparador cumplido**, no como
+previsión futura (`PENDIENTES.md` §17).
+
+**El filtro.** Un `<select>` con «nombre — correo», y `(inactivo)` para los dados de baja.
+**Vienen todos**, y tiene que ser así: `AdminUserService.ListAsync` no filtra por `IsActive`, y lo
+que alguien hizo antes de que le dieran de baja **sigue en el registro** — es justo lo que se va a
+buscar. Si la lista falla, el desplegable se queda con «Todos»: no se vuelve al campo numérico,
+porque un fallo al cargar una ayuda no es motivo para pedirle a nadie que se sepa un
+identificador. El `adminUserId` sigue viajando en la consulta; lo que desaparece es la obligación
+de conocerlo.
+
+**Sin tocar `Table`.** `Column.render` ya devuelve `ReactNode`, así que el `<details>` cabe dentro
+de la celda. Extender la costura compartida por una columna habría costado dos gates y no habría
+comprado nada. `<details>` y no un botón propio: trae plegado, foco y teclado del navegador, y su
+contenido plegado **no está en el texto renderizado** — la regla se cumple de verdad, no ocultando
+con CSS.
+
+**Por qué no se tocó el contrato.** `AuditEntry.entityId` y `AuditQuery.adminUserId` siguen igual,
+el API igual, la base igual, sin migración y sin endpoint nuevo. Lo único que cambió del backend
+es el texto de un resumen, y solo porque ese texto era otra vía de la misma fuga.
+
+**Las pruebas.** `transversal.spec.ts` perdió su `test.fail` y afirma las dos mitades juntas:
+ningún `uuid` en el texto de **toda la pantalla** —no solo de la columna—, la etiqueta legible en
+«Entidad», y luego el identificador exacto al desplegar esa fila y su desaparición al replegarla.
+Por separado cada mitad tiene una forma barata y falsa de pasar: esconder el dato del todo cumple
+la primera, y no arreglar nada cumple la segunda. `medios.spec.ts` afirma que la entrada se sigue
+registrando, que `entityId` sigue completo, que el resumen ya no lleva el identificador y que
+sigue diciendo módulo y tipo. `auditoria.spec.ts` cubre el filtro, creando y dando de baja a su
+propio administrador para no depender del orden de las specs.
+
+**Y había una tercera puerta, encontrada auditando antes del gate.** `ContactMessageService`
+escribía «Baja del mensaje de contacto **#42**.». No es un `uuid`: es la clave primaria entera de
+la fila, repetida dentro del texto que se lee.
+
+Que fuera un entero es justo lo que la hacía peligrosa. La regla de producto no habla de `uuid`,
+habla de **identificadores internos**, y un `#42` es tan interno como un `019fff83-…` — solo que
+**invisible para la prueba que vigila**: `transversal.spec.ts` busca la forma de un `uuid`, y un
+número le pasa por delante sin que salte nada.
+
+**Y no se puede arreglar ampliando la regex.** «Cualquier número» daría falsos positivos con
+fechas, cantidades, precios y teléfonos, que son números legítimos y frecuentes en estas
+pantallas. Convertir una heurística en definición de producto acabaría o con una prueba que grita
+por todo, o —peor— con la regla recortada a lo que la regex sabe reconocer. Así que quedan
+repartidas:
+
+- **La regla de producto cubre todos los identificadores internos**, del tipo que sean.
+- **La prueba transversal cubre la familia `uuid`**, que es la que puede reconocer sin
+  ambigüedad, y no pretende reconocer todas las claves primarias posibles.
+- **Cada productor con identificadores numéricos necesita su propia prueba semántica** cuando se
+  detecta. La de éste vive en `crm-contact.spec.ts`, sobre el flujo de baja que ya existía:
+  la entrada se sigue escribiendo, `entityId` sigue siendo el correcto, el resumen ya no lo
+  contiene y sigue diciendo qué pasó.
+
+La fila sigue identificándose por `EntityType` y `EntityId` y se consulta desplegando el detalle,
+igual que en el caso de los medios. **Esto no cierra el pendiente §16**: aquel pide que el resumen
+nombre la fila —«Baja del mensaje de Ana Quispe»—, y esto solo quita un identificador que no
+debería haber estado. Direcciones distintas.

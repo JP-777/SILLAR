@@ -206,44 +206,11 @@ arranque dice de qué `.env` cargó, a qué base apunta y qué claves le ganó e
 
 ---
 
-## 10 · Defecto abierto: la auditoría enseña identificadores (18 ago 2026)
+## 10 · ~~Defecto abierto: la auditoría enseña identificadores~~ — **resuelto el 3 de septiembre de 2026**
 
-`AuditPage.tsx:71` pinta `entry.entityId` en crudo, y desde la ADR-018 los medios —y también
-las sesiones— llevan `uuid`. La columna «Entidad» acaba mostrando
-`01a016da-5b2e-722b-…` a la vista, contra la regla de `CLAUDE.md` de que **los identificadores
-nunca se muestran al usuario**. No es raro: **cada acceso** deja una entrada con el `uuid` de la
-sesión, así que la pantalla está llena.
-
-Está codificado como defecto conocido en `e2e/tests/transversal.spec.ts:131-132`, con `test.fail`:
-no cuesta un rojo permanente, y **si alguien lo arregla la prueba empieza a fallar** y obliga a
-venir a borrar la marca. Se prefirió eso a exentar la pantalla del recorrido, que lo habría
-escondido.
-
-**Lo que falta es la decisión de producto, no el arreglo:** la auditoría necesita identificar
-la fila exacta y a la vez no puede enseñar el identificador. Las salidas plausibles son un
-código corto derivado, mostrarlo solo al desplegar el detalle, o aceptar que la auditoría es
-una pantalla forense y documentar la excepción. Ninguna es obvia y las tres son baratas.
-
-**Y el cruce que faltaba en todas partes, descubierto el 25 de agosto de 2026 leyendo mal la salida
-de la suite.** `transversal.spec.ts:132` es
-
-```ts
-test.fail(true, 'Defecto abierto: AuditPage.tsx:71 pinta entityId en crudo');
-```
-
-y **es el único `test.fail` de toda la suite** — comprobado sobre `e2e/tests/` entero, donde tampoco
-hay ningún `.skip`, `.only` ni `.fixme`.
-
-El reporter de Playwright lo marca con **`x`**, igual que un fallo de verdad, pero **lo cuenta como
-pasada**. Así que una corrida puede decir «0 failed» con dos `x` a la vista y estar bien. Eso explica
-por qué un «todo en verde» podía convivir con un defecto abierto, y **cuesta media hora de
-desconcierto cada vez que alguien lo ve por primera vez** — que es exactamente lo que pasó ese día.
-
-
-**Disparador.** **No hay uno para decidir**, y conviene decirlo en vez de inventarlo: lo que falta es
-una decisión de producto que nada fuerza. Lo que sí existe es **el disparador al revés** — el día que
-alguien lo arregle, `transversal.spec.ts:132` **empieza a fallar** y le obliga a venir aquí a borrar
-la marca. Es la razón por la que se prefirió `test.fail` a exentar la pantalla del recorrido.
+Se borra el contenido y se conserva el número, como el 1 y el 12: renumerar rompería las
+referencias. **El `test.fail` de `transversal.spec.ts` ya no existe**; esa prueba es una
+afirmación normal. La resolución está en `BITACORA.md` §7.
 
 ---
 
@@ -411,9 +378,64 @@ dónde está la tienda. Lo segundo va a pasar antes.
 
 ---
 
+## 16 · Los resúmenes de auditoría no nombran la fila concreta
+
+**Qué pasa.** Un resumen dice *qué clase de cosa* pasó, no *a cuál*. En la pantalla se lee «Alta de
+un enlace social.», y para saber cuál hay que desplegar el detalle y llevarse el identificador a
+otra pantalla. Con la fila identificada por su nombre —«Alta de la red social Instagram.»— la
+auditoría se lee de un vistazo y el identificador deja de hacer falta casi siempre.
+
+**Por qué está aplazado.** Toca a los productores de auditoría de cuatro módulos, cada uno en su
+sitio. Un barrido así no cabe dentro de una corrección cuyo objeto era otro, y el valor de cada
+resumen es una decisión pequeña del módulo que lo escribe, no una regla central.
+
+**Lo que NO es.** El cambio puntual de `MediaService` —quitar el nombre almacenado del resumen de
+una subida— **no cierra este pendiente**. Aquel quitaba un identificador técnico que se estaba
+presentando; éste añade el nombre humano de la fila. Son direcciones distintas.
+
+**Disparador.** **El próximo módulo que escriba auditoría nace ya nombrando la entidad concreta en
+su resumen.** Los productores que ya existen se ponen al día cuando se toquen por otra razón. No
+hay barrido.
+
+---
+
+## 17 · De quién son las etiquetas visibles de `entityType` — **DISPARADOR CUMPLIDO**
+
+**Estado: disparador cumplido, pendiente de trabajo dedicado.** No es una previsión: el umbral ya
+se pasó y está medido.
+
+**Qué pasa.** La pantalla de Auditoría traduce `entityType` al castellano con un mapa que vive en
+el frontend de esa pantalla (`AuditPage.tsx`). Es lectura traduciendo lo que escribió otro: quien
+sabe cómo se llama un `product_item` es M01, no la pantalla que lo lee.
+
+**La medición.** Al hacerlo se inventariaron los tipos que hoy se escriben de verdad en el
+repositorio: **20**, repartidos entre CORE (7), M01 (5), M02 (5) y M04 (3). El criterio acordado
+era «si el mapa crece más allá de un puñado de entradas, la etiqueta pertenece a la escritura y no
+a la lectura». **Veinte no es un puñado: el mapa nació ya pasado del umbral.** Y crece con cada
+módulo nuevo, que además no tiene forma de enterarse de que debe venir aquí a añadirse.
+
+**Por qué no se hizo entonces.** Por decisión explícita: mover la etiqueta a la escritura significa
+añadir un campo a `AuditEntry` y tocar `Sillar.Core.Contracts`, que es una costura compartida y no
+cabía en la Corrección 3. Se dejó el mapa para poder cerrar la fuga de identificadores, que era el
+objeto de aquella corrección.
+
+**Qué falta.** Decidir si la etiqueta viaja en `AuditEntry` desde el productor, y con ella el
+vocabulario a su módulo. Mientras tanto el mapa funciona y degrada con honestidad: un tipo
+desconocido se muestra con su código técnico, no con un «Desconocido» inventado.
+
+**Disparador.** **Cumplido.** Entra en la revisión de pendientes previa a la división oficial.
+
+---
+
 ## Resueltos recientemente
 
 *(se borran de arriba y se anotan aquí solo hasta que entren en la bitácora del módulo)*
+
+- **La auditoría ya no enseña identificadores.** (3 sep 2026) Era el 10. La columna «Entidad»
+  muestra el tipo en castellano y el identificador completo vive en un `<details>` que se
+  despliega a voluntad; el filtro «Usuario» pasó de pedir un número a un desplegable por nombre y
+  correo, con los dados de baja incluidos. Había **una segunda fuga por la columna «Resumen»** que
+  solo apareció al arreglar la primera. Registrado entero en `BITACORA.md` §7.
 
 - **La portada ya no promete un catálogo vacío.** (3 sep 2026) Era el 1, y su disparador —el
   cierre formal de M02— se cumplió. `catalogHome` pregunta al mismo endpoint público que usa
