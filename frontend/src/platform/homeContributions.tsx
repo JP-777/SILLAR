@@ -8,6 +8,9 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { reducirAportes, type EstadoAporte } from './contributionState';
+
+export type { EstadoAporte } from './contributionState';
 
 /**
  * **Quién ha pintado algo en la portada, y quién todavía no lo sabe.**
@@ -43,8 +46,6 @@ import {
  * sin que el armazón se entere ni tenga que enterarse: `cmsHome` registra
  * cuatro aportes y `catalogHome` uno, y el resumen se calcula igual.
  */
-export type EstadoAporte = 'cargando' | 'vacio' | 'con-contenido';
-
 interface Registro {
   readonly declarar: (clave: string, estado: EstadoAporte) => void;
   readonly retirar: (clave: string) => void;
@@ -139,9 +140,5 @@ export function useHomeContribution(estado: EstadoAporte): void {
 export function useHomeState(): EstadoAporte {
   const aportes = useContext(AportesContext);
 
-  if (aportes.includes('con-contenido')) {
-    return 'con-contenido';
-  }
-
-  return aportes.length === 0 || aportes.includes('cargando') ? 'cargando' : 'vacio';
+  return reducirAportes(aportes);
 }
