@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useCapability } from '../capabilities/useCapability';
 import { usePublicSettings } from './usePublicSettings';
-import { HomeContributions, useHomeState } from './homeContributions';
+import { AportesDePortada, useHomeState } from './homeState';
 import { visibleHomeSections } from './homeSections';
 import { EmptyState } from '../shared/ui';
 import './platform.css';
@@ -36,16 +36,16 @@ import './platform.css';
  * agujero sin querer, porque pinta siempre — el día que hubo un segundo módulo
  * publicable, dejó de taparlo.
  *
- * Ahora lo dicen las propias secciones (`homeContributions.tsx`), y el armazón
+ * Ahora lo dicen las propias secciones (`homeState.tsx`), y el armazón
  * sigue sin saber cuántos bloques trae ninguna.
  */
 export function PublicSite() {
   // El proveedor y quien lo lee no pueden ser el mismo componente: un
   // componente no ve el contexto que él mismo monta. De ahí la partición.
   return (
-    <HomeContributions>
+    <AportesDePortada>
       <Portada />
-    </HomeContributions>
+    </AportesDePortada>
   );
 }
 

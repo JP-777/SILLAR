@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
 import { Link, Route } from 'react-router-dom';
 import type { ModuleNavigation } from '../../layout/navigation';
-import { useHomeContribution, type EstadoAporte } from '../../platform/homeContributions';
+import { useAporteDePortada } from '../../platform/homeState';
+import type { EstadoAporte } from '../../platform/surfaceState';
 import type { HomeSection } from '../../platform/homeSections';
 import { useResource, type ResourceState } from '../../shared/hooks/useResource';
 import { EmptyState } from '../../shared/ui';
@@ -92,11 +93,11 @@ function CatalogHomeSection() {
 
   // Antes de cualquier salida temprana: un hook no puede quedar detrás de un
   // `return`, y el estado que hay que declarar es justo el que las provoca.
-  useHomeContribution(aporteDe(state));
+  useAporteDePortada(aporteDe(state));
 
   // **Mientras se espera no se pinta nada, y no hace falta más.** El armazón
   // no afirma que la portada esté vacía mientras alguien siga cargando
-  // (`homeContributions.tsx:139-147`), así que el aviso no puede aparecer y
+  // (`homeState.tsx:139-147`), así que el aviso no puede aparecer y
   // desaparecer. Un indicador aquí sería ruido: la sección entera son tres
   // líneas.
   if (state.status !== 'ready') {

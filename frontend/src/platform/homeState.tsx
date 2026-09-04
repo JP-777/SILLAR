@@ -8,9 +8,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { reducirAportes, type EstadoAporte } from './contributionState';
+import { reducirAportes, type EstadoAporte } from './surfaceState';
 
-export type { EstadoAporte } from './contributionState';
 
 /**
  * **Quién ha pintado algo en la portada, y quién todavía no lo sabe.**
@@ -65,7 +64,7 @@ const RegistroContext = createContext<Registro>(SIN_REGISTRO);
 const AportesContext = createContext<readonly EstadoAporte[]>([]);
 
 /** Envuelve la portada para que sus secciones puedan declarar qué pintaron. */
-export function HomeContributions({ children }: { children: ReactNode }) {
+export function AportesDePortada({ children }: { children: ReactNode }) {
   const [aportes, setAportes] = useState<Record<string, EstadoAporte>>({});
 
   const declarar = useCallback((clave: string, estado: EstadoAporte) => {
@@ -106,7 +105,7 @@ export function HomeContributions({ children }: { children: ReactNode }) {
  * nombre único** ni coordinarse con otro. Dos instancias del mismo bloque
  * cuentan como dos aportes, que es lo correcto.
  */
-export function useHomeContribution(estado: EstadoAporte): void {
+export function useAporteDePortada(estado: EstadoAporte): void {
   const clave = useId();
   const { declarar, retirar } = useContext(RegistroContext);
 

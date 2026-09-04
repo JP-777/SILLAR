@@ -1,6 +1,6 @@
 import { Link, Route } from 'react-router-dom';
 import type { ModuleNavigation } from '../../layout/navigation';
-import { useHomeContribution } from '../../platform/homeContributions';
+import { useAporteDePortada } from '../../platform/homeState';
 import type { HomeSection } from '../../platform/homeSections';
 import { EmptyState } from '../../shared/ui';
 import { RequireRole } from '../../session';
@@ -50,7 +50,7 @@ function CrmHomeSection() {
   // publicado, los cuatro aportes de M02 dicen «vacío», nadie más habla, y el
   // armazón concluye que no hay contenido — mientras esta sección se está
   // pintando debajo del aviso que dice que no hay nada.
-  useHomeContribution('con-contenido');
+  useAporteDePortada('con-contenido');
 
   const { isAuthenticated } = useCustomerSession();
 
