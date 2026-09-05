@@ -289,3 +289,95 @@ async function cambiarModulo(
     await expect(overlay).toBeHidden({ timeout: 90_000 });
   });
 }
+
+/**
+ * **El pie, que tampoco existe cuando no hay nada que poner dentro.**
+ *
+ * Vive aquí por lo mismo que el resto del archivo: es el único momento de la
+ * suite en que M02 está activo y sin una sola red publicada. Afirmarlo después
+ * de que alguien cree una no lo comprueba, lo hace imposible.
+ *
+ * El criterio es que **nadie vea ni lea un pie vacío**. El elemento sí está
+ * en el documento, y eso fue una concesión con causa: hacerlo aparecer y
+ * desaparecer cambia el padre de las contribuciones, las remonta, y el
+ * remontaje las devuelve a «cargando» — el pie se va, vuelven a montar, y así
+ * sin parar. Con `hidden` el elemento es estable y dentro solo cambia el
+ * contenido.
+ *
+ * `getByRole` no lo ve porque `hidden` lo saca del árbol de accesibilidad, que
+ * es exactamente lo que se quiere afirmar: para un lector de pantalla y para
+ * el ojo, ahí no hay pie. Tampoco ocupa alto.
+ */
+test('Con M02 activo y sin redes publicadas, no hay pie en el documento', async ({ page }) => {
+  // El ancla positiva primero: una aserción de ausencia sobre una página a
+  // medio pintar pasa sola.
+  await page.goto('/');
+  await expect(
+    page.getByRole('heading', { level: 1 }),
+    'la portada no llegó a pintar, así que lo de abajo no afirma nada',
+  ).toBeVisible();
+
+  // Y que M02 **esté activo**: un pie ausente porque el módulo está apagado no
+  // dice nada sobre el estado vacío. Es lo que convierte lo de abajo en una
+  // afirmación.
+  const capacidades = (await (await page.request.get('/api/capabilities')).json()) as {
+    modules: { code: string }[];
+  };
+  expect(
+    capacidades.modules.map((modulo) => modulo.code),
+    'M02 no está activo: el pie faltaría por eso y no por no tener redes',
+  ).toContain('cms');
+
+  await expect(
+    page.getByRole('contentinfo'),
+    'el pie se pintó sin una sola red publicada',
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('navigation', { name: 'Redes sociales' }),
+    'quedó el bloque de redes sin ninguna red dentro',
+  ).toHaveCount(0);
+
+  // **Y ningún aviso de que el pie está vacío.** El visitante no tiene nada
+  // que hacer con esa información; el pie sencillamente no está.
+  await expect(
+    page.getByText(/pie|footer/i),
+    'la portada explica que el pie está vacío en vez de no ponerlo',
+  ).toHaveCount(0);
+});
+
+/**
+ * **Y durante la carga tampoco parpadea.**
+ *
+ * Es la misma regla que la portada aplica al aviso de vacío: lo que aún no se
+ * sabe no se cuenta. Sin ella el pie aparecería al llegar la respuesta y
+ * desaparecería si viene vacía, o al revés — un salto de la página en cada
+ * visita.
+ *
+ * La respuesta se retrasa a propósito: sin retraso la carga dura milisegundos
+ * y la prueba afirmaría sobre un estado que no llegó a existir.
+ */
+test('Mientras las redes se cargan, el pie no aparece ni parpadea', async ({ page }) => {
+  await page.route('**/api/cms/social-links', async (route) => {
+    await new Promise((listo) => setTimeout(listo, 3_000));
+    await route.continue();
+  });
+
+  await page.goto('/');
+  await expect(
+    page.getByRole('heading', { level: 1 }),
+    'la portada no llegó a pintar, así que lo de abajo no afirma nada',
+  ).toBeVisible();
+
+  // Durante la espera: nada de pie, y nada de aviso.
+  await expect(
+    page.getByRole('contentinfo'),
+    'el pie se pintó antes de saber si había algo que poner dentro',
+  ).toHaveCount(0);
+
+  // Y cuando la respuesta llega vacía, sigue sin haberlo: ni un parpadeo.
+  await page.waitForTimeout(4_000);
+  await expect(
+    page.getByRole('contentinfo'),
+    'el pie apareció al asentarse una respuesta sin redes',
+  ).toHaveCount(0);
+});

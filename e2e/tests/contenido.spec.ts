@@ -583,9 +583,64 @@ async function enPortada(page: Page, bloque: string, esperados: string[]): Promi
     ).toHaveText(esperado);
   }
 }
+/* ========================================================================
+ * 5 · El pie público: la primera contribución de M02 fuera del panel
+ * ===================================================================== */
+
+/**
+ * **La mitad con datos del pie.** Su mitad vacía vive en `aa-vacios.spec.ts`,
+ * y la separación es la misma de siempre: afirmar que sin redes no hay pie en
+ * un archivo que crea redes no lo comprueba, lo hace imposible.
+ *
+ * Va **antes** de la limpieza de abajo y no después, por lo que aquélla
+ * advierte de sí misma: su bucle desactiva también `social-links`, así que una
+ * red publicada después de ella se quedaría publicada y rompería las pruebas
+ * de los archivos siguientes, no la suya.
+ *
+ * El pie es de la plataforma y no pone nada suyo — ni nombre del negocio, ni
+ * copyright, ni aviso legal. Es un contenedor, y M02 es por ahora su único
+ * contribuyente.
+ *
+ * **Se comprueba también en la tienda**, no solo en la portada: un pie que
+ * aparece en la portada y desaparece al abrir el catálogo no es alcance
+ * reducido, es un defecto que el visitante ve.
+ */
+test('Una red publicada aparece en el pie de toda la web pública', async ({ page }) => {
+  const direccion = `https://www.tiktok.com/@sillar${SELLO}`;
+
+  await loginAsE2eAdmin(page);
+  await page.goto(REDES);
+  await crearRed(page, 'TikTok', direccion);
+
+  await page.goto('/');
+
+  const pie = page.getByRole('contentinfo');
+  await expect(pie, 'con una red publicada la portada sigue sin pie').toBeVisible();
+
+  const enlace = pie.getByRole('link', { name: 'TikTok' });
+  await expect(enlace, 'el enlace no dice a dónde lleva').toBeVisible();
+  await expect(enlace).toHaveAttribute('href', direccion);
+
+  // `noopener` no es adorno: sin él la página de destino recibe una referencia
+  // a la nuestra por `window.opener`.
+  await expect(enlace, 'enlace externo sin rel="noopener"').toHaveAttribute('rel', /noopener/);
+
+  // **Y la plataforma no pone nada suyo dentro.**
+  await expect(
+    pie.getByText(/©|copyright|todos los derechos/i),
+    'el pie de plataforma se inventó contenido propio',
+  ).toHaveCount(0);
+
+  // La tienda es otra ruta, y el pie tiene que seguir ahí.
+  await page.goto('/catalogo');
+  await expect(
+    page.getByRole('contentinfo').getByRole('link', { name: 'TikTok' }),
+    'el pie desaparece al salir de la portada',
+  ).toBeVisible();
+});
 
 /* ========================================================================
- * 5 · Y al retirar el contenido, la portada vuelve a como estaba
+ * 6 · Y al retirar el contenido, la portada vuelve a como estaba
  * ===================================================================== */
 
 /**
@@ -654,7 +709,7 @@ async function desactivarTodo(api: APIRequestContext, coleccion: string): Promis
 }
 
 /* ========================================================================
- * 6 · El módulo activo que todavía no tiene nada publicado
+ * 7 · El módulo activo que todavía no tiene nada publicado
  * ===================================================================== */
 
 /**
