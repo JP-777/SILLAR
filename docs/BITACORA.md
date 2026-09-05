@@ -1068,3 +1068,32 @@ La fila sigue identificándose por `EntityType` y `EntityId` y se consulta despl
 igual que en el caso de los medios. **Esto no cierra el pendiente §16**: aquel pide que el resumen
 nombre la fila —«Baja del mensaje de Ana Quispe»—, y esto solo quita un identificador que no
 debería haber estado. Direcciones distintas.
+
+---
+
+### 5 sep 2026 · Registros de superficie: comprobación estructural
+
+Tras revisar el retoque del pie se comprobó, **sin convertirlo en una prueba**,
+la colocación de las dos fábricas de estado de superficie. Dos `grep` sobre
+`homeState.tsx` y `footerState.tsx` muestran exactamente dos llamadas a
+`crearRegistroDeSuperficie()`: `const portada` y `const pie`, ambas a nivel de
+módulo. Un segundo `grep` muestra que esos dos registros son los que alimentan
+las exportaciones `AportesDePortada` / `useAporteDePortada` / `useHomeState` y
+`AportesDeFooter` / `useAporteDeFooter` / `useFooterState`.
+
+**Esto es una comprobación, no una prueba de comportamiento.** En esta forma el
+error temido —crear el registro dentro de un render y luego exportar sus hooks—
+no es representable: las exportaciones salen del ámbito del módulo. No se añade
+Vitest ni un segundo runner. El disparador para decidir una infraestructura
+unitaria de frontend será el primer comportamiento de frontend que no pueda
+alcanzarse y observarse desde el navegador.
+
+La regresión observable se coloca donde estaba el defecto real: `PublicLayout`.
+La prueba E2E navega dentro de la SPA entre `/`, `/catalogo` y `/`, mantiene el
+pie con contenido y cuenta las cargas de `/api/cms/social-links`. El arnés usa
+Vite en desarrollo y la aplicación usa `StrictMode`, por lo que el doble ciclo
+inicial de Effects puede producir más de una carga antes de navegar. Por eso la
+prueba guarda esa cifra como línea base y exige **delta cero** durante los
+cambios de ruta: lo que vigila es que cambiar de hijo no remonte al
+contribuyente. **No** afirma que no haya rerenders, no fija cuántos Effects
+ejecuta el entorno y no pretende probar la construcción interna del registro.
