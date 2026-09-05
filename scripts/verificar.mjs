@@ -23,6 +23,17 @@
  * Node y no bash ni PowerShell: el desarrollo alterna entre Windows y Arch
  * Linux (ADR-006), y esto tiene que servir en los dos.
  *
+ * **Antes de lanzarla en Arch, leer `docs/ENTORNO.md`.** Son veinte minutos sin
+ * que nadie toque el teclado, así que la máquina puede suspenderse a mitad y
+ * dejar la suite en rojo por pruebas que no tienen nada que ver. Envolver con
+ * `systemd-inhibit` **no basta**: en este equipo los eventos de energía los
+ * gestiona KDE PowerDevil, que suspende sin pasar por ahí. La forma verificada
+ * añade `kde-inhibit --power` delante, y `dotnet ef` necesita además que
+ * `~/.dotnet/tools` esté en el PATH, que ningún perfil añade:
+ *
+ *     kde-inhibit --power systemd-inhibit --what=sleep:idle --why="SILLAR canonical gate" \
+ *       env PATH="$PATH:$HOME/.dotnet/tools" node scripts/verificar.mjs
+ *
  * **BD efímera para las pruebas backend.** Las pruebas PostgreSQL (CRM, CMS)
  * son destructivas —TRUNCATE, DROP SCHEMA— y nunca deben tocar sillar_dev ni
  * sillar_e2e. La puerta crea una base propia `sillar_verify_<timestamp>_<pid>`
