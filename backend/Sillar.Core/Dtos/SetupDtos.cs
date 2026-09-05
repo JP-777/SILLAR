@@ -1,8 +1,20 @@
 namespace Sillar.Core.Dtos;
 
 /// <summary>Si la instalación está pendiente.</summary>
+/// <remarks>
+/// <c>MigrationsPending</c> se añadió después y es opcional a propósito: quien
+/// solo lee <c>SetupRequired</c> —el arranque de la interfaz, <c>App.tsx</c>—
+/// sigue funcionando igual. Distingue dos situaciones que antes se veían iguales
+/// desde fuera y no lo son: «falta instalar», que se arregla desde el asistente,
+/// y «faltan las migraciones», que <b>no</b> — eso lo arregla quien despliega,
+/// desde una terminal, y el asistente no puede hacer nada al respecto.
+/// </remarks>
 /// <param name="SetupRequired">Verdadero mientras no se haya completado.</param>
-public sealed record SetupStatusResponse(bool SetupRequired);
+/// <param name="MigrationsPending">
+/// Verdadero si el esquema de CORE todavía no está en la base. Implica
+/// <c>SetupRequired</c>: sin tablas no hay instalación posible.
+/// </param>
+public sealed record SetupStatusResponse(bool SetupRequired, bool MigrationsPending = false);
 
 /// <summary>Datos para completar la instalación.</summary>
 /// <param name="BusinessName">Nombre comercial del negocio.</param>

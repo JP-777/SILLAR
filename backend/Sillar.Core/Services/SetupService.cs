@@ -19,12 +19,37 @@ internal enum SetupOutcome
     /// <summary>Ya estaba instalado. Las rutas de instalación dejan de existir.</summary>
     AlreadyInstalled,
 
+    /// <summary>
+    /// El esquema de CORE no está en la base. No es culpa de los datos enviados
+    /// y no se arregla desde el asistente.
+    /// </summary>
+    MigrationsPending,
+
     /// <summary>Los datos enviados no sirven.</summary>
     Invalid
 }
 
 /// <summary>Resultado de la instalación.</summary>
 internal sealed record SetupResult(SetupOutcome Outcome, string? Error = null, SetupResponse? Response = null);
+
+/// <summary>En qué estado está la instalación.</summary>
+/// <remarks>
+/// Son <b>tres</b> y no dos. Que falten las migraciones no es un caso raro de
+/// «falta instalar»: es una situación distinta, con otro responsable y otro
+/// remedio. Tratarlas igual es lo que hacía que la primera pantalla de una
+/// instalación nueva fuera un 500 con un <c>traceId</c>.
+/// </remarks>
+internal enum SetupState
+{
+    /// <summary>El esquema de CORE no está en la base. Faltan las migraciones.</summary>
+    MigrationsPending,
+
+    /// <summary>Las tablas están, pero nadie ha completado la instalación.</summary>
+    SetupPending,
+
+    /// <summary>Instalado y completo.</summary>
+    Completed
+}
 
 /// <summary>Instalación inicial del sistema.</summary>
 internal sealed class SetupService(
@@ -33,14 +58,40 @@ internal sealed class SetupService(
     IAuditWriter audit,
     TimeProvider clock)
 {
-    /// <summary>Indica si queda instalación pendiente.</summary>
-    public async Task<bool> IsSetupRequiredAsync(CancellationToken cancellationToken)
+    /// <summary>En qué estado está la instalación.</summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Por qué se atrapa <c>42P01</c> aquí y no se comprueba antes.</b> Una
+    /// base recién creada no tiene el esquema <c>core</c>, así que esta consulta
+    /// —la primera que hace el sistema— lanzaba <c>relation "core.installation"
+    /// does not exist</c> y salía por el manejador genérico como un 500 en crudo.
+    /// Y ocurría justo en <c>GET /api/setup/status</c>, que es la <b>única</b>
+    /// ruta que el modo instalación monta: la primera pantalla de quien instala
+    /// en una clienta.
+    /// </para>
+    /// <para>
+    /// Preguntar antes por el esquema —un <c>SELECT</c> a <c>information_schema</c>
+    /// en cada llamada— costaría una consulta de más siempre para cubrir un caso
+    /// que ocurre una vez en la vida de la instalación. El error es la señal, y
+    /// PostgreSQL la da con un código estable.
+    /// </para>
+    /// </remarks>
+    public async Task<SetupState> GetStateAsync(CancellationToken cancellationToken)
     {
-        var installation = await database.Installations
-            .AsNoTracking()
-            .FirstOrDefaultAsync(cancellationToken);
+        try
+        {
+            var installation = await database.Installations
+                .AsNoTracking()
+                .FirstOrDefaultAsync(cancellationToken);
 
-        return installation is null || !installation.IsSetupComplete;
+            return installation is null || !installation.IsSetupComplete
+                ? SetupState.SetupPending
+                : SetupState.Completed;
+        }
+        catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.UndefinedTable)
+        {
+            return SetupState.MigrationsPending;
+        }
     }
 
     /// <summary>Crea la instalación y su primer <c>super_admin</c>.</summary>
@@ -59,6 +110,15 @@ internal sealed class SetupService(
 
         var admin = request.Admin!;
         var now = clock.GetUtcNow();
+
+        // Sin tablas no hay nada que instalar, y el asistente no puede crearlas.
+        // Se comprueba antes de abrir la transacción: abrirla para descubrir que
+        // la primera consulta revienta deja el mismo 500 en crudo que esto viene
+        // a quitar, solo que un paso más tarde.
+        if (await GetStateAsync(cancellationToken) is SetupState.MigrationsPending)
+        {
+            return new SetupResult(SetupOutcome.MigrationsPending);
+        }
 
         await using var transaction = await database.Database.BeginTransactionAsync(cancellationToken);
 

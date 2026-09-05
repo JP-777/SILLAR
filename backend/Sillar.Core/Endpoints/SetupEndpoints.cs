@@ -38,7 +38,8 @@ public static class SetupEndpoints
                 "Al terminar, el host se detiene para volver a arrancar en modo normal.")
             .Produces<SetupResponse>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         return endpoints;
     }
@@ -69,9 +70,15 @@ public static class SetupEndpoints
     /// <param name="cancellationToken">Cancelación de la petición.</param>
     /// <returns>El estado de la instalación, o 404 si ya se completó.</returns>
     private static async Task<IResult> GetStatus(SetupService setup, CancellationToken cancellationToken)
-        => await setup.IsSetupRequiredAsync(cancellationToken)
-            ? Results.Ok(new SetupStatusResponse(true))
-            : Results.NotFound();
+        => await setup.GetStateAsync(cancellationToken) switch
+        {
+            // Faltan las migraciones. Sigue siendo 200: la pregunta era «¿en qué
+            // estado estás?» y el servidor lo sabe. Un 500 aquí decía «no sé», y
+            // no era verdad.
+            SetupState.MigrationsPending => Results.Ok(new SetupStatusResponse(true, MigrationsPending: true)),
+            SetupState.SetupPending => Results.Ok(new SetupStatusResponse(true)),
+            _ => Results.NotFound()
+        };
 
     /// <summary>Completa la instalación.</summary>
     /// <param name="request">Negocio, licencia y primer administrador.</param>
@@ -91,6 +98,19 @@ public static class SetupEndpoints
 
         switch (result.Outcome)
         {
+            case SetupOutcome.MigrationsPending:
+                // 503 y no 400: los datos enviados están bien, lo que falta es
+                // del servidor y lo arregla quien despliega, no quien instala.
+                return Results.Problem(
+                    title: "Faltan las migraciones de la base de datos.",
+                    detail:
+                        "El esquema 'core' todavía no existe, así que no hay dónde escribir la " +
+                        "instalación. Aplícalas antes de continuar:\n" +
+                        "  dotnet ef database update --project Sillar.Core --startup-project Sillar.Api\n" +
+                        "Los datos que has enviado no tienen nada de malo: vuelve a intentarlo cuando " +
+                        "las migraciones estén aplicadas.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+
             case SetupOutcome.Invalid:
                 return Results.ValidationProblem(
                     new Dictionary<string, string[]> { ["instalacion"] = [result.Error!] },
