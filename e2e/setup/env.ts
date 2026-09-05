@@ -66,3 +66,13 @@ export const CONNECTION_STRING = values.ConnectionStrings__Default;
 if (!CONNECTION_STRING) {
   throw new Error(`e2e/.env.e2e no define ConnectionStrings__Default`);
 }
+
+/**
+ * Carpeta de archivos subidos que la API ve montada en `/data/media`
+ * (`docker-compose.yml:94`). Se resuelve contra la raíz porque `MEDIA_PATH` se
+ * escribe relativo a ella —`./e2e/.media-e2e`— igual que lo lee `docker compose`.
+ *
+ * **La exporta `global-setup` para crearla antes de levantar nada**, y ese es
+ * todo el motivo de que esté aquí: ver `global-setup.ts`.
+ */
+export const MEDIA_DIR = path.resolve(ROOT, values.MEDIA_PATH ?? './e2e/.media-e2e');
