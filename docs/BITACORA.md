@@ -1024,3 +1024,45 @@ La fila sigue identificándose por `EntityType` y `EntityId` y se consulta despl
 igual que en el caso de los medios. **Esto no cierra el pendiente §16**: aquel pide que el resumen
 nombre la fila —«Baja del mensaje de Ana Quispe»—, y esto solo quita un identificador que no
 debería haber estado. Direcciones distintas.
+
+
+**5 sep · el sellado de replicación se extrae, y se extrae antes de tiempo a propósito.**
+`StampReplicationColumns` estaba copiado **tres veces** —`CoreDbContext.cs`,
+`CatalogDbContext.cs`, `CrmDbContext.cs`— con los cuerpos idénticos salvo el nombre del campo
+inyectado (`clock` / `_clock`). El pendiente §3 le había puesto disparador: «la cuarta copia, **o**
+la primera vez que dos copias discrepen». **Ninguna de las dos mitades se había cumplido**, y aun
+así se extrae.
+
+**Esto es un adelanto explícito, no un disparador cumplido**, y conviene que quede escrito con su
+motivo porque el motivo es lo único que lo justifica: aquel disparador se escribió cuando un solo
+equipo escribía las tres copias. Con dos frentes en paralelo la divergencia pasa de eventual a
+probable —dos equipos en dos `DbContext` no se ven— y a la vez la extracción se vuelve imposible
+de programar, porque toca `Sillar.Shared`, CORE y Catalog a la vez. El día que el disparador
+saltara, ya no habría hueco para arreglarlo. Es el mismo patrón de los tres casos de los que este
+proyecto se salvó por poco: baratos el día antes, imposibles el día después.
+
+**Y al ir a extraerlo apareció que la divergencia ya había empezado.** El §3 hablaba de tres
+copias del sellado, y son tres; pero del **mapeo** hay dos copias iguales —`Catalog` y `Crm`— y
+una tercera de otra forma: CORE no tenía `MapReplication`, sino dos columnas a mano en
+`MediaAssetConfiguration` y las otras dos delegadas en `AsCreatedAt`/`AsUpdatedAt`. El resultado
+era el mismo, así que no rompía nada y por eso nadie lo vio. Discrepar en la forma es el paso
+anterior a discrepar en el fondo.
+
+**Dónde vive ahora, que no es donde se dijo.** No en `Sillar.Shared`. Ese proyecto declara en su
+propio `.csproj` que «aquí no entra lógica de negocio ni acceso a datos» y no referencia EF Core;
+meterlo allí obligaría a añadírselo, y con él lo heredarían los cinco proyectos que hoy lo
+referencian sin tenerlo —entre ellos los tres `*.Contracts`, que son justo lo que un módulo puede
+referenciar de otro—. EF Core acabaría cruzando el grafo entero de módulos por una utilidad de
+cuatro columnas. Tampoco cabía en `Sillar.Core`: un módulo nunca referencia el `Data` de otro
+(regla 3). Así que hay un proyecto nuevo, **`Sillar.Shared.Data`**, para infraestructura de
+persistencia que es de la plataforma y no de ningún módulo.
+
+**Comprobado que no cambia el esquema**, que es lo único que podía convertir un refactor en una
+migración: `dotnet ef migrations has-pending-model-changes` responde «No changes have been made to
+the model since the last migration» en los tres contextos.
+
+**Y el sellado tiene por fin prueba propia.** De las tres copias, solo una estaba cubierta —la de
+CRM, y por una prueba que toca la base—. Ahora hay cinco pruebas de lógica en
+`Sillar.Shared.Data.Tests` que no abren ninguna conexión: el alta pone nodo, versión 1 y las dos
+fechas; la modificación sube la versión y **no** reescribe origen ni fecha de alta; y ni una fila
+sin cambios ni una borrada suben nada.

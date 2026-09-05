@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Sillar.Core.Domain;
+using Sillar.Shared.Data.Replication;
 using Sillar.Shared.Replication;
 
 namespace Sillar.Core.Data;
@@ -111,47 +112,14 @@ public class CoreDbContext(
     /// <inheritdoc />
     public override int SaveChanges()
     {
-        StampReplicationColumns();
+        ChangeTracker.StampReplicationColumns(node, clock);
         return base.SaveChanges();
     }
 
     /// <inheritdoc />
     public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
-        StampReplicationColumns();
+        ChangeTracker.StampReplicationColumns(node, clock);
         return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-    }
-
-    /// <summary>
-    /// Rellena el nodo de origen y sube la marca de versión de las filas
-    /// replicadas de CORE (ADR-018: <c>media_assets</c>).
-    /// </summary>
-    /// <remarks>
-    /// Mismo mecanismo que <c>CatalogDbContext</c>: se hace aquí y no en cada
-    /// llamada porque dejarlo a quien escribe garantiza que alguna se olvide.
-    /// </remarks>
-    private void StampReplicationColumns()
-    {
-        var now = clock.GetUtcNow();
-
-        foreach (var entry in ChangeTracker.Entries<IReplicatedEntity>())
-        {
-            switch (entry.State)
-            {
-                case EntityState.Added:
-                    entry.Entity.OriginNode = node.Code;
-                    entry.Entity.RowVersion = 1;
-                    entry.Entity.CreatedAt = now;
-                    entry.Entity.UpdatedAt = now;
-                    break;
-
-                case EntityState.Modified:
-                    // El origen no se toca: quien edita no es quien creó.
-                    entry.Property(nameof(IReplicatedEntity.OriginNode)).IsModified = false;
-                    entry.Property(nameof(IReplicatedEntity.CreatedAt)).IsModified = false;
-                    entry.Entity.RowVersion += 1;
-                    break;
-            }
-        }
     }
 }

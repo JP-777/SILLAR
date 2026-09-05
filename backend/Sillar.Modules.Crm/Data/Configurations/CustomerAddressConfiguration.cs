@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Sillar.Modules.Crm.Domain;
+using Sillar.Shared.Data.Replication;
 
 namespace Sillar.Modules.Crm.Data.Configurations;
 

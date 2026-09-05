@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Sillar.Core.Domain;
+using Sillar.Shared.Data.Replication;
 
 namespace Sillar.Core.Data.Configurations;
 
@@ -26,15 +27,10 @@ internal sealed class MediaAssetConfiguration : IEntityTypeConfiguration<MediaAs
             .ValueGeneratedNever();
 
         // Las cuatro columnas de la ADR-016 regla 4, que ahora lleva también
-        // media_assets (ADR-018): esta tabla se replica.
-        builder.Property(x => x.OriginNode)
-            .HasColumnName("origin_node")
-            .IsRequired();
-
-        builder.Property(x => x.RowVersion)
-            .HasColumnName("row_version")
-            .HasDefaultValue(1L)
-            .ValueGeneratedNever();
+        // media_assets (ADR-018): esta tabla se replica. Las cuatro juntas y en
+        // un solo sitio — antes estaban partidas, dos aquí y dos abajo con
+        // AsCreatedAt/AsUpdatedAt, que es como se pierde de vista que van juntas.
+        builder.MapReplication();
 
         builder.Property(x => x.StoredName)
             .HasColumnName("stored_name")
@@ -84,9 +80,6 @@ internal sealed class MediaAssetConfiguration : IEntityTypeConfiguration<MediaAs
             .ValueGeneratedNever();
 
         builder.Property(x => x.CreatedBy).HasColumnName("created_by");
-
-        builder.Property(x => x.CreatedAt).AsCreatedAt();
-        builder.Property(x => x.UpdatedAt).AsUpdatedAt();
 
         // Si se elimina el usuario, el archivo se queda: pierde el autor, no el
         // contenido.

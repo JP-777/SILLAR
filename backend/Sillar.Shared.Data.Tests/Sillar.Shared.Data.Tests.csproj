@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ==========================================================================
+       Pruebas de Sillar.Shared.Data.
+
+       El sellado de las columnas de replicación es lógica, no acceso a datos:
+       lee el ChangeTracker y escribe propiedades en memoria. Estas pruebas no
+       abren ninguna conexión — el contexto se configura contra un servidor que
+       no existe a propósito, para que abrirla fallaría y así queda demostrado
+       que no se abre.
+
+       Antes de existir este proyecto, el sellado estaba copiado tres veces y
+       solo una de las tres tenía prueba, y era de las que sí tocan la base.
+       ========================================================================== -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Un proyecto de pruebas no documenta su API: no la tiene. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Shared.Data\Sillar.Shared.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>
