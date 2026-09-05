@@ -175,10 +175,11 @@ archivo entero de una sentada, que es algo que no se vuelve a hacer en meses.
 
 ---
 
-## F · Entrada nueva que se propone abrir
+## F · Entradas nuevas que se proponen abrir
 
-Una sola, y no sale de clasificar lo que había: sale de cerrar la 8. Se escribe aquí con la
-forma que tendría en `PENDIENTES.md` para que fusionarla sea copiar, no redactar.
+Dos, y ninguna sale de clasificar lo que había: salen de cerrar la 8 y de un incidente entre
+frentes. Se escriben aquí con la forma que tendrían en `PENDIENTES.md` para que fusionarlas sea
+copiar, no redactar.
 
 ### 19 · El verde de `main` no está registrado en ninguna parte
 
@@ -213,3 +214,53 @@ formas de que eso ocurra, y conviene reconocerlas:
 
 Ese día, y solo ese, se paga la corrida de `main` — y se paga sabiendo por qué, que es
 distinto de pagarla por costumbre.
+
+---
+
+### 20 · La identidad E2E se pierde sola, y el aislamiento depende de que no se pierda
+
+**Qué pasa.** Cada worktree necesita su propia identidad para correr la suite —
+`COMPOSE_PROJECT_NAME`, `POSTGRES_PORT`, `API_PORT`, `FRONTEND_PORT` y el `Port=` de
+`ConnectionStrings__Default`, que **no se deduce de los otros cuatro**—. Vive en
+`e2e/.env.e2e`, que **sí está versionado** y trae los valores de la worktree principal. Una
+segunda worktree lo modifica y **no commitea el cambio**, para que su identidad no viaje a
+`main` y se la lleve puesta la siguiente.
+
+Y ahí está el defecto: **lo que no se commitea se pierde solo.** Un `git checkout --`, un
+`git stash`, un `git clean`, restaurar el árbol tras un merge — cualquiera de esas cosas
+devuelve el archivo a los valores compartidos, en silencio y sin que nadie lo pida. La worktree
+sigue funcionando igual de bien **hasta que dos frentes corren a la vez**, que es justo cuando
+no hay nadie mirando.
+
+**No es un defecto de la documentación.** `docs/ENTORNO.md` §5 describía el mecanismo con
+precisión y aun así se quedó falso: afirmaba que `sillar-footer` tenía identidad propia, que la
+tuvo, y que la perdió por este mismo mecanismo. **El documento caducó por lo que el documento
+describe.** Corregirlo no arregla nada: volverá a caducar.
+
+**Qué se ha hecho ya, y qué no.** El 5 de septiembre `composeDown()` pasó a mirar de quién es
+el stack antes de destruirlo, por la etiqueta `com.docker.compose.project.working_dir` que pone
+docker compose. Eso **mitiga la consecuencia peor** —que un frente destruya el stack del otro a
+mitad de suite— y convierte una destrucción silenciosa en una parada con nombre. **No resuelve
+el defecto:** la identidad sigue perdiéndose sola, los puertos siguen chocando, y el segundo
+frente sigue sin poder correr.
+
+**Direcciones posibles, ninguna decidida.** Se apuntan para que quien decida no tenga que
+redescubrirlas, no como propuesta:
+
+- **Derivarla del árbol** en vez de escribirla: que `e2e/setup/env.ts` calcule proyecto y
+  puertos a partir de la ruta de la worktree cuando `.env.e2e` no los fije. Colisión imposible
+  por construcción, y nada que perder porque nada que guardar. A cambio, los puertos dejan de
+  ser predecibles y hay que leerlos en cada corrida.
+- **Sacarla del árbol**: un archivo por worktree fuera del control de versiones —
+  `.env.e2e.local`, ignorado— que `git` no pueda restaurar. Sigue habiendo que crearlo a mano.
+- **Dejarla donde está y detectar la pérdida**: que el arnés avise cuando la identidad de esta
+  worktree coincide con la de otra. Es lo más barato y lo menos ambicioso.
+
+**Disparador.** El siguiente frente que se añada — el tercero. Con dos, la colisión es una
+molestia que la guarda de `composeDown()` convierte en una espera. Con tres, el segundo y el
+tercero se bloquean entre sí sin que ninguno de los dos sea el que integra, y la espera deja de
+ser una espera para convertirse en una cola sin turno.
+
+**Y una advertencia sobre este disparador**, que no es del tipo que se cumple solo: no salta al
+crear la worktree, salta la primera vez que dos de los tres quieren correr la puerta a la vez.
+Puede pasar semanas sin saltar y luego saltar tres veces en una tarde.
