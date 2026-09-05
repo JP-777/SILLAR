@@ -2,6 +2,11 @@
    Pantallas de la plataforma: instalación, acceso, reconexión, errores.
    ========================================================================== */
 
+/* `hidden` es una garantía del documento, no una sugerencia a la cascada.
+   Una regla de componente que fije `display` no puede volver visible algo
+   que el producto declaró oculto. */
+[hidden] { display: none !important; }
+
 /* --- Pantalla centrada, para instalación y acceso ----------------------- */
 
 .pf-centered {
