@@ -450,9 +450,24 @@ ahí. Se abre en escritura para todos y **no** se hace `chown`: cambiar el propi
 exige ser root y el arnés no lo es. Es aceptable en esta carpeta y solo en ésta —está fuera del
 control de versiones, no contiene nada del producto y cada corrida la vacía.
 
-**Si vuelve a pasar** —una carpeta que quedó de antes del arreglo, con el propietario malo— el
-arnés falla al abrirla con un `EPERM` y **lo dice por su nombre**, con el `sudo rm -rf` que lo
-arregla, en vez de dejar que reaparezca once pruebas más tarde.
+**Si la carpeta ya existe, lo que decide no es si se puede abrir: es quién es el dueño.** Y
+esto costó un rojo, porque la primera versión de la guarda se equivocaba justo aquí. Daba por
+hecho que un `chmod` denegado significaba «la creó docker como root». No: significa «no soy el
+dueño». Si el dueño es el UID **1654** —el de la API—, la carpeta está **mejor** que si fuera
+nuestra: el proceso que escribe dentro es su propietario. Es el caso normal de cualquier
+worktree con corridas anteriores al arreglo.
+
+Los tres estados y lo que hace el arnés con cada uno:
+
+| Estado en el disco | Qué hace |
+|---|---|
+| No existe | La crea y la abre en escritura. Es el caso de una worktree nueva |
+| Existe y es del UID 1654 | **La deja como está.** El que escribe dentro es el dueño |
+| Existe y es de otro —`root`, típicamente— | Falla, dice de quién es y da el `sudo rm -rf` |
+
+Lo cazó la puerta la primera vez que corrió con la guarda dentro de `sillar-fx`, cuya carpeta
+era `1654:1654` desde el 2 de septiembre. Una guarda que bloquea lo que funciona es peor que
+no tenerla: la que calla te deja seguir, ésta te para en falso.
 
 ### 7 · El `.env` de la raíz tampoco se hereda, y copiarlo del vecino es peor que no tenerlo
 

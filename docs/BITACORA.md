@@ -506,6 +506,47 @@ zona horaria. Ahora responden una de tres: lo vi, miré y no había, **no pude m
 el motivo**. Callar sobre la máquina está bien; callar sobre la propia incapacidad de mirar,
 no.
 
+#### Y el reverso: una barrera que para en falso es la misma enfermedad
+
+Al día siguiente de escribir todo lo anterior, la cuarta barrera de la serie apareció por el
+otro extremo. La guarda de `e2e/.media-e2e` **bloqueaba una carpeta que funcionaba**: daba por
+hecho que un `chmod` denegado significaba «la creó docker como `root`», cuando lo único que
+significa es «no soy el dueño». Y si el dueño es el UID de la API, la carpeta está *mejor* que
+si fuera nuestra — el proceso que escribe dentro es su propietario.
+
+**El detalle técnico que lo hace no obvio, y que conviene tener a mano:** `chmod` exige ser el
+dueño **con independencia del modo**. Una carpeta `drwxrwxrwx` que no es tuya sigue negándote
+el `chmod`. Por eso el 777 de la worktree del otro frente no la habría salvado: la guarda le
+habría caído igual en cuanto sincronizara.
+
+Las dos formas son la misma enfermedad, y la enfermedad no es el sentido del error:
+
+> **No haberla provocado antes de darla por puesta.**
+
+La que calla te deja seguir con algo que no protege; la que para en falso te para con algo que
+no está roto. En los dos casos lo que faltó fue verla decir que sí y verla decir que no.
+
+**La corrección de fondo no fue el arreglo, fue poder provocarla.** La decisión salió a
+`e2e/setup/medios.ts` como función pura —sin disco, sin docker, sin arnés—, y ahí los cuatro
+estados se provocan en un segundo. Porque la razón real de no haberla provocado era que **no se
+podía sin levantar el stack**, y una barrera que solo se puede provocar levantando medio
+sistema es una barrera que nadie va a provocar. Si al escribir una guarda cuesta trabajo
+provocarla, eso ya es el hallazgo: sepárala hasta que sea barato.
+
+**Y una consecuencia para quien integra**, que sale de que este defecto pasara la revisión: se
+comprobaron forma y territorio, no comportamiento. Una rama que introduce una barrera nueva no
+se integra sin que la barrera **se haya observado disparar y dejar pasar**. Las dos mitades:
+verla decir que no es la mitad que se recuerda; verla dejar pasar lo que debe es la que faltó
+aquí.
+
+#### Un pariente pequeño de lo mismo: citar de memoria
+
+En el mismo tramo, un informe dio el identificador de un commit como `76e60b6` cuando era
+`d2197bf`. Es la misma familia que las citas de `ENTORNO.md` que se habían desplazado once
+líneas al editar el fichero que citaban: **una afirmación sobre el árbol escrita sin volver a
+mirarlo**. `CLAUDE.md` ya lo dice para archivo y línea; vale igual para un hash, un recuento o
+un nombre de rama. Si no lo acabas de leer, no lo escribas.
+
 ---
 
 ## 5. Pendientes

@@ -4,6 +4,7 @@ import type { FullConfig } from '@playwright/test';
 import { activateModule, completeSetup, createLesserAdmin, login, waitApiReady } from './api.js';
 import { composeBuildAndUpApi, composeDown, composeUpDb, waitDbHealthy } from './docker.js';
 import { E2E_DIR, MEDIA_DIR } from './env.js';
+import { problemaDeLaCarpetaDeMedios } from './medios.js';
 import { migrate, seed } from './migrate.js';
 
 /**
@@ -24,30 +25,39 @@ import { migrate, seed } from './migrate.js';
  * la vacía en cada corrida. En Windows `chmodSync` no hace nada y tampoco hace
  * falta: ahí el montaje no arrastra el UID del host.
  *
- * Si la carpeta ya existe con el propietario equivocado —quedó de una corrida
- * anterior a este arreglo— `chmod` falla con `EPERM`, y entonces el arnés lo
- * dice por su nombre en vez de dejar que el fallo aparezca once pruebas después.
+ * Si la carpeta ya existe y no se puede abrir, **no basta con eso para fallar**:
+ * hay que mirar quién es el dueño. Ver `problemaDeLaCarpetaDeMedios`, que es
+ * donde vive esa decisión y por qué.
  */
 function prepararCarpetaDeMedios(): void {
   mkdirSync(MEDIA_DIR, { recursive: true });
 
+  let sePudoAbrir = true;
+  let causa = '';
+
   try {
     chmodSync(MEDIA_DIR, 0o777);
   } catch (error) {
-    const propietario = (() => {
-      try {
-        return `${statSync(MEDIA_DIR).uid}`;
-      } catch {
-        return 'desconocido';
-      }
-    })();
+    sePudoAbrir = false;
+    causa = String(error);
+  }
 
+  const uidPropietario = (() => {
+    try {
+      return statSync(MEDIA_DIR).uid;
+    } catch {
+      return -1;
+    }
+  })();
+
+  const problema = problemaDeLaCarpetaDeMedios(uidPropietario, sePudoAbrir);
+
+  if (problema !== null) {
     throw new Error(
-      `No se pudo abrir en escritura ${MEDIA_DIR} (propietario UID ${propietario}).\n` +
-        'La creó docker como root en una corrida anterior. La API corre con UID 1654 y no\n' +
-        'puede escribir dentro, así que toda subida respondería 500.\n' +
+      `${MEDIA_DIR} no sirve como carpeta de medios.\n` +
+        problema +
         `Bórrala y vuelve a lanzar la suite:  sudo rm -rf ${MEDIA_DIR}\n` +
-        `Causa original: ${String(error)}`,
+        `Causa original: ${causa}`,
     );
   }
 }
