@@ -631,6 +631,24 @@ function cargaExcesiva() {
 }
 
 /**
+ * La hora en el formato que `journalctl --since` entiende: **hora local**.
+ *
+ * No es un detalle de estilo. `toISOString()` da UTC, y `journalctl` lee una
+ * fecha sin zona como local: en un equipo a UTC-5 eso pide el diario desde cinco
+ * horas en el futuro, no vuelve nada nunca, y la detección de suspensión —que es
+ * el motivo de existir de todo esto— queda muerta sin que nada lo delate. Se
+ * cazó comparando la cadena generada con `date` antes de fiarse de ella.
+ */
+function comoLoLeeJournalctl(fecha) {
+  const dosCifras = (n) => String(n).padStart(2, '0');
+
+  return (
+    `${fecha.getFullYear()}-${dosCifras(fecha.getMonth() + 1)}-${dosCifras(fecha.getDate())} ` +
+    `${dosCifras(fecha.getHours())}:${dosCifras(fecha.getMinutes())}:${dosCifras(fecha.getSeconds())}`
+  );
+}
+
+/**
  * ¿Se suspendió el equipo durante la corrida?
  *
  * Es la única de las cuatro causas ambientales que **sobrevive a la
@@ -643,8 +661,7 @@ function huboSuspension() {
     return null;
   }
 
-  const desde = INICIO.toISOString().replace('T', ' ').slice(0, 19);
-  const r = spawnSync('journalctl', ['--since', desde, '--no-pager', '-o', 'cat'], {
+  const r = spawnSync('journalctl', ['--since', comoLoLeeJournalctl(INICIO), '--no-pager', '-o', 'cat'], {
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
   });
