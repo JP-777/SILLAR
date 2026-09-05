@@ -102,8 +102,22 @@ async function sembrar(api: import('@playwright/test').APIRequestContext) {
 async function cambiarModulo(page: import('@playwright/test').Page, accion: 'Activar' | 'Desactivar') {
   await page.goto('/admin/modulos');
 
+  const interruptor = page.locator('#modulo-catalog').getByRole('switch');
+  await expect(interruptor).toBeVisible();
+
+  // El helper expresa un estado objetivo, no un toggle ciego. Esto permite
+  // llamarlo desde `finally`: si una operación anterior alcanzó a cambiar el
+  // módulo antes de fallar, se corrige; si no lo cambió, no se invierte por
+  // accidente un estado que ya era el correcto.
+  const activo = (await interruptor.getAttribute('aria-checked')) === 'true';
+  const debeEstarActivo = accion === 'Activar';
+
+  if (activo === debeEstarActivo) {
+    return;
+  }
+
   await duringExpectedOutage(page, async () => {
-    await page.locator('#modulo-catalog').getByRole('switch').click();
+    await interruptor.click();
     await page.getByRole('alertdialog').getByRole('button', { name: new RegExp(`^${accion}`) }).click();
 
     const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
@@ -146,10 +160,9 @@ test('Desactivar M01 no borra nada, y al volver el catálogo está donde lo deja
   ).toContainText(/^Producto/);
 
   // --- Se desactiva -------------------------------------------------------
-  await cambiarModulo(page, 'Desactivar');
-  await expect(page.locator('#modulo-catalog')).toContainText('Inactivo');
-
   try {
+    await cambiarModulo(page, 'Desactivar');
+    await expect(page.locator('#modulo-catalog')).toContainText('Inactivo');
     // La auditoría es CORE y sigue disponible. La entrada histórica tampoco
     // desaparece; lo único que ya no participa es el vocabulario de M01.
     // Por eso el fallback honesto enseña el código técnico `product`, nunca
