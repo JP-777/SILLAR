@@ -1,10 +1,56 @@
-import { mkdirSync, rmSync } from 'node:fs';
+import { chmodSync, mkdirSync, rmSync, statSync } from 'node:fs';
 import path from 'node:path';
 import type { FullConfig } from '@playwright/test';
 import { activateModule, completeSetup, createLesserAdmin, login, waitApiReady } from './api.js';
 import { composeBuildAndUpApi, composeDown, composeUpDb, waitDbHealthy } from './docker.js';
-import { E2E_DIR } from './env.js';
+import { E2E_DIR, MEDIA_DIR } from './env.js';
 import { migrate, seed } from './migrate.js';
+
+/**
+ * Crea la carpeta de medios **antes** de que la levante docker, y se asegura de
+ * que el proceso de dentro del contenedor pueda escribir en ella.
+ *
+ * Si no existe cuando arranca el servicio, **docker la crea como `root`**. El
+ * proceso de la API no es root: la imagen base define `app` con UID 1654
+ * (`backend/Dockerfile:50-51`), así que toda subida responde 500 y once pruebas
+ * caen a la vez sin que nada diga por qué. Es lo que le pasó a la worktree
+ * `sillar-footer` el 4 de septiembre de 2026, y se diagnosticó comparando el
+ * propietario con el de otra worktree, que no es una señal que esté a mano.
+ *
+ * **Por qué el modo y no `chown`.** Cambiar el propietario a 1654 exige ser
+ * root, y el arnés no lo es ni debe serlo. Se abre en escritura para todos, que
+ * es lo aceptable aquí y solo aquí: la carpeta está fuera del control de
+ * versiones (`.gitignore:49`), no contiene nada del producto y `composeDown()`
+ * la vacía en cada corrida. En Windows `chmodSync` no hace nada y tampoco hace
+ * falta: ahí el montaje no arrastra el UID del host.
+ *
+ * Si la carpeta ya existe con el propietario equivocado —quedó de una corrida
+ * anterior a este arreglo— `chmod` falla con `EPERM`, y entonces el arnés lo
+ * dice por su nombre en vez de dejar que el fallo aparezca once pruebas después.
+ */
+function prepararCarpetaDeMedios(): void {
+  mkdirSync(MEDIA_DIR, { recursive: true });
+
+  try {
+    chmodSync(MEDIA_DIR, 0o777);
+  } catch (error) {
+    const propietario = (() => {
+      try {
+        return `${statSync(MEDIA_DIR).uid}`;
+      } catch {
+        return 'desconocido';
+      }
+    })();
+
+    throw new Error(
+      `No se pudo abrir en escritura ${MEDIA_DIR} (propietario UID ${propietario}).\n` +
+        'La creó docker como root en una corrida anterior. La API corre con UID 1654 y no\n' +
+        'puede escribir dentro, así que toda subida respondería 500.\n' +
+        `Bórrala y vuelve a lanzar la suite:  sudo rm -rf ${MEDIA_DIR}\n` +
+        `Causa original: ${String(error)}`,
+    );
+  }
+}
 
 /**
  * Levanta el sistema entero, solo, para el arnés: stack docker efímero,
@@ -18,6 +64,9 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   const screenshots = path.join(E2E_DIR, 'screenshots');
   rmSync(screenshots, { recursive: true, force: true });
   mkdirSync(screenshots, { recursive: true });
+
+  // Antes de docker, no después: si docker llega primero, la crea como root.
+  prepararCarpetaDeMedios();
 
   console.log('[e2e] destruyendo un stack anterior, si quedó alguno...');
   await composeDown();

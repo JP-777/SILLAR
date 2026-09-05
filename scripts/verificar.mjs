@@ -63,6 +63,7 @@ import path from 'node:path';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ENV_FILE = path.join(RAIZ, '.env');
+const ENV_EJEMPLO = path.join(RAIZ, '.env.example');
 
 /**
  * Las pruebas que **se espera** que se salten, por su nombre completo.
@@ -222,6 +223,53 @@ function env(key) {
   return process.env[key] ?? envValues[key] ?? '';
 }
 
+/**
+ * El mensaje que se lee cuando falta la cadena de conexión, que es **lo primero
+ * que le pasa a una worktree recién creada**: `.env` está en `.gitignore`
+ * (`.gitignore:2`), así que no se hereda, y la puerta muere antes de la etapa 1
+ * sin llegar a decir «FALLÓ en la etapa».
+ *
+ * Se escribe aquí y no en `docs/` a propósito. Un paso manual documentado se
+ * paga cada vez que alguien estrena un árbol; una frase en el punto exacto del
+ * fallo se paga una vez. El remedio ya existe versionado —`.env.example`, que
+ * sí trae `ConnectionStrings__Default`—, y lo único que faltaba era que el
+ * fallo lo nombrara.
+ *
+ * Distingue los dos casos porque piden cosas distintas: no hay archivo, o el
+ * archivo está y le falta la clave.
+ */
+function faltaLaCadena() {
+  const hayEjemplo = existsSync(ENV_EJEMPLO);
+
+  const existe = existsSync(ENV_FILE);
+
+  const cabecera = existe
+    ? `${ENV_FILE} existe pero no define ConnectionStrings__Default.`
+    : `No hay ${ENV_FILE}. No se hereda al crear una worktree: está en .gitignore:2.`;
+
+  let remedio;
+  if (!hayEjemplo) {
+    remedio = `Y tampoco hay ${ENV_EJEMPLO}, que es de donde debería salir.`;
+  } else if (existe) {
+    // Copiar encima borraría lo que ya esté puesto: aquí falta una línea, no el archivo.
+    remedio =
+      'Añádele la línea que .env.example trae para esa clave. No copies el ejemplo\n' +
+      'encima: se llevaría por delante lo que ya esté puesto.';
+  } else {
+    remedio = 'Cópialo de la plantilla versionada, que sí la trae:\n    cp .env.example .env';
+  }
+
+  return [
+    cabecera,
+    remedio,
+    '',
+    'Cópialo de .env.example y NO de otra worktree: el .env del vecino apunta a',
+    'SU PostgreSQL, y esta puerta crearía su base efímera dentro de la instalación',
+    'de ese otro árbol. Revisa COMPOSE_PROJECT_NAME, POSTGRES_PORT, el Port= de la',
+    'cadena y Sillar__Node__Code, que son los que identifican a este árbol.',
+  ].join('\n');
+}
+
 // --- Cadena de conexión y BD efímera ---------------------------------------
 
 /**
@@ -232,7 +280,7 @@ function env(key) {
 function cadenaEfímera(nombreBase) {
   const original = env('ConnectionStrings__Default');
   if (!original) {
-    throw new Error('Falta ConnectionStrings__Default en el entorno o en .env');
+    throw new Error(faltaLaCadena());
   }
   const reemplazada = original.replace(/Database=[^;]*/i, `Database=${nombreBase}`);
   if (reemplazada === original) {
@@ -252,7 +300,20 @@ function cadenaEfímera(nombreBase) {
  * comprueban que `Database` en su cadena de conexión coincida exactamente.
  */
 const NOMBRE_BASE = `sillar_verify_${Date.now()}_${process.pid}`;
-const CADENA_EFÍMERA = cadenaEfímera(NOMBRE_BASE);
+
+/**
+ * Se atrapa aquí para que lo que se lea sea el remedio y no la traza. Este
+ * fallo ocurre **antes de la etapa 1**, así que no puede salir por el «FALLÓ en
+ * la etapa: n» de abajo, y una traza de Node por encima y por debajo del texto
+ * entierra justo la línea que dice qué hacer.
+ */
+let CADENA_EFÍMERA;
+try {
+  CADENA_EFÍMERA = cadenaEfímera(NOMBRE_BASE);
+} catch (error) {
+  console.error(`\nLa puerta no llegó a arrancar.\n\n${error.message}\n`);
+  process.exit(1);
+}
 
 /** Usuario PostgreSQL del contenedor. */
 const POSTGRES_USER = env('POSTGRES_USER') || 'postgres';
