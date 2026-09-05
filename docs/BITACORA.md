@@ -539,6 +539,37 @@ se integra sin que la barrera **se haya observado disparar y dejar pasar**. Las 
 verla decir que no es la mitad que se recuerda; verla dejar pasar lo que debe es la que faltó
 aquí.
 
+#### Y el método que las cazó las tres: preguntar por otra vía
+
+Las tres —el diario que no devolvía nada, la guarda que paraba en falso, y un
+`find -newermt "today"` que dio **cero** archivos de un día en el que se habían escrito 67— no
+fallaron. **Contestaron.** Sin error, sin excepción, con código de salida cero, y contestaron
+mal. Ninguna herramienta avisó de nada.
+
+El parecido no es que se equivocaran igual —la primera preguntaba por una ventana imposible, la
+segunda leía bien un `EPERM` y lo interpretaba mal, la tercera filtró mal una fecha—. El
+parecido es **la forma de la respuesta**:
+
+> Un resultado demasiado limpio. Cero líneas. Cero archivos. Una negativa rotunda.
+
+Un cero es una respuesta perfectamente válida y por eso no levanta sospecha, y es justo la que
+da una herramienta a la que le has preguntado mal.
+
+**Lo que las destapó fue siempre lo mismo, y no fue releer el código:** ir a por el mismo hecho
+por una segunda vía, una que no compartiera el error.
+
+| Lo que respondía mal | La segunda vía |
+|---|---|
+| `journalctl --since` con hora UTC | comparar la cadena generada con lo que imprime `date` |
+| `chmod` denegado leído como «lo creó `root`» | mirar quién es el dueño de verdad, y contra qué UID corre la API |
+| `find -newermt "today"` → 0 archivos | **enumerar** por fecha en vez de filtrar por fecha |
+
+**La regla, que es barata:** cuando una comprobación devuelva justo lo que hacía falta para no
+tener que hacer nada —cero resultados, nada que revisar, todo en orden—, consíguelo una segunda
+vez de otra manera antes de creértelo. Y si las dos vías no pueden equivocarse igual, mejor:
+**fíate del que enumera antes que del que filtra**, porque enumerar enseña lo que hay y filtrar
+solo enseña lo que sobrevivió a una condición que puede estar mal escrita.
+
 #### Un pariente pequeño de lo mismo: citar de memoria
 
 En el mismo tramo, un informe dio el identificador de un commit como `76e60b6` cuando era
