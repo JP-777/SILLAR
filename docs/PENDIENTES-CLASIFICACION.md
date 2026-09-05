@@ -1,9 +1,14 @@
 # Propuesta de clasificación de `PENDIENTES.md`
 
-*4 de septiembre de 2026 · leído contra `3b6806d` · las comprobaciones de código son de ese
-mismo árbol*
+*4 de septiembre de 2026 · leído contra `3b6806d` · revisado el 5 de septiembre contra
+`b53e5ee`, que es el árbol al que se integra*
 
-**Qué es esto.** Una lectura ordenada de las 17 entradas de `docs/PENDIENTES.md` y de las
+> **Qué cambió entre las dos lecturas.** `main` cerró la 2 —el footer existe— y abrió la 18.
+> Las dos entradas están reclasificadas abajo, y el recuento de la cabecera es el nuevo. Todas
+> las citas de archivo y línea se volvieron a comprobar contra `b53e5ee` y siguen en su sitio;
+> ninguna otra entrada cambió de texto.
+
+**Qué es esto.** Una lectura ordenada de las 18 entradas de `docs/PENDIENTES.md` y de las
 sublistas de la 11 y la 13, agrupadas por lo único que decide qué hacer con ellas: si siguen
 vivas, si un hecho posterior ya las resolvió sin que nadie fuera a tacharlas, y si tienen
 disparador.
@@ -13,14 +18,19 @@ ninguna**. Un pendiente sin disparador se marca como tal y vuelve al líder; pon
 plausible sería justo el error que `PENDIENTES.md` advierte en su cabecera, con el agravante de
 que quedaría escrito como si alguien lo hubiera decidido.
 
-**Quién la aplica.** No este frente. `PENDIENTES.md` es del frente del footer; la fusión la
-hace él cuando el footer cierre. Este archivo es material para esa fusión.
+**Quién la aplica.** No este frente, y ya no por el mismo motivo: el footer cerró el 4 de
+septiembre, y `PENDIENTES.md` pasó a ser del líder. Los grupos **C** y **D** los aplica él.
+Este archivo es material para esa aplicación, no la aplicación.
 
 **Lo que sí se ha hecho aquí:** ir a mirar. Seis entradas afirmaban algo comprobable contra el
 árbol —dos filas de la 11, dos de la 13, la 2 y la 3— y se comprobó una por una, citando archivo y
 línea en la fila que le corresponde. **Tres de las seis ya no eran ciertas**, y las tres estaban
 escritas como si lo fueran. El resto de las entradas no afirma nada verificable: dice cuándo
 tocaría mirarlas, y eso no se comprueba leyendo código.
+
+De las seis, la de la 2 ya no es una comprobación sino historia: lo que el 4 de septiembre eran
+cinco ficheros sin commitear en `sillar-footer` está hoy en `main`, y la entrada es una lápida.
+Quedan cinco vivas, y las tres falsas siguen siendo tres.
 
 ---
 
@@ -52,7 +62,7 @@ Ordenadas por cercanía del disparador, que es el único orden que sirve para un
 |---|---|---|---|
 | **17** | Etiquetas visibles de `entityType` | «Entra en la revisión de pendientes previa a la división oficial» | **CUMPLIDO**, y así está escrito. 20 tipos medidos. Es la más madura de la lista |
 | **8** | Falsos hallazgos por ruido de máquina | «La tercera vez» | **CUMPLIDO Y SOBREPASADO — ver abajo** |
-| **2** | El footer público de plataforma no existe | «Cuando se decida montar Social Links en público» | **CUMPLIDO y en ejecución.** La worktree `sillar-footer` tiene `PublicLayout.tsx`, `footerContributions.ts`, `footerState.tsx`, `surfaceRegistry.tsx` y `modules/cms/cmsFooter.tsx` sin commitear. Lo cierra ese frente, no éste |
+| **18** | El pie se entregó sin pasar por diseño | «Cuando diseño se reactive» | Vivo, y **nace del cierre de la 2**: entregar el footer no cerró el agujero que la 2 advertía, así que se separó en entrada propia en vez de cerrarse con ella. Bien hecho: es lo contrario de lo que le pasó a la 11 |
 | **15** | El mapa del negocio no tiene módulo dueño | «Antes de cerrar la Fase 1, o cuando alguien pregunte por qué la web no enseña dónde está la tienda» | Vivo. La segunda mitad del disparador puede saltar cualquier día |
 | **16** | Los resúmenes de auditoría no nombran la fila concreta | «El próximo módulo que escriba auditoría nace ya nombrando la entidad» | Vivo, y es de los que no piden barrido: se cumple solo si quien escribe el próximo módulo lo lee |
 | **9** | Cómo llegó `cms` a la base del MVP | «La próxima fila de módulo que aparezca sin que nadie la escriba» | Vivo, en vigilancia. El rastro ya está armado para la próxima |
@@ -104,7 +114,7 @@ Ninguna se cierra ni se le inventa fecha.
 | | Qué es | Qué hacer con ello |
 |---|---|---|
 | **14** | Una **lección**, y lo declara: «no lleva disparador porque no hay nada que hacer — hay algo que mirar» | Dejarla. Pero está en una lista titulada «lo que falta», donde nadie la va a leer el día que sirve. Su sitio natural sería `BITACORA.md` o la cabecera de `ARQUITECTURA_MODULAR.md`. **Es una propuesta, no una decisión** |
-| **1, 7, 10, 12** | Lápidas: número conservado, contenido borrado, resolución en `BITACORA.md` §7 | Quedarse como están. La razón está escrita en cada una y es buena: hay referencias externas y un número que cambia de dueño es peor que un hueco |
+| **1, 2, 7, 10, 12** | Lápidas: número conservado, contenido borrado, resolución en `BITACORA.md` §7. La **2** se sumó el 4 de septiembre y trae la mejora: además de la lápida, dice **qué parte de lo que advertía sigue viva** y dónde —en la 18— | Quedarse como están. La razón está escrita en cada una y es buena: hay referencias externas y un número que cambia de dueño es peor que un hueco |
 | **11** | La tabla de bibliotecas descartadas | Lo dice ella: «no es un pendiente: está aquí para no volver a investigarlas». Es una decisión de arquitectura razonada y **está en el archivo equivocado** — un pendiente se borra al resolverse, y esto no se debe borrar nunca |
 | **13** | Las seis filas tachadas | Se conservan por una razón explícita: «son de otros, y recortar el registro de alguien no es de quien lo mueve». **Esa razón caducó**: el traslado fue hace semanas y lo tachado ya está registrado donde corresponde. Sacarlas devolvería la 13 a un tamaño legible |
 | **13** | «Aplazados por decisión, no pendientes» | Retención de auditoría, vectoriales, permisos granulares, vencimiento de licencias, marca blanca. Correcto donde está y bien etiquetado |
