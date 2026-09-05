@@ -563,12 +563,34 @@ por una segunda vía, una que no compartiera el error.
 | `journalctl --since` con hora UTC | comparar la cadena generada con lo que imprime `date` |
 | `chmod` denegado leído como «lo creó `root`» | mirar quién es el dueño de verdad, y contra qué UID corre la API |
 | `find -newermt "today"` → 0 archivos | **enumerar** por fecha en vez de filtrar por fecha |
+| un comentario que afirmaba que `globalTeardown` solo corre si `globalSetup` terminó | **ejecutarlo** y ver que también corre cuando lanza |
+
+La cuarta fila añade un caso que no es una herramienta sino **un comentario del propio
+repositorio**, y no cambia nada: una afirmación escrita sobre cómo se comporta el código es una
+respuesta como cualquier otra, y se comprueba igual. Ésa además llevaba meses ahí.
 
 **La regla, que es barata:** cuando una comprobación devuelva justo lo que hacía falta para no
 tener que hacer nada —cero resultados, nada que revisar, todo en orden—, consíguelo una segunda
 vez de otra manera antes de creértelo. Y si las dos vías no pueden equivocarse igual, mejor:
 **fíate del que enumera antes que del que filtra**, porque enumerar enseña lo que hay y filtrar
 solo enseña lo que sobrevivió a una condición que puede estar mal escrita.
+
+#### Una guarda pertenece a la operación que protege, no a quien la llama
+
+La barrera que impide destruir el stack e2e de otra worktree se escribió primero en
+`global-setup`, que es donde estaba el problema *a la vista*: es lo que se ejecuta al arrancar
+la suite. **Y no servía.** `globalTeardown` llamaba a la misma operación destructiva sin pasar
+por ahí, y remataba el trabajo un segundo más tarde.
+
+> Poner la guarda en un llamador protege de ese llamador. Ponerla en la operación protege de
+> todos, **incluidos los que todavía no existen**.
+
+Es fácil de razonar al revés, porque el llamador es donde se entiende la intención y la
+operación es donde solo se ve el mecanismo. Pero la intención se duplica y el mecanismo no.
+
+**Y no se descubrió razonándolo: se descubrió provocándola.** La guarda estaba escrita, era
+correcta en su sitio, y el stack ajeno moría igual. Sin la regla de provocar en las dos
+direcciones habría entrado en `main` como una barrera que no protege — la segunda en dos días.
 
 #### Un pariente pequeño de lo mismo: citar de memoria
 

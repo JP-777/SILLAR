@@ -261,6 +261,12 @@ molestia que la guarda de `composeDown()` convierte en una espera. Con tres, el 
 tercero se bloquean entre sí sin que ninguno de los dos sea el que integra, y la espera deja de
 ser una espera para convertirse en una cola sin turno.
 
-**Y una advertencia sobre este disparador**, que no es del tipo que se cumple solo: no salta al
-crear la worktree, salta la primera vez que dos de los tres quieren correr la puerta a la vez.
-Puede pasar semanas sin saltar y luego saltar tres veces en una tarde.
+**Y una advertencia sobre este disparador, porque se lee mal.** «El tercer frente» **parece de
+calendario** —una fecha, un hito, algo que ocurre una vez y se nota— y **es de concurrencia**:
+no salta al crear la worktree, salta la primera vez que dos de los tres quieren correr la
+puerta a la vez. Puede pasar semanas mudo con el tercer frente ya trabajando, y luego dispararse
+tres veces en una tarde.
+
+Quien lea la entrada esperando un día concreto la va a dar por no cumplida mientras el tercer
+árbol exista y todo parezca ir bien. Lo que hay que vigilar no es cuándo aparece el frente:
+es **la primera espera**.
