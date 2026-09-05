@@ -156,13 +156,32 @@ NO PARECE TUYO — esta rama no toca nada de la etapa que falló.
 ```
 
 ```
-Sin veredicto: no hay nada que permita atribuirlo automáticamente.
+Sin veredicto: ninguna señal permite atribuirlo automáticamente.
+
+Lo que NO se pudo comprobar (1):
+  - suspensión: el diario no devolvió nada para la ventana pedida (desde 2026-09-05 13:41:02)
 ```
 
 **La tercera importa tanto como las otras dos.** Un veredicto que siempre dice algo se deja de
 leer; éste calla cuando no sabe, y por eso se le puede creer cuando habla. Sobre la suite e2e
 nunca afirma de quién es —la rompe cualquier capa— y en su lugar manda al sitio donde está la
 respuesta.
+
+**Y «no lo sé» no es lo mismo que «no pude mirar».** Cada sonda responde una de tres cosas —lo
+vi, miré y no había, o **no pude mirar y éste es el motivo**—, y el veredicto lista siempre sus
+puntos ciegos. Antes devolvían todas lo mismo cuando no podían ejecutarse, y ahí se escondió
+durante dos días el fallo de la zona horaria: la detección muerta y la detección «sin diario
+que consultar» producían la misma nada. Está contado en `BITACORA.md` §4, «Una barrera que
+calla no se distingue de una barrera que funciona».
+
+**Las siete ramas se provocan con un comando**, no con un recuerdo:
+
+```bash
+SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1 node scripts/verificar.mjs
+```
+
+Alimenta el veredicto con sondas de mentira, enseña lo que escribe cada rama y termina en 1 si
+alguna calla. No levanta nada ni necesita base de datos.
 
 **Por qué esto dejó de ser opcional.** «La puerta es el criterio» era cierta con un frente: si
 está roja, es tuya. Con dos frentes un rojo ajeno bloquea a los dos, y cada frente paga el

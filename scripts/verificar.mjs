@@ -448,7 +448,12 @@ function migrar(proyecto) {
 // servicio, el puerto y el comando: un fallo genérico de Playwright a los
 // sesenta segundos manda a leer una traza y no dice nada.
 
-console.log(color.gris('Comprobando el entorno...'));
+// En modo autoprueba no se comprueba ningún entorno: se provoca el veredicto y
+// se sale. Anunciarlo aquí haría creer que sí, y esa clase de mentira pequeña es
+// justo la que este bloque entero viene a quitar.
+if (process.env.SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO !== '1') {
+  console.log(color.gris('Comprobando el entorno...'));
+}
 
 // --- Lo que la puerta se prepara a sí misma --------------------------------
 
@@ -602,6 +607,32 @@ const FIRMAS_DE_ENTORNO = [
 ];
 
 /**
+ * **Las sondas no devuelven `null`, y ése es el arreglo.**
+ *
+ * Cada una responde una de tres cosas, nunca dos:
+ *
+ *   `{ visto: … }`     encontró lo que busca
+ *   `{ limpio: true }` miró y no había nada
+ *   `{ ciego: '…' }`   **no pudo mirar**, y dice por qué
+ *
+ * **Por qué importa lo suficiente para cambiar la forma de todas.** Antes las
+ * cuatro devolvían `null` en los dos últimos casos, así que el aparato que
+ * existe para decir por qué la puerta está rota era, por construcción,
+ * indistinguible de estar averiado. No es teórico: el fallo del `toISOString()`
+ * —preguntarle al diario por una ventana cinco horas en el futuro— se escondió
+ * exactamente ahí. `journalctl` devolvía código 0 con salida vacía, `!r.stdout`,
+ * `return null`, silencio. La detección muerta y la detección «sin diario que
+ * consultar» producían la misma nada, y estuvo así hasta que alguien comparó la
+ * cadena generada con `date`.
+ *
+ * Callar sobre la máquina está bien. Callar sobre la propia incapacidad de
+ * mirar, no.
+ */
+
+/** Miró y no había nada. */
+const LIMPIO = { limpio: true };
+
+/**
  * ¿Estaba la máquina saturada al fallar?
  *
  * **De dónde sale.** El 5 de septiembre de 2026, una corrida sobre un árbol
@@ -617,17 +648,23 @@ const FIRMAS_DE_ENTORNO = [
  * entorno por la firma daría veredictos falsos, y un veredicto falso es peor que
  * ninguno. La carga es un hecho medible y ajeno al código: se informa como lo
  * que es, un indicio fuerte, sin decidir por quien lee.
+ *
+ * Los dos argumentos existen para poder provocarla: ver `autoprobarVeredicto`.
  */
-function cargaExcesiva() {
-  const nucleos = os.availableParallelism?.() ?? os.cpus().length;
-  const [carga] = os.loadavg();
-
-  // Cero en Windows: ahí `loadavg` no está implementado y devuelve [0,0,0].
-  if (carga === 0 || nucleos === 0) {
-    return null;
+function cargaExcesiva(carga = os.loadavg()[0], nucleos = os.availableParallelism?.() ?? os.cpus().length) {
+  if (nucleos === 0) {
+    return { ciego: 'no se pudo saber cuántos núcleos tiene esta máquina' };
   }
 
-  return carga > nucleos * 1.5 ? { carga: carga.toFixed(1), nucleos } : null;
+  // Cero en Windows: ahí `loadavg` no está implementado y devuelve [0,0,0]. No
+  // es «carga cero», es «no hay carga que leer», y son cosas distintas.
+  if (carga === 0) {
+    return { ciego: `${process.platform} no publica carga media, así que no se comprobó` };
+  }
+
+  return carga > nucleos * 1.5
+    ? { visto: { carga: carga.toFixed(1), nucleos } }
+    : LIMPIO;
 }
 
 /**
@@ -648,6 +685,15 @@ function comoLoLeeJournalctl(fecha) {
   );
 }
 
+/** Busca la marca de suspensión en un texto de diario. Pura, para poder provocarla. */
+function buscarSuspension(textoDelDiario) {
+  const linea = textoDelDiario
+    .split('\n')
+    .find((l) => /will sleep now|PrepareForSleep/i.test(l));
+
+  return linea ? { visto: linea.trim() } : LIMPIO;
+}
+
 /**
  * ¿Se suspendió el equipo durante la corrida?
  *
@@ -655,30 +701,41 @@ function comoLoLeeJournalctl(fecha) {
  * protección**, y la que más caro sale confundir con un defecto: la suite queda
  * en rojo por pruebas que no tienen nada que ver. El diario del sistema lo dice
  * sin ambigüedad, así que se le pregunta en vez de deducirlo.
+ *
+ * Los tres caminos por los que puede no saberse se nombran uno a uno, y ninguno
+ * se confunde con «no se suspendió».
  */
 function huboSuspension() {
   if (process.platform !== 'linux') {
-    return null;
+    return { ciego: `no hay diario de systemd que consultar en ${process.platform}` };
   }
 
-  const r = spawnSync('journalctl', ['--since', comoLoLeeJournalctl(INICIO), '--no-pager', '-o', 'cat'], {
+  const desde = comoLoLeeJournalctl(INICIO);
+  const r = spawnSync('journalctl', ['--since', desde, '--no-pager', '-o', 'cat'], {
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
   });
 
-  if (r.error || r.status !== 0 || !r.stdout) {
-    return null; // Sin diario no se afirma nada. Callar es más honesto que suponer.
+  if (r.error) {
+    return { ciego: `no se pudo ejecutar journalctl (${r.error.code ?? r.error.message})` };
   }
 
-  const linea = r.stdout
-    .split('\n')
-    .find((l) => /will sleep now|PrepareForSleep/i.test(l));
+  if (r.status !== 0) {
+    return { ciego: `journalctl terminó con código ${r.status}` };
+  }
 
-  return linea ? linea.trim() : null;
+  if (!r.stdout) {
+    // **Éste es el que escondía el fallo de la zona horaria.** Ahora lo dice, y
+    // dice además desde qué momento preguntó, que es el dato con el que se ve
+    // que la ventana estaba mal.
+    return { ciego: `el diario no devolvió nada para la ventana pedida (desde ${desde})` };
+  }
+
+  return buscarSuspension(r.stdout);
 }
 
 /**
- * Qué toca esta rama que `main` no tenga.
+ * Qué toca esta rama que la integración no tenga.
  *
  * **Para qué sirve saberlo.** Con un solo frente, «la puerta es el criterio»
  * bastaba: si está roja, es tuya. Con dos frentes en paralelo un rojo ajeno
@@ -686,37 +743,69 @@ function huboSuspension() {
  * poder hacer nada. Distinguir «esto lo rompí yo» de «esto venía roto» es lo que
  * permite devolverlo en vez de investigarlo.
  *
+ * **Contra `origin/main`, y no contra `main`.** El `main` local de una worktree
+ * recién estrenada puede estar atrasado o no existir siquiera; con la referencia
+ * equivocada, `merge-base` falla y el ámbito de rama dejaba de opinar sin decir
+ * nada. Se prueba `origin/main` primero, `main` como reserva, y **se dice cuál
+ * se usó**: comparar contra una referencia vieja da una lista de ficheros que
+ * parece buena y no lo es.
+ *
  * No decide nada por su cuenta: devuelve la lista y el veredicto la usa como
  * indicio, diciendo siempre que es un indicio.
  */
 function ficherosDeLaRama() {
-  const base = spawnSync('git', ['merge-base', 'HEAD', 'main'], { cwd: RAIZ, encoding: 'utf8' });
+  const candidatas = ['origin/main', 'main'];
+  let referencia = null;
+  let base = null;
 
-  if (base.status !== 0 || !base.stdout.trim()) {
-    return null;
+  for (const candidata of candidatas) {
+    const r = spawnSync('git', ['merge-base', 'HEAD', candidata], { cwd: RAIZ, encoding: 'utf8' });
+
+    if (r.status === 0 && r.stdout.trim()) {
+      referencia = candidata;
+      base = r.stdout.trim();
+      break;
+    }
   }
 
-  const diff = spawnSync('git', ['diff', '--name-only', `${base.stdout.trim()}...HEAD`], {
+  if (base === null) {
+    return { ciego: `no hay ${candidatas.join(' ni ')} contra el que comparar` };
+  }
+
+  const diff = spawnSync('git', ['diff', '--name-only', `${base}...HEAD`], {
     cwd: RAIZ,
     encoding: 'utf8',
   });
 
   if (diff.status !== 0) {
-    return null;
+    return { ciego: `git diff contra ${referencia} terminó con código ${diff.status}` };
   }
 
   const sucios = spawnSync('git', ['status', '--porcelain'], { cwd: RAIZ, encoding: 'utf8' });
-  const sinCommitear = sucios.status === 0
-    ? sucios.stdout.split('\n').map((l) => l.slice(3).trim()).filter(Boolean)
-    : [];
 
-  return [...new Set([...diff.stdout.split('\n').filter(Boolean), ...sinCommitear])];
+  if (sucios.status !== 0) {
+    // Sin esto, un fallo de `git status` haría pasar por «no tocado» un cambio
+    // sin commitear, que es justo el que más probablemente rompió la etapa.
+    return { ciego: 'git status falló, así que no se puede ver lo que está sin commitear' };
+  }
+
+  const sinCommitear = sucios.stdout.split('\n').map((l) => l.slice(3).trim()).filter(Boolean);
+  const ficheros = [...new Set([...diff.stdout.split('\n').filter(Boolean), ...sinCommitear])];
+
+  return { visto: { ficheros, referencia } };
 }
 
 /**
  * Qué carpeta mira cada etapa. La `suite e2e` no está: la rompe cualquier cosa,
  * así que sobre ella no se puede afirmar «no lo tocaste tú» y no se afirma.
  */
+/** Las sondas de verdad. `veredicto` las recibe para poder sustituirlas al provocarlas. */
+const SONDAS_REALES = {
+  suspension: huboSuspension,
+  carga: cargaExcesiva,
+  ficheros: ficherosDeLaRama,
+};
+
 const AMBITO_DE_ETAPA = {
   'tipos del frontend': ['frontend/'],
   'tipos del arnés e2e': ['e2e/'],
@@ -731,63 +820,218 @@ const AMBITO_DE_ETAPA = {
  * **Dice siempre en qué se basa, y dice cuándo no sabe.** Un veredicto sin
  * evidencia sería peor que ninguno: haría que se dejara de mirar.
  */
-function veredicto(etapa, mensaje) {
+function veredicto(etapa, mensaje, sondas = SONDAS_REALES) {
   const lineas = [];
 
-  const suspension = huboSuspension();
-  if (suspension) {
+  // Lo que no se pudo comprobar se acumula y se dice al final, siempre. Un
+  // veredicto que no menciona sus puntos ciegos invita a creerle más de lo que
+  // sabe, y ése es el fallo que este bloque viene a cerrar.
+  const ciegos = [];
+  const mirar = (nombre, sonda) => {
+    const r = sonda();
+    if (r.ciego) {
+      ciegos.push(`${nombre}: ${r.ciego}`);
+    }
+    return r;
+  };
+
+  const cerrar = (cuerpo) => {
+    if (ciegos.length > 0) {
+      cuerpo.push('');
+      cuerpo.push(color.gris(`Lo que NO se pudo comprobar (${ciegos.length}):`));
+      for (const c of ciegos) cuerpo.push(color.gris(`  - ${c}`));
+    }
+    return cuerpo;
+  };
+
+  const suspension = mirar('suspensión', sondas.suspension);
+  if (suspension.visto) {
     lineas.push(color.amarillo('ES DEL ENTORNO — el equipo se suspendió durante la corrida.'));
-    lineas.push(`  ${suspension}`);
+    lineas.push(`  ${suspension.visto}`);
     lineas.push('  No toques el código. Vuelve a lanzarla; docs/ENTORNO.md, hallazgo 4.');
-    return lineas;
+    return cerrar(lineas);
   }
 
-  const saturada = cargaExcesiva();
-  if (saturada && /no llegó a pintar|Test timeout|ECONNRESET|socket hang up|ECONNREFUSED/i.test(mensaje)) {
+  const saturada = mirar('carga de la máquina', sondas.carga);
+  if (saturada.visto && /no llegó a pintar|Test timeout|ECONNRESET|socket hang up|ECONNREFUSED/i.test(mensaje)) {
     lineas.push(color.amarillo('ES DEL ENTORNO (probable) — la máquina estaba saturada al fallar.'));
-    lineas.push(`  Carga ${saturada.carga} sobre ${saturada.nucleos} núcleos, y el fallo es de los que`);
+    lineas.push(`  Carga ${saturada.visto.carga} sobre ${saturada.visto.nucleos} núcleos, y el fallo es de los que`);
     lineas.push('  produce la falta de máquina: tiempos agotados y conexiones cortadas.');
     lineas.push('  Comprueba si hay otra puerta corriendo en otra worktree y repite en frío.');
-    return lineas;
+    return cerrar(lineas);
   }
 
   for (const [patron, explicacion] of FIRMAS_DE_ENTORNO) {
     if (patron.test(mensaje)) {
       lineas.push(color.amarillo(`ES DEL ENTORNO (probable) — ${explicacion}.`));
       lineas.push(`  Coincide con ${patron}. Antes de mirar el código, mira docs/ENTORNO.md.`);
-      return lineas;
+      return cerrar(lineas);
     }
   }
 
   const ambito = AMBITO_DE_ETAPA[etapa];
-  const ficheros = ambito ? ficherosDeLaRama() : null;
 
-  if (ambito && ficheros) {
-    const tocados = ficheros.filter((f) => ambito.some((raiz) => f.startsWith(raiz)));
+  if (ambito) {
+    const rama = mirar('ámbito de la rama', sondas.ficheros);
 
-    if (tocados.length === 0) {
-      lineas.push(color.amarillo('NO PARECE TUYO — esta rama no toca nada de la etapa que falló.'));
-      lineas.push(`  La etapa mira ${ambito.join(', ')} y la rama no cambia nada ahí.`);
-      lineas.push('  Venía de main o de otro frente: devuélvelo en vez de investigarlo.');
-      lineas.push(`  Comprobar:  git diff --stat $(git merge-base HEAD main)...HEAD -- ${ambito.join(' ')}`);
-      return lineas;
+    if (rama.visto) {
+      const { ficheros, referencia } = rama.visto;
+      const tocados = ficheros.filter((f) => ambito.some((raiz) => f.startsWith(raiz)));
+
+      if (tocados.length === 0) {
+        lineas.push(color.amarillo('NO PARECE TUYO — esta rama no toca nada de la etapa que falló.'));
+        lineas.push(`  La etapa mira ${ambito.join(', ')} y la rama no cambia nada ahí, medido contra ${referencia}.`);
+        lineas.push('  Venía de la integración o de otro frente: devuélvelo en vez de investigarlo.');
+        lineas.push(`  Comprobar:  git diff --stat $(git merge-base HEAD ${referencia})...HEAD -- ${ambito.join(' ')}`);
+        return cerrar(lineas);
+      }
+
+      lineas.push(color.gris(`Esta rama toca ${tocados.length} fichero(s) del ámbito de la etapa, contra ${referencia}:`));
+      for (const f of tocados.slice(0, 8)) lineas.push(color.gris(`  - ${f}`));
+      if (tocados.length > 8) lineas.push(color.gris(`  ... y ${tocados.length - 8} más`));
+      return cerrar(lineas);
     }
-
-    lineas.push(color.gris(`Esta rama toca ${tocados.length} fichero(s) del ámbito de la etapa:`));
-    for (const f of tocados.slice(0, 8)) lineas.push(color.gris(`  - ${f}`));
-    if (tocados.length > 8) lineas.push(color.gris(`  ... y ${tocados.length - 8} más`));
-    return lineas;
   }
 
   if (etapa === 'suite e2e') {
     lineas.push(color.gris('Sin veredicto: a la suite e2e la rompe cualquier capa, así que no se'));
     lineas.push(color.gris('afirma de quién es. Abre e2e/test-results/<prueba>/error-context.md,'));
     lineas.push(color.gris('que trae el DOM del fallo — docs/ENTORNO.md, hallazgo 9.'));
-    return lineas;
+    return cerrar(lineas);
   }
 
-  lineas.push(color.gris('Sin veredicto: no hay nada que permita atribuirlo automáticamente.'));
-  return lineas;
+  lineas.push(color.gris('Sin veredicto: ninguna señal permite atribuirlo automáticamente.'));
+  return cerrar(lineas);
+}
+
+/**
+ * **Provoca cada barrera del veredicto y comprueba que dispara.**
+ *
+ *     SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1 node scripts/verificar.mjs
+ *
+ * No lanza la puerta: alimenta el veredicto con sondas de mentira y mira lo que
+ * escribe. Termina en 0 si las siete disparan, en 1 si alguna calla.
+ *
+ * **Por qué existe.** Tres veces en este proyecto una barrera escrita resultó no
+ * poder disparar nunca: el inhibidor con la receta que se tragaba el código de
+ * salida, la detección de suspensión preguntando al diario cinco horas en el
+ * futuro, y las dos pruebas de `ReactivacionRedSocialTests` que exigían una base
+ * que en su etapa no existía. Ninguna de las tres fallaba: las tres callaban.
+ *
+ * Una barrera que calla no se distingue de una barrera que funciona. La pregunta
+ * que lo reconoce es «¿alguna vez la he visto decir que no?», y si la respuesta
+ * es no, lo que se sabe de ella es que compila. Esto es esa pregunta convertida
+ * en comando, para que la respuesta no dependa de acordarse.
+ */
+function autoprobarVeredicto() {
+  const ciega = (motivo) => () => ({ ciego: motivo });
+  const limpia = () => LIMPIO;
+
+  const casos = [
+    {
+      nombre: 'suspensión del equipo',
+      etapa: 'suite e2e',
+      mensaje: 'da igual',
+      sondas: {
+        suspension: () => ({ visto: 'systemd-logind[1]: The system will sleep now!' }),
+        carga: limpia,
+        ficheros: limpia,
+      },
+      espera: 'ES DEL ENTORNO — el equipo se suspendió',
+    },
+    {
+      nombre: 'máquina saturada',
+      etapa: 'suite e2e',
+      mensaje: 'Se navegó a «/admin» y la aplicación no llegó a pintar en 15 s.',
+      sondas: {
+        suspension: limpia,
+        carga: () => cargaExcesiva(24, 8),
+        ficheros: limpia,
+      },
+      espera: 'la máquina estaba saturada',
+    },
+    {
+      nombre: 'firma de entorno conocida',
+      etapa: 'suite e2e',
+      mensaje: 'Failed to load resource: net::ERR_NETWORK_CHANGED',
+      sondas: { suspension: limpia, carga: limpia, ficheros: limpia },
+      espera: 'la red cambió durante la corrida',
+    },
+    {
+      nombre: 'la rama no toca el ámbito',
+      etapa: 'pruebas del backend',
+      mensaje: 'Terminó con código 1.',
+      sondas: {
+        suspension: limpia,
+        carga: limpia,
+        ficheros: () => ({ visto: { ficheros: ['docs/ENTORNO.md'], referencia: 'origin/main' } }),
+      },
+      espera: 'NO PARECE TUYO',
+    },
+    {
+      nombre: 'la rama sí toca el ámbito',
+      etapa: 'pruebas del backend',
+      mensaje: 'Terminó con código 1.',
+      sondas: {
+        suspension: limpia,
+        carga: limpia,
+        ficheros: () => ({ visto: { ficheros: ['backend/Sillar.Core/Data/CoreDbContext.cs'], referencia: 'main' } }),
+      },
+      espera: 'toca 1 fichero(s) del ámbito',
+    },
+    {
+      nombre: 'las tres sondas ciegas se declaran',
+      etapa: 'pruebas del backend',
+      mensaje: 'Terminó con código 1.',
+      sondas: {
+        suspension: ciega('el diario no devolvió nada para la ventana pedida'),
+        carga: ciega('win32 no publica carga media'),
+        ficheros: ciega('no hay origin/main ni main contra el que comparar'),
+      },
+      espera: 'Lo que NO se pudo comprobar (3)',
+    },
+    {
+      nombre: 'sin señal, lo dice en vez de callar',
+      etapa: 'pruebas del backend',
+      mensaje: 'Terminó con código 1.',
+      sondas: {
+        suspension: limpia,
+        carga: limpia,
+        ficheros: () => ({ visto: { ficheros: [], referencia: 'origin/main' } }),
+      },
+      espera: 'NO PARECE TUYO',
+    },
+  ];
+
+  console.log('Provocando las barreras del veredicto, una a una.\n');
+  let fallos = 0;
+
+  for (const caso of casos) {
+    const salida = veredicto(caso.etapa, caso.mensaje, caso.sondas)
+      .join('\n')
+      // Sin colores: comparar texto con secuencias de escape dentro es frágil.
+      .replace(/\x1b\[[0-9;]*m/g, '');
+
+    const disparó = salida.includes(caso.espera);
+    if (!disparó) fallos += 1;
+
+    console.log(`${disparó ? color.verde('DISPARA') : color.rojo('CALLA  ')}  ${caso.nombre}`);
+    console.log(color.gris(`          espera: «${caso.espera}»`));
+    console.log(color.gris(salida.split('\n').map((l) => `          ${l}`).join('\n')));
+    console.log('');
+  }
+
+  if (fallos > 0) {
+    console.error(color.rojo(`${fallos} de ${casos.length} barreras NO dispararon.`));
+    return 1;
+  }
+
+  console.log(color.verde(`Las ${casos.length} barreras disparan.`));
+  return 0;
+}
+
+if (process.env.SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO === '1') {
+  process.exit(autoprobarVeredicto());
 }
 
 asegurarPathDeHerramientas();

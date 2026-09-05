@@ -452,6 +452,50 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
   escrita **mientras pase**: la única forma de saber cuál es cuál es romperla a propósito y ver
   si el mensaje sale.
 
+### Una barrera que calla no se distingue de una barrera que funciona
+
+La entrada de arriba —la aserción de ausencia— resultó ser un caso de algo más grande. **Van
+tres, y las tres tenían la misma forma:** algo escrito, en su sitio, que no podía disparar
+nunca, y que por eso no se distinguía de algo escrito, en su sitio, que sí funcionaba.
+
+| Qué estaba escrito | Por qué no podía disparar | Cómo se supo |
+|---|---|---|
+| El inhibidor de suspensión de la puerta | La receta envolvía con `kde-inhibit`, que **no propaga el código de salida** de su hijo: cualquier rojo salía como cero | Midiendo el código de salida de una puerta que se sabía roja, de las tres formas |
+| La detección de suspensión del veredicto | `toISOString()` da UTC y `journalctl --since` lee local: pedía el diario **cinco horas en el futuro** y no volvía nada nunca | Comparando la cadena generada con `date` antes de fiarse de ella |
+| Las dos pruebas de `ReactivacionRedSocialTests` | Exigían una base de datos que en su etapa todavía no existía: no podían correr | — |
+
+Ninguna de las tres **fallaba**. Las tres **callaban**, que se parece mucho a estar bien.
+
+**La pregunta que lo reconoce**, y sirve para cualquier barrera —una prueba, una aserción de
+ausencia, un `CHECK`, un guard de arranque, un aviso de la puerta—:
+
+> ¿Alguna vez he visto a esta barrera decir que no?
+
+Si nunca ha disparado, lo que se sabe de ella no es que funcione: es que compila.
+
+**La regla que sale de ahí.** Una barrera nueva **se provoca una vez a propósito y se observa
+disparar**, antes de darla por puesta. Con una entrada sintética si hace falta; no vale
+razonar que debería.
+
+**Y donde se pueda, se deja provocable.** Las siete ramas del veredicto de la puerta se
+provocan con un comando, no con un recuerdo:
+
+```bash
+SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1 node scripts/verificar.mjs
+```
+
+Alimenta el veredicto con sondas de mentira, enseña lo que escribe cada rama y termina en 1 si
+alguna calla. Es la misma idea que `SILLAR_VERIFY_FORCE_FAIL=1`, que ya provocaba la limpieza
+de la base efímera para verla ocurrir.
+
+**El corolario, que es lo que cambió el código.** Una barrera que no puede mirar tiene que
+decirlo, y decirlo distinto de «miré y no había nada». Las sondas del veredicto devolvían
+`null` en los dos casos, así que el aparato que existe para decir por qué la puerta está rota
+era indistinguible de estar averiado — y ahí fue exactamente donde se escondió el fallo de la
+zona horaria. Ahora responden una de tres: lo vi, miré y no había, **no pude mirar y éste es
+el motivo**. Callar sobre la máquina está bien; callar sobre la propia incapacidad de mirar,
+no.
+
 ---
 
 ## 5. Pendientes

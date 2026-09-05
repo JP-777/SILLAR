@@ -20,7 +20,8 @@ vivas, si un hecho posterior ya las resolvió sin que nadie fuera a tacharlas, y
 disparador.
 
 **Qué NO es.** No cierra nada, no borra nada, no renumera nada y **no le inventa disparador a
-ninguna**. Un pendiente sin disparador se marca como tal y vuelve al líder; ponerle uno
+ninguna**. Sí **propone abrir una**, la 19 del grupo F, y solo porque el líder la encargó con
+su contenido y su disparador: no salió de clasificar. Un pendiente sin disparador se marca como tal y vuelve al líder; ponerle uno
 plausible sería justo el error que `PENDIENTES.md` advierte en su cabecera, con el agravante de
 que quedaría escrito como si alguien lo hubiera decidido.
 
@@ -95,13 +96,13 @@ criterio— **no estaba hecha**. El 5 de septiembre se hizo: la puerta escribe u
 debajo del `FALLÓ`, con la evidencia en que se apoya, y **calla cuando no puede atribuirlo**.
 Está en `fix/puerta-atribuye-rojo`.
 
-**Aun así no se cierra aquí, y no por formalismo.** Lo que se ha hecho cubre lo que la puerta
-puede saber sola: si el equipo se suspendió, si la máquina estaba saturada, si la firma es de
-red o de disco, y si la rama toca siquiera el ámbito de la etapa que falló. Lo que no cubre
-—porque no se puede desde dentro de una corrida— es decir si el mismo rojo sale en `main`. Esa
-es la pregunta que de verdad separa «lo rompí yo» de «venía roto», y la respuesta cuesta otra
-corrida entera. **Si la 8 se cierra, que se cierre sabiendo que ésa es la mitad que queda
-fuera.**
+**La 8 se cierra con eso, y la mitad que yo daba por perdida no lo estaba.** Aquí se escribió
+que lo que faltaba —saber si el mismo rojo sale en `main`— no se podía responder desde dentro
+de una corrida y costaba otra entera. **La premisa era falsa.** Solo cuesta una corrida si se
+responde corriendo, y no hace falta: por la regla 4 de la división nada entra en `main` sin
+pasar la puerta en su rama, y solo Integración fusiona. `main` está verde **por construcción**,
+y se sabe con qué commit y cuándo se comprobó. Lo que falta no es una corrida: es que ese hecho
+quede escrito. Sale como entrada propia, la **19**, más abajo.
 
 Y una quinta ocurrencia, del mismo día, que conviene anotar porque la produjo este frente: una
 corrida sobre un árbol limpio dio 4 fallos de 126 por tener otra puerta corriendo a la vez en
@@ -171,3 +172,44 @@ archivo entero de una sentada, que es algo que no se vuelve a hacer en meses.
 4. **La cabecera pide una cosa que la lista no cumple.** «Cada entrada lleva su disparador. Un
    pendiente sin disparador es un deseo.» Doce entradas del grupo C no lo tienen. La regla es
    buena; lo que falta es el momento en que se aplica, que sería al escribir cada entrada.
+
+---
+
+## F · Entrada nueva que se propone abrir
+
+Una sola, y no sale de clasificar lo que había: sale de cerrar la 8. Se escribe aquí con la
+forma que tendría en `PENDIENTES.md` para que fusionarla sea copiar, no redactar.
+
+### 19 · El verde de `main` no está registrado en ninguna parte
+
+**Qué pasa.** Con dos frentes, la pregunta cara ante un rojo es «¿esto lo rompí yo o venía
+roto?». El veredicto de la puerta responde lo que puede saber solo desde dentro de una corrida
+—suspensión, saturación, firmas de entorno conocidas, si la rama toca siquiera el ámbito de la
+etapa—, y para lo que queda hay una respuesta que **no cuesta ninguna corrida**: por la regla 4
+de la división, nada entra en `main` sin pasar la puerta en su rama, y solo Integración
+fusiona. **`main` está verde por construcción.** El problema es que ese hecho no está escrito
+en ningún sitio: hoy nadie puede decir con qué commit se comprobó, ni cuándo, sin reconstruirlo
+a mano del historial.
+
+**Qué haría falta.** Que Integración anote **en cada fusión** las tres cosas que convierten el
+verde en un hecho consultable:
+
+- el **commit** de la rama sobre el que corrió la puerta,
+- la **fecha** en que corrió,
+- y el **resultado** —`TODO EN VERDE`, o qué se admitió a pesar de qué.
+
+Coste: una línea por integración. Corridas: **cero**.
+
+**Por qué la fecha y no solo el commit.** Porque lo que caduca no es el árbol, es el entorno. Un
+verde de hace tres semanas sobre el mismo commit no dice nada sobre una máquina a la que le
+cambió KDE, Docker o el kernel entre medias — y cuatro de las cinco causas ambientales
+inventariadas en `docs/ENTORNO.md` son exactamente de esa clase.
+
+**Disparador.** El **primer rojo cuyo origen el registro de verde no baste para resolver**. Dos
+formas de que eso ocurra, y conviene reconocerlas:
+
+- el registro es **más antiguo que el cambio de entorno** que se está investigando, o
+- las cuatro señales del veredicto **vuelven limpias** y el rojo sigue ahí.
+
+Ese día, y solo ese, se paga la corrida de `main` — y se paga sabiendo por qué, que es
+distinto de pagarla por costumbre.
