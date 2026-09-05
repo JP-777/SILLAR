@@ -149,107 +149,112 @@ test('Desactivar M01 no borra nada, y al volver el catálogo está donde lo deja
   await cambiarModulo(page, 'Desactivar');
   await expect(page.locator('#modulo-catalog')).toContainText('Inactivo');
 
-  // La auditoría es CORE y sigue disponible. La entrada histórica tampoco
-  // desaparece; lo único que ya no participa es el vocabulario de M01.
-  // Por eso el fallback honesto enseña el código técnico `product`, nunca
-  // «Desconocido» ni una etiqueta retenida por la plataforma.
-  await page.goto('/admin/auditoria');
-  filaAuditada = page
-    .locator('tbody tr')
-    .filter({ has: page.locator('code', { hasText: productId }) });
+  try {
+    // La auditoría es CORE y sigue disponible. La entrada histórica tampoco
+    // desaparece; lo único que ya no participa es el vocabulario de M01.
+    // Por eso el fallback honesto enseña el código técnico `product`, nunca
+    // «Desconocido» ni una etiqueta retenida por la plataforma.
+    await page.goto('/admin/auditoria');
+    filaAuditada = page
+      .locator('tbody tr')
+      .filter({ has: page.locator('code', { hasText: productId }) });
 
-  await expect(
-    filaAuditada,
-    'desactivar M01 hizo desaparecer su entrada histórica de auditoría',
-  ).toHaveCount(1);
-  await expect(
-    filaAuditada.locator('td').nth(4),
-    'M01 inactivo dejó su vocabulario visible en CORE',
-  ).toContainText(/^product/);
-  await expect(
-    filaAuditada.locator('td').nth(4),
-    'el fallback inventó «Desconocido» en vez del código técnico',
-  ).not.toContainText('Desconocido');
-
-  // 1 · El panel sigue en pie y no queda rastro del módulo en el menú.
-  //
-  // **Por sus enlaces, no por una palabra.** Esto decía
-  // `not.toContainText('Productos')`, y M02 añadió «Productos destacados»:
-  // la aserción empezó a fallar con el módulo correctamente desmontado. La
-  // trampa es que cambiarla por otra subcadena solo muda la fragilidad al
-  // siguiente módulo que use la palabra — y M18 Campaña Escolar la va a usar.
-  //
-  // Se pregunta por lo que identifica a M01 sin ambigüedad: **sus tres
-  // destinos**. Un enlace a `/admin/catalogo/…` solo lo pone M01
-  // (`catalog/routes.tsx`), así que la afirmación sigue siendo cierta con
-  // cualquier número de módulos que hablen de productos.
-  await page.goto('/admin');
-  await expect(page.locator('main')).toBeVisible();
-
-  const menu = page.getByRole('navigation', { name: 'Secciones del panel' });
-  await expect(menu, 'el panel se quedó sin menú al desactivar M01').toBeVisible();
-  await expect(
-    menu.locator('a[href^="/admin/catalogo/"]'),
-    'quedó un enlace de M01 en el menú con el módulo desactivado',
-  ).toHaveCount(0);
-
-  // 2 · Sus rutas no existen: quien escriba una a mano no encuentra una
-  //     pantalla rota.
-  await page.goto('/admin/catalogo/productos');
-  await expect(page).not.toHaveURL(/\/admin\/catalogo\/productos$/);
-
-  // 3 · Y el API del catálogo tampoco: 404, no 500.
-  const publico = await page.request.get('/api/catalog/products');
-  expect(publico.status(), 'con M01 inactivo el catálogo público no responde 404').toBe(404);
-
-  // 4 · **La portada no renderiza la sección de productos.** No vacía, no
-  //     deshabilitada, no con un aviso de que falta algo: un hueco que
-  //     explica su ausencia sigue siendo un hueco.
-  // **Se espera al contenido de verdad, no a que `main` exista.** Las dos
-  // aserciones de abajo esperan ausencia, y una ausencia se cumple sola en una
-  // página a medio pintar: `main` es visible en cuanto aparece el armazón.
-  await duringExpectedOutage(page, async () => {
-    await page.goto('/');
-    // CRM permanece activo: sirve como ancla positiva para demostrar que
-    // la portada terminó de renderizar aunque M01 esté apagado.
     await expect(
-      page.getByText('Cuenta de cliente', { exact: true }),
-    ).toBeVisible();
-
-    // **Y por eso mismo el aviso de portada vacía no sale.** Antes de M04
-    // aquí se afirmaba lo contrario, y era correcto: sin nadie que aportara,
-    // la portada lo decía. Ahora M04 aporta, así que decir «todavía no hay
-    // contenido publicado» debajo de una sección con contenido sería mentira.
-    // Las dos mitades se afirman juntas a propósito: sin esta, un fallo del
-    // registro de contribuciones dejaría las dos cosas en pantalla y ninguna
-    // prueba lo vería.
+      filaAuditada,
+      'desactivar M01 hizo desaparecer su entrada histórica de auditoría',
+    ).toHaveCount(1);
     await expect(
-      page.getByText('Todavía no hay contenido publicado.'),
-      'la portada avisa de que está vacía mientras pinta la sección de M04',
+      filaAuditada.locator('td').nth(4),
+      'M01 inactivo dejó su vocabulario visible en CORE',
+    ).toContainText(/^product/);
+    await expect(
+      filaAuditada.locator('td').nth(4),
+      'el fallback inventó «Desconocido» en vez del código técnico',
+    ).not.toContainText('Desconocido');
+
+    // 1 · El panel sigue en pie y no queda rastro del módulo en el menú.
+    //
+    // **Por sus enlaces, no por una palabra.** Esto decía
+    // `not.toContainText('Productos')`, y M02 añadió «Productos destacados»:
+    // la aserción empezó a fallar con el módulo correctamente desmontado. La
+    // trampa es que cambiarla por otra subcadena solo muda la fragilidad al
+    // siguiente módulo que use la palabra — y M18 Campaña Escolar la va a usar.
+    //
+    // Se pregunta por lo que identifica a M01 sin ambigüedad: **sus tres
+    // destinos**. Un enlace a `/admin/catalogo/…` solo lo pone M01
+    // (`catalog/routes.tsx`), así que la afirmación sigue siendo cierta con
+    // cualquier número de módulos que hablen de productos.
+    await page.goto('/admin');
+    await expect(page.locator('main')).toBeVisible();
+
+    const menu = page.getByRole('navigation', { name: 'Secciones del panel' });
+    await expect(menu, 'el panel se quedó sin menú al desactivar M01').toBeVisible();
+    await expect(
+      menu.locator('a[href^="/admin/catalogo/"]'),
+      'quedó un enlace de M01 en el menú con el módulo desactivado',
     ).toHaveCount(0);
-  });
 
-  // Y lo mismo en la tienda, por el mismo motivo: esto era
-  // `not.toContainText('catálogo')` sobre todo `main`, que es una palabra que
-  // cualquier módulo público puede usar con toda la razón. Lo que identifica a
-  // M01 aquí son **sus rutas públicas** —`/catalogo` y `/producto/…`
-  // (`catalog/routes.tsx`, `catalogPublicRoutes`)— y el título de su sección.
-  await expect(
-    page.locator('main a[href^="/catalogo"], main a[href^="/producto/"]'),
-    'la portada sigue enlazando a la tienda con M01 desactivado',
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole('link', { name: 'Ver el catálogo', exact: true }),
-    'sigue el enlace de la sección de M01',
-  ).toHaveCount(0);
-  await expect(
-    page.getByText('Nuestra tienda', { exact: true }),
-    'la sección de M01 sigue pintándose con el módulo desactivado',
-  ).toHaveCount(0);
+    // 2 · Sus rutas no existen: quien escriba una a mano no encuentra una
+    //     pantalla rota.
+    await page.goto('/admin/catalogo/productos');
+    await expect(page).not.toHaveURL(/\/admin\/catalogo\/productos$/);
 
-  // --- Se vuelve a activar ------------------------------------------------
-  await cambiarModulo(page, 'Activar');
-  await expect(page.locator('#modulo-catalog')).toContainText('Activo');
+    // 3 · Y el API del catálogo tampoco: 404, no 500.
+    const publico = await page.request.get('/api/catalog/products');
+    expect(publico.status(), 'con M01 inactivo el catálogo público no responde 404').toBe(404);
+
+    // 4 · **La portada no renderiza la sección de productos.** No vacía, no
+    //     deshabilitada, no con un aviso de que falta algo: un hueco que
+    //     explica su ausencia sigue siendo un hueco.
+    // **Se espera al contenido de verdad, no a que `main` exista.** Las dos
+    // aserciones de abajo esperan ausencia, y una ausencia se cumple sola en una
+    // página a medio pintar: `main` es visible en cuanto aparece el armazón.
+    await duringExpectedOutage(page, async () => {
+      await page.goto('/');
+      // CRM permanece activo: sirve como ancla positiva para demostrar que
+      // la portada terminó de renderizar aunque M01 esté apagado.
+      await expect(
+        page.getByText('Cuenta de cliente', { exact: true }),
+      ).toBeVisible();
+
+      // **Y por eso mismo el aviso de portada vacía no sale.** Antes de M04
+      // aquí se afirmaba lo contrario, y era correcto: sin nadie que aportara,
+      // la portada lo decía. Ahora M04 aporta, así que decir «todavía no hay
+      // contenido publicado» debajo de una sección con contenido sería mentira.
+      // Las dos mitades se afirman juntas a propósito: sin esta, un fallo del
+      // registro de contribuciones dejaría las dos cosas en pantalla y ninguna
+      // prueba lo vería.
+      await expect(
+        page.getByText('Todavía no hay contenido publicado.'),
+        'la portada avisa de que está vacía mientras pinta la sección de M04',
+      ).toHaveCount(0);
+    });
+
+    // Y lo mismo en la tienda, por el mismo motivo: esto era
+    // `not.toContainText('catálogo')` sobre todo `main`, que es una palabra que
+    // cualquier módulo público puede usar con toda la razón. Lo que identifica a
+    // M01 aquí son **sus rutas públicas** —`/catalogo` y `/producto/…`
+    // (`catalog/routes.tsx`, `catalogPublicRoutes`)— y el título de su sección.
+    await expect(
+      page.locator('main a[href^="/catalogo"], main a[href^="/producto/"]'),
+      'la portada sigue enlazando a la tienda con M01 desactivado',
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: 'Ver el catálogo', exact: true }),
+      'sigue el enlace de la sección de M01',
+    ).toHaveCount(0);
+    await expect(
+      page.getByText('Nuestra tienda', { exact: true }),
+      'la sección de M01 sigue pintándose con el módulo desactivado',
+    ).toHaveCount(0);
+
+  } finally {
+    // Desactivar un módulo muta estado compartido de toda la suite. Una
+    // aserción fallida no puede dejar M01 apagado y trasladar el fallo a las
+    // pruebas siguientes: se restaura antes de abandonar este caso.
+    await cambiarModulo(page, 'Activar');
+    await expect(page.locator('#modulo-catalog')).toContainText('Activo');
+  }
 
   await page.goto('/admin/auditoria');
   filaAuditada = page
