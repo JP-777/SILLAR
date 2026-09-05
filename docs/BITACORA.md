@@ -477,16 +477,26 @@ Si nunca ha disparado, lo que se sabe de ella no es que funcione: es que compila
 disparar**, antes de darla por puesta. Con una entrada sintética si hace falta; no vale
 razonar que debería.
 
-**Y donde se pueda, se deja provocable.** Las siete ramas del veredicto de la puerta se
-provocan con un comando, no con un recuerdo:
+**Y donde se pueda, no se deja provocable: se provoca sola.** Es el paso que faltaba, y lo
+señaló el líder: una barrera que solo dispara cuando alguien se acuerda de invocarla es
+indistinguible de una que no funciona. Dejar la autoprueba como comando aparte habría
+contradicho esta misma entrada en el commit que la introduce.
+
+Así que las siete ramas del veredicto **se provocan dentro de la puerta**, antes de la etapa 1,
+y si alguna calla la puerta no arranca. Cuestan unos milisegundos: son sintéticas y no hacen
+entrada ni salida. Es la misma idea que `SILLAR_VERIFY_FORCE_FAIL=1`, que ya provocaba la
+limpieza de la base efímera para verla ocurrir.
+
+El comando sigue existiendo para lo que dentro no cabe —enseñar lo que escribe cada rama y
+ejercitar las sondas reales—:
 
 ```bash
 SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1 node scripts/verificar.mjs
 ```
 
-Alimenta el veredicto con sondas de mentira, enseña lo que escribe cada rama y termina en 1 si
-alguna calla. Es la misma idea que `SILLAR_VERIFY_FORCE_FAIL=1`, que ya provocaba la limpieza
-de la base efímera para verla ocurrir.
+**Que la puerta compruebe su propio instrumental y no el producto es deliberado, y no es
+nuevo:** `OMITIDAS_ESPERADAS` ya comprueba la contabilidad de la propia puerta, y
+`SILLAR_VERIFY_FORCE_FAIL` existe para provocar su propia limpieza.
 
 **El corolario, que es lo que cambió el código.** Una barrera que no puede mirar tiene que
 decirlo, y decirlo distinto de «miré y no había nada». Las sondas del veredicto devolvían

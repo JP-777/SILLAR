@@ -174,14 +174,31 @@ durante dos días el fallo de la zona horaria: la detección muerta y la detecci
 que consultar» producían la misma nada. Está contado en `BITACORA.md` §4, «Una barrera que
 calla no se distingue de una barrera que funciona».
 
-**Las siete ramas se provocan con un comando**, no con un recuerdo:
+**Las siete ramas se provocan solas, dentro de la puerta**, antes de la etapa 1. Si alguna
+calla, la puerta **no arranca**:
+
+```
+FALLÓ en la etapa: veredicto
+  2 de 7 ramas del veredicto no dispararon al provocarlas.
+  La puerta no arranca: el aparato que dice de quién es un rojo está roto,
+  y un veredicto roto engaña más de lo que cuesta un rojo.
+```
+
+No es una comprobación gratuita ni cara: las provocaciones son sintéticas y no hacen entrada ni
+salida. Medido, el comando entero tarda ~95 ms, de los que ~75 son arranque de Node —que la
+puerta ya paga— y ~25 la llamada a `journalctl`, que en el preflight no se hace.
+
+**Y el comando sigue existiendo**, para lo que dentro de la puerta no cabe: enseñar lo que
+escribe cada rama, y ejercitar las **sondas reales**, que sí dependen de la máquina.
 
 ```bash
 SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1 node scripts/verificar.mjs
 ```
 
-Alimenta el veredicto con sondas de mentira, enseña lo que escribe cada rama y termina en 1 si
-alguna calla. No levanta nada ni necesita base de datos.
+Esa segunda mitad se queda fuera del preflight a propósito: al arrancar la puerta, la ventana
+del diario tiene segundos, así que la sonda de suspensión responde «no pude» con toda la razón.
+Dentro imprimiría esa alarma en **cada corrida sana**, y una alarma que suena siempre se deja de
+leer — la misma enfermedad, por el otro extremo.
 
 **Por qué esto dejó de ser opcional.** «La puerta es el criterio» era cierta con un frente: si
 está roja, es tuya. Con dos frentes un rojo ajeno bloquea a los dos, y cada frente paga el

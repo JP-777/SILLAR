@@ -904,13 +904,123 @@ function veredicto(etapa, mensaje, sondas = SONDAS_REALES) {
   return cerrar(lineas);
 }
 
+/** Sonda de mentira que dice «miré y no había nada». */
+const limpia = () => LIMPIO;
+
+/** Sonda de mentira que dice «no pude mirar, y por esto». */
+const ciega = (motivo) => () => ({ ciego: motivo });
+
+/**
+ * **Las entradas con las que se provoca cada rama del veredicto.**
+ *
+ * Viven aquí arriba y no dentro de la autoprueba porque las usan dos: el
+ * comando de diagnóstico y la comprobación previa de la propia puerta. Una sola
+ * lista, para que no puedan discrepar.
+ */
+const PROVOCACIONES = [
+  {
+    nombre: 'suspensión del equipo',
+    etapa: 'suite e2e',
+    mensaje: 'da igual',
+    sondas: {
+      // La función real de búsqueda, con un diario sintético: lo único que se
+      // sustituye es de dónde sale el texto, no quién decide.
+      suspension: () => buscarSuspension(
+        'kernel: algo irrelevante\nsystemd-logind[1]: The system will sleep now!\nkernel: más ruido',
+      ),
+      carga: limpia,
+      ficheros: limpia,
+    },
+    espera: 'ES DEL ENTORNO — el equipo se suspendió',
+  },
+  {
+    nombre: 'máquina saturada',
+    etapa: 'suite e2e',
+    mensaje: 'Se navegó a «/admin» y la aplicación no llegó a pintar en 15 s.',
+    sondas: {
+      suspension: limpia,
+      carga: () => cargaExcesiva(24, 8),
+      ficheros: limpia,
+    },
+    espera: 'la máquina estaba saturada',
+  },
+  {
+    nombre: 'firma de entorno conocida',
+    etapa: 'suite e2e',
+    mensaje: 'Failed to load resource: net::ERR_NETWORK_CHANGED',
+    sondas: { suspension: limpia, carga: limpia, ficheros: limpia },
+    espera: 'la red cambió durante la corrida',
+  },
+  {
+    nombre: 'la rama no toca el ámbito',
+    etapa: 'pruebas del backend',
+    mensaje: 'Terminó con código 1.',
+    sondas: {
+      suspension: limpia,
+      carga: limpia,
+      ficheros: () => ({ visto: { ficheros: ['docs/ENTORNO.md'], referencia: 'origin/main' } }),
+    },
+    espera: 'NO PARECE TUYO',
+  },
+  {
+    nombre: 'la rama sí toca el ámbito',
+    etapa: 'pruebas del backend',
+    mensaje: 'Terminó con código 1.',
+    sondas: {
+      suspension: limpia,
+      carga: limpia,
+      ficheros: () => ({ visto: { ficheros: ['backend/Sillar.Core/Data/CoreDbContext.cs'], referencia: 'main' } }),
+    },
+    espera: 'toca 1 fichero(s) del ámbito',
+  },
+  {
+    nombre: 'las tres sondas ciegas se declaran',
+    etapa: 'pruebas del backend',
+    mensaje: 'Terminó con código 1.',
+    sondas: {
+      suspension: ciega('el diario no devolvió nada para la ventana pedida'),
+      carga: ciega('win32 no publica carga media'),
+      ficheros: ciega('no hay origin/main ni main contra el que comparar'),
+    },
+    espera: 'Lo que NO se pudo comprobar (3)',
+  },
+  {
+    nombre: 'sin señal, lo dice en vez de callar',
+    etapa: 'pruebas del backend',
+    mensaje: 'Terminó con código 1.',
+    sondas: {
+      suspension: limpia,
+      carga: limpia,
+      ficheros: () => ({ visto: { ficheros: [], referencia: 'origin/main' } }),
+    },
+    espera: 'NO PARECE TUYO',
+  },
+];
+
+/**
+ * Provoca las ramas y devuelve cuáles callaron. **No hace entrada ni salida**:
+ * las sondas son de mentira y el veredicto es una función pura sobre ellas. Por
+ * eso puede correr dentro de la puerta sin coste ni dependencia del entorno.
+ */
+function provocarLasRamas() {
+  return PROVOCACIONES.map((caso) => {
+    const salida = veredicto(caso.etapa, caso.mensaje, caso.sondas)
+      .join('\n')
+      // Sin colores: comparar texto con secuencias de escape dentro es frágil.
+      .replace(/\x1b\[[0-9;]*m/g, '');
+
+    return { ...caso, salida, disparó: salida.includes(caso.espera) };
+  });
+}
+
 /**
  * **Provoca cada barrera del veredicto y comprueba que dispara.**
  *
  *     SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1 node scripts/verificar.mjs
  *
- * No lanza la puerta: alimenta el veredicto con sondas de mentira y mira lo que
- * escribe. Termina en 0 si las siete disparan, en 1 si alguna calla.
+ * No lanza la puerta: alimenta el veredicto con sondas de mentira, enseña lo que
+ * escribe cada rama, y además llama a las sondas de verdad para ver que
+ * contestan. Termina en 0 si todo dispara, en 1 si algo calla.
  *
  * **Por qué existe.** Tres veces en este proyecto una barrera escrita resultó no
  * poder disparar nunca: el inhibidor con la receta que se tragaba el código de
@@ -920,108 +1030,25 @@ function veredicto(etapa, mensaje, sondas = SONDAS_REALES) {
  *
  * Una barrera que calla no se distingue de una barrera que funciona. La pregunta
  * que lo reconoce es «¿alguna vez la he visto decir que no?», y si la respuesta
- * es no, lo que se sabe de ella es que compila. Esto es esa pregunta convertida
- * en comando, para que la respuesta no dependa de acordarse.
+ * es no, lo que se sabe de ella es que compila.
+ *
+ * **Y de acordarse ya no depende:** las provocaciones sintéticas corren también
+ * dentro de la puerta, antes de la etapa 1 — ver `comprobarQueElVeredictoHabla`.
+ * Este comando existe para lo que allí no cabe: enseñar lo que escribe cada rama
+ * y ejercitar las sondas reales, que sí dependen de la máquina.
  */
 function autoprobarVeredicto() {
-  const ciega = (motivo) => () => ({ ciego: motivo });
-  const limpia = () => LIMPIO;
-
-  const casos = [
-    {
-      nombre: 'suspensión del equipo',
-      etapa: 'suite e2e',
-      mensaje: 'da igual',
-      sondas: {
-        // La función real de búsqueda, con un diario sintético: lo único que se
-        // sustituye es de dónde sale el texto, no quién decide.
-        suspension: () => buscarSuspension(
-          'kernel: algo irrelevante\nsystemd-logind[1]: The system will sleep now!\nkernel: más ruido',
-        ),
-        carga: limpia,
-        ficheros: limpia,
-      },
-      espera: 'ES DEL ENTORNO — el equipo se suspendió',
-    },
-    {
-      nombre: 'máquina saturada',
-      etapa: 'suite e2e',
-      mensaje: 'Se navegó a «/admin» y la aplicación no llegó a pintar en 15 s.',
-      sondas: {
-        suspension: limpia,
-        carga: () => cargaExcesiva(24, 8),
-        ficheros: limpia,
-      },
-      espera: 'la máquina estaba saturada',
-    },
-    {
-      nombre: 'firma de entorno conocida',
-      etapa: 'suite e2e',
-      mensaje: 'Failed to load resource: net::ERR_NETWORK_CHANGED',
-      sondas: { suspension: limpia, carga: limpia, ficheros: limpia },
-      espera: 'la red cambió durante la corrida',
-    },
-    {
-      nombre: 'la rama no toca el ámbito',
-      etapa: 'pruebas del backend',
-      mensaje: 'Terminó con código 1.',
-      sondas: {
-        suspension: limpia,
-        carga: limpia,
-        ficheros: () => ({ visto: { ficheros: ['docs/ENTORNO.md'], referencia: 'origin/main' } }),
-      },
-      espera: 'NO PARECE TUYO',
-    },
-    {
-      nombre: 'la rama sí toca el ámbito',
-      etapa: 'pruebas del backend',
-      mensaje: 'Terminó con código 1.',
-      sondas: {
-        suspension: limpia,
-        carga: limpia,
-        ficheros: () => ({ visto: { ficheros: ['backend/Sillar.Core/Data/CoreDbContext.cs'], referencia: 'main' } }),
-      },
-      espera: 'toca 1 fichero(s) del ámbito',
-    },
-    {
-      nombre: 'las tres sondas ciegas se declaran',
-      etapa: 'pruebas del backend',
-      mensaje: 'Terminó con código 1.',
-      sondas: {
-        suspension: ciega('el diario no devolvió nada para la ventana pedida'),
-        carga: ciega('win32 no publica carga media'),
-        ficheros: ciega('no hay origin/main ni main contra el que comparar'),
-      },
-      espera: 'Lo que NO se pudo comprobar (3)',
-    },
-    {
-      nombre: 'sin señal, lo dice en vez de callar',
-      etapa: 'pruebas del backend',
-      mensaje: 'Terminó con código 1.',
-      sondas: {
-        suspension: limpia,
-        carga: limpia,
-        ficheros: () => ({ visto: { ficheros: [], referencia: 'origin/main' } }),
-      },
-      espera: 'NO PARECE TUYO',
-    },
-  ];
-
   console.log('Provocando las barreras del veredicto, una a una.\n');
+
+  const resultados = provocarLasRamas();
   let fallos = 0;
 
-  for (const caso of casos) {
-    const salida = veredicto(caso.etapa, caso.mensaje, caso.sondas)
-      .join('\n')
-      // Sin colores: comparar texto con secuencias de escape dentro es frágil.
-      .replace(/\x1b\[[0-9;]*m/g, '');
+  for (const r of resultados) {
+    if (!r.disparó) fallos += 1;
 
-    const disparó = salida.includes(caso.espera);
-    if (!disparó) fallos += 1;
-
-    console.log(`${disparó ? color.verde('DISPARA') : color.rojo('CALLA  ')}  ${caso.nombre}`);
-    console.log(color.gris(`          espera: «${caso.espera}»`));
-    console.log(color.gris(salida.split('\n').map((l) => `          ${l}`).join('\n')));
+    console.log(`${r.disparó ? color.verde('DISPARA') : color.rojo('CALLA  ')}  ${r.nombre}`);
+    console.log(color.gris(`          espera: «${r.espera}»`));
+    console.log(color.gris(r.salida.split('\n').map((l) => `          ${l}`).join('\n')));
     console.log('');
   }
 
@@ -1031,6 +1058,12 @@ function autoprobarVeredicto() {
   // las sondas reales **contestan**, en la forma de tres estados y sin `null`
   // — que es donde estaba el fallo original. No se afirma qué deben responder:
   // eso depende de la máquina. Se afirma que responden algo nombrable.
+  //
+  // **Esta mitad no entra en la puerta, y es a propósito.** Al arrancar, `INICIO`
+  // tiene segundos, así que el diario devuelve vacío y la sonda de suspensión
+  // responde «no pude» con toda la razón. Meterla en el preflight imprimiría esa
+  // alarma en cada corrida sana, y una alarma que suena siempre se deja de leer:
+  // la misma enfermedad que esto viene a curar, por el otro extremo.
   console.log(color.gris('Y lo que responden hoy las sondas de verdad:\n'));
 
   for (const [nombre, sonda] of Object.entries(SONDAS_REALES)) {
@@ -1067,13 +1100,61 @@ function autoprobarVeredicto() {
     return 1;
   }
 
-  console.log(color.verde(`Las ${casos.length} barreras disparan y las ${Object.keys(SONDAS_REALES).length} sondas reales contestan.`));
+  console.log(color.verde(`Las ${resultados.length} barreras disparan y las ${Object.keys(SONDAS_REALES).length} sondas reales contestan.`));
   return 0;
+}
+
+/**
+ * **Comprueba, antes de la etapa 1, que el veredicto todavía habla.**
+ *
+ * El veredicto se lee exactamente cuando algo ya va mal y alguien tiene prisa.
+ * Roto en ese momento no es que no ayude: **engaña** — un «NO PARECE TUYO» mal
+ * calculado manda a devolver un rojo que sí era tuyo. Por eso se comprueba, y
+ * por eso corta la puerta en vez de avisar: un aviso en el preflight se va por
+ * arriba de un registro de treinta minutos sin que nadie lo vea.
+ *
+ * **Y por eso va aquí y no al final.** Si la maquinaria del veredicto está rota,
+ * conviene saberlo antes de gastar media hora, no después.
+ *
+ * **Coste, medido y no supuesto:** el comando entero tarda unos 110 ms, de los
+ * que 49 son arranque de Node —que la puerta ya paga— y unos 25 la llamada a
+ * `journalctl`, que aquí no se hace. Lo que queda son las provocaciones
+ * sintéticas, que no hacen entrada ni salida.
+ *
+ * **Y sí, esto es la puerta comprobando su propio instrumental y no el
+ * producto.** Es deliberado y no es nuevo: `OMITIDAS_ESPERADAS` comprueba la
+ * contabilidad de la propia puerta, y `SILLAR_VERIFY_FORCE_FAIL` existe para
+ * provocar su propia limpieza. El veredicto es maquinaria de la puerta igual que
+ * esas dos. Dejarlo fuera lo convertiría en una barrera que solo dispara cuando
+ * alguien se acuerda de invocarla, que es justo lo que `BITACORA.md` §4 nombra.
+ */
+function comprobarQueElVeredictoHabla() {
+  const callaron = provocarLasRamas().filter((r) => !r.disparó);
+
+  if (callaron.length === 0) {
+    return;
+  }
+
+  console.error(`\n${color.rojo('FALLÓ')} en la etapa: veredicto`);
+  console.error(`  ${callaron.length} de ${PROVOCACIONES.length} ramas del veredicto no dispararon al provocarlas.`);
+  console.error('  La puerta no arranca: el aparato que dice de quién es un rojo está roto,');
+  console.error('  y un veredicto roto engaña más de lo que cuesta un rojo.\n');
+
+  for (const r of callaron) {
+    console.error(`  - ${r.nombre} — esperaba «${r.espera}» y escribió:`);
+    console.error(r.salida.split('\n').map((l) => `      ${l}`).join('\n'));
+  }
+
+  console.error('\n  Para verlas todas:  SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1 node scripts/verificar.mjs');
+  process.exit(1);
 }
 
 if (process.env.SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO === '1') {
   process.exit(autoprobarVeredicto());
 }
+
+comprobarQueElVeredictoHabla();
+
 
 asegurarPathDeHerramientas();
 const soltarInhibidores = tomarInhibidores();
