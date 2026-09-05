@@ -3,6 +3,7 @@ import { useCapability } from '../capabilities/useCapability';
 import { AdminShell } from '../layout/AdminShell';
 import { HomePage } from '../platform/HomePage';
 import { LoginPage } from '../platform/LoginPage';
+import { PublicLayout } from '../platform/PublicLayout';
 import { PublicSite } from '../platform/PublicSite';
 import { RequireAuth } from '../session';
 import { catalogPublicRoutes, catalogRoutes } from '../modules/catalog/routes';
@@ -20,17 +21,25 @@ import { crmAdminRoutes, crmPublicRoutes } from '../modules/crm/routes';
  *
  * CORE va sin condición porque siempre está activo — es la base sobre la que
  * se enchufa todo lo demás.
+ *
+ * **El sitio público va dentro de `PublicLayout`**, que es quien pone el pie:
+ * un pie que estuviera solo en la portada desaparecería al abrir una ficha de
+ * producto. Las pantallas de acceso quedan fuera — son chrome de plataforma,
+ * no el sitio público.
  */
 export function AppRoutes() {
   const { has } = useCapability();
 
   return (
     <Routes>
-      <Route path="/" element={<PublicSite />} />
-      <Route path="/login" element={<LoginPage />} />
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<PublicSite />} />
 
-      {/* La tienda. Pública y fuera del panel: sin RequireAuth. */}
-      {has('catalog') && catalogPublicRoutes}
+        {/* La tienda. Pública y fuera del panel: sin RequireAuth. */}
+        {has('catalog') && catalogPublicRoutes}
+      </Route>
+
+      <Route path="/login" element={<LoginPage />} />
       {has('crm') && crmPublicRoutes}
 
       <Route element={<RequireAuth />}>

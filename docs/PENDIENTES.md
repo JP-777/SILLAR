@@ -27,23 +27,17 @@ condicional algo que no depende de ningún dato.
 
 ---
 
-## 2 · El footer público de plataforma no existe
+## 2 · ~~El footer público de plataforma no existe~~ — **resuelto el 4 de septiembre de 2026**
 
-**Qué pasa.** La costura `PublicFooterContribution` / `FOOTER_CONTRIBUTIONS` quedó **aprobada** en
-la auditoría de M02, con el mismo patrón que `HOME_SECTIONS`. Pero no hay ningún `<footer>` de
-página en `frontend/src/` — ni vacío. El único `<footer>` del árbol es el del cajón
-(`shared/ui/patterns.tsx:81`), que es otra cosa. M02 tiene la API pública de Social Links y el
-servicio listos (`modules/cms/services/socialLinks.ts`) y **sin montar**.
+Se borra el contenido y se conserva el número, por lo mismo que el 1 y el 12: se cita desde la
+bitácora y renumerar rompería las referencias.
 
-**Ojo con el tamaño.** No es «conectar Social Links a un footer»: es **construir el footer de
-plataforma por primera vez**, con Social Links como su primer contribuyente.
+Existe `PublicLayout`, que envuelve las cuatro rutas públicas y monta el pie; `cmsFooter` es su
+primer contribuyente y consume la API de Social Links que ya estaba lista y sin montar.
 
-**Y por qué nadie lo va a diseñar solo.** `PROTOCOLO-DISENO.md` §3 encarga pantallas a partir del
-§9 del SPEC de un módulo. El footer no está en el §9 de ninguno, porque es de la plataforma. Con
-el protocolo actual, **no le toca a nadie**.
-
-**Disparador.** Cuando se decida montar Social Links en público. Avisar al equipo de diseño en ese
-momento, no antes (§6: consume del mismo cupo).
+**Lo que este pendiente advertía y sigue vigente** está abajo, en el 18: el hueco de
+`PROTOCOLO-DISENO` §3 no se cerró por entregar el footer. Se cerrará el día que el protocolo
+diga quién encarga las superficies de plataforma.
 
 ---
 
@@ -424,6 +418,34 @@ vocabulario a su módulo. Mientras tanto el mapa funciona y degrada con honestid
 desconocido se muestra con su código técnico, no con un «Desconocido» inventado.
 
 **Disparador.** **Cumplido.** Entra en la revisión de pendientes previa a la división oficial.
+
+
+---
+
+## 18 · El pie se entregó sin pasar por diseño, y el protocolo sigue sin poder encargarlo
+
+**Qué pasa.** Tres cosas que van juntas porque tienen la misma raíz:
+
+**1 · El protocolo no tiene forma de encargar una superficie de plataforma.**
+`PROTOCOLO-DISENO.md` §3 encarga pantallas a partir del §9 del SPEC de un módulo, y el pie no
+está en el §9 de ninguno porque es de la plataforma. **No es que diseño no lo hiciera: es que
+nadie podía pedírselo.** Mientras eso no se arregle, cualquier superficie de plataforma futura
+cae en el mismo agujero. El arreglo de fondo es **una línea en `PROTOCOLO-DISENO` sobre
+superficies de plataforma**, no un encargo suelto para este caso.
+
+**2 · WhatsApp abre una conversación, no un perfil.** Es la única de las cinco redes que no
+lleva a una página que se visita: lleva a escribir un mensaje. Enseñarla junto a Instagram y
+TikTok, con el mismo tratamiento y el mismo verbo implícito, promete algo distinto de lo que
+hace. Hay que comunicárselo a diseño para que lo resuelva, no resolverlo por cuenta propia.
+
+**3 · El pie no tiene tratamiento visual.** Hoy es un borde superior y una lista de enlaces de
+texto centrados. Es honesto —el enlace dice a dónde lleva— y deliberadamente sin iconos: no se
+añade una dependencia de iconos por cinco enlaces, ni se dibujan a mano logotipos que son marcas
+de otros. Pero es lo mínimo para que exista, no una decisión de diseño.
+
+**Disparador.** Cuando diseño se reactive. Los tres puntos se le pasan juntos, y el 1 antes que
+los otros dos: sin él, el encargo de los otros dos vuelve a ser una excepción a mano.
+
 
 ---
 

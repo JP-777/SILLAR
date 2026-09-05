@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
-import { useHomeContribution, type EstadoAporte } from '../../platform/homeContributions';
+import { useAporteDePortada } from '../../platform/homeState';
+import type { EstadoAporte } from '../../platform/surfaceState';
 import type { HomeSection } from '../../platform/homeSections';
 import { useDelayedFlag } from '../../shared/hooks/useDelayedFlag';
 import { Alert, Badge, Button, Spinner } from '../../shared/ui';
@@ -62,7 +63,7 @@ function BannersBlock() {
   // Se declara **antes de cualquier salida temprana**: un hook no puede
   // quedar detrás de un `return`, y además el estado que hay que declarar es
   // justamente el que provoca esas salidas.
-  useHomeContribution(aporteDe(state));
+  useAporteDePortada(aporteDe(state));
 
   if (state.status === 'loading') {
     return showLoading
@@ -130,7 +131,7 @@ function PromotionsBlock() {
   // Se declara **antes de cualquier salida temprana**: un hook no puede
   // quedar detrás de un `return`, y además el estado que hay que declarar es
   // justamente el que provoca esas salidas.
-  useHomeContribution(aporteDe(state));
+  useAporteDePortada(aporteDe(state));
 
   if (state.status === 'loading') {
     return showLoading
@@ -197,7 +198,7 @@ function FeaturedProductsBlock() {
   // Se declara **antes de cualquier salida temprana**: un hook no puede
   // quedar detrás de un `return`, y además el estado que hay que declarar es
   // justamente el que provoca esas salidas.
-  useHomeContribution(aporteDe(state));
+  useAporteDePortada(aporteDe(state));
 
   if (state.status === 'loading') {
     return showLoading
@@ -270,7 +271,7 @@ function FeaturedProjectsBlock() {
   // Se declara **antes de cualquier salida temprana**: un hook no puede
   // quedar detrás de un `return`, y además el estado que hay que declarar es
   // justamente el que provoca esas salidas.
-  useHomeContribution(aporteDe(state));
+  useAporteDePortada(aporteDe(state));
 
   if (state.status === 'loading') {
     return showLoading
