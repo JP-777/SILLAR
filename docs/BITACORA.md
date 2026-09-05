@@ -452,6 +452,132 @@ Reglas de decisión del proyecto. Una duda nueva se resuelve con estas, no impro
   escrita **mientras pase**: la única forma de saber cuál es cuál es romperla a propósito y ver
   si el mensaje sale.
 
+### Una barrera que calla no se distingue de una barrera que funciona
+
+La entrada de arriba —la aserción de ausencia— resultó ser un caso de algo más grande. **Van
+tres, y las tres tenían la misma forma:** algo escrito, en su sitio, que no podía disparar
+nunca, y que por eso no se distinguía de algo escrito, en su sitio, que sí funcionaba.
+
+| Qué estaba escrito | Por qué no podía disparar | Cómo se supo |
+|---|---|---|
+| El inhibidor de suspensión de la puerta | La receta envolvía con `kde-inhibit`, que **no propaga el código de salida** de su hijo: cualquier rojo salía como cero | Midiendo el código de salida de una puerta que se sabía roja, de las tres formas |
+| La detección de suspensión del veredicto | `toISOString()` da UTC y `journalctl --since` lee local: pedía el diario **cinco horas en el futuro** y no volvía nada nunca | Comparando la cadena generada con `date` antes de fiarse de ella |
+| Las dos pruebas de `ReactivacionRedSocialTests` | Exigían una base de datos que en su etapa todavía no existía: no podían correr | — |
+
+Ninguna de las tres **fallaba**. Las tres **callaban**, que se parece mucho a estar bien.
+
+**La pregunta que lo reconoce**, y sirve para cualquier barrera —una prueba, una aserción de
+ausencia, un `CHECK`, un guard de arranque, un aviso de la puerta—:
+
+> ¿Alguna vez he visto a esta barrera decir que no?
+
+Si nunca ha disparado, lo que se sabe de ella no es que funcione: es que compila.
+
+**La regla que sale de ahí.** Una barrera nueva **se provoca una vez a propósito y se observa
+disparar**, antes de darla por puesta. Con una entrada sintética si hace falta; no vale
+razonar que debería.
+
+**Y donde se pueda, no se deja provocable: se provoca sola.** Es el paso que faltaba, y lo
+señaló el líder: una barrera que solo dispara cuando alguien se acuerda de invocarla es
+indistinguible de una que no funciona. Dejar la autoprueba como comando aparte habría
+contradicho esta misma entrada en el commit que la introduce.
+
+Así que las siete ramas del veredicto **se provocan dentro de la puerta**, antes de la etapa 1,
+y si alguna calla la puerta no arranca. Cuestan unos milisegundos: son sintéticas y no hacen
+entrada ni salida. Es la misma idea que `SILLAR_VERIFY_FORCE_FAIL=1`, que ya provocaba la
+limpieza de la base efímera para verla ocurrir.
+
+El comando sigue existiendo para lo que dentro no cabe —enseñar lo que escribe cada rama y
+ejercitar las sondas reales—:
+
+```bash
+SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1 node scripts/verificar.mjs
+```
+
+**Que la puerta compruebe su propio instrumental y no el producto es deliberado, y no es
+nuevo:** `OMITIDAS_ESPERADAS` ya comprueba la contabilidad de la propia puerta, y
+`SILLAR_VERIFY_FORCE_FAIL` existe para provocar su propia limpieza.
+
+**El corolario, que es lo que cambió el código.** Una barrera que no puede mirar tiene que
+decirlo, y decirlo distinto de «miré y no había nada». Las sondas del veredicto devolvían
+`null` en los dos casos, así que el aparato que existe para decir por qué la puerta está rota
+era indistinguible de estar averiado — y ahí fue exactamente donde se escondió el fallo de la
+zona horaria. Ahora responden una de tres: lo vi, miré y no había, **no pude mirar y éste es
+el motivo**. Callar sobre la máquina está bien; callar sobre la propia incapacidad de mirar,
+no.
+
+#### Y el reverso: una barrera que para en falso es la misma enfermedad
+
+Al día siguiente de escribir todo lo anterior, la cuarta barrera de la serie apareció por el
+otro extremo. La guarda de `e2e/.media-e2e` **bloqueaba una carpeta que funcionaba**: daba por
+hecho que un `chmod` denegado significaba «la creó docker como `root`», cuando lo único que
+significa es «no soy el dueño». Y si el dueño es el UID de la API, la carpeta está *mejor* que
+si fuera nuestra — el proceso que escribe dentro es su propietario.
+
+**El detalle técnico que lo hace no obvio, y que conviene tener a mano:** `chmod` exige ser el
+dueño **con independencia del modo**. Una carpeta `drwxrwxrwx` que no es tuya sigue negándote
+el `chmod`. Por eso el 777 de la worktree del otro frente no la habría salvado: la guarda le
+habría caído igual en cuanto sincronizara.
+
+Las dos formas son la misma enfermedad, y la enfermedad no es el sentido del error:
+
+> **No haberla provocado antes de darla por puesta.**
+
+La que calla te deja seguir con algo que no protege; la que para en falso te para con algo que
+no está roto. En los dos casos lo que faltó fue verla decir que sí y verla decir que no.
+
+**La corrección de fondo no fue el arreglo, fue poder provocarla.** La decisión salió a
+`e2e/setup/medios.ts` como función pura —sin disco, sin docker, sin arnés—, y ahí los cuatro
+estados se provocan en un segundo. Porque la razón real de no haberla provocado era que **no se
+podía sin levantar el stack**, y una barrera que solo se puede provocar levantando medio
+sistema es una barrera que nadie va a provocar. Si al escribir una guarda cuesta trabajo
+provocarla, eso ya es el hallazgo: sepárala hasta que sea barato.
+
+**Y una consecuencia para quien integra**, que sale de que este defecto pasara la revisión: se
+comprobaron forma y territorio, no comportamiento. Una rama que introduce una barrera nueva no
+se integra sin que la barrera **se haya observado disparar y dejar pasar**. Las dos mitades:
+verla decir que no es la mitad que se recuerda; verla dejar pasar lo que debe es la que faltó
+aquí.
+
+#### Y el método que las cazó las tres: preguntar por otra vía
+
+Las tres —el diario que no devolvía nada, la guarda que paraba en falso, y un
+`find -newermt "today"` que dio **cero** archivos de un día en el que se habían escrito 67— no
+fallaron. **Contestaron.** Sin error, sin excepción, con código de salida cero, y contestaron
+mal. Ninguna herramienta avisó de nada.
+
+El parecido no es que se equivocaran igual —la primera preguntaba por una ventana imposible, la
+segunda leía bien un `EPERM` y lo interpretaba mal, la tercera filtró mal una fecha—. El
+parecido es **la forma de la respuesta**:
+
+> Un resultado demasiado limpio. Cero líneas. Cero archivos. Una negativa rotunda.
+
+Un cero es una respuesta perfectamente válida y por eso no levanta sospecha, y es justo la que
+da una herramienta a la que le has preguntado mal.
+
+**Lo que las destapó fue siempre lo mismo, y no fue releer el código:** ir a por el mismo hecho
+por una segunda vía, una que no compartiera el error.
+
+| Lo que respondía mal | La segunda vía |
+|---|---|
+| `journalctl --since` con hora UTC | comparar la cadena generada con lo que imprime `date` |
+| `chmod` denegado leído como «lo creó `root`» | mirar quién es el dueño de verdad, y contra qué UID corre la API |
+| `find -newermt "today"` → 0 archivos | **enumerar** por fecha en vez de filtrar por fecha |
+
+**La regla, que es barata:** cuando una comprobación devuelva justo lo que hacía falta para no
+tener que hacer nada —cero resultados, nada que revisar, todo en orden—, consíguelo una segunda
+vez de otra manera antes de creértelo. Y si las dos vías no pueden equivocarse igual, mejor:
+**fíate del que enumera antes que del que filtra**, porque enumerar enseña lo que hay y filtrar
+solo enseña lo que sobrevivió a una condición que puede estar mal escrita.
+
+#### Un pariente pequeño de lo mismo: citar de memoria
+
+En el mismo tramo, un informe dio el identificador de un commit como `76e60b6` cuando era
+`d2197bf`. Es la misma familia que las citas de `ENTORNO.md` que se habían desplazado once
+líneas al editar el fichero que citaban: **una afirmación sobre el árbol escrita sin volver a
+mirarlo**. `CLAUDE.md` ya lo dice para archivo y línea; vale igual para un hash, un recuento o
+un nombre de rama. Si no lo acabas de leer, no lo escribas.
+
 ---
 
 ## 5. Pendientes
