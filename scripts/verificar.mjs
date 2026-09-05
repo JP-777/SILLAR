@@ -933,7 +933,11 @@ function autoprobarVeredicto() {
       etapa: 'suite e2e',
       mensaje: 'da igual',
       sondas: {
-        suspension: () => ({ visto: 'systemd-logind[1]: The system will sleep now!' }),
+        // La función real de búsqueda, con un diario sintético: lo único que se
+        // sustituye es de dónde sale el texto, no quién decide.
+        suspension: () => buscarSuspension(
+          'kernel: algo irrelevante\nsystemd-logind[1]: The system will sleep now!\nkernel: más ruido',
+        ),
         carga: limpia,
         ficheros: limpia,
       },
@@ -1021,12 +1025,49 @@ function autoprobarVeredicto() {
     console.log('');
   }
 
+  // --- Y las sondas de verdad, tal cual responden en esta máquina --------
+  //
+  // Lo de arriba prueba que las ramas del veredicto disparan. Esto prueba que
+  // las sondas reales **contestan**, en la forma de tres estados y sin `null`
+  // — que es donde estaba el fallo original. No se afirma qué deben responder:
+  // eso depende de la máquina. Se afirma que responden algo nombrable.
+  console.log(color.gris('Y lo que responden hoy las sondas de verdad:\n'));
+
+  for (const [nombre, sonda] of Object.entries(SONDAS_REALES)) {
+    let r;
+    try {
+      r = sonda();
+    } catch (error) {
+      console.log(`${color.rojo('LANZA  ')}  ${nombre}: ${error.message}`);
+      fallos += 1;
+      continue;
+    }
+
+    if (r === null || r === undefined) {
+      console.log(`${color.rojo('NULL   ')}  ${nombre} — es justo el fallo que esto viene a cerrar`);
+      fallos += 1;
+      continue;
+    }
+
+    const forma = r.visto ? 'vio algo' : r.limpio ? 'miró y no había nada' : r.ciego ? `no pudo: ${r.ciego}` : 'FORMA DESCONOCIDA';
+
+    if (forma === 'FORMA DESCONOCIDA') {
+      console.log(`${color.rojo('RARO   ')}  ${nombre} — ${JSON.stringify(r).slice(0, 120)}`);
+      fallos += 1;
+      continue;
+    }
+
+    console.log(`${color.verde('CONTESTA')}  ${nombre}: ${forma}`);
+  }
+
+  console.log('');
+
   if (fallos > 0) {
-    console.error(color.rojo(`${fallos} de ${casos.length} barreras NO dispararon.`));
+    console.error(color.rojo(`${fallos} comprobación(es) NO pasaron.`));
     return 1;
   }
 
-  console.log(color.verde(`Las ${casos.length} barreras disparan.`));
+  console.log(color.verde(`Las ${casos.length} barreras disparan y las ${Object.keys(SONDAS_REALES).length} sondas reales contestan.`));
   return 0;
 }
 
