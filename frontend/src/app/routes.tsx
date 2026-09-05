@@ -24,8 +24,9 @@ import { crmAdminRoutes, crmPublicRoutes } from '../modules/crm/routes';
  *
  * **El sitio público va dentro de `PublicLayout`**, que es quien pone el pie:
  * un pie que estuviera solo en la portada desaparecería al abrir una ficha de
- * producto. Las pantallas de acceso quedan fuera — son chrome de plataforma,
- * no el sitio público.
+ * producto. `/login` queda fuera porque es la puerta del panel y chrome de
+ * plataforma. Las rutas públicas de cliente de M04 siguen siendo el sitio
+ * público: entrar, registrarse o gestionar su cuenta no cambia de producto.
  */
 export function AppRoutes() {
   const { has } = useCapability();
@@ -37,10 +38,12 @@ export function AppRoutes() {
 
         {/* La tienda. Pública y fuera del panel: sin RequireAuth. */}
         {has('catalog') && catalogPublicRoutes}
+
+        {/* M04 también pertenece a esta superficie pública. */}
+        {has('crm') && crmPublicRoutes}
       </Route>
 
       <Route path="/login" element={<LoginPage />} />
-      {has('crm') && crmPublicRoutes}
 
       <Route element={<RequireAuth />}>
         <Route path="/admin" element={<AdminShell />}>

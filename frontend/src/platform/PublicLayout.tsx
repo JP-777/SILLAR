@@ -11,8 +11,9 @@ import { AportesDeFooter, useFooterState } from './footerState';
  * ficha de producto no es alcance reducido, es un defecto visible**. El
  * visitante ve el pie, entra en un producto y el pie se esfuma.
  *
- * `/login` queda fuera a propósito: es chrome de plataforma, no el sitio
- * público, y un formulario de acceso no necesita redes sociales.
+ * `/login` queda fuera a propósito: es la puerta del panel y chrome de
+ * plataforma. El acceso, registro, recuperación, contacto y cuenta de cliente
+ * de M04 sí viven aquí: son páginas de la misma web pública, no del panel.
  */
 export function PublicLayout() {
   return (

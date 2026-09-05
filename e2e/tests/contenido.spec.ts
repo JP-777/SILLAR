@@ -639,6 +639,98 @@ test('Una red publicada aparece en el pie de toda la web pública', async ({ pag
   ).toBeVisible();
 });
 
+
+/**
+ * **Qué mide esta prueba.** `PublicLayout` tiene que sobrevivir al cambio de
+ * hijo `/` → `/catalogo` → `/`. Si se remonta, sus contribuyentes también se
+ * remontan y M02 vuelve a pedir `/api/cms/social-links`. Por eso se toma una
+ * línea base después del primer montaje y se exige que navegar entre hijos del
+ * mismo layout añada **cero peticiones**.
+ *
+ * **Por qué se compara el delta y no un número absoluto.** El arnés levanta
+ * Vite en desarrollo y la aplicación usa `StrictMode`; React ejecuta un ciclo
+ * adicional de Effects en el montaje inicial. `useResource` carga desde un
+ * Effect, así que la línea base puede contener más de una petición sin que haya
+ * ocurrido navegación ni un remonte provocado por las rutas. Esa duplicación
+ * pertenece al entorno de desarrollo; la propiedad que esta regresión vigila
+ * es que el contador **no aumente después de estabilizar ese primer montaje**.
+ *
+ * **Qué NO mide.** No demuestra que React no vuelva a renderizar: puede hacerlo
+ * todas las veces que necesite. Tampoco prueba cómo se construye el registro de
+ * superficie ni fija cuántas veces ejecuta Effects `StrictMode`. Solo vigila la
+ * propiedad observable de la que depende este diseño: navegar entre hijos del
+ * mismo `PublicLayout` no desmonta y vuelve a montar al contribuyente del pie.
+ */
+test('Navegar por la web pública no remonta al contribuyente del pie', async ({ page }) => {
+  const direccion = `https://www.youtube.com/@sillar${SELLO}`;
+
+  await loginAsE2eAdmin(page);
+  await page.goto(REDES);
+  await crearRed(page, 'YouTube', direccion);
+
+  // El producto no forma parte del comportamiento bajo prueba: únicamente
+  // garantiza que la portada pinte su Link real a `/catalogo`, para que el
+  // recorrido siguiente sea navegación SPA y no un `page.goto()`.
+  await crearProducto(
+    page.request,
+    `Producto para navegación del pie ${SELLO}`,
+    `producto-navegacion-pie-${SELLO}`,
+  );
+
+  let peticionesDeRedes = 0;
+  page.on('request', (request) => {
+    if (
+      request.method() === 'GET'
+      && new URL(request.url()).pathname === '/api/cms/social-links'
+    ) {
+      peticionesDeRedes += 1;
+    }
+  });
+
+  // Única navegación completa: aquí nace el documento y se estabiliza su
+  // primer montaje. A partir de este punto el contador es nuestra línea base.
+  await page.goto('/');
+
+  const pie = page.getByRole('contentinfo');
+  const youtube = pie.getByRole('link', { name: 'YouTube' });
+
+  await expect(pie, 'el pie no apareció en la portada').toBeVisible();
+  await expect(youtube, 'la red publicada no llegó al pie de la portada').toBeVisible();
+  await page.waitForLoadState('networkidle');
+
+  const peticionesIniciales = peticionesDeRedes;
+  expect(
+    peticionesIniciales,
+    'el montaje inicial no pidió los enlaces sociales',
+  ).toBeGreaterThan(0);
+
+  // Navegación SPA real: este Link pertenece a React Router. Usar page.goto()
+  // aquí recargaría el documento y haría inútil la prueba de permanencia.
+  await page.getByRole('link', { name: 'Ver el catálogo' }).click();
+  await expect(page).toHaveURL(/\/catalogo$/);
+  await expect(
+    page.getByRole('contentinfo').getByRole('link', { name: 'YouTube' }),
+    'el pie perdió su contenido al entrar al catálogo',
+  ).toBeVisible();
+  expect(
+    peticionesDeRedes,
+    'entrar al catálogo remontó el contribuyente y volvió a pedir las redes',
+  ).toBe(peticionesIniciales);
+
+  // El Link anterior añadió esta entrada al historial de React Router.
+  // Volver cambia de hijo del mismo layout sin crear un documento nuevo.
+  await page.goBack();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(
+    page.getByRole('contentinfo').getByRole('link', { name: 'YouTube' }),
+    'el pie perdió su contenido al volver a la portada',
+  ).toBeVisible();
+  expect(
+    peticionesDeRedes,
+    'volver a la portada remontó el contribuyente y volvió a pedir las redes',
+  ).toBe(peticionesIniciales);
+});
+
 /* ========================================================================
  * 6 · Y al retirar el contenido, la portada vuelve a como estaba
  * ===================================================================== */
