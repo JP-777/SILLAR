@@ -140,21 +140,49 @@ también eso está medido—.
 
 ## Cuando la suite sale en rojo: ¿es mío o es la máquina?
 
-En este orden, que va de lo barato a lo caro:
+**Lo primero ya no hay que hacerlo: lo hace la puerta.** Debajo del `FALLÓ en la etapa` escribe
+un veredicto con la evidencia en que se basa. Tres formas:
 
-**1 · ¿Se suspendió el equipo?** Un segundo, y descarta la causa más cara de diagnosticar:
+```
+ES DEL ENTORNO — el equipo se suspendió durante la corrida.
+  <la línea del diario que lo dice>
+  No toques el código. Vuelve a lanzarla; docs/ENTORNO.md, hallazgo 4.
+```
+
+```
+NO PARECE TUYO — esta rama no toca nada de la etapa que falló.
+  La etapa mira frontend/ y la rama no cambia nada ahí.
+  Venía de main o de otro frente: devuélvelo en vez de investigarlo.
+```
+
+```
+Sin veredicto: no hay nada que permita atribuirlo automáticamente.
+```
+
+**La tercera importa tanto como las otras dos.** Un veredicto que siempre dice algo se deja de
+leer; éste calla cuando no sabe, y por eso se le puede creer cuando habla. Sobre la suite e2e
+nunca afirma de quién es —la rompe cualquier capa— y en su lugar manda al sitio donde está la
+respuesta.
+
+**Por qué esto dejó de ser opcional.** «La puerta es el criterio» era cierta con un frente: si
+está roja, es tuya. Con dos frentes un rojo ajeno bloquea a los dos, y cada frente paga el
+tiempo de las pruebas del otro sin poder hacer nada. Distinguir «esto lo rompí yo» de «esto
+venía roto» es lo que permite devolverlo en vez de investigarlo. Es el pendiente §8 convertido
+en requisito previo de la división.
+
+Lo que sigue siendo a mano, en este orden:
+
+**1 · ¿Qué vio el navegador?** `e2e/test-results/` es lo primero que hay que abrir y lo último
+que se mira, que es al revés de como debería ser. Hallazgo 9.
+
+**2 · ¿Estás mirando el stack que crees?** Hay dos, salen del mismo `docker-compose.yml` y se
+parecen. Hallazgo 8.
+
+**3 · Y si el veredicto calló pero sospechas del entorno**, la pregunta directa al diario:
 
 ```bash
 journalctl --since "<hora de inicio de la corrida>" | grep -iE 'will sleep now|PrepareForSleep'
 ```
-
-Si aparece algo, no se toca el código. Hallazgo 4.
-
-**2 · ¿Qué vio el navegador?** `e2e/test-results/` es lo primero que hay que abrir y lo último
-que se mira, que es al revés de como debería ser. Hallazgo 9.
-
-**3 · ¿Estás mirando el stack que crees?** Hay dos, salen del mismo `docker-compose.yml` y se
-parecen. Hallazgo 8.
 
 ---
 

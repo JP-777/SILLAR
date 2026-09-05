@@ -104,8 +104,13 @@ const FORCE_FAIL = process.env.SILLAR_VERIFY_FORCE_FAIL === '1';
 
 /** Colores solo si la salida es una terminal. */
 const color = process.stdout.isTTY
-  ? { rojo: (t) => `\x1b[31m${t}\x1b[0m`, verde: (t) => `\x1b[32m${t}\x1b[0m`, gris: (t) => `\x1b[90m${t}\x1b[0m` }
-  : { rojo: (t) => t, verde: (t) => t, gris: (t) => t };
+  ? {
+      rojo: (t) => `\x1b[31m${t}\x1b[0m`,
+      verde: (t) => `\x1b[32m${t}\x1b[0m`,
+      gris: (t) => `\x1b[90m${t}\x1b[0m`,
+      amarillo: (t) => `\x1b[33m${t}\x1b[0m`,
+    }
+  : { rojo: (t) => t, verde: (t) => t, gris: (t) => t, amarillo: (t) => t };
 
 /**
  * Ejecuta y devuelve código de salida y salida completa.
@@ -574,6 +579,200 @@ function tomarInhibidores() {
   };
 }
 
+// --- De quién es el rojo ---------------------------------------------------
+
+/**
+ * Momento en que arrancó la corrida. Se usa para preguntarle al diario del
+ * sistema solo por la ventana de esta puerta y no por todo el día.
+ */
+const INICIO = new Date();
+
+/**
+ * Firmas de fallo que **no son del código**. Cada una está inventariada en
+ * `docs/ENTORNO.md` con su causa y cómo se reconoce.
+ */
+const FIRMAS_DE_ENTORNO = [
+  [/ERR_NETWORK_CHANGED/i, 'la red cambió durante la corrida (causa 3 o 4 de docs/ENTORNO.md)'],
+  [/ERR_NETWORK_IO_SUSPENDED/i, 'la entrada/salida de red quedó suspendida'],
+  [/ERR_INTERNET_DISCONNECTED/i, 'el equipo se quedó sin red'],
+  [/Temporary failure in name resolution/i, 'el DNS dejó de resolver (causa 3 de docs/ENTORNO.md)'],
+  [/Cannot connect to the Docker daemon|docker daemon is not running/i, 'Docker no estaba en pie'],
+  [/no space left on device/i, 'el disco se llenó'],
+  [/Connection refused .*5\d{4}|ECONNREFUSED/i, 'algo del stack no llegó a levantarse'],
+];
+
+/**
+ * ¿Estaba la máquina saturada al fallar?
+ *
+ * **De dónde sale.** El 5 de septiembre de 2026, una corrida sobre un árbol
+ * limpio dio 4 fallos de 126 con la misma forma —«la aplicación no llegó a
+ * pintar en 15 s», tiempos agotados, y el proxy de Vite soltando `ECONNRESET`
+ * contra la API—. No había nada roto: había otra puerta corriendo a la vez en
+ * otra worktree y un par de compilaciones encima, con la carga por las nubes. Es
+ * exactamente lo que el pendiente §8 llama «falso hallazgo por ruido de
+ * máquina», y es el caso que la división a dos frentes va a producir a menudo.
+ *
+ * **Por qué esto y no la firma del error.** `ECONNRESET` y `socket hang up` los
+ * produce igual una API que se cae por un defecto de verdad. Atribuirlos al
+ * entorno por la firma daría veredictos falsos, y un veredicto falso es peor que
+ * ninguno. La carga es un hecho medible y ajeno al código: se informa como lo
+ * que es, un indicio fuerte, sin decidir por quien lee.
+ */
+function cargaExcesiva() {
+  const nucleos = os.availableParallelism?.() ?? os.cpus().length;
+  const [carga] = os.loadavg();
+
+  // Cero en Windows: ahí `loadavg` no está implementado y devuelve [0,0,0].
+  if (carga === 0 || nucleos === 0) {
+    return null;
+  }
+
+  return carga > nucleos * 1.5 ? { carga: carga.toFixed(1), nucleos } : null;
+}
+
+/**
+ * ¿Se suspendió el equipo durante la corrida?
+ *
+ * Es la única de las cuatro causas ambientales que **sobrevive a la
+ * protección**, y la que más caro sale confundir con un defecto: la suite queda
+ * en rojo por pruebas que no tienen nada que ver. El diario del sistema lo dice
+ * sin ambigüedad, así que se le pregunta en vez de deducirlo.
+ */
+function huboSuspension() {
+  if (process.platform !== 'linux') {
+    return null;
+  }
+
+  const desde = INICIO.toISOString().replace('T', ' ').slice(0, 19);
+  const r = spawnSync('journalctl', ['--since', desde, '--no-pager', '-o', 'cat'], {
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
+
+  if (r.error || r.status !== 0 || !r.stdout) {
+    return null; // Sin diario no se afirma nada. Callar es más honesto que suponer.
+  }
+
+  const linea = r.stdout
+    .split('\n')
+    .find((l) => /will sleep now|PrepareForSleep/i.test(l));
+
+  return linea ? linea.trim() : null;
+}
+
+/**
+ * Qué toca esta rama que `main` no tenga.
+ *
+ * **Para qué sirve saberlo.** Con un solo frente, «la puerta es el criterio»
+ * bastaba: si está roja, es tuya. Con dos frentes en paralelo un rojo ajeno
+ * bloquea a los dos, y cada frente paga el tiempo de las pruebas del otro sin
+ * poder hacer nada. Distinguir «esto lo rompí yo» de «esto venía roto» es lo que
+ * permite devolverlo en vez de investigarlo.
+ *
+ * No decide nada por su cuenta: devuelve la lista y el veredicto la usa como
+ * indicio, diciendo siempre que es un indicio.
+ */
+function ficherosDeLaRama() {
+  const base = spawnSync('git', ['merge-base', 'HEAD', 'main'], { cwd: RAIZ, encoding: 'utf8' });
+
+  if (base.status !== 0 || !base.stdout.trim()) {
+    return null;
+  }
+
+  const diff = spawnSync('git', ['diff', '--name-only', `${base.stdout.trim()}...HEAD`], {
+    cwd: RAIZ,
+    encoding: 'utf8',
+  });
+
+  if (diff.status !== 0) {
+    return null;
+  }
+
+  const sucios = spawnSync('git', ['status', '--porcelain'], { cwd: RAIZ, encoding: 'utf8' });
+  const sinCommitear = sucios.status === 0
+    ? sucios.stdout.split('\n').map((l) => l.slice(3).trim()).filter(Boolean)
+    : [];
+
+  return [...new Set([...diff.stdout.split('\n').filter(Boolean), ...sinCommitear])];
+}
+
+/**
+ * Qué carpeta mira cada etapa. La `suite e2e` no está: la rompe cualquier cosa,
+ * así que sobre ella no se puede afirmar «no lo tocaste tú» y no se afirma.
+ */
+const AMBITO_DE_ETAPA = {
+  'tipos del frontend': ['frontend/'],
+  'tipos del arnés e2e': ['e2e/'],
+  'compilación del backend': ['backend/'],
+  'migraciones backend (BD efímera)': ['backend/'],
+  'pruebas del backend': ['backend/'],
+};
+
+/**
+ * Escribe de quién parece ser el rojo, con lo que lo sustenta.
+ *
+ * **Dice siempre en qué se basa, y dice cuándo no sabe.** Un veredicto sin
+ * evidencia sería peor que ninguno: haría que se dejara de mirar.
+ */
+function veredicto(etapa, mensaje) {
+  const lineas = [];
+
+  const suspension = huboSuspension();
+  if (suspension) {
+    lineas.push(color.amarillo('ES DEL ENTORNO — el equipo se suspendió durante la corrida.'));
+    lineas.push(`  ${suspension}`);
+    lineas.push('  No toques el código. Vuelve a lanzarla; docs/ENTORNO.md, hallazgo 4.');
+    return lineas;
+  }
+
+  const saturada = cargaExcesiva();
+  if (saturada && /no llegó a pintar|Test timeout|ECONNRESET|socket hang up|ECONNREFUSED/i.test(mensaje)) {
+    lineas.push(color.amarillo('ES DEL ENTORNO (probable) — la máquina estaba saturada al fallar.'));
+    lineas.push(`  Carga ${saturada.carga} sobre ${saturada.nucleos} núcleos, y el fallo es de los que`);
+    lineas.push('  produce la falta de máquina: tiempos agotados y conexiones cortadas.');
+    lineas.push('  Comprueba si hay otra puerta corriendo en otra worktree y repite en frío.');
+    return lineas;
+  }
+
+  for (const [patron, explicacion] of FIRMAS_DE_ENTORNO) {
+    if (patron.test(mensaje)) {
+      lineas.push(color.amarillo(`ES DEL ENTORNO (probable) — ${explicacion}.`));
+      lineas.push(`  Coincide con ${patron}. Antes de mirar el código, mira docs/ENTORNO.md.`);
+      return lineas;
+    }
+  }
+
+  const ambito = AMBITO_DE_ETAPA[etapa];
+  const ficheros = ambito ? ficherosDeLaRama() : null;
+
+  if (ambito && ficheros) {
+    const tocados = ficheros.filter((f) => ambito.some((raiz) => f.startsWith(raiz)));
+
+    if (tocados.length === 0) {
+      lineas.push(color.amarillo('NO PARECE TUYO — esta rama no toca nada de la etapa que falló.'));
+      lineas.push(`  La etapa mira ${ambito.join(', ')} y la rama no cambia nada ahí.`);
+      lineas.push('  Venía de main o de otro frente: devuélvelo en vez de investigarlo.');
+      lineas.push(`  Comprobar:  git diff --stat $(git merge-base HEAD main)...HEAD -- ${ambito.join(' ')}`);
+      return lineas;
+    }
+
+    lineas.push(color.gris(`Esta rama toca ${tocados.length} fichero(s) del ámbito de la etapa:`));
+    for (const f of tocados.slice(0, 8)) lineas.push(color.gris(`  - ${f}`));
+    if (tocados.length > 8) lineas.push(color.gris(`  ... y ${tocados.length - 8} más`));
+    return lineas;
+  }
+
+  if (etapa === 'suite e2e') {
+    lineas.push(color.gris('Sin veredicto: a la suite e2e la rompe cualquier capa, así que no se'));
+    lineas.push(color.gris('afirma de quién es. Abre e2e/test-results/<prueba>/error-context.md,'));
+    lineas.push(color.gris('que trae el DOM del fallo — docs/ENTORNO.md, hallazgo 9.'));
+    return lineas;
+  }
+
+  lineas.push(color.gris('Sin veredicto: no hay nada que permita atribuirlo automáticamente.'));
+  return lineas;
+}
+
 asegurarPathDeHerramientas();
 const soltarInhibidores = tomarInhibidores();
 // Red de seguridad: si algo termina el proceso por un camino que no pasa por el
@@ -793,6 +992,7 @@ try {
 
       if (errorOriginal) {
         console.error(`\n${color.rojo('FALLÓ')} en la etapa: ${etapaFallida ?? '(desconocida)'}\n  ${errorOriginal.message}`);
+        console.error(`\n${veredicto(etapaFallida, errorOriginal.message).join('\n')}`);
         console.error(`\n${color.rojo('ADEMÁS')} la limpieza falló:\n${msg}`);
       } else {
         console.error(`\n${color.rojo('FALLÓ')} limpieza: ${msg}`);
@@ -803,6 +1003,7 @@ try {
 
   if (errorOriginal) {
     console.error(`\n${color.rojo('FALLÓ')} en la etapa: ${etapaFallida ?? '(desconocida)'}\n  ${errorOriginal.message}`);
+    console.error(`\n${veredicto(etapaFallida, errorOriginal.message).join('\n')}`);
     process.exit(1);
   }
 }
