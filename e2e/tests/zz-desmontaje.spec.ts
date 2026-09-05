@@ -85,6 +85,17 @@ async function sembrar(api: import('@playwright/test').APIRequestContext) {
       },
     });
   }
+
+  // Se recupera por su slug estable, no por posición: con la suite completa
+  // hay muchos productos y el primero de una página no significa nada.
+  const pagina = (await (
+    await api.get('/api/admin/catalog/products?q=Cuaderno%20desmontaje%201')
+  ).json()) as { items: { id: string; slug: string }[] };
+
+  const producto = pagina.items.find((item) => item.slug === 'cuaderno-desmontaje-1');
+  expect(producto, 'la siembra no dejó el producto con el que se leerá la auditoría').toBeTruthy();
+
+  return producto!.id;
 }
 
 /** Mueve el interruptor del módulo y espera a que el proceso vuelva. */
@@ -111,14 +122,54 @@ test('Desactivar M01 no borra nada, y al volver el catálogo está donde lo deja
   // pero una prueba que solo funciona acompañada no dice qué falla cuando
   // falla — y ésta afirma justamente que los datos sobreviven, así que
   // necesita datos que sean suyos y se puedan nombrar.
-  await sembrar(page.request);
+  const productId = await sembrar(page.request);
 
   const antes = await inventario(page.request);
   expect(antes.productos, 'esta prueba necesita un catálogo con datos').toBeGreaterThan(0);
 
+  // El dato de auditoría pertenece a M01 y se creó arriba. Con el módulo
+  // activo, el vocabulario que M01 aporta tiene que leer `product` como
+  // «Producto». La celda quinta es «Entidad»; el detalle forense permanece
+  // plegado y no forma parte de esta afirmación.
+  await page.goto('/admin/auditoria');
+  let filaAuditada = page
+    .locator('tbody tr')
+    .filter({ has: page.locator('code', { hasText: productId }) });
+
+  await expect(
+    filaAuditada,
+    'no aparece la entrada de auditoría del producto sembrado',
+  ).toHaveCount(1);
+  await expect(
+    filaAuditada.locator('td').nth(4),
+    'M01 activo no aporta la etiqueta «Producto»',
+  ).toContainText(/^Producto/);
+
   // --- Se desactiva -------------------------------------------------------
   await cambiarModulo(page, 'Desactivar');
   await expect(page.locator('#modulo-catalog')).toContainText('Inactivo');
+
+  // La auditoría es CORE y sigue disponible. La entrada histórica tampoco
+  // desaparece; lo único que ya no participa es el vocabulario de M01.
+  // Por eso el fallback honesto enseña el código técnico `product`, nunca
+  // «Desconocido» ni una etiqueta retenida por la plataforma.
+  await page.goto('/admin/auditoria');
+  filaAuditada = page
+    .locator('tbody tr')
+    .filter({ has: page.locator('code', { hasText: productId }) });
+
+  await expect(
+    filaAuditada,
+    'desactivar M01 hizo desaparecer su entrada histórica de auditoría',
+  ).toHaveCount(1);
+  await expect(
+    filaAuditada.locator('td').nth(4),
+    'M01 inactivo dejó su vocabulario visible en CORE',
+  ).toContainText(/^product/);
+  await expect(
+    filaAuditada.locator('td').nth(4),
+    'el fallback inventó «Desconocido» en vez del código técnico',
+  ).not.toContainText('Desconocido');
 
   // 1 · El panel sigue en pie y no queda rastro del módulo en el menú.
   //
@@ -199,6 +250,20 @@ test('Desactivar M01 no borra nada, y al volver el catálogo está donde lo deja
   // --- Se vuelve a activar ------------------------------------------------
   await cambiarModulo(page, 'Activar');
   await expect(page.locator('#modulo-catalog')).toContainText('Activo');
+
+  await page.goto('/admin/auditoria');
+  filaAuditada = page
+    .locator('tbody tr')
+    .filter({ has: page.locator('code', { hasText: productId }) });
+
+  await expect(
+    filaAuditada,
+    'reactivar M01 no recuperó la entrada histórica de auditoría',
+  ).toHaveCount(1);
+  await expect(
+    filaAuditada.locator('td').nth(4),
+    'reactivar M01 no recuperó su vocabulario',
+  ).toContainText(/^Producto/);
 
   // 5 · **Todo sigue ahí.** Es la afirmación de esta prueba: desactivar un
   //     módulo apaga sus pantallas y sus rutas, no toca sus datos.

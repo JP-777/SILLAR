@@ -1,5 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import { PageContainer } from '../../../layout/PageContainer';
+import { useCapability } from '../../../capabilities/useCapability';
+import {
+  auditEntityLabel,
+  visibleAuditEntityVocabularies,
+  type AuditEntityVocabulary,
+} from '../../../platform/auditEntityVocabularies';
 import { useResource } from '../../../shared/hooks/useResource';
 import { Alert, Badge, Button, Card, EmptyState, Field, Input } from '../../../shared/ui';
 import { Table, type Column } from '../../../shared/ui/patterns';
@@ -14,61 +20,6 @@ import {
 import { usersService } from '../services/users';
 
 /**
- * Cómo se llama en castellano cada tipo de entidad que se audita.
- *
- * **Vive aquí, del lado de la lectura, y eso tiene fecha de caducidad.** Lo
- * correcto a la larga es que la etiqueta viaje con la escritura, porque quien
- * sabe cómo se llama un `product_item` es M01 y no esta pantalla. Se hace así
- * hoy para no meter vocabulario de cuatro módulos en `Sillar.Core.Contracts`
- * por una columna; el día que el mapa deje de caber de un vistazo, se mueve.
- * Anotado con su disparador en `PENDIENTES.md`.
- *
- * Las palabras no son traducciones libres: son **las que el panel ya usa**.
- * `social_link` es «Red social» porque el menú dice «Redes sociales», y
- * `media_asset` es «Archivo» porque la pantalla se llama «Archivos». Inventar
- * un segundo vocabulario para la auditoría obligaría a traducir dos veces al
- * leerla.
- */
-const ENTIDADES: Readonly<Record<string, string>> = {
-  // CORE
-  admin_session: 'Sesión',
-  admin_user: 'Usuario',
-  email: 'Correo',
-  installation: 'Instalación',
-  media_asset: 'Archivo',
-  module: 'Módulo',
-  setting: 'Ajuste',
-  // M01 · Catálogo
-  brand: 'Marca',
-  category: 'Categoría',
-  product: 'Producto',
-  product_image: 'Imagen de producto',
-  product_item: 'Presentación',
-  // M02 · Contenido web
-  banner: 'Banner',
-  featured_product: 'Producto destacado',
-  featured_project: 'Trabajo destacado',
-  promotion: 'Promoción',
-  social_link: 'Red social',
-  // M04 · Clientes y contacto
-  contact_message: 'Mensaje de contacto',
-  customer: 'Cliente',
-  customer_invitation: 'Invitación de cliente',
-};
-
-/**
- * La etiqueta de un tipo, **o el tipo tal cual si no lo conocemos**.
- *
- * El caso desconocido no dice «Desconocido» ni se inventa una traducción: un
- * módulo nuevo que empiece a auditar aparecerá aquí con su código técnico, que
- * es feo y es cierto. Una etiqueta inventada sería bonita y falsa, y nadie
- * vendría a añadir la buena.
- */
-function etiquetaDe(entityType: string): string {
-  return ENTIDADES[entityType] ?? entityType;
-}
-
-/**
  * Registro de auditoría.
  *
  * Tabla de lectura y nada más. **No ofrece ninguna acción**: ni editar, ni
@@ -79,6 +30,7 @@ function etiquetaDe(entityType: string): string {
 export function AuditPage() {
   const [filters, setFilters] = useState<AuditQuery>({});
   const [page, setPage] = useState(1);
+  const vocabularies = visibleAuditEntityVocabularies(useCapability().has);
 
   const query = useMemo<AuditQuery>(() => ({ ...filters, page }), [filters, page]);
   const load = useCallback(() => auditService.query(query), [query]);
@@ -128,7 +80,7 @@ export function AuditPage() {
     {
       key: 'entity',
       header: 'Entidad',
-      render: (entry) => <Entidad entry={entry} />,
+      render: (entry) => <Entidad entry={entry} vocabularies={vocabularies} />,
     },
     {
       key: 'summary',
@@ -294,14 +246,20 @@ export function AuditPage() {
  * renderizado**, así que la regla se cumple de verdad y no por ocultarlo con
  * CSS.
  */
-function Entidad({ entry }: { entry: AuditEntry }) {
+function Entidad({
+  entry,
+  vocabularies,
+}: {
+  entry: AuditEntry;
+  vocabularies: readonly AuditEntityVocabulary[];
+}) {
   if (!entry.entityType) {
     return <span style={subtle}>—</span>;
   }
 
   return (
     <div style={{ fontSize: '12.5px' }}>
-      {etiquetaDe(entry.entityType)}
+      {auditEntityLabel(entry.entityType, vocabularies)}
       {/* Sin identificador no hay detalle que ofrecer. Un desplegable que se
           abre para decir «—» promete algo que no tiene. */}
       {entry.entityId && (
