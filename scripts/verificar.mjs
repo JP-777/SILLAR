@@ -23,16 +23,14 @@
  * Node y no bash ni PowerShell: el desarrollo alterna entre Windows y Arch
  * Linux (ADR-006), y esto tiene que servir en los dos.
  *
- * **Antes de lanzarla en Arch, leer `docs/ENTORNO.md`.** Son veinte minutos sin
- * que nadie toque el teclado, así que la máquina puede suspenderse a mitad y
- * dejar la suite en rojo por pruebas que no tienen nada que ver. Envolver con
- * `systemd-inhibit` **no basta**: en este equipo los eventos de energía los
- * gestiona KDE PowerDevil, que suspende sin pasar por ahí. La forma verificada
- * añade `kde-inhibit --power` delante, y `dotnet ef` necesita además que
- * `~/.dotnet/tools` esté en el PATH, que ningún perfil añade:
- *
- *     kde-inhibit --power systemd-inhibit --what=sleep:idle --why="SILLAR canonical gate" \
- *       env PATH="$PATH:$HOME/.dotnet/tools" node scripts/verificar.mjs
+ * **Se lanza a secas: `node scripts/verificar.mjs`.** No lleva envoltorio, y eso
+ * es una decisión, no un olvido. Durante un tiempo se documentó anteponerle
+ * `kde-inhibit` y `systemd-inhibit` contra la suspensión —son veinte minutos sin
+ * que nadie toque el teclado— y `env PATH=…` para que `dotnet ef` se encontrara.
+ * Las dos cosas las hace ahora la propia puerta, más abajo, por dos motivos:
+ * un paso manual se olvida, y el envoltorio **estaba mal**. `kde-inhibit` no
+ * propaga el código de salida de su hijo, así que convertía cualquier rojo en un
+ * cero para quien mirase `$?`. Ver `docs/ENTORNO.md`.
  *
  * **BD efímera para las pruebas backend.** Las pruebas PostgreSQL (CRM, CMS)
  * son destructivas —TRUNCATE, DROP SCHEMA— y nunca deben tocar sillar_dev ni
@@ -56,8 +54,9 @@
  * deliberadamente distintas.
  */
 
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -446,6 +445,141 @@ function migrar(proyecto) {
 
 console.log(color.gris('Comprobando el entorno...'));
 
+// --- Lo que la puerta se prepara a sí misma --------------------------------
+
+/**
+ * Añade `~/.dotnet/tools` al `PATH` del proceso si hace falta.
+ *
+ * `dotnet ef` se instala ahí como herramienta global y **ningún archivo de
+ * perfil añade esa carpeta**, así que las etapas 4 y 6 morían a los veinte
+ * segundos con «command not found» — un fallo que no se parece en nada a lo que
+ * es. Durante un tiempo el remedio fue anteponer `env PATH=…` a mano en cada
+ * invocación; era un paso manual de los que se olvidan, y se olvidaba.
+ *
+ * Solo afecta a este proceso y a lo que lance: no toca ningún perfil.
+ */
+function asegurarPathDeHerramientas() {
+  const carpeta = path.join(os.homedir(), '.dotnet', 'tools');
+
+  if (!existsSync(carpeta)) {
+    return;
+  }
+
+  const actual = process.env.PATH ?? '';
+  const partes = actual.split(path.delimiter);
+
+  if (partes.includes(carpeta)) {
+    return;
+  }
+
+  process.env.PATH = actual ? `${actual}${path.delimiter}${carpeta}` : carpeta;
+  console.log(color.gris(`  ~/.dotnet/tools añadido al PATH de esta corrida.`));
+}
+
+/**
+ * Impide que el equipo se suspenda durante la corrida, y **devuelve la función
+ * que suelta el bloqueo**.
+ *
+ * Una corrida son unos veinte minutos sin que nadie toque el teclado, que es
+ * justo lo que la gestión de energía entiende como inactividad. Si la máquina se
+ * suspende a mitad, el WiFi se desautentica y la suite muere con
+ * `net::ERR_NETWORK_CHANGED` en pruebas que no tienen nada que ver.
+ *
+ * **Hacen falta los dos inhibidores, y por motivos distintos.** En este equipo
+ * los eventos de energía los gestiona KDE PowerDevil, que pide la suspensión sin
+ * pasar por systemd: comprobado el 3 de septiembre de 2026, con el inhibidor de
+ * systemd verificado en modo `block` y el equipo suspendiéndose igual. `systemd`
+ * cubre el resto de escritorios y las sesiones sin KDE.
+ *
+ * **Por qué los toma la puerta y no se envuelve el comando desde fuera.** Porque
+ * envolverlo estaba mal: `kde-inhibit` **no propaga el código de salida de su
+ * hijo** —siempre devuelve 0—, así que la receta documentada
+ * `kde-inhibit … node scripts/verificar.mjs` convertía cualquier rojo en un
+ * verde para quien mirase `$?`. Comprobado el 5 de septiembre de 2026: la misma
+ * puerta fallida devuelve 1 sin envoltorio, 1 bajo `systemd-inhibit` y **0** bajo
+ * `kde-inhibit`. Tomándolos desde dentro, el código de salida vuelve a ser el de
+ * la puerta.
+ *
+ * Nada de esto es obligatorio: si un binario no está —Windows, un Linux sin KDE—
+ * se dice y se sigue. Un bloqueo que no se pudo tomar es un riesgo conocido, no
+ * un motivo para no correr las pruebas.
+ */
+function tomarInhibidores() {
+  if (process.platform !== 'linux') {
+    return () => {};
+  }
+
+  const porQué = 'SILLAR: puerta canónica en curso';
+
+  // `sleep` acotado y no `infinity`: si algún día un SIGKILL se lleva a la
+  // puerta sin pasar por la liberación, lo que quede se muere solo en dos horas
+  // en vez de quedarse en la sesión. Una corrida son veinte minutos.
+  const ESPERA = ['sleep', '7200'];
+
+  const candidatos = [
+    ['systemd-inhibit', ['--what=sleep:idle', '--mode=block', `--why=${porQué}`, ...ESPERA]],
+    ['kde-inhibit', ['--power', ...ESPERA]],
+  ];
+
+  const vivos = [];
+  const ausentes = [];
+
+  for (const [comando, args] of candidatos) {
+    try {
+      // `detached` le da al hijo su propio grupo de procesos, y ese es el punto:
+      // estos comandos envuelven a un `sleep`, así que matar solo al hijo deja
+      // al nieto huérfano y vivo. Comprobado — un `sleep` suelto por corrida.
+      // Con el grupo, `kill(-pid)` se los lleva a los dos.
+      const hijo = spawn(comando, args, { stdio: 'ignore', detached: true });
+      // `error` en vez de comprobar antes: spawn falla asíncrono si no existe.
+      hijo.on('error', () => {});
+      if (hijo.pid === undefined) {
+        ausentes.push(comando);
+        continue;
+      }
+      // Que un inhibidor vivo no impida a Node terminar cuando la puerta acabe.
+      hijo.unref();
+      vivos.push(hijo);
+    } catch {
+      ausentes.push(comando);
+    }
+  }
+
+  if (vivos.length > 0) {
+    console.log(color.gris(`  Suspensión bloqueada durante la corrida (${vivos.length}/2 inhibidores).`));
+  }
+
+  if (ausentes.length > 0) {
+    console.log(color.gris(`  Sin ${ausentes.join(' ni ')}: la corrida NO está protegida de la suspensión.`));
+  }
+
+  let soltado = false;
+
+  return () => {
+    if (soltado) {
+      return;
+    }
+    soltado = true;
+    for (const hijo of vivos) {
+      try {
+        process.kill(-hijo.pid, 'SIGTERM'); // el grupo entero, no solo el hijo
+      } catch {
+        try {
+          hijo.kill();
+        } catch {
+          // Ya no estaba. Soltar un bloqueo que no existe no es un fallo.
+        }
+      }
+    }
+  };
+}
+
+asegurarPathDeHerramientas();
+const soltarInhibidores = tomarInhibidores();
+// Red de seguridad: si algo termina el proceso por un camino que no pasa por el
+// `finally`, los `sleep infinity` no deben sobrevivir a la puerta.
+process.on('exit', () => soltarInhibidores());
+
 // --- Las etapas, de barata a cara -----------------------------------------
 
 const etapas = [
@@ -645,6 +779,8 @@ try {
     etapaFallida = error.etapa;
   }
 } finally {
+  soltarInhibidores();
+
   // **La limpieza es incondicional cuando hubo base.** Incluso si migración,
   // pruebas o revisión de skips fallan, la base efímera se intenta eliminar
   // antes de reportar. Si nunca llegó a crearse (ping o barrido fallaron), no

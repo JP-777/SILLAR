@@ -14,50 +14,147 @@ costaron un diagnóstico entero para que el siguiente no los tenga que repetir.
 >
 > **Esto no es `PENDIENTES.md`.** Aquí no hay trabajo aplazado: hay hechos de la máquina.
 > Un hallazgo que pida cambiar el producto va allí, no aquí.
+>
+> **Y lo que se puede arreglar no se escribe aquí como paso manual.** Un paso documentado se
+> paga cada vez que alguien estrena un árbol; un arreglo se paga una vez. Dos de los hallazgos
+> de abajo —el 6 y el 7— llegaron como pasos manuales y salieron como defectos del repositorio:
+> están contados en pasado, con lo que hace el arreglo y cómo se reconoce si vuelve. Si al leer
+> uno piensas «esto tendría que hacerlo el arnés», probablemente tengas razón.
+
+---
+
+## Estrenar una worktree
+
+Cinco pasos, y **están en este orden porque cada uno falla distinto si falta el anterior**.
+Vale lo mismo para `git worktree add` que para un clon nuevo.
+
+```bash
+# 1 · Dependencias de .NET. Sin esto, NETSDK1004 — ver el hallazgo 2.
+dotnet restore backend/Sillar.sln
+
+# 2 · Configuración local. NO la copies de otra worktree — ver el hallazgo 7.
+cp .env.example .env
+#    Y edita las cuatro claves que identifican al árbol: COMPOSE_PROJECT_NAME,
+#    POSTGRES_PORT, el Port= de ConnectionStrings__Default y Sillar__Node__Code.
+#    El propio .env.example las lista y dice por qué.
+
+# 3 · Dependencias de node, propias de esta worktree. Nunca un enlace a otra:
+#    ver el hallazgo 3, que es el que casi cuesta caro.
+pnpm install --frozen-lockfile --dir frontend
+pnpm install --frozen-lockfile --dir e2e
+
+# 4 · Identidad de la suite e2e, si esta worktree va a correrla a la vez que otra.
+#    e2e/.env.e2e SÍ está versionado: se modifica y NO se commitea — ver el hallazgo 5.
+
+# 5 · El PostgreSQL de desarrollo. La puerta crea su base efímera dentro de él,
+#    así que sin esto no pasa de la comprobación de entorno. Es OTRO stack que el
+#    de la suite e2e, que se levanta solo — ver el hallazgo 8.
+docker compose up -d db
+```
+
+Lo que **no** hay que hacer: crear `e2e/.media-e2e` a mano (lo hace el arnés, hallazgo 6),
+añadir `~/.dotnet/tools` al `PATH` (lo hace la puerta), levantar el stack de la suite e2e a
+mano (lo hace el arnés) ni volver a descargar los navegadores de Playwright: viven en
+`~/.cache/ms-playwright`, que es del usuario y no del proyecto, así que una worktree nueva los
+encuentra ya puestos —comprobado desde `sillar-estreno`, `chromium.executablePath()` resuelve a
+`/home/JP777/.cache/ms-playwright/chromium-1234/…`—. **En una máquina nueva sí hacen falta**:
+ahí es `pnpm exec playwright install` dentro de `e2e/`, y esta lista es de estrenar una
+worktree, no una máquina.
+
+> **Cómo se mantiene esta lista.** No dándola por buena porque esté escrita. La próxima
+> worktree se estrena siguiendo **solo** esta lista, sin memoria y sin improvisar, y cada paso
+> que falte se añade en ese momento. Es verificación por efecto aplicada a documentación, que
+> es donde peor se aplica.
+>
+> **La última vez fue el 5 de septiembre de 2026**, en la worktree `sillar-estreno`, contra
+> `a0b1765`. La lista tenía entonces cuatro pasos y le faltaba el quinto: la puerta murió en
+> «FALLÓ en la etapa: entorno — El servicio PostgreSQL `db` no responde». Se añadió ahí mismo,
+> que es la única forma de que una lista así no envejezca. De paso salió el defecto de
+> `kde-inhibit` que está descrito más abajo.
 
 ---
 
 ## Antes de correr la puerta
 
-### La suspensión: `systemd-inhibit` no basta en este equipo
+```bash
+node scripts/verificar.mjs
+```
 
-Una corrida de `node scripts/verificar.mjs` dura unos veinte minutos sin que nadie toque el
-teclado, que es exactamente lo que la gestión de energía entiende como inactividad. Si la
-máquina se suspende a mitad, el WiFi se desautentica y la suite muere con
-`net::ERR_NETWORK_CHANGED` en pruebas que no tienen nada que ver — y el fallo *parece* del
-producto.
-
-**Envolver con `systemd-inhibit` a secas no protege.** Está comprobado que no: el inhibidor
-estaba puesto en modo `block` y la máquina se suspendió igual. Quien gestiona los eventos de
-energía aquí es **KDE PowerDevil**, que pide la suspensión por su cuenta sin pasar por el
-inhibidor de systemd.
-
-**La forma que sí protege** añade `kde-inhibit --power`, que se registra en el `PolicyAgent`
-de PowerDevil:
+**Eso es todo, y no siempre fue así.** Hasta el 5 de septiembre de 2026 esta sección pedía
+envolverla con dos inhibidores y un `PATH`:
 
 ```bash
+# NO usar. Se documenta para que se reconozca si aparece en un guion viejo.
 kde-inhibit --power systemd-inhibit --what=sleep:idle --why="SILLAR canonical gate" \
   env PATH="$PATH:$HOME/.dotnet/tools" node scripts/verificar.mjs
 ```
 
-Se comprueba, antes de dejarla correr sola, que **los dos** registros están puestos:
+Esa línea tenía **dos** problemas, y el segundo es peor que el primero.
 
-```bash
-systemd-inhibit --list | grep verificar          # el de systemd
-qdbus6 --literal org.kde.Solid.PowerManagement \
-  /org/kde/Solid/PowerManagement/PolicyAgent ListInhibitions   # el de PowerDevil
+### El problema barato: era un paso manual
+
+Y de los que se olvidan. Los dos motivos siguen siendo ciertos y están abajo, en los hallazgos
+4 y 2, pero ya no hay que acordarse de ellos: **la puerta toma los inhibidores y arregla su
+propio `PATH`**. Lo dice al arrancar, y dice también cuando *no* ha podido:
+
+```
+  ~/.dotnet/tools añadido al PATH de esta corrida.
+  Suspensión bloqueada durante la corrida (2/2 inhibidores).
 ```
 
-El bloqueo muere con el comando: no queda ninguna configuración de energía cambiada que
-alguien tenga que acordarse de volver a poner.
+Si falta alguno —Windows, un Linux sin KDE— lo avisa y sigue: un bloqueo que no se pudo tomar
+es un riesgo conocido, no un motivo para no correr las pruebas.
 
-### El `PATH` de `dotnet-ef`
+### El problema caro: `kde-inhibit` se tragaba el código de salida
 
-`dotnet ef` está instalado como herramienta global en `~/.dotnet/tools`, y **ningún archivo
-de perfil añade esa carpeta al `PATH`**. Las etapas 4 y 6 lo necesitan
-(`scripts/verificar.mjs:365`, `e2e/setup/migrate.ts:19`). De ahí el `env PATH=…` de la receta
-de arriba; sin él la puerta muere en la etapa 4 a los veinte segundos con «command not
-found», que no se parece en nada a lo que es.
+**`kde-inhibit` no propaga el código de su hijo. Siempre devuelve 0.** Medido el 5 de
+septiembre de 2026 sobre la misma puerta fallida, en la worktree `sillar-estreno`:
+
+| Cómo se lanza | Código |
+|---|---|
+| `node scripts/verificar.mjs` | **1** |
+| `systemd-inhibit … node scripts/verificar.mjs` | **1** |
+| `kde-inhibit --power node scripts/verificar.mjs` | **0** |
+
+La receta que esta misma sección recomendaba **convertía cualquier rojo en un cero** para
+quien mirase `$?`. Nadie lo notó porque el veredicto se leía en la pantalla, donde el `FALLÓ
+en la etapa` seguía saliendo. Habría mordido a la primera cosa que encadenara la puerta con
+`&&` o la metiera en un guion.
+
+Es una advertencia sobre las recetas de este archivo tanto como sobre `kde-inhibit`: **una
+línea de comando documentada es código sin pruebas**. Ésta estuvo escrita dos días.
+
+### Cómo se comprueba que el bloqueo está puesto
+
+Con la puerta corriendo, desde otra terminal:
+
+```bash
+systemd-inhibit --list | grep SILLAR                             # el de systemd
+qdbus6 --literal org.kde.Solid.PowerManagement \
+  /org/kde/Solid/PowerManagement/PolicyAgent ListInhibitions     # el de PowerDevil
+```
+
+Al terminar, los dos quedan vacíos: la puerta los suelta en su `finally` y mata el grupo de
+procesos entero, no solo al hijo —matar solo al hijo dejaba un `sleep` huérfano por corrida, y
+también eso está medido—.
+
+## Cuando la suite sale en rojo: ¿es mío o es la máquina?
+
+En este orden, que va de lo barato a lo caro:
+
+**1 · ¿Se suspendió el equipo?** Un segundo, y descarta la causa más cara de diagnosticar:
+
+```bash
+journalctl --since "<hora de inicio de la corrida>" | grep -iE 'will sleep now|PrepareForSleep'
+```
+
+Si aparece algo, no se toca el código. Hallazgo 4.
+
+**2 · ¿Qué vio el navegador?** `e2e/test-results/` es lo primero que hay que abrir y lo último
+que se mira, que es al revés de como debería ser. Hallazgo 9.
+
+**3 · ¿Estás mirando el stack que crees?** Hay dos, salen del mismo `docker-compose.yml` y se
+parecen. Hallazgo 8.
 
 ---
 
@@ -259,3 +356,126 @@ como *los* puertos de la suite, frente a los de `sillar_dev`. Era cierto cuando 
 worktree. Es el mismo patrón que `PENDIENTES.md` §14 describe —«la regla que era cierta porque
 solo había uno»— y por eso conviene leer aquel párrafo como lo que era el día que se escribió,
 no como la lista vigente.
+
+### 6 · `e2e/.media-e2e`: quién crea la carpeta decide quién puede escribir en ella
+
+*5 de septiembre de 2026 · ocurrido en `sillar-footer` el 4 de septiembre · **arreglado**, ver
+abajo*
+
+**El síntoma.** Once pruebas en rojo a la vez, todas con **HTTP 500 al subir un archivo**. El
+resto de la suite, en verde.
+
+**La causa.** `MEDIA_PATH=./e2e/.media-e2e` (`e2e/.env.e2e:27`) se monta en el contenedor como
+`/data/media` (`docker-compose.yml:94`). Si esa carpeta **no existe** cuando arranca el
+servicio, la crea docker, y la crea como `root`. El proceso de dentro no es root: la imagen
+base define `app` con UID 1654 (`backend/Dockerfile:50-51`). Escribir dentro es imposible, y lo
+único que se ve es un 500.
+
+Y `.media-e2e` está en `.gitignore` (`.gitignore:49`), así que **una worktree nueva nunca la
+hereda**: es exactamente el mismo patrón que el hallazgo 2 y que el 7 —algo no versionado que
+no se hereda—, con la diferencia de que este no falla al arrancar sino a mitad, y en once
+sitios que no se parecen entre sí.
+
+**Cómo se diagnosticó, que es la parte cara.** Comparando el propietario con el de otra
+worktree que sí funcionaba. Eso solo está a mano si hay otra worktree y si a alguien se le
+ocurre mirar el propietario de una carpeta, que no es lo que uno mira cuando ve un 500.
+
+**Qué se hizo en vez de escribir un paso manual.** El arnés la crea antes de levantar docker,
+en `e2e/setup/global-setup.ts`, dos líneas más abajo del `mkdir` de `screenshots` que ya estaba
+ahí. Se abre en escritura para todos y **no** se hace `chown`: cambiar el propietario a 1654
+exige ser root y el arnés no lo es. Es aceptable en esta carpeta y solo en ésta —está fuera del
+control de versiones, no contiene nada del producto y cada corrida la vacía.
+
+**Si vuelve a pasar** —una carpeta que quedó de antes del arreglo, con el propietario malo— el
+arnés falla al abrirla con un `EPERM` y **lo dice por su nombre**, con el `sudo rm -rf` que lo
+arregla, en vez de dejar que reaparezca once pruebas más tarde.
+
+### 7 · El `.env` de la raíz tampoco se hereda, y copiarlo del vecino es peor que no tenerlo
+
+*5 de septiembre de 2026 · comprobado ejecutando la puerta sin `.env`, contra `b53e5ee` ·
+**arreglado**, ver abajo*
+
+**El síntoma.** La puerta ni arranca. Muere en `cadenaEfímera` antes de la etapa 1, así que no
+sale por el «FALLÓ en la etapa: n» que uno espera.
+
+**La causa.** `.env` está en `.gitignore` (`.gitignore:2`). Tercer caso del mismo patrón.
+
+**El peligro, que es lo que hay que retener.** El remedio que se le ocurre a cualquiera es
+copiar el `.env` de la worktree de al lado. Ése apunta a **su** PostgreSQL: la puerta crearía
+su base efímera dentro de la instalación del otro árbol y el API competiría por el mismo
+puerto. No falla — **funciona, en otro sitio**, que es bastante peor que fallar.
+
+**Qué se hizo en vez de escribir un paso manual.** Dos cosas, y ninguna es documentación:
+
+- `scripts/verificar.mjs` distingue los dos casos —no hay archivo, o el archivo está y le falta
+  la clave—, nombra `.env.example` como remedio y avisa de lo del vecino. Se atrapa en el punto
+  de llamada para que lo que se lea sea el remedio y no una traza de Node.
+- `.env.example` lista arriba del todo **las cuatro claves que identifican al árbol** y van
+  distintas en cada worktree: `COMPOSE_PROJECT_NAME`, `POSTGRES_PORT`, el `Port=` de
+  `ConnectionStrings__Default` y `Sillar__Node__Code`.
+
+**Una corrección al encargo que originó esto**, porque quedó escrito al revés: no era que
+`.env.example` «no cubriera la raíz». Está en la raíz, versionado, y trae
+`ConnectionStrings__Default` (`.env.example:55`). Lo que faltaba no era la plantilla: era que
+el fallo la nombrara.
+
+### 8 · Hay dos stacks, salen del mismo `docker-compose.yml` y se parecen
+
+*5 de septiembre de 2026 · comprobado contra `b53e5ee`*
+
+Un mismo `docker-compose.yml` levanta dos cosas distintas, y confundirlas hace perder el rato
+de dos maneras: mirar los registros del que no falló, o creer que la suite está arriba cuando
+lo que está arriba es la base de desarrollo.
+
+| | **Desarrollo** | **Suite e2e** |
+|---|---|---|
+| Quién lo levanta | Tú, `docker compose up -d` | El arnés, en `global-setup.ts` |
+| Configuración | `.env` de la raíz | `e2e/.env.e2e` (`e2e/setup/docker.ts:4`) |
+| Nombre de proyecto | `COMPOSE_PROJECT_NAME`, `sillar` por defecto | `sillar_e2e` (`e2e/setup/env.ts:51`) |
+| Servicios | `db` (`docker-compose.yml:2`) | `db` **y** `api`, perfil `full` (`:51,62`) |
+| Base | `sillar_dev` | `sillar_e2e`, y se destruye con su volumen al terminar |
+| Vida | La que tú le des | Una corrida, salvo `E2E_KEEP_STACK=1` |
+
+**Lo que los distingue de un vistazo es el prefijo del contenedor**, que sale del nombre de
+proyecto (`docker-compose.yml:4,61`):
+
+```bash
+docker ps --format '{{.Names}}\t{{.Ports}}'
+```
+
+**Por qué importa además de para no confundirse.** El `composeDown()` del arnés lleva `-p
+sillar_e2e` y `-v`: destruye su stack entero, volumen incluido, y **no toca** el de desarrollo.
+Esa separación es deliberada y es la razón de que la suite pueda ser destructiva sin miedo. Si
+alguna vez los dos nombres de proyecto coinciden —por haber copiado un `.env` del vecino, ver
+el hallazgo 7—, esa garantía se cae sin avisar.
+
+Y una tercera cosa que no es ninguna de las dos: la puerta canónica crea **su propia** base
+`sillar_verify_<timestamp>_<pid>` dentro del PostgreSQL al que apunte el `.env` de la raíz. Son
+tres bases, no dos.
+
+### 9 · `e2e/test-results/` sabe lo que pasó, y es lo último que se mira
+
+*5 de septiembre de 2026 · comprobado contra `b53e5ee`*
+
+Cuando una prueba de Playwright falla, lo que se lee es la aserción: «esperaba X, encontré Y».
+Eso dice **qué** no cuadró, casi nunca **por qué**. Lo que lo dice está en disco y nadie lo
+abre.
+
+`e2e/test-results/` —salida por defecto de Playwright, ignorada en `.gitignore:50`— guarda una
+carpeta por prueba fallida, y dentro:
+
+| Qué | Para qué sirve |
+|---|---|
+| `error-context.md` | **El DOM de la página en el momento del fallo.** Lo que había, no lo que se esperaba |
+| `trace.zip` | La corrida entera paso a paso, con `pnpm exec playwright show-trace <ruta>` (`playwright.config.ts:45`) |
+| captura y vídeo | El estado final y cómo se llegó (`:49`, `:50`) |
+
+**Lo que esto encontró y ninguna otra señal delataba.** Un bucle de remontaje: un componente
+que se desmontaba y se volvía a montar sin parar. La aserción decía «no encuentro el elemento»
+—que es lo mismo que dice un selector mal escrito, o una ruta que no carga, o media docena de
+cosas más—. El `error-context.md` enseñaba el DOM y ahí se veía el ciclo. **Ninguna cantidad de
+releer el test lo habría dado**, porque el test no era el problema.
+
+**La regla.** Ante un rojo de e2e que no se entiende leyendo la aserción, `error-context.md`
+va **antes** de releer el código, no después. Y se mira antes de relanzar la suite: la carpeta
+se rehace en cada corrida, así que relanzar borra la prueba de lo que pasó.
