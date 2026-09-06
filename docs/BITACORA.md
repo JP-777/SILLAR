@@ -563,12 +563,34 @@ por una segunda vía, una que no compartiera el error.
 | `journalctl --since` con hora UTC | comparar la cadena generada con lo que imprime `date` |
 | `chmod` denegado leído como «lo creó `root`» | mirar quién es el dueño de verdad, y contra qué UID corre la API |
 | `find -newermt "today"` → 0 archivos | **enumerar** por fecha en vez de filtrar por fecha |
+| un comentario que afirmaba que `globalTeardown` solo corre si `globalSetup` terminó | **ejecutarlo** y ver que también corre cuando lanza |
+
+La cuarta fila añade un caso que no es una herramienta sino **un comentario del propio
+repositorio**, y no cambia nada: una afirmación escrita sobre cómo se comporta el código es una
+respuesta como cualquier otra, y se comprueba igual. Ésa además llevaba meses ahí.
 
 **La regla, que es barata:** cuando una comprobación devuelva justo lo que hacía falta para no
 tener que hacer nada —cero resultados, nada que revisar, todo en orden—, consíguelo una segunda
 vez de otra manera antes de creértelo. Y si las dos vías no pueden equivocarse igual, mejor:
 **fíate del que enumera antes que del que filtra**, porque enumerar enseña lo que hay y filtrar
 solo enseña lo que sobrevivió a una condición que puede estar mal escrita.
+
+#### Una guarda pertenece a la operación que protege, no a quien la llama
+
+La barrera que impide destruir el stack e2e de otra worktree se escribió primero en
+`global-setup`, que es donde estaba el problema *a la vista*: es lo que se ejecuta al arrancar
+la suite. **Y no servía.** `globalTeardown` llamaba a la misma operación destructiva sin pasar
+por ahí, y remataba el trabajo un segundo más tarde.
+
+> Poner la guarda en un llamador protege de ese llamador. Ponerla en la operación protege de
+> todos, **incluidos los que todavía no existen**.
+
+Es fácil de razonar al revés, porque el llamador es donde se entiende la intención y la
+operación es donde solo se ve el mecanismo. Pero la intención se duplica y el mecanismo no.
+
+**Y no se descubrió razonándolo: se descubrió provocándola.** La guarda estaba escrita, era
+correcta en su sitio, y el stack ajeno moría igual. Sin la regla de provocar en las dos
+direcciones habría entrado en `main` como una barrera que no protege — la segunda en dos días.
 
 #### Un pariente pequeño de lo mismo: citar de memoria
 
@@ -1221,3 +1243,49 @@ prueba guarda esa cifra como línea base y exige **delta cero** durante los
 cambios de ruta: lo que vigila es que cambiar de hijo no remonte al
 contribuyente. **No** afirma que no haya rerenders, no fija cuántos Effects
 ejecuta el entorno y no pretende probar la construcción interna del registro.
+
+---
+
+### 5 sep 2026 · Dos frentes, dieciséis segundos, y una escopeta apuntando al de al lado
+
+**Incidente de coordinación, no de ejecución.** Los dos frentes recibieron a la vez el encargo
+de traer `main` y relanzar. El aviso que se dio fue sobre el conflicto previsible en
+`docs/BITACORA.md`; el que costó una corrida entera fue otro, y no se vio venir.
+
+**La secuencia, leída del reloj:**
+
+```
+17:24:56  arranca la puerta del frente A
+17:25:13  arranca el Vite del frente B en 55173
+17:25:16  se crea sillar_e2e_db          (frente B)
+17:27:20  se crea sillar_e2e_api         (frente B)
+~17:32    la etapa 6 de A pide el 55173, lo encuentra ocupado y aborta
+```
+
+**Lo que se vio** fue `http://localhost:55173 is already used`: la corrida de A perdida, la de
+B intacta. **Lo que no llegó a pasar por dieciséis segundos** es lo que importa: Playwright
+arranca su `webServer` antes del `globalSetup`, así que A murió en el puerto **sin llegar a
+tocar docker**. Si el orden hubiera sido el contrario, el `composeDown -v` de A —incondicional
+hasta ese día— habría destruido el stack de B a mitad de suite, contenedores y volumen, y la
+corrida de B habría muerto con un fallo que no se parece en nada a su causa.
+
+**Tres cosas salieron de ahí, y solo una es el arreglo:**
+
+1. **La guarda.** `composeDown()` mira de quién es el stack antes de destruirlo, por la
+   etiqueta que docker compose ya pone en cada contenedor. No hizo falta inventar un marcador.
+2. **Dónde iba la guarda.** La primera versión estaba en `global-setup` y **no servía**:
+   `globalTeardown` se ejecuta igual cuando `globalSetup` lanza —medido, no supuesto— y
+   remataba el trabajo un segundo más tarde. La guarda va en la operación destructiva, no en
+   uno de sus llamadores. Se descubrió provocándola, que es la única razón por la que se
+   descubrió.
+3. **El defecto de fondo, que sigue abierto.** La identidad E2E de cada worktree vive **sin
+   commitear a propósito**, para que no viaje a `main` — y por eso se pierde sola con cualquier
+   `checkout`, `stash` o limpieza. `ENTORNO.md` §5 describía ese mecanismo con precisión y aun
+   así se quedó falso: afirmaba que una worktree tenía identidad propia, que la tuvo y la
+   perdió. **El documento caducó por lo que el documento describe.** Queda propuesto como
+   pendiente 20; la guarda mitiga la consecuencia, no el defecto.
+
+**Y una que no es de máquinas.** El aviso previo iba al fichero compartido que se veía venir.
+El daño estaba en el recurso compartido que no se nombró: los puertos. Dos frentes en la misma
+máquina comparten más de lo que comparte su código, y el inventario de lo que comparten no
+existe en ninguna parte.

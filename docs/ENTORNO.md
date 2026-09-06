@@ -407,13 +407,41 @@ worktree principal. Una segunda worktree que necesite correr su suite lo modific
 commitear el cambio**: la identidad es de la worktree, no de la rama.
 
 ```
-sillar-fx, SILLAR, sillar-m02   sillar_e2e         55432 / 55081 / 55173
-sillar-footer                   sillar_footer_e2e  55443 / 55091 / 55183
+sillar-fx, SILLAR, sillar-footer, sillar-m02   sillar_e2e          55432 / 55081 / 55173
+sillar-estreno                                 sillar_estreno_e2e  55452 / 55101 / 55193
 ```
 
-**Tres de las cuatro worktrees comparten identidad hoy.** No ha dado problemas porque no se
-corren dos suites a la vez, pero el margen es ése: dos frentes que arranquen a la vez chocan
-en 55173 y el segundo muere sin decir por qué.
+**Cuatro de las cinco worktrees comparten identidad hoy** — medido el 5 de septiembre de 2026
+leyendo el `COMPOSE_PROJECT_NAME` de cada una, no de memoria.
+
+> **Este párrafo decía otra cosa y era falso.** Hasta el 5 de septiembre afirmaba que eran
+> tres, y que `sillar-footer` tenía identidad propia con 55443/55091/55183. La tenía cuando se
+> escribió y la perdió después, porque **la identidad vive sin commitear a propósito** —para
+> que no viaje a `main`—, así que desaparece en cuanto alguien limpia el árbol o restaura
+> `.env.e2e`. Es decir: el mecanismo que este hallazgo describe es el mismo que hace caducar
+> al hallazgo. Está abierto como pendiente propuesto, la **20**, en
+> `docs/PENDIENTES-CLASIFICACION.md`.
+
+**Y el 5 de septiembre dejó de ser un margen teórico.** Dos frentes lanzaron la puerta con
+dieciséis segundos de diferencia. El segundo murió con `is already used` en el 55173 — que es
+la parte inofensiva. La peligrosa no llegó a ocurrir por esos segundos: `composeDown()` lleva
+`-v`, así que el que llega segundo **destruye el stack del primero a mitad de suite**,
+contenedores y volumen, y la corrida ajena muere con un fallo que no se parece a su causa.
+
+**Eso ya no puede pasar.** `composeDown()` mira de quién es el stack antes de destruirlo, por
+la etiqueta que docker compose pone en cada contenedor
+(`com.docker.compose.project.working_dir`), y **si es de otra worktree no lo toca**:
+
+```
+[e2e] NO se destruye el stack, porque no es de esta worktree.
+  El stack e2e ya está en pie, y lo levantó OTRA worktree:
+    /home/JP777/sillar-estreno
+```
+
+La guarda vive en `composeDown()` y no en quien la llama, y eso también costó una provocación:
+la primera versión estaba en `global-setup` y **no servía** — `globalTeardown` se ejecuta igual
+cuando `globalSetup` lanza, medido y no supuesto, y remataba el trabajo un segundo después. La
+guarda va en la operación destructiva, no en uno de sus llamadores.
 
 **Y una nota para quien lea el README de `e2e/`:** `e2e/README.md:18-21` presenta 55432/55081/55173
 como *los* puertos de la suite, frente a los de `sillar_dev`. Era cierto cuando había una sola

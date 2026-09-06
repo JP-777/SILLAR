@@ -604,6 +604,13 @@ const FIRMAS_DE_ENTORNO = [
   [/Cannot connect to the Docker daemon|docker daemon is not running/i, 'Docker no estaba en pie'],
   [/no space left on device/i, 'el disco se llenó'],
   [/Connection refused .*5\d{4}|ECONNREFUSED/i, 'algo del stack no llegó a levantarse'],
+  // El Vite del arnés arranca con --strictPort, así que este mensaje solo sale
+  // cuando otro proceso ya tiene el puerto. Con la identidad e2e compartida
+  // entre worktrees —hoy la comparten cuatro— es lo que ve el segundo frente
+  // que lanza la puerta. Se añadió el 5 de septiembre de 2026, después de que
+  // el veredicto callara ante exactamente este fallo pudiendo hablar.
+  [/is already used, make sure that nothing is running on the port/i,
+    'el puerto del Vite ya estaba ocupado: otra worktree está corriendo la suite (docs/ENTORNO.md, hallazgo 5)'],
 ];
 
 /**
@@ -983,6 +990,14 @@ const PROVOCACIONES = [
       ficheros: ciega('no hay origin/main ni main contra el que comparar'),
     },
     espera: 'Lo que NO se pudo comprobar (3)',
+  },
+  {
+    nombre: 'colisión de puerto entre worktrees',
+    etapa: 'suite e2e',
+    mensaje:
+      'Error: http://localhost:55173 is already used, make sure that nothing is running on the port/url',
+    sondas: { suspension: limpia, carga: limpia, ficheros: limpia },
+    espera: 'otra worktree está corriendo la suite',
   },
   {
     nombre: 'sin señal, lo dice en vez de callar',

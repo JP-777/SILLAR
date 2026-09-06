@@ -9,6 +9,11 @@ import { buildGallery } from './gallery.js';
  * encontró" — no restaurando nada, sino destruyendo un stack que nunca
  * existió hasta que empezó esta corrida.
  *
+ * **Y corre también cuando `globalSetup` lanza**, que es más de lo que dice la
+ * frase de arriba y se comprobó ejecutándolo: una excepción en el arranque no
+ * evita este teardown. Por eso la guarda de propiedad vive dentro de
+ * `composeDown()` y no en `global-setup`: allí no habría servido de nada.
+ *
  * Con `E2E_KEEP_STACK=1` no lo destruye, para poder mirar un fallo en vez de
  * reproducirlo.
  */

@@ -1,11 +1,59 @@
 import { ENV_FILE, PROJECT_NAME, ROOT } from './env.js';
+import { problemaDeStackAjeno } from './identidad.js';
 import { run, runCapture, sleep } from './shell.js';
 
 const BASE_ARGS = ['compose', '-p', PROJECT_NAME, '--env-file', ENV_FILE];
 
-/** Destruye el stack e2e por completo, volumen incluido. Segura de llamar sobre nada. */
-export function composeDown(): Promise<void> {
+/**
+ * Destruye el stack e2e por completo, volumen incluido. Segura de llamar sobre
+ * nada — y, desde el 5 de septiembre de 2026, **segura de llamar sobre el stack
+ * de otro**: si lo levantó otra worktree, no lo toca.
+ *
+ * **Por qué la guarda está aquí y no solo en quien llama.** Estuvo en
+ * `global-setup`, y no servía: `globalTeardown` se ejecuta igual cuando
+ * `globalSetup` lanza —medido, no supuesto— y llamaba a esta función sin
+ * preguntar, así que el stack ajeno moría de todos modos un segundo más tarde.
+ * La guarda va en la operación destructiva, no en uno de sus llamadores: así
+ * cubre a los dos y a cualquiera que se añada después.
+ */
+export async function composeDown(): Promise<void> {
+  const problema = problemaDeStackAjeno(await duenoDelStackEnPie(), ROOT);
+
+  if (problema !== null) {
+    console.error(`[e2e] NO se destruye el stack, porque no es de esta worktree.\n  ${problema}`);
+    return;
+  }
+
   return run('docker', [...BASE_ARGS, 'down', '-v'], { cwd: ROOT });
+}
+
+/**
+ * Desde qué worktree se levantó el stack e2e que ya está en pie, si lo hay.
+ *
+ * **No hace falta inventar un marcador:** `docker compose` etiqueta cada
+ * contenedor con `com.docker.compose.project.working_dir`, que es exactamente
+ * el árbol desde el que se lanzó. Se lee esa.
+ *
+ * Devuelve `null` si no hay ningún contenedor del proyecto en pie, o si no se
+ * pudo preguntar —que aquí sí es lo mismo a efectos de decidir: sin dato no se
+ * bloquea a nadie, porque una barrera que para en falso sobre el arnés
+ * compartido bloquearía a los dos frentes en vez de a uno.
+ */
+export async function duenoDelStackEnPie(): Promise<string | null> {
+  const ids = await runCapture('docker', [...BASE_ARGS, 'ps', '-q'], { cwd: ROOT }).catch(() => '');
+  const primero = ids.trim().split('\n').filter(Boolean)[0];
+
+  if (!primero) {
+    return null;
+  }
+
+  const dir = await runCapture(
+    'docker',
+    ['inspect', '-f', '{{index .Config.Labels "com.docker.compose.project.working_dir"}}', primero],
+    { cwd: ROOT },
+  ).catch(() => '');
+
+  return dir.trim() || null;
 }
 
 /** Levanta solo la base de datos. */
