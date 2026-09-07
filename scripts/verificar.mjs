@@ -56,6 +56,7 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import { tomarCerrojo } from './cerrojo.mjs';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -603,7 +604,24 @@ const FIRMAS_DE_ENTORNO = [
   [/Temporary failure in name resolution/i, 'el DNS dejó de resolver (causa 3 de docs/ENTORNO.md)'],
   [/Cannot connect to the Docker daemon|docker daemon is not running/i, 'Docker no estaba en pie'],
   [/no space left on device/i, 'el disco se llenó'],
+  // Tres formas del mismo hecho, y hubo que añadir las dos últimas.
+  //
+  // La primera es la de Node y la del navegador: `ECONNREFUSED`, o el mensaje
+  // con el puerto pegado detrás. La tercera y la cuarta son **las de .NET**, y
+  // no las cazaba ninguna de las dos: Npgsql parte la información en dos
+  // líneas —el destino en una, el motivo en la siguiente— y `.` no cruza saltos
+  // de línea, así que `Connection refused .*5\d{4}` no coincidía nunca con
+  // esto:
+  //
+  //     Npgsql.NpgsqlException: Failed to connect to 127.0.0.1:55900
+  //      ---> System.Net.Sockets.SocketException (111): Connection refused
+  //
+  // Es decir: la etapa de migraciones podía morir por un stack que no llegó a
+  // levantarse y el veredicto se quedaba callado, que es exactamente lo que la
+  // bitácora §4 llama una barrera que no se distingue de una que funciona.
   [/Connection refused .*5\d{4}|ECONNREFUSED/i, 'algo del stack no llegó a levantarse'],
+  [/Failed to connect to \S*:5\d{4}/i, 'algo del stack no llegó a levantarse (.NET no llegó a la base)'],
+  [/SocketException \(111\)/i, 'algo del stack no llegó a levantarse (.NET: conexión rechazada)'],
   // El Vite del arnés arranca con --strictPort, así que este mensaje solo sale
   // cuando otro proceso ya tiene el puerto. Con la identidad e2e compartida
   // entre worktrees —hoy la comparten cuatro— es lo que ve el segundo frente
@@ -952,6 +970,15 @@ const PROVOCACIONES = [
     espera: 'la máquina estaba saturada',
   },
   {
+    nombre: 'firma de .NET: Npgsql no llegó a la base',
+    etapa: 'migraciones backend (BD efímera)',
+    mensaje:
+      'Npgsql.NpgsqlException (0x80004005): Failed to connect to 127.0.0.1:55900\n'
+      + ' ---> System.Net.Sockets.SocketException (111): Connection refused',
+    sondas: { suspension: limpia, carga: limpia, ficheros: limpia },
+    espera: 'algo del stack no llegó a levantarse',
+  },
+  {
     nombre: 'firma de entorno conocida',
     etapa: 'suite e2e',
     mensaje: 'Failed to load resource: net::ERR_NETWORK_CHANGED',
@@ -1168,6 +1195,14 @@ if (process.env.SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO === '1') {
   process.exit(autoprobarVeredicto());
 }
 
+// **El cerrojo se toma antes que nada de lo caro**, para que la negativa
+// llegue en el primer segundo y no después de compilar el backend. La
+// autoprueba del veredicto (`SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1`) sale antes
+// de esta línea a propósito: es un diagnóstico que no toca la máquina, y
+// bloquear con él a quien esté corriendo la puerta de verdad sería absurdo.
+const soltarCerrojo = tomarCerrojo({ raiz: RAIZ, color });
+process.on('exit', () => soltarCerrojo());
+
 comprobarQueElVeredictoHabla();
 
 
@@ -1377,6 +1412,7 @@ try {
   }
 } finally {
   soltarInhibidores();
+  soltarCerrojo();
 
   // **La limpieza es incondicional cuando hubo base.** Incluso si migración,
   // pruebas o revisión de skips fallan, la base efímera se intenta eliminar
