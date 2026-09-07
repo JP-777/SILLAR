@@ -452,6 +452,25 @@ function migrar(proyecto) {
 // En modo autoprueba no se comprueba ningún entorno: se provoca el veredicto y
 // se sale. Anunciarlo aquí haría creer que sí, y esa clase de mentira pequeña es
 // justo la que este bloque entero viene a quitar.
+// **El cerrojo se toma antes que nada, y antes que ningún anuncio.**
+//
+// Antes que nada de lo caro, para que la negativa llegue en el primer segundo
+// y no después de compilar el backend. Y antes del anuncio de aquí abajo
+// porque estuvo un rato después: la segunda puerta escribía «Comprobando el
+// entorno...» y se negaba a continuación, afirmando haber comprobado algo que
+// no comprobó. No costaba nada y no rompía nada; es exactamente la clase de
+// mentira pequeña que el comentario de este mismo bloque dice venir a quitar.
+//
+// La autoprueba del veredicto no toma cerrojo: es un diagnóstico que no toca
+// la máquina, y bloquear con él a quien esté corriendo la puerta de verdad
+// sería absurdo.
+const soltarCerrojo =
+  process.env.SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO === '1'
+    ? () => {}
+    : tomarCerrojo({ raiz: RAIZ, color });
+
+process.on('exit', () => soltarCerrojo());
+
 if (process.env.SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO !== '1') {
   console.log(color.gris('Comprobando el entorno...'));
 }
@@ -1254,14 +1273,6 @@ if (process.env.SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO === '1') {
   process.exit(autoprobarVeredicto());
 }
 
-// **El cerrojo se toma antes que nada de lo caro**, para que la negativa
-// llegue en el primer segundo y no después de compilar el backend. La
-// autoprueba del veredicto (`SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1`) sale antes
-// de esta línea a propósito: es un diagnóstico que no toca la máquina, y
-// bloquear con él a quien esté corriendo la puerta de verdad sería absurdo.
-const soltarCerrojo = tomarCerrojo({ raiz: RAIZ, color });
-process.on('exit', () => soltarCerrojo());
-
 comprobarQueElVeredictoHabla();
 
 
@@ -1270,6 +1281,31 @@ const soltarInhibidores = tomarInhibidores();
 // Red de seguridad: si algo termina el proceso por un camino que no pasa por el
 // `finally`, los `sleep infinity` no deben sobrevivir a la puerta.
 process.on('exit', () => soltarInhibidores());
+
+/**
+ * **Y `exit` no basta, que es lo que faltaba aquí.**
+ *
+ * `process.on('exit')` **no corre cuando a un proceso lo mata una señal**. Sin
+ * lo de abajo, un `Ctrl-C` sobre la puerta —que es lo más normal del mundo—
+ * dejaba dos `sleep 7200` vivos bloqueando la suspensión del equipo durante
+ * dos horas, cada vez, en silencio. Se vio el 7 de septiembre de 2026 al
+ * provocar el cerrojo: se mató una corrida a lo bruto y otra por tiempo, y las
+ * dos dejaron su par de inhibidores detrás.
+ *
+ * Es el mismo defecto que ya se arregló una vez —el `sleep` huérfano por
+ * corrida— reaparecido por la otra puerta. Contra `SIGKILL` no hay nada que
+ * hacer y no se finge que lo haya: para eso el cerrojo guarda el PID y se
+ * repara solo. Contra las señales que sí se pueden atender, se atienden.
+ */
+for (const senal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+  process.on(senal, () => {
+    soltarInhibidores();
+    soltarCerrojo();
+    // Salir con el convenio de siempre: 128 + número de señal, para que quien
+    // lanzó la puerta desde un guion lea lo que le pasó y no un 0.
+    process.exit(senal === 'SIGINT' ? 130 : senal === 'SIGTERM' ? 143 : 129);
+  });
+}
 
 // --- Las etapas, de barata a cara -----------------------------------------
 
