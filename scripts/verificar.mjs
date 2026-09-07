@@ -597,6 +597,20 @@ const INICIO = new Date();
  * Firmas de fallo que **no son del código**. Cada una está inventariada en
  * `docs/ENTORNO.md` con su causa y cómo se reconoce.
  */
+/**
+ * **La línea de resultado de Playwright: la prueba de que la suite corrió.**
+ *
+ * `  1 failed` / `  126 passed (18.7m)`. Si está, el stack se levantó, el
+ * navegador arrancó y las specs se ejecutaron — pase lo que pase después en el
+ * log. Ninguna firma que signifique «algo del stack no llegó a levantarse»
+ * puede hablar por encima de esto.
+ *
+ * Va anclada a principio de línea con `m` a propósito: dentro de un mensaje de
+ * error puede aparecer cualquier cosa que se le parezca, pero el reportero
+ * `list` la escribe siempre en su propia línea.
+ */
+const LA_SUITE_CORRIO = /^\s*\d+ (passed|failed|flaky|skipped)\b/m;
+
 const FIRMAS_DE_ENTORNO = [
   [/ERR_NETWORK_CHANGED/i, 'la red cambió durante la corrida (causa 3 o 4 de docs/ENTORNO.md)'],
   [/ERR_NETWORK_IO_SUSPENDED/i, 'la entrada/salida de red quedó suspendida'],
@@ -619,9 +633,9 @@ const FIRMAS_DE_ENTORNO = [
   // Es decir: la etapa de migraciones podía morir por un stack que no llegó a
   // levantarse y el veredicto se quedaba callado, que es exactamente lo que la
   // bitácora §4 llama una barrera que no se distingue de una que funciona.
-  [/Connection refused .*5\d{4}|ECONNREFUSED/i, 'algo del stack no llegó a levantarse'],
-  [/Failed to connect to \S*:5\d{4}/i, 'algo del stack no llegó a levantarse (.NET no llegó a la base)'],
-  [/SocketException \(111\)/i, 'algo del stack no llegó a levantarse (.NET: conexión rechazada)'],
+  [/Connection refused .*5\d{4}|ECONNREFUSED/i, 'algo del stack no llegó a levantarse', LA_SUITE_CORRIO],
+  [/Failed to connect to \S*:5\d{4}/i, 'algo del stack no llegó a levantarse (.NET no llegó a la base)', LA_SUITE_CORRIO],
+  [/SocketException \(111\)/i, 'algo del stack no llegó a levantarse (.NET: conexión rechazada)', LA_SUITE_CORRIO],
   // El Vite del arnés arranca con --strictPort, así que este mensaje solo sale
   // cuando otro proceso ya tiene el puerto. Con la identidad e2e compartida
   // entre worktrees —hoy la comparten cuatro— es lo que ve el segundo frente
@@ -886,7 +900,29 @@ function veredicto(etapa, mensaje, sondas = SONDAS_REALES) {
     return cerrar(lineas);
   }
 
-  for (const [patron, explicacion] of FIRMAS_DE_ENTORNO) {
+  for (const [patron, explicacion, desmentido] of FIRMAS_DE_ENTORNO) {
+    // **Una firma habla solo si su desmentido calla.**
+    //
+    // El 6 de septiembre de 2026 el veredicto dijo, con seguridad, «algo del
+    // stack no llegó a levantarse» sobre una corrida en la que el stack se
+    // levantó y la suite corrió entera: los `ECONNREFUSED` eran ruido del
+    // proxy de Vite en el log DESPUÉS de la línea de resultado de Playwright.
+    // La prueba de que la firma era imposible estaba dentro del mismo texto
+    // que la firma estaba leyendo.
+    //
+    // Es la tercera forma de lo que la bitácora §4 ya describe: una barrera
+    // que calla, una que se detiene en falso, y ésta, que **habla con
+    // seguridad y se equivoca**. Es la peor de las tres, porque las otras dos
+    // te dejan mirar y ésta dice «no mires el código» justo cuando el código
+    // es lo único que hay que mirar.
+    //
+    // El desmentido no es un caso especial de esta firma: es un campo de la
+    // tupla, porque cualquier firma que afirme algo sobre el entorno puede
+    // toparse con la prueba de que no ocurrió.
+    if (desmentido && desmentido.test(mensaje)) {
+      continue;
+    }
+
     if (patron.test(mensaje)) {
       lineas.push(color.amarillo(`ES DEL ENTORNO (probable) — ${explicacion}.`));
       lineas.push(`  Coincide con ${patron}. Antes de mirar el código, mira docs/ENTORNO.md.`);
@@ -970,6 +1006,26 @@ const PROVOCACIONES = [
     espera: 'la máquina estaba saturada',
   },
   {
+    // La provocación al revés: aquí se exige que el veredicto NO atribuya al
+    // entorno. Es la única del conjunto que se comprueba por ausencia, y por
+    // eso lleva `noEspera` en vez de `espera`.
+    nombre: 'ECONNREFUSED de ruido, con la suite ya corrida',
+    etapa: 'suite e2e',
+    mensaje:
+      'Terminó con código 1.\n'
+      + '  1 failed\n'
+      + '    [chromium] › tests/recorrido.spec.ts:28:1 › El recorrido de la demostración\n'
+      + '  126 passed (18.7m)\n'
+      + '[WebServer] AggregateError [ECONNREFUSED]:\n'
+      + '    at internalConnectMultiple (node:net:1122:18)',
+    sondas: { suspension: limpia, carga: limpia, ficheros: limpia },
+    noEspera: 'algo del stack no llegó a levantarse',
+    // Y lo que sí debe decir: que no lo sabe. «Sin veredicto» es la respuesta
+    // correcta aquí, y es mejor que la falsa: deja mirar el código en vez de
+    // mandar a mirar el entorno.
+    espera: 'Sin veredicto',
+  },
+  {
     nombre: 'firma de .NET: Npgsql no llegó a la base',
     etapa: 'migraciones backend (BD efímera)',
     mensaje:
@@ -1051,7 +1107,10 @@ function provocarLasRamas() {
       // Sin colores: comparar texto con secuencias de escape dentro es frágil.
       .replace(/\x1b\[[0-9;]*m/g, '');
 
-    return { ...caso, salida, disparó: salida.includes(caso.espera) };
+    const dijoLoQueDebe = salida.includes(caso.espera);
+    const calloLoQueDebe = caso.noEspera === undefined || !salida.includes(caso.noEspera);
+
+    return { ...caso, salida, disparó: dijoLoQueDebe && calloLoQueDebe };
   });
 }
 
