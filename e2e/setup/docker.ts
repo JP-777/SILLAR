@@ -1,8 +1,32 @@
-import { ENV_FILE, PROJECT_NAME, ROOT } from './env.js';
+import { DB_NAME, ENTORNO_DE_COMPOSE, ENV_FILE, PROJECT_NAME, ROOT } from './env.js';
 import { problemaDeStackAjeno } from './identidad.js';
 import { run, runCapture, sleep } from './shell.js';
 
 const BASE_ARGS = ['compose', '-p', PROJECT_NAME, '--env-file', ENV_FILE];
+
+/**
+ * **Toda llamada a compose pasa por aquí, y ése es el punto.**
+ *
+ * El `--env-file` sigue haciendo falta —trae la contraseña, el entorno de
+ * ASP.NET y el perfil de compilación, que son iguales en todos los árboles—,
+ * pero la identidad va por el entorno del proceso, que en la interpolación de
+ * compose gana al archivo. Ver `ENTORNO_DE_COMPOSE` en `env.ts`, donde está la
+ * medida que lo demuestra.
+ *
+ * Los dos envoltorios existen para que no haya ninguna llamada que se pueda
+ * escribir olvidándose del entorno: es la misma lección que puso la guarda
+ * dentro de `composeDown` en vez de en sus llamadores. Una precaución que hay
+ * que acordarse de repetir en diez sitios ya falló en uno.
+ */
+const OPCIONES = { cwd: ROOT, env: ENTORNO_DE_COMPOSE } as const;
+
+function compose(args: string[]): Promise<void> {
+  return run('docker', [...BASE_ARGS, ...args], OPCIONES);
+}
+
+function composeCapture(args: string[]): Promise<string> {
+  return runCapture('docker', [...BASE_ARGS, ...args], OPCIONES);
+}
 
 /**
  * Destruye el stack e2e por completo, volumen incluido. Segura de llamar sobre
@@ -24,7 +48,7 @@ export async function composeDown(): Promise<void> {
     return;
   }
 
-  return run('docker', [...BASE_ARGS, 'down', '-v'], { cwd: ROOT });
+  return compose(['down', '-v']);
 }
 
 /**
@@ -40,7 +64,7 @@ export async function composeDown(): Promise<void> {
  * compartido bloquearía a los dos frentes en vez de a uno.
  */
 export async function duenoDelStackEnPie(): Promise<string | null> {
-  const ids = await runCapture('docker', [...BASE_ARGS, 'ps', '-q'], { cwd: ROOT }).catch(() => '');
+  const ids = await composeCapture(['ps', '-q']).catch(() => '');
   const primero = ids.trim().split('\n').filter(Boolean)[0];
 
   if (!primero) {
@@ -58,7 +82,7 @@ export async function duenoDelStackEnPie(): Promise<string | null> {
 
 /** Levanta solo la base de datos. */
 export function composeUpDb(): Promise<void> {
-  return run('docker', [...BASE_ARGS, 'up', '-d', 'db'], { cwd: ROOT });
+  return compose(['up', '-d', 'db']);
 }
 
 /**
@@ -68,12 +92,12 @@ export function composeUpDb(): Promise<void> {
  * mentira que hacen falta para ver las cuatro variantes de tarjeta.
  */
 export function composeBuildAndUpApi(): Promise<void> {
-  return run('docker', [...BASE_ARGS, '--profile', 'full', 'up', '-d', '--build', 'api'], { cwd: ROOT });
+  return compose(['--profile', 'full', 'up', '-d', '--build', 'api']);
 }
 
 /** Ejecuta un comando dentro de un servicio ya levantado (para `psql`, típicamente). */
 export function composeExec(service: string, args: string[]): Promise<void> {
-  return run('docker', [...BASE_ARGS, 'exec', '-T', service, ...args], { cwd: ROOT });
+  return compose(['exec', '-T', service, ...args]);
 }
 
 /**
@@ -83,11 +107,10 @@ export function composeExec(service: string, args: string[]): Promise<void> {
  * se puede comparar entre dos momentos.
  */
 export async function psql(sql: string): Promise<string> {
-  const salida = await runCapture(
-    'docker',
-    [...BASE_ARGS, 'exec', '-T', 'db', 'psql', '-U', 'postgres', '-d', 'sillar_e2e', '-tA', '-c', sql],
-    { cwd: ROOT },
-  );
+  const salida = await composeCapture([
+    'exec', '-T', 'db',
+    'psql', '-U', 'postgres', '-d', DB_NAME, '-tA', '-c', sql,
+  ]);
 
   return salida.trim();
 }
@@ -97,11 +120,7 @@ export async function waitDbHealthy(timeoutMs = 60_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {
-    const status = await runCapture(
-      'docker',
-      [...BASE_ARGS, 'ps', 'db', '--format', '{{.Health}}'],
-      { cwd: ROOT },
-    ).catch(() => '');
+    const status = await composeCapture(['ps', 'db', '--format', '{{.Health}}']).catch(() => '');
 
     if (status.trim() === 'healthy') {
       return;
@@ -131,7 +150,7 @@ export async function waitDbHealthy(timeoutMs = 60_000): Promise<void> {
  * no un error.
  */
 export async function serviceRuntimeIdentity(service: string): Promise<string> {
-  const containerId = await runCapture('docker', [...BASE_ARGS, 'ps', '-q', service], { cwd: ROOT })
+  const containerId = await composeCapture(['ps', '-q', service])
     .then((salida) => salida.trim())
     .catch(() => '');
 
