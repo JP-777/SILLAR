@@ -1081,6 +1081,66 @@ const PROVOCACIONES = [
       ficheros: () => ({ visto: { ficheros: ['backend/Sillar.Core/Data/CoreDbContext.cs'], referencia: 'main' } }),
     },
     espera: 'toca 1 fichero(s) del ámbito',
+    // Y la segunda dirección de la misma detección: que **no** devuelva el rojo
+    // a otro frente cuando la rama sí toca lo que falló. Es lo que separa una
+    // barrera provocada de una vista disparar.
+    noEspera: 'NO PARECE TUYO',
+  },
+  // ---------------------------------------------------------------------
+  // **Las que se comprueban por ausencia.**
+  //
+  // Una barrera vista disparar está a medias: falta saber que no dispara
+  // cuando no debe. Es la segunda dirección del hábito de provocar, y se
+  // descubrió con la guarda de `.media-e2e`, que **paraba en falso** —leía
+  // «no soy el dueño» como «lo creó docker como root»— y bloqueaba al frente
+  // de al lado. Una barrera que para en falso es la misma enfermedad que una
+  // que calla: en las dos, lo que dice no depende de lo que pasa.
+  //
+  // Y aquí cuesta más caro que en una guarda, porque el veredicto **manda a
+  // mirar a otro sitio**. Atribuir al entorno un rojo del código hace perder
+  // la tarde en `docs/ENTORNO.md`; devolverle a otro frente un rojo que es
+  // suyo se la hace perder a él.
+  // ---------------------------------------------------------------------
+  {
+    nombre: 'el diario nombra sleep pero nadie se suspendió',
+    etapa: 'suite e2e',
+    mensaje: 'Terminó con código 1.',
+    sondas: {
+      // La función real, con un diario sintético que habla de «sleep» todo el
+      // rato: son los propios inhibidores de la puerta. Si la detección mirara
+      // la palabra y no el suceso, aquí es donde se vería.
+      suspension: () => buscarSuspension(
+        'systemd-inhibit[900]: --what=sleep:idle --mode=block --why=SILLAR: puerta canónica en curso sleep 7200\n'
+        + 'systemd-logind[1]: Delay lock acquired (sleep)\n'
+        + 'kernel: nada que ver aquí',
+      ),
+      carga: limpia,
+      ficheros: limpia,
+    },
+    noEspera: 'el equipo se suspendió',
+    espera: 'Sin veredicto',
+  },
+  {
+    nombre: 'la máquina no estaba saturada',
+    etapa: 'suite e2e',
+    mensaje: 'Se navegó a «/admin» y la aplicación no llegó a pintar en 15 s.',
+    // Carga 2 sobre 8 núcleos: la función real, con números normales. El mismo
+    // mensaje que la provocación de «máquina saturada», a propósito: lo único
+    // que cambia es el hecho medido, que es como debe ser.
+    sondas: { suspension: limpia, carga: () => cargaExcesiva(2, 8), ficheros: limpia },
+    noEspera: 'la máquina estaba saturada',
+    espera: 'Sin veredicto',
+  },
+  {
+    nombre: 'un fallo de aserción no es del entorno',
+    etapa: 'suite e2e',
+    mensaje:
+      'Error: expect(locator).toBeHidden() failed\n'
+      + "Locator:  getByRole('dialog')\n"
+      + 'Expected: hidden\nReceived: visible\nTimeout:  10000ms',
+    sondas: { suspension: limpia, carga: limpia, ficheros: limpia },
+    noEspera: 'ES DEL ENTORNO',
+    espera: 'Sin veredicto',
   },
   {
     nombre: 'las tres sondas ciegas se declaran',
@@ -1166,7 +1226,15 @@ function autoprobarVeredicto() {
   for (const r of resultados) {
     if (!r.disparó) fallos += 1;
 
-    console.log(`${r.disparó ? color.verde('DISPARA') : color.rojo('CALLA  ')}  ${r.nombre}`);
+    // **El rótulo dice qué quedó demostrado, y son dos cosas distintas.**
+    // Toda provocación comprueba lo que el veredicto DICE. Las que además
+    // llevan `noEspera` comprueban lo que CALLA, que es la segunda dirección y
+    // la que faltaba: una barrera vista solo disparar está a medias.
+    const rotulo = r.disparó
+      ? color.verde(r.noEspera === undefined ? 'DICE      ' : 'DICE Y CALLA')
+      : color.rojo(r.noEspera === undefined ? 'NO LO DICE' : 'NO CALLA    ');
+
+    console.log(`${rotulo}  ${r.nombre}`);
     console.log(color.gris(`          espera: «${r.espera}»`));
     console.log(color.gris(r.salida.split('\n').map((l) => `          ${l}`).join('\n')));
     console.log('');
@@ -1220,7 +1288,14 @@ function autoprobarVeredicto() {
     return 1;
   }
 
-  console.log(color.verde(`Las ${resultados.length} barreras disparan y las ${Object.keys(SONDAS_REALES).length} sondas reales contestan.`));
+  const porAusencia = resultados.filter((r) => r.noEspera !== undefined).length;
+
+  console.log(
+    color.verde(
+      `Las ${resultados.length} barreras dicen lo que deben —${porAusencia} de ellas callan además `
+      + `lo que no deben— y las ${Object.keys(SONDAS_REALES).length} sondas reales contestan.`,
+    ),
+  );
   return 0;
 }
 
