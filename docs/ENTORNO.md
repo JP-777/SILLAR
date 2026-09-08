@@ -140,6 +140,36 @@ en la etapa` seguía saliendo. Habría mordido a la primera cosa que encadenara 
 Es una advertencia sobre las recetas de este archivo tanto como sobre `kde-inhibit`: **una
 línea de comando documentada es código sin pruebas**. Ésta estuvo escrita dos días.
 
+#### Y volvió a pasar el 7 de septiembre, por otra puerta: la tubería
+
+La medición concurrente registró `rc=0` para una puerta que había escrito `FALLÓ en la etapa:
+suite e2e` en pantalla. No era la puerta. Medido sobre la misma corrida fallida:
+
+| Cómo se lanza | `$?` |
+|---|---|
+| `node scripts/verificar.mjs` | **1** |
+| `node scripts/verificar.mjs 2>&1 \| tee registro.log` | **0** |
+
+**`$?` de una tubería es el código del último comando, no del primero.** El 1 no se pierde:
+sigue en `${PIPESTATUS[0]}` en bash, o se recupera con `set -o pipefail`. Pero un wrapper que
+guarda el registro de la corrida —que es lo mínimo que hace cualquier wrapper— introduce una
+tubería sin que nadie lo piense, y desde ese momento la puerta no puede volver a decir que no.
+
+Es **la misma forma exacta** que el defecto de `kde-inhibit`, con otro mecanismo: algo que
+envuelve la puerta convierte un rojo en un verde para quien lo lea con `$?`. Que la misma
+enfermedad reaparezca por dos vías distintas en dos días es el argumento de que no es un
+descuido, sino una propiedad de envolver comandos:
+
+> **Todo lo que envuelve a la puerta hay que probarlo con una puerta que se sabe roja.**
+> No con una verde: una verde no distingue un wrapper que propaga de uno que no.
+
+Y la comprobación es de una línea, sin esperar a que falle nada de verdad:
+
+```bash
+bash -c 'false' ; echo "directo: $?"          # 1
+bash -c 'false' | cat ; echo "tubería: $?"    # 0  ← si aquí sale 0, tu wrapper es ciego
+```
+
 ### Cómo se comprueba que el bloqueo está puesto
 
 Con la puerta corriendo, desde otra terminal:

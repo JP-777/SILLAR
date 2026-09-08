@@ -1194,6 +1194,126 @@ function provocarLasRamas() {
 }
 
 /**
+ * ======================= LA IDENTIDAD NO SE ESCRIBE =======================
+ *
+ * **De dónde sale esta comprobación, que es lo que la justifica.**
+ *
+ * Al derivar la identidad de la worktree se quitó el nombre de la base e2e de
+ * `e2e/setup/docker.ts`, que era donde se recordaba haberlo visto. Quedaban
+ * cuatro sitios más —los seeds en `migrate.ts`, tres consultas en
+ * `zz-instalacion.spec.ts` y el `stack:down` de `package.json`— y las dos
+ * puertas de la medición concurrente murieron en el mismo punto:
+ *
+ *     FATAL: database "sillar_e2e" does not exist
+ *
+ * con los contenedores ya levantados y con el nombre correcto. El fallo no fue
+ * el literal: fue **buscar donde uno recuerda en vez de enumerar**, que es
+ * exactamente lo que la bitácora §4 llama fiarse del que filtra. Escrito por
+ * quien lo escribió y repetido por quien lo escribió.
+ *
+ * Una lección aprendida que no se convierte en comando se vuelve a aprender.
+ * Esto es el comando.
+ *
+ * **Lo que mira y lo que no.** Solo el código que habla con los dos stacks
+ * —`e2e/` y `scripts/`—, y solo literales **entrecomillados**: un nombre de
+ * base escrito en prosa no rompe nada. Las líneas de comentario se saltan, y
+ * por eso el propio comentario de arriba puede citar el error sin disparar la
+ * barrera. `scripts/identidad.mjs` queda fuera porque es donde esos nombres se
+ * construyen: es la única definición legítima.
+ */
+
+/** Un nombre de base o de proyecto de los que se derivan, escrito a mano. */
+const IDENTIDAD_A_MANO = /(['"`])(sillar(?:_[a-z0-9]+)*_(?:e2e|dev))\1/;
+
+/** Comentario de línea, de bloque, o de shell: no es código que se ejecute. */
+const ES_COMENTARIO = /^\s*(\/\/|\/?\*|#)/;
+
+/**
+ * La decisión, pura, para poder provocarla sin tocar el disco.
+ *
+ * Devuelve las líneas ofensivas de un texto. Vacío significa limpio.
+ */
+function identidadEscritaAMano(texto) {
+  const encontradas = [];
+
+  texto.split('\n').forEach((linea, i) => {
+    if (ES_COMENTARIO.test(linea)) {
+      return;
+    }
+
+    const m = IDENTIDAD_A_MANO.exec(linea);
+
+    if (m) {
+      encontradas.push({ linea: i + 1, nombre: m[2], texto: linea.trim() });
+    }
+  });
+
+  return encontradas;
+}
+
+/** Los ficheros que hablan con los stacks, enumerados por git y no por memoria. */
+function ficherosQueTocanLaIdentidad() {
+  const r = spawnSync('git', ['ls-files', 'e2e', 'scripts'], { cwd: RAIZ, encoding: 'utf8' });
+
+  if (r.status !== 0) {
+    return { ciego: `git ls-files terminó con código ${r.status}` };
+  }
+
+  return {
+    visto: r.stdout
+      .split('\n')
+      .filter((f) => /\.(ts|mjs|js|json)$/.test(f))
+      .filter((f) => f !== 'scripts/identidad.mjs'),
+  };
+}
+
+/**
+ * Aborta la puerta si alguien volvió a escribir a mano un nombre que se deriva.
+ *
+ * Se niega también si **no puede mirar**, por la misma razón que el cerrojo: una
+ * comprobación que no pudo hacerse no es una comprobación que salió bien.
+ */
+function comprobarQueNadieEscribeLaIdentidad() {
+  const ficheros = ficherosQueTocanLaIdentidad();
+
+  if (ficheros.ciego) {
+    console.error(`\n${color.rojo('La puerta no arranca')}: no se pudo enumerar el código.`);
+    console.error(`  ${ficheros.ciego}\n`);
+    process.exit(1);
+  }
+
+  const malos = [];
+
+  for (const f of ficheros.visto) {
+    let texto;
+    try {
+      texto = readFileSync(path.join(RAIZ, f), 'utf8');
+    } catch {
+      continue;
+    }
+    for (const hallazgo of identidadEscritaAMano(texto)) {
+      malos.push({ fichero: f, ...hallazgo });
+    }
+  }
+
+  if (malos.length === 0) {
+    return;
+  }
+
+  console.error(`\n${color.rojo('La identidad de la worktree está escrita a mano')} en ${malos.length} sitio(s).\n`);
+  console.error('  Estos nombres se derivan del directorio del árbol. Escritos a mano apuntan');
+  console.error('  a la worktree de otro, o a una base que ya no existe con ese nombre:\n');
+
+  for (const m of malos) {
+    console.error(`  ${m.fichero}:${m.linea}  «${m.nombre}»`);
+    console.error(color.gris(`      ${m.texto}`));
+  }
+
+  console.error('\n  Sale de e2e/setup/env.ts (DB_NAME, PROJECT_NAME) o de scripts/identidad.mjs.\n');
+  process.exit(1);
+}
+
+/**
  * **Provoca cada barrera del veredicto y comprueba que dispara.**
  *
  *     SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1 node scripts/verificar.mjs
@@ -1288,6 +1408,50 @@ function autoprobarVeredicto() {
     return 1;
   }
 
+  // **La barrera de la identidad escrita a mano, en las dos direcciones.**
+  // Es la que faltaba el día que los seeds murieron: no basta con que encuentre
+  // el literal, hace falta que NO lo encuentre donde no lo hay — si no, la
+  // puerta no arrancaría nunca y se acabaría quitando.
+  console.log('\nY la identidad escrita a mano:\n');
+
+  // **Las cadenas de prueba se componen, no se escriben.**
+  //
+  // Escritas enteras, este mismo fichero contendría los literales que la
+  // barrera busca, y la barrera se dispararía a sí misma: el árbol limpio
+  // salía en rojo. Se vio provocándola, no razonándola.
+  //
+  // La salida fácil era exceptuar `scripts/verificar.mjs` del barrido. **No se
+  // hizo, y es lo que hay que retener:** este fichero habla con los dos stacks,
+  // así que exceptuarlo abriría exactamente el agujero por el que entró el
+  // fallo. Una barrera que necesita eximir su propio banco de pruebas está
+  // diciendo que su banco de pruebas no se parece a lo que vigila.
+  const E2E = `sillar_${'e2e'}`;
+  const FX_DEV = `sillar_fx_${'dev'}`;
+
+  const casosDeIdentidad = [
+    ['lo encuentra en código', `  await composeExec('db', ['psql', '-d', '${E2E}']);`, true],
+    ['lo encuentra con sufijo', `const base = '${FX_DEV}';`, true],
+    ['NO lo encuentra en un comentario', ` * murió con: database "${E2E}" does not exist`, false],
+    ['NO lo encuentra en prosa sin comillas', `  const nombre = base + suffix; // ${E2E} era el viejo`, false],
+    ['NO lo encuentra en código limpio', "  await psqlArchivo('/scripts/modules/core/02_seed.sql');", false],
+  ];
+
+  for (const [nombre, linea, debeEncontrar] of casosDeIdentidad) {
+    const hallazgos = identidadEscritaAMano(linea);
+    const bien = (hallazgos.length > 0) === debeEncontrar;
+
+    if (!bien) fallos += 1;
+
+    console.log(
+      `${bien ? color.verde(debeEncontrar ? 'LA VE     ' : 'NO LA VE  ') : color.rojo('MAL       ')}  ${nombre}`,
+    );
+  }
+
+  if (fallos > 0) {
+    console.error(`\n${color.rojo(`${fallos} comprobación(es) NO pasaron.`)}\n`);
+    return 1;
+  }
+
   const porAusencia = resultados.filter((r) => r.noEspera !== undefined).length;
 
   console.log(
@@ -1349,6 +1513,7 @@ if (process.env.SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO === '1') {
 }
 
 comprobarQueElVeredictoHabla();
+comprobarQueNadieEscribeLaIdentidad();
 
 
 asegurarPathDeHerramientas();
