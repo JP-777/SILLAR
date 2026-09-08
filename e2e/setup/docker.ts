@@ -115,6 +115,32 @@ export async function psql(sql: string): Promise<string> {
   return salida.trim();
 }
 
+/**
+ * Aplica un archivo `.sql` **contra la base de este árbol**.
+ *
+ * **Por qué existe, y es una lección que ya habíamos aprendido.** El nombre de
+ * la base lo escribían los llamadores, uno por uno, dentro de un
+ * `composeExec('db', ['psql', …, '-d', 'sillar_e2e', …])`. Cuando la identidad
+ * pasó a derivarse del directorio, esa base dejó de existir con ese nombre y
+ * los seeds murieron con
+ *
+ *     FATAL: database "sillar_e2e" does not exist
+ *
+ * en las dos worktrees a la vez, después de que el stack se hubiera levantado
+ * correctamente — que es lo que hace el fallo difícil de leer: los contenedores
+ * tenían el nombre bueno y la consulta iba al nombre viejo.
+ *
+ * Se arregló como se arregló la escopeta de `composeDown`: **la operación es la
+ * dueña del dato, no quien la llama**. Un llamador nuevo no puede escribir el
+ * nombre mal porque ya no escribe ningún nombre.
+ */
+export function psqlArchivo(rutaEnElContenedor: string): Promise<void> {
+  return composeExec('db', [
+    'psql', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres', '-d', DB_NAME,
+    '-f', rutaEnElContenedor,
+  ]);
+}
+
 /** Espera a que el contenedor de la base de datos esté `healthy`. */
 export async function waitDbHealthy(timeoutMs = 60_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
