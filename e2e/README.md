@@ -15,10 +15,12 @@ vistazo a quien no lo construyó.
 
 ## Qué hace falta tener antes de correrlo
 
-- **Docker Desktop corriendo.** La suite levanta su propio stack (`sillar_e2e`:
-  base de datos + API), completamente aparte de `sillar_dev` — otro nombre de
-  proyecto, otros puertos (55432/55081/55173), otro volumen. Los dos pueden
-  estar arriba a la vez sin pisarse.
+- **Docker Desktop corriendo.** La suite levanta su propio stack (base de
+  datos + API), completamente aparte del de desarrollo — otro nombre de
+  proyecto, otros puertos, otro volumen. Los dos pueden estar arriba a la vez
+  sin pisarse, y **los de dos worktrees distintas también**: nombre y puertos
+  se derivan del directorio del árbol. Para ver los de éste:
+  `node scripts/identidad.mjs`.
 - **`dotnet ef` instalado** (`dotnet tool install --global dotnet-ef` si no lo
   tienes) — lo usa `setup/migrate.ts` para aplicar las migraciones de CORE y
   Catalog contra la base efímera.
@@ -58,9 +60,12 @@ runtime de .NET.
 ## Inventario, un archivo por línea
 
 ### Configuración y entorno
-- **`.env.e2e`** — el único `.env` de este repositorio que se versiona: nombre
-  de proyecto docker, puertos, credenciales de una base efímera que no guarda
-  nada entre corridas. Explica en su propia cabecera por qué está commiteado.
+- **`.env.e2e`** — el único `.env` de este repositorio que se versiona:
+  credenciales de una base efímera que no guarda nada entre corridas, y el
+  entorno de compilación. **Ya no trae la identidad del árbol** —nombre de
+  proyecto, puertos, nombre de base, cadena de conexión—, que se deriva del
+  directorio. Su cabecera explica por qué está commiteado y por qué eso fue
+  correcto el día que se decidió.
 - **`playwright.config.ts`** — un solo worker (el stack es compartido y con
   estado), `globalSetup`/`globalTeardown`, y el `webServer` que arranca el
   Vite de `frontend/` apuntado a la API del stack e2e vía `SILLAR_API_ORIGIN`.
@@ -71,8 +76,11 @@ runtime de .NET.
   backend entra aquí.
 
 ### `setup/` — todo lo que levanta y destruye el entorno
-- **`env.ts`** — lee `.env.e2e` a mano y exporta lo que Node necesita fuera de
-  Docker: `API_URL`, `FRONTEND_URL`, `CONNECTION_STRING`, rutas.
+- **`env.ts`** — deriva la identidad del árbol (`scripts/identidad.mjs`), lee
+  de `.env.e2e` lo que no es identidad, y exporta lo que Node necesita fuera de
+  Docker: `API_URL`, `FRONTEND_URL`, `CONNECTION_STRING` —compuesta desde el
+  puerto ya resuelto, nunca leída— y `ENTORNO_DE_COMPOSE`, que es lo que se le
+  pasa a docker por el entorno del proceso.
 - **`shell.ts`** — `run()`/`runCapture()`/`sleep()`: los tres primitivos sobre
   los que está escrito todo lo demás en `setup/`.
 - **`docker.ts`** — `composeUpDb`, `composeBuildAndUpApi` (perfil `full`,

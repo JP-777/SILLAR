@@ -1,6 +1,6 @@
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
 import { expect, test } from '../fixtures/base.js';
-import { composeExec, psql } from '../setup/docker.js';
+import { psql, psqlArchivo } from '../setup/docker.js';
 import { API_URL } from '../setup/env.js';
 import { migrate, seed } from '../setup/migrate.js';
 
@@ -102,10 +102,7 @@ test('Los scripts del catálogo son idempotentes', async () => {
     "SELECT count(*) FROM catalog.categories UNION ALL SELECT count(*) FROM catalog.brands UNION ALL SELECT count(*) FROM catalog.products",
   );
 
-  await composeExec('db', [
-    'psql', '-U', 'postgres', '-d', 'sillar_e2e', '-v', 'ON_ERROR_STOP=1',
-    '-f', '/scripts/modules/catalog/02_seed.sql',
-  ]);
+  await psqlArchivo('/scripts/modules/catalog/02_seed.sql');
 
   const despues = await psql(
     "SELECT count(*) FROM catalog.categories UNION ALL SELECT count(*) FROM catalog.brands UNION ALL SELECT count(*) FROM catalog.products",
@@ -125,10 +122,7 @@ test('El schema catalog se elimina sin llevarse nada de core', async () => {
 
   expect(Number(usuariosAntes), 'la base de prueba debería tener usuarios').toBeGreaterThan(0);
 
-  await composeExec('db', [
-    'psql', '-U', 'postgres', '-d', 'sillar_e2e', '-v', 'ON_ERROR_STOP=1',
-    '-f', '/scripts/modules/catalog/99_drop.sql',
-  ]);
+  await psqlArchivo('/scripts/modules/catalog/99_drop.sql');
 
   // 1 · El schema ya no está.
   const schema = await psql(
@@ -147,10 +141,7 @@ test('El schema catalog se elimina sin llevarse nada de core', async () => {
   ).toBe(mediosAntes);
 
   // 3 · Y es idempotente: volver a desinstalarlo no falla.
-  await composeExec('db', [
-    'psql', '-U', 'postgres', '-d', 'sillar_e2e', '-v', 'ON_ERROR_STOP=1',
-    '-f', '/scripts/modules/catalog/99_drop.sql',
-  ]);
+  await psqlArchivo('/scripts/modules/catalog/99_drop.sql');
 
   // 4 · Se deja como se encontró. **Reinstalar es parte de la prueba**, no
   //     limpieza: el criterio dice «se crea y se elimina», así que volver a

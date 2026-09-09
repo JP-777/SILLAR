@@ -600,6 +600,57 @@ líneas al editar el fichero que citaban: **una afirmación sobre el árbol escr
 mirarlo**. `CLAUDE.md` ya lo dice para archivo y línea; vale igual para un hash, un recuento o
 un nombre de rama. Si no lo acabas de leer, no lo escribas.
 
+#### La tercera forma: una barrera que habla con seguridad y se equivoca
+
+*6 de septiembre de 2026*
+
+Esta sección empezó con barreras que **callan** y creció con barreras que **se detienen en
+falso**. Falta la tercera, y es la peor de las tres.
+
+La puerta murió en la suite e2e y el veredicto dijo:
+
+```
+ES DEL ENTORNO (probable) — algo del stack no llegó a levantarse.
+  Coincide con /Connection refused .*5\d{4}|ECONNREFUSED/i.
+  Antes de mirar el código, mira docs/ENTORNO.md.
+```
+
+Era falso. Los `ECONNREFUSED` eran líneas `[WebServer] AggregateError [ECONNREFUSED]` del proxy
+de Vite a partir de la 398 del registro; la línea de resultado de Playwright —`1 failed`,
+`126 passed`— estaba en la 375. El ruido llegó **después** de que la suite hubiera terminado de
+correr. El stack se levantó, el navegador arrancó y las specs se ejecutaron, y **la prueba de
+que la firma era imposible estaba dentro del mismo texto que la firma estaba leyendo**.
+
+**Por qué es peor que callar.** Una barrera que calla te deja donde estabas: sin ayuda, pero
+mirando. Una que se detiene en falso te para, y al menos te para delante del problema. Ésta te
+manda a otro sitio: dice «antes de mirar el código, mira el entorno» justo cuando el código es
+lo único que hay que mirar. Convierte el aparato que existe para ahorrar media hora en el que
+la gasta.
+
+**Y el mecanismo es el que hay que retener, porque no es de esta firma.** Las firmas se
+recorrían primero y sin condición: la primera que coincidía ganaba, aunque la salida contuviera
+la prueba de que no podía ser. Una firma que significa «el stack no llegó a levantarse» no
+puede hablar sobre un texto que dice `N passed`.
+
+> **Una firma habla solo si su desmentido calla.**
+
+Así que el desmentido no se escribió como un caso especial de esa firma, sino como un campo de
+la tupla —`[patrón, explicación, desmentido]`, `scripts/verificar.mjs`—: cualquier afirmación
+sobre el entorno puede toparse con la prueba de que no ocurrió, y quien la escriba tiene ahora
+dónde ponerla.
+
+**Cómo se supo, que es la parte que se repite.** No razonando sobre la expresión regular: se
+buscó en el registro **dónde** aparecía cada coincidencia y **en qué línea** estaba el
+resultado. Es otra vez preguntar por otra vía —la firma decía «hay un ECONNREFUSED», que era
+cierto; la pregunta útil era «¿dónde, respecto a lo que ya había pasado?»—. Y también es otra
+vez enumerar en vez de filtrar: `grep -c` habría dado un número que confirmaba el veredicto.
+
+**La provocación correspondiente se comprueba por ausencia**, y es la única del conjunto que lo
+hace: se le da al veredicto un texto con `ECONNREFUSED` *y* con la línea de resultado, y se
+exige que **no** atribuya al entorno. Lo que dice entonces es «Sin veredicto», que es la
+respuesta correcta: no sabe. Una barrera nueva se provoca una vez a propósito y se observa
+disparar; ésta se provoca una vez a propósito y se observa **callar**.
+
 ---
 
 ## 5. Pendientes
@@ -1289,3 +1340,65 @@ corrida de B habría muerto con un fallo que no se parece en nada a su causa.
 El daño estaba en el recurso compartido que no se nombró: los puertos. Dos frentes en la misma
 máquina comparten más de lo que comparte su código, y el inventario de lo que comparten no
 existe en ninguna parte.
+
+---
+
+### 9 sep 2026 · El turno lo da la máquina, y el verde que llegó a `main`
+
+El problema de concurrencia deja de ser un pendiente. No se cerró porque existiera una
+rama que prometiera arreglarlo: se cerró cuando el mecanismo llegó a `main` después de
+una puerta canónica completa.
+
+La evidencia tiene tres piezas. El 5 de septiembre hubo una primera observación concurrente
+mala, con dos puertas arrancadas con dieciséis segundos de diferencia y 46 falsos fallos.
+El 8/9 de septiembre se repitió la medición sobre el mismo commit `75f9316`, con identidad
+e2e derivada y separada: **las dos corridas concurrentes terminaron rojas**. Después hubo
+un único control serial sobre ese mismo commit y pasó 6/6.
+
+Ese control es `n=1`: no demuestra que lo serial siempre sea verde. Sí demuestra que el
+segundo rojo concurrente no estaba obligado por el árbol probado.
+
+La decisión es deliberadamente más pequeña que una teoría de hardware: **en esta máquina
+la señal de gates simultáneos no es fiable, así que la puerta se serializa**. El cerrojo
+común da el turno. Para futuras mediciones existe
+`SILLAR_VERIFY_PERMITIR_CONCURRENCIA`, cuyo valor es el motivo obligatorio.
+
+El preflight quedó además fail-safe: una enumeración inesperadamente vacía, un fichero que
+no se puede leer o una provocación rota hacen roja la puerta en vez de hacer desaparecer
+la comprobación.
+
+**Verde que autorizó la integración.** El 9 de septiembre de 2026 a las 11:21 (-05:00),
+`a8a307e` pasó la puerta canónica real: tipos frontend, tipos e2e, build backend,
+migraciones sobre base efímera, pruebas backend y suite e2e —**6/6**—, con
+`systemd-wrapper=0`, `verificar.mjs=0`, sin bypass de concurrencia y sin stack e2e
+residual. Ese mismo commit entró a `main` por fast-forward.
+
+Desde aquí cada integración registra commit, fecha y resultado. No se repite el gate
+únicamente porque el mismo árbol cambió de nombre de rama.
+
+**La identidad dejó de ser pendiente.** La worktree deriva proyecto, bases y puertos;
+el antiguo §20 se disuelve: ya no existe una identidad crítica que dependa de recordar
+cambios locales.
+
+**Limpieza C/D/F.**
+
+- §14 ya vive en `ANTES-DE-EMPEZAR-UN-MODULO.md` §1;
+- §16 ya vive allí en §5, incluida la regla de **no hacer barrido**;
+- las seis bibliotecas descartadas ya viven en §6 y no son pendientes;
+- §11 se disuelve como contenedor heredado;
+- las filas cerradas de §13 salen de la lista;
+- `BUILD_CONFIGURATION` se cierra: `backend/Dockerfile:30` usa
+  `ARG BUILD_CONFIGURATION=Release` y `docker-compose.yml:60` usa
+  `${BUILD_CONFIGURATION:-Release}`; Debug solo aparece si se fija explícitamente;
+- `MultipleCollectionIncludeWarning` se **descarta**, no se aplaza: la medición dejó una
+  cota realista de 6 presentaciones × 3 categorías = 18 filas frente a 9, con los datos
+  actuales en 3 y `Take(50)` acotando el conjunto. Solo se reabre si esa cota deja de
+  describir el caso real;
+- panel, Swagger y `:focus-visible` se revisan juntos por JP antes de cerrar Fase 1;
+- Bsale se pregunta en la misma visita al mostrador que decide M05a;
+- `docs/BITACORA-SESION-2026-08-14.md` se retira porque lo durable ya está en los
+  documentos vigentes.
+
+El pendiente `42P01` **permanece abierto**. Existe una rama que lo arregla, pero una rama
+no resuelve un pendiente: se cerrará cuando el arreglo esté en `main` y haya pasado la
+prueba contra una base realmente vacía.
