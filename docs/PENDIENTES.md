@@ -43,29 +43,6 @@ diga quién encarga las superficies de plataforma.
 
 ---
 
-## 3 · Tres copias de `StampReplicationColumns`
-
-**Qué pasa.** El bucle que sella `origin_node` y `row_version` está duplicado:
-
-    backend/Sillar.Core/Data/CoreDbContext.cs:133
-    backend/Sillar.Modules.Catalog/Data/CatalogDbContext.cs:92
-
-y CRM añade la tercera. `IReplicatedEntity` y `NodeIdentity` **ya viven en `Sillar.Shared`**; lo
-que no está compartido es el sellado y el `MapReplication` de EF.
-
-**Por qué está aplazado.** Extraerlo toca `Sillar.Shared` + CORE + Catalog a la vez: costura
-compartida y regresión sobre dos módulos cerrados. No cabe dentro del Paso 2 de M04.
-
-**Disparador.** La **cuarta** copia, **o** la primera vez que dos copias discrepen. Lo que ocurra
-antes. La unidad que lo extraiga debe llevarse el sellado **y** revisar `MapReplication`; a medias
-no.
-
-**Contexto.** `Sillar.Shared/Replication/NodeIdentity.cs` ya anticipa esto en su docstring: vive
-ahí «porque todo módulo con tablas replicadas escribe esta columna igual: catálogo, clientes,
-existencias y ventas».
-
----
-
 ## 4 · M05a Servicios — puede no llegar a existir
 
 **Qué pasa.** Los dos ejemplos que la arquitectura da de M05a —anillado e impresión— **ya

@@ -1402,3 +1402,46 @@ cambios locales.
 El pendiente `42P01` **permanece abierto**. Existe una rama que lo arregla, pero una rama
 no resuelve un pendiente: se cerrará cuando el arreglo esté en `main` y haya pasado la
 prueba contra una base realmente vacía.
+
+---
+
+### 9 sep 2026 · El sellado de replicación entra a `main`
+
+El pendiente §3 se cierra por efecto, no por existencia de una rama. La rama
+`refactor/sellado-replicacion` incorporó el `main` vigente y su commit final
+`0c45aca224f4685bd1ff0c0cd3ac139db3c49438` fue verificado antes de entrar.
+
+El cambio extrae las dos mitades de la regla compartida: el sellado vive en
+`Sillar.Shared.Data/Replication/ReplicationStamping.cs` y el mapeo en
+`ReplicationMapping.cs`. CORE, Catalog y CRM consumen esas piezas sin introducir
+migraciones nuevas. La comprobación de modelo respondió **sin cambios pendientes**
+en los tres contextos.
+
+La verificación focal independiente pasó **11/11, 0 omitidas**. Antes, las pruebas
+se habían falsificado deliberadamente rompiendo incremento de versión, conservación
+del origen y tres propiedades del mapeo; cada rotura produjo el rojo esperado y,
+tras restaurar, las 11 volvieron a verde.
+
+La puerta canónica completa sobre `0c45aca` pasó:
+
+- tipos del frontend;
+- tipos del arnés e2e;
+- compilación del backend;
+- migraciones sobre base efímera;
+- pruebas del backend;
+- suite e2e.
+
+Resultado: **6/6**, `systemd-wrapper=0`, `verificar.mjs=0`, sin bypass de
+concurrencia, sin procesos residuales y sin stack e2e restante.
+
+Integración: fast-forward de `main`
+`8d075bfaaa7ee55422d482801c50df9624e3a25e` →
+`0c45aca224f4685bd1ff0c0cd3ac139db3c49438`.
+
+No entró el arreglo de base vacía ni otro alcance de #2. Tampoco entró ningún
+`.env`: la identidad local usada para la verificación quedó fuera del commit.
+
+Con esto, **§3 deja de ser pendiente**. La entrada histórica del 5 de septiembre
+que explica por qué se adelantó la extracción se conserva: una cosa registra la
+decisión y su origen; ésta registra que el trabajo ya llegó a `main` y pasó su
+puerta.
