@@ -514,11 +514,25 @@ function cabeceraDeConcurrencia() {
     return [];
   }
 
+  // **Dos hechos, no uno.** Que se corrió sin exclusión, y qué se llegó a
+  // saber de si había alguien más. El segundo se perdía: se decía al arrancar
+  // y desaparecía del informe, y entonces una corrida que NO pudo comprobar
+  // nada se leía exactamente igual que una que comprobó y estaba sola.
+  const segunda = {
+    viva: '   Y había otra puerta corriendo: esta corrida le hizo ruido.',
+    ninguna: '   No había ninguna otra puerta viva: comprobado.',
+    ciega: '   No se pudo comprobar si existe otra puerta corriendo;\n'
+      + '   la inspección del cerrojo no estuvo disponible.',
+    'sin mirar': '   El cerrojo no llegó a mirarse.',
+  }[INSPECCION.estado] ?? `   Estado de la inspección del cerrojo: ${INSPECCION.estado}.`;
+
   return [
     '',
     color.amarillo('══ CONCURRENCIA AUTORIZADA ═════════════════════════════════════════'),
     color.amarillo(`   Esta corrida se ejecutó SIN cerrojo, a propósito. Razón dada:`),
     color.amarillo(`   «${CONCURRENCIA.permitido}»`),
+    color.amarillo(segunda),
+    ...(INSPECCION.detalle ? [color.amarillo(`   (${INSPECCION.detalle})`)] : []),
     color.amarillo('   Lo que salga abajo puede llevar ruido de otra puerta corriendo a la vez.'),
     color.amarillo('════════════════════════════════════════════════════════════════════'),
   ];
@@ -557,10 +571,25 @@ if (CONCURRENCIA.rechazo) {
   process.exit(1);
 }
 
+/**
+ * **Lo que se llegó a saber del cerrojo, guardado hasta el informe final.**
+ *
+ * Empieza en `sin mirar` y solo lo cambia el propio cerrojo. Vive aquí, y no
+ * dentro del módulo del cerrojo, porque quien tiene que repetirlo media hora
+ * después es la puerta: el dato se sabe en el primer segundo y hace falta en
+ * el último.
+ */
+const INSPECCION = { estado: 'sin mirar', detalle: null };
+
 const soltarCerrojo =
   process.env.SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO === '1'
     ? () => {}
-    : tomarCerrojo({ raiz: RAIZ, color, concurrencia: CONCURRENCIA.permitido ?? null });
+    : tomarCerrojo({
+      raiz: RAIZ,
+      color,
+      concurrencia: CONCURRENCIA.permitido ?? null,
+      anotar: (lo) => Object.assign(INSPECCION, lo),
+    });
 
 process.on('exit', () => soltarCerrojo());
 
@@ -1343,12 +1372,25 @@ function loQueElVeredictoNoSabe() {
     return [];
   }
 
+  // Con la inspección ciega el aviso es más fuerte, y tiene que serlo: no solo
+  // pudo haber otra puerta, es que **no se sabe** si la había. Atribuir ese
+  // rojo a la rama sería atribuirlo a lo único que se puede nombrar.
+  const noSeSabe = INSPECCION.estado === 'ciega'
+    ? [
+      color.amarillo('  y ni siquiera se pudo comprobar si había otra puerta corriendo:'),
+      color.amarillo(`  la inspección del cerrojo no estuvo disponible (${INSPECCION.detalle}).`),
+      color.amarillo('  Este resultado NO se puede atribuir limpiamente a esta rama.'),
+    ]
+    : [
+      color.amarillo('  así que compartió Docker, puertos y carga con lo que hubiera al lado.'),
+      color.amarillo('  Un rojo así no se da por del código sin repetirlo con la máquina para uno solo.'),
+    ];
+
   return [
     '',
     color.amarillo('  Y una cosa que el veredicto de arriba no mira:'),
     color.amarillo(`  esta corrida se lanzó con concurrencia autorizada —«${CONCURRENCIA.permitido}»—,`),
-    color.amarillo('  así que compartió Docker, puertos y carga con lo que hubiera al lado.'),
-    color.amarillo('  Un rojo así no se da por del código sin repetirlo con la máquina para uno solo.'),
+    ...noSeSabe,
   ];
 }
 

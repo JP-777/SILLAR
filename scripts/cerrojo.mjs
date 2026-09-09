@@ -278,6 +278,54 @@ function ramaActual(raiz) {
 }
 
 /**
+ * **Qué se llegó a saber del cerrojo, en tres estados y no en dos.**
+ *
+ * Pura, para poder provocarla. Traduce la decisión de `decidirSobreCerrojo` a
+ * lo único que importa cuando ya se ha renunciado al cerrojo: **¿hay alguien
+ * más, no hay nadie, o no se pudo mirar?**
+ *
+ * **Por qué tres y no dos.** Porque el tercero es el que se pierde solo. Sin
+ * él, «no pude mirar» se imprime igual que «miré y no hay nadie», y entonces
+ * el informe de una corrida que no comprobó nada se lee como el de una que
+ * comprobó y estaba sola. Es la misma regla de las sondas del veredicto y de
+ * la sonda de vida, aplicada al último sitio donde faltaba.
+ *
+ * **Y la asimetría con la vía normal, que es deliberada.** Sin bypass, este
+ * dato alimenta una decisión —excluir o no excluir— y por eso no poder
+ * obtenerlo para la puerta. Con bypass, la exclusión ya se desactivó a
+ * propósito: el dato solo alimenta un mensaje, así que la corrida sigue y lo
+ * que se degrada es el mensaje. Se detiene la decisión, no el mensaje.
+ *
+ *   `viva`     hay otra puerta corriendo, o hay un cerrojo que no se pudo
+ *              declarar muerto —que hacia este lado se cuenta como que sí
+ *   `ninguna`  se miró y no hay ninguna viva
+ *   `ciega`    no se pudo mirar. Nunca se escribe como `ninguna`
+ */
+function estadoDeLaInspeccion(decision) {
+  if (decision.rendirse) {
+    return {
+      estado: 'viva',
+      detalle: decision.dudoso
+        ? `hay un cerrojo del proceso ${decision.rendirse.pid} y no se pudo confirmar que siga vivo: ${decision.dudoso}`
+        : `la tiene el proceso ${decision.rendirse.pid} desde ${decision.rendirse.worktree ?? '(worktree desconocida)'}`,
+      titular: decision.rendirse,
+    };
+  }
+
+  if (decision.romper) {
+    // **`datos` es lo que separa las dos clases de «romper».** Con datos, se
+    // leyó el cerrojo entero y se comprobó que su proceso ya no está: eso es
+    // saber que no hay nadie vivo. Sin datos, el archivo estaba ahí y no se
+    // pudo interpretar, que es no haber podido mirar.
+    return decision.datos
+      ? { estado: 'ninguna', detalle: `había un cerrojo abandonado: ${decision.romper}`, titular: decision.datos }
+      : { estado: 'ciega', detalle: `${decision.romper}, así que no se pudo saber de quién era` };
+  }
+
+  return { estado: 'ninguna', detalle: 'no había ningún cerrojo' };
+}
+
+/**
  * **Correr a sabiendas sin cerrojo: mirar y no tocar.**
  *
  * La única diferencia con la vía normal es que aquí no se escribe nada. Se lee
@@ -295,35 +343,42 @@ function ramaActual(raiz) {
  * Se reutiliza `decidirSobreCerrojo` en vez de leer el archivo a mano: es la
  * misma pregunta —¿hay alguien, y está vivo?— y ya está provocada.
  */
-function correrSinCerrojo({ CERROJO, color, sonda, concurrencia }) {
-  const decision = decidirSobreCerrojo(leerCerrojo(CERROJO), sonda);
+function correrSinCerrojo({ CERROJO, color, sonda, concurrencia, anotar }) {
+  const inspeccion = estadoDeLaInspeccion(decidirSobreCerrojo(leerCerrojo(CERROJO), sonda));
 
   console.error(`\n${color.amarillo('CONCURRENCIA AUTORIZADA')} — esta corrida NO toma el cerrojo, a propósito.`);
   console.error(`  Razón dada:  «${concurrencia}»\n`);
 
-  if (decision.rendirse) {
-    const d = decision.rendirse;
+  if (inspeccion.estado === 'viva') {
+    const d = inspeccion.titular;
     console.error(color.amarillo(`  Hay otra puerta corriendo desde ${d.worktree ?? '(worktree desconocida)'};`));
     console.error(color.amarillo('  esta corrida está añadiendo ruido a la suya.'));
     console.error(`  La tiene el proceso ${d.pid}, en la rama ${d.rama ?? '(desconocida)'},`);
     console.error(`  ${haceCuanto(d.desde)} (${d.desde}).`);
-
-    if (decision.dudoso) {
-      console.error(`  ${color.amarillo('Aviso:')} ${decision.dudoso}.`);
-    }
-
+    console.error(`  ${inspeccion.detalle}.`);
     console.error('\n  Su cerrojo se queda como está: no se toca lo ajeno.');
     console.error('  Comparten Docker, puertos y carga, así que un rojo de cualquiera de las');
     console.error('  dos corridas puede ser de la otra.\n');
-  } else if (decision.romper) {
-    // Huérfano. En la vía normal se rompería; aquí no, y se dice por qué.
-    console.error(`  Hay un cerrojo abandonado en ${CERROJO}: ${decision.romper}.`);
+  } else if (inspeccion.estado === 'ciega') {
+    console.error(color.amarillo('  No se pudo comprobar si existe otra puerta corriendo;'));
+    console.error(color.amarillo('  la inspección del cerrojo no estuvo disponible.'));
+    console.error(`  ${inspeccion.detalle}.`);
+    console.error('\n  Esto NO es «no hay ninguna»: es no haberlo podido mirar. La corrida');
+    console.error('  sigue porque la exclusión ya se desactivó a propósito y este dato solo');
+    console.error('  alimentaba el mensaje; pero el mensaje se degrada y se dice.\n');
+  } else if (inspeccion.titular) {
+    // Huérfano de un proceso que sí se pudo declarar muerto. En la vía normal
+    // se rompería; aquí no, y se dice por qué.
+    console.error(`  No hay ninguna otra puerta viva: comprobado.`);
+    console.error(`  Sí hay un cerrojo abandonado en ${CERROJO}: ${inspeccion.detalle}.`);
     console.error('  No se rompe: una corrida que renuncia al cerrojo no se pone a');
     console.error('  administrarlo. La próxima puerta normal lo romperá ella.\n');
   } else {
-    console.error('  No hay ninguna otra puerta en pie ahora mismo, así que de momento');
-    console.error('  esta corrida está sola. Nada impide que arranque otra mientras tanto.\n');
+    console.error('  No hay ninguna otra puerta viva: comprobado, y no había ningún cerrojo.');
+    console.error('  Nada impide que arranque otra mientras tanto.\n');
   }
+
+  anotar(inspeccion);
 
   // No hay nada que soltar: no se tomó nada.
   return () => {};
@@ -342,8 +397,21 @@ function correrSinCerrojo({ CERROJO, color, sonda, concurrencia }) {
  * la variable—; aquí solo se obedece. Con razón, este módulo **mira y no
  * toca**: ni toma, ni rompe, ni borra. Un cerrojo ajeno es de su dueño también
  * cuando se ha decidido correr a su lado.
+ *
+ * **`anotar`** recibe lo que se llegó a saber del cerrojo —`viva`, `ninguna` o
+ * `ciega`— para que la puerta pueda repetirlo en su informe final. Se inyecta
+ * en vez de devolverse porque lo que se devuelve es la función de soltar, y
+ * porque es el mismo patrón que `sonda`. Sin esto, el «no se pudo comprobar»
+ * se decía al arrancar y se perdía: media hora después, el informe de una
+ * corrida que no comprobó nada se leía igual que el de una que comprobó.
  */
-export function tomarCerrojo({ raiz, color = SIN_COLOR, sonda = sondaDeVida, concurrencia = null } = {}) {
+export function tomarCerrojo({
+  raiz,
+  color = SIN_COLOR,
+  sonda = sondaDeVida,
+  concurrencia = null,
+  anotar = () => {},
+} = {}) {
   let CERROJO;
 
   try {
@@ -354,9 +422,13 @@ export function tomarCerrojo({ raiz, color = SIN_COLOR, sonda = sondaDeVida, con
       // el fallo impide es identificar el cerrojo, y en esta corrida el cerrojo
       // no protege nada: ya se ha renunciado a él a propósito. Lo que sí se
       // pierde es poder decir a quién se le está haciendo ruido, y eso se dice.
-      console.error(`\n${color.amarillo('CONCURRENCIA AUTORIZADA')} — corriendo sin cerrojo. Razón:`);
-      console.error(`  «${concurrencia}»\n`);
-      console.error(`  Y ni siquiera se pudo mirar quién más está corriendo: ${e.message}.\n`);
+      console.error(`\n${color.amarillo('CONCURRENCIA AUTORIZADA')} — esta corrida NO toma el cerrojo, a propósito.`);
+      console.error(`  Razón dada:  «${concurrencia}»\n`);
+      console.error(color.amarillo('  No se pudo comprobar si existe otra puerta corriendo;'));
+      console.error(color.amarillo('  la inspección del cerrojo no estuvo disponible.'));
+      console.error(`  ${e.message}.\n`);
+      console.error('  Esto NO es «no hay ninguna»: es no haberlo podido mirar.\n');
+      anotar({ estado: 'ciega', detalle: e.message });
       return () => {};
     }
 
@@ -373,7 +445,7 @@ export function tomarCerrojo({ raiz, color = SIN_COLOR, sonda = sondaDeVida, con
   }
 
   if (concurrencia) {
-    return correrSinCerrojo({ CERROJO, color, sonda, concurrencia });
+    return correrSinCerrojo({ CERROJO, color, sonda, concurrencia, anotar });
   }
 
   for (let intento = 0; intento < 2; intento += 1) {
@@ -486,8 +558,9 @@ function provocar() {
   });
 
   mal += provocarLaSemilla();
+  mal += provocarLaInspeccion();
 
-  console.log(mal === 0 ? '\nLas doce vías deciden lo que deben.\n' : `\n${mal} vía(s) deciden mal.\n`);
+  console.log(mal === 0 ? '\nLas diecisiete vías deciden lo que deben.\n' : `\n${mal} vía(s) deciden mal.\n`);
   return mal === 0 ? 0 : 1;
 }
 
@@ -525,6 +598,45 @@ function provocarLaSemilla() {
     const bien = decidio === espera;
     if (!bien) mal += 1;
     console.log(`  ${bien ? '·' : '✗'} ${nombre.padEnd(28)} → ${decidio.padEnd(9)} ${r.ciego ?? r.semilla}`);
+  }
+
+  return mal;
+}
+
+/**
+ * **Los tres estados de la inspección, provocados.**
+ *
+ * Y el que hay que mirar dos veces es el cuarto caso: un cerrojo que existe y
+ * no se puede interpretar **no** es «no hay nadie». Si se contara como
+ * `ninguna`, el informe de una corrida ciega diría que estaba sola.
+ */
+function provocarLaInspeccion() {
+  const titular = { pid: 4242, worktree: '/home/x/sillar-otra', desde: new Date().toISOString(), rama: 'una/rama' };
+
+  const casos = [
+    ['la tiene una corrida viva', { rendirse: titular }, 'viva'],
+    ['hay cerrojo y no se pudo comprobar', { rendirse: titular, dudoso: 'no se pudo preguntar: EIO' }, 'viva'],
+    ['el proceso estaba muerto', { romper: 'el proceso 4242 ya no existe', datos: titular }, 'ninguna'],
+    ['el cerrojo no se pudo interpretar', { romper: 'el cerrojo estaba corrupto o incompleto' }, 'ciega'],
+    ['no había ningún cerrojo', { tomar: true }, 'ninguna'],
+  ];
+
+  let mal = 0;
+
+  for (const [nombre, decision, espera] of casos) {
+    let r;
+
+    try {
+      r = estadoDeLaInspeccion(decision);
+    } catch (e) {
+      mal += 1;
+      console.log(`  ✗ ${nombre.padEnd(34)} → NO SE PUDO PROVOCAR: ${e.message}`);
+      continue;
+    }
+
+    const bien = r.estado === espera;
+    if (!bien) mal += 1;
+    console.log(`  ${bien ? '·' : '✗'} ${nombre.padEnd(34)} → ${r.estado.padEnd(8)} ${r.detalle}`);
   }
 
   return mal;
