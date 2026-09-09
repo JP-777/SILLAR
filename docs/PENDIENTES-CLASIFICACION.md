@@ -1,5 +1,7 @@
 # Propuesta de clasificación de `PENDIENTES.md`
 
+> **Documento de trabajo histórico.** Esta clasificación fue una propuesta para tomar decisiones; no es la lista vigente. Las decisiones finales viven en `PENDIENTES.md`, `BITACORA.md` y los documentos de coordinación. No usar este archivo para reabrir ni cerrar entradas.
+
 *4 de septiembre de 2026 · leído contra `3b6806d` · revisado el 5 de septiembre contra
 `b53e5ee`, que es el árbol al que se integra*
 

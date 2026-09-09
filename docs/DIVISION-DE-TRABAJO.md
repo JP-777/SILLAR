@@ -127,69 +127,75 @@ ajenas.
 
 ### 6.1 · Una puerta a la vez
 
-**Esto matiza la regla 4 y hay que decirlo en voz alta**, porque la regla dice
-que cada frente pasa la puerta en su rama y no dice cuándo: **no cuando quiera.**
-La máquina tiene 13 GiB sin swap y dos puertas simultáneas ya pusieron una
-corrida en rojo con 46 falsos fallos.
+**El turno lo da la máquina, no el acuerdo.** `verificar.mjs` toma un cerrojo exclusivo
+compartido por las worktrees al arrancar y lo suelta al terminar. El cerrojo registra PID,
+hora de inicio, dueño y worktree; si encuentra otro proceso vivo, la segunda puerta no
+empieza. Un cerrojo huérfano se distingue de uno vivo y se recupera diciéndolo.
 
-**El turno lo da la máquina, no el acuerdo.** `verificar.mjs` toma un cerrojo
-exclusivo al arrancar y lo suelta al terminar; si ya está tomado, se niega y dice
-**quién lo tiene, desde qué worktree y desde cuándo** — que es exactamente el
-diagnóstico que faltó el día del incidente.
+La exclusión no descansa en una sospecha. Hay **dos observaciones independientes de
+concurrencia mala**: el 5 de septiembre dos puertas arrancaron con dieciséis segundos de
+diferencia y apareció una cascada de 46 falsos fallos; el 8/9 de septiembre se repitió la
+medición sobre el mismo commit `75f9316`, con identidades e2e separadas, y las dos puertas
+concurrentes terminaron rojas. Un control serial posterior sobre ese mismo commit dio
+verde 6/6.
 
-Se hace así y no con un turno acordado porque **una regla cuyo incumplimiento es
-invisible no protege: tranquiliza.** Un turno pedido a Integración solo se puede
-cumplir acordándose de él, nadie puede observar que se ha violado hasta que ya se
-violó, y bajo prisa —que es cuando pasa— se salta.
+Ese control serial es `n=1`: no demuestra que una puerta serial siempre sea verde.
+Sí demuestra que el segundo rojo concurrente no era inevitable por el código.
 
-El cerrojo guarda **PID y hora de inicio**, así que un cerrojo huérfano —el de
-una corrida muerta— se distingue de uno vivo y se puede romper diciéndolo. Eso
-cubre además la mitad de §6.3 sin trabajo extra.
+Por eso la política es serializar. No se atribuye el fenómeno a RAM, CPU ni a otra causa
+no medida: lo probado es que **la señal de dos gates simultáneos en esta máquina no es
+fiable**, y que serializar cuesta menos que diagnosticar falsos rojos.
 
-**El turno pedido a Integración se queda como la vía humana para cuando el
-cerrojo no basta**, no como la regla.
+**Excepción deliberada para medir otra vez:** `SILLAR_VERIFY_PERMITIR_CONCURRENCIA`
+acepta como valor **el motivo obligatorio de la medición**, no un booleano. Vacía o con
+solo espacios se rechaza. Con un motivo válido la puerta continúa **sin tomar el cerrojo**,
+no rompe, toma ni borra un cerrojo ajeno y deja el motivo visible en el reporte.
+
+Bajo esa excepción, la inspección del cerrojo tiene tres estados:
+
+1. **otra puerta viva** —incluye el caso conservador en que existe el cerrojo y no se puede demostrar que su PID ya murió—;
+2. **ninguna puerta viva confirmada**;
+3. **no se pudo inspeccionar**.
+
+Los tres aparecen en la cabecera. El tercero no se disfraza de «nadie».
+**Cualquier rojo ejecutado bajo esta excepción queda marcado como de atribución no limpia**,
+porque la concurrencia fue autorizada deliberadamente. Si además la inspección quedó en el
+tercer estado, el reporte dice también que no pudo mirar: son dos fuentes distintas de
+incertidumbre.
+
+La aparente asimetría es deliberada: **fail-closed protege una barrera que está en
+servicio, no una barrera que el operador deshabilitó deliberadamente para medir**.
+Regla general: si una inspección fallida alimenta una **decisión**, se detiene la decisión;
+si solo alimenta un **mensaje**, se degrada el mensaje y se dice que no se pudo mirar.
+
+El turno humano de Integración sirve para coordinación, no sustituye al cerrojo.
+Si cambia el hardware, esta exclusión se revisa por medición usando la excepción
+documentada, no por intuición.
 
 ### 6.2 · La identidad e2e se deriva, no se escribe
 
-Cada worktree que corra la suite necesita identidad propia: nombre de proyecto de
-compose y sus puertos. **Pero no se escribe a mano.**
+Cada worktree obtiene su identidad desde su propio árbol mediante `scripts/identidad.mjs`:
+sufijo, proyecto de Compose, base y puertos salen de una misma derivación. La cadena de
+conexión se compone a partir de esos valores; el puerto de PostgreSQL no vuelve a existir
+como un segundo dato escrito manualmente dentro de la cadena.
 
-Documentar cinco valores que hay que teclear en `e2e/.env.e2e` —un fichero
-rastreado, que debe modificarse y no commitearse— no sería un procedimiento: sería
-**un defecto con instrucciones de uso**. Un `git restore`, un merge o un cambio de
-rama lo revierten en silencio, que es literalmente el pendiente §20.
+Para desarrollo, `scripts/estrenar.mjs` genera el `.env` correspondiente a la worktree.
+**No se copia `.env.example` a mano y no se copia el `.env` de una worktree vecina.**
+La plantilla conserva configuración y secretos vacíos; `estrenar.mjs` escribe la identidad
+calculada y deja los secretos para configuración local.
 
-Y la pista estaba dentro del propio problema. El valor que siempre se olvidaba
-—el `Port=` dentro de `ConnectionStrings__Default`— **no es un quinto valor: es
-`POSTGRES_PORT` otra vez**, duplicado dentro de una cadena en lugar de compuesto a
-partir de él. Que fuese justo ese el que se olvidaba no era mala suerte: era la
-señal de que estos valores no debían escribirse, sino derivarse.
+Para e2e la identidad se deriva sin exigir un fichero específico de máquina.
 
-**Cómo:** `e2e/setup/env.ts` ya tiene la forma correcta a medias —lee el fichero y
-cae a un valor por defecto cuando falta—. Basta cambiar **a qué cae**: derivar el
-sufijo del proyecto y el desplazamiento de puertos del propio directorio de la
-worktree, y **componer** `ConnectionStrings__Default` a partir del puerto ya
-resuelto en vez de leerlo entero.
+Esto elimina el defecto que sostenía el antiguo pendiente §20: una identidad que solo
+existía como cambio local no commiteado y desaparecía con checkout, merge o limpieza.
+**§20 se disolvió; no se abre como pendiente.**
 
-Con eso, el fichero commiteado conserva su virtud —que correr no dependa de copiar
-un ejemplo es parte del punto, y su docstring lo dice—, cada worktree es única sin
-que nadie haga nada, el quinto valor deja de existir como cosa aparte, y **§20 se
-disuelve en lugar de aplazarse**.
+La identidad separada evita colisiones de nombres y que una operación destructiva confunda
+stacks. No vuelve segura la concurrencia del gate: esa pregunta se midió por separado y
+su respuesta actual está en §6.1.
 
-La guarda de `identidad.ts` se queda donde está, como barrera del caso residual.
-
-**Excepción declarada de la regla 8, mientras dure.** La regla 8 dice que la
-configuración de máquina no entra jamás en un commit de producto, y `e2e/.env.e2e`
-está rastreado. Hasta que la identidad se derive, **este fichero es la excepción
-declarada**, y por eso se modifica sin commitear. El día que se derive, el fichero
-dejará de contener nada específico de una máquina y la excepción desaparece sola.
-Se escribe porque un reglamento con dos reglas que se muerden enseña a elegir la
-que convenga.
-
-**Por qué el fichero se commiteó, y no fue un error.** Esa decisión era correcta
-cuando había una worktree: hacía que correr la suite no dependiera de copiar un
-ejemplo a mano. Es §14 otra vez —una regla que era cierta porque solo había uno—
-y esta vez aplicada sobre una decisión buena, no sobre un descuido.
+Las operaciones destructivas mantienen su propia defensa: antes de desmontar un stack
+verifican su propiedad. Identidad distinta y comprobación de propiedad son capas separadas.
 
 ### 6.3 · Lo que deja atrás una corrida abortada
 

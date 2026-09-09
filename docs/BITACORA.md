@@ -1298,3 +1298,65 @@ corrida de B habría muerto con un fallo que no se parece en nada a su causa.
 El daño estaba en el recurso compartido que no se nombró: los puertos. Dos frentes en la misma
 máquina comparten más de lo que comparte su código, y el inventario de lo que comparten no
 existe en ninguna parte.
+
+---
+
+### 9 sep 2026 · El turno lo da la máquina, y el verde que llegó a `main`
+
+El problema de concurrencia deja de ser un pendiente. No se cerró porque existiera una
+rama que prometiera arreglarlo: se cerró cuando el mecanismo llegó a `main` después de
+una puerta canónica completa.
+
+La evidencia tiene tres piezas. El 5 de septiembre hubo una primera observación concurrente
+mala, con dos puertas arrancadas con dieciséis segundos de diferencia y 46 falsos fallos.
+El 8/9 de septiembre se repitió la medición sobre el mismo commit `75f9316`, con identidad
+e2e derivada y separada: **las dos corridas concurrentes terminaron rojas**. Después hubo
+un único control serial sobre ese mismo commit y pasó 6/6.
+
+Ese control es `n=1`: no demuestra que lo serial siempre sea verde. Sí demuestra que el
+segundo rojo concurrente no estaba obligado por el árbol probado.
+
+La decisión es deliberadamente más pequeña que una teoría de hardware: **en esta máquina
+la señal de gates simultáneos no es fiable, así que la puerta se serializa**. El cerrojo
+común da el turno. Para futuras mediciones existe
+`SILLAR_VERIFY_PERMITIR_CONCURRENCIA`, cuyo valor es el motivo obligatorio.
+
+El preflight quedó además fail-safe: una enumeración inesperadamente vacía, un fichero que
+no se puede leer o una provocación rota hacen roja la puerta en vez de hacer desaparecer
+la comprobación.
+
+**Verde que autorizó la integración.** El 9 de septiembre de 2026 a las 11:21 (-05:00),
+`a8a307e` pasó la puerta canónica real: tipos frontend, tipos e2e, build backend,
+migraciones sobre base efímera, pruebas backend y suite e2e —**6/6**—, con
+`systemd-wrapper=0`, `verificar.mjs=0`, sin bypass de concurrencia y sin stack e2e
+residual. Ese mismo commit entró a `main` por fast-forward.
+
+Desde aquí cada integración registra commit, fecha y resultado. No se repite el gate
+únicamente porque el mismo árbol cambió de nombre de rama.
+
+**La identidad dejó de ser pendiente.** La worktree deriva proyecto, bases y puertos;
+el antiguo §20 se disuelve: ya no existe una identidad crítica que dependa de recordar
+cambios locales.
+
+**Limpieza C/D/F.**
+
+- §14 ya vive en `ANTES-DE-EMPEZAR-UN-MODULO.md` §1;
+- §16 ya vive allí en §5, incluida la regla de **no hacer barrido**;
+- las seis bibliotecas descartadas ya viven en §6 y no son pendientes;
+- §11 se disuelve como contenedor heredado;
+- las filas cerradas de §13 salen de la lista;
+- `BUILD_CONFIGURATION` se cierra: `backend/Dockerfile:30` usa
+  `ARG BUILD_CONFIGURATION=Release` y `docker-compose.yml:60` usa
+  `${BUILD_CONFIGURATION:-Release}`; Debug solo aparece si se fija explícitamente;
+- `MultipleCollectionIncludeWarning` se **descarta**, no se aplaza: la medición dejó una
+  cota realista de 6 presentaciones × 3 categorías = 18 filas frente a 9, con los datos
+  actuales en 3 y `Take(50)` acotando el conjunto. Solo se reabre si esa cota deja de
+  describir el caso real;
+- panel, Swagger y `:focus-visible` se revisan juntos por JP antes de cerrar Fase 1;
+- Bsale se pregunta en la misma visita al mostrador que decide M05a;
+- `docs/BITACORA-SESION-2026-08-14.md` se retira porque lo durable ya está en los
+  documentos vigentes.
+
+El pendiente `42P01` **permanece abierto**. Existe una rama que lo arregla, pero una rama
+no resuelve un pendiente: se cerrará cuando el arreglo esté en `main` y haya pasado la
+prueba contra una base realmente vacía.

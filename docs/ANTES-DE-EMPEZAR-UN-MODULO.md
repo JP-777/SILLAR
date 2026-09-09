@@ -67,6 +67,8 @@ disparar, y también dejar pasar**, antes de darla por puesta.
 Las dos direcciones importan. Una barrera que calla te deja seguir; una que para
 en falso te para. Son la misma enfermedad — no haberla provocado.
 
+**Y la prueba que comprueba la barrera también se rompe a propósito.** No basta con ver verde su autoprueba: se introduce deliberadamente el defecto que esa autoprueba debería detectar y se comprueba que ella misma se pone roja. Una barrera sin esa falsificación puede estar protegiendo solo la versión sana de sí misma.
+
 **Y una barrera que solo se puede provocar levantando medio sistema es una
 barrera que nadie va a provocar.** Por eso la decisión se escribe aparte y pura,
 sin disco ni red, y el llamador solo la consulta.
