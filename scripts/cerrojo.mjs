@@ -278,18 +278,88 @@ function ramaActual(raiz) {
 }
 
 /**
+ * **Correr a sabiendas sin cerrojo: mirar y no tocar.**
+ *
+ * La única diferencia con la vía normal es que aquí no se escribe nada. Se lee
+ * el cerrojo para poder decir **a quién se le está haciendo ruido**, que es el
+ * dato que convierte una decisión deliberada en una decisión informada, y se
+ * deja exactamente como estaba:
+ *
+ *   - no se toma: el titular sigue siendo el titular;
+ *   - no se rompe, ni siquiera si está huérfano: romperlo aquí sería que una
+ *     corrida que ha renunciado al cerrojo se pusiera a administrarlo;
+ *   - no se borra al salir, porque no es nuestro. La función que se devuelve no
+ *     hace nada, y eso es lo correcto: soltar lo ajeno es el fallo que la vía
+ *     normal ya evita comprobando el `pid` antes de borrar.
+ *
+ * Se reutiliza `decidirSobreCerrojo` en vez de leer el archivo a mano: es la
+ * misma pregunta —¿hay alguien, y está vivo?— y ya está provocada.
+ */
+function correrSinCerrojo({ CERROJO, color, sonda, concurrencia }) {
+  const decision = decidirSobreCerrojo(leerCerrojo(CERROJO), sonda);
+
+  console.error(`\n${color.amarillo('CONCURRENCIA AUTORIZADA')} — esta corrida NO toma el cerrojo, a propósito.`);
+  console.error(`  Razón dada:  «${concurrencia}»\n`);
+
+  if (decision.rendirse) {
+    const d = decision.rendirse;
+    console.error(color.amarillo(`  Hay otra puerta corriendo desde ${d.worktree ?? '(worktree desconocida)'};`));
+    console.error(color.amarillo('  esta corrida está añadiendo ruido a la suya.'));
+    console.error(`  La tiene el proceso ${d.pid}, en la rama ${d.rama ?? '(desconocida)'},`);
+    console.error(`  ${haceCuanto(d.desde)} (${d.desde}).`);
+
+    if (decision.dudoso) {
+      console.error(`  ${color.amarillo('Aviso:')} ${decision.dudoso}.`);
+    }
+
+    console.error('\n  Su cerrojo se queda como está: no se toca lo ajeno.');
+    console.error('  Comparten Docker, puertos y carga, así que un rojo de cualquiera de las');
+    console.error('  dos corridas puede ser de la otra.\n');
+  } else if (decision.romper) {
+    // Huérfano. En la vía normal se rompería; aquí no, y se dice por qué.
+    console.error(`  Hay un cerrojo abandonado en ${CERROJO}: ${decision.romper}.`);
+    console.error('  No se rompe: una corrida que renuncia al cerrojo no se pone a');
+    console.error('  administrarlo. La próxima puerta normal lo romperá ella.\n');
+  } else {
+    console.error('  No hay ninguna otra puerta en pie ahora mismo, así que de momento');
+    console.error('  esta corrida está sola. Nada impide que arranque otra mientras tanto.\n');
+  }
+
+  // No hay nada que soltar: no se tomó nada.
+  return () => {};
+}
+
+/**
  * Toma el cerrojo o se niega a arrancar. Devuelve la función que lo suelta.
  *
  * El `flag: 'wx'` es lo que hace exclusiva la toma: crear-si-no-existe es una
  * sola operación del sistema de archivos, así que dos puertas lanzadas en el
  * mismo instante no pueden ganar las dos.
+ *
+ * **`concurrencia`** es la razón escrita por la que esta corrida se salta la
+ * exclusión, o `null` para lo normal. Quien decide si esa razón vale es la
+ * puerta —`decidirLaConcurrencia`, en `verificar.mjs`, donde vive el nombre de
+ * la variable—; aquí solo se obedece. Con razón, este módulo **mira y no
+ * toca**: ni toma, ni rompe, ni borra. Un cerrojo ajeno es de su dueño también
+ * cuando se ha decidido correr a su lado.
  */
-export function tomarCerrojo({ raiz, color = SIN_COLOR, sonda = sondaDeVida } = {}) {
+export function tomarCerrojo({ raiz, color = SIN_COLOR, sonda = sondaDeVida, concurrencia = null } = {}) {
   let CERROJO;
 
   try {
     CERROJO = rutaDelCerrojo(raiz);
   } catch (e) {
+    if (concurrencia) {
+      // **Aquí no se para, y es la única excepción de todo el fichero.** Lo que
+      // el fallo impide es identificar el cerrojo, y en esta corrida el cerrojo
+      // no protege nada: ya se ha renunciado a él a propósito. Lo que sí se
+      // pierde es poder decir a quién se le está haciendo ruido, y eso se dice.
+      console.error(`\n${color.amarillo('CONCURRENCIA AUTORIZADA')} — corriendo sin cerrojo. Razón:`);
+      console.error(`  «${concurrencia}»\n`);
+      console.error(`  Y ni siquiera se pudo mirar quién más está corriendo: ${e.message}.\n`);
+      return () => {};
+    }
+
     // **Sin identidad no hay cerrojo, y sin cerrojo no se arranca.** Antes se
     // seguía con una huella de reserva y la exclusión desaparecía en silencio.
     console.error(`\n${color.rojo('La puerta no arranca')}: no se pudo averiguar de qué repositorio es esta worktree.\n`);
@@ -300,6 +370,10 @@ export function tomarCerrojo({ raiz, color = SIN_COLOR, sonda = sondaDeVida } = 
     console.error('  Comprueba que `git` está en el PATH y que esto es una worktree de verdad:');
     console.error('      git rev-parse --path-format=absolute --git-common-dir\n');
     process.exit(1);
+  }
+
+  if (concurrencia) {
+    return correrSinCerrojo({ CERROJO, color, sonda, concurrencia });
   }
 
   for (let intento = 0; intento < 2; intento += 1) {

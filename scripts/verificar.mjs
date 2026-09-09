@@ -452,6 +452,78 @@ function migrar(proyecto) {
 // En modo autoprueba no se comprueba ningún entorno: se provoca el veredicto y
 // se sale. Anunciarlo aquí haría creer que sí, y esa clase de mentira pequeña es
 // justo la que este bloque entero viene a quitar.
+/**
+ * ================== LA SALIDA DELIBERADA DE LA EXCLUSIVIDAD ==================
+ *
+ *     SILLAR_VERIFY_PERMITIR_CONCURRENCIA="medir dos puertas en la máquina nueva" \
+ *       node scripts/verificar.mjs
+ *
+ * **Por qué existe.** El cerrojo serializa la máquina porque hoy la máquina no
+ * da para dos puertas. Eso es un hecho de esta máquina, no una ley: en una con
+ * núcleos y memoria de sobra, correr dos a la vez es justamente lo que hay que
+ * medir para saber si se puede. Sin una salida con nombre, el día que haga
+ * falta se resolverá con un `rm` del cerrojo —que es enseñar a saltárselo— o
+ * con un parche local que nadie revisa.
+ *
+ * **Por qué su valor es una frase y no un `1`.** Un interruptor booleano se
+ * queda puesto: alguien lo exporta en su perfil una tarde y a partir de ahí la
+ * máquina no tiene cerrojo y nadie lo sabe. Una razón hay que escribirla cada
+ * vez, y sobre todo **se puede leer después**: se repite en la cabecera del
+ * informe, así que un rojo de esa corrida llega ya acompañado de por qué se
+ * corrió sin exclusión. Un `=1` no habría dejado ni rastro.
+ *
+ * Y por eso vacío no es «sí». Vacío es una variable que dice que sí sin decir
+ * por qué, que es exactamente lo que esto viene a impedir: la puerta se niega
+ * y no toca ningún cerrojo.
+ *
+ * Tres respuestas, como todo lo demás aquí:
+ *
+ *   `{ normal: true }`      no está definida: cerrojo como siempre
+ *   `{ rechazo: motivo }`   está y no dice nada: la puerta no arranca
+ *   `{ permitido: razón }`  está y dice por qué: se corre sin exclusión
+ */
+function decidirLaConcurrencia(valor) {
+  if (valor === undefined || valor === null) {
+    return { normal: true };
+  }
+
+  const razon = String(valor).trim();
+
+  if (razon === '') {
+    return {
+      rechazo:
+        'SILLAR_VERIFY_PERMITIR_CONCURRENCIA está definida pero vacía, y una excepción '
+        + 'sin razón escrita no es una excepción: es un cerrojo desactivado a escondidas',
+    };
+  }
+
+  return { permitido: razon };
+}
+
+/**
+ * **La marca que acompaña al informe cuando la corrida se saltó la exclusión.**
+ *
+ * Va en la cabecera —antes del `TODO EN VERDE` y antes del `FALLÓ`— y no solo
+ * al arrancar. Un aviso impreso hace treinta minutos, por encima del registro
+ * de seis etapas, no existe: lo que se lee de un rojo es el final. Sin esto,
+ * un rojo producido a propósito con dos puertas encima se leería igual que uno
+ * de una corrida sola, que es la confusión más cara que hay aquí.
+ */
+function cabeceraDeConcurrencia() {
+  if (!CONCURRENCIA.permitido) {
+    return [];
+  }
+
+  return [
+    '',
+    color.amarillo('══ CONCURRENCIA AUTORIZADA ═════════════════════════════════════════'),
+    color.amarillo(`   Esta corrida se ejecutó SIN cerrojo, a propósito. Razón dada:`),
+    color.amarillo(`   «${CONCURRENCIA.permitido}»`),
+    color.amarillo('   Lo que salga abajo puede llevar ruido de otra puerta corriendo a la vez.'),
+    color.amarillo('════════════════════════════════════════════════════════════════════'),
+  ];
+}
+
 // **El cerrojo se toma antes que nada, y antes que ningún anuncio.**
 //
 // Antes que nada de lo caro, para que la negativa llegue en el primer segundo
@@ -464,10 +536,31 @@ function migrar(proyecto) {
 // La autoprueba del veredicto no toma cerrojo: es un diagnóstico que no toca
 // la máquina, y bloquear con él a quien esté corriendo la puerta de verdad
 // sería absurdo.
+//
+// **Y hay una salida, deliberada y con nombre: `SILLAR_VERIFY_PERMITIR_CONCURRENCIA`.**
+// Lo que decide si se toma o no se toma está justo debajo.
+const CONCURRENCIA = decidirLaConcurrencia(process.env.SILLAR_VERIFY_PERMITIR_CONCURRENCIA);
+
+if (CONCURRENCIA.rechazo) {
+  // **Antes de tocar ningún cerrojo, y por eso no se toca ninguno.** Ni se
+  // toma, ni se rompe, ni se borra: la invocación está mal escrita y lo único
+  // que pasa es que la puerta no arranca.
+  console.error(`\n${color.rojo('La puerta no arranca')}: ${CONCURRENCIA.rechazo}\n`);
+  console.error('  SILLAR_VERIFY_PERMITIR_CONCURRENCIA no es un interruptor: su valor es la');
+  console.error('  razón humana por la que esta corrida se salta la exclusión, y esa razón se');
+  console.error('  repite en la cabecera del informe para que un rojo posterior no se lea sin');
+  console.error('  ella. Una variable puesta a vacío diría «sí» sin decir por qué.\n');
+  console.error('  Así se escribe:');
+  console.error('      SILLAR_VERIFY_PERMITIR_CONCURRENCIA="medir dos puertas en la máquina nueva" \\');
+  console.error('        node scripts/verificar.mjs\n');
+  console.error('  Y si lo que quieres es lo normal —una puerta cada vez— no la definas.\n');
+  process.exit(1);
+}
+
 const soltarCerrojo =
   process.env.SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO === '1'
     ? () => {}
-    : tomarCerrojo({ raiz: RAIZ, color });
+    : tomarCerrojo({ raiz: RAIZ, color, concurrencia: CONCURRENCIA.permitido ?? null });
 
 process.on('exit', () => soltarCerrojo());
 
@@ -1229,6 +1322,37 @@ function provocarUna(caso) {
 }
 
 /**
+ * **Lo que el veredicto no puede saber, dicho después de él.**
+ *
+ * El veredicto mira el diario, la carga y los ficheros de la rama. No mira la
+ * variable de entorno con la que se lanzó la puerta, y no debe: es una función
+ * pura y las trece provocaciones dependen de que lo siga siendo.
+ *
+ * Pero entonces, con concurrencia autorizada, su respuesta más probable es
+ * «Sin veredicto: ninguna señal permite atribuirlo automáticamente» — que
+ * leída con prisa es «no es del entorno, luego es del código». **Eso sería
+ * reclasificar como producto un rojo de una corrida que declaró tener otra
+ * puerta encima.** Así que el veredicto no es la última palabra: debajo va lo
+ * que él no podía saber, con la razón literal otra vez.
+ *
+ * No se toca la lógica del veredicto ni se le añade una sonda: se le pone al
+ * lado el dato que le falta.
+ */
+function loQueElVeredictoNoSabe() {
+  if (!CONCURRENCIA.permitido) {
+    return [];
+  }
+
+  return [
+    '',
+    color.amarillo('  Y una cosa que el veredicto de arriba no mira:'),
+    color.amarillo(`  esta corrida se lanzó con concurrencia autorizada —«${CONCURRENCIA.permitido}»—,`),
+    color.amarillo('  así que compartió Docker, puertos y carga con lo que hubiera al lado.'),
+    color.amarillo('  Un rojo así no se da por del código sin repetirlo con la máquina para uno solo.'),
+  ];
+}
+
+/**
  * ======================= LA IDENTIDAD NO SE ESCRIBE =======================
  *
  * **De dónde sale esta comprobación, que es lo que la justifica.**
@@ -1597,6 +1721,49 @@ function autoprobarVeredicto() {
     );
   }
 
+  // --- Y la salida deliberada de la exclusividad --------------------------
+  //
+  // Siete vías, y las tres del medio son las que importan: una variable
+  // definida y vacía **no** es un sí. Si lo fuera, bastaría un `export` suelto
+  // en un perfil para que la máquina se quedara sin cerrojo en silencio.
+  console.log('\nY la salida deliberada de la exclusividad:\n');
+
+  const RAZON = 'medir dos puertas en la máquina nueva';
+
+  const casosDeConcurrencia = [
+    ['no está definida', undefined, 'normal', null],
+    ['definida y vacía', '', 'rechazo', null],
+    ['solo espacios', '   ', 'rechazo', null],
+    ['solo tabuladores y saltos', '\t\n ', 'rechazo', null],
+    ['con una razón escrita', RAZON, 'permitido', RAZON],
+    ['la razón se conserva entera', `  ${RAZON}  `, 'permitido', RAZON],
+    ['una razón de una sola letra vale', 'x', 'permitido', 'x'],
+  ];
+
+  for (const [nombre, valor, espera, razonEsperada] of casosDeConcurrencia) {
+    let r;
+
+    try {
+      r = decidirLaConcurrencia(valor);
+    } catch (error) {
+      console.log(`${color.rojo('NO SE PUDO')}  ${nombre}: ${error.message}`);
+      fallos += 1;
+      continue;
+    }
+
+    const decidio = r.normal ? 'normal' : r.rechazo ? 'rechazo' : 'permitido';
+    const bien = decidio === espera && (razonEsperada === null || r.permitido === razonEsperada);
+
+    if (!bien) fallos += 1;
+
+    const rotulo = { normal: 'CERROJO   ', rechazo: 'SE NIEGA  ', permitido: 'SIN CERROJO' }[decidio];
+
+    console.log(
+      `${bien ? color.verde(rotulo) : color.rojo('MAL       ')}  ${nombre}`
+      + (r.permitido ? color.gris(`  razón: «${r.permitido}»`) : ''),
+    );
+  }
+
   // --- Y el propio banco de pruebas, en las dos direcciones ---------------
   //
   // **La comprobación que faltaba: qué pasa cuando una provocación no se puede
@@ -1656,8 +1823,9 @@ function autoprobarVeredicto() {
     color.verde(
       `Las ${resultados.length} barreras dicen lo que deben —${porAusencia} de ellas callan además `
       + `lo que no deben—, las ${Object.keys(SONDAS_REALES).length} sondas reales contestan, `
-      + `los ${casosDeIdentidad.length} casos de identidad y los ${casosDeEnumeracion.length} de `
-      + 'enumeración deciden lo que deben, y una provocación que revienta cuenta como roja.',
+      + `los ${casosDeIdentidad.length} casos de identidad, los ${casosDeEnumeracion.length} de `
+      + `enumeración y los ${casosDeConcurrencia.length} de concurrencia autorizada deciden lo que `
+      + 'deben, y una provocación que revienta cuenta como roja.',
     ),
   );
   return 0;
@@ -1970,6 +2138,9 @@ try {
     }
   }
 
+  // La cabecera va también en el verde: un verde obtenido con otra puerta
+  // encima tampoco es el mismo verde, y quien lo lea tiene derecho a saberlo.
+  for (const linea of cabeceraDeConcurrencia()) console.log(linea);
   console.log(`\n${color.verde('TODO EN VERDE')} — las ${etapas.length} etapas pasaron.`);
 } catch (error) {
   errorOriginal = error;
@@ -1990,9 +2161,12 @@ try {
     if (cleanup.codigo !== 0) {
       const msg = `La limpieza de la base efímera ${NOMBRE_BASE} falló:\n${cleanup.salida}`;
 
+      for (const linea of cabeceraDeConcurrencia()) console.error(linea);
+
       if (errorOriginal) {
         console.error(`\n${color.rojo('FALLÓ')} en la etapa: ${etapaFallida ?? '(desconocida)'}\n  ${errorOriginal.message}`);
         console.error(`\n${veredicto(etapaFallida, errorOriginal.message).join('\n')}`);
+        for (const linea of loQueElVeredictoNoSabe()) console.error(linea);
         console.error(`\n${color.rojo('ADEMÁS')} la limpieza falló:\n${msg}`);
       } else {
         console.error(`\n${color.rojo('FALLÓ')} limpieza: ${msg}`);
@@ -2002,8 +2176,13 @@ try {
   }
 
   if (errorOriginal) {
+    // **La cabecera primero, y por eso está aquí y no solo al arrancar.** Lo
+    // que se lee de una corrida en rojo es el final; un aviso de hace media
+    // hora, por encima de seis etapas, no lo ha leído nadie.
+    for (const linea of cabeceraDeConcurrencia()) console.error(linea);
     console.error(`\n${color.rojo('FALLÓ')} en la etapa: ${etapaFallida ?? '(desconocida)'}\n  ${errorOriginal.message}`);
     console.error(`\n${veredicto(etapaFallida, errorOriginal.message).join('\n')}`);
+    for (const linea of loQueElVeredictoNoSabe()) console.error(linea);
     process.exit(1);
   }
 }
