@@ -1180,17 +1180,52 @@ const PROVOCACIONES = [
  * eso puede correr dentro de la puerta sin coste ni dependencia del entorno.
  */
 function provocarLasRamas() {
-  return PROVOCACIONES.map((caso) => {
-    const salida = veredicto(caso.etapa, caso.mensaje, caso.sondas)
+  return PROVOCACIONES.map(provocarUna);
+}
+
+/**
+ * **Una provocación, y qué pasa cuando la provocación no se puede ejecutar.**
+ *
+ * Antes, una sonda que lanzara —una herramienta que falta, un permiso, una
+ * inyección mal hecha— salía por arriba como excepción no atrapada: traza de
+ * Node, sin decir qué rama era, y por encima del mensaje que dice qué hacer.
+ * Peor todavía en la vía que espera «Lo que NO se pudo comprobar»: allí una
+ * excepción disfrazada de ceguera habría dado el texto esperado y la
+ * provocación habría pasado **sin haber provocado nada**.
+ *
+ * Así que una provocación que revienta no es un accidente del banco de
+ * pruebas: es un rojo con nombre. `rota` lleva el motivo y `disparó` es
+ * `false` pase lo que pase, sin mirar `espera`. «No pude comprobarlo» no se
+ * escribe nunca como «pasó».
+ */
+function provocarUna(caso) {
+  let salida;
+
+  try {
+    const lineas = veredicto(caso.etapa, caso.mensaje, caso.sondas);
+
+    if (!Array.isArray(lineas)) {
+      return {
+        ...caso,
+        salida: `el veredicto no devolvió líneas, devolvió ${typeof lineas}`,
+        disparó: false,
+        rota: `el veredicto no devolvió líneas, devolvió ${typeof lineas}`,
+      };
+    }
+
+    salida = lineas
       .join('\n')
       // Sin colores: comparar texto con secuencias de escape dentro es frágil.
       .replace(/\x1b\[[0-9;]*m/g, '');
+  } catch (error) {
+    const motivo = `la provocación no se pudo ejecutar: ${error.message}`;
+    return { ...caso, salida: motivo, disparó: false, rota: motivo };
+  }
 
-    const dijoLoQueDebe = salida.includes(caso.espera);
-    const calloLoQueDebe = caso.noEspera === undefined || !salida.includes(caso.noEspera);
+  const dijoLoQueDebe = salida.includes(caso.espera);
+  const calloLoQueDebe = caso.noEspera === undefined || !salida.includes(caso.noEspera);
 
-    return { ...caso, salida, disparó: dijoLoQueDebe && calloLoQueDebe };
-  });
+  return { ...caso, salida, disparó: dijoLoQueDebe && calloLoQueDebe };
 }
 
 /**
@@ -1253,18 +1288,59 @@ function identidadEscritaAMano(texto) {
 
 /** Los ficheros que hablan con los stacks, enumerados por git y no por memoria. */
 function ficherosQueTocanLaIdentidad() {
-  const r = spawnSync('git', ['ls-files', 'e2e', 'scripts'], { cwd: RAIZ, encoding: 'utf8' });
+  return decidirLaEnumeracion(
+    spawnSync('git', ['ls-files', 'e2e', 'scripts'], { cwd: RAIZ, encoding: 'utf8' }),
+  );
+}
+
+/**
+ * **Qué se enumeró, o por qué no se pudo enumerar.**
+ *
+ * Aparte de la llamada para poder provocarla: recibe el resultado de
+ * `spawnSync` tal cual y no ejecuta nada.
+ *
+ * **La vía que faltaba es la última, y es la peor.** `status !== 0` ya se
+ * miraba; lo que no se miraba era un `git` que dijera que sí y no listara
+ * nada. Entonces el bucle de abajo recorría cero ficheros, no encontraba
+ * ningún nombre escrito a mano —no había dónde encontrarlo— y la barrera
+ * pasaba en verde **sin haber mirado nada**. Es la forma exacta de «no pude
+ * comprobarlo» disfrazada de «está limpio», que es lo que esta barrera existe
+ * para no hacer: enumerar en vez de fiarse.
+ *
+ * Un árbol donde `git ls-files e2e scripts` no devuelve nada no existe: este
+ * mismo fichero está dentro de `scripts/`. Así que cero ficheros no es un
+ * árbol limpio, es una enumeración rota.
+ */
+function decidirLaEnumeracion(r) {
+  if (r.error) {
+    return { ciego: `no se pudo ejecutar git: ${r.error.code ?? r.error.message}` };
+  }
+
+  if (typeof r.status !== 'number') {
+    return { ciego: 'git ls-files terminó sin código de salida: lo mató una señal' };
+  }
 
   if (r.status !== 0) {
     return { ciego: `git ls-files terminó con código ${r.status}` };
   }
 
-  return {
-    visto: r.stdout
-      .split('\n')
-      .filter((f) => /\.(ts|mjs|js|json)$/.test(f))
-      .filter((f) => f !== 'scripts/identidad.mjs'),
-  };
+  const texto = typeof r.stdout === 'string' ? r.stdout : '';
+
+  const visto = texto
+    .split('\n')
+    .map((f) => f.trim())
+    .filter((f) => /\.(ts|mjs|js|json)$/.test(f))
+    .filter((f) => f !== 'scripts/identidad.mjs');
+
+  if (visto.length === 0) {
+    return {
+      ciego:
+        'git ls-files no listó ni un fichero de e2e/ ni de scripts/, así que la barrera '
+        + 'no habría mirado nada y habría pasado en verde por no tener dónde mirar',
+    };
+  }
+
+  return { visto };
 }
 
 /**
@@ -1283,17 +1359,35 @@ function comprobarQueNadieEscribeLaIdentidad() {
   }
 
   const malos = [];
+  const noLeidos = [];
 
   for (const f of ficheros.visto) {
     let texto;
     try {
       texto = readFileSync(path.join(RAIZ, f), 'utf8');
-    } catch {
+    } catch (e) {
+      // **Antes esto era un `continue` a secas, y era un agujero.** Un fichero
+      // que no se puede leer —permisos, un enlace roto, un `git ls-files` que
+      // nombra algo que ya no está— se saltaba en silencio y la barrera decía
+      // verde sobre un fichero que nadie miró. Un fichero sin mirar no es un
+      // fichero limpio.
+      noLeidos.push({ fichero: f, motivo: e.code ?? e.message });
       continue;
     }
     for (const hallazgo of identidadEscritaAMano(texto)) {
       malos.push({ fichero: f, ...hallazgo });
     }
+  }
+
+  if (noLeidos.length > 0) {
+    console.error(`\n${color.rojo('La puerta no arranca')}: ${noLeidos.length} fichero(s) que la barrera debía mirar no se pudieron leer.\n`);
+    for (const n of noLeidos) {
+      console.error(`  ${n.fichero}  —  ${n.motivo}`);
+    }
+    console.error('\n  No se pasa por encima: un fichero sin leer no es un fichero limpio, y ésta');
+    console.error('  es la barrera que impide que un nombre de base escrito a mano apunte a la');
+    console.error('  worktree de otro.\n');
+    process.exit(1);
   }
 
   if (malos.length === 0) {
@@ -1343,6 +1437,12 @@ function autoprobarVeredicto() {
   const resultados = provocarLasRamas();
   let fallos = 0;
 
+  // Cero provocaciones no es «todo bien»: es que no se provocó nada.
+  if (PROVOCACIONES.length === 0 || resultados.length !== PROVOCACIONES.length) {
+    console.error(color.rojo(`Se esperaban ${PROVOCACIONES.length} provocaciones y salieron ${resultados.length}.`));
+    fallos += 1;
+  }
+
   for (const r of resultados) {
     if (!r.disparó) fallos += 1;
 
@@ -1350,9 +1450,11 @@ function autoprobarVeredicto() {
     // Toda provocación comprueba lo que el veredicto DICE. Las que además
     // llevan `noEspera` comprueban lo que CALLA, que es la segunda dirección y
     // la que faltaba: una barrera vista solo disparar está a medias.
-    const rotulo = r.disparó
-      ? color.verde(r.noEspera === undefined ? 'DICE      ' : 'DICE Y CALLA')
-      : color.rojo(r.noEspera === undefined ? 'NO LO DICE' : 'NO CALLA    ');
+    const rotulo = r.rota
+      ? color.rojo('NO SE PUDO')
+      : r.disparó
+        ? color.verde(r.noEspera === undefined ? 'DICE      ' : 'DICE Y CALLA')
+        : color.rojo(r.noEspera === undefined ? 'NO LO DICE' : 'NO CALLA    ');
 
     console.log(`${rotulo}  ${r.nombre}`);
     console.log(color.gris(`          espera: «${r.espera}»`));
@@ -1437,7 +1539,17 @@ function autoprobarVeredicto() {
   ];
 
   for (const [nombre, linea, debeEncontrar] of casosDeIdentidad) {
-    const hallazgos = identidadEscritaAMano(linea);
+    let hallazgos;
+
+    try {
+      hallazgos = identidadEscritaAMano(linea);
+    } catch (error) {
+      // Un caso que no se puede provocar no se cuenta como provocado.
+      console.log(`${color.rojo('NO SE PUDO')}  ${nombre}: ${error.message}`);
+      fallos += 1;
+      continue;
+    }
+
     const bien = (hallazgos.length > 0) === debeEncontrar;
 
     if (!bien) fallos += 1;
@@ -1446,6 +1558,92 @@ function autoprobarVeredicto() {
       `${bien ? color.verde(debeEncontrar ? 'LA VE     ' : 'NO LA VE  ') : color.rojo('MAL       ')}  ${nombre}`,
     );
   }
+
+  // --- Y la enumeración de la que esa barrera depende ---------------------
+  //
+  // La barrera de arriba solo puede ver lo que se le enumere. Si `git ls-files`
+  // no contesta, o contesta que sí y no lista nada, la barrera pasa en verde
+  // por no tener dónde mirar — que es lo mismo que no tenerla. Las cinco vías
+  // se provocan aquí, cuatro por rojo y una por verde.
+  console.log('\nY la enumeración que la alimenta:\n');
+
+  const casosDeEnumeracion = [
+    ['git lista los ficheros', { status: 0, stdout: 'e2e/setup/env.ts\nscripts/verificar.mjs\n' }, 'visto'],
+    ['git no está en el PATH', { error: Object.assign(new Error('spawn git ENOENT'), { code: 'ENOENT' }) }, 'ciego'],
+    ['a git lo mató una señal', { status: null, signal: 'SIGKILL', stdout: '' }, 'ciego'],
+    ['git contesta que no', { status: 128, stdout: '' }, 'ciego'],
+    ['git dice que sí y no lista nada', { status: 0, stdout: '\n' }, 'ciego'],
+    ['git solo lista lo que se excluye', { status: 0, stdout: 'scripts/identidad.mjs\nREADME.md\n' }, 'ciego'],
+  ];
+
+  for (const [nombre, resultado, espera] of casosDeEnumeracion) {
+    let r;
+
+    try {
+      r = decidirLaEnumeracion(resultado);
+    } catch (error) {
+      console.log(`${color.rojo('NO SE PUDO')}  ${nombre}: ${error.message}`);
+      fallos += 1;
+      continue;
+    }
+
+    const decidio = r.ciego ? 'ciego' : 'visto';
+    const bien = decidio === espera;
+
+    if (!bien) fallos += 1;
+
+    console.log(
+      `${bien ? color.verde(espera === 'ciego' ? 'SE NIEGA  ' : 'ENUMERA   ') : color.rojo('MAL       ')}  ${nombre}`,
+    );
+  }
+
+  // --- Y el propio banco de pruebas, en las dos direcciones ---------------
+  //
+  // **La comprobación que faltaba: qué pasa cuando una provocación no se puede
+  // ejecutar.** Una herramienta que falta, un permiso, una inyección mal
+  // hecha. Antes salía como excepción no atrapada, y en la vía que espera «Lo
+  // que NO se pudo comprobar» habría dado por bueno el texto esperado sin
+  // haber provocado nada. Así que se provoca la provocación: una que revienta
+  // debe volver marcada como rota y sin disparar, y una sana debe seguir
+  // disparando. Si esto no se comprobara, la promesa de «falla cerrado» sería
+  // otra barrera escrita y no puesta.
+  console.log('\nY qué pasa cuando una provocación no se puede ejecutar:\n');
+
+  const revienta = provocarUna({
+    nombre: 'una sonda que lanza',
+    etapa: 'pruebas del backend',
+    mensaje: 'Terminó con código 1.',
+    sondas: {
+      suspension: () => { throw new Error('inyección deliberada'); },
+      carga: limpia,
+      ficheros: limpia,
+    },
+    // A propósito, lo que la vía ciega escribiría de verdad: si la excepción se
+    // colara como ceguera, este texto la daría por buena y la provocación
+    // pasaría sin haber provocado nada.
+    espera: 'Lo que NO se pudo comprobar',
+  });
+
+  const rotaBien = revienta.disparó === false && typeof revienta.rota === 'string';
+  if (!rotaBien) fallos += 1;
+  console.log(
+    `${rotaBien ? color.verde('SE PONE ROJA') : color.rojo('MAL         ')}  una provocación que revienta no cuenta como pasada`,
+  );
+  console.log(color.gris(`              ${revienta.rota ?? 'no se marcó como rota'}`));
+
+  const sana = provocarUna({
+    nombre: 'la misma, sin reventar',
+    etapa: 'pruebas del backend',
+    mensaje: 'Terminó con código 1.',
+    sondas: { suspension: limpia, carga: limpia, ficheros: ciega('sin referencia') },
+    espera: 'Lo que NO se pudo comprobar',
+  });
+
+  const sanaBien = sana.disparó === true && sana.rota === undefined;
+  if (!sanaBien) fallos += 1;
+  console.log(
+    `${sanaBien ? color.verde('SIGUE VERDE ') : color.rojo('MAL         ')}  y una que no revienta sigue contando como pasada`,
+  );
 
   if (fallos > 0) {
     console.error(`\n${color.rojo(`${fallos} comprobación(es) NO pasaron.`)}\n`);
@@ -1457,7 +1655,9 @@ function autoprobarVeredicto() {
   console.log(
     color.verde(
       `Las ${resultados.length} barreras dicen lo que deben —${porAusencia} de ellas callan además `
-      + `lo que no deben— y las ${Object.keys(SONDAS_REALES).length} sondas reales contestan.`,
+      + `lo que no deben—, las ${Object.keys(SONDAS_REALES).length} sondas reales contestan, `
+      + `los ${casosDeIdentidad.length} casos de identidad y los ${casosDeEnumeracion.length} de `
+      + 'enumeración deciden lo que deben, y una provocación que revienta cuenta como roja.',
     ),
   );
   return 0;
@@ -1475,10 +1675,15 @@ function autoprobarVeredicto() {
  * **Y por eso va aquí y no al final.** Si la maquinaria del veredicto está rota,
  * conviene saberlo antes de gastar media hora, no después.
  *
- * **Coste, medido y no supuesto:** el comando entero tarda unos 110 ms, de los
- * que 49 son arranque de Node —que la puerta ya paga— y unos 25 la llamada a
- * `journalctl`, que aquí no se hace. Lo que queda son las provocaciones
- * sintéticas, que no hacen entrada ni salida.
+ * **Coste, medido y no supuesto.** Lo que esta función añade a la puerta se
+ * midió aparte, con `process.hrtime` a los dos lados de la llamada, cinco
+ * corridas el 9 de septiembre de 2026 en la máquina de desarrollo (8 núcleos):
+ * **3,3–3,9 ms** las trece provocaciones del veredicto, y **17–19 ms** la
+ * barrera de la identidad escrita a mano, que sí lee ficheros. Preflight
+ * entero, **21–23 ms**. El comando de diagnóstico completo
+ * —`SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1`— tarda unos 205 ms, de los que 65 son
+ * arranque de Node y el resto, sobre todo, la llamada real a `journalctl` que
+ * aquí no se hace. Las provocaciones sintéticas no hacen entrada ni salida.
  *
  * **Y sí, esto es la puerta comprobando su propio instrumental y no el
  * producto.** Es deliberado y no es nuevo: `OMITIDAS_ESPERADAS` comprueba la
@@ -1488,7 +1693,29 @@ function autoprobarVeredicto() {
  * alguien se acuerda de invocarla, que es justo lo que `BITACORA.md` §4 nombra.
  */
 function comprobarQueElVeredictoHabla() {
-  const callaron = provocarLasRamas().filter((r) => !r.disparó);
+  // **Cero provocaciones también es rojo.** Un `filter` sobre una lista vacía
+  // devuelve cero fallos, así que una lista que se quedara sin casos —o una
+  // corrida que no llegara a producirlos— habría pasado el preflight sin
+  // provocar nada. Una comprobación que no comprobó nada no salió bien.
+  let resultados;
+
+  try {
+    resultados = provocarLasRamas();
+  } catch (error) {
+    console.error(`\n${color.rojo('FALLÓ')} en la etapa: veredicto`);
+    console.error(`  Las provocaciones no se pudieron ejecutar: ${error.message}\n`);
+    process.exit(1);
+  }
+
+  if (PROVOCACIONES.length === 0 || resultados.length !== PROVOCACIONES.length) {
+    console.error(`\n${color.rojo('FALLÓ')} en la etapa: veredicto`);
+    console.error(`  Se esperaban ${PROVOCACIONES.length} provocaciones y salieron ${resultados.length}.`);
+    console.error('  Una lista de provocaciones vacía o incompleta pasa en verde sin provocar');
+    console.error('  nada: eso no es una barrera puesta, es una barrera escrita.\n');
+    process.exit(1);
+  }
+
+  const callaron = resultados.filter((r) => !r.disparó);
 
   if (callaron.length === 0) {
     return;
@@ -1500,6 +1727,10 @@ function comprobarQueElVeredictoHabla() {
   console.error('  y un veredicto roto engaña más de lo que cuesta un rojo.\n');
 
   for (const r of callaron) {
+    if (r.rota) {
+      console.error(`  - ${r.nombre} — ${r.rota}`);
+      continue;
+    }
     console.error(`  - ${r.nombre} — esperaba «${r.espera}» y escribió:`);
     console.error(r.salida.split('\n').map((l) => `      ${l}`).join('\n'));
   }

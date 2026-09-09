@@ -55,6 +55,10 @@ const SIN_COLOR = { rojo: (t) => t, verde: (t) => t, gris: (t) => t, amarillo: (
  * el uso de la *máquina*, no el de un directorio. Va al temporal del sistema,
  * con una huella del `.git` común —el que comparten todas las worktrees del
  * mismo repositorio— para que dos clones distintos no se bloqueen entre sí.
+ *
+ * **Lanza si no puede averiguar ese `.git` común**, en vez de inventarse una
+ * huella. El motivo está en `decidirLaSemilla`, justo debajo. Quien la llama
+ * atrapa y para la puerta: `tomarCerrojo`.
  */
 export function rutaDelCerrojo(raiz) {
   const comun = spawnSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], {
@@ -62,10 +66,81 @@ export function rutaDelCerrojo(raiz) {
     encoding: 'utf8',
   });
 
-  const semilla = comun.status === 0 ? comun.stdout.trim() : raiz;
-  const huella = createHash('sha1').update(semilla).digest('hex').slice(0, 12);
+  const decision = decidirLaSemilla(comun);
+
+  if (decision.ciego) {
+    throw new Error(decision.ciego);
+  }
+
+  const huella = createHash('sha1').update(decision.semilla).digest('hex').slice(0, 12);
 
   return path.join(os.tmpdir(), `sillar-puerta-${huella}.lock`);
+}
+
+/**
+ * **De qué repositorio es esta worktree, o por qué no se pudo saber.**
+ *
+ * Separada de la llamada para poder provocarla: recibe el resultado de
+ * `spawnSync` tal cual y no ejecuta nada.
+ *
+ * **Por qué no puede tener una salida de reserva.** La tuvo, y era
+ * `?? raiz`, y ahí estaba el agujero: si `git` no contestaba, cada worktree
+ * calculaba su propia huella y **el cerrojo dejaba de excluir sin decir una
+ * palabra**. Dos puertas a la vez, cada una convencida de estar sola, que es
+ * exactamente el suceso del 5 de septiembre de 2026 que el cerrojo existe para
+ * impedir. Medido en esta máquina antes de arreglarlo: con `git` fuera del
+ * `PATH` la ruta pasaba de `sillar-puerta-6c5dfcdff59c.lock` a
+ * `sillar-puerta-3ad840584f99.lock` —la huella de la raíz, distinta en cada
+ * árbol— y con un `git` que devolvía éxito y nada por la salida, a la huella
+ * de la cadena vacía, que además es la misma para clones distintos.
+ *
+ * Un cerrojo que se identifica mal es peor que no tener cerrojo: no falla, y
+ * por eso nadie va a mirarlo. Así que si el dato no está, no hay cerrojo que
+ * valga y la puerta no arranca. Es la misma regla que la sonda de vida: «no
+ * pude mirar» no se escribe como «no pasa nada».
+ *
+ * Las cuatro vías por las que `spawnSync` puede no dar un dato bueno se
+ * nombran una a una, porque el mensaje es lo único que va a leer quien se
+ * quede parado:
+ *
+ *   `error`                 no se pudo ni lanzar `git` (no está en el `PATH`)
+ *   `status` no numérico    terminó sin código: lo mató una señal
+ *   `status` distinto de 0  contestó, y contestó que no
+ *   éxito con salida mala   vacía, con saltos de línea, o no absoluta
+ */
+function decidirLaSemilla(comun) {
+  if (comun.error) {
+    return { ciego: `no se pudo ejecutar git: ${comun.error.code ?? comun.error.message}` };
+  }
+
+  if (typeof comun.status !== 'number') {
+    return { ciego: 'git terminó sin código de salida: lo mató una señal' };
+  }
+
+  if (comun.status !== 0) {
+    const dijo = typeof comun.stderr === 'string' ? comun.stderr.trim().split('\n')[0] : '';
+    return {
+      ciego:
+        `git rev-parse --git-common-dir terminó con código ${comun.status}`
+        + (dijo ? `: ${dijo}` : ''),
+    };
+  }
+
+  const salida = typeof comun.stdout === 'string' ? comun.stdout.trim() : '';
+
+  if (salida === '') {
+    return { ciego: 'git rev-parse --git-common-dir dijo que sí y no escribió ninguna ruta' };
+  }
+
+  if (salida.includes('\n')) {
+    return { ciego: 'git rev-parse --git-common-dir escribió más de una línea' };
+  }
+
+  if (!path.isAbsolute(salida)) {
+    return { ciego: `git rev-parse --git-common-dir devolvió una ruta que no es absoluta: «${salida}»` };
+  }
+
+  return { semilla: salida };
 }
 
 
@@ -210,7 +285,22 @@ function ramaActual(raiz) {
  * mismo instante no pueden ganar las dos.
  */
 export function tomarCerrojo({ raiz, color = SIN_COLOR, sonda = sondaDeVida } = {}) {
-  const CERROJO = rutaDelCerrojo(raiz);
+  let CERROJO;
+
+  try {
+    CERROJO = rutaDelCerrojo(raiz);
+  } catch (e) {
+    // **Sin identidad no hay cerrojo, y sin cerrojo no se arranca.** Antes se
+    // seguía con una huella de reserva y la exclusión desaparecía en silencio.
+    console.error(`\n${color.rojo('La puerta no arranca')}: no se pudo averiguar de qué repositorio es esta worktree.\n`);
+    console.error(`  ${e.message}.\n`);
+    console.error('  El cerrojo se llama como el `.git` común de todas las worktrees. Sin ese');
+    console.error('  dato cada árbol tomaría un cerrojo distinto, y dos puertas correrían a la');
+    console.error('  vez creyéndose solas: es justo lo que el cerrojo existe para impedir.\n');
+    console.error('  Comprueba que `git` está en el PATH y que esto es una worktree de verdad:');
+    console.error('      git rev-parse --path-format=absolute --git-common-dir\n');
+    process.exit(1);
+  }
 
   for (let intento = 0; intento < 2; intento += 1) {
     const decision = decidirSobreCerrojo(leerCerrojo(CERROJO), sonda);
@@ -304,7 +394,16 @@ function provocar() {
   const esperado = ['tomar', 'rendirse', 'romper', 'romper', 'rendirse', 'romper'];
 
   casos.forEach(([nombre, d, sonda], i) => {
-    const r = decidirSobreCerrojo(d, sonda);
+    let r;
+    try {
+      r = decidirSobreCerrojo(d, sonda);
+    } catch (e) {
+      // Una provocación que no se puede ejecutar cuenta como vía mala. «No
+      // pude comprobarlo» no es «pasó».
+      mal += 1;
+      console.log(`  ✗ ${nombre.padEnd(28)} → NO SE PUDO PROVOCAR: ${e.message}`);
+      return;
+    }
     const decidio = r.tomar ? 'tomar' : r.rendirse ? 'rendirse' : 'romper';
     const bien = decidio === esperado[i];
     if (!bien) mal += 1;
@@ -312,8 +411,49 @@ function provocar() {
     console.log(`  ${bien ? '·' : '✗'} ${nombre.padEnd(28)} → ${decidio.padEnd(9)} ${detalle}`);
   });
 
-  console.log(mal === 0 ? '\nLas seis vías deciden lo que deben.\n' : `\n${mal} vía(s) deciden mal.\n`);
+  mal += provocarLaSemilla();
+
+  console.log(mal === 0 ? '\nLas doce vías deciden lo que deben.\n' : `\n${mal} vía(s) deciden mal.\n`);
   return mal === 0 ? 0 : 1;
+}
+
+/**
+ * **La identidad del cerrojo, provocada en las dos direcciones.**
+ *
+ * Una sola vía buena —`git` contesta con una ruta absoluta— y cuatro malas. Y
+ * las cuatro malas importan tanto como la buena: hasta el 9 de septiembre de
+ * 2026 las cuatro producían una huella igualmente convincente y la exclusión se
+ * perdía sin decirlo. Provocarlas cuesta lo que cuesta llamar a una función
+ * pura, así que no hay excusa para no verlas decir que no.
+ */
+function provocarLaSemilla() {
+  const casos = [
+    ['git contesta una ruta absoluta', { status: 0, stdout: '/home/x/SILLAR/.git\n' }, 'semilla'],
+    ['git no está en el PATH', { error: Object.assign(new Error('spawn git ENOENT'), { code: 'ENOENT' }), status: null }, 'ciego'],
+    ['a git lo mató una señal', { status: null, signal: 'SIGKILL', stdout: '' }, 'ciego'],
+    ['git contesta que no', { status: 128, stdout: '', stderr: 'fatal: not a git repository\n' }, 'ciego'],
+    ['git dice que sí y no escribe nada', { status: 0, stdout: '   \n' }, 'ciego'],
+    ['git escribe una ruta relativa', { status: 0, stdout: '.git\n' }, 'ciego'],
+  ];
+
+  let mal = 0;
+
+  for (const [nombre, resultado, espera] of casos) {
+    let r;
+    try {
+      r = decidirLaSemilla(resultado);
+    } catch (e) {
+      mal += 1;
+      console.log(`  ✗ ${nombre.padEnd(28)} → NO SE PUDO PROVOCAR: ${e.message}`);
+      continue;
+    }
+    const decidio = r.ciego ? 'ciego' : 'semilla';
+    const bien = decidio === espera;
+    if (!bien) mal += 1;
+    console.log(`  ${bien ? '·' : '✗'} ${nombre.padEnd(28)} → ${decidio.padEnd(9)} ${r.ciego ?? r.semilla}`);
+  }
+
+  return mal;
 }
 
 if (process.argv.includes('--provocar')) {
