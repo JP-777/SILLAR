@@ -1,12 +1,18 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { cadenaDeConexion, identidadDeLaWorktree } from '../../scripts/identidad.mjs';
 
 /**
  * Lee `e2e/.env.e2e` a mano en vez de depender de un paquete: es un archivo
- * de cuatro secciones, y `docker compose --env-file` ya sabe leerlo solo.
- * Esto es solo para lo que Node necesita fuera de docker: la cadena de
- * conexión para `dotnet ef` y la URL base para Playwright.
+ * corto, y `docker compose --env-file` ya sabe leerlo solo. Esto es solo para
+ * lo que Node necesita fuera de docker.
+ *
+ * **Lo que este archivo ya NO trae es la identidad de la worktree.** Ni el
+ * nombre del proyecto, ni los tres puertos, ni el nombre de la base, ni la
+ * cadena de conexión. Todo eso se deriva del directorio del árbol en
+ * `scripts/identidad.mjs`, que explica por qué. Aquí solo quedan los valores
+ * que son iguales en todos los árboles.
  */
 function parseEnvFile(file: string): Record<string, string> {
   const result: Record<string, string> = {};
@@ -48,24 +54,69 @@ export const ENV_FILE = path.join(E2E_DIR, '.env.e2e');
 
 const values = parseEnvFile(ENV_FILE);
 
-export const PROJECT_NAME = values.COMPOSE_PROJECT_NAME ?? 'sillar_e2e';
+/**
+ * La identidad de este árbol, calculada de su directorio.
+ *
+ * `ROOT` es la raíz de ESTA worktree, no la del repositorio principal: dos
+ * árboles del mismo repositorio dan dos identidades distintas, que es
+ * exactamente lo que hacía falta.
+ */
+const IDENTIDAD = identidadDeLaWorktree(ROOT);
 
-export const API_PORT = values.API_PORT ?? '55081';
+export const PROJECT_NAME = IDENTIDAD.e2e.proyecto;
+
+/** Nombre de la base efímera del stack e2e. Lo usa `docker.ts` para `psql -d`. */
+export const DB_NAME = IDENTIDAD.e2e.base;
+
+export const API_PORT = String(IDENTIDAD.e2e.puertoApi);
 /** La API sola, sin frontend delante. Para las llamadas de `global-setup.ts`. */
 export const API_URL = `http://localhost:${API_PORT}`;
 
 /** Puerto de la base efímera. Solo se anuncia al conservar el stack con `E2E_KEEP_STACK`. */
-export const DB_PORT = values.POSTGRES_PORT ?? '55432';
+export const DB_PORT = String(IDENTIDAD.e2e.puertoDb);
 
-export const FRONTEND_PORT = values.FRONTEND_PORT ?? '55173';
+export const FRONTEND_PORT = String(IDENTIDAD.e2e.puertoFrontend);
 /** El proxy de Vite: lo que Playwright navega, igual que un navegador real. */
 export const FRONTEND_URL = `http://localhost:${FRONTEND_PORT}`;
 
-export const CONNECTION_STRING = values.ConnectionStrings__Default;
+const POSTGRES_USER = values.POSTGRES_USER ?? 'postgres';
+const POSTGRES_PASSWORD = values.POSTGRES_PASSWORD ?? '';
 
-if (!CONNECTION_STRING) {
-  throw new Error(`e2e/.env.e2e no define ConnectionStrings__Default`);
-}
+/**
+ * **La cadena se compone; no se lee.**
+ *
+ * Aquí estaba el defecto que dio origen a todo esto: `ConnectionStrings__Default`
+ * llevaba el puerto escrito dentro, otra vez, al lado de un `POSTGRES_PORT`
+ * que decía lo mismo. Era el valor que siempre se olvidaba al estrenar un
+ * árbol, y que fuese justo ése era la señal de que no debía escribirse.
+ * Ahora sale del puerto ya resuelto: no hay dos sitios que puedan discrepar.
+ */
+export const CONNECTION_STRING = cadenaDeConexion({
+  puerto: IDENTIDAD.e2e.puertoDb,
+  base: DB_NAME,
+  usuario: POSTGRES_USER,
+  contrasena: POSTGRES_PASSWORD,
+});
+
+/**
+ * Lo que hay que pasarle a `docker compose` por el entorno del proceso para
+ * que levante ESTE stack y no el del vecino.
+ *
+ * **Va por el entorno y no por el `--env-file` a propósito, y eso está
+ * medido:** en la interpolación de compose el entorno del proceso gana al
+ * archivo. Se comprobó el 6 de septiembre de 2026 lanzando
+ * `POSTGRES_PORT=59999 docker compose --env-file e2e/.env.e2e config`, que
+ * imprimió `published: "59999"` y no el `55432` del archivo. El diseño entero
+ * se apoyaba en ese punto, así que se midió en vez de leerse.
+ */
+export const ENTORNO_DE_COMPOSE: Record<string, string> = {
+  COMPOSE_PROJECT_NAME: PROJECT_NAME,
+  POSTGRES_DB: DB_NAME,
+  POSTGRES_PORT: DB_PORT,
+  API_PORT,
+  FRONTEND_PORT,
+  ConnectionStrings__Default: CONNECTION_STRING,
+};
 
 /**
  * Carpeta de archivos subidos que la API ve montada en `/data/media`

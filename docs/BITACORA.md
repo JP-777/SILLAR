@@ -600,6 +600,57 @@ líneas al editar el fichero que citaban: **una afirmación sobre el árbol escr
 mirarlo**. `CLAUDE.md` ya lo dice para archivo y línea; vale igual para un hash, un recuento o
 un nombre de rama. Si no lo acabas de leer, no lo escribas.
 
+#### La tercera forma: una barrera que habla con seguridad y se equivoca
+
+*6 de septiembre de 2026*
+
+Esta sección empezó con barreras que **callan** y creció con barreras que **se detienen en
+falso**. Falta la tercera, y es la peor de las tres.
+
+La puerta murió en la suite e2e y el veredicto dijo:
+
+```
+ES DEL ENTORNO (probable) — algo del stack no llegó a levantarse.
+  Coincide con /Connection refused .*5\d{4}|ECONNREFUSED/i.
+  Antes de mirar el código, mira docs/ENTORNO.md.
+```
+
+Era falso. Los `ECONNREFUSED` eran líneas `[WebServer] AggregateError [ECONNREFUSED]` del proxy
+de Vite a partir de la 398 del registro; la línea de resultado de Playwright —`1 failed`,
+`126 passed`— estaba en la 375. El ruido llegó **después** de que la suite hubiera terminado de
+correr. El stack se levantó, el navegador arrancó y las specs se ejecutaron, y **la prueba de
+que la firma era imposible estaba dentro del mismo texto que la firma estaba leyendo**.
+
+**Por qué es peor que callar.** Una barrera que calla te deja donde estabas: sin ayuda, pero
+mirando. Una que se detiene en falso te para, y al menos te para delante del problema. Ésta te
+manda a otro sitio: dice «antes de mirar el código, mira el entorno» justo cuando el código es
+lo único que hay que mirar. Convierte el aparato que existe para ahorrar media hora en el que
+la gasta.
+
+**Y el mecanismo es el que hay que retener, porque no es de esta firma.** Las firmas se
+recorrían primero y sin condición: la primera que coincidía ganaba, aunque la salida contuviera
+la prueba de que no podía ser. Una firma que significa «el stack no llegó a levantarse» no
+puede hablar sobre un texto que dice `N passed`.
+
+> **Una firma habla solo si su desmentido calla.**
+
+Así que el desmentido no se escribió como un caso especial de esa firma, sino como un campo de
+la tupla —`[patrón, explicación, desmentido]`, `scripts/verificar.mjs`—: cualquier afirmación
+sobre el entorno puede toparse con la prueba de que no ocurrió, y quien la escriba tiene ahora
+dónde ponerla.
+
+**Cómo se supo, que es la parte que se repite.** No razonando sobre la expresión regular: se
+buscó en el registro **dónde** aparecía cada coincidencia y **en qué línea** estaba el
+resultado. Es otra vez preguntar por otra vía —la firma decía «hay un ECONNREFUSED», que era
+cierto; la pregunta útil era «¿dónde, respecto a lo que ya había pasado?»—. Y también es otra
+vez enumerar en vez de filtrar: `grep -c` habría dado un número que confirmaba el veredicto.
+
+**La provocación correspondiente se comprueba por ausencia**, y es la única del conjunto que lo
+hace: se le da al veredicto un texto con `ECONNREFUSED` *y* con la línea de resultado, y se
+exige que **no** atribuya al entorno. Lo que dice entonces es «Sin veredicto», que es la
+respuesta correcta: no sabe. Una barrera nueva se provoca una vez a propósito y se observa
+disparar; ésta se provoca una vez a propósito y se observa **callar**.
+
 ---
 
 ## 5. Pendientes
