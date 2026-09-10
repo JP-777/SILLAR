@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ==========================================================================
+       Sillar.Shared.Data — lo que todo módulo con tablas replicadas hace igual.
+
+       Existe por una razón concreta: Sillar.Shared declara «aquí no entra
+       lógica de negocio ni acceso a datos» y no referencia EF Core. Meter ahí
+       un helper de mapeo y otro de ChangeTracker obligaría a añadirle EF Core,
+       y con él lo heredarían los cinco proyectos que hoy referencian Shared sin
+       tenerlo — entre ellos los tres *.Contracts, que son justo lo que un
+       módulo puede referenciar de otro. EF Core acabaría cruzando el grafo
+       entero de módulos por una utilidad de cuatro columnas.
+
+       Tampoco puede vivir en Sillar.Core: un módulo nunca referencia el Data de
+       otro módulo (CLAUDE.md, regla 3 de arquitectura).
+
+       Qué entra aquí: infraestructura de persistencia que es de la PLATAFORMA y
+       no de ningún módulo. Hoy, las cuatro columnas de la ADR-016 regla 4. No
+       es un cajón para lo que no encuentre sitio.
+       ========================================================================== -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- El proveedor trae EF Core. Se referencia el mismo paquete que los
+         módulos y con la misma versión central: dos versiones de EF Core en un
+         proceso es la avería que Directory.Packages.props existe para evitar. -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+
+</Project>

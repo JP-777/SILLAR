@@ -9,7 +9,8 @@
     "//typecheck": "Playwright transpila sin comprobar tipos, asi que un error de tipos en una spec no sale por ningun lado: la prueba corre igual. Este script es la unica forma de verlo.",
     "typecheck": "tsc --noEmit",
     "test:headed": "playwright test --headed",
-    "stack:down": "docker compose -p sillar_e2e --env-file ./.env.e2e -f ../docker-compose.yml down -v",
+    "//stack:down": "El nombre de proyecto se deriva del directorio del arbol, y un package.json no puede derivar nada. Ver stack-down.mjs.",
+    "stack:down": "node ./stack-down.mjs",
     "report": "playwright show-report"
   },
   "devDependencies": {

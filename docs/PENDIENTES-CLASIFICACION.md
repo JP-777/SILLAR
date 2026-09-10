@@ -1,5 +1,7 @@
 # Propuesta de clasificación de `PENDIENTES.md`
 
+> **Documento de trabajo histórico.** Esta clasificación fue una propuesta para tomar decisiones; no es la lista vigente. Las decisiones finales viven en `PENDIENTES.md`, `BITACORA.md` y los documentos de coordinación. No usar este archivo para reabrir ni cerrar entradas.
+
 *4 de septiembre de 2026 · leído contra `3b6806d` · revisado el 5 de septiembre contra
 `b53e5ee`, que es el árbol al que se integra*
 
@@ -217,56 +219,38 @@ distinto de pagarla por costumbre.
 
 ---
 
-### 20 · La identidad E2E se pierde sola, y el aislamiento depende de que no se pierda
+### 20 · La identidad E2E se pierde sola — **DISUELTA el 7 de septiembre de 2026**
 
-**Qué pasa.** Cada worktree necesita su propia identidad para correr la suite —
-`COMPOSE_PROJECT_NAME`, `POSTGRES_PORT`, `API_PORT`, `FRONTEND_PORT` y el `Port=` de
-`ConnectionStrings__Default`, que **no se deduce de los otros cuatro**—. Vive en
-`e2e/.env.e2e`, que **sí está versionado** y trae los valores de la worktree principal. Una
-segunda worktree lo modifica y **no commitea el cambio**, para que su identidad no viaje a
-`main` y se la lleve puesta la siguiente.
+**No se cerró: se disolvió**, y la diferencia importa. Una entrada se cierra cuando se hace lo
+que pedía. Ésta pedía vigilar una pérdida, y lo que se hizo fue quitar lo que se perdía. La
+decisión fue del líder y está dicha así: *«mientras la identidad se escriba a mano en un
+fichero rastreado, cualquier worktree nueva es una bomba — y `sillar-demo` no hizo nada mal,
+copió `.env.example` y arrancó»*. No ampliar la vigilancia: quitar la causa.
 
-Y ahí está el defecto: **lo que no se commitea se pierde solo.** Un `git checkout --`, un
-`git stash`, un `git clean`, restaurar el árbol tras un merge — cualquiera de esas cosas
-devuelve el archivo a los valores compartidos, en silencio y sin que nadie lo pida. La worktree
-sigue funcionando igual de bien **hasta que dos frentes corren a la vez**, que es justo cuando
-no hay nadie mirando.
+La identidad se deriva ahora del directorio del árbol (`scripts/identidad.mjs`), y no se
+escribe en ningún sitio del que pueda perderse. `docs/ENTORNO.md`, hallazgo 5, es la
+descripción vigente.
 
-**No es un defecto de la documentación.** `docs/ENTORNO.md` §5 describía el mecanismo con
-precisión y aun así se quedó falso: afirmaba que `sillar-footer` tenía identidad propia, que la
-tuvo, y que la perdió por este mismo mecanismo. **El documento caducó por lo que el documento
-describe.** Corregirlo no arregla nada: volverá a caducar.
+**Lo que esta entrada dejó apuntado y conviene no perder**, porque es lo que hizo elegir bien:
 
-**Qué se ha hecho ya, y qué no.** El 5 de septiembre `composeDown()` pasó a mirar de quién es
-el stack antes de destruirlo, por la etiqueta `com.docker.compose.project.working_dir` que pone
-docker compose. Eso **mitiga la consecuencia peor** —que un frente destruya el stack del otro a
-mitad de suite— y convierte una destrucción silenciosa en una parada con nombre. **No resuelve
-el defecto:** la identidad sigue perdiéndose sola, los puertos siguen chocando, y el segundo
-frente sigue sin poder correr.
+- **El defecto no era que los valores fueran cinco.** Era **cuál** se olvidaba: el `Port=` de
+  dentro de `ConnectionStrings__Default`. Nunca fue un quinto valor — era `POSTGRES_PORT` otra
+  vez, duplicado dentro de una cadena. Que fuese justo ése el olvidado era la señal de que no
+  debía escribirse.
+- **El documento caducaba por el mecanismo que describía.** Esta entrada ya lo decía —
+  «corregirlo no arregla nada: volverá a caducar»— y ése es el argumento que descartó las otras
+  dos direcciones. Un `.env.e2e.local` ignorado sigue habiendo que crearlo a mano; detectar la
+  pérdida es vigilar en vez de arreglar.
+- **La objeción que se le puso a la dirección elegida se resolvió, no se aceptó.** Decía: «los
+  puertos dejan de ser predecibles y hay que leerlos en cada corrida». Se resolvió haciendo el
+  mapa **regular** —cada papel en su bloque de cien, el mismo offset en los seis puertos— y
+  dando un comando que los enseña: `node scripts/identidad.mjs`. Predecibles no son; mirables,
+  sí, y eso era lo que hacía falta.
 
-**Direcciones posibles, ninguna decidida.** Se apuntan para que quien decida no tenga que
-redescubrirlas, no como propuesta:
-
-- **Derivarla del árbol** en vez de escribirla: que `e2e/setup/env.ts` calcule proyecto y
-  puertos a partir de la ruta de la worktree cuando `.env.e2e` no los fije. Colisión imposible
-  por construcción, y nada que perder porque nada que guardar. A cambio, los puertos dejan de
-  ser predecibles y hay que leerlos en cada corrida.
-- **Sacarla del árbol**: un archivo por worktree fuera del control de versiones —
-  `.env.e2e.local`, ignorado— que `git` no pueda restaurar. Sigue habiendo que crearlo a mano.
-- **Dejarla donde está y detectar la pérdida**: que el arnés avise cuando la identidad de esta
-  worktree coincide con la de otra. Es lo más barato y lo menos ambicioso.
-
-**Disparador.** El siguiente frente que se añada — el tercero. Con dos, la colisión es una
-molestia que la guarda de `composeDown()` convierte en una espera. Con tres, el segundo y el
-tercero se bloquean entre sí sin que ninguno de los dos sea el que integra, y la espera deja de
-ser una espera para convertirse en una cola sin turno.
-
-**Y una advertencia sobre este disparador, porque se lee mal.** «El tercer frente» **parece de
-calendario** —una fecha, un hito, algo que ocurre una vez y se nota— y **es de concurrencia**:
-no salta al crear la worktree, salta la primera vez que dos de los tres quieren correr la
-puerta a la vez. Puede pasar semanas mudo con el tercer frente ya trabajando, y luego dispararse
-tres veces en una tarde.
-
-Quien lea la entrada esperando un día concreto la va a dar por no cumplida mientras el tercer
-árbol exista y todo parezca ir bien. Lo que hay que vigilar no es cuándo aparece el frente:
-es **la primera espera**.
+**Y el disparador que esta entrada tenía nunca llegó a probarse, lo cual es su lección
+propia.** Decía «el siguiente frente que se añada — el tercero», con la advertencia de que
+parecía de calendario y era de concurrencia: que lo que había que vigilar no era cuándo
+aparecía el frente, sino **la primera espera**. No hizo falta ninguna de las dos cosas. Lo que
+forzó la decisión fue un accidente que no estaba en ninguna de las dos lecturas: una worktree
+que siguió el documento al pie de la letra y se llevó por delante el stack de otra. Un
+disparador bien escrito no garantiza que el defecto vaya a llegar por donde dice.

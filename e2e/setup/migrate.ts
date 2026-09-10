@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { composeExec } from './docker.js';
+import { psqlArchivo } from './docker.js';
 import { CONNECTION_STRING, ROOT } from './env.js';
 import { run } from './shell.js';
 
@@ -44,6 +44,6 @@ export async function seed(): Promise<void> {
     // El de `crm` está hoy intencionalmente vacío (`SELECT 1`), y se aplica
     // igual: es el único módulo que el arnés activa, y no aplicar su seed
     // sería una asimetría que solo se nota el día que deje de estar vacío.
-    await composeExec('db', ['psql', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres', '-d', 'sillar_e2e', '-f', `/scripts/modules/${modulo}/02_seed.sql`]);
+    await psqlArchivo(`/scripts/modules/${modulo}/02_seed.sql`);
   }
 }
