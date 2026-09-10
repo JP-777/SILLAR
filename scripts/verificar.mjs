@@ -1990,10 +1990,64 @@ for (const senal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
 
 // --- Las etapas, de barata a cara -----------------------------------------
 
+/**
+ * **Lo que la etapa 1 comprueba del frontend, en orden de barata a cara.**
+ *
+ *   1. `test:audit-vocabulary` — las catorce focales del vocabulario de
+ *      auditoría. Milisegundos, sin red, sin base y sin Docker.
+ *   2. `typecheck` — `tsc --build --force` sobre todo `src`.
+ *
+ * **Por qué la focal va primero.** Es la más barata y la más específica: si el
+ * vocabulario de auditoría se rompió, la etapa 1 lo dice en el primer segundo
+ * en vez de después de compilar los tipos de todo el frontend. Es la misma
+ * regla de barata a cara que ordena las seis etapas, aplicada dentro de una.
+ *
+ * **Por qué no es una séptima etapa.** Porque no es otra cosa que comprobar:
+ * es lo mismo que ya se comprueba, del mismo árbol, con el mismo gestor. Una
+ * etapa por cada comando convertiría la lista de etapas en una lista de
+ * comandos, que es justo lo que la lista de etapas no es.
+ *
+ * **Y por qué existía este agujero.** La prueba estaba escrita desde el 9 de
+ * septiembre de 2026 y no la ejecutaba nadie: no había script `test`, ninguna
+ * etapa la invocaba y `tsconfig.app.json` solo incluye `src`, así que tampoco
+ * se le comprobaban los tipos. Pasaba cuando alguien se acordaba de lanzarla,
+ * que es la definición exacta de una barrera escrita y no puesta.
+ *
+ * **Se corta en el primer paso que falle** y se devuelve su código tal cual:
+ * seguir al siguiente después de un rojo haría que la etapa terminara
+ * informando del último y no del primero.
+ */
+function correrPasosDelFrontend() {
+  const pasos = [
+    ['vocabulario de auditoría', 'test:audit-vocabulary'],
+    ['tipos', 'typecheck'],
+  ];
+
+  let salida = '';
+
+  for (const [titulo, script] of pasos) {
+    const r = correr('pnpm', [script], { cwd: path.join(RAIZ, 'frontend') });
+    salida += `\n--- ${titulo} (pnpm ${script}) ---\n${r.salida}`;
+
+    if (r.codigo !== 0) {
+      return { codigo: r.codigo, salida, fallóAlLanzar: r.fallóAlLanzar };
+    }
+  }
+
+  return { codigo: 0, salida, fallóAlLanzar: false };
+}
+
 const etapas = [
   {
+    // **El nombre se queda como estaba, y no es descuido.** La etapa hace ahora
+    // dos cosas, pero el nombre es además la clave de `AMBITO_DE_ETAPA`, que es
+    // lo que permite al veredicto decir «esta rama no toca `frontend/`». Las dos
+    // sub-etapas viven en `frontend/`, así que esa respuesta sigue siendo cierta
+    // para las dos. Renombrarla es una decisión que además dejaría desfasados
+    // `CLAUDE.md:255` y `docs/BITACORA.md:1427`, y esos no son de este cambio.
+    // Lo que sí dice qué se hizo es la salida: cada paso lleva su rótulo.
     nombre: 'tipos del frontend',
-    correr: () => correr('pnpm', ['typecheck'], { cwd: path.join(RAIZ, 'frontend') }),
+    correr: () => correrPasosDelFrontend(),
   },
   {
     nombre: 'tipos del arnés e2e',
