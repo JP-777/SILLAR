@@ -69,7 +69,14 @@ public static class SetupEndpoints
     /// <param name="setup">Servicio de instalación.</param>
     /// <param name="cancellationToken">Cancelación de la petición.</param>
     /// <returns>El estado de la instalación, o 404 si ya se completó.</returns>
-    private static async Task<IResult> GetStatus(SetupService setup, CancellationToken cancellationToken)
+    /// <remarks>
+    /// <c>internal</c> y no <c>private</c> para que las pruebas puedan llamarlo
+    /// sin levantar el host. Lo que hay que poder afirmar aquí es que una base
+    /// sin tablas sale por 200 y no por el manejador genérico, y eso no se
+    /// comprueba mirando el código: se comprueba llamándolo contra una base
+    /// vacía de verdad. Ver <c>ArranqueContraBaseVaciaTests</c>.
+    /// </remarks>
+    internal static async Task<IResult> GetStatus(SetupService setup, CancellationToken cancellationToken)
         => await setup.GetStateAsync(cancellationToken) switch
         {
             // Faltan las migraciones. Sigue siendo 200: la pregunta era «¿en qué
@@ -87,7 +94,8 @@ public static class SetupEndpoints
     /// <param name="context">Petición en curso.</param>
     /// <param name="cancellationToken">Cancelación de la petición.</param>
     /// <returns>201 con los datos creados, 400 si los datos no sirven, 404 si ya estaba instalado.</returns>
-    private static async Task<IResult> Complete(
+    /// <remarks><c>internal</c> por el mismo motivo que <see cref="GetStatus"/>.</remarks>
+    internal static async Task<IResult> Complete(
         SetupRequest request,
         SetupService setup,
         HostRestarter restarter,

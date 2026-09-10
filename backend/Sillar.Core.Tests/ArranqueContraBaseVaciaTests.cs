@@ -1,5 +1,16 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
+using Sillar.Core.Endpoints;
+using Sillar.Core.Modularity;
 using Sillar.Core.Contracts;
 using Sillar.Core.Data;
 using Sillar.Core.Dtos;
@@ -185,5 +196,159 @@ public sealed class ArranqueContraBaseVaciaTests
             // Y no por culpa de los datos: eso es lo que separa un 503 de un 400.
             Assert.NotEqual(SetupOutcome.Invalid, resultado.Outcome);
         }, ct);
+    }
+
+    // ======================================================================
+    // Las rutas, llamadas directamente contra una base vacía.
+    //
+    // Las dos pruebas de arriba miran el servicio. Estas miran **lo que
+    // responde la ruta**, que es lo que ve quien instala: el 500 no lo producía
+    // el servicio, lo producía el manejador genérico al recibir la excepción
+    // que el servicio dejaba subir.
+    // ======================================================================
+
+    [Fact]
+    public async Task GET_setup_status_contra_base_vacia_responde_200_y_no_un_500()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        await ConBaseVaciaAsync(async cadena =>
+        {
+            await using var contexto = Contexto(cadena);
+
+            var respuesta = await SetupEndpoints.GetStatus(Servicio(contexto), ct);
+
+            // 200 y no 500: la pregunta era «¿en qué estado estás?» y el
+            // servidor lo sabe. Un 500 decía «no sé», y no era verdad.
+            var ok = Assert.IsType<Ok<SetupStatusResponse>>(respuesta);
+
+            Assert.True(ok.Value!.SetupRequired);
+            Assert.True(ok.Value.MigrationsPending);
+        }, ct);
+    }
+
+    [Fact]
+    public async Task POST_setup_sin_tablas_responde_503_y_no_culpa_a_los_datos()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        await ConBaseVaciaAsync(async cadena =>
+        {
+            await using var contexto = Contexto(cadena);
+
+            var respuesta = await SetupEndpoints.Complete(
+                PeticionValida(), Servicio(contexto), Reiniciador(), new DefaultHttpContext(), ct);
+
+            // **No es un ValidationProblem.** Ésa es la distinción entera: los
+            // datos enviados están bien y decirle a quien instala que no lo
+            // están sería mandarle a corregir algo que no ha hecho mal.
+            Assert.IsNotType<ValidationProblem>(respuesta);
+
+            var problema = Assert.IsType<ProblemHttpResult>(respuesta);
+
+            Assert.Equal(StatusCodes.Status503ServiceUnavailable, problema.StatusCode);
+
+            // Y el remedio va en la respuesta, no en la cabeza de nadie.
+            Assert.Contains("dotnet ef database update", problema.ProblemDetails.Detail);
+            Assert.Contains("no tienen nada de malo", problema.ProblemDetails.Detail);
+        }, ct);
+    }
+
+    [Fact]
+    public void El_modo_instalacion_monta_las_dos_rutas_de_setup_y_ninguna_mas()
+    {
+        // Disponibilidad de rutas sin levantar el host: se le da a
+        // MapSetupEndpoints un constructor de rutas y se mira qué quedó
+        // montado. Si alguien añadiera aquí una ruta de negocio, el modo
+        // instalación dejaría de ser lo que dice ser.
+        var builder = WebApplication.CreateSlimBuilder();
+
+        // Los dos servicios que los manejadores reciben. **Se registran pero
+        // nunca se resuelven**: aquí solo se enumeran las rutas montadas, no se
+        // invoca ninguna. Hacen falta porque el enlazado de parámetros de las
+        // minimal APIs decide en tiempo de Map si algo es un servicio o un
+        // cuerpo de petición, y sin el registro infiere «cuerpo» — que en un
+        // GET no está permitido. La fábrica revienta si alguien los pide, para
+        // que esta prueba no pueda convertirse en otra cosa sin darse cuenta.
+        builder.Services.AddSingleton(_ => Reventar<SetupService>());
+        builder.Services.AddSingleton(_ => Reventar<HostRestarter>());
+
+        var app = builder.Build();
+        app.MapSetupEndpoints();
+
+        var rutas = ((IEndpointRouteBuilder)app).DataSources
+            .SelectMany(fuente => fuente.Endpoints)
+            .OfType<RouteEndpoint>()
+            .Select(e => $"{string.Join(",", e.Metadata.GetMetadata<HttpMethodMetadata>()!.HttpMethods)} {e.RoutePattern.RawText}")
+            .OrderBy(x => x)
+            .ToList();
+
+        // La barra final del POST no es un descuido: sale de `MapGroup("/api/setup")`
+        // más `MapPost("")`, y es el patrón que ASP.NET registra de verdad. Se
+        // escribe medido y no supuesto — la primera versión de esta línea decía
+        // «/api/setup» y la prueba lo corrigió.
+        Assert.Equal(["GET /api/setup/status", "POST /api/setup/"], rutas);
+    }
+
+    [Fact]
+    public async Task Un_error_de_PostgreSQL_que_NO_es_42P01_no_se_traga()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        // **La prueba de que el catch es un filtro y no una manta.**
+        //
+        // Se prepara una base donde core.installation SÍ existe pero le falta
+        // una columna: la consulta falla con 42703 (undefined_column), no con
+        // 42P01. Si el catch fuera genérico —o filtrara por el tipo y no por el
+        // SqlState— esto devolvería MigrationsPending y mandaría a aplicar unas
+        // migraciones que ya están aplicadas.
+        await ConBaseVaciaAsync(async cadena =>
+        {
+            await using (var preparar = new NpgsqlConnection(cadena))
+            {
+                await preparar.OpenAsync(ct);
+                await using var crear = new NpgsqlCommand(
+                    "CREATE SCHEMA core; CREATE TABLE core.installation (nada int);", preparar);
+                await crear.ExecuteNonQueryAsync(ct);
+            }
+
+            await using var contexto = Contexto(cadena);
+
+            var error = await Assert.ThrowsAsync<PostgresException>(
+                () => Servicio(contexto).GetStateAsync(ct));
+
+            Assert.Equal(PostgresErrorCodes.UndefinedColumn, error.SqlState);
+            Assert.NotEqual(PostgresErrorCodes.UndefinedTable, error.SqlState);
+        }, ct);
+    }
+
+    private static T Reventar<T>()
+        => throw new InvalidOperationException(
+            $"Se resolvió {typeof(T).Name} en una prueba que solo enumera rutas.");
+
+    /// <summary>Datos de instalación válidos: lo que falla nunca son ellos.</summary>
+    private static SetupRequest PeticionValida()
+        => new(
+            BusinessName: "Negocio de prueba",
+            LicenseType: Sillar.Core.Domain.Values.LicenseType.All.First(),
+            Admin: new SetupAdminRequest(
+                FullName: "Persona Que Instala",
+                Email: "instala@ejemplo.test",
+                Password: "Contrasena-Larga-2026"));
+
+    private static HostRestarter Reiniciador()
+        => new(
+            new CicloDeVidaInerte(),
+            new ConfigurationBuilder().AddInMemoryCollection([]).Build(),
+            NullLogger<HostRestarter>.Instance);
+
+    /// <summary>Ciclo de vida que no detiene nada: aquí nadie debe reiniciar.</summary>
+    private sealed class CicloDeVidaInerte : IHostApplicationLifetime
+    {
+        public CancellationToken ApplicationStarted => CancellationToken.None;
+        public CancellationToken ApplicationStopping => CancellationToken.None;
+        public CancellationToken ApplicationStopped => CancellationToken.None;
+        public void StopApplication()
+            => throw new InvalidOperationException("Se pidió reiniciar el host en un caso que no llega a instalar.");
     }
 }
