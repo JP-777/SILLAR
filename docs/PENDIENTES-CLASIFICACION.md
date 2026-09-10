@@ -1,5 +1,7 @@
 # Propuesta de clasificación de `PENDIENTES.md`
 
+> **Documento de trabajo histórico.** Esta clasificación fue una propuesta para tomar decisiones; no es la lista vigente. Las decisiones finales viven en `PENDIENTES.md`, `BITACORA.md` y los documentos de coordinación. No usar este archivo para reabrir ni cerrar entradas.
+
 *4 de septiembre de 2026 · leído contra `3b6806d` · revisado el 5 de septiembre contra
 `b53e5ee`, que es el árbol al que se integra*
 
@@ -175,10 +177,11 @@ archivo entero de una sentada, que es algo que no se vuelve a hacer en meses.
 
 ---
 
-## F · Entrada nueva que se propone abrir
+## F · Entradas nuevas que se proponen abrir
 
-Una sola, y no sale de clasificar lo que había: sale de cerrar la 8. Se escribe aquí con la
-forma que tendría en `PENDIENTES.md` para que fusionarla sea copiar, no redactar.
+Dos, y ninguna sale de clasificar lo que había: salen de cerrar la 8 y de un incidente entre
+frentes. Se escriben aquí con la forma que tendrían en `PENDIENTES.md` para que fusionarlas sea
+copiar, no redactar.
 
 ### 19 · El verde de `main` no está registrado en ninguna parte
 
@@ -213,3 +216,41 @@ formas de que eso ocurra, y conviene reconocerlas:
 
 Ese día, y solo ese, se paga la corrida de `main` — y se paga sabiendo por qué, que es
 distinto de pagarla por costumbre.
+
+---
+
+### 20 · La identidad E2E se pierde sola — **DISUELTA el 7 de septiembre de 2026**
+
+**No se cerró: se disolvió**, y la diferencia importa. Una entrada se cierra cuando se hace lo
+que pedía. Ésta pedía vigilar una pérdida, y lo que se hizo fue quitar lo que se perdía. La
+decisión fue del líder y está dicha así: *«mientras la identidad se escriba a mano en un
+fichero rastreado, cualquier worktree nueva es una bomba — y `sillar-demo` no hizo nada mal,
+copió `.env.example` y arrancó»*. No ampliar la vigilancia: quitar la causa.
+
+La identidad se deriva ahora del directorio del árbol (`scripts/identidad.mjs`), y no se
+escribe en ningún sitio del que pueda perderse. `docs/ENTORNO.md`, hallazgo 5, es la
+descripción vigente.
+
+**Lo que esta entrada dejó apuntado y conviene no perder**, porque es lo que hizo elegir bien:
+
+- **El defecto no era que los valores fueran cinco.** Era **cuál** se olvidaba: el `Port=` de
+  dentro de `ConnectionStrings__Default`. Nunca fue un quinto valor — era `POSTGRES_PORT` otra
+  vez, duplicado dentro de una cadena. Que fuese justo ése el olvidado era la señal de que no
+  debía escribirse.
+- **El documento caducaba por el mecanismo que describía.** Esta entrada ya lo decía —
+  «corregirlo no arregla nada: volverá a caducar»— y ése es el argumento que descartó las otras
+  dos direcciones. Un `.env.e2e.local` ignorado sigue habiendo que crearlo a mano; detectar la
+  pérdida es vigilar en vez de arreglar.
+- **La objeción que se le puso a la dirección elegida se resolvió, no se aceptó.** Decía: «los
+  puertos dejan de ser predecibles y hay que leerlos en cada corrida». Se resolvió haciendo el
+  mapa **regular** —cada papel en su bloque de cien, el mismo offset en los seis puertos— y
+  dando un comando que los enseña: `node scripts/identidad.mjs`. Predecibles no son; mirables,
+  sí, y eso era lo que hacía falta.
+
+**Y el disparador que esta entrada tenía nunca llegó a probarse, lo cual es su lección
+propia.** Decía «el siguiente frente que se añada — el tercero», con la advertencia de que
+parecía de calendario y era de concurrencia: que lo que había que vigilar no era cuándo
+aparecía el frente, sino **la primera espera**. No hizo falta ninguna de las dos cosas. Lo que
+forzó la decisión fue un accidente que no estaba en ninguna de las dos lecturas: una worktree
+que siguió el documento al pie de la letra y se llevó por delante el stack de otra. Un
+disparador bien escrito no garantiza que el defecto vaya a llegar por donde dice.

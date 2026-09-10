@@ -25,31 +25,39 @@ costaron un diagnóstico entero para que el siguiente no los tenga que repetir.
 
 ## Estrenar una worktree
 
-Cinco pasos, y **están en este orden porque cada uno falla distinto si falta el anterior**.
+Cuatro pasos, y **están en este orden porque cada uno falla distinto si falta el anterior**.
 Vale lo mismo para `git worktree add` que para un clon nuevo.
 
 ```bash
 # 1 · Dependencias de .NET. Sin esto, NETSDK1004 — ver el hallazgo 2.
 dotnet restore backend/Sillar.sln
 
-# 2 · Configuración local. NO la copies de otra worktree — ver el hallazgo 7.
-cp .env.example .env
-#    Y edita las cuatro claves que identifican al árbol: COMPOSE_PROJECT_NAME,
-#    POSTGRES_PORT, el Port= de ConnectionStrings__Default y Sillar__Node__Code.
-#    El propio .env.example las lista y dice por qué.
+# 2 · Configuración local, con la identidad de este árbol ya calculada.
+#    NO copies el .env de otra worktree, ni el .env.example a mano: los dos
+#    traen la identidad de OTRO árbol. Ver el hallazgo 7.
+node scripts/estrenar.mjs
+#    Escribe el .env con las siete claves que identifican al árbol, derivadas
+#    del nombre del directorio. Lo único que queda a mano son las contraseñas.
 
 # 3 · Dependencias de node, propias de esta worktree. Nunca un enlace a otra:
 #    ver el hallazgo 3, que es el que casi cuesta caro.
 pnpm install --frozen-lockfile --dir frontend
 pnpm install --frozen-lockfile --dir e2e
 
-# 4 · Identidad de la suite e2e, si esta worktree va a correrla a la vez que otra.
-#    e2e/.env.e2e SÍ está versionado: se modifica y NO se commitea — ver el hallazgo 5.
-
-# 5 · El PostgreSQL de desarrollo. La puerta crea su base efímera dentro de él,
+# 4 · El PostgreSQL de desarrollo. La puerta crea su base efímera dentro de él,
 #    así que sin esto no pasa de la comprobación de entorno. Es OTRO stack que el
 #    de la suite e2e, que se levanta solo — ver el hallazgo 8.
 docker compose up -d db
+```
+
+**El paso que desapareció era el de la identidad e2e**, y no desapareció por olvido: la suite
+ya no necesita que nadie edite nada. Deriva su identidad del directorio igual que el `.env` y
+se la pasa a docker por el entorno del proceso. Ver el hallazgo 5.
+
+Para ver la identidad de este árbol, o comprobar que no choca con la de otro:
+
+```bash
+node scripts/identidad.mjs
 ```
 
 Lo que **no** hay que hacer: crear `e2e/.media-e2e` a mano (lo hace el arnés, hallazgo 6),
@@ -71,6 +79,14 @@ worktree, no una máquina.
 > «FALLÓ en la etapa: entorno — El servicio PostgreSQL `db` no responde». Se añadió ahí mismo,
 > que es la única forma de que una lista así no envejezca. De paso salió el defecto de
 > `kde-inhibit` que está descrito más abajo.
+>
+> **Y el 7 de septiembre de 2026 la lista cambió sin volver a estrenarse.** Los pasos 2 y 4 se
+> reescribieron al derivar la identidad, y esta versión **no se ha verificado estrenando una
+> worktree de verdad**: lo que sí está provocado, en un árbol de mentira, es cada uno de los
+> dos comandos nuevos por separado, en sus dos vías —`estrenar.mjs` escribiendo y negándose a
+> pisar un `.env` existente, `identidad.mjs` con choque y sin él—. Queda dicho aquí en vez de
+> dejar que se lea como verificada: la próxima worktree es la que la comprueba, y si algo
+> falta se añade en ese momento.
 
 ---
 
@@ -124,6 +140,36 @@ en la etapa` seguía saliendo. Habría mordido a la primera cosa que encadenara 
 Es una advertencia sobre las recetas de este archivo tanto como sobre `kde-inhibit`: **una
 línea de comando documentada es código sin pruebas**. Ésta estuvo escrita dos días.
 
+#### Y volvió a pasar el 7 de septiembre, por otra puerta: la tubería
+
+La medición concurrente registró `rc=0` para una puerta que había escrito `FALLÓ en la etapa:
+suite e2e` en pantalla. No era la puerta. Medido sobre la misma corrida fallida:
+
+| Cómo se lanza | `$?` |
+|---|---|
+| `node scripts/verificar.mjs` | **1** |
+| `node scripts/verificar.mjs 2>&1 \| tee registro.log` | **0** |
+
+**`$?` de una tubería es el código del último comando, no del primero.** El 1 no se pierde:
+sigue en `${PIPESTATUS[0]}` en bash, o se recupera con `set -o pipefail`. Pero un wrapper que
+guarda el registro de la corrida —que es lo mínimo que hace cualquier wrapper— introduce una
+tubería sin que nadie lo piense, y desde ese momento la puerta no puede volver a decir que no.
+
+Es **la misma forma exacta** que el defecto de `kde-inhibit`, con otro mecanismo: algo que
+envuelve la puerta convierte un rojo en un verde para quien lo lea con `$?`. Que la misma
+enfermedad reaparezca por dos vías distintas en dos días es el argumento de que no es un
+descuido, sino una propiedad de envolver comandos:
+
+> **Todo lo que envuelve a la puerta hay que probarlo con una puerta que se sabe roja.**
+> No con una verde: una verde no distingue un wrapper que propaga de uno que no.
+
+Y la comprobación es de una línea, sin esperar a que falle nada de verdad:
+
+```bash
+bash -c 'false' ; echo "directo: $?"          # 1
+bash -c 'false' | cat ; echo "tubería: $?"    # 0  ← si aquí sale 0, tu wrapper es ciego
+```
+
 ### Cómo se comprueba que el bloqueo está puesto
 
 Con la puerta corriendo, desde otra terminal:
@@ -174,14 +220,31 @@ durante dos días el fallo de la zona horaria: la detección muerta y la detecci
 que consultar» producían la misma nada. Está contado en `BITACORA.md` §4, «Una barrera que
 calla no se distingue de una barrera que funciona».
 
-**Las siete ramas se provocan con un comando**, no con un recuerdo:
+**Las siete ramas se provocan solas, dentro de la puerta**, antes de la etapa 1. Si alguna
+calla, la puerta **no arranca**:
+
+```
+FALLÓ en la etapa: veredicto
+  2 de 7 ramas del veredicto no dispararon al provocarlas.
+  La puerta no arranca: el aparato que dice de quién es un rojo está roto,
+  y un veredicto roto engaña más de lo que cuesta un rojo.
+```
+
+No es una comprobación gratuita ni cara: las provocaciones son sintéticas y no hacen entrada ni
+salida. Medido, el comando entero tarda ~95 ms, de los que ~75 son arranque de Node —que la
+puerta ya paga— y ~25 la llamada a `journalctl`, que en el preflight no se hace.
+
+**Y el comando sigue existiendo**, para lo que dentro de la puerta no cabe: enseñar lo que
+escribe cada rama, y ejercitar las **sondas reales**, que sí dependen de la máquina.
 
 ```bash
 SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1 node scripts/verificar.mjs
 ```
 
-Alimenta el veredicto con sondas de mentira, enseña lo que escribe cada rama y termina en 1 si
-alguna calla. No levanta nada ni necesita base de datos.
+Esa segunda mitad se queda fuera del preflight a propósito: al arrancar la puerta, la ventana
+del diario tiene segundos, así que la sonda de suspensión responde «no pude» con toda la razón.
+Dentro imprimiría esa alarma en **cada corrida sana**, y una alarma que suena siempre se deja de
+leer — la misma enfermedad, por el otro extremo.
 
 **Por qué esto dejó de ser opcional.** «La puerta es el criterio» era cierta con un frente: si
 está roja, es tuya. Con dos frentes un rojo ajeno bloquea a los dos, y cada frente paga el
@@ -364,45 +427,112 @@ journalctl --since "<hora de inicio de la corrida>" | grep -iE 'will sleep now|P
 Si aparece algo, no se toca el código. Si no aparece nada y hay `ERR_NETWORK_CHANGED`, es la
 causa 3 y se mira el WiFi.
 
-### 5 · La identidad e2e va separada por worktree
+### 5 · La identidad de una worktree se deriva de su directorio
 
-*4 de septiembre de 2026 · comprobado contra `3b6806d` y contra `sillar-footer`*
+*7 de septiembre de 2026 · reescrito al derivarla. Antes se titulaba «La identidad e2e va
+separada por worktree» y describía cómo separarla a mano.*
 
-La suite levanta su propio stack de Docker y su propio Vite, y **todo lo que lo identifica
-sale de `e2e/.env.e2e`** (`e2e/setup/env.ts:51-64`). Son cinco valores, y el quinto es el que
-se olvida:
+Cada árbol tiene su propio stack de desarrollo y su propio stack e2e, y **nada de lo que los
+identifica se escribe**: sale del nombre del directorio, en `scripts/identidad.mjs:106`.
 
-| | Qué nombra | Dónde se usa |
+```bash
+node scripts/identidad.mjs
+```
+
+enseña la identidad de este árbol, la de todos sus hermanos, y **avisa si dos comparten
+offset**. El offset es un hash del sufijo (`scripts/identidad.mjs:83`), así que dos nombres
+distintos pueden caer en el mismo número: pasa poco, no pasa nunca, y por eso hay una
+comprobación en vez de una esperanza. Se arregla renombrando un directorio.
+
+| Papel | Puerto | Quién lo pone |
 |---|---|---|
-| `COMPOSE_PROJECT_NAME` | El proyecto de Docker y el nombre de los contenedores | `docker-compose.yml:4,61` |
-| `POSTGRES_PORT` | El puerto publicado de la base | `docker-compose.yml:34` |
-| `API_PORT` | El puerto publicado de la API | `docker-compose.yml:86` |
-| `FRONTEND_PORT` | El Vite que arranca Playwright | `e2e/playwright.config.ts:32` |
-| **el `Port=` de `ConnectionStrings__Default`** | Por dónde entra `dotnet ef` a migrar | `e2e/setup/env.ts:64`, `e2e/setup/migrate.ts:19` |
+| PostgreSQL de desarrollo | `55600 + offset` | `.env`, escrito por `scripts/estrenar.mjs:42` |
+| API de desarrollo | `55700 + offset` | ídem |
+| pgAdmin | `55800 + offset` | ídem |
+| PostgreSQL de la suite e2e | `55900 + offset` | el entorno del proceso, `e2e/setup/env.ts:112` |
+| API de la suite e2e | `56000 + offset` | ídem |
+| Vite de la suite e2e | `56100 + offset` | ídem |
 
-**El quinto no se deduce de los otros cuatro.** Cambiar `POSTGRES_PORT` y dejar la cadena de
-conexión apuntando al puerto viejo da un stack que levanta bien y unas migraciones que se
-aplican **a la base de la otra worktree**. Los dos números se cambian juntos o no se cambia
-ninguno.
+**El mapa es regular a propósito.** Antes no lo era —desarrollo en 55430 y e2e en 55432, dos de
+distancia— y con dos de margen ningún desplazamiento cabe sin solaparse. Ahora el offset de un
+árbol es el mismo número en los seis puertos: si su Vite e2e está en el 56120, su API de
+desarrollo está en el 55720. El árbol base, el que se llama `SILLAR` a secas, se queda con el
+offset 0, que es lo que permite citar puertos concretos en un documento sin mentir.
 
-**Los valores.** El archivo está versionado a propósito (`.gitignore:46`), y trae los de la
-worktree principal. Una segunda worktree que necesite correr su suite lo modifica **sin
-commitear el cambio**: la identidad es de la worktree, no de la rama.
+**Los dos stacks se identifican igual pero no se sirven igual, y la asimetría tiene motivo.**
+El e2e no escribe la identidad en ningún archivo: el arnés se la pasa a `docker compose` por el
+entorno del proceso, que **gana al `--env-file` en la interpolación** —medido el 6 de septiembre
+de 2026 con `POSTGRES_PORT=59999 docker compose --env-file e2e/.env.e2e config`, que imprimió
+`published: "59999"`—. El de desarrollo sí acaba en un archivo, porque lo levanta una persona
+escribiendo `docker compose up -d` y ahí no hay ningún proceso en medio que pueda calcular
+nada. Pero **el archivo no lo escribe la persona**: lo escribe `scripts/estrenar.mjs`.
+
+Y en `e2e/setup/docker.ts:21-29` toda llamada a compose pasa por dos envoltorios que llevan ese
+entorno puesto, en vez de repetirlo en diez sitios. Es la misma lección que metió la guarda
+dentro de `composeDown()`: una precaución que hay que acordarse de repetir ya falló una vez.
+
+**Qué había aquí antes.** Cinco valores en `e2e/.env.e2e` que cada worktree tenía que editar a
+mano, sin commitear —«la identidad es de la worktree, no de la rama»—, más cuatro en `.env`. Y
+el defecto no era que fueran nueve: era **cuál** se olvidaba.
+
+> El quinto valor era el `Port=` de dentro de `ConnectionStrings__Default`, y era el que
+> siempre se quedaba atrás. Nunca fue un quinto valor: era `POSTGRES_PORT` otra vez, duplicado
+> dentro de una cadena. **Que fuese justo ése el olvidado era la señal de que no debía
+> escribirse.** Un valor que aparece en dos sitios se olvida en uno.
+
+Con dos añadidos que la lista vieja no nombraba y colisionan igual: `API_PORT` y `PGADMIN_PORT`.
+Un árbol que seguía el documento al pie de la letra seguía chocando — y el 7 de septiembre de
+2026 el contenedor `sillar_api` de una worktree **ya borrada** seguía ocupando el 5080.
+
+> **Este hallazgo llegó a afirmar algo falso, y el mecanismo que describía era la causa.** Hasta
+> el 5 de septiembre decía que tres worktrees tenían identidad propia. La tenían cuando se
+> escribió y la perdieron después, porque la identidad vivía sin commitear a propósito —para
+> que no viajara a `main`— y desaparece en cuanto alguien limpia el árbol o restaura
+> `.env.e2e`. Un documento cuyo contenido caduca por el mismo procedimiento que documenta no se
+> arregla actualizándolo. Estaba abierto como pendiente propuesto, el **20**, en
+> `docs/PENDIENTES-CLASIFICACION.md`; se disuelve aquí, que era la decisión del líder: no
+> ampliar la vigilancia, quitar la causa.
+
+**El caso que lo demostró sin que nadie fallara.** `sillar-demo` copió `.env.example` y arrancó,
+exactamente como el documento mandaba, y recreó el stack de desarrollo compartido sobre el
+puerto de otro árbol. No hizo nada mal. Mientras la identidad se escriba a mano, cada worktree
+nueva es una bomba, y quien la ceba es el documento.
+
+**Y el 5 de septiembre dejó de ser un margen teórico.** Dos frentes lanzaron la puerta con
+dieciséis segundos de diferencia. El segundo murió con `is already used` en el 55173 — que es
+la parte inofensiva. La peligrosa no llegó a ocurrir por esos segundos: `composeDown()` lleva
+`-v`, así que el que llega segundo **destruye el stack del primero a mitad de suite**,
+contenedores y volumen, y la corrida ajena muere con un fallo que no se parece a su causa.
+
+**Eso ya no puede pasar.** `composeDown()` mira de quién es el stack antes de destruirlo, por
+la etiqueta que docker compose pone en cada contenedor
+(`com.docker.compose.project.working_dir`), y **si es de otra worktree no lo toca**:
 
 ```
-sillar-fx, SILLAR, sillar-m02   sillar_e2e         55432 / 55081 / 55173
-sillar-footer                   sillar_footer_e2e  55443 / 55091 / 55183
+[e2e] NO se destruye el stack, porque no es de esta worktree.
+  El stack e2e ya está en pie, y lo levantó OTRA worktree:
+    /home/JP777/sillar-estreno
 ```
 
-**Tres de las cuatro worktrees comparten identidad hoy.** No ha dado problemas porque no se
-corren dos suites a la vez, pero el margen es ése: dos frentes que arranquen a la vez chocan
-en 55173 y el segundo muere sin decir por qué.
+La guarda vive en `composeDown()` y no en quien la llama, y eso también costó una provocación:
+la primera versión estaba en `global-setup` y **no servía** — `globalTeardown` se ejecuta igual
+cuando `globalSetup` lanza, medido y no supuesto, y remataba el trabajo un segundo después. La
+guarda va en la operación destructiva, no en uno de sus llamadores.
 
 **Y una nota para quien lea el README de `e2e/`:** `e2e/README.md:18-21` presenta 55432/55081/55173
-como *los* puertos de la suite, frente a los de `sillar_dev`. Era cierto cuando había una sola
-worktree. Es el mismo patrón que `PENDIENTES.md` §14 describe —«la regla que era cierta porque
-solo había uno»— y por eso conviene leer aquel párrafo como lo que era el día que se escribió,
-no como la lista vigente.
+como *los* puertos de la suite. Era cierto cuando había una sola worktree, y hoy no lo es en
+ninguna: los puertos salen del offset del árbol. Es el mismo patrón que `PENDIENTES.md` §14
+describe —«la regla que era cierta porque solo había uno»— y por eso conviene leer aquel
+párrafo como lo que era el día que se escribió, no como la lista vigente.
+
+**Lo mismo vale, y esta vez sobre una decisión buena, para que `e2e/.env.e2e` esté
+versionado.** Commitearlo fue correcto el día que se decidió: había una sola worktree, el
+archivo no guardaba ningún secreto real —solo la contraseña de una base efímera que `down -v`
+destruye—, y versionarlo era lo que hacía que la suite arrancara sin ceremonia en cualquier
+máquina. Lo que caducó no fue el criterio: fue el mundo en el que se aplicaba. La segunda
+worktree convirtió un archivo compartido en una identidad compartida. El archivo sigue
+versionado, y ahora puede estarlo sin daño, porque ya no lleva identidad dentro: lo que
+registra su cabecera no es «nos equivocamos», es «cambió el supuesto».
 
 ### 6 · `e2e/.media-e2e`: quién crea la carpeta decide quién puede escribir en ella
 
@@ -472,9 +602,15 @@ puerto. No falla — **funciona, en otro sitio**, que es bastante peor que falla
 - `scripts/verificar.mjs` distingue los dos casos —no hay archivo, o el archivo está y le falta
   la clave—, nombra `.env.example` como remedio y avisa de lo del vecino. Se atrapa en el punto
   de llamada para que lo que se lea sea el remedio y no una traza de Node.
-- `.env.example` lista arriba del todo **las cuatro claves que identifican al árbol** y van
-  distintas en cada worktree: `COMPOSE_PROJECT_NAME`, `POSTGRES_PORT`, el `Port=` de
-  `ConnectionStrings__Default` y `Sillar__Node__Code`.
+- `.env.example` decía arriba del todo **cuáles eran las cuatro claves que identifican al
+  árbol**, para que se editaran a mano. Eso duró hasta el 7 de septiembre de 2026: eran seis,
+  no cuatro, y una de ellas era un puerto repetido dentro de una cadena. Ahora ese bloque dice
+  otra cosa —`node scripts/estrenar.mjs`— y las escribe el guion. Ver el hallazgo 5.
+
+  Vale la pena guardar la forma del error, porque no era pereza al contarlas: la lista estaba
+  incompleta **en la dirección que no se nota**. Las cuatro nombradas rompían ruidosamente al
+  chocar; las dos que faltaban, `API_PORT` y `PGADMIN_PORT`, solo chocan si el vecino levanta
+  el perfil `full` o pgAdmin, que es a veces. Una lista se queda coja por sus casos raros.
 
 **Una corrección al encargo que originó esto**, porque quedó escrito al revés: no era que
 `.env.example` «no cubriera la raíz». Está en la raíz, versionado, y trae
@@ -492,10 +628,10 @@ lo que está arriba es la base de desarrollo.
 | | **Desarrollo** | **Suite e2e** |
 |---|---|---|
 | Quién lo levanta | Tú, `docker compose up -d` | El arnés, en `global-setup.ts` |
-| Configuración | `.env` de la raíz | `e2e/.env.e2e` (`e2e/setup/docker.ts:4`) |
-| Nombre de proyecto | `COMPOSE_PROJECT_NAME`, `sillar` por defecto | `sillar_e2e` (`e2e/setup/env.ts:51`) |
+| Configuración | `.env` de la raíz, escrito por `scripts/estrenar.mjs` | derivada del directorio, por el entorno del proceso (`e2e/setup/env.ts:112`) |
+| Nombre de proyecto | `sillar` más el sufijo del árbol | `sillar_e2e` más el sufijo del árbol (`e2e/setup/env.ts:64`) |
 | Servicios | `db` (`docker-compose.yml:2`) | `db` **y** `api`, perfil `full` (`:51,62`) |
-| Base | `sillar_dev` | `sillar_e2e`, y se destruye con su volumen al terminar |
+| Base | `sillar_dev`, con el sufijo del árbol | `sillar_e2e` con el sufijo, y se destruye con su volumen al terminar |
 | Vida | La que tú le des | Una corrida, salvo `E2E_KEEP_STACK=1` |
 
 **Lo que los distingue de un vistazo es el prefijo del contenedor**, que sale del nombre de

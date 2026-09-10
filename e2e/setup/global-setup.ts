@@ -2,8 +2,9 @@ import { chmodSync, mkdirSync, rmSync, statSync } from 'node:fs';
 import path from 'node:path';
 import type { FullConfig } from '@playwright/test';
 import { activateModule, completeSetup, createLesserAdmin, login, waitApiReady } from './api.js';
-import { composeBuildAndUpApi, composeDown, composeUpDb, waitDbHealthy } from './docker.js';
-import { E2E_DIR, MEDIA_DIR } from './env.js';
+import { composeBuildAndUpApi, composeDown, composeUpDb, duenoDelStackEnPie, waitDbHealthy } from './docker.js';
+import { E2E_DIR, MEDIA_DIR, ROOT } from './env.js';
+import { problemaDeStackAjeno } from './identidad.js';
 import { problemaDeLaCarpetaDeMedios } from './medios.js';
 import { migrate, seed } from './migrate.js';
 
@@ -77,6 +78,15 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
 
   // Antes de docker, no después: si docker llega primero, la crea como root.
   prepararCarpetaDeMedios();
+
+  // **Antes de destruir nada, mirar de quién es.** `composeDown()` lleva `-v` y
+  // es incondicional: sobre el stack de otra worktree con el mismo nombre de
+  // proyecto es una escopeta apuntando al frente de al lado.
+  const problemaDeIdentidad = problemaDeStackAjeno(await duenoDelStackEnPie(), ROOT);
+
+  if (problemaDeIdentidad !== null) {
+    throw new Error(`La suite e2e no arranca.\n\n  ${problemaDeIdentidad}`);
+  }
 
   console.log('[e2e] destruyendo un stack anterior, si quedó alguno...');
   await composeDown();

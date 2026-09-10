@@ -477,16 +477,26 @@ Si nunca ha disparado, lo que se sabe de ella no es que funcione: es que compila
 disparar**, antes de darla por puesta. Con una entrada sintética si hace falta; no vale
 razonar que debería.
 
-**Y donde se pueda, se deja provocable.** Las siete ramas del veredicto de la puerta se
-provocan con un comando, no con un recuerdo:
+**Y donde se pueda, no se deja provocable: se provoca sola.** Es el paso que faltaba, y lo
+señaló el líder: una barrera que solo dispara cuando alguien se acuerda de invocarla es
+indistinguible de una que no funciona. Dejar la autoprueba como comando aparte habría
+contradicho esta misma entrada en el commit que la introduce.
+
+Así que las siete ramas del veredicto **se provocan dentro de la puerta**, antes de la etapa 1,
+y si alguna calla la puerta no arranca. Cuestan unos milisegundos: son sintéticas y no hacen
+entrada ni salida. Es la misma idea que `SILLAR_VERIFY_FORCE_FAIL=1`, que ya provocaba la
+limpieza de la base efímera para verla ocurrir.
+
+El comando sigue existiendo para lo que dentro no cabe —enseñar lo que escribe cada rama y
+ejercitar las sondas reales—:
 
 ```bash
 SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1 node scripts/verificar.mjs
 ```
 
-Alimenta el veredicto con sondas de mentira, enseña lo que escribe cada rama y termina en 1 si
-alguna calla. Es la misma idea que `SILLAR_VERIFY_FORCE_FAIL=1`, que ya provocaba la limpieza
-de la base efímera para verla ocurrir.
+**Que la puerta compruebe su propio instrumental y no el producto es deliberado, y no es
+nuevo:** `OMITIDAS_ESPERADAS` ya comprueba la contabilidad de la propia puerta, y
+`SILLAR_VERIFY_FORCE_FAIL` existe para provocar su propia limpieza.
 
 **El corolario, que es lo que cambió el código.** Una barrera que no puede mirar tiene que
 decirlo, y decirlo distinto de «miré y no había nada». Las sondas del veredicto devolvían
@@ -529,6 +539,59 @@ se integra sin que la barrera **se haya observado disparar y dejar pasar**. Las 
 verla decir que no es la mitad que se recuerda; verla dejar pasar lo que debe es la que faltó
 aquí.
 
+#### Y el método que las cazó las tres: preguntar por otra vía
+
+Las tres —el diario que no devolvía nada, la guarda que paraba en falso, y un
+`find -newermt "today"` que dio **cero** archivos de un día en el que se habían escrito 67— no
+fallaron. **Contestaron.** Sin error, sin excepción, con código de salida cero, y contestaron
+mal. Ninguna herramienta avisó de nada.
+
+El parecido no es que se equivocaran igual —la primera preguntaba por una ventana imposible, la
+segunda leía bien un `EPERM` y lo interpretaba mal, la tercera filtró mal una fecha—. El
+parecido es **la forma de la respuesta**:
+
+> Un resultado demasiado limpio. Cero líneas. Cero archivos. Una negativa rotunda.
+
+Un cero es una respuesta perfectamente válida y por eso no levanta sospecha, y es justo la que
+da una herramienta a la que le has preguntado mal.
+
+**Lo que las destapó fue siempre lo mismo, y no fue releer el código:** ir a por el mismo hecho
+por una segunda vía, una que no compartiera el error.
+
+| Lo que respondía mal | La segunda vía |
+|---|---|
+| `journalctl --since` con hora UTC | comparar la cadena generada con lo que imprime `date` |
+| `chmod` denegado leído como «lo creó `root`» | mirar quién es el dueño de verdad, y contra qué UID corre la API |
+| `find -newermt "today"` → 0 archivos | **enumerar** por fecha en vez de filtrar por fecha |
+| un comentario que afirmaba que `globalTeardown` solo corre si `globalSetup` terminó | **ejecutarlo** y ver que también corre cuando lanza |
+
+La cuarta fila añade un caso que no es una herramienta sino **un comentario del propio
+repositorio**, y no cambia nada: una afirmación escrita sobre cómo se comporta el código es una
+respuesta como cualquier otra, y se comprueba igual. Ésa además llevaba meses ahí.
+
+**La regla, que es barata:** cuando una comprobación devuelva justo lo que hacía falta para no
+tener que hacer nada —cero resultados, nada que revisar, todo en orden—, consíguelo una segunda
+vez de otra manera antes de creértelo. Y si las dos vías no pueden equivocarse igual, mejor:
+**fíate del que enumera antes que del que filtra**, porque enumerar enseña lo que hay y filtrar
+solo enseña lo que sobrevivió a una condición que puede estar mal escrita.
+
+#### Una guarda pertenece a la operación que protege, no a quien la llama
+
+La barrera que impide destruir el stack e2e de otra worktree se escribió primero en
+`global-setup`, que es donde estaba el problema *a la vista*: es lo que se ejecuta al arrancar
+la suite. **Y no servía.** `globalTeardown` llamaba a la misma operación destructiva sin pasar
+por ahí, y remataba el trabajo un segundo más tarde.
+
+> Poner la guarda en un llamador protege de ese llamador. Ponerla en la operación protege de
+> todos, **incluidos los que todavía no existen**.
+
+Es fácil de razonar al revés, porque el llamador es donde se entiende la intención y la
+operación es donde solo se ve el mecanismo. Pero la intención se duplica y el mecanismo no.
+
+**Y no se descubrió razonándolo: se descubrió provocándola.** La guarda estaba escrita, era
+correcta en su sitio, y el stack ajeno moría igual. Sin la regla de provocar en las dos
+direcciones habría entrado en `main` como una barrera que no protege — la segunda en dos días.
+
 #### Un pariente pequeño de lo mismo: citar de memoria
 
 En el mismo tramo, un informe dio el identificador de un commit como `76e60b6` cuando era
@@ -536,6 +599,57 @@ En el mismo tramo, un informe dio el identificador de un commit como `76e60b6` c
 líneas al editar el fichero que citaban: **una afirmación sobre el árbol escrita sin volver a
 mirarlo**. `CLAUDE.md` ya lo dice para archivo y línea; vale igual para un hash, un recuento o
 un nombre de rama. Si no lo acabas de leer, no lo escribas.
+
+#### La tercera forma: una barrera que habla con seguridad y se equivoca
+
+*6 de septiembre de 2026*
+
+Esta sección empezó con barreras que **callan** y creció con barreras que **se detienen en
+falso**. Falta la tercera, y es la peor de las tres.
+
+La puerta murió en la suite e2e y el veredicto dijo:
+
+```
+ES DEL ENTORNO (probable) — algo del stack no llegó a levantarse.
+  Coincide con /Connection refused .*5\d{4}|ECONNREFUSED/i.
+  Antes de mirar el código, mira docs/ENTORNO.md.
+```
+
+Era falso. Los `ECONNREFUSED` eran líneas `[WebServer] AggregateError [ECONNREFUSED]` del proxy
+de Vite a partir de la 398 del registro; la línea de resultado de Playwright —`1 failed`,
+`126 passed`— estaba en la 375. El ruido llegó **después** de que la suite hubiera terminado de
+correr. El stack se levantó, el navegador arrancó y las specs se ejecutaron, y **la prueba de
+que la firma era imposible estaba dentro del mismo texto que la firma estaba leyendo**.
+
+**Por qué es peor que callar.** Una barrera que calla te deja donde estabas: sin ayuda, pero
+mirando. Una que se detiene en falso te para, y al menos te para delante del problema. Ésta te
+manda a otro sitio: dice «antes de mirar el código, mira el entorno» justo cuando el código es
+lo único que hay que mirar. Convierte el aparato que existe para ahorrar media hora en el que
+la gasta.
+
+**Y el mecanismo es el que hay que retener, porque no es de esta firma.** Las firmas se
+recorrían primero y sin condición: la primera que coincidía ganaba, aunque la salida contuviera
+la prueba de que no podía ser. Una firma que significa «el stack no llegó a levantarse» no
+puede hablar sobre un texto que dice `N passed`.
+
+> **Una firma habla solo si su desmentido calla.**
+
+Así que el desmentido no se escribió como un caso especial de esa firma, sino como un campo de
+la tupla —`[patrón, explicación, desmentido]`, `scripts/verificar.mjs`—: cualquier afirmación
+sobre el entorno puede toparse con la prueba de que no ocurrió, y quien la escriba tiene ahora
+dónde ponerla.
+
+**Cómo se supo, que es la parte que se repite.** No razonando sobre la expresión regular: se
+buscó en el registro **dónde** aparecía cada coincidencia y **en qué línea** estaba el
+resultado. Es otra vez preguntar por otra vía —la firma decía «hay un ECONNREFUSED», que era
+cierto; la pregunta útil era «¿dónde, respecto a lo que ya había pasado?»—. Y también es otra
+vez enumerar en vez de filtrar: `grep -c` habría dado un número que confirmaba el veredicto.
+
+**La provocación correspondiente se comprueba por ausencia**, y es la única del conjunto que lo
+hace: se le da al veredicto un texto con `ECONNREFUSED` *y* con la línea de resultado, y se
+exige que **no** atribuya al entorno. Lo que dice entonces es «Sin veredicto», que es la
+respuesta correcta: no sabe. Una barrera nueva se provoca una vez a propósito y se observa
+disparar; ésta se provoca una vez a propósito y se observa **callar**.
 
 ---
 
@@ -1110,6 +1224,48 @@ igual que en el caso de los medios. **Esto no cierra el pendiente §16**: aquel 
 nombre la fila —«Baja del mensaje de Ana Quispe»—, y esto solo quita un identificador que no
 debería haber estado. Direcciones distintas.
 
+
+**5 sep · el sellado de replicación se extrae, y se extrae antes de tiempo a propósito.**
+`StampReplicationColumns` estaba copiado **tres veces** —`CoreDbContext.cs`,
+`CatalogDbContext.cs`, `CrmDbContext.cs`— con los cuerpos idénticos salvo el nombre del campo
+inyectado (`clock` / `_clock`). El pendiente §3 le había puesto disparador: «la cuarta copia, **o**
+la primera vez que dos copias discrepen». **Ninguna de las dos mitades se había cumplido**, y aun
+así se extrae.
+
+**Esto es un adelanto explícito, no un disparador cumplido**, y conviene que quede escrito con su
+motivo porque el motivo es lo único que lo justifica: aquel disparador se escribió cuando un solo
+equipo escribía las tres copias. Con dos frentes en paralelo la divergencia pasa de eventual a
+probable —dos equipos en dos `DbContext` no se ven— y a la vez la extracción se vuelve imposible
+de programar, porque toca `Sillar.Shared`, CORE y Catalog a la vez. El día que el disparador
+saltara, ya no habría hueco para arreglarlo. Es el mismo patrón de los tres casos de los que este
+proyecto se salvó por poco: baratos el día antes, imposibles el día después.
+
+**Y al ir a extraerlo apareció que la divergencia ya había empezado.** El §3 hablaba de tres
+copias del sellado, y son tres; pero del **mapeo** hay dos copias iguales —`Catalog` y `Crm`— y
+una tercera de otra forma: CORE no tenía `MapReplication`, sino dos columnas a mano en
+`MediaAssetConfiguration` y las otras dos delegadas en `AsCreatedAt`/`AsUpdatedAt`. El resultado
+era el mismo, así que no rompía nada y por eso nadie lo vio. Discrepar en la forma es el paso
+anterior a discrepar en el fondo.
+
+**Dónde vive ahora, que no es donde se dijo.** No en `Sillar.Shared`. Ese proyecto declara en su
+propio `.csproj` que «aquí no entra lógica de negocio ni acceso a datos» y no referencia EF Core;
+meterlo allí obligaría a añadírselo, y con él lo heredarían los cinco proyectos que hoy lo
+referencian sin tenerlo —entre ellos los tres `*.Contracts`, que son justo lo que un módulo puede
+referenciar de otro—. EF Core acabaría cruzando el grafo entero de módulos por una utilidad de
+cuatro columnas. Tampoco cabía en `Sillar.Core`: un módulo nunca referencia el `Data` de otro
+(regla 3). Así que hay un proyecto nuevo, **`Sillar.Shared.Data`**, para infraestructura de
+persistencia que es de la plataforma y no de ningún módulo.
+
+**Comprobado que no cambia el esquema**, que es lo único que podía convertir un refactor en una
+migración: `dotnet ef migrations has-pending-model-changes` responde «No changes have been made to
+the model since the last migration» en los tres contextos.
+
+**Y el sellado tiene por fin prueba propia.** De las tres copias, solo una estaba cubierta —la de
+CRM, y por una prueba que toca la base—. Ahora hay cinco pruebas de lógica en
+`Sillar.Shared.Data.Tests` que no abren ninguna conexión: el alta pone nodo, versión 1 y las dos
+fechas; la modificación sube la versión y **no** reescribe origen ni fecha de alta; y ni una fila
+sin cambios ni una borrada suben nada.
+
 ---
 
 ### 5 sep 2026 · Registros de superficie: comprobación estructural
@@ -1138,3 +1294,154 @@ prueba guarda esa cifra como línea base y exige **delta cero** durante los
 cambios de ruta: lo que vigila es que cambiar de hijo no remonte al
 contribuyente. **No** afirma que no haya rerenders, no fija cuántos Effects
 ejecuta el entorno y no pretende probar la construcción interna del registro.
+
+---
+
+### 5 sep 2026 · Dos frentes, dieciséis segundos, y una escopeta apuntando al de al lado
+
+**Incidente de coordinación, no de ejecución.** Los dos frentes recibieron a la vez el encargo
+de traer `main` y relanzar. El aviso que se dio fue sobre el conflicto previsible en
+`docs/BITACORA.md`; el que costó una corrida entera fue otro, y no se vio venir.
+
+**La secuencia, leída del reloj:**
+
+```
+17:24:56  arranca la puerta del frente A
+17:25:13  arranca el Vite del frente B en 55173
+17:25:16  se crea sillar_e2e_db          (frente B)
+17:27:20  se crea sillar_e2e_api         (frente B)
+~17:32    la etapa 6 de A pide el 55173, lo encuentra ocupado y aborta
+```
+
+**Lo que se vio** fue `http://localhost:55173 is already used`: la corrida de A perdida, la de
+B intacta. **Lo que no llegó a pasar por dieciséis segundos** es lo que importa: Playwright
+arranca su `webServer` antes del `globalSetup`, así que A murió en el puerto **sin llegar a
+tocar docker**. Si el orden hubiera sido el contrario, el `composeDown -v` de A —incondicional
+hasta ese día— habría destruido el stack de B a mitad de suite, contenedores y volumen, y la
+corrida de B habría muerto con un fallo que no se parece en nada a su causa.
+
+**Tres cosas salieron de ahí, y solo una es el arreglo:**
+
+1. **La guarda.** `composeDown()` mira de quién es el stack antes de destruirlo, por la
+   etiqueta que docker compose ya pone en cada contenedor. No hizo falta inventar un marcador.
+2. **Dónde iba la guarda.** La primera versión estaba en `global-setup` y **no servía**:
+   `globalTeardown` se ejecuta igual cuando `globalSetup` lanza —medido, no supuesto— y
+   remataba el trabajo un segundo más tarde. La guarda va en la operación destructiva, no en
+   uno de sus llamadores. Se descubrió provocándola, que es la única razón por la que se
+   descubrió.
+3. **El defecto de fondo, que sigue abierto.** La identidad E2E de cada worktree vive **sin
+   commitear a propósito**, para que no viaje a `main` — y por eso se pierde sola con cualquier
+   `checkout`, `stash` o limpieza. `ENTORNO.md` §5 describía ese mecanismo con precisión y aun
+   así se quedó falso: afirmaba que una worktree tenía identidad propia, que la tuvo y la
+   perdió. **El documento caducó por lo que el documento describe.** Queda propuesto como
+   pendiente 20; la guarda mitiga la consecuencia, no el defecto.
+
+**Y una que no es de máquinas.** El aviso previo iba al fichero compartido que se veía venir.
+El daño estaba en el recurso compartido que no se nombró: los puertos. Dos frentes en la misma
+máquina comparten más de lo que comparte su código, y el inventario de lo que comparten no
+existe en ninguna parte.
+
+---
+
+### 9 sep 2026 · El turno lo da la máquina, y el verde que llegó a `main`
+
+El problema de concurrencia deja de ser un pendiente. No se cerró porque existiera una
+rama que prometiera arreglarlo: se cerró cuando el mecanismo llegó a `main` después de
+una puerta canónica completa.
+
+La evidencia tiene tres piezas. El 5 de septiembre hubo una primera observación concurrente
+mala, con dos puertas arrancadas con dieciséis segundos de diferencia y 46 falsos fallos.
+El 8/9 de septiembre se repitió la medición sobre el mismo commit `75f9316`, con identidad
+e2e derivada y separada: **las dos corridas concurrentes terminaron rojas**. Después hubo
+un único control serial sobre ese mismo commit y pasó 6/6.
+
+Ese control es `n=1`: no demuestra que lo serial siempre sea verde. Sí demuestra que el
+segundo rojo concurrente no estaba obligado por el árbol probado.
+
+La decisión es deliberadamente más pequeña que una teoría de hardware: **en esta máquina
+la señal de gates simultáneos no es fiable, así que la puerta se serializa**. El cerrojo
+común da el turno. Para futuras mediciones existe
+`SILLAR_VERIFY_PERMITIR_CONCURRENCIA`, cuyo valor es el motivo obligatorio.
+
+El preflight quedó además fail-safe: una enumeración inesperadamente vacía, un fichero que
+no se puede leer o una provocación rota hacen roja la puerta en vez de hacer desaparecer
+la comprobación.
+
+**Verde que autorizó la integración.** El 9 de septiembre de 2026 a las 11:21 (-05:00),
+`a8a307e` pasó la puerta canónica real: tipos frontend, tipos e2e, build backend,
+migraciones sobre base efímera, pruebas backend y suite e2e —**6/6**—, con
+`systemd-wrapper=0`, `verificar.mjs=0`, sin bypass de concurrencia y sin stack e2e
+residual. Ese mismo commit entró a `main` por fast-forward.
+
+Desde aquí cada integración registra commit, fecha y resultado. No se repite el gate
+únicamente porque el mismo árbol cambió de nombre de rama.
+
+**La identidad dejó de ser pendiente.** La worktree deriva proyecto, bases y puertos;
+el antiguo §20 se disuelve: ya no existe una identidad crítica que dependa de recordar
+cambios locales.
+
+**Limpieza C/D/F.**
+
+- §14 ya vive en `ANTES-DE-EMPEZAR-UN-MODULO.md` §1;
+- §16 ya vive allí en §5, incluida la regla de **no hacer barrido**;
+- las seis bibliotecas descartadas ya viven en §6 y no son pendientes;
+- §11 se disuelve como contenedor heredado;
+- las filas cerradas de §13 salen de la lista;
+- `BUILD_CONFIGURATION` se cierra: `backend/Dockerfile:30` usa
+  `ARG BUILD_CONFIGURATION=Release` y `docker-compose.yml:60` usa
+  `${BUILD_CONFIGURATION:-Release}`; Debug solo aparece si se fija explícitamente;
+- `MultipleCollectionIncludeWarning` se **descarta**, no se aplaza: la medición dejó una
+  cota realista de 6 presentaciones × 3 categorías = 18 filas frente a 9, con los datos
+  actuales en 3 y `Take(50)` acotando el conjunto. Solo se reabre si esa cota deja de
+  describir el caso real;
+- panel, Swagger y `:focus-visible` se revisan juntos por JP antes de cerrar Fase 1;
+- Bsale se pregunta en la misma visita al mostrador que decide M05a;
+- `docs/BITACORA-SESION-2026-08-14.md` se retira porque lo durable ya está en los
+  documentos vigentes.
+
+El pendiente `42P01` **permanece abierto**. Existe una rama que lo arregla, pero una rama
+no resuelve un pendiente: se cerrará cuando el arreglo esté en `main` y haya pasado la
+prueba contra una base realmente vacía.
+
+---
+
+### 9 sep 2026 · El sellado de replicación entra a `main`
+
+El pendiente §3 se cierra por efecto, no por existencia de una rama. La rama
+`refactor/sellado-replicacion` incorporó el `main` vigente y su commit final
+`0c45aca224f4685bd1ff0c0cd3ac139db3c49438` fue verificado antes de entrar.
+
+El cambio extrae las dos mitades de la regla compartida: el sellado vive en
+`Sillar.Shared.Data/Replication/ReplicationStamping.cs` y el mapeo en
+`ReplicationMapping.cs`. CORE, Catalog y CRM consumen esas piezas sin introducir
+migraciones nuevas. La comprobación de modelo respondió **sin cambios pendientes**
+en los tres contextos.
+
+La verificación focal independiente pasó **11/11, 0 omitidas**. Antes, las pruebas
+se habían falsificado deliberadamente rompiendo incremento de versión, conservación
+del origen y tres propiedades del mapeo; cada rotura produjo el rojo esperado y,
+tras restaurar, las 11 volvieron a verde.
+
+La puerta canónica completa sobre `0c45aca` pasó:
+
+- tipos del frontend;
+- tipos del arnés e2e;
+- compilación del backend;
+- migraciones sobre base efímera;
+- pruebas del backend;
+- suite e2e.
+
+Resultado: **6/6**, `systemd-wrapper=0`, `verificar.mjs=0`, sin bypass de
+concurrencia, sin procesos residuales y sin stack e2e restante.
+
+Integración: fast-forward de `main`
+`8d075bfaaa7ee55422d482801c50df9624e3a25e` →
+`0c45aca224f4685bd1ff0c0cd3ac139db3c49438`.
+
+No entró el arreglo de base vacía ni otro alcance de #2. Tampoco entró ningún
+`.env`: la identidad local usada para la verificación quedó fuera del commit.
+
+Con esto, **§3 deja de ser pendiente**. La entrada histórica del 5 de septiembre
+que explica por qué se adelantó la extracción se conserva: una cosa registra la
+decisión y su origen; ésta registra que el trabajo ya llegó a `main` y pasó su
+puerta.

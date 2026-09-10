@@ -1,46 +1,19 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Sillar.Shared.Replication;
 
 namespace Sillar.Modules.Catalog.Data.Configurations;
 
 /// <summary>
-/// Las columnas que llevan todas las tablas replicadas (ADR-016, regla 4).
+/// Lo que el catálogo mapea igual en todas sus tablas.
 /// </summary>
-internal static class ReplicationColumns
+/// <remarks>
+/// Las cuatro columnas de replicación ya no están aquí: son iguales en CORE, en
+/// Catalog y en CRM, así que viven una sola vez en
+/// <c>Sillar.Shared.Data.Replication.ReplicationMapping</c>. Lo que queda es lo
+/// que de verdad es del catálogo.
+/// </remarks>
+internal static class CatalogColumns
 {
-    /// <summary>Mapea nodo de origen, versión y fechas.</summary>
-    public static void MapReplication<T>(this EntityTypeBuilder<T> builder)
-        where T : class, IReplicatedEntity
-    {
-        // text, no varchar: el SPEC §6 lo declara así y en PostgreSQL no hay
-        // diferencia de rendimiento. Un límite arbitrario aquí solo serviría
-        // para rechazar el nombre de un nodo el día que alguien elija uno largo.
-        builder.Property(x => x.OriginNode)
-            .HasColumnName("origin_node")
-            .IsRequired();
-
-        builder.Property(x => x.RowVersion)
-            .HasColumnName("row_version")
-            .HasDefaultValue(1L)
-            .ValueGeneratedNever();
-
-        builder.Property(x => x.CreatedAt)
-            .HasColumnName("created_at")
-            .HasColumnType("timestamptz")
-            .HasDefaultValueSql("now()")
-            .ValueGeneratedOnAdd();
-
-        // La escribe el trigger catalog.set_updated_at(). Marcada como generada
-        // para que EF la relea tras guardar y la entidad en memoria refleje lo
-        // que puso la base.
-        builder.Property(x => x.UpdatedAt)
-            .HasColumnName("updated_at")
-            .HasColumnType("timestamptz")
-            .HasDefaultValueSql("now()")
-            .ValueGeneratedOnAddOrUpdate();
-    }
-
     /// <summary>
     /// Mapea la clave primaria <c>uuid</c> de una entidad del catálogo.
     /// </summary>

@@ -56,6 +56,7 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import { tomarCerrojo } from './cerrojo.mjs';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -451,6 +452,147 @@ function migrar(proyecto) {
 // En modo autoprueba no se comprueba ningún entorno: se provoca el veredicto y
 // se sale. Anunciarlo aquí haría creer que sí, y esa clase de mentira pequeña es
 // justo la que este bloque entero viene a quitar.
+/**
+ * ================== LA SALIDA DELIBERADA DE LA EXCLUSIVIDAD ==================
+ *
+ *     SILLAR_VERIFY_PERMITIR_CONCURRENCIA="medir dos puertas en la máquina nueva" \
+ *       node scripts/verificar.mjs
+ *
+ * **Por qué existe.** El cerrojo serializa la máquina porque hoy la máquina no
+ * da para dos puertas. Eso es un hecho de esta máquina, no una ley: en una con
+ * núcleos y memoria de sobra, correr dos a la vez es justamente lo que hay que
+ * medir para saber si se puede. Sin una salida con nombre, el día que haga
+ * falta se resolverá con un `rm` del cerrojo —que es enseñar a saltárselo— o
+ * con un parche local que nadie revisa.
+ *
+ * **Por qué su valor es una frase y no un `1`.** Un interruptor booleano se
+ * queda puesto: alguien lo exporta en su perfil una tarde y a partir de ahí la
+ * máquina no tiene cerrojo y nadie lo sabe. Una razón hay que escribirla cada
+ * vez, y sobre todo **se puede leer después**: se repite en la cabecera del
+ * informe, así que un rojo de esa corrida llega ya acompañado de por qué se
+ * corrió sin exclusión. Un `=1` no habría dejado ni rastro.
+ *
+ * Y por eso vacío no es «sí». Vacío es una variable que dice que sí sin decir
+ * por qué, que es exactamente lo que esto viene a impedir: la puerta se niega
+ * y no toca ningún cerrojo.
+ *
+ * Tres respuestas, como todo lo demás aquí:
+ *
+ *   `{ normal: true }`      no está definida: cerrojo como siempre
+ *   `{ rechazo: motivo }`   está y no dice nada: la puerta no arranca
+ *   `{ permitido: razón }`  está y dice por qué: se corre sin exclusión
+ */
+function decidirLaConcurrencia(valor) {
+  if (valor === undefined || valor === null) {
+    return { normal: true };
+  }
+
+  const razon = String(valor).trim();
+
+  if (razon === '') {
+    return {
+      rechazo:
+        'SILLAR_VERIFY_PERMITIR_CONCURRENCIA está definida pero vacía, y una excepción '
+        + 'sin razón escrita no es una excepción: es un cerrojo desactivado a escondidas',
+    };
+  }
+
+  return { permitido: razon };
+}
+
+/**
+ * **La marca que acompaña al informe cuando la corrida se saltó la exclusión.**
+ *
+ * Va en la cabecera —antes del `TODO EN VERDE` y antes del `FALLÓ`— y no solo
+ * al arrancar. Un aviso impreso hace treinta minutos, por encima del registro
+ * de seis etapas, no existe: lo que se lee de un rojo es el final. Sin esto,
+ * un rojo producido a propósito con dos puertas encima se leería igual que uno
+ * de una corrida sola, que es la confusión más cara que hay aquí.
+ */
+function cabeceraDeConcurrencia() {
+  if (!CONCURRENCIA.permitido) {
+    return [];
+  }
+
+  // **Dos hechos, no uno.** Que se corrió sin exclusión, y qué se llegó a
+  // saber de si había alguien más. El segundo se perdía: se decía al arrancar
+  // y desaparecía del informe, y entonces una corrida que NO pudo comprobar
+  // nada se leía exactamente igual que una que comprobó y estaba sola.
+  const segunda = {
+    viva: '   Y había otra puerta corriendo: esta corrida le hizo ruido.',
+    ninguna: '   No había ninguna otra puerta viva: comprobado.',
+    ciega: '   No se pudo comprobar si existe otra puerta corriendo;\n'
+      + '   la inspección del cerrojo no estuvo disponible.',
+    'sin mirar': '   El cerrojo no llegó a mirarse.',
+  }[INSPECCION.estado] ?? `   Estado de la inspección del cerrojo: ${INSPECCION.estado}.`;
+
+  return [
+    '',
+    color.amarillo('══ CONCURRENCIA AUTORIZADA ═════════════════════════════════════════'),
+    color.amarillo(`   Esta corrida se ejecutó SIN cerrojo, a propósito. Razón dada:`),
+    color.amarillo(`   «${CONCURRENCIA.permitido}»`),
+    color.amarillo(segunda),
+    ...(INSPECCION.detalle ? [color.amarillo(`   (${INSPECCION.detalle})`)] : []),
+    color.amarillo('   Lo que salga abajo puede llevar ruido de otra puerta corriendo a la vez.'),
+    color.amarillo('════════════════════════════════════════════════════════════════════'),
+  ];
+}
+
+// **El cerrojo se toma antes que nada, y antes que ningún anuncio.**
+//
+// Antes que nada de lo caro, para que la negativa llegue en el primer segundo
+// y no después de compilar el backend. Y antes del anuncio de aquí abajo
+// porque estuvo un rato después: la segunda puerta escribía «Comprobando el
+// entorno...» y se negaba a continuación, afirmando haber comprobado algo que
+// no comprobó. No costaba nada y no rompía nada; es exactamente la clase de
+// mentira pequeña que el comentario de este mismo bloque dice venir a quitar.
+//
+// La autoprueba del veredicto no toma cerrojo: es un diagnóstico que no toca
+// la máquina, y bloquear con él a quien esté corriendo la puerta de verdad
+// sería absurdo.
+//
+// **Y hay una salida, deliberada y con nombre: `SILLAR_VERIFY_PERMITIR_CONCURRENCIA`.**
+// Lo que decide si se toma o no se toma está justo debajo.
+const CONCURRENCIA = decidirLaConcurrencia(process.env.SILLAR_VERIFY_PERMITIR_CONCURRENCIA);
+
+if (CONCURRENCIA.rechazo) {
+  // **Antes de tocar ningún cerrojo, y por eso no se toca ninguno.** Ni se
+  // toma, ni se rompe, ni se borra: la invocación está mal escrita y lo único
+  // que pasa es que la puerta no arranca.
+  console.error(`\n${color.rojo('La puerta no arranca')}: ${CONCURRENCIA.rechazo}\n`);
+  console.error('  SILLAR_VERIFY_PERMITIR_CONCURRENCIA no es un interruptor: su valor es la');
+  console.error('  razón humana por la que esta corrida se salta la exclusión, y esa razón se');
+  console.error('  repite en la cabecera del informe para que un rojo posterior no se lea sin');
+  console.error('  ella. Una variable puesta a vacío diría «sí» sin decir por qué.\n');
+  console.error('  Así se escribe:');
+  console.error('      SILLAR_VERIFY_PERMITIR_CONCURRENCIA="medir dos puertas en la máquina nueva" \\');
+  console.error('        node scripts/verificar.mjs\n');
+  console.error('  Y si lo que quieres es lo normal —una puerta cada vez— no la definas.\n');
+  process.exit(1);
+}
+
+/**
+ * **Lo que se llegó a saber del cerrojo, guardado hasta el informe final.**
+ *
+ * Empieza en `sin mirar` y solo lo cambia el propio cerrojo. Vive aquí, y no
+ * dentro del módulo del cerrojo, porque quien tiene que repetirlo media hora
+ * después es la puerta: el dato se sabe en el primer segundo y hace falta en
+ * el último.
+ */
+const INSPECCION = { estado: 'sin mirar', detalle: null };
+
+const soltarCerrojo =
+  process.env.SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO === '1'
+    ? () => {}
+    : tomarCerrojo({
+      raiz: RAIZ,
+      color,
+      concurrencia: CONCURRENCIA.permitido ?? null,
+      anotar: (lo) => Object.assign(INSPECCION, lo),
+    });
+
+process.on('exit', () => soltarCerrojo());
+
 if (process.env.SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO !== '1') {
   console.log(color.gris('Comprobando el entorno...'));
 }
@@ -596,6 +738,20 @@ const INICIO = new Date();
  * Firmas de fallo que **no son del código**. Cada una está inventariada en
  * `docs/ENTORNO.md` con su causa y cómo se reconoce.
  */
+/**
+ * **La línea de resultado de Playwright: la prueba de que la suite corrió.**
+ *
+ * `  1 failed` / `  126 passed (18.7m)`. Si está, el stack se levantó, el
+ * navegador arrancó y las specs se ejecutaron — pase lo que pase después en el
+ * log. Ninguna firma que signifique «algo del stack no llegó a levantarse»
+ * puede hablar por encima de esto.
+ *
+ * Va anclada a principio de línea con `m` a propósito: dentro de un mensaje de
+ * error puede aparecer cualquier cosa que se le parezca, pero el reportero
+ * `list` la escribe siempre en su propia línea.
+ */
+const LA_SUITE_CORRIO = /^\s*\d+ (passed|failed|flaky|skipped)\b/m;
+
 const FIRMAS_DE_ENTORNO = [
   [/ERR_NETWORK_CHANGED/i, 'la red cambió durante la corrida (causa 3 o 4 de docs/ENTORNO.md)'],
   [/ERR_NETWORK_IO_SUSPENDED/i, 'la entrada/salida de red quedó suspendida'],
@@ -603,7 +759,31 @@ const FIRMAS_DE_ENTORNO = [
   [/Temporary failure in name resolution/i, 'el DNS dejó de resolver (causa 3 de docs/ENTORNO.md)'],
   [/Cannot connect to the Docker daemon|docker daemon is not running/i, 'Docker no estaba en pie'],
   [/no space left on device/i, 'el disco se llenó'],
-  [/Connection refused .*5\d{4}|ECONNREFUSED/i, 'algo del stack no llegó a levantarse'],
+  // Tres formas del mismo hecho, y hubo que añadir las dos últimas.
+  //
+  // La primera es la de Node y la del navegador: `ECONNREFUSED`, o el mensaje
+  // con el puerto pegado detrás. La tercera y la cuarta son **las de .NET**, y
+  // no las cazaba ninguna de las dos: Npgsql parte la información en dos
+  // líneas —el destino en una, el motivo en la siguiente— y `.` no cruza saltos
+  // de línea, así que `Connection refused .*5\d{4}` no coincidía nunca con
+  // esto:
+  //
+  //     Npgsql.NpgsqlException: Failed to connect to 127.0.0.1:55900
+  //      ---> System.Net.Sockets.SocketException (111): Connection refused
+  //
+  // Es decir: la etapa de migraciones podía morir por un stack que no llegó a
+  // levantarse y el veredicto se quedaba callado, que es exactamente lo que la
+  // bitácora §4 llama una barrera que no se distingue de una que funciona.
+  [/Connection refused .*5\d{4}|ECONNREFUSED/i, 'algo del stack no llegó a levantarse', LA_SUITE_CORRIO],
+  [/Failed to connect to \S*:5\d{4}/i, 'algo del stack no llegó a levantarse (.NET no llegó a la base)', LA_SUITE_CORRIO],
+  [/SocketException \(111\)/i, 'algo del stack no llegó a levantarse (.NET: conexión rechazada)', LA_SUITE_CORRIO],
+  // El Vite del arnés arranca con --strictPort, así que este mensaje solo sale
+  // cuando otro proceso ya tiene el puerto. Con la identidad e2e compartida
+  // entre worktrees —hoy la comparten cuatro— es lo que ve el segundo frente
+  // que lanza la puerta. Se añadió el 5 de septiembre de 2026, después de que
+  // el veredicto callara ante exactamente este fallo pudiendo hablar.
+  [/is already used, make sure that nothing is running on the port/i,
+    'el puerto del Vite ya estaba ocupado: otra worktree está corriendo la suite (docs/ENTORNO.md, hallazgo 5)'],
 ];
 
 /**
@@ -861,7 +1041,29 @@ function veredicto(etapa, mensaje, sondas = SONDAS_REALES) {
     return cerrar(lineas);
   }
 
-  for (const [patron, explicacion] of FIRMAS_DE_ENTORNO) {
+  for (const [patron, explicacion, desmentido] of FIRMAS_DE_ENTORNO) {
+    // **Una firma habla solo si su desmentido calla.**
+    //
+    // El 6 de septiembre de 2026 el veredicto dijo, con seguridad, «algo del
+    // stack no llegó a levantarse» sobre una corrida en la que el stack se
+    // levantó y la suite corrió entera: los `ECONNREFUSED` eran ruido del
+    // proxy de Vite en el log DESPUÉS de la línea de resultado de Playwright.
+    // La prueba de que la firma era imposible estaba dentro del mismo texto
+    // que la firma estaba leyendo.
+    //
+    // Es la tercera forma de lo que la bitácora §4 ya describe: una barrera
+    // que calla, una que se detiene en falso, y ésta, que **habla con
+    // seguridad y se equivoca**. Es la peor de las tres, porque las otras dos
+    // te dejan mirar y ésta dice «no mires el código» justo cuando el código
+    // es lo único que hay que mirar.
+    //
+    // El desmentido no es un caso especial de esta firma: es un campo de la
+    // tupla, porque cualquier firma que afirme algo sobre el entorno puede
+    // toparse con la prueba de que no ocurrió.
+    if (desmentido && desmentido.test(mensaje)) {
+      continue;
+    }
+
     if (patron.test(mensaje)) {
       lineas.push(color.amarillo(`ES DEL ENTORNO (probable) — ${explicacion}.`));
       lineas.push(`  Coincide con ${patron}. Antes de mirar el código, mira docs/ENTORNO.md.`);
@@ -904,13 +1106,481 @@ function veredicto(etapa, mensaje, sondas = SONDAS_REALES) {
   return cerrar(lineas);
 }
 
+/** Sonda de mentira que dice «miré y no había nada». */
+const limpia = () => LIMPIO;
+
+/** Sonda de mentira que dice «no pude mirar, y por esto». */
+const ciega = (motivo) => () => ({ ciego: motivo });
+
+/**
+ * **Las entradas con las que se provoca cada rama del veredicto.**
+ *
+ * Viven aquí arriba y no dentro de la autoprueba porque las usan dos: el
+ * comando de diagnóstico y la comprobación previa de la propia puerta. Una sola
+ * lista, para que no puedan discrepar.
+ */
+const PROVOCACIONES = [
+  {
+    nombre: 'suspensión del equipo',
+    etapa: 'suite e2e',
+    mensaje: 'da igual',
+    sondas: {
+      // La función real de búsqueda, con un diario sintético: lo único que se
+      // sustituye es de dónde sale el texto, no quién decide.
+      suspension: () => buscarSuspension(
+        'kernel: algo irrelevante\nsystemd-logind[1]: The system will sleep now!\nkernel: más ruido',
+      ),
+      carga: limpia,
+      ficheros: limpia,
+    },
+    espera: 'ES DEL ENTORNO — el equipo se suspendió',
+  },
+  {
+    nombre: 'máquina saturada',
+    etapa: 'suite e2e',
+    mensaje: 'Se navegó a «/admin» y la aplicación no llegó a pintar en 15 s.',
+    sondas: {
+      suspension: limpia,
+      carga: () => cargaExcesiva(24, 8),
+      ficheros: limpia,
+    },
+    espera: 'la máquina estaba saturada',
+  },
+  {
+    // La provocación al revés: aquí se exige que el veredicto NO atribuya al
+    // entorno. Es la única del conjunto que se comprueba por ausencia, y por
+    // eso lleva `noEspera` en vez de `espera`.
+    nombre: 'ECONNREFUSED de ruido, con la suite ya corrida',
+    etapa: 'suite e2e',
+    mensaje:
+      'Terminó con código 1.\n'
+      + '  1 failed\n'
+      + '    [chromium] › tests/recorrido.spec.ts:28:1 › El recorrido de la demostración\n'
+      + '  126 passed (18.7m)\n'
+      + '[WebServer] AggregateError [ECONNREFUSED]:\n'
+      + '    at internalConnectMultiple (node:net:1122:18)',
+    sondas: { suspension: limpia, carga: limpia, ficheros: limpia },
+    noEspera: 'algo del stack no llegó a levantarse',
+    // Y lo que sí debe decir: que no lo sabe. «Sin veredicto» es la respuesta
+    // correcta aquí, y es mejor que la falsa: deja mirar el código en vez de
+    // mandar a mirar el entorno.
+    espera: 'Sin veredicto',
+  },
+  {
+    nombre: 'firma de .NET: Npgsql no llegó a la base',
+    etapa: 'migraciones backend (BD efímera)',
+    mensaje:
+      'Npgsql.NpgsqlException (0x80004005): Failed to connect to 127.0.0.1:55900\n'
+      + ' ---> System.Net.Sockets.SocketException (111): Connection refused',
+    sondas: { suspension: limpia, carga: limpia, ficheros: limpia },
+    espera: 'algo del stack no llegó a levantarse',
+  },
+  {
+    nombre: 'firma de entorno conocida',
+    etapa: 'suite e2e',
+    mensaje: 'Failed to load resource: net::ERR_NETWORK_CHANGED',
+    sondas: { suspension: limpia, carga: limpia, ficheros: limpia },
+    espera: 'la red cambió durante la corrida',
+  },
+  {
+    nombre: 'la rama no toca el ámbito',
+    etapa: 'pruebas del backend',
+    mensaje: 'Terminó con código 1.',
+    sondas: {
+      suspension: limpia,
+      carga: limpia,
+      ficheros: () => ({ visto: { ficheros: ['docs/ENTORNO.md'], referencia: 'origin/main' } }),
+    },
+    espera: 'NO PARECE TUYO',
+  },
+  {
+    nombre: 'la rama sí toca el ámbito',
+    etapa: 'pruebas del backend',
+    mensaje: 'Terminó con código 1.',
+    sondas: {
+      suspension: limpia,
+      carga: limpia,
+      ficheros: () => ({ visto: { ficheros: ['backend/Sillar.Core/Data/CoreDbContext.cs'], referencia: 'main' } }),
+    },
+    espera: 'toca 1 fichero(s) del ámbito',
+    // Y la segunda dirección de la misma detección: que **no** devuelva el rojo
+    // a otro frente cuando la rama sí toca lo que falló. Es lo que separa una
+    // barrera provocada de una vista disparar.
+    noEspera: 'NO PARECE TUYO',
+  },
+  // ---------------------------------------------------------------------
+  // **Las que se comprueban por ausencia.**
+  //
+  // Una barrera vista disparar está a medias: falta saber que no dispara
+  // cuando no debe. Es la segunda dirección del hábito de provocar, y se
+  // descubrió con la guarda de `.media-e2e`, que **paraba en falso** —leía
+  // «no soy el dueño» como «lo creó docker como root»— y bloqueaba al frente
+  // de al lado. Una barrera que para en falso es la misma enfermedad que una
+  // que calla: en las dos, lo que dice no depende de lo que pasa.
+  //
+  // Y aquí cuesta más caro que en una guarda, porque el veredicto **manda a
+  // mirar a otro sitio**. Atribuir al entorno un rojo del código hace perder
+  // la tarde en `docs/ENTORNO.md`; devolverle a otro frente un rojo que es
+  // suyo se la hace perder a él.
+  // ---------------------------------------------------------------------
+  {
+    nombre: 'el diario nombra sleep pero nadie se suspendió',
+    etapa: 'suite e2e',
+    mensaje: 'Terminó con código 1.',
+    sondas: {
+      // La función real, con un diario sintético que habla de «sleep» todo el
+      // rato: son los propios inhibidores de la puerta. Si la detección mirara
+      // la palabra y no el suceso, aquí es donde se vería.
+      suspension: () => buscarSuspension(
+        'systemd-inhibit[900]: --what=sleep:idle --mode=block --why=SILLAR: puerta canónica en curso sleep 7200\n'
+        + 'systemd-logind[1]: Delay lock acquired (sleep)\n'
+        + 'kernel: nada que ver aquí',
+      ),
+      carga: limpia,
+      ficheros: limpia,
+    },
+    noEspera: 'el equipo se suspendió',
+    espera: 'Sin veredicto',
+  },
+  {
+    nombre: 'la máquina no estaba saturada',
+    etapa: 'suite e2e',
+    mensaje: 'Se navegó a «/admin» y la aplicación no llegó a pintar en 15 s.',
+    // Carga 2 sobre 8 núcleos: la función real, con números normales. El mismo
+    // mensaje que la provocación de «máquina saturada», a propósito: lo único
+    // que cambia es el hecho medido, que es como debe ser.
+    sondas: { suspension: limpia, carga: () => cargaExcesiva(2, 8), ficheros: limpia },
+    noEspera: 'la máquina estaba saturada',
+    espera: 'Sin veredicto',
+  },
+  {
+    nombre: 'un fallo de aserción no es del entorno',
+    etapa: 'suite e2e',
+    mensaje:
+      'Error: expect(locator).toBeHidden() failed\n'
+      + "Locator:  getByRole('dialog')\n"
+      + 'Expected: hidden\nReceived: visible\nTimeout:  10000ms',
+    sondas: { suspension: limpia, carga: limpia, ficheros: limpia },
+    noEspera: 'ES DEL ENTORNO',
+    espera: 'Sin veredicto',
+  },
+  {
+    nombre: 'las tres sondas ciegas se declaran',
+    etapa: 'pruebas del backend',
+    mensaje: 'Terminó con código 1.',
+    sondas: {
+      suspension: ciega('el diario no devolvió nada para la ventana pedida'),
+      carga: ciega('win32 no publica carga media'),
+      ficheros: ciega('no hay origin/main ni main contra el que comparar'),
+    },
+    espera: 'Lo que NO se pudo comprobar (3)',
+  },
+  {
+    nombre: 'colisión de puerto entre worktrees',
+    etapa: 'suite e2e',
+    mensaje:
+      'Error: http://localhost:55173 is already used, make sure that nothing is running on the port/url',
+    sondas: { suspension: limpia, carga: limpia, ficheros: limpia },
+    espera: 'otra worktree está corriendo la suite',
+  },
+  {
+    nombre: 'sin señal, lo dice en vez de callar',
+    etapa: 'pruebas del backend',
+    mensaje: 'Terminó con código 1.',
+    sondas: {
+      suspension: limpia,
+      carga: limpia,
+      ficheros: () => ({ visto: { ficheros: [], referencia: 'origin/main' } }),
+    },
+    espera: 'NO PARECE TUYO',
+  },
+];
+
+/**
+ * Provoca las ramas y devuelve cuáles callaron. **No hace entrada ni salida**:
+ * las sondas son de mentira y el veredicto es una función pura sobre ellas. Por
+ * eso puede correr dentro de la puerta sin coste ni dependencia del entorno.
+ */
+function provocarLasRamas() {
+  return PROVOCACIONES.map(provocarUna);
+}
+
+/**
+ * **Una provocación, y qué pasa cuando la provocación no se puede ejecutar.**
+ *
+ * Antes, una sonda que lanzara —una herramienta que falta, un permiso, una
+ * inyección mal hecha— salía por arriba como excepción no atrapada: traza de
+ * Node, sin decir qué rama era, y por encima del mensaje que dice qué hacer.
+ * Peor todavía en la vía que espera «Lo que NO se pudo comprobar»: allí una
+ * excepción disfrazada de ceguera habría dado el texto esperado y la
+ * provocación habría pasado **sin haber provocado nada**.
+ *
+ * Así que una provocación que revienta no es un accidente del banco de
+ * pruebas: es un rojo con nombre. `rota` lleva el motivo y `disparó` es
+ * `false` pase lo que pase, sin mirar `espera`. «No pude comprobarlo» no se
+ * escribe nunca como «pasó».
+ */
+function provocarUna(caso) {
+  let salida;
+
+  try {
+    const lineas = veredicto(caso.etapa, caso.mensaje, caso.sondas);
+
+    if (!Array.isArray(lineas)) {
+      return {
+        ...caso,
+        salida: `el veredicto no devolvió líneas, devolvió ${typeof lineas}`,
+        disparó: false,
+        rota: `el veredicto no devolvió líneas, devolvió ${typeof lineas}`,
+      };
+    }
+
+    salida = lineas
+      .join('\n')
+      // Sin colores: comparar texto con secuencias de escape dentro es frágil.
+      .replace(/\x1b\[[0-9;]*m/g, '');
+  } catch (error) {
+    const motivo = `la provocación no se pudo ejecutar: ${error.message}`;
+    return { ...caso, salida: motivo, disparó: false, rota: motivo };
+  }
+
+  const dijoLoQueDebe = salida.includes(caso.espera);
+  const calloLoQueDebe = caso.noEspera === undefined || !salida.includes(caso.noEspera);
+
+  return { ...caso, salida, disparó: dijoLoQueDebe && calloLoQueDebe };
+}
+
+/**
+ * **Lo que el veredicto no puede saber, dicho después de él.**
+ *
+ * El veredicto mira el diario, la carga y los ficheros de la rama. No mira la
+ * variable de entorno con la que se lanzó la puerta, y no debe: es una función
+ * pura y las trece provocaciones dependen de que lo siga siendo.
+ *
+ * Pero entonces, con concurrencia autorizada, su respuesta más probable es
+ * «Sin veredicto: ninguna señal permite atribuirlo automáticamente» — que
+ * leída con prisa es «no es del entorno, luego es del código». **Eso sería
+ * reclasificar como producto un rojo de una corrida que declaró tener otra
+ * puerta encima.** Así que el veredicto no es la última palabra: debajo va lo
+ * que él no podía saber, con la razón literal otra vez.
+ *
+ * No se toca la lógica del veredicto ni se le añade una sonda: se le pone al
+ * lado el dato que le falta.
+ */
+function loQueElVeredictoNoSabe() {
+  if (!CONCURRENCIA.permitido) {
+    return [];
+  }
+
+  // Con la inspección ciega el aviso es más fuerte, y tiene que serlo: no solo
+  // pudo haber otra puerta, es que **no se sabe** si la había. Atribuir ese
+  // rojo a la rama sería atribuirlo a lo único que se puede nombrar.
+  const noSeSabe = INSPECCION.estado === 'ciega'
+    ? [
+      color.amarillo('  y ni siquiera se pudo comprobar si había otra puerta corriendo:'),
+      color.amarillo(`  la inspección del cerrojo no estuvo disponible (${INSPECCION.detalle}).`),
+      color.amarillo('  Este resultado NO se puede atribuir limpiamente a esta rama.'),
+    ]
+    : [
+      color.amarillo('  así que compartió Docker, puertos y carga con lo que hubiera al lado.'),
+      color.amarillo('  Un rojo así no se da por del código sin repetirlo con la máquina para uno solo.'),
+    ];
+
+  return [
+    '',
+    color.amarillo('  Y una cosa que el veredicto de arriba no mira:'),
+    color.amarillo(`  esta corrida se lanzó con concurrencia autorizada —«${CONCURRENCIA.permitido}»—,`),
+    ...noSeSabe,
+  ];
+}
+
+/**
+ * ======================= LA IDENTIDAD NO SE ESCRIBE =======================
+ *
+ * **De dónde sale esta comprobación, que es lo que la justifica.**
+ *
+ * Al derivar la identidad de la worktree se quitó el nombre de la base e2e de
+ * `e2e/setup/docker.ts`, que era donde se recordaba haberlo visto. Quedaban
+ * cuatro sitios más —los seeds en `migrate.ts`, tres consultas en
+ * `zz-instalacion.spec.ts` y el `stack:down` de `package.json`— y las dos
+ * puertas de la medición concurrente murieron en el mismo punto:
+ *
+ *     FATAL: database "sillar_e2e" does not exist
+ *
+ * con los contenedores ya levantados y con el nombre correcto. El fallo no fue
+ * el literal: fue **buscar donde uno recuerda en vez de enumerar**, que es
+ * exactamente lo que la bitácora §4 llama fiarse del que filtra. Escrito por
+ * quien lo escribió y repetido por quien lo escribió.
+ *
+ * Una lección aprendida que no se convierte en comando se vuelve a aprender.
+ * Esto es el comando.
+ *
+ * **Lo que mira y lo que no.** Solo el código que habla con los dos stacks
+ * —`e2e/` y `scripts/`—, y solo literales **entrecomillados**: un nombre de
+ * base escrito en prosa no rompe nada. Las líneas de comentario se saltan, y
+ * por eso el propio comentario de arriba puede citar el error sin disparar la
+ * barrera. `scripts/identidad.mjs` queda fuera porque es donde esos nombres se
+ * construyen: es la única definición legítima.
+ */
+
+/** Un nombre de base o de proyecto de los que se derivan, escrito a mano. */
+const IDENTIDAD_A_MANO = /(['"`])(sillar(?:_[a-z0-9]+)*_(?:e2e|dev))\1/;
+
+/** Comentario de línea, de bloque, o de shell: no es código que se ejecute. */
+const ES_COMENTARIO = /^\s*(\/\/|\/?\*|#)/;
+
+/**
+ * La decisión, pura, para poder provocarla sin tocar el disco.
+ *
+ * Devuelve las líneas ofensivas de un texto. Vacío significa limpio.
+ */
+function identidadEscritaAMano(texto) {
+  const encontradas = [];
+
+  texto.split('\n').forEach((linea, i) => {
+    if (ES_COMENTARIO.test(linea)) {
+      return;
+    }
+
+    const m = IDENTIDAD_A_MANO.exec(linea);
+
+    if (m) {
+      encontradas.push({ linea: i + 1, nombre: m[2], texto: linea.trim() });
+    }
+  });
+
+  return encontradas;
+}
+
+/** Los ficheros que hablan con los stacks, enumerados por git y no por memoria. */
+function ficherosQueTocanLaIdentidad() {
+  return decidirLaEnumeracion(
+    spawnSync('git', ['ls-files', 'e2e', 'scripts'], { cwd: RAIZ, encoding: 'utf8' }),
+  );
+}
+
+/**
+ * **Qué se enumeró, o por qué no se pudo enumerar.**
+ *
+ * Aparte de la llamada para poder provocarla: recibe el resultado de
+ * `spawnSync` tal cual y no ejecuta nada.
+ *
+ * **La vía que faltaba es la última, y es la peor.** `status !== 0` ya se
+ * miraba; lo que no se miraba era un `git` que dijera que sí y no listara
+ * nada. Entonces el bucle de abajo recorría cero ficheros, no encontraba
+ * ningún nombre escrito a mano —no había dónde encontrarlo— y la barrera
+ * pasaba en verde **sin haber mirado nada**. Es la forma exacta de «no pude
+ * comprobarlo» disfrazada de «está limpio», que es lo que esta barrera existe
+ * para no hacer: enumerar en vez de fiarse.
+ *
+ * Un árbol donde `git ls-files e2e scripts` no devuelve nada no existe: este
+ * mismo fichero está dentro de `scripts/`. Así que cero ficheros no es un
+ * árbol limpio, es una enumeración rota.
+ */
+function decidirLaEnumeracion(r) {
+  if (r.error) {
+    return { ciego: `no se pudo ejecutar git: ${r.error.code ?? r.error.message}` };
+  }
+
+  if (typeof r.status !== 'number') {
+    return { ciego: 'git ls-files terminó sin código de salida: lo mató una señal' };
+  }
+
+  if (r.status !== 0) {
+    return { ciego: `git ls-files terminó con código ${r.status}` };
+  }
+
+  const texto = typeof r.stdout === 'string' ? r.stdout : '';
+
+  const visto = texto
+    .split('\n')
+    .map((f) => f.trim())
+    .filter((f) => /\.(ts|mjs|js|json)$/.test(f))
+    .filter((f) => f !== 'scripts/identidad.mjs');
+
+  if (visto.length === 0) {
+    return {
+      ciego:
+        'git ls-files no listó ni un fichero de e2e/ ni de scripts/, así que la barrera '
+        + 'no habría mirado nada y habría pasado en verde por no tener dónde mirar',
+    };
+  }
+
+  return { visto };
+}
+
+/**
+ * Aborta la puerta si alguien volvió a escribir a mano un nombre que se deriva.
+ *
+ * Se niega también si **no puede mirar**, por la misma razón que el cerrojo: una
+ * comprobación que no pudo hacerse no es una comprobación que salió bien.
+ */
+function comprobarQueNadieEscribeLaIdentidad() {
+  const ficheros = ficherosQueTocanLaIdentidad();
+
+  if (ficheros.ciego) {
+    console.error(`\n${color.rojo('La puerta no arranca')}: no se pudo enumerar el código.`);
+    console.error(`  ${ficheros.ciego}\n`);
+    process.exit(1);
+  }
+
+  const malos = [];
+  const noLeidos = [];
+
+  for (const f of ficheros.visto) {
+    let texto;
+    try {
+      texto = readFileSync(path.join(RAIZ, f), 'utf8');
+    } catch (e) {
+      // **Antes esto era un `continue` a secas, y era un agujero.** Un fichero
+      // que no se puede leer —permisos, un enlace roto, un `git ls-files` que
+      // nombra algo que ya no está— se saltaba en silencio y la barrera decía
+      // verde sobre un fichero que nadie miró. Un fichero sin mirar no es un
+      // fichero limpio.
+      noLeidos.push({ fichero: f, motivo: e.code ?? e.message });
+      continue;
+    }
+    for (const hallazgo of identidadEscritaAMano(texto)) {
+      malos.push({ fichero: f, ...hallazgo });
+    }
+  }
+
+  if (noLeidos.length > 0) {
+    console.error(`\n${color.rojo('La puerta no arranca')}: ${noLeidos.length} fichero(s) que la barrera debía mirar no se pudieron leer.\n`);
+    for (const n of noLeidos) {
+      console.error(`  ${n.fichero}  —  ${n.motivo}`);
+    }
+    console.error('\n  No se pasa por encima: un fichero sin leer no es un fichero limpio, y ésta');
+    console.error('  es la barrera que impide que un nombre de base escrito a mano apunte a la');
+    console.error('  worktree de otro.\n');
+    process.exit(1);
+  }
+
+  if (malos.length === 0) {
+    return;
+  }
+
+  console.error(`\n${color.rojo('La identidad de la worktree está escrita a mano')} en ${malos.length} sitio(s).\n`);
+  console.error('  Estos nombres se derivan del directorio del árbol. Escritos a mano apuntan');
+  console.error('  a la worktree de otro, o a una base que ya no existe con ese nombre:\n');
+
+  for (const m of malos) {
+    console.error(`  ${m.fichero}:${m.linea}  «${m.nombre}»`);
+    console.error(color.gris(`      ${m.texto}`));
+  }
+
+  console.error('\n  Sale de e2e/setup/env.ts (DB_NAME, PROJECT_NAME) o de scripts/identidad.mjs.\n');
+  process.exit(1);
+}
+
 /**
  * **Provoca cada barrera del veredicto y comprueba que dispara.**
  *
  *     SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1 node scripts/verificar.mjs
  *
- * No lanza la puerta: alimenta el veredicto con sondas de mentira y mira lo que
- * escribe. Termina en 0 si las siete disparan, en 1 si alguna calla.
+ * No lanza la puerta: alimenta el veredicto con sondas de mentira, enseña lo que
+ * escribe cada rama, y además llama a las sondas de verdad para ver que
+ * contestan. Termina en 0 si todo dispara, en 1 si algo calla.
  *
  * **Por qué existe.** Tres veces en este proyecto una barrera escrita resultó no
  * poder disparar nunca: el inhibidor con la receta que se tragaba el código de
@@ -920,108 +1590,41 @@ function veredicto(etapa, mensaje, sondas = SONDAS_REALES) {
  *
  * Una barrera que calla no se distingue de una barrera que funciona. La pregunta
  * que lo reconoce es «¿alguna vez la he visto decir que no?», y si la respuesta
- * es no, lo que se sabe de ella es que compila. Esto es esa pregunta convertida
- * en comando, para que la respuesta no dependa de acordarse.
+ * es no, lo que se sabe de ella es que compila.
+ *
+ * **Y de acordarse ya no depende:** las provocaciones sintéticas corren también
+ * dentro de la puerta, antes de la etapa 1 — ver `comprobarQueElVeredictoHabla`.
+ * Este comando existe para lo que allí no cabe: enseñar lo que escribe cada rama
+ * y ejercitar las sondas reales, que sí dependen de la máquina.
  */
 function autoprobarVeredicto() {
-  const ciega = (motivo) => () => ({ ciego: motivo });
-  const limpia = () => LIMPIO;
-
-  const casos = [
-    {
-      nombre: 'suspensión del equipo',
-      etapa: 'suite e2e',
-      mensaje: 'da igual',
-      sondas: {
-        // La función real de búsqueda, con un diario sintético: lo único que se
-        // sustituye es de dónde sale el texto, no quién decide.
-        suspension: () => buscarSuspension(
-          'kernel: algo irrelevante\nsystemd-logind[1]: The system will sleep now!\nkernel: más ruido',
-        ),
-        carga: limpia,
-        ficheros: limpia,
-      },
-      espera: 'ES DEL ENTORNO — el equipo se suspendió',
-    },
-    {
-      nombre: 'máquina saturada',
-      etapa: 'suite e2e',
-      mensaje: 'Se navegó a «/admin» y la aplicación no llegó a pintar en 15 s.',
-      sondas: {
-        suspension: limpia,
-        carga: () => cargaExcesiva(24, 8),
-        ficheros: limpia,
-      },
-      espera: 'la máquina estaba saturada',
-    },
-    {
-      nombre: 'firma de entorno conocida',
-      etapa: 'suite e2e',
-      mensaje: 'Failed to load resource: net::ERR_NETWORK_CHANGED',
-      sondas: { suspension: limpia, carga: limpia, ficheros: limpia },
-      espera: 'la red cambió durante la corrida',
-    },
-    {
-      nombre: 'la rama no toca el ámbito',
-      etapa: 'pruebas del backend',
-      mensaje: 'Terminó con código 1.',
-      sondas: {
-        suspension: limpia,
-        carga: limpia,
-        ficheros: () => ({ visto: { ficheros: ['docs/ENTORNO.md'], referencia: 'origin/main' } }),
-      },
-      espera: 'NO PARECE TUYO',
-    },
-    {
-      nombre: 'la rama sí toca el ámbito',
-      etapa: 'pruebas del backend',
-      mensaje: 'Terminó con código 1.',
-      sondas: {
-        suspension: limpia,
-        carga: limpia,
-        ficheros: () => ({ visto: { ficheros: ['backend/Sillar.Core/Data/CoreDbContext.cs'], referencia: 'main' } }),
-      },
-      espera: 'toca 1 fichero(s) del ámbito',
-    },
-    {
-      nombre: 'las tres sondas ciegas se declaran',
-      etapa: 'pruebas del backend',
-      mensaje: 'Terminó con código 1.',
-      sondas: {
-        suspension: ciega('el diario no devolvió nada para la ventana pedida'),
-        carga: ciega('win32 no publica carga media'),
-        ficheros: ciega('no hay origin/main ni main contra el que comparar'),
-      },
-      espera: 'Lo que NO se pudo comprobar (3)',
-    },
-    {
-      nombre: 'sin señal, lo dice en vez de callar',
-      etapa: 'pruebas del backend',
-      mensaje: 'Terminó con código 1.',
-      sondas: {
-        suspension: limpia,
-        carga: limpia,
-        ficheros: () => ({ visto: { ficheros: [], referencia: 'origin/main' } }),
-      },
-      espera: 'NO PARECE TUYO',
-    },
-  ];
-
   console.log('Provocando las barreras del veredicto, una a una.\n');
+
+  const resultados = provocarLasRamas();
   let fallos = 0;
 
-  for (const caso of casos) {
-    const salida = veredicto(caso.etapa, caso.mensaje, caso.sondas)
-      .join('\n')
-      // Sin colores: comparar texto con secuencias de escape dentro es frágil.
-      .replace(/\x1b\[[0-9;]*m/g, '');
+  // Cero provocaciones no es «todo bien»: es que no se provocó nada.
+  if (PROVOCACIONES.length === 0 || resultados.length !== PROVOCACIONES.length) {
+    console.error(color.rojo(`Se esperaban ${PROVOCACIONES.length} provocaciones y salieron ${resultados.length}.`));
+    fallos += 1;
+  }
 
-    const disparó = salida.includes(caso.espera);
-    if (!disparó) fallos += 1;
+  for (const r of resultados) {
+    if (!r.disparó) fallos += 1;
 
-    console.log(`${disparó ? color.verde('DISPARA') : color.rojo('CALLA  ')}  ${caso.nombre}`);
-    console.log(color.gris(`          espera: «${caso.espera}»`));
-    console.log(color.gris(salida.split('\n').map((l) => `          ${l}`).join('\n')));
+    // **El rótulo dice qué quedó demostrado, y son dos cosas distintas.**
+    // Toda provocación comprueba lo que el veredicto DICE. Las que además
+    // llevan `noEspera` comprueban lo que CALLA, que es la segunda dirección y
+    // la que faltaba: una barrera vista solo disparar está a medias.
+    const rotulo = r.rota
+      ? color.rojo('NO SE PUDO')
+      : r.disparó
+        ? color.verde(r.noEspera === undefined ? 'DICE      ' : 'DICE Y CALLA')
+        : color.rojo(r.noEspera === undefined ? 'NO LO DICE' : 'NO CALLA    ');
+
+    console.log(`${rotulo}  ${r.nombre}`);
+    console.log(color.gris(`          espera: «${r.espera}»`));
+    console.log(color.gris(r.salida.split('\n').map((l) => `          ${l}`).join('\n')));
     console.log('');
   }
 
@@ -1031,6 +1634,12 @@ function autoprobarVeredicto() {
   // las sondas reales **contestan**, en la forma de tres estados y sin `null`
   // — que es donde estaba el fallo original. No se afirma qué deben responder:
   // eso depende de la máquina. Se afirma que responden algo nombrable.
+  //
+  // **Esta mitad no entra en la puerta, y es a propósito.** Al arrancar, `INICIO`
+  // tiene segundos, así que el diario devuelve vacío y la sonda de suspensión
+  // responde «no pude» con toda la razón. Meterla en el preflight imprimiría esa
+  // alarma en cada corrida sana, y una alarma que suena siempre se deja de leer:
+  // la misma enfermedad que esto viene a curar, por el otro extremo.
   console.log(color.gris('Y lo que responden hoy las sondas de verdad:\n'));
 
   for (const [nombre, sonda] of Object.entries(SONDAS_REALES)) {
@@ -1067,19 +1676,317 @@ function autoprobarVeredicto() {
     return 1;
   }
 
-  console.log(color.verde(`Las ${casos.length} barreras disparan y las ${Object.keys(SONDAS_REALES).length} sondas reales contestan.`));
+  // **La barrera de la identidad escrita a mano, en las dos direcciones.**
+  // Es la que faltaba el día que los seeds murieron: no basta con que encuentre
+  // el literal, hace falta que NO lo encuentre donde no lo hay — si no, la
+  // puerta no arrancaría nunca y se acabaría quitando.
+  console.log('\nY la identidad escrita a mano:\n');
+
+  // **Las cadenas de prueba se componen, no se escriben.**
+  //
+  // Escritas enteras, este mismo fichero contendría los literales que la
+  // barrera busca, y la barrera se dispararía a sí misma: el árbol limpio
+  // salía en rojo. Se vio provocándola, no razonándola.
+  //
+  // La salida fácil era exceptuar `scripts/verificar.mjs` del barrido. **No se
+  // hizo, y es lo que hay que retener:** este fichero habla con los dos stacks,
+  // así que exceptuarlo abriría exactamente el agujero por el que entró el
+  // fallo. Una barrera que necesita eximir su propio banco de pruebas está
+  // diciendo que su banco de pruebas no se parece a lo que vigila.
+  const E2E = `sillar_${'e2e'}`;
+  const FX_DEV = `sillar_fx_${'dev'}`;
+
+  const casosDeIdentidad = [
+    ['lo encuentra en código', `  await composeExec('db', ['psql', '-d', '${E2E}']);`, true],
+    ['lo encuentra con sufijo', `const base = '${FX_DEV}';`, true],
+    ['NO lo encuentra en un comentario', ` * murió con: database "${E2E}" does not exist`, false],
+    ['NO lo encuentra en prosa sin comillas', `  const nombre = base + suffix; // ${E2E} era el viejo`, false],
+    ['NO lo encuentra en código limpio', "  await psqlArchivo('/scripts/modules/core/02_seed.sql');", false],
+  ];
+
+  for (const [nombre, linea, debeEncontrar] of casosDeIdentidad) {
+    let hallazgos;
+
+    try {
+      hallazgos = identidadEscritaAMano(linea);
+    } catch (error) {
+      // Un caso que no se puede provocar no se cuenta como provocado.
+      console.log(`${color.rojo('NO SE PUDO')}  ${nombre}: ${error.message}`);
+      fallos += 1;
+      continue;
+    }
+
+    const bien = (hallazgos.length > 0) === debeEncontrar;
+
+    if (!bien) fallos += 1;
+
+    console.log(
+      `${bien ? color.verde(debeEncontrar ? 'LA VE     ' : 'NO LA VE  ') : color.rojo('MAL       ')}  ${nombre}`,
+    );
+  }
+
+  // --- Y la enumeración de la que esa barrera depende ---------------------
+  //
+  // La barrera de arriba solo puede ver lo que se le enumere. Si `git ls-files`
+  // no contesta, o contesta que sí y no lista nada, la barrera pasa en verde
+  // por no tener dónde mirar — que es lo mismo que no tenerla. Las cinco vías
+  // se provocan aquí, cuatro por rojo y una por verde.
+  console.log('\nY la enumeración que la alimenta:\n');
+
+  const casosDeEnumeracion = [
+    ['git lista los ficheros', { status: 0, stdout: 'e2e/setup/env.ts\nscripts/verificar.mjs\n' }, 'visto'],
+    ['git no está en el PATH', { error: Object.assign(new Error('spawn git ENOENT'), { code: 'ENOENT' }) }, 'ciego'],
+    ['a git lo mató una señal', { status: null, signal: 'SIGKILL', stdout: '' }, 'ciego'],
+    ['git contesta que no', { status: 128, stdout: '' }, 'ciego'],
+    ['git dice que sí y no lista nada', { status: 0, stdout: '\n' }, 'ciego'],
+    ['git solo lista lo que se excluye', { status: 0, stdout: 'scripts/identidad.mjs\nREADME.md\n' }, 'ciego'],
+  ];
+
+  for (const [nombre, resultado, espera] of casosDeEnumeracion) {
+    let r;
+
+    try {
+      r = decidirLaEnumeracion(resultado);
+    } catch (error) {
+      console.log(`${color.rojo('NO SE PUDO')}  ${nombre}: ${error.message}`);
+      fallos += 1;
+      continue;
+    }
+
+    const decidio = r.ciego ? 'ciego' : 'visto';
+    const bien = decidio === espera;
+
+    if (!bien) fallos += 1;
+
+    console.log(
+      `${bien ? color.verde(espera === 'ciego' ? 'SE NIEGA  ' : 'ENUMERA   ') : color.rojo('MAL       ')}  ${nombre}`,
+    );
+  }
+
+  // --- Y la salida deliberada de la exclusividad --------------------------
+  //
+  // Siete vías, y las tres del medio son las que importan: una variable
+  // definida y vacía **no** es un sí. Si lo fuera, bastaría un `export` suelto
+  // en un perfil para que la máquina se quedara sin cerrojo en silencio.
+  console.log('\nY la salida deliberada de la exclusividad:\n');
+
+  const RAZON = 'medir dos puertas en la máquina nueva';
+
+  const casosDeConcurrencia = [
+    ['no está definida', undefined, 'normal', null],
+    ['definida y vacía', '', 'rechazo', null],
+    ['solo espacios', '   ', 'rechazo', null],
+    ['solo tabuladores y saltos', '\t\n ', 'rechazo', null],
+    ['con una razón escrita', RAZON, 'permitido', RAZON],
+    ['la razón se conserva entera', `  ${RAZON}  `, 'permitido', RAZON],
+    ['una razón de una sola letra vale', 'x', 'permitido', 'x'],
+  ];
+
+  for (const [nombre, valor, espera, razonEsperada] of casosDeConcurrencia) {
+    let r;
+
+    try {
+      r = decidirLaConcurrencia(valor);
+    } catch (error) {
+      console.log(`${color.rojo('NO SE PUDO')}  ${nombre}: ${error.message}`);
+      fallos += 1;
+      continue;
+    }
+
+    const decidio = r.normal ? 'normal' : r.rechazo ? 'rechazo' : 'permitido';
+    const bien = decidio === espera && (razonEsperada === null || r.permitido === razonEsperada);
+
+    if (!bien) fallos += 1;
+
+    const rotulo = { normal: 'CERROJO   ', rechazo: 'SE NIEGA  ', permitido: 'SIN CERROJO' }[decidio];
+
+    console.log(
+      `${bien ? color.verde(rotulo) : color.rojo('MAL       ')}  ${nombre}`
+      + (r.permitido ? color.gris(`  razón: «${r.permitido}»`) : ''),
+    );
+  }
+
+  // --- Y el propio banco de pruebas, en las dos direcciones ---------------
+  //
+  // **La comprobación que faltaba: qué pasa cuando una provocación no se puede
+  // ejecutar.** Una herramienta que falta, un permiso, una inyección mal
+  // hecha. Antes salía como excepción no atrapada, y en la vía que espera «Lo
+  // que NO se pudo comprobar» habría dado por bueno el texto esperado sin
+  // haber provocado nada. Así que se provoca la provocación: una que revienta
+  // debe volver marcada como rota y sin disparar, y una sana debe seguir
+  // disparando. Si esto no se comprobara, la promesa de «falla cerrado» sería
+  // otra barrera escrita y no puesta.
+  console.log('\nY qué pasa cuando una provocación no se puede ejecutar:\n');
+
+  const revienta = provocarUna({
+    nombre: 'una sonda que lanza',
+    etapa: 'pruebas del backend',
+    mensaje: 'Terminó con código 1.',
+    sondas: {
+      suspension: () => { throw new Error('inyección deliberada'); },
+      carga: limpia,
+      ficheros: limpia,
+    },
+    // A propósito, lo que la vía ciega escribiría de verdad: si la excepción se
+    // colara como ceguera, este texto la daría por buena y la provocación
+    // pasaría sin haber provocado nada.
+    espera: 'Lo que NO se pudo comprobar',
+  });
+
+  const rotaBien = revienta.disparó === false && typeof revienta.rota === 'string';
+  if (!rotaBien) fallos += 1;
+  console.log(
+    `${rotaBien ? color.verde('SE PONE ROJA') : color.rojo('MAL         ')}  una provocación que revienta no cuenta como pasada`,
+  );
+  console.log(color.gris(`              ${revienta.rota ?? 'no se marcó como rota'}`));
+
+  const sana = provocarUna({
+    nombre: 'la misma, sin reventar',
+    etapa: 'pruebas del backend',
+    mensaje: 'Terminó con código 1.',
+    sondas: { suspension: limpia, carga: limpia, ficheros: ciega('sin referencia') },
+    espera: 'Lo que NO se pudo comprobar',
+  });
+
+  const sanaBien = sana.disparó === true && sana.rota === undefined;
+  if (!sanaBien) fallos += 1;
+  console.log(
+    `${sanaBien ? color.verde('SIGUE VERDE ') : color.rojo('MAL         ')}  y una que no revienta sigue contando como pasada`,
+  );
+
+  if (fallos > 0) {
+    console.error(`\n${color.rojo(`${fallos} comprobación(es) NO pasaron.`)}\n`);
+    return 1;
+  }
+
+  const porAusencia = resultados.filter((r) => r.noEspera !== undefined).length;
+
+  console.log(
+    color.verde(
+      `Las ${resultados.length} barreras dicen lo que deben —${porAusencia} de ellas callan además `
+      + `lo que no deben—, las ${Object.keys(SONDAS_REALES).length} sondas reales contestan, `
+      + `los ${casosDeIdentidad.length} casos de identidad, los ${casosDeEnumeracion.length} de `
+      + `enumeración y los ${casosDeConcurrencia.length} de concurrencia autorizada deciden lo que `
+      + 'deben, y una provocación que revienta cuenta como roja.',
+    ),
+  );
   return 0;
+}
+
+/**
+ * **Comprueba, antes de la etapa 1, que el veredicto todavía habla.**
+ *
+ * El veredicto se lee exactamente cuando algo ya va mal y alguien tiene prisa.
+ * Roto en ese momento no es que no ayude: **engaña** — un «NO PARECE TUYO» mal
+ * calculado manda a devolver un rojo que sí era tuyo. Por eso se comprueba, y
+ * por eso corta la puerta en vez de avisar: un aviso en el preflight se va por
+ * arriba de un registro de treinta minutos sin que nadie lo vea.
+ *
+ * **Y por eso va aquí y no al final.** Si la maquinaria del veredicto está rota,
+ * conviene saberlo antes de gastar media hora, no después.
+ *
+ * **Coste, medido y no supuesto.** Lo que esta función añade a la puerta se
+ * midió aparte, con `process.hrtime` a los dos lados de la llamada, cinco
+ * corridas el 9 de septiembre de 2026 en la máquina de desarrollo (8 núcleos):
+ * **3,3–3,9 ms** las trece provocaciones del veredicto, y **17–19 ms** la
+ * barrera de la identidad escrita a mano, que sí lee ficheros. Preflight
+ * entero, **21–23 ms**. El comando de diagnóstico completo
+ * —`SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1`— tarda unos 205 ms, de los que 65 son
+ * arranque de Node y el resto, sobre todo, la llamada real a `journalctl` que
+ * aquí no se hace. Las provocaciones sintéticas no hacen entrada ni salida.
+ *
+ * **Y sí, esto es la puerta comprobando su propio instrumental y no el
+ * producto.** Es deliberado y no es nuevo: `OMITIDAS_ESPERADAS` comprueba la
+ * contabilidad de la propia puerta, y `SILLAR_VERIFY_FORCE_FAIL` existe para
+ * provocar su propia limpieza. El veredicto es maquinaria de la puerta igual que
+ * esas dos. Dejarlo fuera lo convertiría en una barrera que solo dispara cuando
+ * alguien se acuerda de invocarla, que es justo lo que `BITACORA.md` §4 nombra.
+ */
+function comprobarQueElVeredictoHabla() {
+  // **Cero provocaciones también es rojo.** Un `filter` sobre una lista vacía
+  // devuelve cero fallos, así que una lista que se quedara sin casos —o una
+  // corrida que no llegara a producirlos— habría pasado el preflight sin
+  // provocar nada. Una comprobación que no comprobó nada no salió bien.
+  let resultados;
+
+  try {
+    resultados = provocarLasRamas();
+  } catch (error) {
+    console.error(`\n${color.rojo('FALLÓ')} en la etapa: veredicto`);
+    console.error(`  Las provocaciones no se pudieron ejecutar: ${error.message}\n`);
+    process.exit(1);
+  }
+
+  if (PROVOCACIONES.length === 0 || resultados.length !== PROVOCACIONES.length) {
+    console.error(`\n${color.rojo('FALLÓ')} en la etapa: veredicto`);
+    console.error(`  Se esperaban ${PROVOCACIONES.length} provocaciones y salieron ${resultados.length}.`);
+    console.error('  Una lista de provocaciones vacía o incompleta pasa en verde sin provocar');
+    console.error('  nada: eso no es una barrera puesta, es una barrera escrita.\n');
+    process.exit(1);
+  }
+
+  const callaron = resultados.filter((r) => !r.disparó);
+
+  if (callaron.length === 0) {
+    return;
+  }
+
+  console.error(`\n${color.rojo('FALLÓ')} en la etapa: veredicto`);
+  console.error(`  ${callaron.length} de ${PROVOCACIONES.length} ramas del veredicto no dispararon al provocarlas.`);
+  console.error('  La puerta no arranca: el aparato que dice de quién es un rojo está roto,');
+  console.error('  y un veredicto roto engaña más de lo que cuesta un rojo.\n');
+
+  for (const r of callaron) {
+    if (r.rota) {
+      console.error(`  - ${r.nombre} — ${r.rota}`);
+      continue;
+    }
+    console.error(`  - ${r.nombre} — esperaba «${r.espera}» y escribió:`);
+    console.error(r.salida.split('\n').map((l) => `      ${l}`).join('\n'));
+  }
+
+  console.error('\n  Para verlas todas:  SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO=1 node scripts/verificar.mjs');
+  process.exit(1);
 }
 
 if (process.env.SILLAR_VERIFY_AUTOPRUEBA_VEREDICTO === '1') {
   process.exit(autoprobarVeredicto());
 }
 
+comprobarQueElVeredictoHabla();
+comprobarQueNadieEscribeLaIdentidad();
+
+
 asegurarPathDeHerramientas();
 const soltarInhibidores = tomarInhibidores();
 // Red de seguridad: si algo termina el proceso por un camino que no pasa por el
 // `finally`, los `sleep infinity` no deben sobrevivir a la puerta.
 process.on('exit', () => soltarInhibidores());
+
+/**
+ * **Y `exit` no basta, que es lo que faltaba aquí.**
+ *
+ * `process.on('exit')` **no corre cuando a un proceso lo mata una señal**. Sin
+ * lo de abajo, un `Ctrl-C` sobre la puerta —que es lo más normal del mundo—
+ * dejaba dos `sleep 7200` vivos bloqueando la suspensión del equipo durante
+ * dos horas, cada vez, en silencio. Se vio el 7 de septiembre de 2026 al
+ * provocar el cerrojo: se mató una corrida a lo bruto y otra por tiempo, y las
+ * dos dejaron su par de inhibidores detrás.
+ *
+ * Es el mismo defecto que ya se arregló una vez —el `sleep` huérfano por
+ * corrida— reaparecido por la otra puerta. Contra `SIGKILL` no hay nada que
+ * hacer y no se finge que lo haya: para eso el cerrojo guarda el PID y se
+ * repara solo. Contra las señales que sí se pueden atender, se atienden.
+ */
+for (const senal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+  process.on(senal, () => {
+    soltarInhibidores();
+    soltarCerrojo();
+    // Salir con el convenio de siempre: 128 + número de señal, para que quien
+    // lanzó la puerta desde un guion lea lo que le pasó y no un 0.
+    process.exit(senal === 'SIGINT' ? 130 : senal === 'SIGTERM' ? 143 : 129);
+  });
+}
 
 // --- Las etapas, de barata a cara -----------------------------------------
 
@@ -1273,6 +2180,9 @@ try {
     }
   }
 
+  // La cabecera va también en el verde: un verde obtenido con otra puerta
+  // encima tampoco es el mismo verde, y quien lo lea tiene derecho a saberlo.
+  for (const linea of cabeceraDeConcurrencia()) console.log(linea);
   console.log(`\n${color.verde('TODO EN VERDE')} — las ${etapas.length} etapas pasaron.`);
 } catch (error) {
   errorOriginal = error;
@@ -1281,6 +2191,7 @@ try {
   }
 } finally {
   soltarInhibidores();
+  soltarCerrojo();
 
   // **La limpieza es incondicional cuando hubo base.** Incluso si migración,
   // pruebas o revisión de skips fallan, la base efímera se intenta eliminar
@@ -1292,9 +2203,12 @@ try {
     if (cleanup.codigo !== 0) {
       const msg = `La limpieza de la base efímera ${NOMBRE_BASE} falló:\n${cleanup.salida}`;
 
+      for (const linea of cabeceraDeConcurrencia()) console.error(linea);
+
       if (errorOriginal) {
         console.error(`\n${color.rojo('FALLÓ')} en la etapa: ${etapaFallida ?? '(desconocida)'}\n  ${errorOriginal.message}`);
         console.error(`\n${veredicto(etapaFallida, errorOriginal.message).join('\n')}`);
+        for (const linea of loQueElVeredictoNoSabe()) console.error(linea);
         console.error(`\n${color.rojo('ADEMÁS')} la limpieza falló:\n${msg}`);
       } else {
         console.error(`\n${color.rojo('FALLÓ')} limpieza: ${msg}`);
@@ -1304,8 +2218,13 @@ try {
   }
 
   if (errorOriginal) {
+    // **La cabecera primero, y por eso está aquí y no solo al arrancar.** Lo
+    // que se lee de una corrida en rojo es el final; un aviso de hace media
+    // hora, por encima de seis etapas, no lo ha leído nadie.
+    for (const linea of cabeceraDeConcurrencia()) console.error(linea);
     console.error(`\n${color.rojo('FALLÓ')} en la etapa: ${etapaFallida ?? '(desconocida)'}\n  ${errorOriginal.message}`);
     console.error(`\n${veredicto(etapaFallida, errorOriginal.message).join('\n')}`);
+    for (const linea of loQueElVeredictoNoSabe()) console.error(linea);
     process.exit(1);
   }
 }

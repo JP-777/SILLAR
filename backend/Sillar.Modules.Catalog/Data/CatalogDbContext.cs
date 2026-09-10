@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Sillar.Modules.Catalog.Domain;
+using Sillar.Shared.Data.Replication;
 using Sillar.Shared.Replication;
 
 namespace Sillar.Modules.Catalog.Data;
@@ -66,51 +67,14 @@ public class CatalogDbContext : DbContext
     /// <inheritdoc />
     public override int SaveChanges()
     {
-        StampReplicationColumns();
+        ChangeTracker.StampReplicationColumns(_node, _clock);
         return base.SaveChanges();
     }
 
     /// <inheritdoc />
     public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
-        StampReplicationColumns();
+        ChangeTracker.StampReplicationColumns(_node, _clock);
         return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-    }
-
-    /// <summary>
-    /// Rellena el nodo de origen y sube la marca de versión.
-    /// </summary>
-    /// <remarks>
-    /// Se hace aquí y no en cada llamada porque dejarlo a quien escribe garantiza
-    /// que alguna se olvide, y una fila sin <c>origin_node</c> es una fila que
-    /// M16 no sabrá de dónde vino.
-    ///
-    /// El nodo se fija solo al crear: una fila editada en otro nodo <b>no cambia
-    /// de origen</b>. Nació donde nació, y esa es la pregunta que la columna
-    /// responde.
-    /// </remarks>
-    private void StampReplicationColumns()
-    {
-        var now = _clock.GetUtcNow();
-
-        foreach (var entry in ChangeTracker.Entries<IReplicatedEntity>())
-        {
-            switch (entry.State)
-            {
-                case EntityState.Added:
-                    entry.Entity.OriginNode = _node.Code;
-                    entry.Entity.RowVersion = 1;
-                    entry.Entity.CreatedAt = now;
-                    entry.Entity.UpdatedAt = now;
-                    break;
-
-                case EntityState.Modified:
-                    // El origen no se toca: quien edita no es quien creó.
-                    entry.Property(nameof(IReplicatedEntity.OriginNode)).IsModified = false;
-                    entry.Property(nameof(IReplicatedEntity.CreatedAt)).IsModified = false;
-                    entry.Entity.RowVersion += 1;
-                    break;
-            }
-        }
     }
 }

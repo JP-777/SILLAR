@@ -58,3 +58,15 @@ La base de datos **ya sabe** qué debería estar. No hace falta inventar una seg
 **Negativas.** Un error de empaquetado deja el sistema **caído** en vez de degradado. Es deliberado y es la línea de siempre —a medias es peor que parado, porque nadie lo mira—, pero conviene decirlo antes de que ocurra a las once de la noche.
 
 **Riesgo a vigilar.** Que alguien resuelva un arranque abortado desactivando el módulo en la base para «que levante». Eso convierte un despliegue roto en una web sin catálogo, que es exactamente lo que esta decisión evita. El mensaje de aborto tiene que decir qué hacer: **reconstruir la imagen**, no tocar la base.
+
+## Verificación observable pendiente
+
+A 9 de septiembre de 2026, la decisión está implementada y probada en su lógica, pero
+**todavía no se ha observado en vivo la promesa completa de esta ADR**: un host real que,
+con un módulo activo en `core.modules` y ausente del binario, se niegue a arrancar y nombre
+el módulo faltante.
+
+No se abre una campaña aparte.
+
+**Disparador:** la próxima vez que se toque el instalador. La comprobación debe observar
+el efecto del host; una prueba de la función pura no sustituye ese efecto.
