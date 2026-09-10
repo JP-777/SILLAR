@@ -6,6 +6,7 @@ using Sillar.Core.Data;
 using Sillar.Core.Domain;
 using Sillar.Core.Domain.Values;
 using Sillar.Core.Dtos;
+using Sillar.Shared.Configuration;
 using Sillar.Shared.Platform;
 
 namespace Sillar.Core.Services;
@@ -19,12 +20,42 @@ internal enum SetupOutcome
     /// <summary>Ya estaba instalado. Las rutas de instalación dejan de existir.</summary>
     AlreadyInstalled,
 
+    /// <summary>
+    /// La tabla de instalación no existe <b>en la base a la que se conectó</b>.
+    /// No es culpa de los datos enviados y no se arregla desde el asistente.
+    /// </summary>
+    /// <remarks>
+    /// El nombre dice «faltan migraciones» porque es la explicación más
+    /// frecuente y el diseño de tres estados se aprobó así, pero <b>eso es lo
+    /// que se sospecha, no lo que se sabe</b>: ver <see cref="SetupService.GetStateAsync"/>.
+    /// </remarks>
+    MigrationsPending,
+
     /// <summary>Los datos enviados no sirven.</summary>
     Invalid
 }
 
 /// <summary>Resultado de la instalación.</summary>
 internal sealed record SetupResult(SetupOutcome Outcome, string? Error = null, SetupResponse? Response = null);
+
+/// <summary>En qué estado está la instalación.</summary>
+/// <remarks>
+/// Son <b>tres</b> y no dos. Que falten las migraciones no es un caso raro de
+/// «falta instalar»: es una situación distinta, con otro responsable y otro
+/// remedio. Tratarlas igual es lo que hacía que la primera pantalla de una
+/// instalación nueva fuera un 500 con un <c>traceId</c>.
+/// </remarks>
+internal enum SetupState
+{
+    /// <summary>La tabla de instalación no está en la base a la que se conectó.</summary>
+    MigrationsPending,
+
+    /// <summary>Las tablas están, pero nadie ha completado la instalación.</summary>
+    SetupPending,
+
+    /// <summary>Instalado y completo.</summary>
+    Completed
+}
 
 /// <summary>Instalación inicial del sistema.</summary>
 internal sealed class SetupService(
@@ -33,15 +64,73 @@ internal sealed class SetupService(
     IAuditWriter audit,
     TimeProvider clock)
 {
-    /// <summary>Indica si queda instalación pendiente.</summary>
-    public async Task<bool> IsSetupRequiredAsync(CancellationToken cancellationToken)
+    /// <summary>En qué estado está la instalación.</summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Por qué se atrapa <c>42P01</c> aquí y no se comprueba antes.</b> Una
+    /// base recién creada no tiene el esquema <c>core</c>, así que esta consulta
+    /// —la primera que hace el sistema— lanzaba <c>relation "core.installation"
+    /// does not exist</c> y salía por el manejador genérico como un 500 en crudo.
+    /// Y ocurría justo en <c>GET /api/setup/status</c>, que es la <b>única</b>
+    /// ruta que el modo instalación monta: la primera pantalla de quien instala
+    /// en una clienta.
+    /// </para>
+    /// <para>
+    /// Preguntar antes por el esquema —un <c>SELECT</c> a <c>information_schema</c>
+    /// en cada llamada— costaría una consulta de más siempre para cubrir un caso
+    /// que ocurre una vez en la vida de la instalación. El error es la señal, y
+    /// PostgreSQL la da con un código estable.
+    /// </para>
+    /// <para>
+    /// <b>Y lo que ese código prueba, exactamente.</b> <c>42P01</c> dice que la
+    /// tabla no existe <b>en la base a la que la aplicación se conectó de
+    /// verdad</b>. No dice que falten las migraciones: una conexión apuntando a
+    /// otra base produce el mismo error, y entonces aplicar migraciones crearía
+    /// el esquema de CORE en la base equivocada. Por eso este estado se traduce
+    /// en un diagnóstico que nombra la base y el servidor y ofrece las dos
+    /// explicaciones —ver <c>SetupEndpoints.Complete</c>—, y no en una orden.
+    /// </para>
+    /// </remarks>
+    public async Task<SetupState> GetStateAsync(CancellationToken cancellationToken)
     {
-        var installation = await database.Installations
-            .AsNoTracking()
-            .FirstOrDefaultAsync(cancellationToken);
+        try
+        {
+            var installation = await database.Installations
+                .AsNoTracking()
+                .FirstOrDefaultAsync(cancellationToken);
 
-        return installation is null || !installation.IsSetupComplete;
+            return installation is null || !installation.IsSetupComplete
+                ? SetupState.SetupPending
+                : SetupState.Completed;
+        }
+        catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.UndefinedTable)
+        {
+            return SetupState.MigrationsPending;
+        }
     }
+
+    /// <summary>
+    /// A qué base y servidor apunta <b>esta</b> conexión, para poder decirlo.
+    /// </summary>
+    /// <remarks>
+    /// Se lee de la conexión del propio contexto y no de la configuración: lo
+    /// que hay que explicar es un error que acaba de ocurrir en esa conexión, y
+    /// preguntarle a otro sitio sería volver a suponer. Es el mismo tipo que
+    /// usa el arranque para anunciar su destino (pendiente 9).
+    /// </remarks>
+    public DestinoDeConexion Destino
+        => DestinoDeConexion.DeConexion(database.Database.GetDbConnection());
+
+    /// <summary>
+    /// La tabla que se esperaba encontrar, con su schema, según el modelo.
+    /// </summary>
+    /// <remarks>
+    /// Sale del modelo de EF y no escrita a mano: si algún día la tabla se
+    /// renombra, el diagnóstico no puede quedarse nombrando la de antes.
+    /// </remarks>
+    public string TablaEsperada
+        => database.Model.FindEntityType(typeof(Installation))?.GetSchemaQualifiedTableName()
+           ?? $"{CoreDbContext.Schema}.installation";
 
     /// <summary>Crea la instalación y su primer <c>super_admin</c>.</summary>
     /// <remarks>
@@ -59,6 +148,15 @@ internal sealed class SetupService(
 
         var admin = request.Admin!;
         var now = clock.GetUtcNow();
+
+        // La tabla no está donde se buscó, y el asistente no puede crearla.
+        // Se comprueba antes de abrir la transacción: abrirla para descubrir que
+        // la primera consulta revienta deja el mismo 500 en crudo que esto viene
+        // a quitar, solo que un paso más tarde.
+        if (await GetStateAsync(cancellationToken) is SetupState.MigrationsPending)
+        {
+            return new SetupResult(SetupOutcome.MigrationsPending);
+        }
 
         await using var transaction = await database.Database.BeginTransactionAsync(cancellationToken);
 

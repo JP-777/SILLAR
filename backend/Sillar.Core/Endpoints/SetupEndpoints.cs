@@ -38,7 +38,8 @@ public static class SetupEndpoints
                 "Al terminar, el host se detiene para volver a arrancar en modo normal.")
             .Produces<SetupResponse>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         return endpoints;
     }
@@ -68,10 +69,25 @@ public static class SetupEndpoints
     /// <param name="setup">Servicio de instalación.</param>
     /// <param name="cancellationToken">Cancelación de la petición.</param>
     /// <returns>El estado de la instalación, o 404 si ya se completó.</returns>
-    private static async Task<IResult> GetStatus(SetupService setup, CancellationToken cancellationToken)
-        => await setup.IsSetupRequiredAsync(cancellationToken)
-            ? Results.Ok(new SetupStatusResponse(true))
-            : Results.NotFound();
+    /// <remarks>
+    /// <c>internal</c> y no <c>private</c> para que las pruebas puedan llamarlo
+    /// sin levantar el host. Lo que hay que poder afirmar aquí es que una base
+    /// sin tablas sale por 200 y no por el manejador genérico, y eso no se
+    /// comprueba mirando el código: se comprueba llamándolo contra una base
+    /// vacía de verdad. Ver <c>ArranqueContraBaseVaciaTests</c>.
+    /// </remarks>
+    internal static async Task<IResult> GetStatus(SetupService setup, CancellationToken cancellationToken)
+        => await setup.GetStateAsync(cancellationToken) switch
+        {
+            // La tabla de instalación no está en la base a la que se conectó
+            // —faltan las migraciones, o la conexión apunta a otro sitio; el
+            // POST lo distingue, esto solo informa—. Sigue siendo 200: la
+            // pregunta era «¿en qué estado estás?» y el servidor lo sabe. Un
+            // 500 aquí decía «no sé», y no era verdad.
+            SetupState.MigrationsPending => Results.Ok(new SetupStatusResponse(true, MigrationsPending: true)),
+            SetupState.SetupPending => Results.Ok(new SetupStatusResponse(true)),
+            _ => Results.NotFound()
+        };
 
     /// <summary>Completa la instalación.</summary>
     /// <param name="request">Negocio, licencia y primer administrador.</param>
@@ -80,7 +96,8 @@ public static class SetupEndpoints
     /// <param name="context">Petición en curso.</param>
     /// <param name="cancellationToken">Cancelación de la petición.</param>
     /// <returns>201 con los datos creados, 400 si los datos no sirven, 404 si ya estaba instalado.</returns>
-    private static async Task<IResult> Complete(
+    /// <remarks><c>internal</c> por el mismo motivo que <see cref="GetStatus"/>.</remarks>
+    internal static async Task<IResult> Complete(
         SetupRequest request,
         SetupService setup,
         HostRestarter restarter,
@@ -91,6 +108,42 @@ public static class SetupEndpoints
 
         switch (result.Outcome)
         {
+            case SetupOutcome.MigrationsPending:
+                // 503 y no 400: los datos enviados están bien, lo que falta es
+                // del servidor y lo arregla quien despliega, no quien instala.
+                //
+                // **Y el diagnóstico no da una orden, porque no sabe lo bastante
+                // para darla.** `42P01` prueba que la tabla no existe EN LA BASE
+                // A LA QUE ESTA APLICACIÓN SE CONECTÓ. No prueba que falten las
+                // migraciones: una cadena de conexión apuntando a otra base da
+                // exactamente el mismo error. Si en ese caso alguien obedece un
+                // «aplica las migraciones», crea el esquema de CORE **en la base
+                // equivocada** — y eso ya no lo deshace un mensaje.
+                //
+                // Por eso el texto nombra la base y el servidor reales, da las
+                // dos explicaciones, y manda comprobar la conexión ANTES. El
+                // comando sigue estando, porque hace falta cuando la explicación
+                // es la primera; deja de estar como remedio inequívoco.
+                return Results.Problem(
+                    title: $"No existe {setup.TablaEsperada} en la base {setup.Destino.Base} ({setup.Destino.Host}:{setup.Destino.Puerto}).",
+                    detail:
+                        $"La aplicación consultó {setup.TablaEsperada} en la base '{setup.Destino.Base}' " +
+                        $"del servidor {setup.Destino.Host}:{setup.Destino.Puerto}, y esa tabla no está ahí.\n" +
+                        "\n" +
+                        "Hay dos explicaciones y llevan a sitios distintos:\n" +
+                        "  1. Faltan las migraciones en esa base.\n" +
+                        "  2. La conexión apunta a una base distinta de la que esperabas.\n" +
+                        "\n" +
+                        "Comprueba PRIMERO la conexión: si es la segunda y aplicas las migraciones, " +
+                        "crearás el esquema de CORE en la base equivocada. Revisa " +
+                        "ConnectionStrings__Default y desde qué .env se cargó.\n" +
+                        "\n" +
+                        "Solo cuando hayas confirmado que la base es la correcta:\n" +
+                        "  dotnet ef database update --project Sillar.Core --startup-project Sillar.Api\n" +
+                        "\n" +
+                        "Los datos que has enviado no tienen nada de malo: no hay nada que corregir en ellos.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+
             case SetupOutcome.Invalid:
                 return Results.ValidationProblem(
                     new Dictionary<string, string[]> { ["instalacion"] = [result.Error!] },

@@ -3,9 +3,16 @@
   <!-- ==========================================================================
        Pruebas de Sillar.Core.
 
-       Solo lógica: la secuencia de inicio de sesión, la política de contraseñas,
-       la vigencia de las sesiones y la jerarquía de roles. Nada aquí toca la base
-       de datos ni levanta el host.
+       Casi todo es lógica: la secuencia de inicio de sesión, la política de
+       contraseñas, la vigencia de las sesiones y la jerarquía de roles. Nada
+       levanta el host.
+
+       La excepción, y está declarada aquí porque esta cabecera decía «nada aquí
+       toca la base de datos» y dejó de ser verdad: ArranqueContraBaseVaciaTests
+       crea y destruye una base SIN MIGRAR. Es el único caso que no se puede
+       comprobar de otra forma —los proyectos que tocan base están atados a la
+       efímera de la puerta, que llega ya migrada— y es justo el que produjo un
+       500 en la primera pantalla de una instalación nueva.
        ========================================================================== -->
 
   <PropertyGroup>
