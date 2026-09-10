@@ -255,6 +255,67 @@ public sealed class ArranqueContraBaseVaciaTests
     }
 
     [Fact]
+    public async Task El_503_nombra_la_base_real_y_advierte_de_que_puede_ser_otra()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        // **Qué se está midiendo, y por qué no basta con el 503.**
+        //
+        // `42P01` prueba que la tabla no existe EN LA BASE A LA QUE LA
+        // APLICACIÓN SE CONECTÓ. No prueba que falten las migraciones: una
+        // conexión apuntando a otra base da el mismo error. Un diagnóstico que
+        // solo dijera «faltan las migraciones, aplícalas» puede llevar a alguien
+        // a crear el esquema de CORE en la base equivocada — y eso ya no lo
+        // deshace ningún mensaje.
+        //
+        // Así que el mensaje tiene que nombrar la base y el servidor reales, dar
+        // las dos explicaciones, y mandar comprobar la conexión ANTES.
+        await ConBaseVaciaAsync(async cadena =>
+        {
+            var esperado = new NpgsqlConnectionStringBuilder(cadena);
+
+            await using var contexto = Contexto(cadena);
+
+            var respuesta = await SetupEndpoints.Complete(
+                PeticionValida(), Servicio(contexto), Reiniciador(), new DefaultHttpContext(), ct);
+
+            var problema = Assert.IsType<ProblemHttpResult>(respuesta);
+            var texto = $"{problema.ProblemDetails.Title}\n{problema.ProblemDetails.Detail}";
+
+            // 1 · Qué tabla se esperaba, con su schema.
+            Assert.Contains("core.installation", texto);
+
+            // 2 · El nombre REAL de la base. Es de usar y tirar y distinto en
+            //     cada corrida, así que si aparece es porque salió de la
+            //     conexión y no de un literal escrito en el código.
+            Assert.Contains(esperado.Database!, texto);
+
+            // 3 · El host/servidor REAL.
+            Assert.Contains(esperado.Host!, texto);
+
+            // 4 · Las dos explicaciones, no una.
+            Assert.Contains("Faltan las migraciones", texto);
+            Assert.Contains("apunta a una base distinta", texto);
+
+            // 5 · Y el orden: comprobar la conexión ANTES de aplicar nada. Se
+            //     mide por posición, no por presencia: un texto que dijera las
+            //     dos cosas en el orden contrario cumpliría lo anterior y
+            //     seguiría siendo peligroso.
+            var avisoDeConexion = texto.IndexOf("Comprueba PRIMERO la conexión", StringComparison.Ordinal);
+            var comando = texto.IndexOf("dotnet ef database update", StringComparison.Ordinal);
+
+            Assert.True(avisoDeConexion >= 0, "El diagnóstico no manda comprobar la conexión.");
+            Assert.True(comando >= 0, "El diagnóstico ya no ofrece el comando.");
+            Assert.True(
+                avisoDeConexion < comando,
+                "El comando aparece antes que el aviso de comprobar la conexión: se lee como una orden.");
+
+            // Y no se filtra la contraseña en el camino.
+            Assert.DoesNotContain(esperado.Password ?? "no-hay-contrasena-en-esta-cadena", texto);
+        }, ct);
+    }
+
+    [Fact]
     public void El_modo_instalacion_monta_las_dos_rutas_de_setup_y_ninguna_mas()
     {
         // Disponibilidad de rutas sin levantar el host: se le da a

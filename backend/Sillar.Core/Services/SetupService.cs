@@ -6,6 +6,7 @@ using Sillar.Core.Data;
 using Sillar.Core.Domain;
 using Sillar.Core.Domain.Values;
 using Sillar.Core.Dtos;
+using Sillar.Shared.Configuration;
 using Sillar.Shared.Platform;
 
 namespace Sillar.Core.Services;
@@ -20,9 +21,14 @@ internal enum SetupOutcome
     AlreadyInstalled,
 
     /// <summary>
-    /// El esquema de CORE no está en la base. No es culpa de los datos enviados
-    /// y no se arregla desde el asistente.
+    /// La tabla de instalación no existe <b>en la base a la que se conectó</b>.
+    /// No es culpa de los datos enviados y no se arregla desde el asistente.
     /// </summary>
+    /// <remarks>
+    /// El nombre dice «faltan migraciones» porque es la explicación más
+    /// frecuente y el diseño de tres estados se aprobó así, pero <b>eso es lo
+    /// que se sospecha, no lo que se sabe</b>: ver <see cref="SetupService.GetStateAsync"/>.
+    /// </remarks>
     MigrationsPending,
 
     /// <summary>Los datos enviados no sirven.</summary>
@@ -41,7 +47,7 @@ internal sealed record SetupResult(SetupOutcome Outcome, string? Error = null, S
 /// </remarks>
 internal enum SetupState
 {
-    /// <summary>El esquema de CORE no está en la base. Faltan las migraciones.</summary>
+    /// <summary>La tabla de instalación no está en la base a la que se conectó.</summary>
     MigrationsPending,
 
     /// <summary>Las tablas están, pero nadie ha completado la instalación.</summary>
@@ -75,6 +81,15 @@ internal sealed class SetupService(
     /// que ocurre una vez en la vida de la instalación. El error es la señal, y
     /// PostgreSQL la da con un código estable.
     /// </para>
+    /// <para>
+    /// <b>Y lo que ese código prueba, exactamente.</b> <c>42P01</c> dice que la
+    /// tabla no existe <b>en la base a la que la aplicación se conectó de
+    /// verdad</b>. No dice que falten las migraciones: una conexión apuntando a
+    /// otra base produce el mismo error, y entonces aplicar migraciones crearía
+    /// el esquema de CORE en la base equivocada. Por eso este estado se traduce
+    /// en un diagnóstico que nombra la base y el servidor y ofrece las dos
+    /// explicaciones —ver <c>SetupEndpoints.Complete</c>—, y no en una orden.
+    /// </para>
     /// </remarks>
     public async Task<SetupState> GetStateAsync(CancellationToken cancellationToken)
     {
@@ -94,6 +109,29 @@ internal sealed class SetupService(
         }
     }
 
+    /// <summary>
+    /// A qué base y servidor apunta <b>esta</b> conexión, para poder decirlo.
+    /// </summary>
+    /// <remarks>
+    /// Se lee de la conexión del propio contexto y no de la configuración: lo
+    /// que hay que explicar es un error que acaba de ocurrir en esa conexión, y
+    /// preguntarle a otro sitio sería volver a suponer. Es el mismo tipo que
+    /// usa el arranque para anunciar su destino (pendiente 9).
+    /// </remarks>
+    public DestinoDeConexion Destino
+        => DestinoDeConexion.DeConexion(database.Database.GetDbConnection());
+
+    /// <summary>
+    /// La tabla que se esperaba encontrar, con su schema, según el modelo.
+    /// </summary>
+    /// <remarks>
+    /// Sale del modelo de EF y no escrita a mano: si algún día la tabla se
+    /// renombra, el diagnóstico no puede quedarse nombrando la de antes.
+    /// </remarks>
+    public string TablaEsperada
+        => database.Model.FindEntityType(typeof(Installation))?.GetSchemaQualifiedTableName()
+           ?? $"{CoreDbContext.Schema}.installation";
+
     /// <summary>Crea la instalación y su primer <c>super_admin</c>.</summary>
     /// <remarks>
     /// Todo en una transacción: una instalación a medias —con negocio pero sin
@@ -111,7 +149,7 @@ internal sealed class SetupService(
         var admin = request.Admin!;
         var now = clock.GetUtcNow();
 
-        // Sin tablas no hay nada que instalar, y el asistente no puede crearlas.
+        // La tabla no está donde se buscó, y el asistente no puede crearla.
         // Se comprueba antes de abrir la transacción: abrirla para descubrir que
         // la primera consulta revienta deja el mismo 500 en crudo que esto viene
         // a quitar, solo que un paso más tarde.

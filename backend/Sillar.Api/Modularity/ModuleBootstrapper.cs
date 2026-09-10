@@ -84,10 +84,11 @@ internal static class ModuleBootstrapper
         //
         // **Host, puerto y base; nunca la cadena entera.** La contraseña no va
         // a los registros (CLAUDE.md, «Seguridad»).
+        // La lectura vive en `DestinoDeConexion` (Sillar.Shared) desde que hizo
+        // falta también para el diagnóstico del modo instalación: el mismo dato
+        // dicho de dos formas distintas es como se empieza a discrepar.
+        var apunta = DestinoDeConexion.DeCadena(connectionString);
         var destino = new System.Data.Common.DbConnectionStringBuilder { ConnectionString = connectionString };
-        var host = destino.TryGetValue("Host", out var h) ? h : "(sin host)";
-        var puerto = destino.TryGetValue("Port", out var p) ? p : "5432";
-        var baseDatos = destino.TryGetValue("Database", out var d) ? d : "(sin base)";
 
         // **Quién se conecta, dicho por el propio proceso.** PostgreSQL ya
         // registra cada conexión, pero desde el anfitrión todas llegan con la
@@ -109,9 +110,9 @@ internal static class ModuleBootstrapper
         logger.LogInformation(
             "Configuración: {Origen} · base {Base} en {Host}:{Puerto}.",
             DotEnv.LoadedFrom ?? "sin .env (variables de entorno del proceso)",
-            baseDatos,
-            host,
-            puerto);
+            apunta.Base,
+            apunta.Host,
+            apunta.Puerto);
 
         // **Y si el archivo dice una cosa y el entorno otra, que se sepa.** Una
         // variable heredada de la consola gana sobre el `.env` en silencio, y

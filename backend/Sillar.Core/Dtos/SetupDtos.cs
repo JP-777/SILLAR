@@ -6,12 +6,16 @@ namespace Sillar.Core.Dtos;
 /// solo lee <c>SetupRequired</c> —el arranque de la interfaz, <c>App.tsx</c>—
 /// sigue funcionando igual. Distingue dos situaciones que antes se veían iguales
 /// desde fuera y no lo son: «falta instalar», que se arregla desde el asistente,
-/// y «faltan las migraciones», que <b>no</b> — eso lo arregla quien despliega,
-/// desde una terminal, y el asistente no puede hacer nada al respecto.
+/// y «la tabla de instalación no está en esta base», que <b>no</b> — eso lo
+/// arregla quien despliega, desde una terminal, y el asistente no puede hacer
+/// nada al respecto. La bandera se llama <c>MigrationsPending</c> porque ésa es
+/// la causa más frecuente, pero <b>lo que se sabe es lo primero</b>: la tabla no
+/// está donde se buscó, y eso también ocurre con una conexión equivocada. Quien
+/// tenga que actuar lo lee entero en la respuesta del <c>POST</c>.
 /// </remarks>
 /// <param name="SetupRequired">Verdadero mientras no se haya completado.</param>
 /// <param name="MigrationsPending">
-/// Verdadero si el esquema de CORE todavía no está en la base. Implica
+/// Verdadero si la tabla de instalación no está en la base a la que se conectó. Implica
 /// <c>SetupRequired</c>: sin tablas no hay instalación posible.
 /// </param>
 public sealed record SetupStatusResponse(bool SetupRequired, bool MigrationsPending = false);

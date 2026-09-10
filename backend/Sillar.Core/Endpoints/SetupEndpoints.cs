@@ -79,9 +79,11 @@ public static class SetupEndpoints
     internal static async Task<IResult> GetStatus(SetupService setup, CancellationToken cancellationToken)
         => await setup.GetStateAsync(cancellationToken) switch
         {
-            // Faltan las migraciones. Sigue siendo 200: la pregunta era «¿en qué
-            // estado estás?» y el servidor lo sabe. Un 500 aquí decía «no sé», y
-            // no era verdad.
+            // La tabla de instalación no está en la base a la que se conectó
+            // —faltan las migraciones, o la conexión apunta a otro sitio; el
+            // POST lo distingue, esto solo informa—. Sigue siendo 200: la
+            // pregunta era «¿en qué estado estás?» y el servidor lo sabe. Un
+            // 500 aquí decía «no sé», y no era verdad.
             SetupState.MigrationsPending => Results.Ok(new SetupStatusResponse(true, MigrationsPending: true)),
             SetupState.SetupPending => Results.Ok(new SetupStatusResponse(true)),
             _ => Results.NotFound()
@@ -109,14 +111,37 @@ public static class SetupEndpoints
             case SetupOutcome.MigrationsPending:
                 // 503 y no 400: los datos enviados están bien, lo que falta es
                 // del servidor y lo arregla quien despliega, no quien instala.
+                //
+                // **Y el diagnóstico no da una orden, porque no sabe lo bastante
+                // para darla.** `42P01` prueba que la tabla no existe EN LA BASE
+                // A LA QUE ESTA APLICACIÓN SE CONECTÓ. No prueba que falten las
+                // migraciones: una cadena de conexión apuntando a otra base da
+                // exactamente el mismo error. Si en ese caso alguien obedece un
+                // «aplica las migraciones», crea el esquema de CORE **en la base
+                // equivocada** — y eso ya no lo deshace un mensaje.
+                //
+                // Por eso el texto nombra la base y el servidor reales, da las
+                // dos explicaciones, y manda comprobar la conexión ANTES. El
+                // comando sigue estando, porque hace falta cuando la explicación
+                // es la primera; deja de estar como remedio inequívoco.
                 return Results.Problem(
-                    title: "Faltan las migraciones de la base de datos.",
+                    title: $"No existe {setup.TablaEsperada} en la base {setup.Destino.Base} ({setup.Destino.Host}:{setup.Destino.Puerto}).",
                     detail:
-                        "El esquema 'core' todavía no existe, así que no hay dónde escribir la " +
-                        "instalación. Aplícalas antes de continuar:\n" +
+                        $"La aplicación consultó {setup.TablaEsperada} en la base '{setup.Destino.Base}' " +
+                        $"del servidor {setup.Destino.Host}:{setup.Destino.Puerto}, y esa tabla no está ahí.\n" +
+                        "\n" +
+                        "Hay dos explicaciones y llevan a sitios distintos:\n" +
+                        "  1. Faltan las migraciones en esa base.\n" +
+                        "  2. La conexión apunta a una base distinta de la que esperabas.\n" +
+                        "\n" +
+                        "Comprueba PRIMERO la conexión: si es la segunda y aplicas las migraciones, " +
+                        "crearás el esquema de CORE en la base equivocada. Revisa " +
+                        "ConnectionStrings__Default y desde qué .env se cargó.\n" +
+                        "\n" +
+                        "Solo cuando hayas confirmado que la base es la correcta:\n" +
                         "  dotnet ef database update --project Sillar.Core --startup-project Sillar.Api\n" +
-                        "Los datos que has enviado no tienen nada de malo: vuelve a intentarlo cuando " +
-                        "las migraciones estén aplicadas.",
+                        "\n" +
+                        "Los datos que has enviado no tienen nada de malo: no hay nada que corregir en ellos.",
                     statusCode: StatusCodes.Status503ServiceUnavailable);
 
             case SetupOutcome.Invalid:
