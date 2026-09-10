@@ -1,51 +1,116 @@
 /**
- * Vocabulario visible aportado por un módulo para los entityType de auditoría.
+ * Una asociación visible declarada por un módulo para un entityType auditado.
  *
- * Los productores siguen escribiendo únicamente el código técnico. Esta
- * estructura pertenece al lado de lectura/presentación.
+ * Se conserva como entrada individual y no como propiedad de un objeto para
+ * que dos declaraciones iguales sigan existiendo hasta llegar al compositor.
  */
+export type AuditEntityLabelEntry = readonly [
+  entityType: string,
+  label: string,
+];
+
+/** Vocabulario visible aportado por un módulo. */
 export interface AuditEntityVocabulary {
   readonly moduleCode: string;
-  readonly labels: Readonly<Record<string, string>>;
+  readonly entries: readonly AuditEntityLabelEntry[];
 }
 
 export type AuditEntityLabels = Readonly<Record<string, string>>;
 
+export interface AuditEntityDeclaration {
+  readonly moduleCode: string;
+  readonly label: string;
+}
+
+export interface AuditEntityVocabularyConflict {
+  readonly entityType: string;
+  readonly declarations: readonly AuditEntityDeclaration[];
+}
+
+export type AuditEntityVocabularyConflictReporter = (
+  conflict: AuditEntityVocabularyConflict,
+) => void;
+
 /**
- * Compone contribuciones modulares en una única tabla de consulta.
+ * Compone contribuciones sin resolver silenciosamente una colisión.
  *
- * Una clave repetida es un defecto de configuración, no una precedencia:
- * resolverla por orden escondería qué módulo declaró algo que no le pertenece.
+ * Si una clave aparece más de una vez, incluso dentro de la misma
+ * contribución, ninguna declaración gana: la clave se omite del resultado.
  */
 export function composeAuditEntityVocabularies(
   vocabularies: readonly AuditEntityVocabulary[],
+  reportConflict: AuditEntityVocabularyConflictReporter = () => undefined,
 ): AuditEntityLabels {
-  const labels: Record<string, string> = {};
-  const owners = new Map<string, string>();
+  const declarations = new Map<string, AuditEntityDeclaration[]>();
 
   for (const vocabulary of vocabularies) {
-    for (const [entityType, label] of Object.entries(vocabulary.labels)) {
-      const previousModule = owners.get(entityType);
-
-      if (previousModule !== undefined) {
-        throw new Error(
-          `entityType de auditoría duplicado "${entityType}": ` +
-            `${previousModule} y ${vocabulary.moduleCode}`,
-        );
-      }
-
-      owners.set(entityType, vocabulary.moduleCode);
-      labels[entityType] = label;
+    for (const [entityType, label] of vocabulary.entries) {
+      const current = declarations.get(entityType) ?? [];
+      current.push({
+        moduleCode: vocabulary.moduleCode,
+        label,
+      });
+      declarations.set(entityType, current);
     }
+  }
+
+  const labels: Record<string, string> = {};
+
+  for (const [entityType, candidates] of declarations) {
+    if (candidates.length === 1) {
+      labels[entityType] = candidates[0].label;
+      continue;
+    }
+
+    reportConflict({
+      entityType,
+      declarations: candidates,
+    });
   }
 
   return Object.freeze(labels);
 }
 
-/** Etiqueta humana o, si nadie la declaró, el código técnico exacto. */
+/** Compone únicamente las contribuciones cuyos módulos están activos. */
+export function visibleAuditEntityLabelsFrom(
+  vocabularies: readonly AuditEntityVocabulary[],
+  isActive: (moduleCode: string) => boolean,
+  reportConflict: AuditEntityVocabularyConflictReporter = () => undefined,
+): AuditEntityLabels {
+  return composeAuditEntityVocabularies(
+    vocabularies.filter((vocabulary) => isActive(vocabulary.moduleCode)),
+    reportConflict,
+  );
+}
+
+/** Etiqueta humana o código técnico exacto cuando la clave no está registrada. */
 export function auditEntityLabel(
   entityType: string,
   labels: AuditEntityLabels,
 ): string {
   return labels[entityType] ?? entityType;
+}
+
+/**
+ * Señala una inconsistencia únicamente durante desarrollo.
+ *
+ * La detección y omisión pertenecen al compositor; esta función solo decide
+ * cuándo hacer visible el defecto.
+ */
+export function reportAuditEntityConflictInDevelopment(
+  isDevelopment: boolean,
+  conflict: AuditEntityVocabularyConflict,
+  report: (message: string) => void = console.error,
+): void {
+  if (!isDevelopment) {
+    return;
+  }
+
+  const modules = conflict.declarations
+    .map((declaration) => declaration.moduleCode)
+    .join(', ');
+
+  report(
+    `entityType de auditoría duplicado "${conflict.entityType}": ${modules}`,
+  );
 }

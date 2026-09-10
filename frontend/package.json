@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "tsc --build && vite build",
     "preview": "vite preview",
+    "test:audit-vocabulary": "node --test tests/auditEntityVocabulary.test.mjs",
     "typecheck": "tsc --build --force"
   },
   "dependencies": {

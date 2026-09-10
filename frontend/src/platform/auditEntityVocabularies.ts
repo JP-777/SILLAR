@@ -4,16 +4,18 @@ import { coreAuditEntityVocabulary } from '../modules/core/auditEntityVocabulary
 import { crmAuditEntityVocabulary } from '../modules/crm/routes';
 import {
   auditEntityLabel,
-  composeAuditEntityVocabularies,
+  reportAuditEntityConflictInDevelopment,
+  visibleAuditEntityLabelsFrom,
   type AuditEntityLabels,
   type AuditEntityVocabulary,
+  type AuditEntityVocabularyConflictReporter,
 } from './auditEntityVocabulary';
 
 /**
  * Registro estático de contribuciones.
  *
  * La plataforma conoce qué contribuciones componen el producto, pero ninguna
- * etiqueta concreta. Las asociaciones pertenecen a cada módulo.
+ * asociación concreta entityType → etiqueta.
  */
 export const AUDIT_ENTITY_VOCABULARIES: readonly AuditEntityVocabulary[] = [
   coreAuditEntityVocabulary,
@@ -22,18 +24,26 @@ export const AUDIT_ENTITY_VOCABULARIES: readonly AuditEntityVocabulary[] = [
   crmAuditEntityVocabulary,
 ];
 
+const reportAuditEntityConflict: AuditEntityVocabularyConflictReporter = (
+  conflict,
+) => {
+  reportAuditEntityConflictInDevelopment(import.meta.env.DEV, conflict);
+};
+
 /**
- * Compone únicamente el vocabulario de los módulos activos.
+ * Etiquetas aportadas únicamente por módulos activos.
  *
- * Una fila histórica de un módulo apagado cae deliberadamente al código
- * técnico, porque su contribución deja de participar.
+ * Una clave conflictiva queda ausente siempre. En desarrollo además se
+ * informa explícitamente; en producción la auditoría continúa funcionando y
+ * esa clave degrada a su código técnico.
  */
 export function visibleAuditEntityLabels(
   isActive: (code: string) => boolean,
 ): AuditEntityLabels {
-  return composeAuditEntityVocabularies(
-    AUDIT_ENTITY_VOCABULARIES.filter((vocabulary) =>
-      isActive(vocabulary.moduleCode)),
+  return visibleAuditEntityLabelsFrom(
+    AUDIT_ENTITY_VOCABULARIES,
+    isActive,
+    reportAuditEntityConflict,
   );
 }
 

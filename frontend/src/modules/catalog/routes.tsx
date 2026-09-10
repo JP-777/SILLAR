@@ -56,13 +56,13 @@ export const catalogHome: HomeSection = {
 /** Vocabulario de auditoría que pertenece a M01 · Catálogo. */
 export const catalogAuditEntityVocabulary: AuditEntityVocabulary = {
   moduleCode: 'catalog',
-  labels: {
-    brand: 'Marca',
-    category: 'Categoría',
-    product: 'Producto',
-    product_image: 'Imagen de producto',
-    product_item: 'Presentación',
-  },
+  entries: [
+    ['brand', 'Marca'],
+    ['category', 'Categoría'],
+    ['product', 'Producto'],
+    ['product_image', 'Imagen de producto'],
+    ['product_item', 'Presentación'],
+  ],
 };
 
 /**
