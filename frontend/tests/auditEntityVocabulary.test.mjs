@@ -321,7 +321,76 @@ test('el registro conecta la señal de conflicto exclusivamente a import.meta.en
   );
 });
 
-test('AuditPage consulta la plataforma con useCapability().has', () => {
+const auditPageVocabularyBaseline = {
+  technicalKeyCounts: {
+  "admin_session": 0,
+  "admin_user": 0,
+  "email": 1,
+  "installation": 0,
+  "media_asset": 0,
+  "module": 1,
+  "setting": 0,
+  "brand": 0,
+  "category": 0,
+  "product": 0,
+  "product_image": 0,
+  "product_item": 0,
+  "banner": 0,
+  "featured_product": 0,
+  "featured_project": 0,
+  "promotion": 0,
+  "social_link": 0,
+  "contact_message": 0,
+  "customer": 0,
+  "customer_invitation": 0
+},
+  labelLiteralCounts: {
+  "Sesión": 0,
+  "Usuario": 1,
+  "Correo": 0,
+  "Instalación": 0,
+  "Archivo": 0,
+  "Módulo": 2,
+  "Ajuste": 0,
+  "Marca": 0,
+  "Categoría": 0,
+  "Producto": 0,
+  "Imagen de producto": 0,
+  "Presentación": 0,
+  "Banner": 0,
+  "Producto destacado": 0,
+  "Trabajo destacado": 0,
+  "Promoción": 0,
+  "Red social": 0,
+  "Mensaje de contacto": 0,
+  "Cliente": 0,
+  "Invitación de cliente": 0
+},
+};
+
+function escapeRegExp(literal) {
+  return literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function countStandaloneVocabularyToken(sourceText, token) {
+  const pattern = new RegExp(
+    `(?<![A-Za-z0-9_])${escapeRegExp(token)}(?![A-Za-z0-9_])`,
+    'g',
+  );
+
+  return [...sourceText.matchAll(pattern)].length;
+}
+
+function countQuotedVocabularyLiteral(sourceText, literal) {
+  const pattern = new RegExp(
+    "(['\"`])" + escapeRegExp(literal) + "\\1",
+    'g',
+  );
+
+  return [...sourceText.matchAll(pattern)].length;
+}
+
+test('AuditPage consulta capacidades y no recentraliza vocabulario en ninguna representación', () => {
   const page = source('src/modules/core/pages/AuditPage.tsx');
 
   assert.equal(/\bENTIDADES\b/.test(page), false);
@@ -335,9 +404,50 @@ test('AuditPage consulta la plataforma con useCapability().has', () => {
 
   for (const [entityType, label] of Object.entries(expected)) {
     assert.equal(
-      page.includes(`${entityType}: '${label}'`),
+      countStandaloneVocabularyToken(page, entityType),
+      auditPageVocabularyBaseline.technicalKeyCounts[entityType],
+      `AuditPage añadió la clave técnica de auditoría "${entityType}"`,
+    );
+
+    assert.equal(
+      countQuotedVocabularyLiteral(page, label),
+      auditPageVocabularyBaseline.labelLiteralCounts[label],
+      `AuditPage añadió la etiqueta de auditoría "${label}"`,
+    );
+
+    const quotedKey =
+      "['\"`]" + escapeRegExp(entityType) + "['\"`]";
+
+    const quotedLabel =
+      "['\"`]" + escapeRegExp(label) + "['\"`]";
+
+    const tupleMapping = new RegExp(
+      "\\[\\s*" +
+        quotedKey +
+        "\\s*,\\s*" +
+        quotedLabel +
+        "\\s*\\]",
+    );
+
+    const objectMapping = new RegExp(
+      "(?:\\b" +
+        escapeRegExp(entityType) +
+        "\\b|" +
+        quotedKey +
+        ")\\s*:\\s*" +
+        quotedLabel,
+    );
+
+    assert.equal(
+      tupleMapping.test(page),
       false,
-      `AuditPage todavía conoce ${entityType} → ${label}`,
+      `AuditPage contiene el mapeo por tupla ${entityType} → ${label}`,
+    );
+
+    assert.equal(
+      objectMapping.test(page),
+      false,
+      `AuditPage contiene el mapeo por objeto ${entityType} → ${label}`,
     );
   }
 
