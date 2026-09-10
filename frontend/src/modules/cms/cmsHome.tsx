@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAporteDePortada } from '../../platform/homeState';
 import type { EstadoAporte } from '../../platform/surfaceState';
 import type { HomeSection } from '../../platform/homeSections';
+import type { AuditEntityVocabulary } from '../../platform/auditEntityVocabulary';
 import { useDelayedFlag } from '../../shared/hooks/useDelayedFlag';
 import { Alert, Badge, Button, Spinner } from '../../shared/ui';
 import { formatFeaturedProductPrice } from './components/featuredProductPresentation';
@@ -22,6 +23,18 @@ import { useResource, type ResourceState } from '../../shared/hooks/useResource'
 export const cmsHome: HomeSection = {
   moduleCode: 'cms',
   Component: CmsHomeSection,
+};
+
+/** Vocabulario de auditoría que pertenece a M02 · Contenido web. */
+export const cmsAuditEntityVocabulary: AuditEntityVocabulary = {
+  moduleCode: 'cms',
+  labels: {
+    banner: 'Banner',
+    featured_product: 'Producto destacado',
+    featured_project: 'Trabajo destacado',
+    promotion: 'Promoción',
+    social_link: 'Red social',
+  },
 };
 
 /**

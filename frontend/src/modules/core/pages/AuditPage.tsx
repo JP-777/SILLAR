@@ -3,8 +3,8 @@ import { PageContainer } from '../../../layout/PageContainer';
 import { useCapability } from '../../../capabilities/useCapability';
 import {
   auditEntityLabel,
-  visibleAuditEntityVocabularies,
-  type AuditEntityVocabulary,
+  visibleAuditEntityLabels,
+  type AuditEntityLabels,
 } from '../../../platform/auditEntityVocabularies';
 import { useResource } from '../../../shared/hooks/useResource';
 import { Alert, Badge, Button, Card, EmptyState, Field, Input } from '../../../shared/ui';
@@ -30,7 +30,7 @@ import { usersService } from '../services/users';
 export function AuditPage() {
   const [filters, setFilters] = useState<AuditQuery>({});
   const [page, setPage] = useState(1);
-  const vocabularies = visibleAuditEntityVocabularies(useCapability().has);
+  const entityLabels = visibleAuditEntityLabels(useCapability().has);
 
   const query = useMemo<AuditQuery>(() => ({ ...filters, page }), [filters, page]);
   const load = useCallback(() => auditService.query(query), [query]);
@@ -80,7 +80,7 @@ export function AuditPage() {
     {
       key: 'entity',
       header: 'Entidad',
-      render: (entry) => <Entidad entry={entry} vocabularies={vocabularies} />,
+      render: (entry) => <Entidad entry={entry} labels={entityLabels} />,
     },
     {
       key: 'summary',
@@ -248,10 +248,10 @@ export function AuditPage() {
  */
 function Entidad({
   entry,
-  vocabularies,
+  labels,
 }: {
   entry: AuditEntry;
-  vocabularies: readonly AuditEntityVocabulary[];
+  labels: AuditEntityLabels;
 }) {
   if (!entry.entityType) {
     return <span style={subtle}>—</span>;
@@ -259,7 +259,7 @@ function Entidad({
 
   return (
     <div style={{ fontSize: '12.5px' }}>
-      {auditEntityLabel(entry.entityType, vocabularies)}
+      {auditEntityLabel(entry.entityType, labels)}
       {/* Sin identificador no hay detalle que ofrecer. Un desplegable que se
           abre para decir «—» promete algo que no tiene. */}
       {entry.entityId && (

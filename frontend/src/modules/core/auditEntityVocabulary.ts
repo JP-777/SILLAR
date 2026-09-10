@@ -1,4 +1,4 @@
-import type { AuditEntityVocabulary } from '../../platform/auditEntityVocabularies';
+import type { AuditEntityVocabulary } from '../../platform/auditEntityVocabulary';
 
 /** Vocabulario de auditoría que pertenece a CORE. */
 export const coreAuditEntityVocabulary: AuditEntityVocabulary = {

@@ -4,6 +4,7 @@ import type { ModuleNavigation } from '../../layout/navigation';
 import { useAporteDePortada } from '../../platform/homeState';
 import type { EstadoAporte } from '../../platform/surfaceState';
 import type { HomeSection } from '../../platform/homeSections';
+import type { AuditEntityVocabulary } from '../../platform/auditEntityVocabulary';
 import { useResource, type ResourceState } from '../../shared/hooks/useResource';
 import { EmptyState } from '../../shared/ui';
 import { publicCatalog, type PublicCard, type PublicPage } from './services/publicCatalog';
@@ -50,6 +51,18 @@ export const catalogNavigation: ModuleNavigation = {
 export const catalogHome: HomeSection = {
   moduleCode: 'catalog',
   Component: CatalogHomeSection,
+};
+
+/** Vocabulario de auditoría que pertenece a M01 · Catálogo. */
+export const catalogAuditEntityVocabulary: AuditEntityVocabulary = {
+  moduleCode: 'catalog',
+  labels: {
+    brand: 'Marca',
+    category: 'Categoría',
+    product: 'Producto',
+    product_image: 'Imagen de producto',
+    product_item: 'Presentación',
+  },
 };
 
 /**

@@ -2,6 +2,7 @@ import { Link, Route } from 'react-router-dom';
 import type { ModuleNavigation } from '../../layout/navigation';
 import { useAporteDePortada } from '../../platform/homeState';
 import type { HomeSection } from '../../platform/homeSections';
+import type { AuditEntityVocabulary } from '../../platform/auditEntityVocabulary';
 import { EmptyState } from '../../shared/ui';
 import { RequireRole } from '../../session';
 import { CustomerEmailVerificationPage } from './pages/CustomerEmailVerificationPage';
@@ -38,6 +39,16 @@ export const crmNavigation: ModuleNavigation = {
 export const crmHome: HomeSection = {
   moduleCode: 'crm',
   Component: CrmHomeSection,
+};
+
+/** Vocabulario de auditoría que pertenece a M04 · Clientes y contacto. */
+export const crmAuditEntityVocabulary: AuditEntityVocabulary = {
+  moduleCode: 'crm',
+  labels: {
+    contact_message: 'Mensaje de contacto',
+    customer: 'Cliente',
+    customer_invitation: 'Invitación de cliente',
+  },
 };
 
 function CrmHomeSection() {
