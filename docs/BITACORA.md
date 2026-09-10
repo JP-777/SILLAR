@@ -1445,3 +1445,71 @@ Con esto, **§3 deja de ser pendiente**. La entrada histórica del 5 de septiemb
 que explica por qué se adelantó la extracción se conserva: una cosa registra la
 decisión y su origen; ésta registra que el trabajo ya llegó a `main` y pasó su
 puerta.
+
+---
+
+### 10 sep 2026 · Una tabla ausente no demuestra que falten migraciones
+
+El pendiente de arranque contra una base vacía se cerró cuando el arreglo dejó de ser una rama y llegó a `main`.
+
+La distinción que faltaba era pequeña pero operativamente importante: PostgreSQL `42P01` demuestra que una relación no existe **en la base a la que la aplicación se conectó**; no demuestra por sí solo que falten migraciones. La misma señal aparece si `ConnectionStrings__Default` apunta a otra base.
+
+La lectura de host, puerto y base que ya usaba el arranque por el pendiente §9 se extrajo a `Sillar.Shared/Configuration/DestinoDeConexion.cs`. `ModuleBootstrapper` y el diagnóstico de instalación consumen ahora la misma lógica; solo se conservan host, puerto y base, nunca la contraseña ni la cadena completa.
+
+Cuando `core.installation` no existe, el diagnóstico del `POST /api/setup/` identifica la tabla esperada y el destino real de la conexión, explica las dos causas posibles —migraciones ausentes o conexión a otra base— y ordena **comprobar primero la conexión**. El comando `dotnet ef database update` aparece únicamente después de esa advertencia.
+
+La detección continúa cerrada sobre `PostgresErrorCodes.UndefinedTable`; una `UndefinedColumn` y cualquier otro error PostgreSQL no se convierten en `MigrationsPending`.
+
+**Verificación que autorizó la integración.** Sobre `2d22ecf221f9fc8439007489e799295cb0a0a7cf`:
+
+- focal de base vacía: **8/8**, 0 fallos, 0 omitidas;
+- proyecto `Sillar.Core.Tests`: **148/148**, 0 fallos, 0 omitidas;
+- puerta canónica: **6/6**;
+- `systemd-inhibit=0`;
+- `verificar.mjs=0`;
+- sin bypass de concurrencia;
+- sin procesos, stack e2e ni bases temporales residuales.
+
+Integración: fast-forward de `main`
+`d409c0eb02fb5e9db6036d8ee4f6ffea2f7e347a` →
+`2d22ecf221f9fc8439007489e799295cb0a0a7cf`.
+
+Con eso, **arranque con base vacía deja de ser pendiente**.
+
+---
+
+### 10 sep 2026 · El vocabulario de auditoría vuelve a tener dueño
+
+El vocabulario legible de auditoría dejó de vivir dentro de `AuditPage.tsx`. La propiedad quedó distribuida en **cuatro contribuciones frontend**:
+
+- CORE: 7 asociaciones;
+- M01 catálogo: 5;
+- M02 CMS: 5;
+- M04 CRM: 3.
+
+`product_item → Presentación` pertenece a M01. Con los cuatro módulos activos el resultado conserva exactamente las veinte asociaciones anteriores; el SHA-256 canónico antes y después es
+`f660a26fd16ccfee327d7157af173ca3f3f9bc64b2a4b48473834bd6f8b7714a`.
+
+Un módulo desactivado deja de aportar su vocabulario y las filas históricas correspondientes muestran el código técnico. Un `entityType` desconocido hace lo mismo. Los duplicados, incluso dentro de una sola contribución, se conservan como declaraciones individuales durante la composición, no tienen ganador silencioso y la clave conflictiva se omite. En desarrollo el conflicto se hace visible; en producción no rompe la pantalla.
+
+La cobertura quedó convertida en barrera permanente. `frontend/package.json` expone `test:audit-vocabulary` y `scripts/verificar.mjs` la ejecuta dentro de `[1/6]` **antes** del `typecheck`; una regresión en el vocabulario deja roja la primera etapa y corta antes de compilar los tipos.
+
+Después de integrar el nuevo `main` del arreglo `42P01`, el candidato final fue
+`576fc7f3e843c0ce061ae72d030a8ce0781f3cd0`. El merge tuvo como padres la costura verificada de §17 y `2d22ecf`, sin conflictos ni resolución manual.
+
+**Verificación que autorizó la integración.**
+
+- `test:audit-vocabulary`: **14/14**;
+- `typecheck` frontend: código 0;
+- build frontend: código 0, 178 módulos;
+- puerta canónica: **6/6**;
+- `verificar.mjs=0`;
+- `systemd-inhibit=0`;
+- sin bypass de concurrencia;
+- árbol limpio y sin procesos, cerrojo, stack e2e ni bases temporales residuales.
+
+Integración: fast-forward de `main`
+`2d22ecf221f9fc8439007489e799295cb0a0a7cf` →
+`576fc7f3e843c0ce061ae72d030a8ce0781f3cd0`.
+
+Con esta entrada también se satisface el antiguo §19: **el verde que autorizó cada movimiento reciente de `main` ya está registrado**.
