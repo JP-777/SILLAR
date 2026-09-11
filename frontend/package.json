@@ -9,7 +9,8 @@
     "build": "tsc --build && vite build",
     "preview": "vite preview",
     "test:audit-vocabulary": "node --test tests/auditEntityVocabulary.test.mjs",
-    "typecheck": "tsc --build --force"
+    "typecheck": "tsc --build --force",
+    "test:frontend-hygiene": "node --test tests/frontendHygiene.test.mjs"
   },
   "dependencies": {
     "react": "^19.2.0",

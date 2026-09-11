@@ -1,17 +1,12 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useCapability } from '../capabilities/useCapability';
 import { useSession } from '../session';
+import { roleLabel } from '../session/roleVocabulary';
 import { usePublicSettings } from '../platform/usePublicSettings';
 import { Button } from '../shared/ui';
 import { ThemeToggle } from '../shared/ui/ThemeToggle';
 import { visibleNavigation } from './navigation';
 import './layout.css';
-
-const ROLE_LABELS: Record<string, string> = {
-  super_admin: 'Administrador principal',
-  admin: 'Administrador',
-  editor: 'Editor',
-};
 
 /**
  * Armazón del panel.
@@ -69,7 +64,7 @@ export function AdminShell() {
           <div className="ly-topbar__user">
             <span className="ly-topbar__name">{user?.fullName}</span>
             <span className="ly-topbar__role">
-              {user ? (ROLE_LABELS[user.role] ?? user.role) : ''}
+              {user ? roleLabel(user.role) : ''}
             </span>
           </div>
 

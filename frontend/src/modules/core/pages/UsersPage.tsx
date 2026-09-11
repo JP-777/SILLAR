@@ -5,16 +5,11 @@ import { useResource } from '../../../shared/hooks/useResource';
 import { Badge, Button, EmptyState } from '../../../shared/ui';
 import { ConfirmDialog, FailureAlert, Table, Toasts, useToasts, type Column } from '../../../shared/ui/patterns';
 import { ForbiddenPage } from '../../../platform/ForbiddenPage';
-import { useSession, type Role } from '../../../session';
+import { useSession } from '../../../session';
+import { roleLabel } from '../../../session/roleVocabulary';
 import { UserForm } from '../components/UserForm';
 import { SessionList } from '../components/SessionList';
 import { usersService, type AdminUser } from '../services/users';
-
-const ROLE_LABELS: Record<Role, string> = {
-  super_admin: 'Principal',
-  admin: 'Administrador',
-  editor: 'Editor',
-};
 
 /** Administración de usuarios. Solo `super_admin`. */
 export function UsersPage() {
@@ -68,7 +63,7 @@ export function UsersPage() {
     {
       key: 'role',
       header: 'Rol',
-      render: (user) => <Badge tone="neutral">{ROLE_LABELS[user.role]}</Badge>,
+      render: (user) => <Badge tone="neutral">{roleLabel(user.role)}</Badge>,
     },
     {
       key: 'status',
@@ -117,7 +112,7 @@ export function UsersPage() {
     <PageContainer
       title="Usuarios"
       description="Quién puede entrar al panel y con qué permisos."
-      actions={<Button onClick={() => setCreating(true)}>Nuevo administrador</Button>}
+      actions={<Button onClick={() => setCreating(true)}>Nuevo usuario</Button>}
     >
       <FailureAlert failure={failure} />
 

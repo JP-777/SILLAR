@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useCapability } from '../capabilities/useCapability';
+import { useSession } from '../session';
 import { usePublicSettings } from './usePublicSettings';
 import { AportesDePortada, useHomeState } from './homeState';
 import { visibleHomeSections } from './homeSections';
@@ -50,6 +51,7 @@ export function PublicSite() {
 }
 
 function Portada() {
+  const { isAuthenticated } = useSession();
   const businessName = usePublicSettings().get('business_name');
   const configured = businessName && businessName !== 'PENDIENTE_DEFINIR';
   const secciones = visibleHomeSections(useCapability().has);
@@ -86,7 +88,11 @@ function Portada() {
           // activo. Esto es verdad en los dos casos y en ninguno manda a
           // hacer algo que ya está hecho.
           description="Todavía no hay contenido publicado. Lo que se publique desde el panel aparecerá aquí."
-          action={<Link to="/admin">Ir al panel de administración</Link>}
+          action={
+          isAuthenticated
+            ? <Link to="/admin">Ir al panel de administración</Link>
+            : undefined
+        }
         />
       )}
     </main>

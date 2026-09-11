@@ -1,13 +1,15 @@
 import { useCallback, useMemo, useState } from 'react';
 import { PageContainer } from '../../../layout/PageContainer';
 import { useCapability } from '../../../capabilities/useCapability';
+import { moduleDisplayName } from '../../../capabilities/moduleDisplayName';
 import {
   auditEntityLabel,
   visibleAuditEntityLabels,
   type AuditEntityLabels,
 } from '../../../platform/auditEntityVocabularies';
 import { useResource } from '../../../shared/hooks/useResource';
-import { Alert, Badge, Button, Card, EmptyState, Field, Input } from '../../../shared/ui';
+import { Alert, Badge, Button, Card, EmptyState, Field } from '../../../shared/ui';
+import { DateFilterField } from '../../../shared/ui/DateFilterField';
 import { Table, type Column } from '../../../shared/ui/patterns';
 import { ForbiddenPage } from '../../../platform/ForbiddenPage';
 import {
@@ -18,6 +20,7 @@ import {
   type AuditQuery,
 } from '../services/audit';
 import { usersService } from '../services/users';
+import { modulesService } from '../services/modules';
 
 /**
  * Registro de auditoría.
@@ -31,6 +34,14 @@ export function AuditPage() {
   const [filters, setFilters] = useState<AuditQuery>({});
   const [page, setPage] = useState(1);
   const entityLabels = visibleAuditEntityLabels(useCapability().has);
+  const moduleCatalog = useResource(
+    modulesService.list,
+    'cargar los nombres de los módulos',
+  );
+  const moduleDisplayModules =
+    moduleCatalog.state.status === 'ready'
+      ? moduleCatalog.state.data
+      : [];
 
   const query = useMemo<AuditQuery>(() => ({ ...filters, page }), [filters, page]);
   const load = useCallback(() => auditService.query(query), [query]);
@@ -102,31 +113,19 @@ export function AuditPage() {
     >
       <Card title="Filtros">
         <div style={filterGrid}>
-          <Field label="Desde">
-            {(props) => (
-              <Input
-                {...props}
-                type="date"
-                value={filters.from?.slice(0, 10) ?? ''}
-                onChange={(event) =>
-                  apply({ from: event.target.value ? `${event.target.value}T00:00:00Z` : undefined })
-                }
-              />
-            )}
-          </Field>
+          <DateFilterField
+          label="Desde"
+          value={filters.from}
+          boundary="start"
+          onChange={(from) => apply({ from })}
+        />
 
-          <Field label="Hasta">
-            {(props) => (
-              <Input
-                {...props}
-                type="date"
-                value={filters.to?.slice(0, 10) ?? ''}
-                onChange={(event) =>
-                  apply({ to: event.target.value ? `${event.target.value}T23:59:59Z` : undefined })
-                }
-              />
-            )}
-          </Field>
+          <DateFilterField
+          label="Hasta"
+          value={filters.to}
+          boundary="end"
+          onChange={(to) => apply({ to })}
+        />
 
           <Field label="Usuario" hint={usuarios.status === 'error' ? usuarios.failure.message : undefined}>
             {(props) => (
@@ -156,15 +155,28 @@ export function AuditPage() {
           </Field>
 
           <Field label="Módulo">
-            {(props) => (
-              <Input
-                {...props}
-                value={filters.moduleCode ?? ''}
-                placeholder="core, catalog…"
-                onChange={(event) => apply({ moduleCode: event.target.value || undefined })}
-              />
-            )}
-          </Field>
+          {(props) => (
+            <select
+              {...props}
+              className="ui-input"
+              value={filters.moduleCode ?? ''}
+              onChange={(event) =>
+                apply({ moduleCode: event.target.value || undefined })
+              }
+            >
+              <option value="">Todos</option>
+              {moduleDisplayModules.map((item) => {
+                  const label = moduleDisplayName(moduleDisplayModules, item.code);
+
+                  return label ? (
+                    <option key={item.code} value={item.code}>
+                      {label}
+                    </option>
+                  ) : null;
+                })}
+            </select>
+          )}
+        </Field>
 
           <Field label="Acción">
             {(props) => (

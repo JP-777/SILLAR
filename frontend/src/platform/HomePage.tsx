@@ -1,24 +1,30 @@
+import { useCallback } from 'react';
+import { settingsService } from '../modules/core/services/settings';
+import { useResource } from '../shared/hooks/useResource';
 import { useCapability } from '../capabilities/useCapability';
 import { useSession } from '../session';
 import { PageContainer } from '../layout/PageContainer';
-import { usePublicSettings } from './usePublicSettings';
 import { Alert, Badge, Card } from '../shared/ui';
 
 /**
  * Inicio del panel.
  *
- * Provisional: la sustituirá la entrega de pantallas de CORE. Muestra lo mínimo
- * útil —qué está activo y qué falta configurar— para que la instalación recién
- * hecha no reciba a nadie con una pantalla vacía.
+ * Resumen operativo del panel: muestra módulos activos y la configuración
+ * que todavía requiere atención.
  */
 export function HomePage() {
   const { modules, version } = useCapability();
   const { user } = useSession();
-  const settings = usePublicSettings();
+  const loadSettings = useCallback(() => settingsService.list(), []);
+  const { state: settingsState } = useResource(
+    loadSettings,
+    'cargar la configuración del inicio',
+  );
 
-  const pending = Object.entries(settings.all)
-    .filter(([, value]) => value === 'PENDIENTE_DEFINIR')
-    .map(([key]) => key);
+  const pending =
+    settingsState.status === 'ready'
+      ? settingsState.data.filter((setting) => setting.needsSetup)
+      : [];
 
   return (
     <PageContainer
@@ -28,8 +34,9 @@ export function HomePage() {
       {pending.length > 0 && (
         <Alert tone="warning" title="Falta configurar el negocio">
           {pending.length} dato{pending.length === 1 ? '' : 's'} sin completar:{' '}
-          {pending.join(', ')}. Se configuran desde la pantalla de configuración, que llega en la
-          siguiente entrega.
+          {pending
+            .map((setting) => setting.description?.trim() || setting.key)
+            .join(', ')}. Se configuran desde la pantalla de configuración.
         </Alert>
       )}
 
@@ -43,10 +50,10 @@ export function HomePage() {
         </div>
       </Card>
 
-      <Card title="Qué viene ahora">
+      <Card title="Administración disponible">
         <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-          Las pantallas de módulos, usuarios, configuración, auditoría y archivos llegan en la
-          entrega de administración de CORE. El API ya las sirve; falta la interfaz.
+          Desde este panel puedes gestionar módulos, usuarios, configuración, auditoría y archivos
+          según tu rol y los módulos activos.
         </p>
       </Card>
     </PageContainer>

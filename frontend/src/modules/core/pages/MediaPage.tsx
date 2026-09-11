@@ -1,9 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import { PageContainer } from '../../../layout/PageContainer';
 import { useCapability } from '../../../capabilities/useCapability';
+import { moduleDisplayName } from '../../../capabilities/moduleDisplayName';
 import { describe } from '../../../shared/errors/messages';
 import { useResource } from '../../../shared/hooks/useResource';
-import { Alert, Badge, Button, Card, EmptyState, Field, Input } from '../../../shared/ui';
+import { Alert, Badge, Button, Card, EmptyState, Field } from '../../../shared/ui';
+import { DateFilterField } from '../../../shared/ui/DateFilterField';
 import { Gallery } from '../../../shared/ui/Gallery';
 import { ConfirmDialog, Pagination, Toasts, useToasts } from '../../../shared/ui/patterns';
 import { ForbiddenPage } from '../../../platform/ForbiddenPage';
@@ -15,6 +17,7 @@ import {
   type MediaAsset,
   type MediaQuery,
 } from '../services/media';
+import { modulesService } from '../services/modules';
 import '../../../shared/ui/gallery.css';
 
 /**
@@ -27,6 +30,14 @@ export function MediaPage() {
   const { modules } = useCapability();
   const { hasRole } = useSession();
   const { toasts, show } = useToasts();
+  const moduleCatalog = useResource(
+    modulesService.list,
+    'cargar los nombres de los módulos',
+  );
+  const moduleDisplayModules =
+    moduleCatalog.state.status === 'ready'
+      ? moduleCatalog.state.data
+      : [];
 
   const canDelete = hasRole('admin');
   const moduleCodes = useMemo(() => modules.map((module) => module.code), [modules]);
@@ -169,11 +180,15 @@ export function MediaPage() {
                 onChange={(event) => apply({ ownerModuleCode: event.target.value || undefined })}
               >
                 <option value="">Todos</option>
-                {moduleCodes.map((code) => (
-                  <option key={code} value={code}>
-                    {code}
-                  </option>
-                ))}
+                {moduleCodes.map((code) => {
+                  const label = moduleDisplayName(moduleDisplayModules, code);
+
+                  return label ? (
+                    <option key={code} value={code}>
+                      {label}
+                    </option>
+                  ) : null;
+                })}
               </select>
             )}
           </Field>
@@ -194,18 +209,12 @@ export function MediaPage() {
             )}
           </Field>
 
-          <Field label="Desde">
-            {(props) => (
-              <Input
-                {...props}
-                type="date"
-                value={filters.from?.slice(0, 10) ?? ''}
-                onChange={(event) =>
-                  apply({ from: event.target.value ? `${event.target.value}T00:00:00Z` : undefined })
-                }
-              />
-            )}
-          </Field>
+          <DateFilterField
+          label="Desde"
+          value={filters.from}
+          boundary="start"
+          onChange={(from) => apply({ from })}
+        />
 
           <Field label="Sin dueño">
             {(props) => (

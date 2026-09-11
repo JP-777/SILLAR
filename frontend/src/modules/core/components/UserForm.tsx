@@ -5,12 +5,7 @@ import { describe, type Failure } from '../../../shared/errors/messages';
 import { MIN_LENGTH, requirements } from '../../../platform/password';
 import { ROLES, type Role } from '../../../session';
 import { usersService, type AdminUser } from '../services/users';
-
-const ROLE_LABELS: Record<Role, string> = {
-  editor: 'Editor — edita contenido y sube archivos',
-  admin: 'Administrador — configura el negocio',
-  super_admin: 'Administrador principal — gestiona usuarios y módulos',
-};
+import { roleFormLabel } from '../../../session/roleVocabulary';
 
 interface UserFormProps {
   open: boolean;
@@ -80,7 +75,7 @@ export function UserForm({ open, user, currentUserId, onClose, onSaved }: UserFo
   return (
     <Drawer
       open={open}
-      title={editing ? `Editar ${user.fullName}` : 'Nuevo administrador'}
+      title={editing ? `Editar ${user.fullName}` : 'Nuevo usuario'}
       description={
         editing ? 'El correo no se puede cambiar: es el identificador de acceso.' : undefined
       }
@@ -91,7 +86,7 @@ export function UserForm({ open, user, currentUserId, onClose, onSaved }: UserFo
             Cancelar
           </Button>
           <Button type="submit" form="formulario-usuario" loading={busy}>
-            {editing ? 'Guardar cambios' : 'Crear administrador'}
+            {editing ? 'Guardar cambios' : 'Crear usuario'}
           </Button>
         </>
       }
@@ -162,7 +157,7 @@ export function UserForm({ open, user, currentUserId, onClose, onSaved }: UserFo
             >
               {ROLES.map((value) => (
                 <option key={value} value={value}>
-                  {ROLE_LABELS[value]}
+                  {roleFormLabel(value)}
                 </option>
               ))}
             </select>
