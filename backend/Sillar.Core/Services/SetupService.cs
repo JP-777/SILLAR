@@ -6,6 +6,7 @@ using Sillar.Core.Data;
 using Sillar.Core.Domain;
 using Sillar.Core.Domain.Values;
 using Sillar.Core.Dtos;
+using Sillar.Core.Setup;
 using Sillar.Shared.Configuration;
 using Sillar.Shared.Platform;
 
@@ -21,22 +22,26 @@ internal enum SetupOutcome
     AlreadyInstalled,
 
     /// <summary>
-    /// La tabla de instalación no existe <b>en la base a la que se conectó</b>.
-    /// No es culpa de los datos enviados y no se arregla desde el asistente.
+    /// La base a la que apunta la conexión tiene cosas que no son de SILLAR, y
+    /// el instalador se negó a aplicar migraciones en ella.
     /// </summary>
     /// <remarks>
-    /// El nombre dice «faltan migraciones» porque es la explicación más
-    /// frecuente y el diseño de tres estados se aprobó así, pero <b>eso es lo
-    /// que se sospecha, no lo que se sabe</b>: ver <see cref="SetupService.GetStateAsync"/>.
+    /// No es culpa de los datos enviados. Y no es «faltan migraciones»: es que
+    /// el destino no es seguro, y lo más probable es que la conexión apunte a
+    /// otra base. Ver <see cref="DestinoDeInstalacion"/>.
     /// </remarks>
-    MigrationsPending,
+    UnsafeTarget,
 
     /// <summary>Los datos enviados no sirven.</summary>
     Invalid
 }
 
 /// <summary>Resultado de la instalación.</summary>
-internal sealed record SetupResult(SetupOutcome Outcome, string? Error = null, SetupResponse? Response = null);
+internal sealed record SetupResult(
+    SetupOutcome Outcome,
+    string? Error = null,
+    SetupResponse? Response = null,
+    DiagnosticoDelDestino? Destino = null);
 
 /// <summary>En qué estado está la instalación.</summary>
 /// <remarks>
@@ -62,7 +67,8 @@ internal sealed class SetupService(
     CoreDbContext database,
     IPasswordHasher hasher,
     IAuditWriter audit,
-    TimeProvider clock)
+    TimeProvider clock,
+    InstaladorDeModulos instalador)
 {
     /// <summary>En qué estado está la instalación.</summary>
     /// <remarks>
@@ -149,13 +155,25 @@ internal sealed class SetupService(
         var admin = request.Admin!;
         var now = clock.GetUtcNow();
 
-        // La tabla no está donde se buscó, y el asistente no puede crearla.
-        // Se comprueba antes de abrir la transacción: abrirla para descubrir que
-        // la primera consulta revienta deja el mismo 500 en crudo que esto viene
-        // a quitar, solo que un paso más tarde.
-        if (await GetStateAsync(cancellationToken) is SetupState.MigrationsPending)
+        // **El instalador aplica; la activación comprueba.** Antes de escribir la
+        // instalación se dejan preparados los schemas de todos los módulos
+        // desplegados, y antes de eso se comprueba que la base sea de SILLAR (o
+        // esté vacía). Ver InstaladorDeModulos y DestinoDeInstalacion.
+        //
+        // Con la conexión REAL del contexto, no con la de la configuración: la
+        // que se va a modificar es ésta, y describir otra sería volver a suponer.
+        //
+        // Fuera de la transacción de la instalación, y antes: las migraciones
+        // de contextos distintos no forman una transacción, y lo que se exige es
+        // que se pueda reanudar, no que todo sea atómico.
+        var preparacion = await instalador.PrepararAsync(
+            database.Database.GetConnectionString()
+                ?? throw new InvalidOperationException("El contexto de CORE no tiene cadena de conexión."),
+            cancellationToken);
+
+        if (preparacion.Diagnostico.Estado == EstadoDelDestino.NoSeguro)
         {
-            return new SetupResult(SetupOutcome.MigrationsPending);
+            return new SetupResult(SetupOutcome.UnsafeTarget, Destino: preparacion.Diagnostico);
         }
 
         await using var transaction = await database.Database.BeginTransactionAsync(cancellationToken);

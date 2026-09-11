@@ -18,6 +18,8 @@ using Sillar.Core.Services;
 using Sillar.Shared.Configuration;
 using Sillar.Shared.Replication;
 
+using static Sillar.Core.Tests.BaseDePrueba;
+
 namespace Sillar.Core.Tests;
 
 /// <summary>
@@ -62,67 +64,6 @@ internal sealed class AuditoriaQueNoDeberiaLlamarse : IAuditWriter
 /// </summary>
 public sealed class ArranqueContraBaseVaciaTests
 {
-    private static readonly NodeIdentity Nodo = new(NodeIdentity.DefaultCode);
-
-    /// <summary>La cadena del entorno, o <c>null</c> si no hay ninguna.</summary>
-    private static string? Cadena()
-    {
-        DotEnv.Load();
-        var cadena = Environment.GetEnvironmentVariable("ConnectionStrings__Default");
-        return string.IsNullOrWhiteSpace(cadena) ? null : cadena;
-    }
-
-    private static CoreDbContext Contexto(string cadena)
-        => new(
-            new DbContextOptionsBuilder<CoreDbContext>().UseNpgsql(cadena).Options,
-            Nodo,
-            TimeProvider.System);
-
-    private static SetupService Servicio(CoreDbContext contexto)
-        => new(contexto, new FakePasswordHasher(), new AuditoriaQueNoDeberiaLlamarse(), TimeProvider.System);
-
-    /// <summary>
-    /// Crea una base vacía, corre lo que se le pase contra ella y la destruye.
-    /// </summary>
-    private static async Task ConBaseVaciaAsync(Func<string, Task> cuerpo, CancellationToken ct)
-    {
-        var cadena = Cadena();
-
-        if (cadena is null)
-        {
-            Assert.Skip("Sin ConnectionStrings__Default: no hay servidor donde crear una base vacía.");
-            return;
-        }
-
-        var nombre = $"sillar_vacia_{Guid.NewGuid():N}";
-        var mantenimiento = new NpgsqlConnectionStringBuilder(cadena) { Database = "postgres" }.ConnectionString;
-        var destino = new NpgsqlConnectionStringBuilder(cadena) { Database = nombre }.ConnectionString;
-
-        await using (var admin = new NpgsqlConnection(mantenimiento))
-        {
-            await admin.OpenAsync(ct);
-            await using var crear = new NpgsqlCommand($"CREATE DATABASE \"{nombre}\"", admin);
-            await crear.ExecuteNonQueryAsync(ct);
-        }
-
-        try
-        {
-            await cuerpo(destino);
-        }
-        finally
-        {
-            // Las conexiones abiertas contra la base se cierran solas al salir
-            // del `using` del contexto, pero el pool de Npgsql las conserva: sin
-            // vaciarlo, el DROP falla por «is being accessed by other users».
-            NpgsqlConnection.ClearAllPools();
-
-            await using var admin = new NpgsqlConnection(mantenimiento);
-            await admin.OpenAsync(ct);
-            await using var borrar = new NpgsqlCommand($"DROP DATABASE IF EXISTS \"{nombre}\" WITH (FORCE)", admin);
-            await borrar.ExecuteNonQueryAsync(ct);
-        }
-    }
-
     [Fact]
     public async Task Sin_migraciones_el_estado_es_faltan_migraciones_y_no_una_excepcion()
     {
@@ -169,35 +110,6 @@ public sealed class ArranqueContraBaseVaciaTests
         }, ct);
     }
 
-    [Fact]
-    public async Task Sin_migraciones_la_instalacion_se_rinde_antes_de_escribir_nada()
-    {
-        var ct = TestContext.Current.CancellationToken;
-
-        await ConBaseVaciaAsync(async cadena =>
-        {
-            await using var contexto = Contexto(cadena);
-
-            // Datos válidos a propósito: lo que falla no son ellos. Si el
-            // servicio los rechazara por inválidos, el usuario recibiría un 400
-            // culpándole de algo que no ha hecho mal.
-            var peticion = new SetupRequest(
-                BusinessName: "Negocio de prueba",
-                LicenseType: Sillar.Core.Domain.Values.LicenseType.All.First(),
-                Admin: new SetupAdminRequest(
-                    FullName: "Persona Que Instala",
-                    Email: "instala@ejemplo.test",
-                    Password: "Contrasena-Larga-2026"));
-
-            var resultado = await Servicio(contexto).CompleteAsync(peticion, ct);
-
-            Assert.Equal(SetupOutcome.MigrationsPending, resultado.Outcome);
-
-            // Y no por culpa de los datos: eso es lo que separa un 503 de un 400.
-            Assert.NotEqual(SetupOutcome.Invalid, resultado.Outcome);
-        }, ct);
-    }
-
     // ======================================================================
     // Las rutas, llamadas directamente contra una base vacía.
     //
@@ -224,94 +136,6 @@ public sealed class ArranqueContraBaseVaciaTests
 
             Assert.True(ok.Value!.SetupRequired);
             Assert.True(ok.Value.MigrationsPending);
-        }, ct);
-    }
-
-    [Fact]
-    public async Task POST_setup_sin_tablas_responde_503_y_no_culpa_a_los_datos()
-    {
-        var ct = TestContext.Current.CancellationToken;
-
-        await ConBaseVaciaAsync(async cadena =>
-        {
-            await using var contexto = Contexto(cadena);
-
-            var respuesta = await SetupEndpoints.Complete(
-                PeticionValida(), Servicio(contexto), Reiniciador(), new DefaultHttpContext(), ct);
-
-            // **No es un ValidationProblem.** Ésa es la distinción entera: los
-            // datos enviados están bien y decirle a quien instala que no lo
-            // están sería mandarle a corregir algo que no ha hecho mal.
-            Assert.IsNotType<ValidationProblem>(respuesta);
-
-            var problema = Assert.IsType<ProblemHttpResult>(respuesta);
-
-            Assert.Equal(StatusCodes.Status503ServiceUnavailable, problema.StatusCode);
-
-            // Y el remedio va en la respuesta, no en la cabeza de nadie.
-            Assert.Contains("dotnet ef database update", problema.ProblemDetails.Detail);
-            Assert.Contains("no tienen nada de malo", problema.ProblemDetails.Detail);
-        }, ct);
-    }
-
-    [Fact]
-    public async Task El_503_nombra_la_base_real_y_advierte_de_que_puede_ser_otra()
-    {
-        var ct = TestContext.Current.CancellationToken;
-
-        // **Qué se está midiendo, y por qué no basta con el 503.**
-        //
-        // `42P01` prueba que la tabla no existe EN LA BASE A LA QUE LA
-        // APLICACIÓN SE CONECTÓ. No prueba que falten las migraciones: una
-        // conexión apuntando a otra base da el mismo error. Un diagnóstico que
-        // solo dijera «faltan las migraciones, aplícalas» puede llevar a alguien
-        // a crear el esquema de CORE en la base equivocada — y eso ya no lo
-        // deshace ningún mensaje.
-        //
-        // Así que el mensaje tiene que nombrar la base y el servidor reales, dar
-        // las dos explicaciones, y mandar comprobar la conexión ANTES.
-        await ConBaseVaciaAsync(async cadena =>
-        {
-            var esperado = new NpgsqlConnectionStringBuilder(cadena);
-
-            await using var contexto = Contexto(cadena);
-
-            var respuesta = await SetupEndpoints.Complete(
-                PeticionValida(), Servicio(contexto), Reiniciador(), new DefaultHttpContext(), ct);
-
-            var problema = Assert.IsType<ProblemHttpResult>(respuesta);
-            var texto = $"{problema.ProblemDetails.Title}\n{problema.ProblemDetails.Detail}";
-
-            // 1 · Qué tabla se esperaba, con su schema.
-            Assert.Contains("core.installation", texto);
-
-            // 2 · El nombre REAL de la base. Es de usar y tirar y distinto en
-            //     cada corrida, así que si aparece es porque salió de la
-            //     conexión y no de un literal escrito en el código.
-            Assert.Contains(esperado.Database!, texto);
-
-            // 3 · El host/servidor REAL.
-            Assert.Contains(esperado.Host!, texto);
-
-            // 4 · Las dos explicaciones, no una.
-            Assert.Contains("Faltan las migraciones", texto);
-            Assert.Contains("apunta a una base distinta", texto);
-
-            // 5 · Y el orden: comprobar la conexión ANTES de aplicar nada. Se
-            //     mide por posición, no por presencia: un texto que dijera las
-            //     dos cosas en el orden contrario cumpliría lo anterior y
-            //     seguiría siendo peligroso.
-            var avisoDeConexion = texto.IndexOf("Comprueba PRIMERO la conexión", StringComparison.Ordinal);
-            var comando = texto.IndexOf("dotnet ef database update", StringComparison.Ordinal);
-
-            Assert.True(avisoDeConexion >= 0, "El diagnóstico no manda comprobar la conexión.");
-            Assert.True(comando >= 0, "El diagnóstico ya no ofrece el comando.");
-            Assert.True(
-                avisoDeConexion < comando,
-                "El comando aparece antes que el aviso de comprobar la conexión: se lee como una orden.");
-
-            // Y no se filtra la contraseña en el camino.
-            Assert.DoesNotContain(esperado.Password ?? "no-hay-contrasena-en-esta-cadena", texto);
         }, ct);
     }
 
@@ -387,29 +211,6 @@ public sealed class ArranqueContraBaseVaciaTests
         => throw new InvalidOperationException(
             $"Se resolvió {typeof(T).Name} en una prueba que solo enumera rutas.");
 
-    /// <summary>Datos de instalación válidos: lo que falla nunca son ellos.</summary>
-    private static SetupRequest PeticionValida()
-        => new(
-            BusinessName: "Negocio de prueba",
-            LicenseType: Sillar.Core.Domain.Values.LicenseType.All.First(),
-            Admin: new SetupAdminRequest(
-                FullName: "Persona Que Instala",
-                Email: "instala@ejemplo.test",
-                Password: "Contrasena-Larga-2026"));
 
-    private static HostRestarter Reiniciador()
-        => new(
-            new CicloDeVidaInerte(),
-            new ConfigurationBuilder().AddInMemoryCollection([]).Build(),
-            NullLogger<HostRestarter>.Instance);
 
-    /// <summary>Ciclo de vida que no detiene nada: aquí nadie debe reiniciar.</summary>
-    private sealed class CicloDeVidaInerte : IHostApplicationLifetime
-    {
-        public CancellationToken ApplicationStarted => CancellationToken.None;
-        public CancellationToken ApplicationStopping => CancellationToken.None;
-        public CancellationToken ApplicationStopped => CancellationToken.None;
-        public void StopApplication()
-            => throw new InvalidOperationException("Se pidió reiniciar el host en un caso que no llega a instalar.");
-    }
 }

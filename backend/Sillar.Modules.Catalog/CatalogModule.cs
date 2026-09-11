@@ -1,3 +1,4 @@
+using Sillar.Shared.Data.Modularity;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -20,7 +21,7 @@ namespace Sillar.Modules.Catalog;
 ///
 /// Vendible solo, como catálogo de exhibición sin venta.
 /// </remarks>
-public sealed class CatalogModule : IModule
+public sealed class CatalogModule : IModule, IModuleMigrations
 {
     /// <summary>Código del módulo, y nombre de su schema.</summary>
     public const string ModuleCode = "catalog";
@@ -30,6 +31,34 @@ public sealed class CatalogModule : IModule
 
     /// <inheritdoc />
     public string Code => ModuleCode;
+
+    /// <summary>
+    /// Sus migraciones, para que el instalador las aplique sin conocer este
+    /// módulo. El contexto se construye aquí, con la misma configuración que
+    /// en tiempo de ejecución; el nodo y el reloj no intervienen al migrar.
+    /// </summary>
+    private static readonly MigracionesDeContexto<CatalogDbContext> Migraciones = new(
+        connectionString => new CatalogDbContext(
+            PersistenciaDeModulo.Opciones<CatalogDbContext>(
+                connectionString, CatalogDbContext.Schema, CatalogDbContext.MigrationsHistoryTable),
+            new NodeIdentity(NodeIdentity.DefaultCode),
+            TimeProvider.System),
+        CatalogDbContext.MigrationsHistoryTable);
+
+    /// <inheritdoc />
+    public string MigrationsHistoryTable => Migraciones.MigrationsHistoryTable;
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> KnownMigrations(string connectionString)
+        => Migraciones.KnownMigrations(connectionString);
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<string>> AppliedMigrationsAsync(string connectionString, CancellationToken cancellationToken)
+        => Migraciones.AppliedMigrationsAsync(connectionString, cancellationToken);
+
+    /// <inheritdoc />
+    public Task ApplyMigrationsAsync(string connectionString, CancellationToken cancellationToken)
+        => Migraciones.ApplyMigrationsAsync(connectionString, cancellationToken);
 
     /// <inheritdoc />
     public string DisplayName => "Catálogo de Productos";
@@ -68,11 +97,9 @@ public sealed class CatalogModule : IModule
         // veces, sea cual sea el orden en que arranquen los módulos.
         services.TryAddNodeIdentity(configuration);
 
-        services.AddDbContext<CatalogDbContext>(options => options.UseNpgsql(
-            connectionString,
-            npgsql => npgsql.MigrationsHistoryTable(
-                CatalogDbContext.MigrationsHistoryTable,
-                CatalogDbContext.Schema)));
+        // Por el mismo sitio que el instalador: ver PersistenciaDeModulo.
+        services.AddDbContext<CatalogDbContext>(options => PersistenciaDeModulo.Configurar(
+            options, connectionString, CatalogDbContext.Schema, CatalogDbContext.MigrationsHistoryTable));
 
         services.AddScoped<CategoryService>();
         services.AddScoped<BrandService>();

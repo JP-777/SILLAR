@@ -108,38 +108,31 @@ public static class SetupEndpoints
 
         switch (result.Outcome)
         {
-            case SetupOutcome.MigrationsPending:
-                // 503 y no 400: los datos enviados están bien, lo que falta es
-                // del servidor y lo arregla quien despliega, no quien instala.
-                //
-                // **Y el diagnóstico no da una orden, porque no sabe lo bastante
-                // para darla.** `42P01` prueba que la tabla no existe EN LA BASE
-                // A LA QUE ESTA APLICACIÓN SE CONECTÓ. No prueba que falten las
-                // migraciones: una cadena de conexión apuntando a otra base da
-                // exactamente el mismo error. Si en ese caso alguien obedece un
-                // «aplica las migraciones», crea el esquema de CORE **en la base
-                // equivocada** — y eso ya no lo deshace un mensaje.
-                //
-                // Por eso el texto nombra la base y el servidor reales, da las
-                // dos explicaciones, y manda comprobar la conexión ANTES. El
-                // comando sigue estando, porque hace falta cuando la explicación
-                // es la primera; deja de estar como remedio inequívoco.
+            case SetupOutcome.UnsafeTarget:
+                // 503 y no 400: los datos enviados están bien. Y no «faltan
+                // migraciones»: el instalador se ha negado a crearlas porque el
+                // destino no es seguro. Es la lección del 42P01 llevada a su
+                // sitio: una conexión potencialmente equivocada no se arregla
+                // creando tablas sin comprobar el destino.
+                var diagnostico = result.Destino!;
+                var destino = diagnostico.Destino;
+
                 return Results.Problem(
-                    title: $"No existe {setup.TablaEsperada} en la base {setup.Destino.Base} ({setup.Destino.Host}:{setup.Destino.Puerto}).",
+                    title: $"No se instala en la base {destino.Base} ({destino.Host}:{destino.Puerto}): " +
+                           "tiene cosas que no son de SILLAR.",
                     detail:
-                        $"La aplicación consultó {setup.TablaEsperada} en la base '{setup.Destino.Base}' " +
-                        $"del servidor {setup.Destino.Host}:{setup.Destino.Puerto}, y esa tabla no está ahí.\n" +
+                        $"Antes de aplicar ninguna migración se comprobó la base '{destino.Base}' del servidor " +
+                        $"{destino.Host}:{destino.Puerto}, y contiene cosas que no pertenecen a ningún módulo " +
+                        "desplegado:\n" +
+                        string.Concat(diagnostico.Evidencias.Select(evidencia => $"  · {evidencia}\n")) +
                         "\n" +
-                        "Hay dos explicaciones y llevan a sitios distintos:\n" +
-                        "  1. Faltan las migraciones en esa base.\n" +
-                        "  2. La conexión apunta a una base distinta de la que esperabas.\n" +
+                        "No se ha aplicado ninguna migración ni se ha modificado nada.\n" +
                         "\n" +
-                        "Comprueba PRIMERO la conexión: si es la segunda y aplicas las migraciones, " +
-                        "crearás el esquema de CORE en la base equivocada. Revisa " +
-                        "ConnectionStrings__Default y desde qué .env se cargó.\n" +
+                        "Comprueba PRIMERO la conexión: lo más probable es que apunte a una base distinta de la " +
+                        "que esperabas. Revisa ConnectionStrings__Default y desde qué .env se cargó.\n" +
                         "\n" +
-                        "Solo cuando hayas confirmado que la base es la correcta:\n" +
-                        "  dotnet ef database update --project Sillar.Core --startup-project Sillar.Api\n" +
+                        "Si esa base es la correcta, lo que hay en ella tiene que salir antes de instalar SILLAR " +
+                        "ahí. El instalador no borra nada.\n" +
                         "\n" +
                         "Los datos que has enviado no tienen nada de malo: no hay nada que corregir en ellos.",
                     statusCode: StatusCodes.Status503ServiceUnavailable);

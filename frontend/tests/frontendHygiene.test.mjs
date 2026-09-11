@@ -172,6 +172,63 @@ test('H-14 Media y Audit comparten DateFilterField', () => {
   assert.match(audit, /DateFilterField/);
 });
 
+test('H-14 conserva el día visible incluso al cambiar timezone', () => {
+  assert.deepEqual(
+    parseDateFilter('11/09/2026', 'start'),
+    {
+      kind: 'valid',
+      apiValue: '2026-09-11T00:00:00Z',
+    },
+  );
+
+  assert.deepEqual(
+    parseDateFilter('11/09/2026', 'end'),
+    {
+      kind: 'valid',
+      apiValue: '2026-09-11T23:59:59Z',
+    },
+  );
+
+  assert.deepEqual(
+    parseDateFilter('01/10/2026', 'start'),
+    {
+      kind: 'valid',
+      apiValue: '2026-10-01T00:00:00Z',
+    },
+  );
+
+  assert.deepEqual(
+    parseDateFilter('31/09/2026', 'start'),
+    { kind: 'invalid' },
+  );
+
+  const originalTimezone = process.env.TZ;
+
+  try {
+    process.env.TZ = 'Pacific/Kiritimati';
+    const east = parseDateFilter('11/09/2026', 'start');
+
+    process.env.TZ = 'America/Los_Angeles';
+    const west = parseDateFilter('11/09/2026', 'start');
+
+    assert.deepEqual(
+      east,
+      {
+        kind: 'valid',
+        apiValue: '2026-09-11T00:00:00Z',
+      },
+    );
+
+    assert.deepEqual(west, east);
+  } finally {
+    if (originalTimezone === undefined) {
+      delete process.env.TZ;
+    } else {
+      process.env.TZ = originalTimezone;
+    }
+  }
+});
+
 test('H-12 Inicio usa Setting.description', () => {
   const home = source('src/platform/HomePage.tsx');
 

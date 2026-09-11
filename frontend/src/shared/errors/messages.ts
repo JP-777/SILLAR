@@ -3,6 +3,13 @@ import { ApiError, isApiError } from '../http/errors';
 /**
  * De error tipado a frase.
  *
+ * **La frase del servidor se compone en un solo sitio: `ApiError.displayMessage`.**
+ * Antes cada rama elegía por su cuenta —unas pegaban `detail`, otras solo el
+ * título— y el `detail` que el backend escribía para leerse se perdía según por
+ * dónde pasara el error. Ahora las ramas que enseñan texto del servidor lo
+ * piden ahí, y las que no lo enseñan (red, sesión, 404 y el caso genérico)
+ * siguen redactando su propia frase con el contexto que solo esta función tiene.
+ *
  * **Ninguna rama de este archivo produce «Ha ocurrido un error».** Es la regla
  * del §3 de la entrega 4a, y la razón es sencilla: un mensaje así no dice qué
  * pasó, no dice qué hacer, y convierte cualquier fallo en el mismo callejón.
@@ -68,7 +75,7 @@ export function describe(error: unknown, context: string): Failure {
     case 'Forbidden':
       return {
         kind: 'forbidden',
-        message: error.detail ? `${error.message} ${error.detail}` : error.message,
+        message: error.displayMessage,
         fieldErrors: null,
         blockedBy: null,
       };
@@ -90,7 +97,7 @@ export function describe(error: unknown, context: string): Failure {
       // la que no, muestra este mensaje, que se basta solo.
       return {
         kind: 'inline',
-        message: error.message,
+        message: error.displayMessage,
         fieldErrors: null,
         blockedBy: error.blockedBy,
       };
@@ -98,7 +105,7 @@ export function describe(error: unknown, context: string): Failure {
     case 'Locked':
       return {
         kind: 'inline',
-        message: error.detail ? `${error.message} ${error.detail}` : error.message,
+        message: error.displayMessage,
         fieldErrors: null,
         blockedBy: null,
       };
@@ -113,9 +120,9 @@ export function describe(error: unknown, context: string): Failure {
 
     case 'PayloadTooLarge':
     case 'UnsupportedMediaType':
-      // Los redacta el backend con el detalle concreto: cuántos megabytes, qué
-      // formatos se aceptan.
-      return { kind: 'inline', message: error.message, fieldErrors: null, blockedBy: null };
+      // Los redacta el backend: qué formatos se aceptan, que el archivo pasa del
+      // máximo. `displayMessage` sabe qué parte del 413 no debe enseñarse.
+      return { kind: 'inline', message: error.displayMessage, fieldErrors: null, blockedBy: null };
 
     default:
       // Ni siquiera aquí: se dice qué se intentaba y qué hacer.

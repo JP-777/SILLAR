@@ -4,6 +4,7 @@ using Sillar.Core.Contracts.Events;
 using Sillar.Core.Data;
 using Sillar.Core.Dtos;
 using Sillar.Core.Modularity;
+using Sillar.Shared.Configuration;
 using Sillar.Shared.Events;
 using Sillar.Shared.Modularity;
 
@@ -171,6 +172,29 @@ internal sealed class ModuleActivationService(
                 $"El módulo '{module.Code}' no tiene fila de activación. Reinicia el host para que se cree.");
         }
 
+        // **La activación comprueba; nunca migra.** Antes de marcar nada como
+        // activo, el schema que el módulo necesita tiene que existir. Si no, se
+        // niega aquí —con la transacción sin escribir, así que el estado previo
+        // queda intacto— en vez de confirmar un éxito que fallará después, cuando
+        // alguien entre al módulo.
+        //
+        // Solo al activar, y solo si el módulo declara schema: uno sin
+        // persistencia (los de demostración) no tiene nada que comprobar.
+        if (activate
+            && module.Schema is { } schema
+            && !await SchemaExisteAsync(schema, cancellationToken))
+        {
+            var destino = DestinoDeConexion.DeConexion(database.Database.GetDbConnection());
+
+            return new ActivationOperation(
+                ActivationOutcome.Conflict,
+                $"No se puede activar «{module.DisplayName}» (módulo '{module.Code}'): su schema '{schema}' " +
+                $"no existe en la base '{destino.Base}' del servidor {destino.Host}:{destino.Puerto}. " +
+                "Las migraciones no se aplican desde este interruptor: repite la instalación, o aplica las " +
+                "migraciones de ese módulo como paso de despliegue, y vuelve a intentarlo. Si esperabas que el " +
+                "schema ya existiera, comprueba antes la conexión: puede apuntar a otra base.");
+        }
+
         var now = clock.GetUtcNow();
         activation.IsActive = activate;
 
@@ -225,6 +249,18 @@ internal sealed class ModuleActivationService(
 
         return new ActivationOperation(ActivationOutcome.Changed, IsActive: activate);
     }
+
+    /// <summary>¿Existe ese schema en la base a la que apunta el contexto?</summary>
+    /// <remarks>
+    /// <b>Sin <c>catch</c>, a propósito.</b> Si la pregunta falla —la conexión se
+    /// cae, la base no existe— es otra avería, y tiene que salir como lo que es.
+    /// Tragarla y devolver <c>false</c> la convertiría en «falta el schema», y
+    /// mandaría a aplicar migraciones a quien tiene un problema de red.
+    /// </remarks>
+    internal async Task<bool> SchemaExisteAsync(string schema, CancellationToken cancellationToken)
+        => await database.Database
+            .SqlQuery<bool>($"SELECT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = {schema}) AS \"Value\"")
+            .SingleAsync(cancellationToken);
 
     /// <summary>Explica qué impide la operación, o <c>null</c> si nada la impide.</summary>
     /// <remarks>
