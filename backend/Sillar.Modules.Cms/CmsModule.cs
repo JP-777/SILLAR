@@ -1,3 +1,4 @@
+using Sillar.Shared.Data.Modularity;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -13,11 +14,37 @@ using Sillar.Shared.Modularity;
 namespace Sillar.Modules.Cms;
 
 /// <summary>M02 — Contenido Web.</summary>
-public sealed class CmsModule : IModule
+public sealed class CmsModule : IModule, IModuleMigrations
 {
     public const string ModuleCode = "cms";
     public const string ConnectionStringName = "Default";
     public string Code => ModuleCode;
+
+    /// <summary>
+    /// Sus migraciones, para que el instalador las aplique sin conocer este
+    /// módulo. El contexto se construye aquí, con la misma configuración que
+    /// en tiempo de ejecución.
+    /// </summary>
+    private static readonly MigracionesDeContexto<CmsDbContext> Migraciones = new(
+        connectionString => new CmsDbContext(
+            PersistenciaDeModulo.Opciones<CmsDbContext>(
+                connectionString, CmsDbContext.Schema, CmsDbContext.MigrationsHistoryTable)),
+        CmsDbContext.MigrationsHistoryTable);
+
+    /// <inheritdoc />
+    public string MigrationsHistoryTable => Migraciones.MigrationsHistoryTable;
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> KnownMigrations(string connectionString)
+        => Migraciones.KnownMigrations(connectionString);
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<string>> AppliedMigrationsAsync(string connectionString, CancellationToken cancellationToken)
+        => Migraciones.AppliedMigrationsAsync(connectionString, cancellationToken);
+
+    /// <inheritdoc />
+    public Task ApplyMigrationsAsync(string connectionString, CancellationToken cancellationToken)
+        => Migraciones.ApplyMigrationsAsync(connectionString, cancellationToken);
     public string DisplayName => "Contenido Web";
     public string Description =>
         "Banners, promociones, productos destacados, trabajos y redes sociales para una web administrable.";
@@ -32,11 +59,9 @@ public sealed class CmsModule : IModule
             ?? throw new InvalidOperationException(
                 $"Falta la cadena de conexión '{ConnectionStringName}'.");
 
-        services.AddDbContext<CmsDbContext>(options => options.UseNpgsql(
-            connectionString,
-            npgsql => npgsql.MigrationsHistoryTable(
-                CmsDbContext.MigrationsHistoryTable,
-                CmsDbContext.Schema)));
+        // Por el mismo sitio que el instalador: ver PersistenciaDeModulo.
+        services.AddDbContext<CmsDbContext>(options => PersistenciaDeModulo.Configurar(
+            options, connectionString, CmsDbContext.Schema, CmsDbContext.MigrationsHistoryTable));
 
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<CmsOrderService>();

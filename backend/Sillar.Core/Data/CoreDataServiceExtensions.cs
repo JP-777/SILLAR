@@ -1,3 +1,4 @@
+using Sillar.Shared.Data.Modularity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,11 +9,8 @@ public static class CoreDataServiceExtensions
 {
     /// <summary>Añade <see cref="CoreDbContext"/> al contenedor.</summary>
     public static IServiceCollection AddCoreData(this IServiceCollection services, string connectionString)
-        => services.AddDbContext<CoreDbContext>(options => options.UseNpgsql(
-            connectionString,
-            npgsql => npgsql.MigrationsHistoryTable(
-                CoreDbContext.MigrationsHistoryTable,
-                CoreDbContext.Schema)));
+        => services.AddDbContext<CoreDbContext>(options => PersistenciaDeModulo.Configurar(
+            options, connectionString, CoreDbContext.Schema, CoreDbContext.MigrationsHistoryTable));
 
     /// <summary>
     /// Construye las opciones del contexto sin pasar por el contenedor.
@@ -24,11 +22,6 @@ public static class CoreDataServiceExtensions
     /// del contenedor, para que no haya dos formas distintas de conectarse.
     /// </remarks>
     public static DbContextOptions<CoreDbContext> BuildOptions(string connectionString)
-        => new DbContextOptionsBuilder<CoreDbContext>()
-            .UseNpgsql(
-                connectionString,
-                npgsql => npgsql.MigrationsHistoryTable(
-                    CoreDbContext.MigrationsHistoryTable,
-                    CoreDbContext.Schema))
-            .Options;
+        => PersistenciaDeModulo.Opciones<CoreDbContext>(
+            connectionString, CoreDbContext.Schema, CoreDbContext.MigrationsHistoryTable);
 }
