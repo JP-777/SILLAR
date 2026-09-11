@@ -104,7 +104,14 @@ export function SetupPage() {
           subtitle="Solo se hace una vez. Después, estos datos se cambian desde el panel."
         >
           <form className="pf-form" onSubmit={submit} noValidate>
-            {error && <Alert tone="danger" title="No se pudo instalar">{error}</Alert>}
+            {/* `pf-server-message`: el 503 de la instalación trae en su detalle una
+                explicación en varias líneas —dos causas posibles y un comando—, y
+                sin conservar los saltos se leía como un solo párrafo apelmazado. */}
+            {error && (
+              <Alert tone="danger" title="No se pudo instalar">
+                <span className="pf-server-message">{error}</span>
+              </Alert>
+            )}
 
             <fieldset className="pf-form__section" style={{ border: 'none', margin: 0, padding: 0 }}>
               <legend className="pf-form__legend">El negocio</legend>

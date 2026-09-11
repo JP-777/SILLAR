@@ -33,6 +33,10 @@
 
 .pf-form { display: flex; flex-direction: column; gap: var(--s4); }
 
+/* Texto del servidor con saltos de línea propios: se conservan, y una línea
+   larga —un comando, una ruta— parte donde haga falta en vez de desbordar. */
+.pf-server-message { white-space: pre-line; overflow-wrap: anywhere; }
+
 .pf-form__section {
   display: flex;
   flex-direction: column;

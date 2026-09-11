@@ -1995,7 +1995,10 @@ for (const senal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
  *
  *   1. `test:audit-vocabulary` — las catorce focales del vocabulario de
  *      auditoría. Milisegundos, sin red, sin base y sin Docker.
- *   2. `typecheck` — `tsc --build --force` sobre todo `src`.
+ *   2. `test:api-errors` — la precedencia del mensaje de error del API: qué
+ *      parte de un ProblemDetails llega a la pantalla y qué parte no (H-01).
+ *      También milisegundos.
+ *   3. `typecheck` — `tsc --build --force` sobre todo `src`.
  *
  * **Por qué la focal va primero.** Es la más barata y la más específica: si el
  * vocabulario de auditoría se rompió, la etapa 1 lo dice en el primer segundo
@@ -2020,6 +2023,7 @@ for (const senal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
 function correrPasosDelFrontend() {
   const pasos = [
     ['vocabulario de auditoría', 'test:audit-vocabulary'],
+    ['errores del API', 'test:api-errors'],
     ['tipos', 'typecheck'],
   ];
 

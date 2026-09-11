@@ -70,10 +70,56 @@ export class ApiError extends Error {
     return this.errors ? Object.values(this.errors).flat() : [];
   }
 
-  /** Lo que conviene enseñar a una persona. */
+  /**
+   * La frase del servidor, entera: su `title` y, si lo trae, su `detail`.
+   *
+   * **Por qué las dos y no solo el título.** Los productores de este backend
+   * escriben la frase principal en `title` y el complemento en `detail`: el
+   * 423 dice en `detail` a qué hora vuelve a poder intentarse, y el 503 de la
+   * instalación explica en `detail` que antes de migrar hay que comprobar a qué
+   * base apunta la conexión. Quedarse con el título era enseñar la mitad del
+   * mensaje, y a veces la mitad peligrosa: «No existe la tabla» sin «comprueba
+   * PRIMERO la conexión» invita a migrar la base equivocada.
+   *
+   * **`null` cuando lo que trae el servidor no debe llegar a una pantalla**, y
+   * son dos casos, los dos medidos:
+   *
+   *   - **500.** Ningún productor de la aplicación escribe un 500: sale siempre
+   *     de una excepción no manejada, así que su texto es del framework —en
+   *     inglés, y fuera de producción con el mensaje de la excepción—. Es
+   *     texto para el registro, no para una persona.
+   *   - **413, el `detail`.** `MediaEndpoints` lo rellena con el `Message` de
+   *     la `BadHttpRequestException` de Kestrel: texto del framework, en
+   *     inglés. Se enseña el título, que sí está escrito para leerse, y el
+   *     `detail` se queda fuera hasta que el productor lo redacte.
+   */
+  get serverMessage(): string | null {
+    if (this.status === 500) {
+      return null;
+    }
+
+    if (this.kind === 'PayloadTooLarge' || !this.detail) {
+      return this.message;
+    }
+
+    return `${this.message} ${this.detail}`;
+  }
+
+  /**
+   * Lo que conviene enseñar a una persona cuando no hay contexto para más.
+   *
+   * La precedencia, de más a menos concreta:
+   *
+   *   1. el primer error de validación, que dice qué campo corregir;
+   *   2. la frase del servidor, título y detalle (`serverMessage`);
+   *   3. una frase propia, cuando el servidor no escribió nada presentable.
+   */
   get displayMessage(): string {
-    const fromValidation = this.validationMessages[0];
-    return fromValidation ?? this.message;
+    return (
+      this.validationMessages[0]
+      ?? this.serverMessage
+      ?? 'El servidor no pudo completar la operación. Si vuelve a pasar, revisa el registro del servidor.'
+    );
   }
 }
 
