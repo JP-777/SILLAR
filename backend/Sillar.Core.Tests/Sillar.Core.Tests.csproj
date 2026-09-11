@@ -23,6 +23,17 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Sillar.Core\Sillar.Core.csproj" />
+    <!-- Los módulos reales, SOLO para las pruebas del instalador y de la
+         activación: el caso que hay que demostrar es «una base vacía queda con
+         los schemas de todos los módulos desplegados», y eso no se prueba sin
+         desplegarlos. Es composición de pruebas, no una dependencia de CORE:
+         Sillar.Core sigue sin referenciar a ningún módulo. -->
+    <ProjectReference Include="..\Sillar.Modules.Catalog\Sillar.Modules.Catalog.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Cms\Sillar.Modules.Cms.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Crm\Sillar.Modules.Crm.csproj" />
+    <!-- Igual que el host: la DLL de demostración solo existe en Debug. -->
+    <ProjectReference Include="..\Sillar.Modules.Demo\Sillar.Modules.Demo.csproj"
+                      Condition="'$(Configuration)' == 'Debug'" />
   </ItemGroup>
 
   <ItemGroup>

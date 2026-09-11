@@ -66,6 +66,15 @@ internal static class ModuleBootstrapper
             throw new StartupAbortedException(graph.DescribeErrors());
         }
 
+        // **El catálogo completo, registrado antes del corte del modo instalación.**
+        //
+        // Solo metadatos: qué módulos trae el binario. No registra ningún servicio
+        // ni ningún DbContext de módulo —eso sigue ocurriendo solo para lo activo,
+        // en el paso 7—. Lo necesitan dos consumidores: el endpoint de activación,
+        // que razona sobre el grafo entero, y el instalador, que en modo
+        // instalación tiene que saber qué módulos desplegados tienen migraciones.
+        builder.Services.AddSingleton(new DeclaredModules(modules));
+
         // --- Paso 3: conectar con la base de datos ------------------------
         var connectionString = builder.Configuration.GetConnectionString(CoreModule.ConnectionStringName);
         if (string.IsNullOrWhiteSpace(connectionString))
@@ -199,11 +208,6 @@ internal static class ModuleBootstrapper
         var active = graph.InstallationOrder.Where(module => activeCodes.Contains(module.Code)).ToList();
 
         builder.Services.AddSingleton(new ModuleActivationSnapshot(activeModules));
-
-        // El catálogo completo, no solo lo activo: el endpoint de activación
-        // necesita razonar sobre el grafo entero para decir qué se puede
-        // encender y qué bloquea qué.
-        builder.Services.AddSingleton(new DeclaredModules(modules));
 
         foreach (var module in active)
         {

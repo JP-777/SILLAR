@@ -27,6 +27,30 @@ public interface IModule
     /// </remarks>
     string Code { get; }
 
+    /// <summary>
+    /// Schema de PostgreSQL que el módulo necesita que exista, o <c>null</c> si
+    /// no posee ninguno.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Por defecto es el código</b>, que es la regla de CLAUDE.md
+    /// —cada módulo tiene su schema con <c>HasDefaultSchema("&lt;código&gt;")</c>—
+    /// y la cumplen hoy los cuatro módulos reales. No hay una lista de schemas
+    /// aparte: se deriva de un dato que el módulo ya declara.
+    /// </para>
+    /// <para>
+    /// <b><c>null</c> es una declaración, no una ausencia.</b> Un módulo sin
+    /// persistencia —los de demostración, por ejemplo— tiene que decirlo, o la
+    /// activación le exigiría un schema que nunca va a existir.
+    /// </para>
+    /// <para>
+    /// La activación comprueba que exista antes de encender el módulo, y el
+    /// instalador lo usa para distinguir una instalación a medias de una base
+    /// ajena. Ver <c>ModuleActivationService</c> y <c>DestinoDeInstalacion</c>.
+    /// </para>
+    /// </remarks>
+    string? Schema => Code;
+
     /// <summary>Nombre visible del módulo, en español. Aparece en el panel.</summary>
     string DisplayName { get; }
 

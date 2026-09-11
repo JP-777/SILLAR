@@ -1,3 +1,4 @@
+using Sillar.Core.Setup;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Configuration;
@@ -51,6 +52,7 @@ public static class CoreServices
         services.AddScoped<IAuditWriter, AuditWriter>();
         services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<SetupService>();
+        services.AddScoped<InstaladorDeModulos>();
 
         // También en modo instalación: completar la instalación es el otro caso
         // en que el host tiene que detenerse tras responder.

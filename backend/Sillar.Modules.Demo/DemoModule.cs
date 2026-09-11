@@ -26,6 +26,19 @@ public abstract class DemoModule : IModule
     /// <inheritdoc />
     public abstract string Code { get; }
 
+    /// <summary>
+    /// Ninguno. Los módulos de demostración no tienen persistencia.
+    /// </summary>
+    /// <remarks>
+    /// Tiene que estar declarado: sin esto, la convención de
+    /// <see cref="IModule.Schema"/> exigiría un schema <c>demo_catalog</c> que no
+    /// existe, y la activación se negaría a encenderlos. El arnés e2e activa
+    /// <c>demo_catalog</c> y <c>demo_sales</c> para enseñar las variantes de
+    /// tarjeta, así que se notaría enseguida — pero se notaría como un rojo, no
+    /// como una decisión.
+    /// </remarks>
+    public string? Schema => null;
+
     /// <inheritdoc />
     public abstract string DisplayName { get; }
 

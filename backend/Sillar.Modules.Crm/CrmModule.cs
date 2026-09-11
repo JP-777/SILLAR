@@ -1,3 +1,4 @@
+using Sillar.Shared.Data.Modularity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
@@ -16,12 +17,40 @@ using Sillar.Shared.Replication;
 namespace Sillar.Modules.Crm;
 
 /// <summary>M04 — Clientes y Contacto.</summary>
-public sealed class CrmModule : IModule
+public sealed class CrmModule : IModule, IModuleMigrations
 {
     public const string ModuleCode = "crm";
     public const string ConnectionStringName = "Default";
 
     public string Code => ModuleCode;
+
+    /// <summary>
+    /// Sus migraciones, para que el instalador las aplique sin conocer este
+    /// módulo. El contexto se construye aquí, con la misma configuración que
+    /// en tiempo de ejecución; el nodo y el reloj no intervienen al migrar.
+    /// </summary>
+    private static readonly MigracionesDeContexto<CrmDbContext> Migraciones = new(
+        connectionString => new CrmDbContext(
+            PersistenciaDeModulo.Opciones<CrmDbContext>(
+                connectionString, CrmDbContext.Schema, CrmDbContext.MigrationsHistoryTable),
+            new NodeIdentity(NodeIdentity.DefaultCode),
+            TimeProvider.System),
+        CrmDbContext.MigrationsHistoryTable);
+
+    /// <inheritdoc />
+    public string MigrationsHistoryTable => Migraciones.MigrationsHistoryTable;
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> KnownMigrations(string connectionString)
+        => Migraciones.KnownMigrations(connectionString);
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<string>> AppliedMigrationsAsync(string connectionString, CancellationToken cancellationToken)
+        => Migraciones.AppliedMigrationsAsync(connectionString, cancellationToken);
+
+    /// <inheritdoc />
+    public Task ApplyMigrationsAsync(string connectionString, CancellationToken cancellationToken)
+        => Migraciones.ApplyMigrationsAsync(connectionString, cancellationToken);
     public string DisplayName => "Clientes y Contacto";
 
     public string Description =>
@@ -47,11 +76,9 @@ public sealed class CrmModule : IModule
 
         services.TryAddNodeIdentity(configuration);
 
-        services.AddDbContext<CrmDbContext>(options => options.UseNpgsql(
-            connectionString,
-            npgsql => npgsql.MigrationsHistoryTable(
-                CrmDbContext.MigrationsHistoryTable,
-                CrmDbContext.Schema)));
+        // Por el mismo sitio que el instalador: ver PersistenciaDeModulo.
+        services.AddDbContext<CrmDbContext>(options => PersistenciaDeModulo.Configurar(
+            options, connectionString, CrmDbContext.Schema, CrmDbContext.MigrationsHistoryTable));
 
         // Segundo esquema. No cambia el default administrativo de CORE.
         services.AddAuthentication()
