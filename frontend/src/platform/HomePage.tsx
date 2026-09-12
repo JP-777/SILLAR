@@ -53,7 +53,7 @@ export function HomePage() {
       <Card title="Administración disponible">
         <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
           Desde este panel puedes gestionar módulos, usuarios, configuración, auditoría y archivos
-          según tu rol y los módulos activos.
+          según tu rol y las funciones disponibles.
         </p>
       </Card>
     </PageContainer>

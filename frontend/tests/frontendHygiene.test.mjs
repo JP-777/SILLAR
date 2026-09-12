@@ -243,10 +243,15 @@ test('H-12 Inicio usa Setting.description', () => {
 
 test('H-13 Inicio refleja el producto actual', () => {
   const home = source('src/platform/HomePage.tsx');
+  const homeSinComentarios = home.replace(/\/\*[\s\S]*?\*\//g, '');
 
   assert.match(home, /Administración disponible/);
   assert.equal(home.includes('falta la interfaz'), false);
   assert.equal(home.includes('siguiente entrega'), false);
+  assert.equal(
+    (homeSinComentarios.match(/módulos activos/gi) ?? []).length,
+    1,
+  );
 });
 
 test('H-18 CTA administrativo depende de sesión', () => {
