@@ -122,7 +122,10 @@ function principal() {
     console.log(`  ${k.padEnd(28)} ${k === 'ConnectionStrings__Default' ? v.replace(/Password=[^;]*/, 'Password=…') : v}`);
   }
   console.log(
-    `\nFalta lo único que no se puede derivar: pon las contraseñas reales.\n` +
+    `\nFalta lo único que no se puede derivar: pon los secretos reales.\n` +
+      `  · POSTGRES_PASSWORD y Password=... de ConnectionStrings__Default deben coincidir.\n` +
+      `  · PGADMIN_PASSWORD solo importa si levantas el perfil tools.\n` +
+      `Cambiar POSTGRES_PASSWORD no cambia la clave de un db_data ya inicializado.\n` +
       `Para ver esta identidad otra vez, o comprobar que no choca con otro árbol:\n` +
       `  node scripts/identidad.mjs\n`,
   );

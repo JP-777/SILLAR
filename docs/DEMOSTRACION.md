@@ -1,125 +1,205 @@
 # Levantar SILLAR para una demostración
 
-Los comandos exactos, **probados una vez de principio a fin el 20 de agosto de 2026** sobre una
-base recién borrada. No están escritos de memoria: son los que se ejecutaron, en este orden.
+Esta guía corresponde al producto desplegado actual: **CORE + M01 Catálogo +
+M02 Contenido Web + M04 Clientes y Contacto**.
 
-Lo que queda en pie al terminar: **CORE + M01 Catálogo**, con 4 marcas, 9 categorías en dos
-niveles y 20 productos.
+CORE queda siempre activo. M01, M02 y M04 se activan desde **Módulos**.
+Las migraciones de los cuatro módulos forman parte de la instalación, pero
+los datos automáticos de demostración siguen siendo solo de **Catálogo**:
+CMS y CRM se muestran inicialmente vacíos, sin inventar contenido ni clientes.
 
 ---
 
 ## 0 · Lo que hace falta tener
 
-- Docker Desktop (Windows con WSL2) o Docker (Linux), **arrancado**.
-- El SDK de .NET 10 y `dotnet-ef` — solo para las migraciones.
-- `pnpm`, si se va a enseñar con el frontend de desarrollo.
-- El archivo `.env` en la raíz. Si no está: `cp .env.example .env` y cambiar las contraseñas.
+- Docker Desktop con WSL2 en Windows o Docker en Linux, arrancado.
+- SDK de .NET 10.
+- Node.js/corepack y `pnpm` si se enseñará el frontend.
+- Un `.env` propio de este árbol, generado así:
 
-**La primera vez, la API tarda varios minutos** en construirse: se descarga el SDK de .NET.
-Hacerlo el día anterior, no delante de nadie.
+```bash
+node scripts/estrenar.mjs
+```
+
+No copies `.env.example` ni el `.env` de otra worktree.
+
+Después cambia los secretos. Mientras la conexión conserve `Password=...`,
+`POSTGRES_PASSWORD` y el password de `ConnectionStrings__Default` deben
+coincidir.
+
+En una máquina nueva restaura primero las herramientas y dependencias:
+
+```bash
+cd backend
+dotnet tool restore
+dotnet restore Sillar.sln
+cd ..
+```
+
+`dotnet-ef` está fijado por `backend/.config/dotnet-tools.json`.
+
+Para ver la identidad y los puertos de este árbol:
+
+```bash
+node scripts/identidad.mjs
+```
 
 ---
 
 ## 1 · La base de datos, desde cero
 
+**Este paso borra únicamente la base desechable de esta demostración.**
+
 ```bash
-docker compose down -v          # BORRA los datos. Es lo que se quiere aquí, y solo aquí
+docker compose down -v
 docker compose up -d db
-docker compose ps               # esperar a que db diga «healthy»
+docker compose ps
 ```
 
-## 2 · Las migraciones
+`POSTGRES_PASSWORD` se usa cuando PostgreSQL crea `db_data`. Cambiarla luego
+en `.env` no modifica la contraseña almacenada dentro de un volumen existente.
 
-Las tablas las crean las migraciones de EF Core, nunca un script (ADR-009):
+`docker compose down -v` elimina `db_data` y todos sus datos: no es un método
+para rotar credenciales de una base que se quiera conservar.
+
+---
+
+## 2 · Las migraciones de los cuatro módulos reales
+
+Las tablas las crean las migraciones de EF Core:
 
 ```bash
 cd backend
-dotnet ef database update --project Sillar.Core            --startup-project Sillar.Api
+dotnet ef database update --project Sillar.Core --startup-project Sillar.Api
 dotnet ef database update --project Sillar.Modules.Catalog --startup-project Sillar.Api
+dotnet ef database update --project Sillar.Modules.Cms --startup-project Sillar.Api
+dotnet ef database update --project Sillar.Modules.Crm --startup-project Sillar.Api
 cd ..
 ```
 
-## 3 · Los seeds
+El instalador también sabe aplicar migraciones pendientes antes de completar
+una instalación y se niega a modificar un destino que contenga objetos ajenos
+a SILLAR.
+
+En esta demostración se aplican explícitamente antes del seed mínimo de CORE
+para que ese seed exista cuando el setup escriba el nombre público del negocio.
+
+---
+
+## 3 · El seed mínimo del producto
+
+CORE sí contiene configuración mínima. Los seeds de M01, M02 y M04 están
+vacíos por diseño: no crean productos, banners, contenido ni clientes ficticios.
 
 ```bash
-docker compose exec -T db psql -U postgres -d sillar_dev -f /scripts/modules/core/02_seed.sql
-docker compose exec -T db psql -U postgres -d sillar_dev -f /scripts/modules/catalog/02_seed.sql
+docker compose exec -T db sh -lc   'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /scripts/modules/core/02_seed.sql'
 ```
 
-> **El truco de Git Bash en Windows.** Git Bash reescribe `/scripts/...` a `C:/Program
-> Files/scripts/...` antes de que el comando salga, y `psql` responde *No such file or
-> directory* por un archivo que sí existe dentro del contenedor. Se evita anteponiendo
-> `MSYS_NO_PATHCONV=1` a cada comando:
->
-> ```bash
-> MSYS_NO_PATHCONV=1 docker compose exec -T db psql -U postgres -d sillar_dev -f /scripts/modules/core/02_seed.sql
-> ```
->
-> En PowerShell y en Linux no hace falta nada.
+En Git Bash, si MSYS intenta reescribir `/scripts/...`, antepón:
 
-Los dos seeds están **vacíos de datos de negocio a propósito** (SPEC de M01 §6.9). Los datos de
-la demostración llegan en el paso 6, que es de otra naturaleza y por eso vive fuera.
+```bash
+MSYS_NO_PATHCONV=1
+```
+
+En PowerShell y Linux no hace falta.
+
+---
 
 ## 4 · La API
+
+Levanta el API:
 
 ```bash
 docker compose --profile full up -d --build api
 ```
 
-Y esperar a que responda:
+Consulta el puerto propio de esta worktree:
 
 ```bash
-curl http://localhost:5080/api/setup/status
-# {"setupRequired":true}   ← base limpia, instalación pendiente
+node scripts/identidad.mjs
 ```
+
+En Bash puedes obtener la URL sin escribir el puerto a mano:
+
+```bash
+API_PORT="$(node --input-type=module -e "import { identidadDeLaWorktree } from './scripts/identidad.mjs'; console.log(identidadDeLaWorktree(process.cwd()).dev.puertoApi)")"
+API="http://localhost:${API_PORT}"
+echo "$API"
+```
+
+Antes de instalar:
+
+```bash
+curl "$API/api/setup/status"
+```
+
+Debe indicar:
+
+```text
+"setupRequired": true
+```
+
+---
 
 ## 5 · La instalación
 
-Crea el negocio y su primer administrador. **Después de esto el proceso se reinicia solo**: es a
-propósito, el enrutamiento se construye al arrancar.
+Crea el negocio y su primer administrador:
 
 ```bash
-curl -X POST http://localhost:5080/api/setup \
-  -H "Content-Type: application/json" \
-  -d '{"businessName":"Demostracion SILLAR","licenseType":"trial",
+curl -i -X POST "$API/api/setup"   -H "Content-Type: application/json"   -d '{"businessName":"Demostracion SILLAR","licenseType":"trial",
        "admin":{"fullName":"Persona Administradora",
                 "email":"demo@sillar.local",
                 "password":"LA-QUE-ELIJAS-AQUI"}}'
 ```
 
-En PowerShell, con `curl.exe` y comillas dobles escapadas, o desde Swagger en
-`http://localhost:5080/swagger`.
+La respuesta correcta es **201**. Después el host se detiene y Docker vuelve
+a levantarlo en modo normal.
 
-Esperar unos segundos y comprobar que el proceso nuevo está arriba:
-
-```bash
-curl -o /dev/null -w "%{http_code}\n" -X POST http://localhost:5080/api/admin/auth/login \
-  -H "Content-Type: application/json" -d '{"email":"x@x.x","password":"x"}'
-# 401 ← el proceso nuevo responde. Un 404 significa que el viejo todavía no cedió el puesto
-```
-
-## 6 · Activar el catálogo y sembrar la demostración
-
-**M01 nace inactivo.** Se activa desde el panel (Módulos → Catálogo) o por API. Activarlo
-**vuelve a reiniciar** el proceso; es la misma razón de antes.
-
-Con el módulo activo:
+La señal positiva de que terminó la instalación ya no consiste en provocar
+un login inválido. Espera al reinicio y consulta:
 
 ```bash
-SILLAR_EMAIL=demo@sillar.local SILLAR_PASSWORD='la que elegiste en el paso 5' \
-  node scripts/demo/seed-demo.mjs
+curl "$API/api/setup/status"
 ```
 
-En PowerShell:
+Debe contener:
 
-```powershell
-$env:SILLAR_EMAIL = "demo@sillar.local"
-$env:SILLAR_PASSWORD = "la que elegiste en el paso 5"
-node scripts/demo/seed-demo.mjs
+```text
+"setupRequired": false
 ```
 
-Tarda menos de un minuto y es **idempotente**: correrlo dos veces no duplica nada, dice `=` en
-vez de `+` y sigue. Las imágenes **se generan**, no están en el repositorio.
+En modo normal `POST /api/setup` deja de estar disponible.
+
+---
+
+## 6 · Activar los módulos reales y sembrar Catálogo
+
+Entra con `demo@sillar.local` y la contraseña elegida en el paso 5.
+
+Desde **Módulos**, activa en este orden:
+
+1. **M01 · Catálogo de Productos**
+2. **M02 · Contenido Web**
+3. **M04 · Clientes y Contacto**
+
+Cada cambio de activación reinicia el API unos segundos.
+
+La activación **no aplica migraciones**: comprueba el schema preparado por el
+instalador antes de cambiar el estado.
+
+Con M01 activo:
+
+```bash
+SILLAR_EMAIL=demo@sillar.local SILLAR_PASSWORD='LA-QUE-ELIJAS-AQUI' node scripts/demo/seed-demo.mjs
+```
+
+`seed-demo.mjs` deriva automáticamente el puerto de esta worktree. Solo define
+`SILLAR_API` si deliberadamente quieres apuntar a otro host.
+
+El script crea datos de demostración de Catálogo. No crea contenido CMS ni
+clientes CRM ficticios.
+
+---
 
 ## 7 · El frontend
 

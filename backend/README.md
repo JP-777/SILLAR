@@ -36,11 +36,12 @@ referencia el paquete sin versión.
 
 - .NET SDK 10
 - PostgreSQL 16 levantado con `docker compose up -d` desde la raíz
-- `.env` en la raíz del repositorio, copiado de `.env.example`
+- `.env` en la raíz del repositorio, generado con `node scripts/estrenar.mjs` desde la raíz
 
-La cadena de conexión sale de `.env` (`ConnectionStrings__Default`). El host la
-carga al arrancar y las herramientas de EF Core también, así que la credencial
-vive en un solo sitio.
+La cadena de conexión sale de `.env` (`ConnectionStrings__Default`). El host y
+las herramientas de EF Core leen el mismo archivo. Mientras la conexión
+contenga `Password=...`, ese valor debe coincidir con `POSTGRES_PASSWORD`;
+`scripts/estrenar.mjs` deriva la identidad del árbol, pero no inventa secretos.
 
 ## Comandos
 
@@ -274,8 +275,10 @@ curl -X POST http://localhost:5080/api/setup -H 'Content-Type: application/json'
 ```
 
 Devuelve 201 y **el host se detiene** para volver a arrancar en modo normal: en
-Docker el contenedor reinicia solo; con `dotnet run`, se relanza a mano. A partir
-de ahí `/api/setup*` responde 404 y funciona el resto del API.
+Docker el contenedor reinicia solo; con `dotnet run`, se relanza a mano.
+Después, `POST /api/setup` deja de estar disponible y
+`GET /api/setup/status` responde 200 con `setupRequired: false`; esa es la
+comprobación positiva de que el host nuevo ya está en modo normal.
 
 La instalación no abre sesión. Se entra después:
 

@@ -19,15 +19,21 @@
  *
  * Variables de entorno, todas opcionales:
  *
- *   SILLAR_API      dónde escucha la API          (http://localhost:5080)
+ *   SILLAR_API      override de la API; si falta se deriva de la worktree
  *   SILLAR_EMAIL    correo del administrador      (se pregunta si falta)
  *   SILLAR_PASSWORD su contraseña
  */
 
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { identidadDeLaWorktree } from '../identidad.mjs';
 import { CATEGORIAS, MARCAS, PRODUCTOS } from './datos.mjs';
 import { png } from './imagen.mjs';
 
-const API = process.env.SILLAR_API ?? 'http://localhost:5080';
+const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const API =
+  process.env.SILLAR_API ??
+  `http://localhost:${identidadDeLaWorktree(RAIZ).dev.puertoApi}`;
 const EMAIL = process.env.SILLAR_EMAIL;
 const PASSWORD = process.env.SILLAR_PASSWORD;
 

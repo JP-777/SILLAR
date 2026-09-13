@@ -12,31 +12,44 @@ Primera instalación en curso: una librería y bazar de Arequipa, Perú.
 
 ## Puesta en marcha
 
-Requisitos: Docker Desktop con WSL2 en Windows, o Docker en Linux.
+Requisitos: Docker Desktop con WSL2 en Windows, o Docker en Linux; Node.js y .NET SDK 10 para desarrollo.
 
 ```bash
-# 1. Configurar el entorno
-cp .env.example .env          # en PowerShell: Copy-Item .env.example .env
-# editar .env y cambiar las contraseñas
+# 1. Generar la configuración propia de este árbol
+node scripts/estrenar.mjs
 
-# 2. Levantar la base de datos
-docker compose up -d
+# 2. Editar únicamente los secretos de .env
+# POSTGRES_PASSWORD y Password=... dentro de ConnectionStrings__Default
+# deben contener la misma contraseña.
+# PGADMIN_PASSWORD solo se usa con el perfil tools.
 
-# 3. Verificar que arrancó bien
+# 3. Levantar PostgreSQL
+docker compose up -d db
+
+# 4. Verificar que arrancó bien
 docker compose ps
 docker compose logs -f db
 ```
 
+No copies `.env.example` ni el `.env` de otra worktree. `scripts/estrenar.mjs`
+deriva automáticamente nombre de proyecto, base, nodo y puertos desde el
+directorio del árbol.
+
+**Importante:** `POSTGRES_PASSWORD` se utiliza al crear un clúster nuevo.
+Cambiarla después en `.env` no cambia la contraseña almacenada dentro de un
+`db_data` que ya existe. `docker compose down -v` elimina ese volumen y sus
+datos, por lo que solo se usa con bases deliberadamente desechables.
+
 Herramientas opcionales:
 
 ```bash
-docker compose --profile tools up -d     # añade pgAdmin en http://localhost:5050
+docker compose --profile tools up -d    # añade pgAdmin; consulta su puerto con `node scripts/identidad.mjs`
 ```
 
 Conectarse por línea de comandos:
 
 ```bash
-docker compose exec db psql -U postgres -d sillar_dev
+docker compose exec db sh -lc 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
 
 Detener:
@@ -50,17 +63,24 @@ docker compose down -v     # BORRA los datos
 
 ## Instalación de módulos
 
-La base de datos no se crea de una sola vez: se instala módulo por módulo, según lo que el cliente tenga licenciado.
+La instalación inicial prepara los schemas de **todos los módulos desplegados**
+antes de crear la instalación. El instalador aplica sus migraciones siguiendo
+el orden del grafo; la activación no migra, sino que comprueba que el schema
+esperado exista antes de marcar un módulo como activo.
 
-Las tablas las crean las **migraciones de EF Core** de cada módulo (ADR-009):
+Para ejecutar migraciones explícitamente en desarrollo, diagnóstico o
+recuperación, la herramienta `dotnet-ef` está fijada en
+`backend/.config/dotnet-tools.json`:
 
 ```bash
-# 1. Aplicar las migraciones del módulo
-dotnet ef database update --context CatalogDbContext --project backend/Sillar.Modules.Catalog
-
-# 2. Sembrar sus datos mínimos
-docker compose exec db psql -U postgres -d sillar_dev -f /scripts/modules/catalog/02_seed.sql
+cd backend
+dotnet tool restore
+dotnet ef database update --context CatalogDbContext --project Sillar.Modules.Catalog
+cd ..
 ```
+
+Los seeds de módulo contienen solo datos mínimos del producto. Los datos de
+demostración se cargan aparte mediante `scripts/demo/seed-demo.mjs`.
 
 Los scripts de integración se ejecutan **solo si ambos módulos están instalados**:
 

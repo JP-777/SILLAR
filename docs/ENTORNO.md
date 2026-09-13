@@ -50,6 +50,14 @@ pnpm install --frozen-lockfile --dir e2e
 docker compose up -d db
 ```
 
+> **Una contraseña nueva en `.env` no cambia un volumen PostgreSQL existente.**
+> `POSTGRES_PASSWORD` se utiliza cuando PostgreSQL inicializa `db_data`. Si ese
+> volumen ya contiene un clúster, editar la variable solo cambia la contraseña
+> con la que los procesos intentan conectarse; no modifica la almacenada por
+> PostgreSQL. `docker compose down -v` elimina el volumen y **borra sus datos**:
+> sirve para estrenar una base desechable, no para rotar credenciales de una
+> base que deba conservarse.
+
 **El paso que desapareció era el de la identidad e2e**, y no desapareció por olvido: la suite
 ya no necesita que nadie edite nada. Deriva su identidad del directorio igual que el `.env` y
 se la pasa a docker por el entorno del proceso. Ver el hallazgo 5.
