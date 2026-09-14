@@ -143,7 +143,11 @@ Debe indicar:
 
 ## 5 · La instalación
 
-Crea el negocio y su primer administrador:
+Crea el negocio y su primer administrador.
+
+La contraseña debe cumplir la política del instalador y **no puede contener
+el nombre ni el correo del administrador**. Si no la acepta, el setup
+responde 400 sin completar ni dejar una instalación a medias.
 
 ```bash
 curl -i -X POST "$API/api/setup"   -H "Content-Type: application/json"   -d '{"businessName":"Demostracion SILLAR","licenseType":"trial",
