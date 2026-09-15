@@ -46,7 +46,19 @@ const RETRY_DELAYS_MS = [1000, 2000, 3000, 5000] as const;
 const GIVE_UP_AFTER_MS = 60_000;
 
 /** Ruta que se sondea: pública, barata y la que dice si el host ya está listo. */
-const PROBE_PATH = '/api/capabilities';
+// **`/api/setup/status` y no `/api/capabilities`: es la única ruta que existe en
+// los dos modos del servidor**, anónima y barata (`SetupEndpoints`: la monta el
+// modo instalación, y `MapAlwaysAvailableStatus` el modo normal).
+//
+// Con `/api/capabilities` el seguidor no se recuperaba NUNCA en modo
+// instalación: allí esa ruta no existe, el sondeo recibía 404 una y otra vez, y
+// tras cualquier corte de red el asistente se quedaba sin poder enviar nada
+// —«El servidor se está reiniciando. La operación no se envió.»— con la API ya
+// de vuelta, hasta recargar la página. Ver tests/seguidorEnModoInstalacion.
+//
+// Lo que se pregunta es solo «¿responde?». Qué modo tiene lo decide quien
+// arranca, no el seguidor.
+const PROBE_PATH = '/api/setup/status';
 
 type Listener = (status: ConnectionStatus) => void;
 
