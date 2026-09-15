@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test:audit-vocabulary": "node --test tests/auditEntityVocabulary.test.mjs",
     "test:api-errors": "node --test tests/apiErrors.test.mjs",
+    "test:connection-setup": "node --test tests/seguidorEnModoInstalacion.test.mjs",
     "typecheck": "tsc --build --force",
     "test:frontend-hygiene": "node --test tests/frontendHygiene.test.mjs"
   },
