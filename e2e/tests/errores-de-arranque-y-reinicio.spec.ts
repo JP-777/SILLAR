@@ -86,8 +86,16 @@ test('H03: tras un corte de red en modo instalación, reintentar vuelve a enviar
   });
 
   // El primer arranque ve el asistente; después el servidor se cae un momento.
+  //
+  // **Se espera a ver el formulario antes de tumbar la API.** La primera
+  // versión la tumbaba justo después de `page.goto`, pero `goto` vuelve con el
+  // evento `load` y la pregunta del arranque sale después, desde un efecto de
+  // React: el arranque fallaba, el formulario no aparecía nunca, y la prueba
+  // salía roja SIN haber llegado a medir el reintento. Un rojo por la razón
+  // equivocada no reproduce nada.
   caida = false;
   await page.goto('/');
+  await expect(page.locator('form').getByLabel('Nombre del negocio')).toBeVisible();
   caida = true;
   await enviarInstalacion(page);
   await expect(page.getByRole('alert').first()).toBeVisible();
