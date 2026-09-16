@@ -48,6 +48,18 @@ export class ApiError extends Error {
    */
   readonly blockedBy: string[] | null;
 
+  /**
+   * Si el título lo escribió el servidor, o es el de reserva del cliente.
+   *
+   * **Por qué hace falta como dato y no se deduce del texto.** Un 503 que trae
+   * su `ProblemDetails` —el instalador negándose, con su motivo— y un 503 sin
+   * cuerpo —un proxy, un servicio caído— son situaciones distintas: el primero
+   * explica por qué, el segundo no. Distinguirlos comparando el título con la
+   * frase de reserva sería decidir por una cadena, que es justo lo que este
+   * fichero dice que no se hace.
+   */
+  readonly explainedByServer: boolean;
+
   constructor(
     kind: ApiErrorKind,
     status: number,
@@ -55,6 +67,7 @@ export class ApiError extends Error {
     detail: string | null = null,
     errors: ValidationErrors | null = null,
     blockedBy: string[] | null = null,
+    explainedByServer = false,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -63,6 +76,7 @@ export class ApiError extends Error {
     this.detail = detail;
     this.errors = errors;
     this.blockedBy = blockedBy;
+    this.explainedByServer = explainedByServer;
   }
 
   /** Mensajes de validación en una sola lista, para mostrarlos juntos. */

@@ -225,11 +225,14 @@ async function toApiError(
     problem.detail,
     problem.errors,
     problem.blockedBy,
+    problem.fromServer,
   );
 }
 
 interface Problem {
   title: string;
+  /** Verdadero si `title` lo escribió el servidor y no es el de reserva. */
+  fromServer: boolean;
   detail: string | null;
   errors: ValidationErrors | null;
   blockedBy: string[] | null;
@@ -237,7 +240,7 @@ interface Problem {
 
 async function readProblem(response: Response): Promise<Problem> {
   const fallback = `No se pudo completar la operación (${response.status}).`;
-  const empty: Problem = { title: fallback, detail: null, errors: null, blockedBy: null };
+  const empty: Problem = { title: fallback, fromServer: false, detail: null, errors: null, blockedBy: null };
 
   try {
     const contentType = response.headers.get('Content-Type') ?? '';
@@ -255,6 +258,7 @@ async function readProblem(response: Response): Promise<Problem> {
 
     return {
       title: payload.title ?? fallback,
+      fromServer: typeof payload.title === 'string',
       detail: payload.detail ?? null,
       errors: payload.errors ?? null,
       blockedBy: readCodes(payload.blockedBy),

@@ -209,6 +209,28 @@ export const connection = {
     this.expectRestart('El servidor no responde.');
   },
 
+  /**
+   * Comprueba **ahora** si el servidor responde, sin esperar al calendario del
+   * sondeo, y recupera la conexión si lo hace. Devuelve el estado resultante.
+   *
+   * **Para los botones de reintentar.** Tras un corte, las peticiones no salen
+   * hasta que el sondeo confirma que el servidor volvió, y el sondeo tiene su
+   * propio calendario (1, 2, 3, 5 s…). Sin esto, pulsar «Reintentar» justo
+   * después de que el servidor vuelva fallaba igual —«La operación no se
+   * envió»— y había que esperar y volver a pulsar sin saber cuánto.
+   */
+  async probeNow(): Promise<ConnectionState> {
+    if (status.state === 'online') {
+      return status.state;
+    }
+
+    if (await probe()) {
+      await recover();
+    }
+
+    return status.state;
+  },
+
   /** Reintenta a mano tras agotarse el plazo. */
   retryNow(): void {
     if (status.state !== 'failed') {

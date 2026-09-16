@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { http } from '../shared/http/client';
+import { connection } from '../shared/http/connection';
 import { isApiError } from '../shared/http/errors';
+import { describirFalloDeInstalacion } from './fallos';
 import { Alert, Button, Card, Field, Input } from '../shared/ui';
 import { MIN_LENGTH, requirements, strength } from './password';
 import './platform.css';
@@ -70,6 +72,9 @@ export function SetupPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // Título y mensaje por separado: el mensaje sigue siendo `error`, y se pinta
+  // dentro de `pf-server-message` para conservar los saltos del detalle (H-01).
+  const [errorTitle, setErrorTitle] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [checkingReady, setCheckingReady] = useState(false);
@@ -83,6 +88,10 @@ export function SetupPage() {
     setCheckingReady(true);
 
     try {
+      // En el acto, sin esperar al calendario del sondeo: si el servidor ya
+      // volvió, la pregunta tiene que poder salir ahora (H08).
+      await connection.probeNow();
+
       const status = await http.get<SetupStatus>('/setup/status', {
         allowUnauthorized: true,
       });
@@ -114,6 +123,7 @@ export function SetupPage() {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    setErrorTitle(null);
     setError(null);
     setSubmitting(true);
 
@@ -133,11 +143,13 @@ export function SetupPage() {
         return;
       }
 
-      setError(
-        isApiError(caught)
-          ? caught.displayMessage
-          : 'No se pudo completar la instalación.',
-      );
+      // **Según lo que se sabe del fallo, no con un título fijo** (H03). Un 503
+      // explicado por el instalador, un 5xx sin explicación y un corte de red
+      // son situaciones distintas, y antes las tres salían bajo «No se pudo
+      // instalar». Ver `fallos.ts`.
+      const fallo = describirFalloDeInstalacion(caught);
+      setErrorTitle(fallo.titulo);
+      setError(fallo.mensaje);
     } finally {
       setSubmitting(false);
     }
@@ -184,9 +196,9 @@ export function SetupPage() {
             {/* `pf-server-message`: el 503 de la instalación trae en su detalle una
                 explicación en varias líneas —dos causas posibles y un comando—, y
                 sin conservar los saltos se leía como un solo párrafo apelmazado. */}
-            {error && (
-              <Alert tone="danger" title="No se pudo instalar">
-                <span className="pf-server-message">{error}</span>
+            {errorTitle && (
+              <Alert tone="danger" title={errorTitle}>
+                {error && <span className="pf-server-message">{error}</span>}
               </Alert>
             )}
 

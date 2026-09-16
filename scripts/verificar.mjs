@@ -2024,6 +2024,11 @@ function correrPasosDelFrontend() {
   const pasos = [
     ['vocabulario de auditoría', 'test:audit-vocabulary'],
     ['errores del API', 'test:api-errors'],
+    // H03, H08, H22: el seguidor de conexión en modo instalación, y cómo se
+    // describe un fallo sin afirmar una causa que no se conoce. Milisegundos
+    // también: código real, `fetch` simulado, sin navegador.
+    ['seguidor de conexión en modo instalación', 'test:connection-setup'],
+    ['descripción de fallos de arranque e instalación', 'test:startup-errors'],
     ['tipos', 'typecheck'],
   ];
 

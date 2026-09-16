@@ -3,7 +3,6 @@ import { BrowserRouter, useNavigate } from 'react-router-dom';
 import { CapabilitiesProvider, fetchCapabilities, type Capabilities } from '../capabilities/CapabilitiesProvider';
 import { http } from '../shared/http/client';
 import { connection } from '../shared/http/connection';
-import { isApiError } from '../shared/http/errors';
 import { SessionProvider, fetchSession, type AuthenticatedUser } from '../session';
 import { CustomerSessionProvider } from '../modules/crm/session';
 import {
@@ -11,6 +10,7 @@ import {
   type CustomerIdentity,
 } from '../modules/crm/services/customerAuth';
 import { PlatformErrorPage } from '../platform/PlatformErrorPage';
+import type { PasoDeArranque } from '../platform/fallos';
 import { RouteFocus } from '../shared/a11y/RouteFocus';
 import { ReconnectingOverlay } from '../platform/ReconnectingOverlay';
 import { MigrationsPendingPage, SetupPage } from '../platform/SetupPage';
@@ -31,7 +31,7 @@ type Boot =
   | { phase: 'loading' }
   | { phase: 'setup' }
   | { phase: 'migrations' }
-  | { phase: 'failed'; detail: string }
+  | { phase: 'failed'; paso: PasoDeArranque; error: unknown }
   | {
       phase: 'ready';
       capabilities: Capabilities;
@@ -76,16 +76,25 @@ export function App() {
     } catch (error) {
       // Esta pregunta decide el modo del servidor. Si no responde, no se
       // inventa un estado de instalación.
-      setBoot({
-        phase: 'failed',
-        detail: isApiError(error) ? error.displayMessage : String(error),
-      });
+      setBoot({ phase: 'failed', paso: 'estado', error });
+      return;
+    }
+
+    // **Cada pregunta con su paso**, para que la página de error diga cuál
+    // falló (H22). Antes las capacidades y las sesiones compartían un solo
+    // `catch`, y la página atribuía a los módulos cualquier cosa que cayera ahí.
+    let capabilities: Capabilities;
+
+    try {
+      // Paso 2.
+      capabilities = await fetchCapabilities();
+    } catch (error) {
+      setBoot({ phase: 'failed', paso: 'capacidades', error });
       return;
     }
 
     try {
-      // Paso 2 y 3, más la configuración pública que necesita el armazón.
-      const capabilities = await fetchCapabilities();
+      // Paso 3, más la configuración pública que necesita el armazón.
       const crmActive = capabilities.modules.some(
         (module) => module.code === 'crm',
       );
@@ -104,12 +113,18 @@ export function App() {
         settings,
       });
     } catch (error) {
-      setBoot({
-        phase: 'failed',
-        detail: isApiError(error) ? error.displayMessage : String(error),
-      });
+      setBoot({ phase: 'failed', paso: 'sesion', error });
     }
   }, []);
+
+  // **Reintentar comprueba en el acto antes de arrancar** (H08). Tras un corte,
+  // las peticiones no salen hasta que el sondeo confirma que el servidor
+  // volvió; sin esto, el primer «Reintentar» después de un reinicio fallaba
+  // aunque el servidor ya estuviera de vuelta.
+  const reintentar = useCallback(async () => {
+    await connection.probeNow();
+    await start();
+  }, [start]);
 
   useEffect(() => {
     void start();
@@ -125,7 +140,13 @@ export function App() {
   }
 
   if (boot.phase === 'failed') {
-    return <PlatformErrorPage detail={boot.detail} onRetry={() => void start()} />;
+    return (
+      <PlatformErrorPage
+        paso={boot.paso}
+        error={boot.error}
+        onRetry={() => void reintentar()}
+      />
+    );
   }
 
   if (boot.phase === 'migrations') {

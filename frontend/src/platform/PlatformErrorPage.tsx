@@ -1,14 +1,27 @@
 import { Alert, Button, Card } from '../shared/ui';
+import { describirFalloDeArranque, type PasoDeArranque } from './fallos';
 import './platform.css';
 
 /**
  * El arranque no pudo completarse.
  *
- * Se llega aquí cuando `GET /api/capabilities` falla: sin saber qué módulos hay,
- * la aplicación no sabe qué montar y no puede continuar. Mejor decirlo que
- * enseñar una pantalla en blanco.
+ * **Dice solo lo que se sabe.** Antes afirmaba siempre «no se pudo consultar
+ * qué módulos están activos» y aconsejaba revisar un módulo recién activado,
+ * aunque lo que hubiera fallado fuese la primera pregunta del arranque o un
+ * corte de red sin ningún módulo de por medio (H22). Ahora nombra la pregunta
+ * que falló y de qué forma, y no atribuye causa. Ver `fallos.ts`.
  */
-export function PlatformErrorPage({ detail, onRetry }: { detail?: string; onRetry: () => void }) {
+export function PlatformErrorPage({
+  paso,
+  error,
+  onRetry,
+}: {
+  paso: PasoDeArranque;
+  error: unknown;
+  onRetry: () => void;
+}) {
+  const { que, como, pista } = describirFalloDeArranque(paso, error);
+
   return (
     <div className="pf-centered">
       <span className="pf-centered__brand">SILLAR</span>
@@ -16,17 +29,11 @@ export function PlatformErrorPage({ detail, onRetry }: { detail?: string; onRetr
       <div className="pf-centered__panel">
         <Card title="No se pudo cargar el sistema">
           <div className="pf-form">
-            <Alert tone="danger">
-              No se pudo consultar qué módulos están activos, así que la aplicación no puede
-              continuar.
-            </Alert>
+            <Alert tone="danger">{que}</Alert>
 
-            {detail && <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{detail}</p>}
+            {como && <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{como}</p>}
 
-            <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-              Comprueba que el servicio esté levantado. Si acabas de activar un módulo, es posible
-              que aún esté reiniciándose.
-            </p>
+            {pista && <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{pista}</p>}
 
             <Button onClick={onRetry}>Reintentar</Button>
           </div>
