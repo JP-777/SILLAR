@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react';
+import { useEffect, useEffectEvent, type RefObject } from 'react';
 
 const FOCUSABLE = [
   'a[href]',
@@ -30,12 +30,28 @@ export const FORCE_FOCUS_RING_CLASS = 'ui-force-focus-ring';
  *
  * Al cerrar devuelve el foco a donde estaba, que es lo que hace que abrir y
  * cerrar un panel no obligue a recorrer la página otra vez.
+ *
+ * **El efecto se arma una vez por apertura, y no con cada pintado de quien
+ * lo usa.** Antes dependía también de `onEscape`, y las 24 llamadas del panel
+ * lo pasan como flecha en línea: una identidad nueva en cada pintado. Así que
+ * cualquier pintado de la página con el diálogo abierto desarmaba el trap
+ * —devolviendo el foco a la página de detrás— y lo volvía a armar, mandando el
+ * foco al primer control. Y los pintados llegan solos: `useToasts` quita cada
+ * aviso a los 4 s con un `setState` en la página. Medido con los componentes
+ * reales: tras guardar una marca y abrir «Nueva marca», al caducar el aviso el
+ * foco saltaba a «Cerrar» y el siguiente espacio cerraba el panel y tiraba lo
+ * escrito; en una confirmación, el Enter que iba a «Dar de baja» cancelaba.
+ *
+ * Por eso Escape se lee con `useEffectEvent`: la función que se ejecuta es la
+ * de ese momento, pero cambiarla no rearma nada.
  */
 export function useFocusTrap(
   container: RefObject<HTMLElement | null>,
   open: boolean,
   onEscape: () => void,
 ): void {
+  const escape = useEffectEvent(onEscape);
+
   useEffect(() => {
     if (!open) {
       return;
@@ -58,7 +74,7 @@ export function useFocusTrap(
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         event.stopPropagation();
-        onEscape();
+        escape();
         return;
       }
 
@@ -94,5 +110,5 @@ export function useFocusTrap(
       releaseForcedRing();
       previous?.focus?.();
     };
-  }, [container, open, onEscape]);
+  }, [container, open]);
 }

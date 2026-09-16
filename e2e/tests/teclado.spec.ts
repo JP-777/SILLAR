@@ -142,3 +142,114 @@ test('El anillo de foco se ve al abrir el diálogo con el ratón', async ({ page
 
   await page.keyboard.press('Escape');
 });
+
+/**
+ * **H17: un aviso que caduca no mueve el foco del panel ni del diálogo.**
+ *
+ * `useToasts` quita cada aviso a los 4 s con un `setState` en la página, y eso
+ * vuelve a pintarla sin que nadie toque nada. El trap se rearmaba con cada
+ * pintado —dependía de `onEscape`, que las páginas pasan como flecha en
+ * línea— y mandaba el foco al primer control: «Cerrar» en el panel, donde el
+ * siguiente espacio lo cerraba y tiraba lo escrito, y «Cancelar» en la
+ * confirmación, donde el Enter cancelaba en vez de dar de baja.
+ *
+ * Las pruebas de arriba no podían verlo: abren el diálogo y pulsan Tab sin
+ * que nada vuelva a pintar la página entremedias. Por eso aquí se exige que
+ * el aviso siga **vivo** con el foco ya dentro, antes de dejarlo caducar: si
+ * llegara caducado, la prueba pasaría sin haber provocado nada.
+ */
+test('Un aviso que caduca no mueve el foco del panel ni del diálogo abiertos', async ({ page }) => {
+  await loginAsE2eAdmin(page);
+  await page.goto('/admin/catalogo/marcas');
+
+  const sufijo = Date.now().toString(36);
+  const primera = `Foco primera ${sufijo}`;
+  const segunda = `Foco segunda ${sufijo}`;
+  const nueva = page.getByRole('button', { name: 'Nueva marca', exact: true });
+  const fila = (nombre: string) => page.locator('tbody tr').filter({ hasText: nombre });
+
+  async function crear(nombre: string) {
+    await nueva.click();
+    const alta = page.getByRole('dialog');
+    await alta.getByLabel('Nombre').fill(nombre);
+    await alta.getByRole('button', { name: 'Crear marca' }).click();
+    await expect(alta).toBeHidden();
+    await expect(fila(nombre)).toContainText('Visible');
+  }
+
+  // --- 1 · Escribiendo en el panel mientras caduca el aviso de alta --------
+  await crear(primera);
+  const avisoAlta = page.getByRole('status').filter({ hasText: 'Se creó la marca' });
+
+  await nueva.click();
+  const panel = page.getByRole('dialog');
+  await expect(panel).toBeVisible();
+  const nombre = panel.getByLabel('Nombre');
+  await nombre.click();
+  await page.keyboard.type('Marca que');
+
+  await expect(avisoAlta, 'el aviso tiene que seguir vivo con el foco dentro, o esto no provoca nada').toBeVisible();
+  await expect(avisoAlta).toBeHidden({ timeout: 8_000 });
+
+  await expect(nombre, 'al caducar el aviso el foco salió del campo').toBeFocused();
+  // Con el defecto, el foco estaba en «Cerrar» y este espacio cerraba el panel.
+  await page.keyboard.type(' no se pierde');
+  await expect(panel, 'el panel se cerró solo y se llevó lo escrito').toBeVisible();
+  await expect(nombre).toBeFocused();
+  await expect(nombre).toHaveValue('Marca que no se pierde');
+
+  // Tab sigue atrapado, y volver atrás devuelve al mismo campo.
+  await page.keyboard.press('Tab');
+  expect(await page.evaluate(() => document.querySelector('[role="dialog"]')?.contains(document.activeElement) ?? false),
+    'el Tab salió del panel').toBe(true);
+  await page.keyboard.press('Shift+Tab');
+  await expect(nombre).toBeFocused();
+
+  // Escape cierra sin guardar y devuelve el foco a quien abrió.
+  await page.keyboard.press('Escape');
+  await expect(panel).toBeHidden();
+  await expect(nueva).toBeFocused();
+  await expect(fila('Marca que no se pierde')).toHaveCount(0);
+
+  // --- 2 · El foco en la acción destructiva mientras caduca el aviso de baja
+  await crear(segunda);
+
+  await fila(primera).getByRole('button', { name: 'Dar de baja' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Dar de baja' }).click();
+  await expect(fila(primera)).toContainText('Oculta');
+  const avisoBaja = page.getByRole('status').filter({ hasText: `«${primera}» ya no aparece en la web.` });
+  await expect(avisoBaja).toBeVisible();
+
+  const abrir = fila(segunda).getByRole('button', { name: 'Dar de baja' });
+  await abrir.click();
+  const dialogo = page.getByRole('alertdialog');
+  await expect(dialogo).toBeVisible();
+  const destructiva = dialogo.getByRole('button', { name: 'Dar de baja' });
+  const cancelar = dialogo.getByRole('button', { name: 'Cancelar' });
+
+  await page.keyboard.press('Tab'); // de «Cancelar» a «Dar de baja»
+  await expect(destructiva).toBeFocused();
+
+  await expect(avisoBaja, 'el aviso tiene que seguir vivo con el foco dentro, o esto no provoca nada').toBeVisible();
+  await expect(avisoBaja).toBeHidden({ timeout: 8_000 });
+
+  // Con el defecto, aquí el foco estaba en «Cancelar».
+  await expect(destructiva, 'al caducar el aviso el foco dejó la acción elegida').toBeFocused();
+
+  await page.keyboard.press('Tab');
+  await expect(cancelar).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(destructiva).toBeFocused();
+
+  // Escape no ejecuta la baja y devuelve el foco a la fila.
+  await page.keyboard.press('Escape');
+  await expect(dialogo).toBeHidden();
+  await expect(abrir).toBeFocused();
+  await expect(fila(segunda)).toContainText('Visible');
+
+  // Se deja todo oculto: las marcas de esta prueba no deben asomar en la tienda
+  // que recorren las pruebas que vienen después.
+  await abrir.click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Dar de baja' }).click();
+  await expect(fila(segunda)).toContainText('Oculta');
+});
