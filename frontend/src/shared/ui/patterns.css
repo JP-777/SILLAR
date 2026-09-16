@@ -210,3 +210,46 @@
 }
 
 .ui-toast--danger { border-left-color: var(--danger); }
+
+/* H29 · la navegación estrecha reutiliza el mismo Drawer, pero nace del
+   borde izquierdo. Los drawers de formularios conservan su lado derecho. */
+.ui-drawer--left {
+  left: 0;
+  right: auto;
+  width: min(326px, calc(100vw - 28px));
+  border-left: 0;
+  border-right: 1px solid var(--border);
+  animation: ui-drawer-left-enter var(--duracion-superficie) var(--curva-entrada);
+}
+
+.ui-drawer__backdrop--left {
+  animation: ui-drawer-backdrop-enter var(--duracion-superficie) var(--curva-entrada);
+}
+
+@keyframes ui-drawer-left-enter {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes ui-drawer-backdrop-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* `base.css` elimina todas las animaciones con `!important` y conserva
+     únicamente transiciones de opacidad. `@starting-style` da a una
+     superficie recién montada el estado inicial necesario para que ese
+     fundido exista sin reintroducir desplazamiento ni escala. */
+  .ui-drawer--left,
+  .ui-drawer__backdrop--left {
+    opacity: 1;
+  }
+
+  @starting-style {
+    .ui-drawer--left,
+    .ui-drawer__backdrop--left {
+      opacity: 0;
+    }
+  }
+}

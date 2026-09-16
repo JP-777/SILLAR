@@ -22,6 +22,8 @@ interface DrawerProps {
   onClose: () => void;
   footer?: ReactNode;
   children: ReactNode;
+  /** Lado del que nace la superficie. Los formularios siguen a la derecha. */
+  side?: 'right' | 'left';
 }
 
 /**
@@ -31,7 +33,15 @@ interface DrawerProps {
  * tabla de detrás a la vista, que es lo que hace que editar cinco usuarios
  * seguidos no sea una peregrinación.
  */
-export function Drawer({ open, title, description, onClose, footer, children }: DrawerProps) {
+export function Drawer({
+  open,
+  title,
+  description,
+  onClose,
+  footer,
+  children,
+  side = 'right',
+}: DrawerProps) {
   const panel = useRef<HTMLDivElement>(null);
 
   useFocusTrap(panel, open, onClose);
@@ -42,10 +52,14 @@ export function Drawer({ open, title, description, onClose, footer, children }: 
 
   return createPortal(
     <>
-      <div className="ui-drawer__backdrop" onClick={onClose} aria-hidden="true" />
+      <div
+        className={`ui-drawer__backdrop${side === 'left' ? ' ui-drawer__backdrop--left' : ''}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
       <div
-        className="ui-drawer"
+        className={`ui-drawer${side === 'left' ? ' ui-drawer--left' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="drawer-titulo"

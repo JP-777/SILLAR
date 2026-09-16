@@ -201,3 +201,330 @@
 .ly-page__header { display: flex; flex-direction: column; gap: var(--s1); }
 
 .ly-page__description { color: var(--text-muted); max-width: 68ch; }
+
+/* ==========================================================================
+   H29 · navegación estrecha
+   ========================================================================== */
+
+.ly-mobile-menu,
+.ly-mobile-account {
+  display: none;
+}
+
+.ly-mobile-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.ly-mobile-nav__group {
+  border-top: 1px solid var(--border);
+  padding-top: var(--s2);
+}
+
+.ly-mobile-nav__group-title,
+.ly-mobile-nav__group-toggle {
+  min-height: 44px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--s3);
+  margin: 0;
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.ly-mobile-nav__group-toggle {
+  justify-content: space-between;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ly-mobile-nav__group-toggle:hover {
+  background: var(--bg-sunken);
+}
+
+.ly-mobile-nav__chevron {
+  display: inline-block;
+  transition: transform var(--duracion-control) var(--curva-entrada);
+}
+
+.ly-mobile-nav__group-toggle[aria-expanded='true'] .ly-mobile-nav__chevron {
+  transform: rotate(90deg);
+}
+
+.ly-mobile-nav__items {
+  display: flex;
+  flex-direction: column;
+}
+
+.ly-mobile-nav__link {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--s3);
+  border-radius: var(--r-md);
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.ly-mobile-nav__items .ly-mobile-nav__link {
+  padding-left: var(--s5);
+}
+
+.ly-mobile-nav__link:hover {
+  background: var(--bg-sunken);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.ly-mobile-nav__link[aria-current='page'] {
+  background: var(--selected-bg);
+  color: var(--selected);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--selected);
+}
+
+.ly-mobile-nav__footer {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s3);
+  color: var(--text-subtle);
+  font-size: 12px;
+}
+
+@media (max-width: 860px) {
+  .ly-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'topbar'
+      'main';
+  }
+
+  .ly-sidebar {
+    display: none;
+  }
+
+  .ly-topbar {
+    min-height: 58px;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: var(--s2);
+    padding: 0 var(--s2);
+    position: relative;
+    z-index: 10;
+  }
+
+  .ly-topbar__business {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 650;
+  }
+
+  .ly-topbar__right {
+    display: none;
+  }
+
+  .ly-mobile-menu {
+    width: 44px;
+    height: 44px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--bg-raised);
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .ly-mobile-menu:hover {
+    background: var(--bg-sunken);
+  }
+
+  .ly-mobile-menu__glyph {
+    width: 20px;
+    height: 16px;
+    position: relative;
+  }
+
+  .ly-mobile-menu__glyph span {
+    position: absolute;
+    left: 0;
+    width: 20px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transform-origin: center;
+    transition:
+      transform var(--duracion-control) var(--curva-entrada),
+      opacity var(--duracion-control) var(--curva-entrada);
+  }
+
+  .ly-mobile-menu__glyph span:nth-child(1) { top: 1px; }
+  .ly-mobile-menu__glyph span:nth-child(2) { top: 7px; }
+  .ly-mobile-menu__glyph span:nth-child(3) { top: 13px; }
+
+  .ly-mobile-menu[aria-expanded='true'] .ly-mobile-menu__glyph span:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+  }
+
+  .ly-mobile-menu[aria-expanded='true'] .ly-mobile-menu__glyph span:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(.6);
+  }
+
+  .ly-mobile-menu[aria-expanded='true'] .ly-mobile-menu__glyph span:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+
+  .ly-mobile-account {
+    display: block;
+    position: relative;
+  }
+
+  .ly-mobile-account__trigger {
+    min-height: 44px;
+    max-width: 112px;
+    display: grid;
+    grid-template-columns: 28px minmax(0, auto);
+    align-items: center;
+    gap: var(--s2);
+    padding: 0 var(--s2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--bg-raised);
+    cursor: pointer;
+  }
+
+  .ly-mobile-account__trigger:hover {
+    background: var(--bg-sunken);
+  }
+
+  .ly-mobile-account__avatar {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--selected-bg);
+    color: var(--selected);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .ly-mobile-account__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 650;
+  }
+
+  .ly-account-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + var(--s1));
+    z-index: 850;
+    width: min(250px, calc(100vw - var(--s4)));
+    padding: var(--s2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--bg-raised);
+    box-shadow: var(--shadow-lg);
+    animation: ly-account-enter var(--duracion-mensaje) var(--curva-entrada);
+  }
+
+  .ly-account-panel__identity {
+    padding: var(--s3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ly-account-panel__identity strong,
+  .ly-account-panel__identity span {
+    display: block;
+  }
+
+  .ly-account-panel__identity span {
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .ly-account-panel .ui-button,
+  .ly-account-panel__item {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    text-decoration: none;
+  }
+
+  .ly-account-panel .ui-button {
+    justify-content: flex-start;
+  }
+
+  .ly-account-panel__item {
+    padding: 0 var(--s3);
+    border: 0;
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .ly-account-panel__item:hover {
+    background: var(--bg-sunken);
+    text-decoration: none;
+  }
+
+  .ly-account-panel__item--danger {
+    margin-top: var(--s1);
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+    color: var(--danger);
+  }
+
+  @keyframes ly-account-enter {
+    from {
+      opacity: 0;
+      transform: translateY(-6px) scale(.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ly-mobile-menu__glyph span,
+  .ly-mobile-nav__chevron {
+    transition-duration: var(--duracion-cambio-reducido);
+  }
+
+  .ly-account-panel {
+    opacity: 1;
+  }
+
+  @starting-style {
+    .ly-account-panel {
+      opacity: 0;
+    }
+  }
+}
