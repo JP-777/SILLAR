@@ -2,16 +2,13 @@ namespace Sillar.Core.Dtos;
 
 /// <summary>Si la instalación está pendiente.</summary>
 /// <remarks>
-/// <c>MigrationsPending</c> se añadió después y es opcional a propósito: quien
-/// solo lee <c>SetupRequired</c> —el arranque de la interfaz, <c>App.tsx</c>—
-/// sigue funcionando igual. Distingue dos situaciones que antes se veían iguales
-/// desde fuera y no lo son: «falta instalar», que se arregla desde el asistente,
-/// y «la tabla de instalación no está en esta base», que <b>no</b> — eso lo
-/// arregla quien despliega, desde una terminal, y el asistente no puede hacer
-/// nada al respecto. La bandera se llama <c>MigrationsPending</c> porque ésa es
-/// la causa más frecuente, pero <b>lo que se sabe es lo primero</b>: la tabla no
-/// está donde se buscó, y eso también ocurre con una conexión equivocada. Quien
-/// tenga que actuar lo lee entero en la respuesta del <c>POST</c>.
+/// <c>MigrationsPending</c> distingue dos situaciones que no tienen la misma
+/// solución: «falta instalar», que se resuelve desde el asistente, y «la tabla de
+/// instalación no está en esta base», que el asistente no debe intentar arreglar.
+/// El arranque de la interfaz consume ambas banderas para no ofrecer instalación
+/// cuando primero corresponde comprobar la conexión o preparar las migraciones.
+/// El nombre refleja la causa más frecuente, aunque lo comprobado es la ausencia
+/// de la tabla y una conexión equivocada produce el mismo estado.
 /// </remarks>
 /// <param name="SetupRequired">Verdadero mientras no se haya completado.</param>
 /// <param name="MigrationsPending">
