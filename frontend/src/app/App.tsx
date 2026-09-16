@@ -13,7 +13,7 @@ import {
 import { PlatformErrorPage } from '../platform/PlatformErrorPage';
 import { RouteFocus } from '../shared/a11y/RouteFocus';
 import { ReconnectingOverlay } from '../platform/ReconnectingOverlay';
-import { SetupPage } from '../platform/SetupPage';
+import { MigrationsPendingPage, SetupPage } from '../platform/SetupPage';
 import {
   PublicSettingsContext,
   fetchPublicSettings,
@@ -30,6 +30,7 @@ import '../platform/platform.css';
 type Boot =
   | { phase: 'loading' }
   | { phase: 'setup' }
+  | { phase: 'migrations' }
   | { phase: 'failed'; detail: string }
   | {
       phase: 'ready';
@@ -56,26 +57,30 @@ export function App() {
     setBoot({ phase: 'loading' });
 
     try {
-      // Paso 1. Mientras la instalación esté pendiente, esta ruta responde 200;
-      // en cuanto se completa, deja de existir y devuelve 404.
-      const status = await http.get<{ setupRequired: boolean }>('/setup/status', {
+      // Paso 1. Esta ruta existe durante la instalación y en modo normal.
+      // Si falta la tabla de instalación, el asistente no puede arreglarlo:
+      // primero corresponde comprobar la conexión o las migraciones.
+      const status = await http.get<{
+        setupRequired: boolean;
+        migrationsPending?: boolean;
+      }>('/setup/status', {
         allowUnauthorized: true,
       });
 
       if (status.setupRequired) {
-        setBoot({ phase: 'setup' });
-        return;
-      }
-    } catch (error) {
-      // 404 significa «ya está instalado», que es lo normal. Cualquier otra cosa
-      // se deja para el paso 2, que es el que decide si se puede continuar.
-      if (!isApiError(error, 'NotFound')) {
         setBoot({
-          phase: 'failed',
-          detail: isApiError(error) ? error.displayMessage : String(error),
+          phase: status.migrationsPending ? 'migrations' : 'setup',
         });
         return;
       }
+    } catch (error) {
+      // Esta pregunta decide el modo del servidor. Si no responde, no se
+      // inventa un estado de instalación.
+      setBoot({
+        phase: 'failed',
+        detail: isApiError(error) ? error.displayMessage : String(error),
+      });
+      return;
     }
 
     try {
@@ -121,6 +126,10 @@ export function App() {
 
   if (boot.phase === 'failed') {
     return <PlatformErrorPage detail={boot.detail} onRetry={() => void start()} />;
+  }
+
+  if (boot.phase === 'migrations') {
+    return <MigrationsPendingPage onRetry={() => void start()} />;
   }
 
   if (boot.phase === 'setup') {
