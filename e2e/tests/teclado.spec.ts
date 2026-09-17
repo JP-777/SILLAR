@@ -41,7 +41,20 @@ async function focoActual(page: import('@playwright/test').Page): Promise<string
  * elementos enfocables — que es justo lo que pasó al escribir esta prueba.
  */
 async function recorrerConTab(page: import('@playwright/test').Page, pantalla: string) {
-  const cuantos = await page.locator(ENFOCABLES).count();
+  // Desde H29 existen controles móviles en el DOM también en escritorio,
+  // pero `display:none` los saca correctamente del recorrido de teclado.
+  // Contarlos como si fueran tabbables hacía pulsar Tab una vez de más y
+  // confundía el paso del foco a la barra del navegador con una pérdida.
+  const cuantos = await page.locator(ENFOCABLES).evaluateAll((elements) =>
+    elements.filter((element) => {
+      const style = getComputedStyle(element);
+      return (
+        style.display !== 'none' &&
+        style.visibility !== 'hidden' &&
+        element.getClientRects().length > 0
+      );
+    }).length,
+  );
   expect(cuantos, `«${pantalla}» no tiene nada enfocable`).toBeGreaterThan(3);
 
   for (let salto = 1; salto < cuantos; salto += 1) {

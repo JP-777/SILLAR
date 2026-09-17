@@ -157,17 +157,34 @@ test('A 390 px, el menú del panel sigue estando y lleva a todas partes', async 
   await loginAsE2eAdmin(page);
   await abrir(page, '/admin');
 
-  // **Esconder la barra lateral no era la respuesta**: no hay menú en la
-  // barra superior, así que sin ella el panel se queda sin ninguna forma de
-  // navegar. Lo que se afirma no es que la barra esté, es que **se pueda
-  // llegar a las pantallas**.
-  const menu = page.getByRole('navigation', { name: 'Secciones del panel' });
+  // H29 deja el contenido libre en el primer viewport y mueve la navegación
+  // estrecha al Drawer compartido. La regla que esta prueba protege sigue
+  // siendo la misma: a 390 px se puede llegar a todas las pantallas.
+  await page.getByRole('button', { name: 'Abrir navegación' }).click();
+
+  const drawer = page.getByRole('dialog', { name: 'Navegación' });
+  const menu = drawer.getByRole('navigation', { name: 'Secciones del panel' });
   await expect(menu).toBeVisible();
 
+  // En el caso largo H29 mantiene plegados los grupos que no son el actual.
+  // La prueba verifica alcanzabilidad, no que todos deban estar abiertos a la vez.
+  async function asegurarGrupoAbierto(nombre: string) {
+    const grupo = drawer
+      .locator('.ly-mobile-nav__group-toggle')
+      .filter({ hasText: nombre });
+
+    await expect(grupo).toBeVisible();
+
+    if ((await grupo.getAttribute('aria-expanded')) !== 'true') {
+      await grupo.click();
+    }
+  }
+
+  await asegurarGrupoAbierto('Sistema');
+  await asegurarGrupoAbierto('Catálogo');
+
   // **`exact`, y no es cosmético.** Sin él, «Productos» casa también con
-  // «Productos destacados» (`cms/routes.tsx:16`) y la aserción muere por modo
-  // estricto. La entrada de M02 es correcta; lo que se apoyaba en que nadie
-  // más usara esa palabra era esta prueba.
+  // «Productos destacados» (`cms/routes.tsx:16`).
   for (const nombre of ['Módulos', 'Usuarios', 'Archivos', 'Marcas', 'Productos']) {
     await expect(
       menu.getByRole('link', { name: nombre, exact: true }),
