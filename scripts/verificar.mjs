@@ -1998,7 +1998,9 @@ for (const senal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
  *   2. `test:api-errors` — la precedencia del mensaje de error del API: qué
  *      parte de un ProblemDetails llega a la pantalla y qué parte no (H-01).
  *      También milisegundos.
- *   3. `typecheck` — `tsc --build --force` sobre todo `src`.
+ *   3. `test:frontend-hygiene` — barreras de presentación y nomenclatura
+ *      que protegen H12–H15 y H18–H20.
+ *   4. `typecheck` — `tsc --build --force` sobre todo `src`.
  *
  * **Por qué la focal va primero.** Es la más barata y la más específica: si el
  * vocabulario de auditoría se rompió, la etapa 1 lo dice en el primer segundo
@@ -2029,6 +2031,7 @@ function correrPasosDelFrontend() {
     // también: código real, `fetch` simulado, sin navegador.
     ['seguidor de conexión en modo instalación', 'test:connection-setup'],
     ['descripción de fallos de arranque e instalación', 'test:startup-errors'],
+    ['higiene del frontend', 'test:frontend-hygiene'],
     ['tipos', 'typecheck'],
   ];
 
