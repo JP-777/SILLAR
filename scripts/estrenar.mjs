@@ -3,6 +3,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cadenaDeConexion, identidadDeLaWorktree, sufijoDeWorktree } from './identidad.mjs';
+import { contrasenaPostgresCoherente } from './coherencia-env.mjs';
 
 /**
  * Escribe el `.env` de esta worktree, con su identidad ya calculada.
@@ -110,7 +111,10 @@ function principal() {
 
   // La contraseña que traiga el ejemplo se respeta tal cual: este guion decide
   // la identidad, no los secretos.
-  const contrasena = /^POSTGRES_PASSWORD=(.*)$/m.exec(ejemplo)?.[1]?.trim() ?? '';
+  // La plantilla es una sola unidad de configuración: si sus dos
+  // representaciones de la contraseña divergen, no generamos ningún .env.
+  // El error no imprime ninguno de los valores.
+  const contrasena = contrasenaPostgresCoherente(ejemplo);
 
   const valores = identidadComoClaves(RAIZ, contrasena);
   writeFileSync(DESTINO, conValores(ejemplo, valores), 'utf8');

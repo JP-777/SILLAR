@@ -987,6 +987,7 @@ const SONDAS_REALES = {
 };
 
 const AMBITO_DE_ETAPA = {
+  'coherencia de configuración': ['.env.example', 'scripts/'],
   'tipos del frontend': ['frontend/'],
   'tipos del arnés e2e': ['e2e/'],
   'compilación del backend': ['backend/'],
@@ -2162,6 +2163,32 @@ let baseCreada = false;
 try {
   // **Todo lo que toca el servidor vive dentro del try.** El `finally` es el
   // árbitro único: reporta una sola vez y solo después de intentar limpiar.
+
+  // H05: antes de tocar Docker comprobamos que la plantilla versionada no
+  // contenga dos contraseñas divergentes. Es un preflight barato y no una
+  // séptima etapa: las seis etapas canónicas conservan su significado.
+  console.log(color.gris('Preflight: coherencia de .env.example...'));
+
+  const coherenciaConfig = correr(
+    'node',
+    ['--test', 'scripts/tests/coherencia-env.test.mjs'],
+  );
+
+  if (coherenciaConfig.fallóAlLanzar) {
+    abortar(
+      'coherencia de configuración',
+      'No se pudo lanzar la comprobación de .env.example.',
+      coherenciaConfig.salida,
+    );
+  }
+
+  if (coherenciaConfig.codigo !== 0) {
+    abortar(
+      'coherencia de configuración',
+      `Terminó con código ${coherenciaConfig.codigo}.`,
+      coherenciaConfig.salida,
+    );
+  }
 
   // Docker es requisito real de la puerta completa: administra PostgreSQL y
   // Playwright levanta su propio stack. Se falla aquí con un mensaje útil en
