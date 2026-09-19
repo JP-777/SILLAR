@@ -13,6 +13,10 @@ import {
   roleLabel,
 } from '../src/session/roleVocabulary.ts';
 import { moduleDisplayName } from '../src/capabilities/moduleDisplayName.ts';
+import {
+  hasPublicContact,
+  publicContactFromSettings,
+} from '../src/platform/publicContact.ts';
 
 const frontend = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -265,5 +269,73 @@ test('H-18 CTA administrativo depende de sesión', () => {
   assert.match(
     publicSite,
     /isAuthenticated[\s\S]*Ir al panel de administración/,
+  );
+});
+
+test('§18 oculta valores vacíos y PENDIENTE_DEFINIR', () => {
+  const contact = publicContactFromSettings({
+    whatsapp_number: 'PENDIENTE_DEFINIR',
+    contact_email: '   ',
+    contact_phone: '',
+    business_address: 'PENDIENTE_DEFINIR',
+    business_reference: '',
+    google_maps_url: '   ',
+    business_hours: 'PENDIENTE_DEFINIR',
+  });
+
+  assert.deepEqual(contact, {
+    whatsappNumber: null,
+    whatsappUrl: null,
+    contactEmail: null,
+    contactPhone: null,
+    businessAddress: null,
+    businessReference: null,
+    googleMapsUrl: null,
+    businessHours: null,
+  });
+  assert.equal(hasPublicContact(contact), false);
+});
+
+test('§18 CORE convierte su WhatsApp principal en enlace público', () => {
+  const contact = publicContactFromSettings({
+    whatsapp_number: '+51 999 888 777',
+    contact_email: ' contacto@negocio.pe ',
+    contact_phone: '054 123456',
+    business_address: 'Av. Ejemplo 123',
+    business_reference: 'Frente a la plaza',
+    google_maps_url: 'https://maps.example.test/local',
+    business_hours: 'Lun–Sáb 09:00–18:00',
+  });
+
+  assert.equal(contact.whatsappNumber, '+51 999 888 777');
+  assert.equal(contact.whatsappUrl, 'https://wa.me/51999888777');
+  assert.equal(contact.contactEmail, 'contacto@negocio.pe');
+  assert.equal(contact.contactPhone, '054 123456');
+  assert.equal(contact.businessAddress, 'Av. Ejemplo 123');
+  assert.equal(contact.businessReference, 'Frente a la plaza');
+  assert.equal(contact.googleMapsUrl, 'https://maps.example.test/local');
+  assert.equal(contact.businessHours, 'Lun–Sáb 09:00–18:00');
+  assert.equal(hasPublicContact(contact), true);
+});
+
+test('§18 usa CORE en footer y contacto, y CMS no compite por WhatsApp', () => {
+  const registry = source('src/platform/footerContributions.ts');
+  const coreFooter = source('src/modules/core/coreFooter.tsx');
+  const cmsFooter = source('src/modules/cms/cmsFooter.tsx');
+  const contactPage = source('src/modules/crm/pages/ContactPage.tsx');
+
+  assert.match(
+    registry,
+    /FOOTER_CONTRIBUTIONS[\s\S]*coreFooter[\s\S]*cmsFooter/,
+  );
+  assert.match(coreFooter, /moduleCode: 'core'/);
+  assert.match(coreFooter, /PublicContactDetails/);
+
+  assert.match(contactPage, /PublicContactDetails/);
+  assert.match(contactPage, /Escribir por WhatsApp/);
+
+  assert.match(
+    cmsFooter,
+    /contact\.whatsappUrl[\s\S]*enlace\.platform\.toLowerCase\(\) === 'whatsapp'/,
   );
 });

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { coreFooter } from '../modules/core/coreFooter';
 import { cmsFooter } from '../modules/cms/cmsFooter';
 
 /**
@@ -23,7 +24,10 @@ export interface PublicFooterContribution {
  * pueden pelearse por el mismo hueco y nadie lo ve hasta que se instalan
  * juntos.
  */
-export const FOOTER_CONTRIBUTIONS: readonly PublicFooterContribution[] = [cmsFooter];
+export const FOOTER_CONTRIBUTIONS: readonly PublicFooterContribution[] = [
+  coreFooter,
+  cmsFooter,
+];
 
 /** Las contribuciones de los módulos activos, en el orden del array. */
 export function visibleFooterContributions(

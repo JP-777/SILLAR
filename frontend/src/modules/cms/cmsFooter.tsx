@@ -1,5 +1,7 @@
 import type { CSSProperties } from 'react';
 import { useAporteDeFooter } from '../../platform/footerState';
+import { publicContactFromSettings } from '../../platform/publicContact';
+import { usePublicSettings } from '../../platform/usePublicSettings';
 import type { PublicFooterContribution } from '../../platform/footerContributions';
 import type { EstadoAporte } from '../../platform/surfaceState';
 import { useResource, type ResourceState } from '../../shared/hooks/useResource';
@@ -35,13 +37,16 @@ const NOMBRES: Readonly<Record<string, string>> = {
  * un mensaje de error, y un `<footer>` con una disculpa dentro es peor que no
  * tener pie.
  */
-function aporteDe(state: ResourceState<readonly PublicSocialLink[]>): EstadoAporte {
+function aporteDe(
+  state: ResourceState<readonly PublicSocialLink[]>,
+  visibleCount: number,
+): EstadoAporte {
   if (state.status === 'loading') {
     return 'cargando';
   }
 
   if (state.status === 'ready') {
-    return state.data.length === 0 ? 'vacio' : 'con-contenido';
+    return visibleCount === 0 ? 'vacio' : 'con-contenido';
   }
 
   return 'vacio';
@@ -59,20 +64,31 @@ function aporteDe(state: ResourceState<readonly PublicSocialLink[]>): EstadoApor
  */
 function CmsFooterBlock() {
   const { state } = useResource(publicSocialLinksService.list, 'cargar las redes publicadas');
+  const contact = publicContactFromSettings(usePublicSettings().all);
+
+  // `whatsapp_number` de CORE es la fuente principal. Si está configurado,
+  // cualquier WhatsApp legado del CMS se oculta para no publicar dos
+  // destinos que pueden discrepar. Las demás redes siguen siendo de M02.
+  const enlaces = state.status === 'ready'
+    ? state.data.filter(
+        (enlace) =>
+          !(contact.whatsappUrl && enlace.platform.toLowerCase() === 'whatsapp'),
+      )
+    : [];
 
   // Se declara **antes de cualquier salida temprana**: un hook no puede quedar
   // detrás de un `return`, y además el estado que hay que declarar es
   // justamente el que provoca esas salidas.
-  useAporteDeFooter(aporteDe(state));
+  useAporteDeFooter(aporteDe(state, enlaces.length));
 
-  if (state.status !== 'ready' || state.data.length === 0) {
+  if (state.status !== 'ready' || enlaces.length === 0) {
     return null;
   }
 
   return (
     <nav aria-label="Redes sociales">
       <ul style={listStyle}>
-        {state.data.map((enlace) => (
+        {enlaces.map((enlace) => (
           <li key={enlace.id}>
             <a href={enlace.url} rel="noopener" target="_blank">
               {NOMBRES[enlace.platform] ?? enlace.platform}

@@ -2,12 +2,19 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { isApiError, type ValidationErrors } from '../../../shared/http/errors';
 import { Alert, Button, Card, Field, Input } from '../../../shared/ui';
+import { PublicContactDetails } from '../../../platform/PublicContactDetails';
+import {
+  hasPublicContact,
+  publicContactFromSettings,
+} from '../../../platform/publicContact';
+import { usePublicSettings } from '../../../platform/usePublicSettings';
 import { submitPublicContact } from '../services/contactMessages';
 import { useCustomerSession } from '../session';
 import '../crm.css';
 
 export function ContactPage() {
   const { customer } = useCustomerSession();
+  const publicContact = publicContactFromSettings(usePublicSettings().all);
   const [fullName, setFullName] = useState(customer?.fullName ?? '');
   const [email, setEmail] = useState(customer?.email ?? '');
   const [phone, setPhone] = useState('');
@@ -66,6 +73,15 @@ export function ContactPage() {
           un teléfono para poder responderte.
         </p>
       </div>
+
+      {hasPublicContact(publicContact) && (
+        <Card title="Datos de contacto">
+          <PublicContactDetails
+            contact={publicContact}
+            whatsappLabel="Escribir por WhatsApp"
+          />
+        </Card>
+      )}
 
       <Card title="Envíanos un mensaje">
         <form className="pf-form" onSubmit={submit} noValidate>

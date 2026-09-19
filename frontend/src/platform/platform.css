@@ -161,3 +161,59 @@
 .pf-skip:focus {
   transform: translateY(0);
 }
+
+/* --- Datos públicos de contacto -------------------------------------- */
+
+.pf-footer__contact {
+  width: min(1120px, calc(100% - (2 * var(--s5))));
+  margin-inline: auto;
+  display: grid;
+  gap: var(--s3);
+}
+
+.pf-footer__heading {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.pf-contact-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--s3) var(--s5);
+  margin: 0;
+}
+
+.pf-contact-details__item {
+  min-width: 0;
+}
+
+.pf-contact-details dt {
+  margin-bottom: var(--s1);
+  color: var(--text-subtle);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.pf-contact-details dd {
+  margin: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.pf-contact-details a {
+  color: var(--link);
+}
+
+.pf-contact-details__whatsapp {
+  font-weight: 600;
+}
+
+@media (max-width: 560px) {
+  .pf-footer__contact {
+    width: min(100% - (2 * var(--s4)), 1120px);
+  }
+
+  .pf-contact-details {
+    grid-template-columns: 1fr;
+  }
+}
