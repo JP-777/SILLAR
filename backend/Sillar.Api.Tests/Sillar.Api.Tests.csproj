@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ==========================================================================
+       Pruebas de Sillar.Api — el host.
+
+       Es el único proyecto de pruebas que arranca el binario de verdad, como un
+       proceso aparte, y observa lo que hace el arranque completo. No prueba
+       funciones: prueba que el host se niega a arrancar cuando tiene que
+       negarse, y que arranca cuando tiene que arrancar.
+
+       **Por qué existe este proyecto y no una prueba más en Sillar.Core.Tests.**
+       Lo que se afirma es del host: la secuencia del SPEC de CORE §7, el aborto
+       de la ADR-019 y el código de salida del proceso. Sillar.Core.Tests no
+       referencia a Sillar.Api —ni debe: CORE no conoce a su anfitrión— así que
+       desde allí la ruta del binario sería una suposición sobre dónde compiló
+       otro proyecto. El ProjectReference de abajo convierte esa suposición en
+       una dependencia de compilación: si esta prueba corre, el host está
+       construido.
+       ========================================================================== -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- **Se referencia para que se compile, no para usar sus tipos.**
+         `ReferenceOutputAssembly="false"` conserva el orden de compilación
+         —si esta prueba corre, el host está construido— sin traer a este
+         proyecto los ensamblados de una aplicación web, que es lo que dejaba
+         más de cien avisos MSB3277 por versiones en conflicto. El host se
+         ejecuta como proceso desde SU carpeta bin, donde están su
+         runtimeconfig.json y su appsettings.json: así es como se despliega. -->
+    <ProjectReference Include="..\Sillar.Api\Sillar.Api.csproj" ReferenceOutputAssembly="false" />
+
+    <!-- Lo único que este arnés necesita compilar contra: `DotEnv`, para leer
+         la cadena igual que la lee el host, y `Npgsql` por transitividad, para
+         crear y destruir la base de la prueba. -->
+    <ProjectReference Include="..\Sillar.Core\Sillar.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

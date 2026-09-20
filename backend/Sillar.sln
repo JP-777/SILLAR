@@ -39,6 +39,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sillar.Shared.Data", "Silla
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sillar.Shared.Data.Tests", "Sillar.Shared.Data.Tests\Sillar.Shared.Data.Tests.csproj", "{322EC9FE-8F71-4C88-9CE7-DA4DE564B310}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sillar.Api.Tests", "Sillar.Api.Tests\Sillar.Api.Tests.csproj", "{4189D8F8-DA89-421D-8252-16D21AFAE375}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -265,6 +267,18 @@ Global
 		{322EC9FE-8F71-4C88-9CE7-DA4DE564B310}.Release|x64.Build.0 = Release|Any CPU
 		{322EC9FE-8F71-4C88-9CE7-DA4DE564B310}.Release|x86.ActiveCfg = Release|Any CPU
 		{322EC9FE-8F71-4C88-9CE7-DA4DE564B310}.Release|x86.Build.0 = Release|Any CPU
+		{4189D8F8-DA89-421D-8252-16D21AFAE375}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4189D8F8-DA89-421D-8252-16D21AFAE375}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4189D8F8-DA89-421D-8252-16D21AFAE375}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4189D8F8-DA89-421D-8252-16D21AFAE375}.Debug|x64.Build.0 = Debug|Any CPU
+		{4189D8F8-DA89-421D-8252-16D21AFAE375}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4189D8F8-DA89-421D-8252-16D21AFAE375}.Debug|x86.Build.0 = Debug|Any CPU
+		{4189D8F8-DA89-421D-8252-16D21AFAE375}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4189D8F8-DA89-421D-8252-16D21AFAE375}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4189D8F8-DA89-421D-8252-16D21AFAE375}.Release|x64.ActiveCfg = Release|Any CPU
+		{4189D8F8-DA89-421D-8252-16D21AFAE375}.Release|x64.Build.0 = Release|Any CPU
+		{4189D8F8-DA89-421D-8252-16D21AFAE375}.Release|x86.ActiveCfg = Release|Any CPU
+		{4189D8F8-DA89-421D-8252-16D21AFAE375}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
