@@ -59,9 +59,9 @@ de la contraseña de `.env.example`— y el §18 funcional. El cierre documental
 entró en `50f5066e5acfea928ab2ed4a7cb62cdfa89d968b`.
 
 **Lo que falta para cerrar la fase, y es corto.** La verificación humana de CORE, que es de JP y
-no se delega; la verificación en vivo del aborto de la ADR-019, que es lo único técnico con el
-disparador ya cumplido; y una deuda estrictamente visual, el tratamiento del pie
-(`PENDIENTES.md` §18). H23 queda incierto y diferido a propósito, con disparador escrito
+no se delega; y una deuda estrictamente visual, el tratamiento del pie (`PENDIENTES.md` §18). Lo
+último técnico con disparador cumplido —el aborto de la ADR-019— quedó demostrado en vivo y
+registrado abajo. H23 queda incierto y diferido a propósito, con disparador escrito
 (`PENDIENTES.md` §21).
 
 **La pregunta de cada campo sigue siendo la misma**, y no caduca al cerrar la fase: *¿tendría
@@ -1608,3 +1608,75 @@ habría sido cerrarlo con otro nombre.
 intermedios no hay aquí el verde que autorizó cada movimiento de `main`. La regla de la antigua
 §19 pide ese registro por movimiento; esta entrada cubre el tramo por su extremo, que es lo que
 consta. Completarlo es de Integración, que es quien fusiona y quien tiene las corridas.
+
+### 20 sep 2026 · El host se niega a arrancar, y ahora se ve
+
+La ADR-019 prometía que **un módulo marcado activo en la base y ausente del binario impide
+arrancar**. Estaba probada la función que compara las dos listas
+(`ModuleActiveButUndeclaredTests`), y esa prueba era buena; pero entre una función que devuelve
+el nombre correcto y un proceso que se cae hay un `catch`, un código de salida y un puerto que
+podría abrirse igualmente. **La afirmación pendiente era sobre el host**, y un host solo se
+observa arrancándolo.
+
+Su disparador era «la próxima vez que se toque el instalador». Se tocó —H-27— así que tocaba.
+
+**El escenario, contra una base que la prueba crea y destruye.** Se instala por el camino real:
+el host arranca en modo instalación, `POST /api/setup` aplica las migraciones de los cuatro
+módulos y el propio host se detiene al completarla. Se arranca otra vez y se comprueba que
+sirve. Y solo entonces se marca activo `sales` —código que ningún binario declara; los de
+mentira se llaman `demo_*`— y se arranca por tercera vez. **Entre el arranque que funciona y el
+que aborta cambia una fila.**
+
+**El contraste positivo va antes que el caso incoherente, y no es un detalle de orden.** Si
+fuera después, un rojo del caso incoherente podría deberse a cualquier causa anterior —una
+conexión mal, un binario sin compilar— y la prueba lo contaría como la ADR-019 funcionando. Es
+el mismo defecto que ya nos costó una vez: una prueba que se pone roja por el motivo equivocado
+afirma algo que no ha comprobado.
+
+**Lo observado**, con el binario tal cual está en `main`:
+
+```
+warn: ModuleSynchronizer[0] El módulo 'sales' figura en core.modules pero no existe en esta
+      versión del producto. Se conserva la fila y se ignora. Activación actual: activo.
+crit: Sillar.Arranque[0] SILLAR no puede arrancar. Módulo(s) marcados activos en la base pero
+      ausentes de este binario: sales. Es un despliegue incompleto: reconstruye la imagen
+      [...]. No lo resuelvas desactivando el módulo en la base: eso convertiría el despliegue
+      roto en una instalación sin ese módulo.
+código de salida: 1
+```
+
+El aviso del sincronizador es justamente lo que la ADR-019 existe para no dejar solo: **un
+`warn` entre otros, que exige que alguien lo lea.** Lo que se afirma es que después de ese aviso
+el proceso termina con 1, que **no llega a escuchar**, que no llega a registrar módulos activos,
+y que el mensaje nombra al que falta y lo clasifica como despliegue incompleto.
+
+**La barrera, provocada en las dos direcciones.** Con la condición del aborto desactivada a mano
+—`missingActive.Count > 99` en lugar de `> 0`— el host **abre el puerto y sirve** con `sales`
+activo: exactamente el funcionamiento degradado que la decisión prohíbe. La prueba lo dice en el
+instante en que se abre el puerto, no esperando a un tiempo límite: preguntar por *lo primero que
+ocurra* —puerto o salida— es lo que convierte un rojo tardío y disfrazado de cancelación en un
+rojo que se explica solo. El fichero se restauró por copia y se comprobó por `sha256`
+(`af455689…`), no con `git checkout`.
+
+**Dónde vive.** `backend/Sillar.Api.Tests`, el primer proyecto de pruebas del host. No cabía en
+`Sillar.Core.Tests`: CORE no conoce a su anfitrión, así que desde allí la ruta del binario sería
+una suposición sobre dónde compiló otro proyecto. El `ProjectReference` a `Sillar.Api` es
+`ReferenceOutputAssembly="false"` —basta el orden de compilación; traer sus ensamblados dejaba
+más de cien avisos MSB3277— y el proceso se lanza desde la carpeta de salida del host, con su
+`runtimeconfig.json` y su `appsettings.json`, que es como se despliega.
+
+**Entra sola en la puerta**: el proyecto está en `backend/Sillar.sln` y la etapa 5 ejecuta
+`dotnet test backend/Sillar.sln` (`scripts/verificar.mjs:2105`). No hay ningún comando aparte que
+haya que acordarse de lanzar, que es la forma que tiene una barrera de existir sin proteger.
+
+**Verificación de este frente**, con un PostgreSQL propio de la corrida en un puerto efímero:
+
+- focal ADR-019: **1/1**, 41 s;
+- `Sillar.Shared.Tests`: **54/54**, 0 omitidas;
+- `Sillar.Core.Tests`, arranque y modularidad: **43/43**, 0 omitidas;
+- `dotnet build backend/Sillar.sln`: 0 errores, y 0 avisos atribuibles al proyecto nuevo;
+- `git diff --check`: limpio.
+
+Commit: `91793fa9dc4565ba7789d6d2889c46745870431f`. **La puerta canónica completa no se ha ejecutado en este frente**: la decide
+Integración, y este árbol comparte offset con otra worktree viva (`identidad.mjs` lo detectó al
+empezar), así que levantar aquí un stack habría escrito en la base de al lado.

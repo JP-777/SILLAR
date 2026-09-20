@@ -173,7 +173,6 @@ registrada donde corresponde y `PENDIENTES.md` no es un histórico.
 
 | Pendiente | Estado y disparador |
 |---|---|
-| **Probar el aborto de la ADR-019 en vivo** | La lógica está probada, pero falta observar al host negándose a arrancar cuando `core.modules` declara activo un módulo ausente del binario. **Disparador:** la próxima vez que se toque el instalador |
 | **La búsqueda no encuentra por prefijo** | La decisión técnica ya está tomada: `COLLATE "C"` + trigram; no se vuelve a investigar desde cero. **Disparador:** la próxima unidad que toque servicios de M01, o antes de mostrar el catálogo a una clienta; lo que ocurra primero |
 | **El paquete lleva código de módulos no licenciados** | Es una decisión de licenciamiento, no un arreglo aislado de navegación o portada. **Disparador:** cuando se decida el modelo de licencias; esa decisión llega al líder con la segunda clienta |
 | **Conservar el stack e2e cuando haga falta diagnosticarlo** | `E2E_KEEP_STACK` solo se justifica cuando el desmontaje impida inspeccionar un fallo. **Disparador:** la primera vez que haya que reproducir desde cero un fallo e2e por falta de evidencia posterior |
