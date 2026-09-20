@@ -99,7 +99,7 @@ async function identificadorVisible(
 test('Ninguna pantalla enseña un identificador al usuario', async ({ page }) => {
   await loginAsE2eAdmin(page);
 
-  // Auditoría va aparte, abajo: tiene un defecto conocido y abierto.
+  // Auditoría va aparte, abajo: su regla más fuerte se comprueba por separado.
   for (const screen of SCREENS.filter((s) => s.path !== '/admin/auditoria')) {
     const found = await identificadorVisible(page, screen.path);
 
