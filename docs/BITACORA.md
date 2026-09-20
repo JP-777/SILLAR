@@ -4,22 +4,32 @@ Registro vivo para continuar el trabajo. Los documentos de `docs/` dicen **qué*
 
 Si retomas el proyecto sin haber estado en la conversación: lee las secciones 1 a 4 antes de decidir nada.
 
-**Última actualización:** 18 de agosto de 2026 · **M01 pasos 1–3 cerrados · arnés `e2e/` en pie · un solo chat**
+**Última actualización:** 20 de septiembre de 2026 · **cierre de Fase 1 · trabajo repartido en frentes con worktrees propias**
 
 ---
 
 ## 1. Estado
 
+**Esta tabla estaba fosilizada el 18 de agosto y decía «M02 en adelante: sin empezar».** Se
+corrige aquí el estado, no el histórico: lo que ocurrió en cada fecha sigue contado en la §7, que
+es donde se lee en orden.
+
 | | |
 |---|---|
 | Fundación F-01 a F-08 | Completa |
-| CORE — backend | Completo. `media_assets` replicable. **221 pruebas** en la solución (132 + 54 + 35) |
-| CORE — pantallas | Completo, **verificado a mano** y ahora cubierto por `e2e/` |
-| **M01 Catálogo** | **Pasos 1 a 3 cerrados.** Esquema, contrato y API verificados en vivo. Toca el paso 4, interfaz |
-| M02 en adelante | Sin empezar |
-| SILLAR ERP (M13–M16) | **Nuevo producto.** En descubrimiento |
+| CORE — backend | Completo. `media_assets` replicable |
+| CORE — pantallas | Completo. **Queda la verificación humana**: cinco puntos en `VERIFICACION-VISUAL-CORE.md` |
+| **M01 Catálogo** | Construido, interfaz incluida. El selector N:M de categorías con principal queda **aprobado tal cual** y no bloquea nada |
+| **M02 cms** | Construido: banners, destacados, promociones y redes |
+| **M04 crm** | Construido: clientes, mensajes de contacto y sesión de cliente |
+| Superficie pública | Portada, catálogo, tienda, `/contacto` y pie de plataforma con el contacto de CORE (§18) |
+| M03 y siguientes | Sin empezar |
+| SILLAR ERP (M13–M16) | **Aparcado** |
 
-Entorno: PostgreSQL 16 en Docker con colación ICU `es-PE`. Backend en `:5080`, frontend Vite en `:5173` con proxy a `/api` y `/media`.
+Entorno: PostgreSQL 16 en Docker con colación ICU `es-PE`. El árbol base usa `:5080` para el
+backend y `:5173` para Vite; **cada worktree deriva los suyos de su propio directorio**
+(`scripts/identidad.mjs`), que es lo que permite trabajar en varios frentes a la vez sin que uno
+escriba en la base del otro.
 
 **CORE terminado en siete entregas** (1, 2, 2.1, 3, 3b, 4a, 4b): base de datos, API y panel. Doce ADR.
 
@@ -42,9 +52,20 @@ Comparten código y módulos; no comparten instalación. Decisiones en ADR-014 a
 
 **Del 16 al 18 de agosto el proyecto se planificó en dos chats que se turnaban**, Backend y Frontend. **Se deshizo el 18** — el motivo y lo que costó están en la §7, y merece leerse antes de volver a partir el trabajo en dos cabezas. `PROTOCOLO-DOS-CHATS.md` queda retirado, conservado sin editar; lo que sobrevive está repartido en `CLAUDE.md` y `PROTOCOLO-DISENO.md`. Sigue vigente lo que nunca dependió de haber dos chats: **el diseño es referencia, nunca origen**, y **ningún proveedor escribe en el repositorio**.
 
-**Lo que hay que hacer antes del paso 4** está en la §5, en el bloque heredado. Lo que bloquea de verdad es **resincronizar el sistema de diseño**: lo diseñado para M01 se hizo contra tokens que ya no son los vigentes, y construir contra tokens viejos es rehacerlo dos veces.
+**Dónde está el cierre de Fase 1.** La puerta canónica son seis etapas y la primera ya incluye
+la higiene del frontend (`scripts/verificar.mjs:2035`), así que una regresión de presentación
+corta antes de compilar los tipos. Están integrados H29 —navegación estrecha—, H05 —coherencia
+de la contraseña de `.env.example`— y el §18 funcional. El cierre documental de esos hechos
+entró en `50f5066e5acfea928ab2ed4a7cb62cdfa89d968b`.
 
-**Después: paso 4 de M01.** Sirve a los dos productos, así que en cada campo se siguen preguntando las dos cosas: *¿tendría sentido en un negocio que solo tiene la web?* y *¿esto le cierra la puerta al mostrador?*
+**Lo que falta para cerrar la fase, y es corto.** La verificación humana de CORE, que es de JP y
+no se delega; la verificación en vivo del aborto de la ADR-019, que es lo único técnico con el
+disparador ya cumplido; y una deuda estrictamente visual, el tratamiento del pie
+(`PENDIENTES.md` §18). H23 queda incierto y diferido a propósito, con disparador escrito
+(`PENDIENTES.md` §21).
+
+**La pregunta de cada campo sigue siendo la misma**, y no caduca al cerrar la fase: *¿tendría
+sentido en un negocio que solo tiene la web?* y *¿esto le cierra la puerta al mostrador?*
 
 ---
 
