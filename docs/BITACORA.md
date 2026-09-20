@@ -1513,3 +1513,77 @@ Integración: fast-forward de `main`
 `576fc7f3e843c0ce061ae72d030a8ce0781f3cd0`.
 
 Con esta entrada también se satisface el antiguo §19: **el verde que autorizó cada movimiento reciente de `main` ya está registrado**.
+
+### 19 sep 2026 · El contacto del negocio se enseña, y la puerta se queda con la barrera que ya estaba escrita
+
+Cinco commits cierran la Fase 1 por el lado del producto público y de la puerta. Se registran
+juntos porque son el tramo que va del último verde anotado —`576fc7f3e843c0ce061ae72d030a8ce0781f3cd0`—
+al canon con el que se cierra: `294bb7944252f0b52d5c1873e54c76b16bb3157d`.
+
+| SHA | Qué cierra |
+|---|---|
+| `5cf1dea87a4dc0250e49e7fe424d08ffc9f9e6f9` | **H29 · navegación estrecha.** En ancho estrecho el armazón del panel deja la barra lateral por una topbar compacta y agrupa los destinos en grupos plegables; en escritorio no cambia nada (`frontend/src/layout/AdminShell.tsx:16`) |
+| `b45c3ecd277ace6b6985796457ad53f19f86c698` | Las pruebas de teclado y móvil se adaptan a esa navegación, en vez de quedarse describiendo la anterior |
+| `9b4e45cb4bcece8685e39143cb0c4385fb9bdb2a` | **`test:frontend-hygiene` entra en la puerta**, dentro de `[1/6]` y antes del `typecheck` (`scripts/verificar.mjs:2035`) |
+| `f2188376338b1f33c7b03e105ffdb59464a99c4a` | **H05 · coherencia de contraseña.** Un preflight rechaza un `.env.example` donde `POSTGRES_PASSWORD` y el `Password=` de `ConnectionStrings__Default` no coincidan (`scripts/coherencia-env.mjs:70-83`, enganchado en `scripts/verificar.mjs:2170`) |
+| `294bb7944252f0b52d5c1873e54c76b16bb3157d` | **§18 · el contacto público de CORE se publica**, en el pie y en `/contacto` |
+
+**La higiene del frontend llevaba diez días escrita y no la ejecutaba nadie.** Existía desde el 9
+de septiembre y no había script `test`, ninguna etapa la invocaba, y `tsconfig.app.json` solo
+incluye `src`, así que tampoco se le comprobaban los tipos: pasaba cuando alguien se acordaba.
+Es la definición exacta de **una barrera escrita y no puesta**, que es la §4 otra vez y por
+tercera vez: no calla por romperse, calla por no haberse conectado. Ahora una regresión de
+presentación deja roja la primera etapa antes de compilar los tipos del frontend
+(`frontend/package.json:16`).
+
+**§18 — lo que se publica y lo que no.** CORE es la fuente principal del contacto público, y lo
+aporta al pie como contribución de módulo, no como código de la plataforma
+(`frontend/src/modules/core/coreFooter.tsx:10-30`). Se enseñan **WhatsApp, teléfono, correo,
+horario, dirección, referencia y mapa**, en ese orden, con un único componente compartido por el
+pie y por `/contacto` (`frontend/src/platform/PublicContactDetails.tsx`).
+
+Tres reglas, y las tres tienen la misma forma — *no publicar lo que no se sabe*:
+
+- **`whatsapp_number` de CORE es la autoridad.** Si está configurado, el enlace de WhatsApp
+  heredado de `cms.social_links` deja de publicarse (`frontend/src/modules/cms/cmsFooter.tsx:69-76`).
+  No compite: desaparece. Dos destinos publicados que pueden discrepar no son redundancia, son un
+  número equivocado esperando su turno.
+- **WhatsApp aparece dos veces y son dos cosas distintas**: un botón que nombra la acción
+  —«Escribir por WhatsApp» en `/contacto`— y un dato de contacto junto al teléfono. Es lo que
+  pedía el punto 2 de la 18: lleva a escribir, no a visitar.
+- **Un valor vacío o `PENDIENTE_DEFINIR` no se publica**, y si no queda ninguno la sección entera
+  no se pinta (`frontend/src/platform/publicContact.ts:16-24` y `:52-62`). Un dato de contacto a
+  medias es peor que ninguno: el vacío se nota, el marcador de plantilla se lee como si fuera el
+  dato.
+
+**Verificación que autorizó la integración**, según el registro de Integración: focal
+`e2e/tests/public-contact.spec.ts` **2/2** —una prueba para lo que se publica y la precedencia
+sobre el CMS (`:47`), otra para que los pendientes y los vacíos no se publiquen (`:130`)— y
+**puerta canónica 6/6** antes de mover `main`. H29 y H05 entraron verificados por sus propios
+frentes.
+
+**Dos decisiones de JP del 20 de septiembre**, que cierran pendientes sin escribir código:
+
+- **El selector de categorías N:M se aprueba tal cual está.** Hace lo que la 18 pedía: varias
+  categorías, una principal elegible solo entre las marcadas, promoción automática **y anunciada**
+  al quitar la principal (`frontend/src/modules/catalog/components/CategoryAssigner.tsx:60-85`) y
+  validación en el backend (`backend/Sillar.Modules.Catalog/Services/ProductService.cs:297`).
+  Deja de ser prerrequisito del paso 4 de M01; una sustitución visual futura es mejora, no
+  bloqueo.
+- **`PROTOCOLO-DISENO.md` gana una forma de encargar superficies de plataforma** (§3, «Superficies
+  de plataforma»). El §3 solo sabía encargar pantallas del §9 de un SPEC, y el pie no está en el
+  §9 de ninguno. Durante meses eso se leyó como diseño que faltaba y era el protocolo el que no
+  tenía cómo pedirlo. Se corrige la regla, no el caso.
+
+**H23 no se cierra: se difiere, y se dice por qué.** Una discrepancia entre el estado efectivo del
+sistema y lo que decían los registros, no reproducida y sin causa medida. Queda como
+**INCIERTO / DIFERIDO** en `PENDIENTES.md` §21, con disparador explícito: reabrir en cuanto vuelva
+a aparecer una discrepancia de esa naturaleza, sea cual sea el síntoma. Llamarlo «no reproducible»
+habría sido cerrarlo con otro nombre.
+
+**Lo que este registro no puede afirmar, y se anota en vez de suponerse.** Entre
+`576fc7f3e843c0ce061ae72d030a8ce0781f3cd0` y este canon hay más commits que los cinco de la tabla
+—entre ellos `22ed79c9ec27e34f3b58f3dd8939986dd7da2213`, que fue canon de auditoría—, y de esos
+intermedios no hay aquí el verde que autorizó cada movimiento de `main`. La regla de la antigua
+§19 pide ese registro por movimiento; esta entrada cubre el tramo por su extremo, que es lo que
+consta. Completarlo es de Integración, que es quien fusiona y quien tiene las corridas.

@@ -123,10 +123,10 @@ Ninguna se cierra ni se le inventa fecha.
 | | Entrada | Por qué está aquí |
 |---|---|---|
 | **11** | *El conjunto* | Lo dice ella misma: «**Sin disparador definido para el conjunto**». Con dos de sus seis filas ya hechas (grupo A), lo que queda es más pequeño de lo que aparenta y quizá sí admita uno |
-| **11** | El selector de categorías N:M no existe | Bloqueado en diseño: «pide pasar antes por el paso 3.5». Un bloqueo no es un disparador — dice qué falta, no cuándo mirarlo |
+| **11** | ~~El selector de categorías N:M no existe~~ — **DECIDIDA el 20 de septiembre de 2026** | Estaba aquí por lo correcto: un bloqueo no es un disparador. Volvió al líder y el líder decidió — el control que existe se aprueba tal cual y **deja de bloquear el paso 4 de M01**; una sustitución visual sería mejora, no requisito. Ver `PENDIENTES.md` §18, punto 4 |
 | **11** | `BUILD_CONFIGURATION=Debug`: ¿alcanzable en la imagen de producción? | Es una **pregunta de hecho**, no trabajo. Se responde leyendo `backend/Dockerfile` y citando línea; cuesta minutos. No se responde aquí porque responderla es hacerla, no clasificarla |
 | **11** | `:focus-visible` en diálogo con clic de ratón | De las que solo se resuelven en un navegador de verdad. Es de lo de JP |
-| **13** | Arranque con base vacía revienta con `42P01` | Estaba aquí por no tener cuándo. **El líder le subió el rango el 5 sep y está arreglado** en `fix/arranque-base-vacia`, verificado arrancando contra una base vacía. Sale del grupo C: ya no le falta disparador, le falta que alguien decida si la fila se cierra |
+| **13** | ~~Arranque con base vacía revienta con `42P01`~~ — **CERRADA** | Estaba aquí por no tener cuándo; el líder le subió el rango el 5 sep. Lo que le faltaba —que alguien decidiera si la fila se cierra— ya ocurrió: entró en `main` con `2d22ecf` y está registrada en `BITACORA.md` §7, «10 sep 2026 · Una tabla ausente no demuestra que falten migraciones». La fila ya no está en la 13 |
 | **13** | Probar el aborto de la ADR-019 en vivo | «Es lo único que la decisión promete» y sigue sin probarse |
 | **13** | La búsqueda no encuentra por prefijo | Medido y descrito con precisión. Es trabajo de tamaño conocido y **sin fecha**: toca los tres servicios de M01 |
 | **13** | El paquete lleva código de módulos no licenciados | Declarado «asunto de licenciamiento, no de arquitectura». El disparador natural sería el día que se decida el licenciamiento, pero **eso no está escrito** y no lo escribo yo |

@@ -188,42 +188,28 @@ permisos granulares, vencimiento de licencias, marca blanca.
 
 ---
 
-## 15 · La ubicación del negocio está entregada, pero no se enseña
+## 15 · ~~La ubicación del negocio está entregada, pero no se enseña~~ — **resuelta el 19 de septiembre de 2026**
 
-**Corrección de la premisa.** Esta entrada decía que el mapa del negocio no tenía
-módulo dueño y que todavía había que decidir entre `core.site_settings` y M02.
-Esa decisión ya se tomó y se entregó.
+Se conserva el número porque el cierre de Fase 1 ya la referencia. La premisa que le
+daba nombre dejó de ser cierta: dirección, referencia, mapa y horario **se enseñan**,
+y no en una superficie propia sino donde tenían que estar desde el principio —junto al
+resto del contacto público.
 
-La semilla inicial de CORE declara:
+La superficie que faltaba la aporta CORE como contribución al pie
+(`frontend/src/modules/core/coreFooter.tsx:26-29`), con los valores leídos de los
+ajustes públicos (`frontend/src/platform/publicContact.ts:35-50`) y pintados por un
+único componente compartido (`frontend/src/platform/PublicContactDetails.tsx`), que es
+el mismo que usa `/contacto`
+(`frontend/src/modules/crm/pages/ContactPage.tsx:77-84`). Un negocio que compró
+solamente el catálogo sigue teniendo pie con su dirección: era el supuesto que abrió
+esta entrada y se cumple porque la contribución es de CORE, no del CMS.
 
-- `business_address`;
-- `business_reference`;
-- `google_maps_url`;
-- `business_hours`.
+La frase que dejó esta entrada sigue valiendo para la siguiente que aparezca:
+*prometido y sin dueño es la peor de las dos formas de no existir*, y **entregado y sin
+enseñar es peor todavía** — porque nadie lo echa en falta en la base de datos.
 
-Las cuatro aparecen como públicas desde
-`database/modules/core/02_seed.sql:36-39`, están declaradas en
-`docs/modules/core/SPEC.md:274` y `:276`, y el panel ya las edita agrupadas desde
-`frontend/src/modules/core/services/settings.ts:60`.
-
-**Qué falta realmente.** No falta decidir dónde viven los datos; falta la
-superficie pública que los enseñe. Su sitio natural es el **pie de plataforma**:
-un negocio que compra únicamente el catálogo sigue teniendo dirección, referencia,
-mapa y horario.
-
-El precedente ya existe. `whatsapp` vive en `cms.social_links`, mientras
-`whatsapp_number` vive en `site_settings`: la propiedad se reparte según
-**dónde se enseña**, no mediante una obligación de que todo dato visible pertenezca
-al mismo módulo.
-
-La frase útil de la entrada anterior se conserva con la corrección que reveló la
-evidencia: *prometido y sin dueño es la peor de las dos formas de no existir*;
-aquí resultó ser **entregado y sin enseñar**, que es peor todavía.
-
-**Disparador.** Se funde con §18. Cuando se reactive el diseño del pie de
-plataforma se incorpora allí la superficie pública de ubicación y horario. No
-requiere una nueva decisión de arquitectura ni bloquea por sí sola el arranque de
-los siguientes módulos.
+Entró en `main` con `294bb7944252f0b52d5c1873e54c76b16bb3157d`. Qué se publica, qué no
+se publica y qué verde lo autorizó están en `BITACORA.md` §7.
 
 ---
 
@@ -236,33 +222,50 @@ Con los cuatro módulos activos se conservan exactamente las mismas veinte asoci
 La implementación y su costura de verificación entraron en `main` con `576fc7f3e843c0ce061ae72d030a8ce0781f3cd0`. La focal `test:audit-vocabulary` quedó incorporada a `[1/6]` antes del `typecheck`, pasó 14/14 y la puerta canónica completa pasó 6/6. La evidencia durable queda en `BITACORA.md`.
 ---
 
-## 18 · Diseño pendiente: superficies de plataforma y selector N:M
+## 18 · El pie de plataforma no tiene tratamiento visual
 
-**Qué pasa.** Cuatro cosas que se resuelven en la misma reactivación de diseño:
+**Esta entrada abrió con cuatro puntos y tres están cerrados.** Se dejan nombrados,
+con lo que cerró cada uno, porque la entrada se cita entera desde la 2 y desde
+`PENDIENTES-CLASIFICACION.md`, y porque el detalle importa: ninguno de los tres lo
+cerró diseño.
 
-**1 · El protocolo no tiene forma de encargar una superficie de plataforma.**
-`PROTOCOLO-DISENO.md` §3 encarga pantallas a partir del §9 del SPEC de un módulo, y el pie no
-está en el §9 de ninguno porque es de la plataforma. **No es que diseño no lo hiciera: es que
-nadie podía pedírselo.** Mientras eso no se arregle, cualquier superficie de plataforma futura
-cae en el mismo agujero. El arreglo de fondo es **una línea en `PROTOCOLO-DISENO` sobre
-superficies de plataforma**, no un encargo suelto para este caso.
+**1 · El protocolo no tenía forma de encargar una superficie de plataforma. Cerrado el
+20 de septiembre de 2026.** JP aprobó la opción A: corregir el protocolo ahora, en
+lugar de pasar el encargo a mano y dejar el agujero abierto para la siguiente
+superficie. Está escrito en `PROTOCOLO-DISENO.md` §3, «Superficies de plataforma». Era
+el punto que bloqueaba a los otros tres, y por eso iba primero.
 
-**2 · WhatsApp abre una conversación, no un perfil.** Es la única de las cinco redes que no
-lleva a una página que se visita: lleva a escribir un mensaje. Enseñarla junto a Instagram y
-TikTok, con el mismo tratamiento y el mismo verbo implícito, promete algo distinto de lo que
-hace. Hay que comunicárselo a diseño para que lo resuelva, no resolverlo por cuenta propia.
+**2 · WhatsApp abre una conversación, no un perfil. Cerrado por producto.** Ya no se
+enseña como una red más junto a Instagram y TikTok: aparece como **botón que nombra lo
+que hace** y como **dato de contacto** al lado del teléfono y del correo
+(`frontend/src/platform/PublicContactDetails.tsx:15-29`). Y tiene una sola fuente:
+`whatsapp_number` de CORE manda, y el enlace heredado del CMS **deja de publicarse
+cuando ese existe** en vez de competir con él
+(`frontend/src/modules/cms/cmsFooter.tsx:69-76`). Dos destinos publicados que pueden
+discrepar no son una redundancia: son un número equivocado esperando su turno.
 
-**3 · El pie no tiene tratamiento visual.** Hoy es un borde superior y una lista de enlaces de
-texto centrados. Es honesto —el enlace dice a dónde lleva— y deliberadamente sin iconos: no se
-añade una dependencia de iconos por cinco enlaces, ni se dibujan a mano logotipos que son marcas
-de otros. Pero es lo mínimo para que exista, no una decisión de diseño.
+**4 · El selector de categorías N:M con principal. Cerrado como decisión, no como
+trabajo.** JP lo aprobó tal cual está el 20 de septiembre de 2026. Lo que hay hace lo
+que la entrada pedía: varias categorías, una principal elegida solo entre las marcadas,
+**promoción automática y anunciada** cuando se quita la principal
+(`frontend/src/modules/catalog/components/CategoryAssigner.tsx:60-85`) y validación en
+el backend, que rechaza una principal que no esté entre las asignadas
+(`backend/Sillar.Modules.Catalog/Services/ProductService.cs:297` y `:525`). **Deja de
+ser prerrequisito del paso 4 de M01.** Una sustitución visual futura sería una mejora,
+no un bloqueo de Fase 1: la regla del paso 3.5 existe para que no se invente la
+interacción desde código, y esta interacción ya está decidida y revisada.
 
-**4 · El selector de categorías N:M con principal no está diseñado.** No es un problema de implementación: falta decidir visualmente cómo se seleccionan varias categorías y cómo se distingue una como principal. Se resuelve antes de volver al paso 4 de M01; inventar la interacción desde código sería saltarse el paso 3.5.
+**Lo que sigue vivo — 3 · el pie no tiene tratamiento visual.** Hoy es un borde
+superior, una lista de enlaces de texto y una sección de contacto con estilos mínimos
+(`frontend/src/platform/platform.css`). Es honesto —cada enlace dice a dónde lleva— y
+deliberadamente sin iconos: no se añade una dependencia de iconos por cinco enlaces ni
+se dibujan a mano logotipos que son marcas de otros. Pero es lo mínimo para que exista,
+no una decisión de diseño. **Lo que cambió es que ahora se puede encargar**, que es
+justamente lo que el punto 1 impedía.
 
-**Disparador.** Cuando diseño se reactive. Los cuatro puntos se le pasan juntos, y el 1 antes que
-los otros tres: sin él, el encargo de los otros tres vuelve a ser una excepción a mano.
-
-El selector de categorías debe quedar resuelto antes de retomar el paso 4 de M01.
+**Disparador.** Cuando diseño se reactive, como superficie de plataforma y con los
+módulos activos nombrados en el encargo: el mismo pie con solo CORE y con CORE más el
+CMS no es la misma pantalla.
 
 ---
 
@@ -271,6 +274,37 @@ El selector de categorías debe quedar resuelto antes de retomar el paso 4 de M0
 Se conserva el número para no romper referencias. La regla ya se aplicó a los dos movimientos posteriores al último registro: `d409c0e → 2d22ecf` y `2d22ecf → 576fc7f`.
 
 Cada fast-forward queda acompañado en `BITACORA.md` por el commit probado y por el verde que lo autorizó. No se repitió una corrida únicamente porque el mismo árbol pasara a llamarse `main`: la evidencia pertenece al árbol integrado, no al nombre de la rama.
+---
+
+## 21 · H23 — el estado del sistema y lo que decían los registros no coincidieron una vez · **INCIERTO / DIFERIDO**
+
+**Qué pasó.** Una discrepancia entre el estado efectivo del sistema y lo que indicaban
+los registros. No se reprodujo después, y no se midió la causa.
+
+**Por qué no dice «resuelto» ni «no reproducible».** «Resuelto» afirmaría una causa que
+nadie comprobó. «No reproducible» suena a cerrado y es lo mismo con mejor cara: dice
+que se buscó una vez, no que no exista. Lo único cierto es que quedó **incierto**, y
+darlo por bueno sin volver a mirarlo es la barrera que calla de `BITACORA.md` §4 —
+indistinguible de una que funciona hasta el día que hace falta.
+
+**Disparador, y es explícito a propósito:** *reabrir inmediatamente si vuelve a
+aparecer una discrepancia entre el estado efectivo del sistema y lo que indican los
+registros.* No hace falta que sea el mismo síntoma ni el mismo componente. La segunda
+ocurrencia es la que convierte una rareza en un defecto, y es además la que trae la
+evidencia que la primera no dejó — por eso el disparador es la aparición, no una fecha.
+
+**El número.** Se abre con el 21 porque el 20 se propuso y se disolvió sin llegar a
+existir aquí (`PENDIENTES-CLASIFICACION.md` §F). Los números no se reutilizan.
+
+**Y lo que esta entrada deja a la vista.** Hasta ahora «H23» no significaba nada dentro
+de `docs/`: el catálogo de hallazgos H01–H29 se usó entero para cerrar la Fase 1 y
+**ningún documento de este repositorio lo recoge** — los códigos solo aparecen en
+código y pruebas, como `e2e/tests/h29-navegacion-estrecha.spec.ts` o
+`scripts/verificar.mjs:2002`. Mientras eso siga así, esta entrada es la única forma de
+volver a encontrar H23 el día que reaparezca, y queda para el líder decidir lo
+general: o el catálogo entra a `docs/`, o cada hallazgo que no se cerró necesita su
+entrada como esta.
+
 ---
 
 ## Resueltos recientemente

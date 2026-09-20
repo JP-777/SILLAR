@@ -90,6 +90,28 @@ Y las cuatro combinaciones que no son opcionales: **claro y oscuro**, **móvil y
 Cuando agregues el primero aparecerá aquí» dice qué falta y qué hacer; una tabla en blanco no
 dice nada.
 
+### Superficies de plataforma
+
+**No todo lo que se ve pertenece a un módulo.** El pie público, la portada, las pantallas de
+arranque e instalación y el armazón del panel son de la plataforma: no están en el §9 de ningún
+SPEC porque no hay un SPEC que los contenga. Durante meses eso se leyó como diseño que faltaba,
+y no lo era — **nadie podía pedirlo.** El pie se construyó sin pasar por el paso 3.5 por este
+agujero, no por saltárselo, y cualquier superficie de plataforma futura caía en el mismo sitio.
+
+Una superficie de plataforma se encarga igual que una pantalla de módulo —los cuatro estados de
+arriba, claro y oscuro, móvil y escritorio— con dos diferencias:
+
+| | Pantalla de módulo | Superficie de plataforma |
+|---|---|---|
+| De dónde sale la lista | El §9 del SPEC | Se nombra en el encargo; no hay §9 que la contenga |
+| Quién decide qué aparece | El módulo, dentro de su pantalla | Producto, porque varios módulos aportan a la misma superficie |
+
+**La segunda fila es la que hay que leer dos veces.** Una superficie de plataforma la componen
+módulos que no se conocen entre sí, así que el encargo tiene que decir **con qué módulos activos
+se diseña**, y como mínimo dos combinaciones: el pie con solo CORE y el pie con CORE más el CMS
+no son la misma pantalla. **El caso de un módulo solo no es un caso degradado**: es un negocio
+que compró únicamente el catálogo, y sigue teniendo dirección, horario y WhatsApp que enseñar.
+
 ---
 
 ## 4. Lo que el diseño tiene que respetar
