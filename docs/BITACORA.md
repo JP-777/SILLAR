@@ -4,7 +4,7 @@ Registro vivo para continuar el trabajo. Los documentos de `docs/` dicen **qué*
 
 Si retomas el proyecto sin haber estado en la conversación: lee las secciones 1 a 4 antes de decidir nada.
 
-**Última actualización:** 20 de septiembre de 2026 · **cierre de Fase 1 · trabajo repartido en frentes con worktrees propias**
+**Última actualización:** 20 de septiembre de 2026 · **Fase 1 cerrada · verificación humana 5/5 y puerta canónica 6/6**
 
 ---
 
@@ -18,7 +18,7 @@ es donde se lee en orden.
 |---|---|
 | Fundación F-01 a F-08 | Completa |
 | CORE — backend | Completo. `media_assets` replicable |
-| CORE — pantallas | Completo. **Queda la verificación humana**: cinco puntos en `VERIFICACION-VISUAL-CORE.md` |
+| CORE — pantallas | Completo. **Verificación humana 5/5 aprobada el 20 de septiembre de 2026**; evidencia en `VERIFICACION-VISUAL-CORE.md` |
 | **M01 Catálogo** | Construido, interfaz incluida. El selector N:M de categorías con principal queda **aprobado tal cual** y no bloquea nada |
 | **M02 cms** | Construido: banners, destacados, promociones y redes |
 | **M04 crm** | Construido: clientes, mensajes de contacto y sesión de cliente |
@@ -58,11 +58,17 @@ corta antes de compilar los tipos. Están integrados H29 —navegación estrecha
 de la contraseña de `.env.example`— y el §18 funcional. El cierre documental de esos hechos
 entró en `50f5066e5acfea928ab2ed4a7cb62cdfa89d968b`.
 
-**Lo que falta para cerrar la fase, y es corto.** La verificación humana de CORE, que es de JP y
-no se delega; y una deuda estrictamente visual, el tratamiento del pie (`PENDIENTES.md` §18). Lo
-último técnico con disparador cumplido —el aborto de la ADR-019— quedó demostrado en vivo y
-registrado abajo. H23 queda incierto y diferido a propósito, con disparador escrito
-(`PENDIENTES.md` §21).
+**Fase 1 cerrada el 20 de septiembre de 2026.** JP completó los cinco juicios humanos
+de `VERIFICACION-VISUAL-CORE.md`: estados de tarjeta en oscuro, redacción de los mensajes,
+foco visible con ratón, repaso completo del panel y Swagger, y tiempo de reinicio al activar
+módulos. Resultado: **5/5 PASS**. El mismo árbol integrado
+(`6efc00de3a6a1a0587d0df7f3e949c9f0c985635`) había pasado la puerta canónica **6/6** y la
+focal en vivo de la ADR-019 **1/1**. No quedan bloqueantes técnicos conocidos de Fase 1.
+
+Dos asuntos permanecen abiertos deliberadamente y **no se reinterpretan como resueltos por
+cerrar la fase**: el tratamiento estrictamente visual del pie (`PENDIENTES.md` §18.3), con
+disparador cuando diseño se reactive, y H23 (`PENDIENTES.md` §21), **INCIERTO / DIFERIDO**
+hasta que vuelva a aparecer una discrepancia entre estado efectivo y registros.
 
 **La pregunta de cada campo sigue siendo la misma**, y no caduca al cerrar la fase: *¿tendría
 sentido en un negocio que solo tiene la web?* y *¿esto le cierra la puerta al mostrador?*

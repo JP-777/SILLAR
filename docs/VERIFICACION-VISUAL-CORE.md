@@ -1,9 +1,11 @@
 # Verificación visual del panel — CORE
 
 **Para:** JP.
+**Estado:** ✅ **COMPLETADA el 20 de septiembre de 2026 — 5/5 PASS** sobre
+`6efc00de3a6a1a0587d0df7f3e949c9f0c985635`.
 **Duración:** unos diez minutos, y una parte sin abrir la aplicación.
-**Por qué existe:** hay cosas que un modelo no puede afirmar. Ya no son «todo lo visual» — son cinco,
-y están numeradas abajo para que se puedan tachar de una en una.
+**Por qué existe:** hay cosas que un modelo no puede afirmar. Quedaron reducidas a cinco
+juicios humanos y JP comprobó los cinco antes del cierre formal de Fase 1.
 
 > **Este documento se redactó el 16 de agosto, cuando el proyecto no tenía Playwright.** El
 > arnés `e2e/` entró el 18 y absorbió la mayor parte. Lo que sigue abajo es el residuo: lo que
@@ -22,7 +24,7 @@ No hace falta que diagnostiques nada. Con esas tres líneas se corrige.
 
 ---
 
-## A. Lo que queda para ti
+## A. Verificación completada — 5/5 PASS
 
 ### A.1 · Desde la galería de capturas, sin levantar nada
 
@@ -33,32 +35,32 @@ e2e/screenshots/index.html
 Se genera sola al terminar cada corrida de `pnpm test` en `e2e/`, con cada paso en claro y
 oscuro uno al lado del otro. Abre el archivo en el navegador.
 
-**1 · Que los estados de tarjeta sigan distinguiéndose entre sí, en oscuro.** `axe-core` mide
+**1 · ✅ PASS — Que los estados de tarjeta sigan distinguiéndose entre sí, en oscuro.** `axe-core` mide
 el contraste de cada texto contra su fondo y por eso cazó los cuatro fallos del 18 — pero **no
 mide si «Activo» y «Bloqueado» se parecen demasiado el uno al otro**. Son dos preguntas
 distintas y solo la primera está automatizada. Mira la captura de las cuatro variantes en oscuro
 y responde: ¿se distinguen de un vistazo, sin leer la insignia?
 
-**2 · Que las frases suenen a persona.** Se afirma en código que ningún conflicto dice «Ha
+**2 · ✅ PASS — Que las frases suenen a persona.** Se afirma en código que ningún conflicto dice «Ha
 ocurrido un error»; no se puede afirmar que lo que dice en su lugar esté bien escrito. Lee los
 textos de las capturas —el diálogo de confirmación, el aviso del 409— como los leería quien
 administra su negocio.
 
-**3 · Que el anillo de foco se pinte al abrir con el ratón.** Mira la captura
+**3 · ✅ PASS — Que el anillo de foco se pinte al abrir con el ratón.** Mira la captura
 `teclado/…foco-tras-abrir-el-dialogo-con-raton` y di si se ve. Es comprobación única, no
 regresión: lo que una prueba puede afirmar es que el foco **está** en el diálogo, no que el
 anillo se **vea**.
 
 ### A.2 · Con la aplicación delante
 
-**4 · El repaso visual del panel completo y de Swagger, en una sola pasada.** Es el punto que
+**4 · ✅ PASS — El repaso visual del panel completo y de Swagger, en una sola pasada.** Es el punto que
 `PENDIENTES.md` §13 llama «verificación humana de CORE», y son dos miradas distintas: que el
 panel entero se vea bien pantalla por pantalla, y que Swagger se lea —los cuerpos de ejemplo ya
 están automatizados; aquí queda el juicio—. En el mismo recorrido, **comprueba
 `:focus-visible` interactuando con el ratón**: la captura del punto 3 enseña un momento; usar el
 panel con el ratón enseña el resto.
 
-**5 · Que la espera del reinicio resulte razonable.** El arnés afirma que la superposición
+**5 · ✅ PASS — Que la espera del reinicio resulte razonable.** El arnés afirma que la superposición
 aparece y desaparece sola, y que la sesión sobrevive (`e2e/tests/modulos.spec.ts:219`). Lo que
 no puede afirmar es si esos segundos se hacen largos **en una demostración de venta**, que es
 donde importa.
@@ -130,6 +132,6 @@ defecto conocido con `test.fail`. Las tres cosas dejaron de ser verdad:
   delante de quien no lo pidió; **responder** es dárselo a quien despliega la fila que está
   investigando. Se prohíbe lo primero, no lo segundo.
 
-**No queda ningún defecto conocido abierto en esta guía.** Lo que sigue sin cubrir nadie es lo
-de la sección A, y es juicio humano por naturaleza, no trabajo pendiente de automatizar: si se
-pudiera afirmar en código ya estaría en la tabla B.
+**No queda ningún defecto conocido abierto en esta guía.** La sección A también quedó cerrada:
+JP realizó los cinco juicios humanos y registró **5/5 PASS**. Lo automatizable permanece en la
+tabla B; lo que exigía juicio humano ya no es un pendiente de Fase 1.
