@@ -383,6 +383,18 @@ Comportamiento:
 - `GET /api/capabilities` es público y devuelve solo códigos y versiones de módulos activos. Nunca expone datos de licencia.
 - La venta como producto instalable usa un archivo de licencia firmado que se valida al arrancar. La firma se implementa en la fase de comercialización, no ahora, pero el esquema de datos ya la contempla.
 
+### Instalación y activación — regla de H27
+
+**Instalar y activar son operaciones distintas y no se sustituyen entre sí.**
+
+- **El instalador aplica las migraciones de todos los módulos desplegados**, respetando el orden de dependencias. Ése es el momento deliberado de preparar sus schemas.
+- **La activación no ejecuta migraciones.** Antes de marcar un módulo como activo comprueba que su schema esperado exista y, si no existe, **se niega a activarlo** con un error accionable.
+- CORE no toma propiedad de las migraciones de otro módulo durante una petición de activación: cada módulo conserva la propiedad de su schema conforme a ADR-009.
+
+La separación evita que un interruptor administrativo se convierta en una herramienta de despliegue y evita ejecutar DDL, bloqueos y migraciones largas dentro del ciclo HTTP que además provoca el reinicio de activación.
+
+Esta regla fue materializada al cerrar **H27** en `e60416c`: el flujo normal ya no puede dejar un módulo marcado como activo sin haber preparado antes su esquema. Si aparece ese estado por restauración, manipulación manual o una instalación anterior, se trata como una inconsistencia externa al flujo normal y debe diagnosticarse, no repararse silenciosamente al activar.
+
 ---
 
 ## 8. Qué cambia respecto al diseño anterior
