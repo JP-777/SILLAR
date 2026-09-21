@@ -1,7 +1,7 @@
 # Catálogo de hallazgos H01–H29 — Fase 1
 
 **Creación:** 21 de septiembre de 2026, 11:15:03 -05 — America/Lima
-**Última verificación:** 21 de septiembre de 2026, 11:20:52 -05:00 — America/Lima
+**Última verificación:** 21 de septiembre de 2026, 11:41:27 -05:00 — America/Lima
 **Commit del producto verificado:** `d79f4635851eb42678777bfa1589102672add562`
 **Fuente primaria:** informe de verificación manual del panel del 11 de septiembre de 2026, dirigido por el líder técnico y ejecutado/observado por JP.
 **Objeto:** dejar durable en el repositorio la disposición de los 29 hallazgos utilizados para el cierre de Fase 1.
@@ -119,7 +119,7 @@ Los hallazgos sin commit correctivo son **H09, H16, H23, H24 y H28**. H09, H16, 
 
 **Enunciado.** Con el schema de CRM ausente, Clientes podía conservar título, acciones y formulario mientras la lectura mostraba un error. El informe dejó abierta la cuestión de si intentar crear un cliente en ese estado podía provocar pérdida de trabajo.
 
-**Disposición: Deuda aceptada.** Aceptada por **Chat 2 / Integración** durante el cierre de Fase 1. La comprobación posterior descartó pérdida de trabajo del usuario en el escenario investigado y H01 cubre la comunicación general del error; no existe, sin embargo, un commit específico que elimine por completo el comportamiento visual descrito en el enunciado, por lo que **no se marca como Corregido**. Este catálogo constituye el registro durable de su aceptación no bloqueante.
+**Disposición: Deuda aceptada.** Aceptada por **JP el 21 de septiembre de 2026**. **Motivo:** desde H27 (`e60416c`), la activación exige el esquema y la instalación migra todos los módulos desplegados, así que el estado de H28 no se alcanza por el flujo normal. **Disparador:** reabrir si un módulo activo aparece sin su esquema por cualquier vía —restauración de copia, manipulación manual de la base o instalación anterior a `e60416c`—, o al volver a tocar la presentación de errores de módulo.
 
 ---
 
@@ -271,7 +271,7 @@ La segunda aparición debe aportar la evidencia que la primera no dejó.
 | H16 | Deuda de presentación aceptada; el scroll interno es correcto |
 | H23 | Diferido con disparador en `PENDIENTES.md` §21 |
 | H24 | Ruido ambiental inofensivo aceptado |
-| H28 | Deuda no bloqueante; no se observó pérdida de trabajo, pero no existe un commit específico que elimine por completo la presentación descrita |
+| H28 | Deuda aceptada por JP el 21 de septiembre de 2026; reabrir si un módulo activo aparece sin su esquema por cualquier vía, o al volver a tocar la presentación de errores de módulo |
 
 ## 4. Contradicciones y enmiendas entre el informe original y el repositorio
 
@@ -293,7 +293,7 @@ El propio informe terminó constatando que H09 **no causó H21**. La enmienda de
 
 ### 4.5 · H28
 
-El informe dejó abierta una posible pérdida de trabajo al escribir con el schema ausente. La comprobación posterior no observó esa pérdida. El comportamiento visual original no tiene un commit correctivo específico, por lo que se conserva como deuda aceptada y no se presenta falsamente como corregido.
+El informe dejó abierta una posible pérdida de trabajo al escribir con el schema ausente. La disposición vigente es la decidida posteriormente por JP: desde H27 (`e60416c`), la activación exige el esquema y la instalación migra todos los módulos desplegados, por lo que H28 no se alcanza por el flujo normal. Se reabre si un módulo activo aparece sin su esquema por restauración de copia, manipulación manual de la base o una instalación anterior a `e60416c`, o al volver a tocar la presentación de errores de módulo.
 
 ### 4.6 · H29
 
