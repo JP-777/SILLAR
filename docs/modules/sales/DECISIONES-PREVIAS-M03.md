@@ -1,8 +1,8 @@
 # Decisiones previas de M03 Ventas Online
 
 **Creación:** 21 de septiembre de 2026, 12:12:36 -05:00 — America/Lima
-**Última verificación:** 21 de septiembre de 2026, 19:38:48 -05:00 — America/Lima
-**Commit verificado:** `fc6ca42799ea5d78c83ce0eafeced34ab2d25a39`
+**Última verificación:** 21 de septiembre de 2026, 19:47:14 -05:00 — America/Lima
+**Commit verificado:** `21b3897003aee4d9dde1b346be64dc2ca03ada70`
 
 Decisiones de producto que deben quedar escritas **antes de especificar M03**.
 
@@ -36,19 +36,22 @@ pertenece a M09 Inventario, conforme al SPEC de M01 y a la arquitectura modular.
 
 ---
 
-## 2 · ABIERTA — plazo de la reserva
+## 2 · CERRADA — plazo de la reserva
 
-Falta una decisión de JP:
+**Valor:** **48 horas naturales por defecto, configurable por instalación**.
 
-> **¿Cuánto tiempo permanece reservado el stock antes de liberarse?**
+**Procedencia:** valor fijado por el **colíder por delegación expresa de JP el 21 de septiembre
+de 2026**.
 
-El valor exacto está **PENDIENTE_DEFINIR**. No se deduce ni se elige por conveniencia técnica.
+**Criterio:** el plazo debe cubrir la confirmación manual de Yape a lo largo de un fin de semana
+sin inmovilizar stock durante varios días en temporada escolar.
 
-La decisión de §1 no depende de ese número: sea cual sea el plazo, al vencer se libera la
-reserva **sin cancelar automáticamente el pedido**.
+La decisión de §1 se mantiene: al vencer el plazo se libera la reserva **sin cancelar
+automáticamente el pedido**.
 
-**Disparador:** este plazo debe quedar cerrado **antes de congelar el SPEC de M03 y antes de
-implementar cualquier temporizador o expiración de reserva**.
+**Pendiente para el SPEC de M03:** cada instalación debe poder ajustar este valor. Este documento
+fija la regla de producto; no define todavía el mecanismo técnico de configuración ni implementa
+la expiración.
 
 ---
 
@@ -70,7 +73,8 @@ DESCARTÉ      Convertir el vencimiento de la reserva en cancelación automátic
 POR QUÉ       Reserva y pedido representan estados distintos; liberar capacidad no equivale a cancelar una operación comercial
 REVERSIBLE    Sí antes de implementar M03; después pasa a ser una regla de negocio observable
 
-ABIERTO       Plazo exacto de la reserva de stock
-NO INVENTAR   Debe decidirlo JP
-DISPARADOR    Antes de congelar el SPEC de M03 o implementar la expiración
+DECIDÍ        Reserva de stock de 48 horas naturales por defecto, configurable por instalación
+PROCEDENCIA   Colíder, por delegación expresa de JP el 21 de septiembre de 2026
+POR QUÉ       Cubre la confirmación manual de Yape durante un fin de semana sin inmovilizar stock durante días en temporada escolar
+SPEC M03      Cada instalación debe poder ajustar el valor
 ```
