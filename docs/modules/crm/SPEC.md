@@ -358,8 +358,12 @@ Se cierra cuando **todos** se pueden enseñar funcionando, no descritos:
 - [ ] Un cliente sin verificar entra y ve su perfil; el estado dice que le falta verificar
 - [ ] Recuperar la contraseña funciona, y **el enlace no sirve dos veces**
 - [ ] Se entra desde dos navegadores, se restablece en uno **y el otro deja de valer**
-- [ ] Registrarse con el correo de otra cuenta **escrito con un espacio al final** choca con el
-      índice único, no crea una segunda
+- [ ] **La base de datos es la autoridad sobre los blancos de `customers.email`:** por SQL directo,
+      rechaza cualquier correo que empiece o termine con un carácter para el que el runtime .NET
+      devuelve `char.IsWhiteSpace == true`, exactamente el conjunto que recorta `String.Trim()`;
+      un correo limpio y caracteres que .NET no recorta, como U+200B, no son rechazados por esta
+      regla. La comparación de la restricción se hace bajo `COLLATE "C"`, nunca bajo
+      `core.es_ci`. **Decisión del líder técnico, 22 de septiembre de 2026 — America/Lima.**
 - [ ] La respuesta de recuperar **es idéntica** con un correo registrado y con uno que no existe
 - [ ] Los intentos fallidos **retrasan sin bloquear**, y una cuenta ajena no se puede dejar fuera
 - [ ] El personal crea una ficha sin cuenta e **invita**; la persona pone su contraseña con el enlace

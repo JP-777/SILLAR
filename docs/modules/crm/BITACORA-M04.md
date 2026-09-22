@@ -207,3 +207,82 @@ líder técnico después de ver esta evidencia.
 con las nuevas pruebas de los criterios 1, 13 y 17, no se ejecutaron las dos
 puertas consecutivas del criterio 19 y no se añadió todavía la nota histórica
 de M02 en `PENDIENTES.md`.
+---
+
+### Cierre parcial M04 — criterios 5, 13 y 17 tras decisión del líder técnico — 22 sep 2026
+
+**Base de trabajo:** `01f7e42bb6ec25b1687094c2b4138a86d653bec8`.
+
+#### Criterio 5 — **PASS tras corrección autorizada**
+
+El líder técnico decidió el 22 de septiembre de 2026 que **la base de datos
+es la autoridad** para impedir blancos al principio o al final de
+`crm.customers.email`.
+
+La enumeración se hizo en ejecución con **.NET 10.0.10** usando
+`char.IsWhiteSpace` sobre todo `char`. El conjunto obtenido fue de
+**25 caracteres**:
+
+`U+0009`, `U+000A`, `U+000B`, `U+000C`, `U+000D`, `U+0020`,
+`U+0085`, `U+00A0`, `U+1680`, `U+2000`, `U+2001`, `U+2002`,
+`U+2003`, `U+2004`, `U+2005`, `U+2006`, `U+2007`, `U+2008`,
+`U+2009`, `U+200A`, `U+2028`, `U+2029`, `U+202F`, `U+205F`,
+`U+3000`.
+
+`U+200B` devolvió `char.IsWhiteSpace == false` y se conserva como caso
+válido: PostgreSQL no debe rechazar más de lo que `String.Trim()` recorta.
+
+La migración
+`20260922115958_CrmCustomersEmailTrimAuthority` añade
+`ck_customers_email_sin_blancos_en_bordes`. Tanto el precheck como el
+`CHECK` comparan bajo **`COLLATE "C"`**. La migración cuenta primero las
+filas incompatibles y, si encuentra alguna, falla con `23514`, informa la
+cantidad y entrega una consulta para encontrarlas; **no modifica ningún
+correo**.
+
+`Test14b_base_rechaza_todos_los_blancos_que_dotnet_trim_recorta` inserta
+por SQL directo y demuestra las tres direcciones:
+
+- un correo limpio pasa;
+- U+200B al inicio y al final pasa;
+- los 25 `char.IsWhiteSpace` son rechazados tanto al inicio como al final
+  con `ck_customers_email_sin_blancos_en_bordes`.
+
+`Test14c_migracion_falla_y_no_corrige_correos_preexistentes` reproduce una
+instalación anterior con un correo terminado en U+00A0: la migración falla,
+anuncia **1 fila**, muestra cómo localizarla y el valor queda intacto.
+
+**Barrera deliberada.** Se quitó temporalmente únicamente
+`AddCheckConstraint` de la migración, manteniendo el resto. Entre
+**2026-09-22 08:55:12 -0500 America/Lima** y **2026-09-22 08:57:53 -0500 America/Lima**, la puerta quedó roja
+específicamente en
+`Test14b_base_rechaza_todos_los_blancos_que_dotnet_trim_recorta` porque no
+se lanzó la excepción esperada. El fichero de migración se restauró
+byte a byte antes de continuar. Esto demuestra que la prueba protege la
+barrera y no pasa por accidente.
+
+#### Criterio 13 — **PASS**
+
+Hay evidencia durable en dos niveles:
+
+- `CustomerPasswordExposureTests` afirma que los contratos públicos de
+  respuesta de CRM no exponen propiedades `Password` ni `Hash`.
+- `CierreM04SeguridadYCorreoTests` registra una contraseña centinela mediante
+  el host real y afirma que no aparece en la respuesta HTTP, en
+  `core.audit_log` ni en stdout/stderr del proceso.
+
+Las pruebas focales pasaron con la restricción del criterio 5 restaurada.
+
+#### Criterio 17 — **PASS**
+
+`CierreM04SeguridadYCorreoTests` registra un cliente con SMTP sin configurar.
+El registro HTTP sigue funcionando; después espera el `email_send` de
+**ese correo concreto** en `core.audit_log`, inicia sesión como
+`super_admin`, consulta `GET /api/admin/audit` y exige que quien administra
+vea exactamente el mismo fallo de envío.
+
+La prueba focal pasó con el host y PostgreSQL reales.
+
+**Criterios todavía fuera de esta unidad:** el 1 espera la decisión de JP
+sobre un capturador de correo; el 19 se comprueba después, sobre un SHA
+limpio y fijo, con dos puertas consecutivas.

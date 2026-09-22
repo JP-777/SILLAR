@@ -491,54 +491,219 @@ public sealed class CrmPersistenceTests(CrmDbFixture fixture) : IClassFixture<Cr
     }
 
     // ================================================================
-    // 14b. El mismo correo con espacio final debe chocar en la base.
+    // 14b. La base es la autoridad sobre los blancos en los bordes.
     //
-    // Esta prueba salta deliberadamente toda normalización de aplicación:
-    // el criterio de cierre de M04 exige comprobar la autoridad de
-    // uq_customers_email, no que un endpoint haga Trim antes.
+    // No se escribe la lista a mano en la prueba: se enumera en ejecución
+    // exactamente el conjunto que String.Trim() considera espacio mediante
+    // char.IsWhiteSpace. Si el runtime cambia ese conjunto, esta prueba
+    // obliga a revisar también la restricción de PostgreSQL.
     // ================================================================
     [Fact]
-    public async Task Test14b_correo_con_espacio_final_choca_en_uq_customers_email()
+    public async Task Test14b_base_rechaza_todos_los_blancos_que_dotnet_trim_recorta()
     {
         await fixture.CleanAllTablesAsync();
         await using var conn = await OpenConnectionAsync();
 
-        const string email = "espacio-final@ejemplo.pe";
+        var blancos = Enumerable
+            .Range(char.MinValue, char.MaxValue + 1)
+            .Select(value => (char)value)
+            .Where(char.IsWhiteSpace)
+            .ToArray();
 
-        await using (var first = conn.CreateCommand())
+        // Guardas de intención, no la fuente de la lista completa.
+        Assert.Contains(' ', blancos);
+        Assert.Contains('\t', blancos);
+        Assert.Contains('\r', blancos);
+        Assert.Contains('\n', blancos);
+        Assert.Contains('\u00A0', blancos);
+        Assert.DoesNotContain('\u200B', blancos);
+
+        async Task InsertarValidoAsync(string email, string nombre)
         {
-            first.CommandText = """
+            await using var command = conn.CreateCommand();
+            command.CommandText = """
                 INSERT INTO crm.customers
                     (customer_id, full_name, email, origin_node)
                 VALUES
-                    (@id, 'Cliente sin espacio', @email, 'principal');
+                    (@id, @nombre, @email, 'principal');
                 """;
-            first.Parameters.AddWithValue("id", Guid.CreateVersion7());
-            first.Parameters.AddWithValue("email", email);
-            await first.ExecuteNonQueryAsync();
+            command.Parameters.AddWithValue("id", Guid.CreateVersion7());
+            command.Parameters.AddWithValue("nombre", nombre);
+            command.Parameters.AddWithValue("email", email);
+            await command.ExecuteNonQueryAsync();
         }
 
-        await using var duplicate = conn.CreateCommand();
-        duplicate.CommandText = """
-            INSERT INTO crm.customers
-                (customer_id, full_name, email, origin_node)
-            VALUES
-                (@id, 'Cliente con espacio', @email, 'principal');
-            """;
-        duplicate.Parameters.AddWithValue("id", Guid.CreateVersion7());
-        duplicate.Parameters.AddWithValue("email", email + " ");
+        async Task ExigirRechazoAsync(
+            string email,
+            char blanco,
+            string borde)
+        {
+            await using var command = conn.CreateCommand();
+            command.CommandText = """
+                INSERT INTO crm.customers
+                    (customer_id, full_name, email, origin_node)
+                VALUES
+                    (@id, @nombre, @email, 'principal');
+                """;
+            command.Parameters.AddWithValue("id", Guid.CreateVersion7());
+            command.Parameters.AddWithValue(
+                "nombre",
+                $"U+{(int)blanco:X4} {borde}");
+            command.Parameters.AddWithValue("email", email);
 
-        var ex = await Assert.ThrowsAsync<PostgresException>(
-            () => duplicate.ExecuteNonQueryAsync());
+            var ex = await Assert.ThrowsAsync<PostgresException>(
+                () => command.ExecuteNonQueryAsync());
 
-        Assert.Equal("23505", ex.SqlState);
-        Assert.Equal("uq_customers_email", ex.ConstraintName);
+            // 23514 = check_violation
+            Assert.Equal("23514", ex.SqlState);
+            Assert.Equal(
+                "ck_customers_email_sin_blancos_en_bordes",
+                ex.ConstraintName);
+        }
+
+        // Dirección 1: lo limpio pasa.
+        await InsertarValidoAsync(
+            "limpio-criterio14b@sillar.test",
+            "Correo limpio");
+
+        // La base no puede ser más estricta que String.Trim():
+        // U+200B no es char.IsWhiteSpace en este runtime.
+        await InsertarValidoAsync(
+            "\u200Bno-trim-inicio@sillar.test",
+            "U+200B inicio");
+
+        await InsertarValidoAsync(
+            "no-trim-fin@sillar.test\u200B",
+            "U+200B final");
+
+        // Direcciones 2 y 3: cada char.IsWhiteSpace se rechaza tanto
+        // al principio como al final, por SQL directo.
+        foreach (var blanco in blancos)
+        {
+            var codigo = $"{(int)blanco:X4}";
+
+            await ExigirRechazoAsync(
+                $"{blanco}ws-{codigo}-inicio@sillar.test",
+                blanco,
+                "inicio");
+
+            await ExigirRechazoAsync(
+                $"ws-{codigo}-final@sillar.test{blanco}",
+                blanco,
+                "final");
+        }
 
         await using var count = conn.CreateCommand();
-        count.CommandText =
-            "SELECT count(*) FROM crm.customers WHERE email LIKE 'espacio-final@ejemplo.pe%';";
+        count.CommandText = "SELECT count(*) FROM crm.customers;";
 
-        Assert.Equal(1L, (long)(await count.ExecuteScalarAsync())!);
+        Assert.Equal(
+            3L,
+            (long)(await count.ExecuteScalarAsync())!);
+    }
+
+    // ================================================================
+    // 14c. Una actualización con datos incompatibles se detiene.
+    //
+    // Reproduce una instalación previa a la nueva migración: retira solo
+    // la restricción y su entrada de historial, deja un correo incompatible
+    // por SQL directo y pide a EF aplicar la migración pendiente.
+    //
+    // La migración debe fallar explicando cuántas filas hay y cómo
+    // encontrarlas. Nunca corrige el correo por su cuenta.
+    // ================================================================
+    [Fact]
+    public async Task Test14c_migracion_falla_y_no_corrige_correos_preexistentes()
+    {
+        const string migrationId =
+            "20260922115958_CrmCustomersEmailTrimAuthority";
+
+        const string emailIncompatible =
+            "preexistente@sillar.test\u00A0";
+
+        await fixture.CleanAllTablesAsync();
+
+        await using (var conn = await OpenConnectionAsync())
+        {
+            await using (var retroceder = conn.CreateCommand())
+            {
+                retroceder.CommandText = """
+                    ALTER TABLE crm.customers
+                        DROP CONSTRAINT IF EXISTS
+                        ck_customers_email_sin_blancos_en_bordes;
+
+                    DELETE FROM crm.__migrations
+                     WHERE "MigrationId" = @migration;
+                    """;
+                retroceder.Parameters.AddWithValue(
+                    "migration",
+                    migrationId);
+                await retroceder.ExecuteNonQueryAsync();
+            }
+
+            await using var insertar = conn.CreateCommand();
+            insertar.CommandText = """
+                INSERT INTO crm.customers
+                    (customer_id, full_name, email, origin_node)
+                VALUES
+                    (@id, 'Preexistente incompatible', @email, 'principal');
+                """;
+            insertar.Parameters.AddWithValue(
+                "id",
+                Guid.CreateVersion7());
+            insertar.Parameters.AddWithValue(
+                "email",
+                emailIncompatible);
+            await insertar.ExecuteNonQueryAsync();
+        }
+
+        try
+        {
+            await using var actualizar = NewDb();
+
+            var ex = await Assert.ThrowsAsync<PostgresException>(
+                () => actualizar.Database.MigrateAsync());
+
+            Assert.Equal("23514", ex.SqlState);
+
+            Assert.Contains(
+                "1 fila(s) de crm.customers",
+                ex.MessageText,
+                StringComparison.Ordinal);
+
+            Assert.Contains(
+                "SELECT customer_id, email",
+                ex.Hint ?? "",
+                StringComparison.Ordinal);
+
+            // La migración falló; el dato no fue limpiado ni sustituido.
+            await using var comprobar = await OpenConnectionAsync();
+            await using var leer = comprobar.CreateCommand();
+            leer.CommandText = """
+                SELECT email
+                  FROM crm.customers
+                 WHERE full_name = 'Preexistente incompatible';
+                """;
+
+            Assert.Equal(
+                emailIncompatible,
+                (string)(await leer.ExecuteScalarAsync())!);
+        }
+        finally
+        {
+            // Restaurar siempre la base efímera aunque falle una aserción.
+            await using (var conn = await OpenConnectionAsync())
+            {
+                await using var limpiar = conn.CreateCommand();
+                limpiar.CommandText = """
+                    DELETE FROM crm.customers
+                     WHERE full_name = 'Preexistente incompatible';
+                    """;
+                await limpiar.ExecuteNonQueryAsync();
+            }
+
+            await using var restaurar = NewDb();
+            await restaurar.Database.MigrateAsync();
+        }
     }
 
     // ================================================================
