@@ -1,5 +1,9 @@
 # Pendientes
 
+**Creación:** 25 de agosto de 2026, 21:04:02 -05:00 — America/Lima (`1d3f78874cae9a57659166495bb84151b0797db4`)
+**Última verificación:** 21 de septiembre de 2026, 23:36:14 -05:00 — America/Lima
+**Commit verificado:** `986b8cb4ae1942f031c5559e290b2d18d5e8d6cb`
+
 Lo que está decidido pero no hecho, y lo que está aplazado a propósito.
 
 > **Por qué existe este archivo.** Se perdió trabajo una vez por tener esto solo en una
@@ -344,31 +348,80 @@ decisiones se revisen con evidencia del motor que vaya a usarse.
 
 ---
 
-## 23 · Fijar la versión de PostgreSQL para producción antes de la primera instalación real
+## 23 · PostgreSQL de producción — **DECIDIDO: versión mayor 16**
 
-**Qué pasa.** El repositorio fija PostgreSQL 16 para el entorno de desarrollo, pero no existe una
-decisión arquitectónica que establezca qué versión de PostgreSQL debe usar una instalación de
-producción. `ADR-001-modelo-de-despliegue.md` define una instancia por cliente, pero no fija una
-versión del motor.
+**Decisión del líder técnico, 21 de septiembre de 2026 — America/Lima:** las instalaciones de
+producción usan **PostgreSQL 16**, la misma versión mayor que desarrollo y pruebas.
 
-Las referencias actuales a PostgreSQL 16 verificadas en este contexto son de desarrollo o de sus
-herramientas: `docker-compose.yml`, `ADR-006-entorno-de-desarrollo.md`, `CLAUDE.md` y
-`backend/README.md`. No sustituyen una decisión de versión para producción.
+**Regla de actualización.** No se cambia de versión mayor de PostgreSQL sin ejecutar antes la
+revisión de §22, porque las reglas y barreras que dependen del comportamiento del motor tienen
+que releerse contra la versión que realmente se vaya a desplegar.
 
-**Discrepancia registrada, no corregida aquí.** `ADR-006-entorno-de-desarrollo.md:30` especifica
-`postgres:16-alpine`, mientras `docker-compose.yml:3` usa `postgres:16`. Este pendiente solo deja
-constancia; **no elige una de las dos imágenes ni modifica ninguna**.
+**Qué fija esta decisión.** La versión mayor: **16**. No fija la variante concreta de imagen.
 
-**Disparador.** Antes de la primera instalación real fuera de desarrollo, el mismo momento en que
-debe reconsiderarse la alternativa B diferida de H05. La versión del motor tiene que estar
-decidida antes de aprovisionar esa instalación, no después.
+**Discrepancia que sigue registrada, no resuelta:** `ADR-006-entorno-de-desarrollo.md:30`
+especifica `postgres:16-alpine`, mientras `docker-compose.yml:3` usa `postgres:16`. Ambas son
+PostgreSQL 16; decidir entre `16-alpine` y `16` es otra cuestión y esta decisión no la resuelve.
 
-**Decide:** el **líder técnico**, porque fijar la versión de PostgreSQL de producción es una
-decisión de arquitectura y condiciona compatibilidad, actualizaciones y las barreras dependientes
-del comportamiento del motor.
+**Estado.** La pregunta de versión de producción queda cerrada. La discrepancia de imagen se
+conserva como evidencia y no se corrige en esta unidad.
 
-**No hacer ahora.** No cambiar PostgreSQL 16, no cambiar la imagen de Compose y no corregir la
-discrepancia `16-alpine` / `16` dentro de este encargo.
+---
+
+## 24 · Una instalación existente no tiene una ruta de actualización para las migraciones nuevas
+
+**Qué pasa.** El repositorio sabe aplicar las migraciones de todos los módulos desplegados durante
+la instalación inicial, pero no tiene hoy una ruta operativa equivalente para actualizar una
+instalación ya existente.
+
+La evidencia verificada sobre `986b8cb` es:
+
+- `backend/Sillar.Core/Setup/InstaladorDeModulos.cs:21` declara que el instalador que orquesta
+  migraciones **solo se usa desde `POST /api/setup`**.
+- `backend/Sillar.Api/Program.cs:126-142` monta `POST /api/setup` únicamente en modo instalación;
+  una instalación completada conserva solo `GET /api/setup/status`.
+- En `backend/Sillar.Core/Services/SetupService.cs`, la llamada a
+  `instalador.PrepararAsync(...)` está en torno a `:169` y la comprobación de una instalación ya
+  existente en torno a `:181`. Esas líneas por sí solas no demuestran el alcance: la barrera real
+  es que ese servicio se alcanza desde la ruta de instalación que desaparece en modo normal.
+- `backend/Sillar.Api/Modularity/ModuleBootstrapper.cs:233-258` permite aplicar migraciones al
+  arrancar solo en desarrollo, y esa vía corresponde a CORE; fuera de desarrollo las rechaza.
+- `backend/Sillar.Core/Services/ModuleActivationService.cs:175-196` comprueba que exista el
+  schema al activar, pero no comprueba que estén aplicadas todas las migraciones del módulo.
+
+**Riesgo.** Una instalación puede tener ya el schema de un módulo y recibir un binario que espere
+una migración posterior. Esa instalación pasa la guarda de existencia del schema y puede fallar
+más tarde al usar código que dependa de la migración pendiente. Es la misma clase de fallo tardío
+que H28 obligó a evitar para el caso de schema ausente, pero aquí el schema sí existe.
+
+**Disparador.** La **primera actualización de una instalación real**.
+
+**Decide cómo resolverlo:** el **líder técnico**. Hace falta decidir cuál es la ruta explícita de
+despliegue/actualización que aplica, verifica y deja trazabilidad de las migraciones pendientes de
+todos los módulos desplegados.
+
+**No hacer ahora.** No implementar esa ruta, no migrar al arrancar en producción y no relajar la
+guarda de activación.
+
+---
+
+## 25 · Pregunta de producto para JP — ¿sigue vigente «M11 no antes que M09»?
+
+**Esto es una pregunta, no una regla.** M09 Inventario fue movido a **SILLAR ERP**
+(`ROADMAP_MODULAR.md:122`), mientras M11 Pagos permanece en SILLAR WEB como la pasarela de pago
+en línea (`ROADMAP_MODULAR.md:119`).
+
+Si se mantiene literalmente «M11 no antes que M09», SILLAR WEB no tendría pagos en línea hasta
+que exista el inventario del ERP. Ese efecto necesita una decisión explícita de producto; no se
+deduce del roadmap.
+
+**Pregunta para JP:** ¿M11 debe seguir condicionado a que M09 exista primero, ahora que M09
+pertenece al ERP?
+
+**Disparador.** Antes de redactar o cerrar las decisiones previas de M11.
+
+**No convertir en regla.** Hasta que JP responda, no se modifica el roadmap, no se reordena M11 y
+no se escribe «M11 no antes que M09» como restricción en ningún otro documento.
 
 ---
 
