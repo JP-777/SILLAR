@@ -1,5 +1,9 @@
 # Decisiones previas de M03 Ventas Online
 
+**Creación:** 21 de septiembre de 2026, 12:12:36 -05:00 — America/Lima
+**Última verificación:** 21 de septiembre de 2026, 19:38:48 -05:00 — America/Lima
+**Commit verificado:** `fc6ca42799ea5d78c83ce0eafeced34ab2d25a39`
+
 Decisiones de producto que deben quedar escritas **antes de especificar M03**.
 
 Este documento no sustituye al SPEC. Registra qué se decidió, qué se descartó y qué dato sigue
