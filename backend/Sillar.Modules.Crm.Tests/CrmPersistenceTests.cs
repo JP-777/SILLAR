@@ -491,6 +491,57 @@ public sealed class CrmPersistenceTests(CrmDbFixture fixture) : IClassFixture<Cr
     }
 
     // ================================================================
+    // 14b. El mismo correo con espacio final debe chocar en la base.
+    //
+    // Esta prueba salta deliberadamente toda normalización de aplicación:
+    // el criterio de cierre de M04 exige comprobar la autoridad de
+    // uq_customers_email, no que un endpoint haga Trim antes.
+    // ================================================================
+    [Fact]
+    public async Task Test14b_correo_con_espacio_final_choca_en_uq_customers_email()
+    {
+        await fixture.CleanAllTablesAsync();
+        await using var conn = await OpenConnectionAsync();
+
+        const string email = "espacio-final@ejemplo.pe";
+
+        await using (var first = conn.CreateCommand())
+        {
+            first.CommandText = """
+                INSERT INTO crm.customers
+                    (customer_id, full_name, email, origin_node)
+                VALUES
+                    (@id, 'Cliente sin espacio', @email, 'principal');
+                """;
+            first.Parameters.AddWithValue("id", Guid.CreateVersion7());
+            first.Parameters.AddWithValue("email", email);
+            await first.ExecuteNonQueryAsync();
+        }
+
+        await using var duplicate = conn.CreateCommand();
+        duplicate.CommandText = """
+            INSERT INTO crm.customers
+                (customer_id, full_name, email, origin_node)
+            VALUES
+                (@id, 'Cliente con espacio', @email, 'principal');
+            """;
+        duplicate.Parameters.AddWithValue("id", Guid.CreateVersion7());
+        duplicate.Parameters.AddWithValue("email", email + " ");
+
+        var ex = await Assert.ThrowsAsync<PostgresException>(
+            () => duplicate.ExecuteNonQueryAsync());
+
+        Assert.Equal("23505", ex.SqlState);
+        Assert.Equal("uq_customers_email", ex.ConstraintName);
+
+        await using var count = conn.CreateCommand();
+        count.CommandText =
+            "SELECT count(*) FROM crm.customers WHERE email LIKE 'espacio-final@ejemplo.pe%';";
+
+        Assert.Equal(1L, (long)(await count.ExecuteScalarAsync())!);
+    }
+
+    // ================================================================
     // 15. Cambiar realmente customers.email limpia customer_accounts.email_verified_at.
     // ================================================================
     [Fact]

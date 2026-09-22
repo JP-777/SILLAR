@@ -155,3 +155,55 @@ stemming español y además ignora diacríticos.
 La extensión `unaccent` es compartida y no se elimina al desinstalar CRM;
 la configuración `crm.spanish_unaccent` sí pertenece al módulo y desaparece
 con su schema.
+---
+
+### Criterio 5 — el espacio final no choca con `uq_customers_email` — **FAIL** (22 sep 2026)
+
+**Base comprobada:** `a7416aece5117433ff5d1ab96d69cc24120065ac`.
+
+El criterio 5 de `SPEC.md` §9 exige demostrar, a nivel de base de datos, que una
+segunda ficha con el mismo correo escrito con un espacio final choque con el
+índice único `uq_customers_email`.
+
+Se añadió la prueba durable
+`CrmPersistenceTests.Test14b_correo_con_espacio_final_choca_en_uq_customers_email`.
+La prueba evita deliberadamente las normalizaciones de la aplicación:
+
+1. inserta por SQL directo `espacio-final@ejemplo.pe`;
+2. intenta insertar por SQL directo `espacio-final@ejemplo.pe `, con un espacio final;
+3. exige `23505 unique_violation` de `uq_customers_email`.
+
+**Resultado observado:** PostgreSQL aceptó el segundo `INSERT`. xUnit informó
+`Assert.Throws() Failure: No exception was thrown`. La suite
+`Sillar.Modules.Crm.Tests` terminó con **93 pruebas: 92 PASS y 1 FAIL**, siendo
+este caso el único fallo. La puerta se detuvo correctamente en
+`pruebas del backend`.
+
+**Conclusión:** el criterio 5 queda **FAIL** tal como está escrito. El índice
+`uq_customers_email` no constituye por sí solo una barrera contra una variante
+que difiere únicamente por espacio final.
+
+Esto no implica que las vías normales de la aplicación estén insertando hoy
+esa variante. Las vías de aplicación que escriben `crm.customers.email`
+verificadas en esta base son:
+
+- **Registro público** — `CustomerRegistrationService.cs:38-40,63`:
+  aplica `Trim()` y normalización NFC antes de escribir.
+- **Alta desde el panel** — `CustomerAdminService.cs:169-189`:
+  escribe `request.Email!.Trim()`.
+- **Edición desde el panel** — `CustomerAdminService.cs:228-258`:
+  escribe `request.Email!.Trim()`.
+- **Edición del perfil propio** — `CustomerProfileService.cs:82-102`:
+  escribe `request.Email!.Trim()`.
+- **Invitación** — `CustomerAdminService.cs:458` y
+  `CustomerAccountTokenService.cs:107+`: **no escribe el correo**; usa el
+  valor ya guardado en la ficha para emitir la invitación.
+
+**No se corrige aquí.** Por instrucción del cierre de M04, decidir si debe
+cambiar el criterio, la colación/índice o alguna otra barrera corresponde al
+líder técnico después de ver esta evidencia.
+
+**Detención de la unidad:** al haberse revelado un fallo real, no se avanzó
+con las nuevas pruebas de los criterios 1, 13 y 17, no se ejecutaron las dos
+puertas consecutivas del criterio 19 y no se añadió todavía la nota histórica
+de M02 en `PENDIENTES.md`.
