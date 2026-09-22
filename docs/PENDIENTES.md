@@ -305,6 +305,73 @@ entrada como esta.
 
 ---
 
+## 22 · Releer la regla de patrones sobre colaciones no deterministas al cambiar PostgreSQL
+
+**Qué pasa.** La regla actual nació de un comportamiento comprobado en PostgreSQL 16: determinadas
+operaciones de patrones sobre las colaciones ICU no deterministas del proyecto fallan con
+`SQLSTATE 0A000`. Ese error es hoy parte de la barrera que impide usar accidentalmente una
+expresión incompatible.
+
+PostgreSQL 18 cambia una parte de esa premisa: admite `LIKE` sobre colaciones no deterministas.
+Eso **no permite borrar ni invertir la regla en bloque**. `ILIKE` y las expresiones regulares
+tienen comportamiento distinto, y además algunas ubicaciones usan `COLLATE "C"` no solo para
+evitar el error sino también como parte de expresiones e índices concretos. La revisión tiene que
+hacerse ubicación por ubicación.
+
+**Ubicaciones a releer, verificadas sobre `b3bf5b6`:**
+
+- `backend/README.md:350` — formula la regla general para búsqueda por patrón.
+- `docs/modules/crm/DATOS.md:427` — registra el `0A000` de `LIKE/ILIKE` sobre `email`.
+- `docs/modules/crm/DATOS.md:442` — aplica la restricción a `full_name`.
+- `docs/modules/crm/DATOS.md:450` — la usa al justificar `crm.spanish_unaccent`.
+- `docs/modules/catalog/DATOS.md:179` — incluye tanto expresiones regulares (`~`) como
+  `LIKE/ILIKE`; por eso no se puede trasladar automáticamente un cambio de `LIKE` al resto.
+- `docs/modules/crm/BITACORA-M04.md:147` — registro fechado de lo que era cierto con
+  PostgreSQL 16. **Se relee como evidencia histórica; no se reescribe.**
+
+**Disparador.** Cada vez que cambie la versión de PostgreSQL en **cualquier entorno**, incluida
+una instalación real. La revisión forma parte del cambio de versión, no de una limpieza
+documental posterior.
+
+**Qué hacer ese día.** Comprobar en la versión nueva cada ubicación y decidir si su regla sigue
+en pie. Si una regla de proyecto debe conservarse pero el motor ya no falla con `0A000`, necesita
+una **barrera propia y verificable**: no se puede seguir contando con un error del motor que ya
+no ocurre como única protección.
+
+**No hacer ahora.** No se cambia `COLLATE "C"`, `pg_trgm`, la búsqueda textual, los `CHECK`, las
+expresiones regulares ni ninguna consulta. Este pendiente existe precisamente para que esas
+decisiones se revisen con evidencia del motor que vaya a usarse.
+
+---
+
+## 23 · Fijar la versión de PostgreSQL para producción antes de la primera instalación real
+
+**Qué pasa.** El repositorio fija PostgreSQL 16 para el entorno de desarrollo, pero no existe una
+decisión arquitectónica que establezca qué versión de PostgreSQL debe usar una instalación de
+producción. `ADR-001-modelo-de-despliegue.md` define una instancia por cliente, pero no fija una
+versión del motor.
+
+Las referencias actuales a PostgreSQL 16 verificadas en este contexto son de desarrollo o de sus
+herramientas: `docker-compose.yml`, `ADR-006-entorno-de-desarrollo.md`, `CLAUDE.md` y
+`backend/README.md`. No sustituyen una decisión de versión para producción.
+
+**Discrepancia registrada, no corregida aquí.** `ADR-006-entorno-de-desarrollo.md:30` especifica
+`postgres:16-alpine`, mientras `docker-compose.yml:3` usa `postgres:16`. Este pendiente solo deja
+constancia; **no elige una de las dos imágenes ni modifica ninguna**.
+
+**Disparador.** Antes de la primera instalación real fuera de desarrollo, el mismo momento en que
+debe reconsiderarse la alternativa B diferida de H05. La versión del motor tiene que estar
+decidida antes de aprovisionar esa instalación, no después.
+
+**Decide:** el **líder técnico**, porque fijar la versión de PostgreSQL de producción es una
+decisión de arquitectura y condiciona compatibilidad, actualizaciones y las barreras dependientes
+del comportamiento del motor.
+
+**No hacer ahora.** No cambiar PostgreSQL 16, no cambiar la imagen de Compose y no corregir la
+discrepancia `16-alpine` / `16` dentro de este encargo.
+
+---
+
 ## Resueltos recientemente
 
 *(se borran de arriba y se anotan aquí solo hasta que entren en la bitácora del módulo)*
