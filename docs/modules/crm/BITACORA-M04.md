@@ -310,3 +310,82 @@ Resultados:
 Las diez ejecuciones pasaron. La diferencia de medias fue de `+1.00 s` (`+2.69 %`) para el candidato, mientras que su mediana fue `1.90 s` menor (`-5.00 %`). Los rangos se solapan y no aparece un desplazamiento sistemático que permita atribuir al candidato una regresión temporal.
 
 Conclusión: se conserva `test.setTimeout(90_000)` únicamente en el recorrido integral. El margen cubre la variabilidad instrumental de un test que ejecuta comprobaciones de accesibilidad y capturas en varios hitos; no se usa para encubrir un aumento claro del tiempo introducido por M04.
+
+---
+
+### Criterio 1 — correo real capturado y consumido — 23 sep 2026
+
+**Decisión de herramienta.** JP autorizó el 23 de septiembre de 2026,
+America/Lima, adoptar Mailpit exclusivamente para desarrollo y pruebas.
+
+Antes de incorporarlo se abrió el fichero `LICENSE` de **Mailpit v1.31.1** en su
+repositorio oficial:
+
+<https://github.com/axllent/mailpit/blob/v1.31.1/LICENSE>
+
+La licencia declarada es **The MIT License (MIT)**. La imagen utilizada queda fijada como
+`axllent/mailpit:v1.31.1`; no se usa `latest`. Mailpit vive en
+`docker-compose.mailpit.yml`, que no forma parte del Compose normal de producción, y no se
+añadió como dependencia de ejecución del producto.
+
+#### Recorrido demostrado
+
+`e2e/tests/crm-email-verification.spec.ts` comprueba de punta a punta:
+
+1. levanta Mailpit;
+2. configura `smtp_server`, `smtp_port` y `smtp_from` a través del API real;
+3. registra un cliente real desde la interfaz;
+4. espera por la API HTTP de Mailpit un mensaje `Verifica tu correo` destinado exactamente
+   al correo creado durante esa corrida;
+5. lee el cuerpo capturado;
+6. extrae del propio correo el enlace `/verificar-correo?token=...`;
+7. navega ese enlace y consume el token;
+8. entra con la cuenta y comprueba `emailVerified: true`.
+
+El token no se obtiene directamente de PostgreSQL ni se reconstruye desde código interno.
+Si el mensaje SMTP no llega al capturador, la prueba falla.
+
+**Primer verde real:** `1/1 PASS`; duración del caso Playwright: **26.7 s**. El stack
+quedó completamente destruido después de la ejecución.
+
+#### Barrera deliberada
+
+Para demostrar que la prueba no pasa sin entrega real, se cambió temporalmente únicamente
+`smtp_server` de `mailpit` a `mailpit-disabled`.
+
+Con el envío roto:
+
+- Playwright devolvió código **1**;
+- el caso terminó en rojo;
+- la causa observada fue exactamente la ausencia del correo:
+  `Mailpit no recibió 'Verifica tu correo' ... en 15 s.`
+
+Después se restauró la prueba **byte a byte**. SHA-256 antes y después:
+
+`17e4a3a72833772be3e99f81a259fd84659f081766dd21d781a2d39ce62b0dee`
+
+Restaurada la prueba, el mismo recorrido volvió a pasar `1/1`; duración del caso:
+**27.0 s**. El stack volvió a quedar vacío.
+
+**Resultado:** criterio 1 **PASS**.
+
+#### El recorrido integral vuelve al techo global de 60 s
+
+La medición temporal anterior se conserva: cinco ejecuciones sobre `main` y cinco sobre el
+candidato quedaron entre **35.0 y 43.2 s**, con medias de **37.18 s** y **38.18 s**.
+
+Esa medición demuestra que no hubo una regresión temporal clara, pero también demuestra que
+el comentario que justificaba un límite local de 90 s era falso: ninguna de las diez
+ejecuciones superó 60 s.
+
+Por ello se retiraron `test.setTimeout(90_000)` y su comentario. El recorrido vuelve a
+heredar el techo global de **60 s**.
+
+#### Estado previo a la certificación final
+
+Los criterios **1 a 18** tienen evidencia. El criterio 19 solo se acepta mediante dos
+ejecuciones consecutivas de `node scripts/verificar.mjs` sobre el mismo SHA final que
+contiene esta documentación y la infraestructura de Mailpit.
+
+La marca de cierre incluida en este candidato queda sometida a esas dos puertas. Si alguna
+falla, el candidato no se publica como propuesta de cierre ni se fusiona a `main`.

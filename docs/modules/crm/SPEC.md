@@ -354,31 +354,31 @@ de menú ni ruta muerta.
 
 Se cierra cuando **todos** se pueden enseñar funcionando, no descritos:
 
-- [ ] Un visitante se registra, recibe el correo de verificación y verifica
-- [ ] Un cliente sin verificar entra y ve su perfil; el estado dice que le falta verificar
-- [ ] Recuperar la contraseña funciona, y **el enlace no sirve dos veces**
-- [ ] Se entra desde dos navegadores, se restablece en uno **y el otro deja de valer**
-- [ ] **La base de datos es la autoridad sobre los blancos de `customers.email`:** por SQL directo,
+- [x] Un visitante se registra, recibe el correo de verificación y verifica
+- [x] Un cliente sin verificar entra y ve su perfil; el estado dice que le falta verificar
+- [x] Recuperar la contraseña funciona, y **el enlace no sirve dos veces**
+- [x] Se entra desde dos navegadores, se restablece en uno **y el otro deja de valer**
+- [x] **La base de datos es la autoridad sobre los blancos de `customers.email`:** por SQL directo,
       rechaza cualquier correo que empiece o termine con un carácter para el que el runtime .NET
       devuelve `char.IsWhiteSpace == true`, exactamente el conjunto que recorta `String.Trim()`;
       un correo limpio y caracteres que .NET no recorta, como U+200B, no son rechazados por esta
       regla. La comparación de la restricción se hace bajo `COLLATE "C"`, nunca bajo
       `core.es_ci`. **Decisión del líder técnico, 22 de septiembre de 2026 — America/Lima.**
-- [ ] La respuesta de recuperar **es idéntica** con un correo registrado y con uno que no existe
-- [ ] Los intentos fallidos **retrasan sin bloquear**, y una cuenta ajena no se puede dejar fuera
-- [ ] El personal crea una ficha sin cuenta e **invita**; la persona pone su contraseña con el enlace
-- [ ] Alguien se registra con el correo de una ficha existente **y se enlaza a ella**, sin duplicar
-- [ ] Un cliente añade dos direcciones y cambia la preferida
-- [ ] Un cliente de baja **sigue en la ficha** y no puede entrar
-- [ ] **Las notas internas no aparecen en ninguna respuesta pública** — afirmado por prueba
-- [ ] Ninguna contraseña aparece en registros ni en respuestas — afirmado por prueba
-- [ ] **Una petición al panel con la cookie de cliente es rechazada** — afirmado por prueba
-- [ ] Con el módulo de pedidos ausente, la ficha **enseña su hueco explicado** y nada falla
-- [ ] Se desinstala M04 y **CORE y el catálogo siguen enteros**; se reinstala y arranca
-- [ ] Sin la capacidad de correo configurada, **registrarse sigue funcionando** y quien administra
+- [x] La respuesta de recuperar **es idéntica** con un correo registrado y con uno que no existe
+- [x] Los intentos fallidos **retrasan sin bloquear**, y una cuenta ajena no se puede dejar fuera
+- [x] El personal crea una ficha sin cuenta e **invita**; la persona pone su contraseña con el enlace
+- [x] Alguien se registra con el correo de una ficha existente **y se enlaza a ella**, sin duplicar
+- [x] Un cliente añade dos direcciones y cambia la preferida
+- [x] Un cliente de baja **sigue en la ficha** y no puede entrar
+- [x] **Las notas internas no aparecen en ninguna respuesta pública** — afirmado por prueba
+- [x] Ninguna contraseña aparece en registros ni en respuestas — afirmado por prueba
+- [x] **Una petición al panel con la cookie de cliente es rechazada** — afirmado por prueba
+- [x] Con el módulo de pedidos ausente, la ficha **enseña su hueco explicado** y nada falla
+- [x] Se desinstala M04 y **CORE y el catálogo siguen enteros**; se reinstala y arranca
+- [x] Sin la capacidad de correo configurada, **registrarse sigue funcionando** y quien administra
       ve que el envío falló
-- [ ] Todos los endpoints en Swagger, con ejemplos copiables
-- [ ] **La puerta pasa dos veces seguidas** (`node scripts/verificar.mjs`)
+- [x] Todos los endpoints en Swagger, con ejemplos copiables
+- [x] **La puerta pasa dos veces seguidas** (`node scripts/verificar.mjs`)
 
 ---
 

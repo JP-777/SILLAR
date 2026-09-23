@@ -36,7 +36,7 @@ dotnet restore backend/Sillar.sln
 #    NO copies el .env de otra worktree, ni el .env.example a mano: los dos
 #    traen la identidad de OTRO árbol. Ver el hallazgo 7.
 node scripts/estrenar.mjs
-#    Escribe el .env con las siete claves que identifican al árbol, derivadas
+#    Escribe el .env con las ocho claves que identifican al árbol, derivadas
 #    del nombre del directorio. Lo único que queda a mano son las contraseñas.
 
 # 3 · Dependencias de node, propias de esta worktree. Nunca un enlace a otra:
@@ -95,6 +95,53 @@ worktree, no una máquina.
 > pisar un `.env` existente, `identidad.mjs` con choque y sin él—. Queda dicho aquí en vez de
 > dejar que se lea como verificada: la próxima worktree es la que la comprueba, y si algo
 > falta se añade en ese momento.
+
+---
+
+## Mailpit — capturador SMTP de desarrollo y pruebas
+
+*23 de septiembre de 2026 · adopción autorizada por JP para desarrollo y pruebas.*
+
+M04 necesita demostrar por efecto que el correo de verificación **sale realmente por
+SMTP**, llega a un buzón observable, se lee desde fuera del producto y el enlace recibido
+verifica la cuenta. Para esa función se adoptó **Mailpit v1.31.1**.
+
+La licencia se comprobó antes de adoptarlo en el fichero `LICENSE` de esa versión del
+repositorio oficial:
+
+<https://github.com/axllent/mailpit/blob/v1.31.1/LICENSE>
+
+El fichero declara **The MIT License (MIT)**.
+
+**Alcance de la decisión:** Mailpit no es una dependencia de ejecución de SILLAR y no forma
+parte del despliegue de producción. Vive en `docker-compose.mailpit.yml`, un Compose opt-in
+separado. La imagen queda fijada en `axllent/mailpit:v1.31.1`; no se usa `latest`.
+
+La suite E2E lo levanta únicamente cuando una prueba lo necesita. El criterio 1 de M04 usa
+su API HTTP para localizar el mensaje dirigido al destinatario creado durante esa corrida,
+leer el cuerpo, extraer de allí el enlace `/verificar-correo?token=...` y consumir **ese
+enlace real**. La prueba no obtiene el token desde PostgreSQL ni desde código interno.
+
+Para levantar únicamente el capturador en desarrollo:
+
+```bash
+docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.mailpit.yml \
+  up -d mailpit
+```
+
+La interfaz HTTP queda en `127.0.0.1:<MAILPIT_HTTP_PORT>`, donde
+`MAILPIT_HTTP_PORT` deriva de la identidad de la worktree. Dentro de Compose el SMTP se
+resuelve como `mailpit:1025`.
+
+La contraseña SMTP continúa siendo un secreto de proceso. No se escribe ninguna credencial
+en `docker-compose.mailpit.yml`, `.env.example`, las pruebas ni la documentación. Para la
+prueba E2E el valor nace de forma efímera en memoria y Mailpit acepta cualquier par de
+credenciales únicamente dentro de este capturador de desarrollo/pruebas.
+
+El arnés destruye Mailpit junto con la API, PostgreSQL, la red y el volumen al terminar.
+`pnpm --dir e2e stack:down` conoce también este Compose opt-in.
 
 ---
 
