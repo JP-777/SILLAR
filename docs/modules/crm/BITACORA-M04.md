@@ -286,3 +286,27 @@ La prueba focal pasó con el host y PostgreSQL reales.
 **Criterios todavía fuera de esta unidad:** el 1 espera la decisión de JP
 sobre un capturador de correo; el 19 se comprueba después, sobre un SHA
 limpio y fijo, con dos puertas consecutivas.
+
+## Medición temporal del recorrido integral — 2026-09-23
+
+Antes de integrar se midió `e2e/tests/recorrido.spec.ts` para comprobar si el margen local de 90 segundos ocultaba una regresión del candidato o únicamente absorbía el coste variable del propio arnés.
+
+Se compararon `a7416aece5117433ff5d1ab96d69cc24120065ac` (`main`) y `92062f8e72e19ef89ee8bf301c680eded34fd47f` (candidato). Se hicieron cinco ejecuciones independientes por SHA, alternadas entre ambas worktrees, levantando un stack E2E nuevo en cada vuelta y usando el mismo techo de 90 segundos. La medida registrada es la duración que Playwright atribuye al test, no el tiempo de `globalSetup`, migraciones ni `globalTeardown`.
+
+Resultados:
+
+| Ejecución | `main` | candidato |
+| --- | ---: | ---: |
+| 1 | 38.0 s | 43.2 s |
+| 2 | 38.2 s | 40.6 s |
+| 3 | 35.0 s | 35.4 s |
+| 4 | 38.6 s | 36.1 s |
+| 5 | 36.1 s | 35.6 s |
+| Media | 37.18 s | 38.18 s |
+| Mediana | 38.00 s | 36.10 s |
+| Mínimo | 35.00 s | 35.40 s |
+| Máximo | 38.60 s | 43.20 s |
+
+Las diez ejecuciones pasaron. La diferencia de medias fue de `+1.00 s` (`+2.69 %`) para el candidato, mientras que su mediana fue `1.90 s` menor (`-5.00 %`). Los rangos se solapan y no aparece un desplazamiento sistemático que permita atribuir al candidato una regresión temporal.
+
+Conclusión: se conserva `test.setTimeout(90_000)` únicamente en el recorrido integral. El margen cubre la variabilidad instrumental de un test que ejecuta comprobaciones de accesibilidad y capturas en varios hitos; no se usa para encubrir un aumento claro del tiempo introducido por M04.
