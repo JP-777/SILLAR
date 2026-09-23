@@ -12,7 +12,7 @@ import {
   waitMailpitReady,
 } from '../setup/mailpit.js';
 
-const PASSWORD = 'cobre-lima-dieciocho-lunas';
+const PASSWORD = `Aa9!${Date.now()}-${process.pid}`;
 
 interface Session {
   cookie: string;
