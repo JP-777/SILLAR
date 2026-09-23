@@ -108,3 +108,55 @@ y el de las variantes siguen esperando a 04D.
   habrá que mover cosas.
 - Qué criterios del SPEC cierras enteros, y cuáles quedan a medias y por qué.
 - El informe de decisiones, con `REVERSIBLE` primero si alguna no lo es.
+
+---
+
+## 7 · Hallazgo posterior — una operación de imagen no sobrevive al cierre
+
+*23 de septiembre de 2026.*
+
+La puerta de cierre de M04 volvió a ejecutar el recorrido integral de M01 y encontró una
+segunda carrera en la ficha de producto.
+
+La protección existente cubría este orden:
+
+1. asociar una imagen;
+2. termina el `POST .../images`;
+3. empieza el `GET` que recarga la ficha;
+4. la persona guarda mientras ese `GET` sigue en vuelo;
+5. el guardado cierra la ficha;
+6. el `GET` viejo termina.
+
+Ese caso ya estaba protegido con una generación de carga y una prueba que retiene el `GET`.
+
+La puerta encontró otro orden:
+
+1. empieza `POST .../images`;
+2. la persona guarda mientras **el propio POST sigue en vuelo**;
+3. el `PUT` del producto termina correctamente y la ficha se cierra;
+4. recién después termina el POST antiguo;
+5. su callback `onChanged()` intenta iniciar **un GET nuevo**;
+6. ese GET volvía a escribir `editing` y reabría el cajón.
+
+En la traza real, el `POST .../images` empezó antes del guardado y duró 256.5 ms. El
+`PUT .../products/<id>` terminó antes que ese POST. Después apareció un nuevo
+`GET .../products/<id>`, exactamente la secuencia que explicaba la reapertura.
+
+La corrección separa dos conceptos:
+
+- `generaciónFicha`: decide qué **carga** es la vigente;
+- `sesiónFicha`: decide si el **formulario que originó el callback** sigue vivo.
+
+`cerrarFicha()` invalida ambas. Un callback de una ficha ya cerrada no puede ni siquiera
+iniciar una recarga nueva.
+
+La nueva prueba
+`Una asociación de imagen que termina después del guardado no reabre el cajón`
+retiene deliberadamente el POST de asociación hasta que el guardado ya cerró la ficha.
+
+**Barrera:** antes de la corrección, la nueva prueba quedó roja exactamente porque el drawer
+volvió a aparecer. Después de añadir la sesión de ficha pasaron las tres pruebas de
+`imagenes-asociadas.spec.ts`.
+
+El recorrido integral que reveló el defecto volvió a pasar en **46.5 s**, por debajo de su
+techo global de 60 s. No se restauró ningún timeout especial.

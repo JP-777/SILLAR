@@ -249,3 +249,124 @@ test('Una recarga de la ficha que llega tarde no reabre el cajón que el guardad
 
   await expect(ficha, 'una recarga anterior reabrió el cajón ya cerrado').toBeHidden();
 });
+
+/**
+ * Segunda carrera de la ficha.
+ *
+ * La prueba anterior retiene el GET de recarga una vez que la asociación ya
+ * terminó. Falta el otro orden posible: el POST que asocia la imagen sigue en
+ * vuelo mientras la persona guarda el producto. El guardado cierra la ficha;
+ * si el POST termina después, su callback ya no pertenece a una ficha viva y
+ * no debe poder iniciar una recarga nueva que vuelva a abrirla.
+ */
+test('Una asociación de imagen que termina después del guardado no reabre el cajón', async ({
+  page,
+}) => {
+  await loginAsE2eAdmin(page);
+  const api = page.request;
+  const sello = Date.now();
+
+  const { csrfToken } = (await (await api.get('/api/admin/auth/csrf')).json()) as {
+    csrfToken: string;
+  };
+  const cabeceras = { 'X-CSRF-Token': csrfToken };
+
+  const nombreArchivo = `asociacion-tardia-${sello}.png`;
+  await subir(api, cabeceras, nombreArchivo);
+
+  const nombre = `Cuaderno asociación tardía ${sello}`;
+  const creado = await api.post('/api/admin/catalog/products', {
+    headers: cabeceras,
+    data: {
+      name: nombre,
+      slug: `cuaderno-asociacion-tardia-${sello}`,
+      shortDescription: null,
+      description: null,
+      primaryCategoryId: null,
+      categoryIds: [],
+      brandId: null,
+      listPrice: 5,
+      saleUnit: null,
+      variantLabel: null,
+      code: null,
+      barcode: null,
+    },
+  });
+
+  expect(creado.ok(), `crear «${nombre}»: ${creado.status()}`).toBe(true);
+  const id = ((await creado.json()) as { id: string }).id;
+
+  await page.goto('/admin/catalogo/productos');
+  await page.getByLabel('Buscar').fill(nombre);
+  await page
+    .locator('tbody tr')
+    .filter({ hasText: nombre })
+    .getByRole('button', { name: 'Editar' })
+    .click();
+
+  const ficha = page.getByRole('dialog');
+  await expect(ficha).toBeVisible();
+
+  let soltar: () => void = () => {};
+  const retenida = new Promise<void>((resolver) => {
+    soltar = resolver;
+  });
+
+  let asociaciones = 0;
+
+  await page.route(
+    `**/api/admin/catalog/products/${id}/images`,
+    async (ruta) => {
+      if (ruta.request().method() !== 'POST') {
+        await ruta.continue();
+        return;
+      }
+
+      asociaciones += 1;
+      await retenida;
+      await ruta.continue();
+    },
+  );
+
+  // Empieza la asociación, pero su POST se queda deliberadamente en vuelo.
+  await ficha.getByRole('button', { name: nombreArchivo }).click();
+
+  await expect
+    .poll(
+      () => asociaciones,
+      { message: 'la asociación de la imagen no llegó a empezar' },
+    )
+    .toBe(1);
+
+  // Guardar el producto sí debe poder cerrar la ficha.
+  await ficha.getByRole('button', { name: 'Guardar cambios' }).click();
+
+  await expect(
+    page.locator('.ui-toast').filter({ hasText: 'Se guardaron los cambios' }),
+  ).toBeVisible();
+
+  await expect(ficha, 'el guardado no cerró el cajón').toBeHidden();
+
+  // La asociación antigua termina cuando la ficha ya está cerrada.
+  const asociaciónTerminada = page.waitForResponse(
+    (respuesta) =>
+      respuesta.request().method() === 'POST' &&
+      respuesta.url().endsWith(`/api/admin/catalog/products/${id}/images`),
+  );
+
+  soltar();
+  await asociaciónTerminada;
+
+  // Deja que el callback del ImageList y cualquier recarga provocada pinten.
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolver) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolver()));
+      }),
+  );
+
+  await expect(
+    ficha,
+    'una asociación terminada después del cierre volvió a abrir el cajón',
+  ).toBeHidden();
+});

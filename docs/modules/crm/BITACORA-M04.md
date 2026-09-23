@@ -389,3 +389,43 @@ contiene esta documentación y la infraestructura de Mailpit.
 
 La marca de cierre incluida en este candidato queda sometida a esas dos puertas. Si alguna
 falla, el candidato no se publica como propuesta de cierre ni se fusiona a `main`.
+
+---
+
+### Puerta final 1/2 — hallazgo transversal en M01 — 23 sep 2026
+
+El primer intento del criterio 19 sobre
+`ef018d1082c552f83aa8ef6320ec47f3f90feee4` **no pasó**.
+
+La suite terminó con **145 PASS / 1 FAIL**. El único fallo fue
+`e2e/tests/recorrido.spec.ts`: después de guardar correctamente un producto, el drawer
+permaneció visible.
+
+No fue un timeout global: el caso cayó a los 32 s. Tampoco se atribuyó a Mailpit ni a una
+suspensión de la máquina.
+
+La traza mostró una segunda carrera real de M01:
+
+- asociación de imagen `POST .../images` todavía en vuelo;
+- guardado `PUT .../products/<id>` completado;
+- cierre de la ficha;
+- finalización posterior del POST antiguo;
+- callback tardío que iniciaba un GET nuevo y reabría el drawer.
+
+Se añadió un reproductor determinista a `imagenes-asociadas.spec.ts`. Antes del arreglo,
+ese caso terminó en rojo exactamente con:
+
+`una asociación terminada después del cierre volvió a abrir el cajón`
+
+La corrección añadió identidad de **sesión de ficha**, además de la generación de cargas ya
+existente. Después:
+
+- `imagenes-asociadas.spec.ts`: **3/3 PASS**;
+- recorrido focal: **1/1 PASS**;
+- duración del recorrido: **46.5 s**;
+- CORE permaneció intacto;
+- `recorrido.spec.ts` continuó usando el techo global de **60 s**.
+
+El intento fallido de puerta no cuenta para el criterio 19. Después de incorporar este arreglo
+y esta evidencia se genera un SHA nuevo y las dos puertas consecutivas empiezan otra vez desde
+cero.
