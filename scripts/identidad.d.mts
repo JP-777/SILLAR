@@ -25,6 +25,7 @@ export interface IdentidadDeDesarrollo {
   puertoDb: number;
   puertoApi: number;
   puertoPgadmin: number;
+  puertoMailpitHttp: number;
 }
 
 export interface IdentidadE2e {
@@ -33,6 +34,7 @@ export interface IdentidadE2e {
   puertoDb: number;
   puertoApi: number;
   puertoFrontend: number;
+  puertoMailpitHttp: number;
 }
 
 export interface Identidad {

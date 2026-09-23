@@ -28,11 +28,6 @@ const PNG = Buffer.from(
 test('El recorrido de la demostración, de entrar al panel a verlo en la tienda', async ({
   page,
 }) => {
-  // Este recorrido ejecuta axe-core y captura ambos temas en varios hitos.
-  // Conserva el timeout global de 60 s para el resto de la suite y amplía
-  // únicamente esta prueba integral, cuyo coste instrumental ya supera ese límite.
-  test.setTimeout(90_000);
-
   const record = themeRecorder(page, 'recorrido');
   const sello = Date.now();
 

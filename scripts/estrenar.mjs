@@ -23,7 +23,7 @@ import { contrasenaPostgresCoherente } from './coherencia-env.mjs';
  * pedirle a una persona que copiara seis valores sin equivocarse, cada vez.
  *
  * Aquí se copia el ejemplo entero —comentarios incluidos, que son buenos— y se
- * sustituyen las siete líneas que identifican al árbol. Lo único que queda por
+ * sustituyen las ocho líneas que identifican al árbol. Lo único que queda por
  * rellenar a mano es lo que ninguna máquina puede inventar: las contraseñas.
  */
 
@@ -49,6 +49,7 @@ function identidadComoClaves(dir, contrasena) {
     POSTGRES_PORT: String(dev.puertoDb),
     API_PORT: String(dev.puertoApi),
     PGADMIN_PORT: String(dev.puertoPgadmin),
+    MAILPIT_HTTP_PORT: String(dev.puertoMailpitHttp),
     Sillar__Node__Code: dev.nodo,
     ConnectionStrings__Default: cadenaDeConexion({
       puerto: dev.puertoDb,

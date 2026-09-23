@@ -32,7 +32,7 @@ import path from 'node:path';
  * PostgreSQL de desarrollo en 55430 y el de e2e en 55432, dos de distancia— y
  * con dos de margen ningún desplazamiento derivado cabe sin solaparse. Cada
  * papel tiene ahora su bloque de cien, así que el offset de un árbol es el
- * mismo número en los seis puertos y se lee de un vistazo: si el e2e de este
+ * mismo número en los ocho puertos y se lee de un vistazo: si el e2e de este
  * árbol está en 55907, su API de desarrollo está en 55707.
  *
  * Cien caben porque el offset va de 0 a 99. El árbol base —el que se llama
@@ -47,6 +47,8 @@ const BLOQUES = {
   e2eDb: 55900,
   e2eApi: 56000,
   e2eFrontend: 56100,
+  devMailpitHttp: 56200,
+  e2eMailpitHttp: 56300,
 };
 
 /** Cuántos árboles caben antes de que dos compartan offset. */
@@ -120,6 +122,7 @@ export function identidadDeLaWorktree(dir) {
       puertoDb: BLOQUES.devDb + offset,
       puertoApi: BLOQUES.devApi + offset,
       puertoPgadmin: BLOQUES.devPgadmin + offset,
+      puertoMailpitHttp: BLOQUES.devMailpitHttp + offset,
     },
 
     e2e: {
@@ -128,6 +131,7 @@ export function identidadDeLaWorktree(dir) {
       puertoDb: BLOQUES.e2eDb + offset,
       puertoApi: BLOQUES.e2eApi + offset,
       puertoFrontend: BLOQUES.e2eFrontend + offset,
+      puertoMailpitHttp: BLOQUES.e2eMailpitHttp + offset,
     },
   };
 }
@@ -181,8 +185,8 @@ async function principal() {
   const aqui = identidadDeLaWorktree(process.cwd());
   console.log(`\nEste árbol: ${aqui.dir}`);
   console.log(`  sufijo «${aqui.sufijo || '(ninguno: es el árbol base)'}», offset ${aqui.offset}\n`);
-  console.log('  desarrollo   db ' + aqui.dev.puertoDb + '   api ' + aqui.dev.puertoApi + '   pgadmin ' + aqui.dev.puertoPgadmin);
-  console.log('  e2e          db ' + aqui.e2e.puertoDb + '   api ' + aqui.e2e.puertoApi + '   frontend ' + aqui.e2e.puertoFrontend);
+  console.log('  desarrollo   db ' + aqui.dev.puertoDb + '   api ' + aqui.dev.puertoApi + '   pgadmin ' + aqui.dev.puertoPgadmin + '   mailpit ' + aqui.dev.puertoMailpitHttp);
+  console.log('  e2e          db ' + aqui.e2e.puertoDb + '   api ' + aqui.e2e.puertoApi + '   frontend ' + aqui.e2e.puertoFrontend + '   mailpit ' + aqui.e2e.puertoMailpitHttp);
 
   console.log('\nTodos los árboles de este repositorio:\n');
   for (const f of filas) {
