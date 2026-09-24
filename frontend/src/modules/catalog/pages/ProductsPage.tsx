@@ -55,7 +55,18 @@ export function ProductsPage() {
   // es un `ref` y no un estado.
   const generaciónFicha = useRef(0);
 
-  async function abrirFicha(id: string) {
+  // La generación protege contra un GET viejo que termina tarde. La sesión
+  // protege además contra callbacks asíncronos de un ProductForm que ya fue
+  // cerrado: esos callbacks tampoco pueden iniciar una recarga nueva.
+  const sesiónFicha = useRef(0);
+
+  async function abrirFicha(id: string, sesión = sesiónFicha.current) {
+    // Si el callback pertenece a una ficha que ya se cerró, no tiene autoridad
+    // para iniciar otra carga.
+    if (sesiónFicha.current !== sesión) {
+      return;
+    }
+
     const generación = ++generaciónFicha.current;
 
     // La ficha completa no está en el listado: se pide al abrir. El listado
@@ -63,16 +74,21 @@ export function ProductsPage() {
     try {
       const producto = await productsService.get(id);
 
-      if (generaciónFicha.current !== generación) {
+      if (
+        generaciónFicha.current !== generación ||
+        sesiónFicha.current !== sesión
+      ) {
         return;
       }
 
       setEditing(producto);
     } catch (error) {
-      // También el fallo se descarta si la carga ya no es la vigente: un aviso
-      // de «no se pudo abrir el producto» sobre una ficha que el usuario ya
-      // cerró no dice nada de lo que tiene delante.
-      if (generaciónFicha.current !== generación) {
+      // También el fallo se descarta si la carga o la sesión ya no son
+      // vigentes: una ficha cerrada no puede volver a escribir en pantalla.
+      if (
+        generaciónFicha.current !== generación ||
+        sesiónFicha.current !== sesión
+      ) {
         return;
       }
 
@@ -80,8 +96,9 @@ export function ProductsPage() {
     }
   }
 
-  /** Cierra la ficha para siempre: invalida lo que esté en vuelo y luego cierra. */
+  /** Cierra la ficha e invalida cargas y callbacks de esa sesión. */
   function cerrarFicha() {
+    sesiónFicha.current += 1;
     generaciónFicha.current += 1;
     setCreating(false);
     setEditing(null);
@@ -168,6 +185,11 @@ export function ProductsPage() {
     return <ForbiddenPage minimum="editor" />;
   }
 
+  // Los callbacks del ProductForm conservan la sesión de este render.
+  // Si el formulario se cierra antes de que termine una operación asíncrona,
+  // cerrarFicha() cambia la sesión y ese callback tardío queda invalidado.
+  const sesiónDelRender = sesiónFicha.current;
+
   return (
     <PageContainer
       title="Productos"
@@ -234,7 +256,7 @@ export function ProductsPage() {
             if (message === '') {
               // Cambió una imagen: la ficha se recarga y el panel sigue abierto.
               if (editing) {
-                void abrirFicha(editing.id);
+                void abrirFicha(editing.id, sesiónDelRender);
               }
               return;
             }
