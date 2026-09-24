@@ -22,9 +22,10 @@
 | 25 | PASS | Mensaje explícito para búsquedas por prefijo |
 | 32 | PASS | Móvil, escritorio, teclado y comprobación de colores |
 
-Los resultados PASS corresponden a las afirmaciones de la
-primera batería de pruebas. La validación deliberadamente
-roja de las barreras sigue pendiente.
+Los diez criterios PASS completaron la secuencia: ejecución
+positiva inicial, regresión simulada detectada y retorno a verde.
+Estas simulaciones se realizaron en la frontera UI/API;
+no fueron mutaciones del código de producción.
 
 ## Hallazgo C21 — No corregido
 
@@ -45,8 +46,10 @@ la prueba para conseguir un resultado verde.
 
 ## Pendiente
 
-- Ejecutar y registrar la comprobación deliberadamente roja
-  de cada barrera nueva, verificando ambas direcciones.
+- Completada la comprobación negativa simulada de las diez
+  barreras aprobadas y verificado su retorno a verde.
+- Pendiente, si se exige, la mutación del código de producto:
+  las simulaciones UI/API no acreditan esa modalidad.
 - Mantener C21 en FAIL hasta una corrección autorizada
   y verificada fuera de este encargo de evidencia.
 - No declarar los 33 criterios en PASS.
@@ -63,3 +66,45 @@ Pruebas:
 `e2e/tests/m02-cierre-evidencia.spec.ts`
 
 SHA256 del log original: `d12a3a42173d31047f893d52f9cea803e289412dd91da151274c0e387e3a4bda`
+
+
+## Controles negativos y retorno a verde — 2026-09-24
+
+**Base de la comprobación:** `6d2353cefcfc9889a6db564de2d49602065e07ec`
+
+| Criterio | Positivo inicial | Regresión simulada | Retorno |
+|---|---|---|---|
+| 3 | PASS | Detectada | PASS |
+| 5 | PASS | Detectada | PASS |
+| 13 | PASS | Detectada | PASS |
+| 16 | PASS | Detectada | PASS |
+| 17 | PASS | Detectada | PASS |
+| 18 | PASS | Detectada | PASS |
+| 19 | PASS | Detectada | PASS |
+| 24 | PASS | Detectada | PASS |
+| 25 | PASS | Detectada | PASS |
+| 32 | PASS | Detectada | PASS |
+
+Las diez simulaciones provocaron el fallo de la afirmación
+correspondiente. En C24 se produjo además un error de consola,
+efecto adicional de la solicitud indebida simulada.
+
+Se eliminó la spec temporal. La spec original permaneció
+inalterada y los diez casos volvieron a pasar.
+
+**C21:** excluido de las simulaciones. Conserva el defecto real
+de presentación registrado, sin modificación del producto.
+
+**Alcance:** simulación controlada en la frontera UI/API.
+No acredita mutaciones de código de producción.
+
+**Estado:** evidencia parcial; M02 sigue abierto.
+
+### Registros conservados
+
+- `docs/modules/cms/evidencias/CONTROLES-NEGATIVOS-20260924.txt`
+- `docs/modules/cms/evidencias/RETORNO-VERDE-20260924.txt`
+
+SHA-256 del log negativo original: `a50a7b2ae9e83bb9d4e05af7e436abc97c9357452e7f9b8551b44b817e1894d2`
+
+SHA-256 del log de retorno original: `8bf0696c9a84845d77eeb55464741de0ecdf4540feb406699d23b1bf1f1c2172`
