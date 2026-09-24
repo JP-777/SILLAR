@@ -108,3 +108,72 @@ No acredita mutaciones de código de producción.
 SHA-256 del log negativo original: `a50a7b2ae9e83bb9d4e05af7e436abc97c9357452e7f9b8551b44b817e1894d2`
 
 SHA-256 del log de retorno original: `8bf0696c9a84845d77eeb55464741de0ecdf4540feb406699d23b1bf1f1c2172`
+
+## Ciclo de instalación y desinstalación — 2026-09-24
+
+**Resultado:** PASS diagnóstico, mutación detectada y retorno
+a verde. Esta evidencia no constituye el cierre de M02.
+
+### Ejecución positiva
+
+Se publicó un producto destacado y una red social.
+La prueba comprobó que M02 puede desactivarse, retirar su
+integración con Catálogo y desinstalar su schema.
+
+Comprobó que CORE y Catálogo conservan sus datos y tablas,
+y que la aplicación mantiene las rutas y superficies
+correspondientes a los módulos restantes.
+
+Los scripts de retirada se ejecutaron dos veces. Después,
+las migraciones reconstruyeron M02 y se pudo publicar
+contenido nuevamente.
+
+**Resultado:** PASS.
+
+### Mutación real y control negativo
+
+Se añadió temporalmente al script `cms/99_drop.sql`
+la creación indebida de una tabla en CORE.
+
+La prueba detectó la alteración del inventario de
+CORE: diez tablas antes del desmontaje y once después.
+
+**Resultado:** fallo provocado detectado por la comprobación
+de conservación de los módulos ajenos.
+
+La alteración del archivo SQL se revirtió byte por byte.
+
+### Retorno a verde
+
+Con el SQL original restaurado se repitió la prueba
+diagnóstica completa.
+
+**Resultado:** PASS.
+
+### Alcance y limitaciones
+
+La mutación fue real sobre una copia de trabajo del script
+SQL y se ejecutó exclusivamente contra el entorno E2E
+efímero de esta worktree.
+
+Esta prueba demuestra que la barrera detecta la alteración
+introducida en CORE. No demuestra que pueda detectar
+todas las regresiones posibles del ciclo de vida.
+
+C21 sigue abierto por la diferencia visual entre la tarjeta
+sin fotografía de CMS y la presentación de Catálogo.
+
+M02 continúa sin autorización de cierre ni fusión.
+
+### Archivos
+
+- `e2e/tests/zz-z-m02-ciclo-diagnostico.spec.ts`
+- `docs/modules/cms/evidencias/CICLO-INICIAL-20260924.txt`
+- `docs/modules/cms/evidencias/CICLO-MUTACION-20260924.txt`
+- `docs/modules/cms/evidencias/CICLO-RETORNO-20260924.txt`
+
+SHA-256 de los registros originales:
+
+- Inicial: `324df6ac4b23d3e024784d74a91ae7f2aa601fba8aa054f457b12c76c4a8b34a`
+- Mutación: `23e43b560f122e9022c2ab904758f9af1515aadc1ad2b290cdb95379df5c8317`
+- Retorno: `ae2b343b69241e7db702f714efd42727575022f968a2dedadef9a6500c06a8b9`
