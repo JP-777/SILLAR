@@ -68,11 +68,49 @@ async function banner(api: APIRequestContext, title: string, desktop: string, mo
 }
 
 async function red(api: APIRequestContext, platform: string, url: string) {
+  // La suite completa puede contener una cuenta previa de esta red.
+  // Nunca duplicarla ni eliminar datos que pertenecen a otras pruebas.
+  const listed = await api.get('/api/admin/cms/social-links');
+  expect(listed.ok(), `listar redes: ${listed.status()}`).toBe(true);
+
+  const links = (await listed.json()) as {
+    id: number; platform: string; isActive: boolean;
+  }[];
+
+  const existing = links.find(
+    (link) => link.platform.toLowerCase() === platform.toLowerCase(),
+  );
+
+  if (existing?.isActive) {
+    return;
+  }
+
+  if (existing) {
+    const activated = await api.put(
+      `/api/admin/cms/social-links/${existing.id}/reactivate`,
+      { headers: await csrf(api) },
+    );
+    expect(
+      activated.ok(),
+      `reactivar red: ${activated.status()} ${await activated.text()}`,
+    ).toBe(true);
+
+    // La limpieza la devolverá a su estado inactivo original.
+    createdCms.push({
+      collection: 'social-links',
+      id: existing.id,
+    });
+    return;
+  }
+
   const r = await api.post('/api/admin/cms/social-links', {
     headers: await csrf(api), data: { platform, url },
   });
   expect(r.ok(), `red: ${r.status()} ${await r.text()}`).toBe(true);
-  createdCms.push({ collection: 'social-links', id: ((await r.json()) as { id: number }).id });
+  createdCms.push({
+    collection: 'social-links',
+    id: ((await r.json()) as { id: number }).id,
+  });
 }
 
 async function categoria(api: APIRequestContext, name: string, slug: string) {
@@ -210,6 +248,17 @@ test('[M02-C3] módulo inactivo: arranque, menú, portada y pie sin huecos', asy
   await page.goto('/');
   await expect(page.getByRole('heading', { name })).toBeVisible();
   await expect(page.getByRole('contentinfo')).toBeVisible();
+  await expect(
+    page.locator(
+      'footer.pf-footer nav[aria-label="Redes sociales"]',
+    ).getByRole('link', { name: 'YouTube' }),
+  ).toBeVisible();
+
+  await page.waitForLoadState('networkidle');
+  const coreContactInicial = await page.locator(
+    'footer.pf-footer .pf-footer__contact',
+  ).isVisible();
+
   await modulo(page, 'cms', 'Desactivar');
   try {
     await page.goto('/admin');
@@ -224,10 +273,25 @@ test('[M02-C3] módulo inactivo: arranque, menú, portada y pie sin huecos', asy
     for (const id of ['cms-banners', 'cms-promotions', 'cms-featured-products', 'cms-featured-projects']) {
       await expect(page.locator(`section[aria-labelledby="${id}-title"]`)).toHaveCount(0);
     }
-    await expect(page.getByRole('contentinfo')).toHaveCount(0);
-    const foot = page.locator('footer');
-    if (await foot.count()) {
-      const height = await foot.evaluate((node) => node.getBoundingClientRect().height);
+    const footer = page.locator('footer.pf-footer');
+
+    // CMS debe desaparecer del DOM, aunque CORE mantenga el pie.
+    await expect(
+      footer.locator('nav[aria-label="Redes sociales"]'),
+    ).toHaveCount(0);
+
+    const coreContact = footer.locator('.pf-footer__contact');
+
+    if (coreContactInicial) {
+      await expect(coreContact).toBeVisible();
+      await expect(footer).toBeVisible();
+    } else {
+      await expect(coreContact).toHaveCount(0);
+      await expect(footer).toBeHidden();
+
+      const height = await footer.evaluate(
+        (node) => node.getBoundingClientRect().height,
+      );
       expect(height, 'el pie vacío ocupa espacio').toBe(0);
     }
     const caps = (await (await page.request.get('/api/capabilities')).json()) as {
@@ -240,6 +304,13 @@ test('[M02-C3] módulo inactivo: arranque, menú, portada y pie sin huecos', asy
   await page.goto('/');
   await expect(page.getByRole('heading', { name })).toBeVisible();
   await expect(page.getByRole('contentinfo')).toBeVisible();
+
+  // Reactivar CMS debe recuperar SU contribución.
+  await expect(
+    page.locator(
+      'footer.pf-footer nav[aria-label="Redes sociales"]',
+    ).getByRole('link', { name: 'YouTube' }),
+  ).toBeVisible();
 });
 
 test('[M02-C5] banner móvil: fallback real y dos proporciones', async ({ page }) => {

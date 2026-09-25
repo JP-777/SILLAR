@@ -70,17 +70,39 @@ async function publicarCms(
     `destacar producto: ${featured.status()} ${await featured.text()}`,
   ).toBe(true);
 
-  const social = await api.post('/api/admin/cms/social-links', {
-    headers: await csrf(api),
-    data: {
-      platform: 'youtube',
-      url: enlace,
-    },
-  });
+  // Antes del desmontaje puede existir YouTube por otra prueba.
+  // Tras reinstalar CMS, su tabla estará vacía y se creará de nuevo.
+  const listed = await api.get('/api/admin/cms/social-links');
+  expect(listed.ok(), `listar redes: ${listed.status()}`).toBe(true);
+
+  const links = (await listed.json()) as {
+    id: number; platform: string; isActive: boolean;
+  }[];
+
+  const youtube = links.find(
+    (link) => link.platform.toLowerCase() === 'youtube',
+  );
+
+  if (youtube?.isActive) {
+    return;
+  }
+
+  const social = youtube
+    ? await api.put(
+        `/api/admin/cms/social-links/${youtube.id}/reactivate`,
+        { headers: await csrf(api) },
+      )
+    : await api.post('/api/admin/cms/social-links', {
+        headers: await csrf(api),
+        data: {
+          platform: 'youtube',
+          url: enlace,
+        },
+      });
 
   expect(
     social.ok(),
-    `publicar red: ${social.status()} ${await social.text()}`,
+    `habilitar red: ${social.status()} ${await social.text()}`,
   ).toBe(true);
 }
 
@@ -123,11 +145,39 @@ async function cambiarModulo(
   });
 }
 
+async function revisarPieSinCms(
+  page: Page,
+  coreContactInicial: boolean,
+) {
+  const footer = page.locator('footer.pf-footer');
+
+  await expect(
+    footer.locator('nav[aria-label="Redes sociales"]'),
+  ).toHaveCount(0);
+
+  const coreContact = footer.locator('.pf-footer__contact');
+
+  if (coreContactInicial) {
+    await expect(coreContact).toBeVisible();
+    await expect(footer).toBeVisible();
+  } else {
+    await expect(coreContact).toHaveCount(0);
+    await expect(footer).toBeHidden();
+
+    const height = await footer.evaluate(
+      (node) => node.getBoundingClientRect().height,
+    );
+
+    expect(height, 'pie vacío con espacio residual').toBe(0);
+  }
+}
+
 async function revisarSinCms(
   page: Page,
   otrasCapacidades: string[],
   testInfo: TestInfo,
   etapa: string,
+  coreContactInicial: boolean,
 ) {
   const activas = await capacidades(page.request);
 
@@ -170,9 +220,7 @@ async function revisarSinCms(
     ).toHaveCount(0);
   }
 
-  await expect(
-    page.getByRole('contentinfo'),
-  ).toHaveCount(0);
+  await revisarPieSinCms(page, coreContactInicial);
 
   const catalog = await page.request.get(
     `/api/catalog/products/${slug}`,
@@ -188,6 +236,9 @@ async function revisarSinCms(
   await expect(
     page.getByRole('heading', { name: nombre }),
   ).toBeVisible();
+
+  // La ficha de producto también debe conservar únicamente el pie ajeno.
+  await revisarPieSinCms(page, coreContactInicial);
 
   await testInfo.attach(`m02-${etapa}.png`, {
     body: await page.screenshot({ fullPage: true }),
@@ -255,6 +306,12 @@ test(
       }).getByRole('link', { name: 'YouTube' }),
     ).toBeVisible();
 
+    await page.waitForLoadState('networkidle');
+
+    const coreContactInicial = await page.locator(
+      'footer.pf-footer .pf-footer__contact',
+    ).isVisible();
+
     const inicio = await estadoAjeno();
     const cmsInicial = await tablasCms();
     const iniciales = await capacidades(page.request);
@@ -293,6 +350,7 @@ test(
       otras,
       testInfo,
       'desactivado',
+      coreContactInicial,
     );
 
     // Retirar primero la integración física.
@@ -346,6 +404,7 @@ test(
       otras,
       testInfo,
       'desinstalado',
+      coreContactInicial,
     );
 
     // Reinstalar únicamente las migraciones de CMS.

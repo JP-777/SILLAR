@@ -177,3 +177,62 @@ SHA-256 de los registros originales:
 - Inicial: `324df6ac4b23d3e024784d74a91ae7f2aa601fba8aa054f457b12c76c4a8b34a`
 - Mutación: `23e43b560f122e9022c2ab904758f9af1515aadc1ad2b290cdb95379df5c8317`
 - Retorno: `ae2b343b69241e7db702f714efd42727575022f968a2dedadef9a6500c06a8b9`
+
+## Integración final — 2026-09-25
+
+**Resultado de la puerta integrada:** 157 pruebas PASS y
+1 FAIL, correspondiente exclusivamente a C21.
+
+Las seis etapas de la puerta canónica se iniciaron.
+Las cinco primeras pasaron; la última terminó con código 1
+por el defecto de presentación previamente identificado.
+
+### Aislamiento de las pruebas
+
+Se corrigieron exclusivamente las fixtures y afirmaciones
+de las dos pruebas de M02 para evitar colisiones entre
+cuentas de redes sociales y distinguir las contribuciones
+al pie de página de CORE y CMS.
+
+La regresión focal comprobó cuatro casos:
+
+- Navegación con la cuenta social existente.
+- C3 con reutilización de esa cuenta.
+- Ciclo de M02 con contacto de CORE simulado.
+- Ciclo de M02 con la configuración E2E habitual.
+
+**Resultado focal:** 4 PASS.
+
+La variante que simula contacto de CORE fue temporal;
+su archivo se eliminó tras la ejecución.
+
+### Alcance de la comprobación final
+
+La suite integrada volvió a ejecutar las pruebas
+existentes junto con las nuevas pruebas de M02.
+
+El ciclo de instalación y desinstalación se ejecutó
+correctamente dentro de la suite.
+
+C21 continúa en FAIL por la ausencia de la presentación
+equivalente a Catálogo cuando el destacado carece
+de fotografía.
+
+No se alteró código de producción, no se debilitó C21
+y no se modificó el script SQL de desinstalación.
+
+**Veredicto:** evidencia del encargo de M02 completada,
+con un defecto de producto documentado y pendiente.
+
+**M02 no está cerrado. No autorizar fusión ni marcar
+el ROADMAP como completado.**
+
+### Registros de integración
+
+- `docs/modules/cms/evidencias/FOCAL-FOOTER-CORE-20260925.txt`
+- `docs/modules/cms/evidencias/PUERTA-INTEGRADA-20260925.txt`
+
+SHA-256 de los registros originales:
+
+- Regresión focal: `6e94a10ace18f0f9f4acda6810ef56d23405c1059c265d88dc90df51f861b4e6`
+- Puerta integrada: `045c9776d0c0db03ec7b213e18d1282568f4a5356b0033693b50a37ab5524bd6`
