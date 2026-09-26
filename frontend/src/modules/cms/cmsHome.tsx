@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
+import { NoPhoto } from '../catalog/components/ProductCard';
 import { useAporteDePortada } from '../../platform/homeState';
 import type { EstadoAporte } from '../../platform/surfaceState';
 import type { HomeSection } from '../../platform/homeSections';
@@ -259,8 +260,13 @@ function FeaturedProductCard({ product }: { product: PublicFeaturedProduct }) {
   return (
     <li style={cardStyle}>
       <article>
-        {product.imageUrl && (
+        {product.imageUrl ? (
           <img src={product.imageUrl} alt="" loading="lazy" style={cardImageStyle} />
+        ) : (
+          <NoPhoto
+            name={product.productName}
+            context={product.productCategory}
+          />
         )}
         <div style={bodyStyle}>
           {product.productCategory && <p style={eyebrowStyle}>{product.productCategory}</p>}

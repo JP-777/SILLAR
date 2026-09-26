@@ -454,17 +454,44 @@ test('[M02-C21] destacado sin foto compara nombre y categoría con tarjeta Catá
   await page.goto(`/catalogo/${catSlug}`);
   const catalog = page.locator('.ti-card').filter({ hasText: name });
   await expect(catalog).toBeVisible();
-  await expect(catalog.locator('.ti-nophoto__context')).toHaveText(catName);
-  await expect(catalog.locator('.ti-nophoto__name')).toHaveText(name);
+  const catalogNoPhoto = catalog.locator('.ti-nophoto');
+  await expect(catalogNoPhoto.locator('.ti-nophoto__context')).toHaveText(catName);
+  await expect(catalogNoPhoto.locator('.ti-nophoto__name')).toHaveText(name);
+
+  const reference = await catalogNoPhoto.evaluate((node) => ({
+    className: node.className,
+    aspectRatio: getComputedStyle(node).aspectRatio,
+    backgroundColor: getComputedStyle(node).backgroundColor,
+  }));
+
+  const referenceCategory =
+    await catalogNoPhoto.locator('.ti-nophoto__context')
+      .evaluate((node) => node.textContent?.trim() ?? '');
+
+  expect(referenceCategory).toBe(catName);
+  const referenceName =
+    await catalogNoPhoto.locator('.ti-nophoto__name').innerText();
+
   await page.goto('/');
   const cms = tarjeta(page, name);
   await expect(cms).toBeVisible();
   await expect(cms.locator('img')).toHaveCount(0);
-  await expect(cms.getByText(catName, { exact: true })).toBeVisible();
   await expect(cms.getByRole('link', { name })).toBeVisible();
-  // Paridad visual real, no solo que el nombre se repite fuera del cuadro.
-  await expect(cms.locator('.ti-nophoto__context')).toHaveText(catName);
-  await expect(cms.locator('.ti-nophoto__name')).toHaveText(name);
+  // Comparación obtenida directamente de la tarjeta real de Catálogo.
+  const cmsNoPhoto = cms.locator('.ti-nophoto');
+  await expect(cmsNoPhoto).toHaveCount(1);
+  await expect(cmsNoPhoto.locator('.ti-nophoto__context'))
+    .toHaveText(referenceCategory);
+  await expect(cmsNoPhoto.locator('.ti-nophoto__name'))
+    .toHaveText(referenceName);
+
+  const actual = await cmsNoPhoto.evaluate((node) => ({
+    className: node.className,
+    aspectRatio: getComputedStyle(node).aspectRatio,
+    backgroundColor: getComputedStyle(node).backgroundColor,
+  }));
+
+  expect(actual).toEqual(reference);
 });
 
 test('[M02-C24] Catálogo inactivo: ninguna solicitud al selector', async ({ page }) => {

@@ -1,0 +1,33 @@
+M02 - Evidencia de certificación final
+Fecha: 2026-09-25
+
+Control negativo C21
+Registro local: /var/tmp/sillar-m02-c21-mutacion-final.log
+SHA256 original: 25253c3aff3b436361af6eff9ae22d3a67a3bd7a6177791c00086a322b819d49
+✘  1 [chromium] › tests/m02-cierre-evidencia.spec.ts:440:1 › [M02-C21] destacado sin foto compara nombre y categoría con tarjeta Catálogo (24.0s)
+1) [chromium] › tests/m02-cierre-evidencia.spec.ts:440:1 › [M02-C21] destacado sin foto compara nombre y categoría con tarjeta Catálogo
+1 failed
+[chromium] › tests/m02-cierre-evidencia.spec.ts:440:1 › [M02-C21] destacado sin foto compara nombre y categoría con tarjeta Catálogo
+
+Retorno verde C21
+Registro local: /var/tmp/sillar-m02-c21-retorno-final.log
+SHA256 original: 8e6365c289d30ddd1baaec67e5d183dacd3a0a8520e938a59414b0de13c9cd82
+✓  1 [chromium] › tests/m02-cierre-evidencia.spec.ts:440:1 › [M02-C21] destacado sin foto compara nombre y categoría con tarjeta Catálogo (11.8s)
+1 passed (2.7m)
+
+Puerta integrada
+Registro local: /var/tmp/sillar-m02-puerta-final-validada.log
+SHA256 original: a00e0bb7c17c9ab9e207cd29d85b8a10ef51d9ffa7e36edaac01ab4f08a7bf70
+[1/6] tipos del frontend...
+[2/6] tipos del arnés e2e...
+[3/6] compilación del backend...
+[4/6] migraciones backend (BD efímera)...
+[5/6] pruebas del backend...
+[6/6] suite e2e...
+TODO EN VERDE — las 6 etapas pasaron.
+
+Ciclo innegociable
+Registro local: /var/tmp/sillar-m02-ciclo-innegociable-validado.log
+SHA256 original: 2b0febc1159e0d0c8c79626cfea038d8e8238e7dd7b9e81864d3ea7c97421897
+✓  1 [chromium] › tests/zz-z-m02-ciclo-diagnostico.spec.ts:285:1 › [M02-CICLO] desmontar e instalar sin romper CORE, Catálogo ni superficies (1.1m)
+1 passed (2.9m)

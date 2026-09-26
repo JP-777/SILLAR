@@ -297,7 +297,7 @@ test(
     await expect(
       page.locator(
         'section[aria-labelledby="cms-featured-products-title"]',
-      ).getByText(nombre),
+      ).getByRole('link', { name: nombre, exact: true }),
     ).toBeVisible();
 
     await expect(
@@ -477,7 +477,7 @@ test(
     await expect(
       page.locator(
         'section[aria-labelledby="cms-featured-products-title"]',
-      ).getByText(nombre),
+      ).getByRole('link', { name: nombre, exact: true }),
     ).toBeVisible();
 
     await expect(
