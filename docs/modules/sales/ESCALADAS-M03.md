@@ -12,7 +12,7 @@ las tiene.**
 
 | § | Estado tras la ronda |
 |---|---|
-| **§a** SPEC de Diseño | **Anunciada como recuperada el 26/09 y NO recibida.** El adjunto `SPEC-M03-ORIGINAL-DISENO-2026-09-23.md` no llegó: comprobado por cinco vías en `INCIDENCIA-SPEC-DISENO-M03.md` §3. Sigue sin reconstruirse. **Y el colíder informa de que la versión recuperada está incompleta** —falta el final del §7 y, por la numeración, el §8 entero—, lo cual no he observado |
+| **§a** SPEC de Diseño | **RESUELTA el 26/09/2026.** Recibida **completa**: 897 líneas, §7 y §8 presentes, cierra en B-05 con «ESTADO FINAL: DETENIDO». Conservada íntegra e idéntica byte a byte en `SPEC-M03-ORIGINAL-DISENO-2026-09-23.md`. La reconciliación está en `SPEC.md` §0 |
 | **§b1** Código visible `2026-0147` frente a `ADR-016` | **Abierta, expresamente.** «No inventes respuestas» |
 | **§b2** Cancelación y reactivación | **Abierta** |
 | **§c** Efectivo frente a Yape | **Abierta** |
@@ -26,15 +26,31 @@ las tiene.**
 La entrega se conserva para la fase siguiente. Por eso esta cabecera **no añade ninguna entrada
 nueva**: solo registra dueño y estado, que es lo que se pierde si no se escribe.
 
-**Segunda ronda del 26/09 — la SPEC anunciada y no recibida.** No cambia ninguna entrada de dueño.
-Cambia una sola cosa, y hacia atrás: **§a pasa de «pendiente de incorporación» a «anunciada como
-recuperada, y no llegada»**, que no es lo mismo y no se debe confundir. Lo primero es una pieza que
-falta; lo segundo es una pieza que existe, que alguien ha leído, y que **está a un mensaje de
-distancia**. El detalle y la forma en que tiene que llegar están en
-`INCIDENCIA-SPEC-DISENO-M03.md`.
+**Segunda ronda del 26/09 — la SPEC anunciada y no recibida.** §a pasó de «pendiente de
+incorporación» a «anunciada como recuperada, y no llegada». Queda registrado en
+`INCIDENCIA-SPEC-DISENO-M03.md`, que **no se borra aunque la incidencia esté cerrada**: un intento
+fallido sin registro es un intento que se repite.
 
 **El contrato de M04 para pedidos sin dirección (§e3) está escalado al líder técnico**, por encima
 de Chat 2.
+
+**Tercera ronda del 26/09 — la SPEC llegó completa, y con ella se cierran tres entradas y media.**
+Diseño la había detenido sobre cinco preguntas bloqueantes (B-01 a B-05), y **las decisiones del
+26/09 resultaron ser sus respuestas** —cuatro de cinco, y la quinta a medias. El cotejo íntegro está
+en `SPEC.md` §0.2. Lo que eso mueve en esta cola:
+
+| Entrada | Antes | Ahora |
+|---|---|---|
+| **§a** SPEC de Diseño | Bloqueaba el paso 1 | **RESUELTA** |
+| **§f** ¿El carrito se guarda en el servidor? | Abierta, con mi recomendación de no persistirlo | **RESUELTA, y contra mi recomendación.** La SPEC histórica §5.2 **sí declara** `sales.carts` y `sales.cart_items`, no replicadas, apoyándose en que ADR-017 pone «carrito y sesiones de compra» del lado exclusivo de WEB. Es decisión de Diseño y está bien fundada: **se adopta** |
+| **§b1** Código visible | Abierta | **Abierta, y ahora con dos fuentes que la piden.** La SPEC histórica la había planteado ella sola como **B-03**, y por el mismo motivo: «no se propone uno porque lo verá el cliente» |
+| **§b2** Cancelación y reactivación | Abierta | **Abierta.** Coincide con **B-05** en su parte no resuelta y con **D-03** |
+| **§c** Efectivo · **§d** acceso a M07 · **§e1–§e4** | Abiertas o de Integración | **Sin cambio** |
+
+**Un hallazgo del cotejo que conviene no perder:** Diseño marcó B-01 —quién es la autoridad de
+stock— como contradicción arquitectónica, y enumeró tres salidas posibles. **La salida real no era
+ninguna de las tres: fue quitar la reserva.** La pregunta estaba bien planteada y su respuesta no
+estaba entre las opciones visibles desde dentro.
 
 ---
 

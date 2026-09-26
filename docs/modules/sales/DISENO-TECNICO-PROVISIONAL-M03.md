@@ -4,6 +4,18 @@
 **Última verificación:** 26 de septiembre de 2026 — America/Lima
 **Commit verificado:** `711bfba7cf3be80baa146b44e79ddf7a633d695d`
 
+> ## SUPERADO el 26/09/2026 — ahora existe `SPEC.md`
+>
+> Este documento se escribió cuando no había SPEC. **Ya la hay**: `docs/modules/sales/SPEC.md`,
+> reconciliada con la SPEC histórica de Diseño del 23/09 y con las decisiones del 26/09. **Donde los
+> dos hablen del mismo punto, manda la SPEC.**
+>
+> Se conserva porque su §3 —el barrido de la ADR-018 sobre cada FK— y su §5 —el plan de pruebas—
+> pasaron a la SPEC y aquí queda el razonamiento largo que allí está resumido. **No se usa como
+> fuente:** se usa para ver de dónde salió algo.
+
+---
+
 > ## Esto NO es el SPEC de M03, y no puede usarse como tal
 >
 > El SPEC de M03 **no existe**. La SPEC detenida que redactó el chat de Diseño no está en

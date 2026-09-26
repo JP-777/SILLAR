@@ -1,4 +1,25 @@
-# Incidencia — la SPEC original de Diseño de M03 sigue sin llegar
+# Incidencia — la SPEC original de Diseño de M03 (CERRADA)
+
+> ## CERRADA el 26 de septiembre de 2026 — la SPEC llegó completa
+>
+> Llegó en una tercera entrega, **como archivo en la raíz del repositorio de trabajo**, avisada por
+> JP. Completa: 897 líneas, **con su §7 y su §8**, cerrando en B-05 y «ESTADO FINAL DEL DOCUMENTO:
+> `DETENIDO / REQUIERE RESPUESTA DE JP`». Diseño localizó y entregó las dos secciones que faltaban.
+>
+> Conservada íntegra en `SPEC-M03-ORIGINAL-DISENO-2026-09-23.md`, **idéntica byte a byte** a la
+> recibida (`sha256` `3efbed1f35252f3f5c1ea6838a08ca2ff70ea0e9557352f931c3bbba91a6f22e`), sin
+> cabecera ni aviso añadidos. La reconciliación con las decisiones del 26/09 está en `SPEC.md` §0.
+>
+> **Este documento no se borra.** Registra dos anuncios de entrega que no llegaron, y **la tercera
+> funcionó por la vía que el §7 de abajo pedía**: un archivo localizable, no un adjunto anunciado.
+> Un intento fallido sin registro es un intento que se repite.
+>
+> **Lo que el §5 dedujo, confirmado:** faltaban **dos** huecos y no uno. Un documento que salta de 7
+> a 9 tenía un §8, y en la versión completa el §8 son las nueve reglas de negocio R-01 a R-09 — la
+> sección de la que dependía todo lo demás.
+
+---
+
 
 **Creación:** 26 de septiembre de 2026 — America/Lima
 **Última verificación:** 26 de septiembre de 2026 — America/Lima
