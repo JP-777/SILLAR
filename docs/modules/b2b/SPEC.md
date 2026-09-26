@@ -3,8 +3,25 @@
 - **Código:** `b2b`
 - **Schema:** `b2b`
 - **Versión:** 1.0.0
-- **Estado:** Borrador
+- **Estado:** Borrador — **enmendado el 26/09/2026**, con cuatro tramos en suspenso (ver abajo)
 - **Fase:** MVP
+- **Creado:** 25/08/2026 (`d97cd02`) · **Última verificación:** 26/09/2026, America/Lima ·
+  **Commit base comprobado:** `711bfba7cf3be80baa146b44e79ddf7a633d695d` (`origin/main` ese día)
+
+> ### Enmiendas del 26/09/2026 — cómo leerlas
+>
+> El texto original **no se ha borrado ni reescrito**. Cada cambio va en un bloque
+> **«Enmienda 26/09»** junto al párrafo que afecta, y la tabla completa de qué se tocó y por qué está
+> en `MATRIZ-26-09-M07.md`. Lo que no se puede decidir desde aquí está en `ESCALADAS-M07.md`, y el
+> tramo afectado queda **en suspenso**: ni se cierra el modelo ni se implementa hasta resolverse.
+>
+> | Tramo en suspenso | Escalada |
+> |---|---|
+> | Dónde se registra la consulta de un producto «a consultar» | E1 |
+> | Si esa consulta exige sesión de cliente | E2 |
+> | A qué se ata una línea de cotización: producto o presentación | E3 |
+> | La foto de referencia del cliente (`reference_image_id`) | E4 |
+> | Desde dónde se abre una solicitud de volumen | E9 |
 
 ---
 
@@ -17,6 +34,17 @@ una **cotización** que el negocio manda por WhatsApp.
 Sin M07, eso vive en conversaciones sueltas de WhatsApp: **no queda registro de qué se cotizó ni a
 qué precio**, y cuando el cliente vuelve a preguntar en marzo por lo que se habló en enero, no hay
 dónde mirarlo.
+
+> **Enmienda 26/09 — frontera con M03, decisión ratificada por JP el 26/09/2026.** Texto idéntico
+> al de frente A, y no se parafrasea en ningún documento de M07:
+>
+> **«Un artículo con precio “a consultar” no puede incorporarse al carrito de M03 ni pagarse en
+> línea; su acción conduce a una solicitud de información gestionada por M07».**
+>
+> Lo que esto **no** decide todavía: en qué tabla y con qué forma vive esa solicitud (E1), y si
+> exige cuenta (E2). La SPEC distingue personalización —cambia la especificación— de volumen —la
+> cantidad cambia el precio—, y **una consulta simple sobre un producto sin precio publicado no es
+> automáticamente ninguna de las dos**.
 
 ## 2. Valor comercial
 
@@ -113,7 +141,7 @@ distinta de las que se ofrecen»*.
 | `product_slug` | `text` | no | | Instantánea del slug | No vacío | |
 | `pending_relink` | `boolean` | no | | El origen se perdió | Se marca al desactivarse el producto | `false` |
 | `description` | `text` | no | | Qué quiere exactamente | No vacío | |
-| `reference_image_id` | `uuid` | sí | FK → `core.media_assets` | Foto que trae el cliente | Opcional | `null` |
+| `reference_image_id` | `uuid` | sí | FK → `core.media_assets` | Foto que trae el cliente | Opcional · **en suspenso, E4** | `null` |
 | `quantity` | `integer` | sí | | Cuántos | Si viene, `> 0` | `null` |
 | `needed_by` | `date` | sí | | Para cuándo lo quiere | **Informativa**: no calcula ni bloquea nada | `null` |
 | `status` | `text` | no | | Estado de la bandeja | Regla 5 | `'recibida'` |
@@ -133,6 +161,11 @@ distinta de las que se ofrecen»*.
 > viva al catálogo **más** copia de lo que se leyó. Sin la copia, un producto dado de baja deja la
 > solicitud sin poder decir de qué hablaba, y el personal se queda con una descripción que empieza
 > por «pero con otro peluche» sin saber pero-con-otro-peluche **de qué**.
+
+> **Enmienda 26/09 — `reference_image_id` en suspenso (E4).** `IMediaStorage` devuelve siempre una
+> ruta pública bajo `/media/` (`backend/Sillar.Core.Contracts/IMediaStorage.cs:5-8`): la foto
+> personal de un cliente quedaría servida sin sesión a quien tenga la URL. No se construye la
+> columna ni la subida hasta que se decida.
 
 #### `b2b.institution_requests` — volumen al por mayor
 
@@ -252,6 +285,23 @@ cotizaron**.
 > distinción que M01 ya pagó por aprender: *«Cero no es lo mismo que nulo: cero es gratis»*
 > (`docs/modules/catalog/SPEC.md:206`, y su regla 5 en `:400`; en código,
 > `backend/Sillar.Modules.Catalog/Domain/Product.cs:61-63`).
+
+> **Enmienda 26/09 — `quote_lines` en suspenso por las presentaciones (E3).** Esta tabla se
+> escribió el 25/08 atada a `catalog.products` y a su «precio de lista». Pero en M01 **el precio es
+> de la presentación**: «El precio efectivo de una variante es `price_override ?? list_price`»
+> (`docs/modules/catalog/SPEC.md:400`), y `catalog.product_items` «es la unidad que se cuenta, se
+> cobra y se factura» (`:210`). El contrato que da ese precio es `ItemSnapshot.Price`, por
+> presentación (`backend/Sillar.Modules.Catalog.Contracts/ItemSnapshot.cs:22-34`).
+> `ProductPickerItem.Price` es el precio **de tarjeta** —una cota «Desde» cuando varían
+> (`ProductPickerItem.cs:181-186`)—, y comparar contra él haría caducar o no caducar por la
+> presentación equivocada.
+>
+> Segundo problema en la misma tabla: con un producto «a consultar», `catalog_price_at_quote`
+> saldría **nulo aunque la línea sí venga del catálogo**, y la regla 8 dice que nulo significa «no
+> viene del catálogo». Las dos cosas se resuelven juntas en E3.
+>
+> **La distinción refresca / congela no cambia:** `special_order_leads` refresca su instantánea;
+> la cotización congela el precio de su fecha. Las dos siguen con sus pruebas (§9).
 
 ### Relaciones internas
 
@@ -373,6 +423,18 @@ public sealed record QuoteLineDetail(
 > (`backend/Sillar.Core/Authentication/LockoutPolicy.cs`, citado por el SPEC de M04 en su `:187`).
 > Sin sesión no se llega a crear nada, así que no hay nada que limitar por IP.
 
+> **Enmienda 26/09 — el límite por cuenta no existe todavía; lo pone M07.** El precedente citado
+> es un **bloqueo de acceso tras intentos fallidos** (`backend/Sillar.Core/Authentication/LockoutPolicy.cs:3-17`),
+> no un límite de ritmo de escrituras. El razonamiento se sostiene —con toda escritura autenticada,
+> se limita contra la cuenta y no por IP—, pero **M07 tiene que implementar ese límite dentro de su
+> propio módulo**. El precedente más cercano es el de M04 para su contacto
+> (`backend/Sillar.Modules.Crm/Endpoints/ContactMessageEndpoints.cs:98`).
+>
+> **Enmienda 26/09 — la regla de sesión se mantiene.** El enlace «a consultar» desde el catálogo
+> podría abrirse sin sesión. Eso **no** convierte ningún endpoint en anónimo ni obliga a entrar por
+> decisión de este frente: se eleva como E2, alineado con la escalada §d de frente A, y **mientras
+> el líder no disponga otra cosa rige esta tabla: todos con sesión de cliente**.
+
 `GET /api/b2b/quotes/{quoteNumber}` responde **404 y no 403** cuando el número existe pero es de otro
 cliente: distinguirlos convertiría el endpoint en un detector de números de cotización válidos.
 
@@ -431,9 +493,56 @@ con su `group` y sus `items` al lado de `cmsRoutes`.
 `shared/ui`), cajón de detalle con notas internas, editor de líneas de cotización, y el botón de
 solicitud que M01 aloja en la ficha de producto.
 
+> **Enmienda 26/09 — dos huecos de entrada que esta sección no resolvía.**
+>
+> - **No existe hoy ninguna superficie en la ficha de producto** donde otro módulo pueda pintar un
+>   botón: los aportes entre módulos van por `frontend/src/platform/surfaceRegistry.tsx`, que se
+>   usa para portada y pie. El botón no puede escribirse dentro de `modules/catalog/` desde M07, ni
+>   M07 importar de M01. Se pide a Integración **por efecto** (petición C1 de `ESCALADAS-M07.md`).
+> - **La solicitud de volumen puede no tener producto** («100 cordones», §4), así que no tiene
+>   ficha desde la que abrirse, y esta sección dice «rutas públicas: ninguna». Las dos cosas no
+>   pueden ser ciertas a la vez: E9.
+
 **Qué desaparece de la web si el módulo se desactiva:** el grupo «Solicitudes» del menú, las tres
 rutas de administración **y el botón de solicitud de la ficha de producto de M01**. Sin ruta muerta y
 **sin hueco visual donde estaba el botón**.
+
+### 7.1 Pantallas para Diseño (paso 3.5) — añadido el 26/09
+
+La lista íntegra de pantallas que Diseño tiene que producir. **Cada una en sus cuatro estados**
+—vacío, con datos, cargando, conflicto— **y en claro y oscuro, móvil y escritorio.** Las marcadas
+«en suspenso» no se dibujan hasta que su escalada se resuelva: dibujarlas antes fijaría la
+respuesta por la vía de la pantalla.
+
+**Tienda (cliente):**
+
+| # | Pantalla | Dónde vive | Conflicto que tiene que tener dibujado | Estado |
+|---|---|---|---|---|
+| T1 | Acción de solicitud en la ficha de producto | Superficie de la ficha de M01 (C1) | Módulo inactivo: **sin hueco** | Dibujable |
+| T2 | Formulario de personalización | Abierto desde T1 | Sesión caducada · límite por cuenta alcanzado · descripción vacía | Dibujable |
+| T3 | Formulario de volumen | **Por decidir** (E9) | Cantidad no válida · institución vacía · límite | **En suspenso — E9** |
+| T4 | Confirmación de solicitud recibida | Tras T2 / T3 | — (su «conflicto» es T2/T3) | Dibujable |
+| T5 | Acción y formulario «a consultar» | Ficha de un producto con precio nulo | Sin sesión — **E2** | **En suspenso — E1, E2** |
+
+**Panel (personal), grupo «Solicitudes»:**
+
+| # | Pantalla | Ruta | Conflicto que tiene que tener dibujado |
+|---|---|---|---|
+| A1 | Bandeja de personalizadas, filtro por estado | `/admin/solicitudes/personalizadas` | Filtro sin resultados ≠ bandeja vacía |
+| A2 | Detalle de personalizada (cajón): notas internas, estado, **producto de origen dado de baja** (`pending_relink`) | ídem | Transición de estado no permitida |
+| A3 | Reenlace del producto de origen (buscador de M01) | desde A2 | Ningún producto coincide |
+| A4 | Bandeja de institucionales | `/admin/solicitudes/institucionales` | Igual que A1 |
+| A5 | Detalle de institucional (cajón) | ídem | Igual que A2 |
+| A6 | Bandeja de cotizaciones, filtro por estado | `/admin/solicitudes/cotizaciones` | Igual que A1 |
+| A7 | Crear cotización desde una solicitud | desde A2 / A5 | Solicitud cerrada o rechazada |
+| A8 | Editor de líneas en `borrador` (buscador de catálogo + líneas libres, dos precios) | desde A6 / A7 | **Líneas de catálogo en suspenso — E3** |
+| A9 | Detalle de cotización `enviada` / `aprobada` / `pagada` / `anulada`, **y caducada** con su motivo | desde A6 | Intento de editar una `enviada` |
+| A10 | Registrar pago (solo `admin`): método, referencia | desde A9 | Rol insuficiente · falta referencia |
+| A11 | Baja lógica (solo `admin`), para las tres entidades | desde A2 / A5 / A9 | Rol insuficiente |
+
+**Una pregunta abierta para Diseño, que no es de datos:** la SPEC dice que la cotización se manda
+«por WhatsApp» (§1, §10) pero no dice **qué** se manda —texto para copiar, imagen, PDF—. No se
+inventa aquí; se dibuja en A9 como acción «Preparar para enviar» y su forma la decide Diseño con JP.
 
 ---
 
@@ -455,6 +564,11 @@ rutas de administración **y el botón de solicitud de la ficha de producto de M
    | **No** | `special_order_leads` — personalización |
    | **Sí, en cantidad que cambia el precio** | `institution_requests` — volumen |
    | **Sí, en cantidad normal** | **No es una solicitud: es el carrito de M03** |
+
+   > **Enmienda 26/09.** Falta un cuarto renglón: **«Sí existe, pero su precio es “a consultar”»**.
+   > No es personalización (no cambia la especificación) ni volumen (la cantidad no es lo que
+   > mueve el precio: no lo hay). Por la decisión de JP del 26/09 no es carrito de M03. **A dónde
+   > va es E1**, y el renglón no se escribe hasta resolverla.
 
    El tercer renglón es el que importa y el que se olvida. **Una solicitud existe para que alguien
    cotice**; sin cotización que hacer, es un carrito con pasos de más y con una espera que el cliente
@@ -499,6 +613,9 @@ rutas de administración **y el botón de solicitud de la ficha de producto de M
      invalidar algo que el cliente pagó en febrero.
    - **No existe caducidad por tiempo.** Solo caduca por precio, y `invalidated_reason` dice cuál.
 
+   > **Enmienda 26/09 — alcance de «no caduca por tiempo».** Se refiere a las **cotizaciones de
+   > M07**. No dice nada de los pedidos de M03, cuyo plazo para pagar es suyo y distinto.
+
 8. **Nulo y cero no son lo mismo en ningún importe de este módulo.** `catalog_price_at_quote` nulo
    significa «esta línea no viene del catálogo»; cero significa «vale cero». M01 ya pagó por aprender
    la diferencia (`docs/modules/catalog/SPEC.md:206`).
@@ -532,6 +649,24 @@ Y los propios de M07:
 - [ ] **Una cotización en `enviada` no admite edición de líneas**
 - [ ] **Con M07 desactivado, la ficha de producto de M01 no deja hueco donde estaba el botón**
 
+Añadidos el 26/09 —los anteriores se conservan tal cual—:
+
+- [ ] **La instantánea de `special_order_leads` se refresca** con `ProductoActualizado` y **el
+      precio congelado de `quote_lines` no se toca**: las dos variedades, afirmadas por efecto en la
+      misma prueba
+- [ ] **Cero no es nulo**: una línea a precio de catálogo 0 caduca si pasa a 5; una línea sin
+      precio de catálogo no se evalúa. Pendiente de E3 en lo que toca a productos «a consultar»
+- [ ] **El límite por cuenta dispara**: la solicitud N+1 dentro de la ventana se rechaza con una
+      frase que dice cuándo se puede volver a intentar, y la N pasa
+- [ ] **Una consulta «a consultar» nunca llega al carrito de M03 ni al pago** — criterio compartido
+      con frente A; su mitad de M07 se escribe al resolver E1
+- [ ] **Instalar, desinstalar y reinstalar M07** deja plataforma, M01, M02 y M04 sin rutas muertas,
+      sin enlaces rotos y sin fallo de arranque
+- [ ] **Cada barrera nueva se ha visto disparar y dejar pasar**, y su prueba se ha roto a propósito
+      una vez (`ANTES-DE-EMPEZAR-UN-MODULO.md` §2)
+- [ ] **La auditoría nombra la fila**: «Cotización ‹su número visible› marcada como enviada», no «Cambio de
+      estado de cotización» (`ANTES-DE-EMPEZAR-UN-MODULO.md` §5)
+
 ---
 
 ## 10. Fuera de alcance
@@ -545,4 +680,5 @@ Y los propios de M07:
 | Convertir una cotización en pedido de M03 | **No pedido.** Si aparece, se especifica entonces |
 | Caducidad por tiempo | **No existe.** Solo se caduca por precio (regla 7) |
 | Más de dos orígenes cotizables | **No se decide ahora.** Hoy son dos columnas nulables excluyentes con un `CHECK`, y funciona. Si aparece un tercer origen, dos columnas no escalan — pero elegir hoy entre tabla polimórfica, herencia o discriminador **sin un tercer caso real sería inventar** (`CLAUDE.md:180`). Se replantea con el SPEC de `quotes` de fase 2 |
+| Pedir un producto «a consultar» al carrito o al pago de M03 | **Nunca** — decisión de JP del 26/09. La consulta es de M07 (E1) |
 | Integración con la API de WhatsApp | **Nada, y es una decisión, no una omisión.** Un trabajador manda la cotización desde su propio WhatsApp: sin API de terceros, sin credenciales que custodiar, y sin nada que se rompa el día que Meta cambie algo |
