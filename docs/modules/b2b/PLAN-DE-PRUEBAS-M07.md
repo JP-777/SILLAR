@@ -175,26 +175,36 @@ idempotentes» (`SPEC.md` §9), y el criterio de terminado de `CLAUDE.md`.
 | 5.7 | **Tras reinstalar, las claves foráneas de `b2b` hacia `crm` y `catalog` existen** | Ver el hallazgo de abajo |
 | 5.8 | Las restricciones de datos se prueban con `INSERT` real: `ck_quotes_origen` rechaza dos orígenes y ninguno | Relajar el `CHECK` |
 
-### Hallazgo: desinstalar M01 o M04 a mano se lleva en silencio las FK de M07
+### Hallazgo C6: riesgo futuro, no un fallo reproducido
 
-`database/modules/catalog/99_drop.sql:61` y `database/modules/crm/99_drop.sql:24` hacen
+> **Enmienda 26/09.** La primera redacción de este apartado hablaba de «la suite de hoy». No era
+> exacto: **M07 no está instalado en `main`**, así que el escenario todavía no puede darse. Lo que
+> sigue es lectura de código (**LEÍDO**) más una consecuencia **DEDUCIDA** que nadie ha provocado.
+
+**LEÍDO.** `database/modules/catalog/99_drop.sql:61` y `database/modules/crm/99_drop.sql:24` hacen
 `DROP SCHEMA ... CASCADE`. El script de catálogo lo avisa: CASCADE «se lleva también la clave
 foránea que ese módulo declaró hacia catalog… la tabla del otro módulo no desaparece, se queda con
-la columna huérfana» (`catalog/99_drop.sql:27-34`). **Pero su lista de módulos avisados no incluye
-`b2b`** (`:43`: `sales`, `inventory`, `pos`, `purchasing`).
+la columna huérfana» (`catalog/99_drop.sql:27-34`). Su lista de módulos avisados no incluye `b2b`
+(`:43`: `sales`, `inventory`, `pos`, `purchasing`). `e2e/tests/zz-instalacion.spec.ts:114`
+desinstala y reinstala el catálogo.
 
-Y hay una consecuencia que el aviso no cuenta: **al reinstalar M01, la migración de M07 no vuelve a
-correr** —ya figura en `b2b.__migrations`—, así que **las FK de M07 no vuelven**. La base queda
-coherente por dentro y sin integridad referencial, sin que nada falle.
+**DEDUCIDO, sin reproducir.** Cuando M07 exista con sus FK, desinstalar a mano M01 o M04 se las
+llevaría. Al reinstalar la dependencia, la migración de M07 **podría no volver a correr** —ya
+figuraría en `b2b.__migrations`—, y entonces sus FK no volverían. Si la suite sigue desinstalando
+el catálogo en la misma base, lo que corra después lo haría sin esas FK.
 
-Esto afecta a la suite de hoy: `zz-instalacion.spec.ts:114` desinstala y reinstala el catálogo.
-Con M07 instalado en la misma base, **todo lo que corra después lo hará sin las FK de M07**.
+**Distinción que importa:** esto es de la **desinstalación manual** con scripts. La **desactivación
+administrativa** ya se niega con dependientes duros activos (`e2e/tests/modulos.spec.ts:159`) y no
+borra nada (`zz-desmontaje.spec.ts:104`).
+
+**Primera provocación prevista:** la prueba 5.7, cuando exista la migración de M07. Hasta entonces
+no hay nada que reproducir.
 
 - **No es un defecto de M07 ni se arregla desde M07**: `catalog/99_drop.sql` es de M01,
   `crm/99_drop.sql` de M04, y `e2e/tests/zz-instalacion.spec.ts` es de plataforma.
 - **Petición C6 a Chat 2, por efecto:** que desinstalar a mano un módulo del que M07 depende duro
   **lo diga** nombrando a `b2b`, y que la suite no deje a M07 sin sus FK para las pruebas que corren
-  después. **La prueba 5.7 es la que lo vigila**, y tiene que correr **después** de cualquier
+  después. **La prueba 5.7 es la que lo vigilará**, y tendrá que correr **después** de cualquier
   desinstalación de M01 o M04 en la suite.
 - **Pregunta para la auditoría (no se decide aquí):** ¿la reinstalación de una dependencia dura
   debe restaurar las FK de sus dependientes, o desinstalar una dependencia dura con dependientes
