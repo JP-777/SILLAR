@@ -12,7 +12,7 @@ las tiene.**
 
 | § | Estado tras la ronda |
 |---|---|
-| **§a** SPEC de Diseño | **Pendiente de incorporación, y NO se reconstruye.** No está en el repositorio principal ni en `SILLAR-DESIGN`. Deja de ser una petición mía: su incorporación es un pendiente del proyecto |
+| **§a** SPEC de Diseño | **Anunciada como recuperada el 26/09 y NO recibida.** El adjunto `SPEC-M03-ORIGINAL-DISENO-2026-09-23.md` no llegó: comprobado por cinco vías en `INCIDENCIA-SPEC-DISENO-M03.md` §3. Sigue sin reconstruirse. **Y el colíder informa de que la versión recuperada está incompleta** —falta el final del §7 y, por la numeración, el §8 entero—, lo cual no he observado |
 | **§b1** Código visible `2026-0147` frente a `ADR-016` | **Abierta, expresamente.** «No inventes respuestas» |
 | **§b2** Cancelación y reactivación | **Abierta** |
 | **§c** Efectivo frente a Yape | **Abierta** |
@@ -22,9 +22,19 @@ las tiene.**
 | **§e3** Contrato de M04 para pedidos sin dirección | **Pasa a Chat 2** |
 | **§e4** Barrera de fronteras del frontend | **Pendiente de integración.** Cuando llegue a `main`: **merge normal, nunca rebase**, y se registra el SHA en `MATRIZ-DIFERENCIAS-M03.md` §2 |
 
-**Instrucción de esta ronda:** no se ejecutan tareas bloqueadas ni se piden autorizaciones. La
-entrega se conserva para la fase siguiente. Por eso esta cabecera **no añade ninguna entrada
+**Instrucción de la ronda del 26/09:** no se ejecutan tareas bloqueadas ni se piden autorizaciones.
+La entrega se conserva para la fase siguiente. Por eso esta cabecera **no añade ninguna entrada
 nueva**: solo registra dueño y estado, que es lo que se pierde si no se escribe.
+
+**Segunda ronda del 26/09 — la SPEC anunciada y no recibida.** No cambia ninguna entrada de dueño.
+Cambia una sola cosa, y hacia atrás: **§a pasa de «pendiente de incorporación» a «anunciada como
+recuperada, y no llegada»**, que no es lo mismo y no se debe confundir. Lo primero es una pieza que
+falta; lo segundo es una pieza que existe, que alguien ha leído, y que **está a un mensaje de
+distancia**. El detalle y la forma en que tiene que llegar están en
+`INCIDENCIA-SPEC-DISENO-M03.md`.
+
+**El contrato de M04 para pedidos sin dirección (§e3) está escalado al líder técnico**, por encima
+de Chat 2.
 
 ---
 
@@ -223,7 +233,7 @@ efecto, no el cambio.**
 - **Y hay precedente escrito de que esto se esperaba:** `docs/modules/crm/SPEC.md:328` — «**Este
   contrato no está cerrado hasta que M03 lo estrene.** En M01, mirarlo desde fuera dio dos
   carencias; **usarlo dio cuatro más**… Un contrato no se cierra: se estrena.» Esta es la primera.
-- **Dueño: Chat 2, desde el 26/09/2026.** M04 está en `main` y **aprobado e integrado**; el cambio
+- **Dueño: escalado al líder técnico**, por encima de Chat 2 (26/09/2026, segunda ronda). M04 está en `main` y **aprobado e integrado**; el cambio
   es de `Contracts`, y lo decide Integración. Lo que M03 necesita observar sigue siendo lo de
   arriba: congelar al cliente sin pasar una dirección.
 
