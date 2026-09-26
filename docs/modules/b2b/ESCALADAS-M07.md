@@ -1,6 +1,6 @@
 # Escaladas de M07 — cola abierta
 
-Creado: 26/09/2026, America/Lima · Última verificación: 26/09/2026 ·
+Creado: 26/09/2026, America/Lima · Última verificación: 26/09/2026 (C6 añadida el mismo día) ·
 Commit base comprobado: `711bfba7cf3be80baa146b44e79ddf7a633d695d`.
 
 Lo que frente B **no decide solo**, con las opciones vistas y lo que sigue mientras tanto. Cada
@@ -121,3 +121,9 @@ Numeración estable: una entrada resuelta se tacha y conserva su número.
 - **C5 — La barrera de fronteras en `main`.** El paso 2 espera a ver en `main`
   `frontend/scripts/fronteras-frontend.mjs`, `frontend/tests/fronterasFrontend.test.mjs` y su
   llamada en la etapa 1 de `scripts/verificar.mjs`. En `711bfba` no existe ninguna de las tres.
+- **C6 — Desinstalar a mano M01 o M04 deja a M07 sin sus FK, y no vuelven al reinstalar.**
+  `database/modules/catalog/99_drop.sql:61` y `database/modules/crm/99_drop.sql:24` usan `CASCADE`;
+  el aviso de catálogo no nombra a `b2b` (`catalog/99_drop.sql:43`), y la migración de M07 no se
+  repite al reinstalar la dependencia. `e2e/tests/zz-instalacion.spec.ts:114` hace justo esa
+  desinstalación. **Efecto pedido:** que el aviso nombre a `b2b` y que ninguna prueba posterior
+  corra con M07 sin sus FK. Detalle y pregunta de plataforma en `PLAN-DE-PRUEBAS-M07.md` §5.
