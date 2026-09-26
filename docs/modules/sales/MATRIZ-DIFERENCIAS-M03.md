@@ -29,12 +29,22 @@ comprobó abriendo el archivo en `711bfba`.
 | **No existe `docs/modules/sales/SPEC.md`**, ni en el árbol ni en ninguna rama del repositorio | `git log --all -- docs/modules/sales/SPEC.md` → vacío; `ls docs/modules/sales/` | OBSERVADO |
 | `database/modules/sales/` contiene solo un `.gitkeep` | `ls -la database/modules/sales/` | OBSERVADO |
 | **No existe `backend/Sillar.Modules.Sales`** ni `frontend/src/modules/sales` | `ls backend/`, `ls frontend/src/modules/` | OBSERVADO |
-| M04 **está en `main`**: `backend/Sillar.Modules.Crm` existe en `711bfba`. Su **cierre** está propuesto, no aprobado | `ls backend/`; `docs/ROADMAP_MODULAR.md:67` | OBSERVADO |
+| M04 **está en `main` y está aprobado e integrado** | `ls backend/` — `backend/Sillar.Modules.Crm` existe en `711bfba` (OBSERVADO). **La aprobación la confirma el colíder el 26/09/2026**, y no el repositorio: `docs/ROADMAP_MODULAR.md:67` conserva el texto anterior, «cierre propuesto… pendiente de aprobación y fusión». Ese documento es de Integración y **no se edita desde aquí** | OBSERVADO + recibido del colíder |
 
 **Consecuencia de la última fila.** La regla 5 de `docs/DIVISION-DE-TRABAJO.md:71` —«un módulo no
-arranca hasta que aquello de lo que depende duro esté en `main`»— **está satisfecha**. Lo que no
-está cerrado es la *aprobación* de M04, y su propio SPEC advierte de por qué eso importa aquí:
-«**Este contrato no está cerrado hasta que M03 lo estrene**» (`docs/modules/crm/SPEC.md:328`).
+arranca hasta que aquello de lo que depende duro esté en `main`»— **está satisfecha**, y con la
+aprobación del 26/09 lo está sin reserva.
+
+> **Lo que no cambia con la aprobación:** el SPEC de M04 sigue diciendo «**Este contrato no está
+> cerrado hasta que M03 lo estrene**» (`docs/modules/crm/SPEC.md:328`). Aprobar el módulo no
+> estrena su contrato; eso lo hace el primer consumidor, y es M03. La carencia que el estreno ya
+> destapó —congelar un cliente sin dirección— está en `ESCALADAS-M03.md` §e3, **ahora en manos de
+> Chat 2**.
+
+> **Aviso de vigencia.** La fila de M04 de `ROADMAP_MODULAR.md:67` y la aprobación del colíder
+> **dicen cosas distintas hoy**. Quien lea este documento más adelante y quiera comprobarlo: la
+> aprobación no está escrita en el repositorio, así que abrir el ROADMAP **no la confirma ni la
+> desmiente**. Se corrige cuando Integración toque ese documento.
 
 ---
 

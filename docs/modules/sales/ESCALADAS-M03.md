@@ -4,6 +4,30 @@
 **Última verificación:** 26 de septiembre de 2026 — America/Lima
 **Commit verificado:** `711bfba7cf3be80baa146b44e79ddf7a633d695d`
 
+## Estado de la cola tras la ronda del 26/09/2026
+
+Respuesta del colíder, vía JP, sobre el commit `617bb28`: **entrega preparatoria aceptada.** Esto
+es lo que cambió de dueño o de estado. Las entradas conservan su texto: **lo que cambia es quién
+las tiene.**
+
+| § | Estado tras la ronda |
+|---|---|
+| **§a** SPEC de Diseño | **Pendiente de incorporación, y NO se reconstruye.** No está en el repositorio principal ni en `SILLAR-DESIGN`. Deja de ser una petición mía: su incorporación es un pendiente del proyecto |
+| **§b1** Código visible `2026-0147` frente a `ADR-016` | **Abierta, expresamente.** «No inventes respuestas» |
+| **§b2** Cancelación y reactivación | **Abierta** |
+| **§c** Efectivo frente a Yape | **Abierta** |
+| **§d** Navegación entre módulos para «a consultar» | **Pasa a Chat 2.** La *modalidad de acceso* —si «a consultar» exige cuenta— sigue siendo decisión comercial abierta |
+| **§e1** `ARQUITECTURA_MODULAR.md:213` apunta al producto | Documento compartido: **de Chat 2** desde el principio |
+| **§e2** `order_statuses` como tabla replicada | **Pasa a Chat 2** |
+| **§e3** Contrato de M04 para pedidos sin dirección | **Pasa a Chat 2** |
+| **§e4** Barrera de fronteras del frontend | **Pendiente de integración.** Cuando llegue a `main`: **merge normal, nunca rebase**, y se registra el SHA en `MATRIZ-DIFERENCIAS-M03.md` §2 |
+
+**Instrucción de esta ronda:** no se ejecutan tareas bloqueadas ni se piden autorizaciones. La
+entrega se conserva para la fase siguiente. Por eso esta cabecera **no añade ninguna entrada
+nueva**: solo registra dueño y estado, que es lo que se pierde si no se escribe.
+
+---
+
 Ninguna entrada de esta cola detiene a las demás. La columna «qué sigue» dice qué trabajo continúa
 mientras la entrada espera, porque **una espera no es una parada**.
 
@@ -199,8 +223,9 @@ efecto, no el cambio.**
 - **Y hay precedente escrito de que esto se esperaba:** `docs/modules/crm/SPEC.md:328` — «**Este
   contrato no está cerrado hasta que M03 lo estrene.** En M01, mirarlo desde fuera dio dos
   carencias; **usarlo dio cuatro más**… Un contrato no se cierra: se estrena.» Esta es la primera.
-- **Dueño:** M04 está en `main` y cerrado a falta de aprobación; el cambio es de `Contracts`.
-  **Lo decide Integración**, no yo.
+- **Dueño: Chat 2, desde el 26/09/2026.** M04 está en `main` y **aprobado e integrado**; el cambio
+  es de `Contracts`, y lo decide Integración. Lo que M03 necesita observar sigue siendo lo de
+  arriba: congelar al cliente sin pasar una dirección.
 
 ### §e4 · La barrera de fronteras del frontend
 
