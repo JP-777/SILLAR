@@ -1,0 +1,23 @@
+M04 — puerta 1/2
+SHA del candidato: 9f9015b4186a55f9f305222b320477e79aea7028
+Árbol Git: c099ca88abcf36c561e8f4cc69db18ac35988b8b
+Inicio America/Lima: 2026-09-25 23:59:23 -0500
+Fin America/Lima: 2026-09-26 00:24:29 -0500
+Código de salida: 0
+Resultado: 6/6 PASS
+
+Extracto del registro original:
+[1/6] tipos del frontend...
+[2/6] tipos del arnés e2e...
+[3/6] compilación del backend...
+[4/6] migraciones backend (BD efímera)...
+[5/6] pruebas del backend...
+[6/6] suite e2e...
+TODO EN VERDE — las 6 etapas pasaron.
+
+Original completo: /var/tmp/sillar-m04-doble-puerta.amxXnc84/PUERTA-1.log
+SHA-256 del original: 7e944f6afd537c99e3225e974d6d466d226081a40cb4cd69988b3795768a2050
+
+El original completo se conserva fuera del
+repositorio; este archivo es un extracto
+verificado, no una copia literal del original.

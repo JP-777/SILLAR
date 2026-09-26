@@ -389,3 +389,48 @@ contiene esta documentación y la infraestructura de Mailpit.
 
 La marca de cierre incluida en este candidato queda sometida a esas dos puertas. Si alguna
 falla, el candidato no se publica como propuesta de cierre ni se fusiona a `main`.
+
+
+---
+
+## Certificación final del candidato 9f9015b — 26 de septiembre de 2026
+
+**SHA del candidato certificado:**
+`9f9015b4186a55f9f305222b320477e79aea7028`
+
+**Árbol Git invariable:** `c099ca88abcf36c561e8f4cc69db18ac35988b8b`
+
+Se ejecutó `node scripts/verificar.mjs` dos veces
+consecutivas, sin modificar el árbol ni cambiar el
+commit entre ejecuciones.
+
+| Puerta | Inicio (America/Lima) | Fin (America/Lima) | Resultado |
+|---|---|---|---|
+| 1 | 2026-09-25 23:59:23 -0500 | 2026-09-26 00:24:29 -0500 | 6/6 PASS; RC=0 |
+| 2 | 2026-09-26 00:24:29 -0500 | 2026-09-26 00:51:35 -0500 | 6/6 PASS; RC=0 |
+
+**Criterio 19:** PASS. Las dos puertas aprobaron
+consecutivamente sobre el mismo SHA y árbol.
+
+**Criterios 1–18:** conservan la evidencia ya registrada,
+incluida la verificación mediante Mailpit, las restricciones
+de correo de la base y las comprobaciones de seguridad.
+
+### Registros
+
+- Puerta 1: `evidencias/M04-PUERTA-1-20260926.txt`. SHA-256 del original íntegro: `7e944f6afd537c99e3225e974d6d466d226081a40cb4cd69988b3795768a2050`.
+- Puerta 2: `evidencias/M04-PUERTA-2-20260926.txt`. SHA-256 del original íntegro: `f555105fcdf66f5935ee05d99f386ce1846d3f199b9452a317fc8b99c331ac2a`.
+
+### Alcance de la certificación
+
+Las dos ejecuciones certifican el candidato indicado.
+El commit posterior, que incorpora estos registros,
+la tabla y la marca del ROADMAP, es documental y
+tendrá necesariamente otro SHA.
+
+No se atribuyen al commit documental ejecuciones
+que se realizaron sobre el candidato anterior.
+
+**Decisión:** propuesta de cierre de M04 pendiente
+de revisión del colíder y autorización de JP.
+No se ha fusionado a `main`.
