@@ -2001,7 +2001,12 @@ for (const senal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
  *      También milisegundos.
  *   3. `test:frontend-hygiene` — barreras de presentación y nomenclatura
  *      que protegen H12–H15 y H18–H20.
- *   4. `typecheck` — `tsc --build --force` sobre todo `src`.
+ *   4. `test:fronteras` — las fronteras entre módulos del frontend: ningún
+ *      módulo importa de otro, `shared/` no importa de fuera, y solo los
+ *      puntos de composición enumerados llegan a un módulo
+ *      (`frontend/scripts/fronteras-frontend.mjs`). Lee el árbol, sin
+ *      compilar: menos de dos segundos.
+ *   5. `typecheck` — `tsc --build --force` sobre todo `src`.
  *
  * **Por qué la focal va primero.** Es la más barata y la más específica: si el
  * vocabulario de auditoría se rompió, la etapa 1 lo dice en el primer segundo
@@ -2033,6 +2038,9 @@ function correrPasosDelFrontend() {
     ['seguidor de conexión en modo instalación', 'test:connection-setup'],
     ['descripción de fallos de arranque e instalación', 'test:startup-errors'],
     ['higiene del frontend', 'test:frontend-hygiene'],
+    // ADR-005: un módulo nunca importa de otro. Antes de los tipos porque no
+    // compila nada, y porque un import cruzado compila perfectamente.
+    ['fronteras entre módulos', 'test:fronteras'],
     ['tipos', 'typecheck'],
   ];
 
