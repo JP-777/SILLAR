@@ -121,7 +121,8 @@ Numeración estable: una entrada resuelta se tacha y conserva su número.
 - **C5 — La barrera de fronteras en `main`.** El paso 2 espera a ver en `main`
   `frontend/scripts/fronteras-frontend.mjs`, `frontend/tests/fronterasFrontend.test.mjs` y su
   llamada en la etapa 1 de `scripts/verificar.mjs`. En `711bfba` no existe ninguna de las tres.
-- **C6 — Desinstalar a mano M01 o M04 deja a M07 sin sus FK, y no vuelven al reinstalar.**
+- **C6 — Riesgo futuro, no reproducido: desinstalar a mano M01 o M04 dejaría a M07 sin sus FK, y podrían no volver al reinstalar.**
+  M07 no está instalado en `main`; la consecuencia es deducida. Solo desinstalación manual, no la desactivación administrativa.
   `database/modules/catalog/99_drop.sql:61` y `database/modules/crm/99_drop.sql:24` usan `CASCADE`;
   el aviso de catálogo no nombra a `b2b` (`catalog/99_drop.sql:43`), y la migración de M07 no se
   repite al reinstalar la dependencia. `e2e/tests/zz-instalacion.spec.ts:114` hace justo esa
