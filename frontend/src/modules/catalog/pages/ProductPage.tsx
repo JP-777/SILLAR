@@ -4,7 +4,8 @@ import { useDocumentTitle } from '../../../shared/a11y/useDocumentTitle';
 import { useDelayedFlag } from '../../../shared/hooks/useDelayedFlag';
 import { useResource } from '../../../shared/hooks/useResource';
 import { EmptyState, Spinner } from '../../../shared/ui';
-import { NoPhoto, Price } from '../components/ProductCard';
+import { NoPhoto } from '../../../shared/ui/NoPhoto';
+import { Price } from '../components/ProductCard';
 import { formatPrice, publicCatalog, variantPriceNote } from '../services/publicCatalog';
 import '../components/tienda.css';
 
