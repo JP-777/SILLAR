@@ -92,10 +92,22 @@ hay tiempo *después*.
 - **Fecha:** 26/09/2026.
 - **El conflicto, con las dos citas:**
   - El encargo §5 fija el **ejemplo obligatorio `2026-0147`**: año y correlativo.
-  - `ADR-016:66` establece que los códigos visibles son «campos aparte, legibles y **con su propia
-    serie por nodo**», y su tabla de `:70-79` marca «Lleva la sucursal» → **«Sí, delante»**. El
-    ejemplo de la propia ADR es `V-03-000459`. `CLAUDE.md` lo repite en sus convenciones de base
-    de datos: «llevan la serie de su nodo delante».
+  - La **regla 2** de la ADR-016 (`:66`) establece que los códigos visibles son «campos aparte,
+    legibles y **con su propia serie por nodo**», y su tabla de `:70-79` marca «Lleva la sucursal»
+    → **«Sí, delante»**. El ejemplo de la propia ADR es `V-03-000459`. `CLAUDE.md` lo repite en sus
+    convenciones de base de datos: «llevan la serie de su nodo delante».
+- **El conflicto es estrecho, y conviene decir con qué NO lo hay.** La **decisión** de la ADR-016
+  (`:45`) —`uuid` v7 en las replicadas, `integer IDENTITY` en las que no— y sus **reglas 1, 3 y 4**
+  están **adoptadas sin reserva** por esta SPEC, igual que la primera mitad de la regla 2 (ningún
+  `uuid` se muestra). **Lo único abierto es la segunda mitad de la regla 2:** si el código visible
+  lleva serie de nodo. El desglose está en `SPEC.md` §5.1.
+- **Requiere ratificación expresa de JP**, no interpretación mía: `2026-0147` es un ejemplo
+  obligatorio del encargo, y lo que falta es que alguien diga si desplaza a la regla 2 a sabiendas.
+- **Y arrastra una sub-pregunta con precio:** si la serie debe además ser **continua**. Unicidad y
+  continuidad son propiedades distintas, y la segunda no está ratificada; su desglose —rollback,
+  concurrencia y reinicio anual— está en `SPEC.md` §5.4. **El reinicio anual que `2026-0147` implica
+  choca a su vez con la misma tabla `:77`**, que admite renumerar «mientras no salte **ni
+  reinicie**».
 - **Por qué es caro:** `ADR-016` eligió el prefijo de nodo precisamente para no tener que
   renumerar nunca, y avisa de que pasar de esa decisión «no es migrar: es reconstruir». Un código
   ya dictado a un cliente no se puede reformatear, y `2026-0147` no reserva sitio para el nodo.
@@ -194,10 +206,16 @@ enlace a una pantalla de otro. Los aportes entre módulos van por
 `frontend/src/platform/surfaceRegistry.tsx`, que resuelve *quién ha pintado algo en una superficie*
 —portada y pie— y no *a dónde llevo al usuario*. Las rutas se componen en
 `frontend/src/app/routes.tsx:9-12` importando cada módulo por su ruta, y ese archivo es de
-Integración. Escribir `/solicitudes/...` a mano dentro de M03 sería justo la importación directa
-que el encargo §3 prohíbe. **Efecto observable que pido a Chat 2:** que M03 pueda obtener el
+Integración. Escribir a mano la ruta de una pantalla de M07 dentro de M03 sería justo la dependencia
+directa que el encargo §3 prohíbe, **y esta SPEC no nombra ninguna**: no se presupone ni ruta, ni
+endpoint, ni modalidad de acceso. **Efecto observable que pido a Chat 2:** que M03 pueda obtener el
 destino de «pedir información» sin conocer `modules/b2b/`, y que cuando M07 no está activo ese
 destino no exista y la acción no se pinte.
+
+> **Nomenclatura que no es mía.** El colíder sitúa esta consulta «pendiente de **E1 y E2**». Esos dos
+> identificadores **no aparecen en ninguno de mis documentos ni en el repositorio**: los busqué. Serán
+> de la cola de frente B o de la del propio colíder. **No presupongo qué contienen** y no los uso como
+> si los hubiera leído; quedan anotados aquí para poder emparejarlos cuando lleguen.
 
 ---
 

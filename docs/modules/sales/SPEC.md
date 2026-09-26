@@ -56,7 +56,7 @@ hoy aprobado e integrado**, y ese criterio está satisfecho (§11 de este docume
 |---|---|---|---|
 | **B-01** | ¿Quién es la autoridad de stock que reserva y libera de forma atómica? | **DISUELTA** — no respondida: **desaparecida** | 26/09 §1: no hay reserva de existencias en v1. Sin operación de reserva no hay autoridad que designar. Con ella se disuelve también **D-01** |
 | **B-02** | ¿Qué constituye exactamente el total que paga el cliente? | **RESUELTA** | 26/09 §3: solo recojo, sin entrega ni tarifa. 26/09 §4: «a consultar» fuera del carrito. **Total = suma de las líneas.** Con ella se resuelve **D-02** |
-| **B-03** | ¿Qué formato ve una persona como código del pedido? | **RESPONDIDA Y EN CONFLICTO** | 26/09 §5 fija `2026-0147`. **Choca con `ADR-016:66-79`**, que exige la serie del nodo delante. **Abierta** — §0.3 (a) |
+| **B-03** | ¿Qué formato ve una persona como código del pedido? | **RESPONDIDA Y EN CONFLICTO** | 26/09 §5 fija `2026-0147`. **Choca con la regla 2 de `ADR-016` (`:66`)**, que exige la serie del nodo delante. **Abierta** — §0.3 (a) y §5.4 |
 | **B-04** | ¿Qué estados ve el cliente y cuáles maneja el personal? | **RESUELTA** | 26/09 §6: **siete estados, idénticos para cliente y personal.** Con ella se resuelve **D-04** |
 | **B-05** | ¿Qué pasa si el Yape llega después de vencer? | **RESUELTA EN SU PARTE CRÍTICA** | 26/09 §8: el personal **siempre** puede registrar el pago; con mercancía se reactiva, sin ella queda aviso operativo visible. **Sigue abierto a qué estado vuelve** — §0.3 (b). **D-03** queda así |
 
@@ -71,10 +71,10 @@ hoy aprobado e integrado**, y ese criterio está satisfecho (§11 de este docume
 
 | | Qué falta | Dónde |
 |---|---|---|
-| **(a)** | **Formato del código visible.** `2026-0147` frente a la serie de nodo de `ADR-016`. **No reversible**: un código ya dictado no se reformatea | `ESCALADAS-M03.md` §b1 |
+| **(a)** | **Formato del código visible.** `2026-0147` frente a la serie de nodo de la **regla 2** de `ADR-016`. **Requiere ratificación expresa de JP** — no se decide aquí. **No reversible**: un código ya dictado no se reformatea. Incluye la sub-pregunta de la continuidad (§5.4) | `ESCALADAS-M03.md` §b1 |
 | **(b)** | **Cancelación y reactivación.** A qué estado vuelve un Vencido pagado; quién cancela y desde dónde; si exige motivo; si se cancela un Entregado | `ESCALADAS-M03.md` §b2 |
 | **(c)** | **Efectivo.** `PENDIENTES.md:487-488` dice «Yape **y efectivo**»; el 26/09 nombra solo Yape y no lo resuelve | `ESCALADAS-M03.md` §c |
-| **(d)** | **Modalidad de acceso a «a consultar».** M07 da 401 sin sesión de cliente | `ESCALADAS-M03.md` §d |
+| **(d)** | **La frontera con M07: la vía y la modalidad de acceso.** Hoy su SPEC exige sesión de cliente en sus cuatro endpoints públicos, pero **eso es el estado de su SPEC, no una modalidad ratificada** para «a consultar». **No se presupone ningún endpoint ni ningún acceso aprobado** | `ESCALADAS-M03.md` §d |
 
 **Condiciones técnicas — no de JP, pero bloquean igual.**
 
@@ -192,7 +192,9 @@ Negativo y positivo: dentro del plazo el pedido no vence; pasado el plazo pasa a
 después: **el pedido sigue existiendo y no está cancelado**.
 
 **Y una tercera comprobación que no es de comportamiento sino de lenguaje:** ningún texto visible
-—estado, aviso, correo— dice «reserva», «reservado», «apartado» ni «garantizado» (R-13).
+—estado, aviso, correo— **afirma** una retención. **Las negaciones correctas sí pasan**: «ya no está
+garantizado» es lo que esta SPEC manda decir. La tabla de las dos direcciones está en R-13, y esta
+barrera **se provoca en ambas**.
 
 ### Suprimida · «Stock»
 
@@ -248,7 +250,7 @@ aparecieron.)*
 | CORE | Dura / plataforma | Capacidades, auditoría, configuración, infraestructura modular | SILLAR no funciona como plataforma |
 | **M01 Catálogo** | **Dura** | `ItemId`, snapshot comercial, precio efectivo, estado del item | M03 no puede vender |
 | **M04 Clientes** | **Dura** | Identidad de sesión de cliente, snapshot del cliente, correo verificado | M03 no puede aceptar pedidos |
-| M07 B2B | **Blanda** | Destino de «pedir información» para los productos «a consultar» | **Degrada sin fallar:** la acción no se pinta. Nunca una excepción |
+| M07 B2B | **Blanda** | Un destino para «pedir información» en los productos «a consultar». **Cuál, y con qué acceso, no está decidido** — (d) | **Degrada sin fallar:** la acción no se pinta. Nunca una excepción porque falte |
 
 **OBSERVADO:** `docs/ARQUITECTURA_MODULAR.md:58` declara M01 y M04 duras. La dependencia sobre M04
 pasó a dura el 21/08 y por eso **`sales_crm.sql` ya no está en la lista de integraciones**
@@ -272,7 +274,23 @@ primera migración, que es cuando sale barato.
 
 **Pedido y sus líneas: sí.** PK `uuid` v7 generada por la aplicación, `origin_node`, `row_version`,
 y las FK entre replicadas también `uuid`. **OBSERVADO:** `ADR-016:54` enumera «Ventas y sus líneas»
-entre las replicables. Las cuatro columnas las rellena el `DbContext` al guardar, no quien escribe
+entre las replicables.
+
+> ### La ADR-016 tiene dos cosas dentro, y solo una está en conflicto
+>
+> Conviene separarlas explícitamente, porque tener una disputa abierta «con la ADR-016» invita a
+> creer que algo de su decisión principal está en duda, **y no lo está.**
+>
+> | De la ADR-016 | Qué dice | M03 |
+> |---|---|---|
+> | **Decisión** (`:45`) | Las tablas que se replican usan `uuid` v7 como PK; las que no, `integer IDENTITY` | **Adoptada sin reserva.** `orders` y `order_lines` con `uuid` v7; `carts`, `cart_items` y el contador con `integer IDENTITY` |
+> | **Regla 1** (`:65`) | El identificador lo genera **la aplicación**, no la base | **Adoptada sin reserva** |
+> | **Regla 2** (`:66`, con su tabla `:70-79`) | Ningún identificador se muestra al usuario, y los códigos visibles son campos aparte «**con su propia serie por nodo**» | **Su primera mitad, adoptada sin reserva** — ningún `uuid` se presenta. **Su segunda mitad es el conflicto:** `2026-0147` no lleva serie de nodo → §0.3 (a) |
+> | **Regla 3** (`:80`) | Las FK entre replicadas también `uuid`; y una replicada no referencia a una que no lo es (ADR-018) | **Adoptada sin reserva.** El barrido está en §5.2 |
+> | **Regla 4** (`:82`) | Las replicadas llevan nodo de origen y marca de versión | **Adoptada sin reserva** |
+>
+> **Es decir: cuatro de las cinco entradas están adoptadas enteras, y de la quinta solo la segunda
+> mitad está abierta.** El conflicto es estrecho y está localizado; no toca la clave primaria. Las cuatro columnas las rellena el `DbContext` al guardar, no quien escribe
 la entidad (`backend/Sillar.Shared/Replication/IReplicatedEntity.cs`).
 
 **Carrito y sesión de compra: no.** **OBSERVADO:** ADR-017 los coloca en el lado exclusivo de WEB.
@@ -349,12 +367,56 @@ su motivo escrito: «Fundirlos obliga a rehacer la máquina de estados **con ped
 Una tabla contador por año, **local al nodo**, `integer GENERATED ALWAYS AS IDENTITY`, **no
 replicada**. El número se toma con `UPDATE … RETURNING` en la misma transacción que inserta el
 pedido. **Ninguna tabla replicada la referencia:** el pedido guarda el código como `text`, no una FK.
-El `UNIQUE` del código **es la barrera, no el adorno**: el contador evita la colisión, el índice la
-hace imposible.
 
 *El formato sigue abierto — (a). El mecanismo no depende de él.*
 
-## 5.4 Colaciones
+## 5.4 Unicidad y continuidad son dos cosas · y solo una está ratificada
+
+**`UNIQUE` demuestra unicidad. No demuestra continuidad.** Son propiedades distintas, con pruebas
+distintas y precios distintos, y confundirlas hace creer que un índice garantiza algo que no mira.
+
+| | Qué es | Cómo se demuestra | ¿Ratificada? |
+|---|---|---|---|
+| **Unicidad** | No hay dos pedidos con el mismo código | `UNIQUE` sobre la columna, más N creaciones concurrentes sin colisión | **Sí.** 26/09 §5: «la generación debe prevenir duplicados/concurrencia» |
+| **Continuidad** | La serie no salta ningún número | Solo observando la serie completa en los tres casos de abajo | **NO.** Nadie la ha pedido para M03 |
+
+**El `UNIQUE` es la barrera de la unicidad, y solo de ella.** Un índice único deja pasar
+`2026-0001, 2026-0002, 2026-0007` sin decir una palabra, porque los tres son distintos. Si la
+continuidad hace falta, la da **el mecanismo**, no el índice.
+
+### Los tres casos donde la continuidad se gana o se pierde
+
+**1 · Rollback.** Aquí está la diferencia real entre los dos mecanismos posibles, y es la que decide:
+
+| Mecanismo | Si la transacción del pedido se deshace |
+|---|---|
+| **Contador en una fila**, con `UPDATE … RETURNING` dentro de la misma transacción | El incremento **se deshace con ella**. No queda hueco |
+| **Secuencia de PostgreSQL** (`nextval`) | El número **se consume igual**. Queda hueco, y es por diseño: las secuencias son deliberadamente no transaccionales para no serializar a quien las usa |
+
+**2 · Concurrencia.** La continuidad del contador **no es gratis**: la fila se bloquea, y el segundo
+pedido simultáneo **espera** a que el primero confirme o deshaga. Eso serializa la creación de
+pedidos. A escala de una tienda es irrelevante; **es la contrapartida que hay que decir en voz
+alta**, porque la secuencia no la tiene.
+
+**3 · Reinicio anual.** `2026-0147` implica que el correlativo **reinicia cada año**. Eso obliga a
+crear la fila del año nuevo de forma atómica —el primer pedido del 1 de enero puede llegar dos
+veces a la vez—, y deja una pregunta que no es técnica: la tabla de la **regla 2** de `ADR-016`
+(`:77`) dice de los códigos visibles «se puede renumerar: **sí, mientras no salte ni reinicie**».
+Una serie anual **reinicia por definición**. No se resuelve aquí.
+
+### Por qué esto es una sub-pregunta de (a) y no una decisión mía
+
+La continuidad no es un requisito comercial ratificado, **y tiene precio**. Si JP **no** la exige,
+la secuencia sirve y desaparece la serialización. Si **sí** la exige, el contador es el camino y la
+serialización es su coste. **Elegir por mi cuenta sería añadir un requisito comercial que nadie pidió
+o renunciar a uno que quizá importe** — y en un negocio con comprobantes, «que la numeración no
+salte» a veces no es estética.
+
+**Mientras no se ratifique:** la SPEC exige **unicidad** y describe los dos mecanismos. **No exige
+continuidad**, y §11 no la prueba. El mecanismo se elige al responder (a), en la misma decisión que
+fija el formato — que es donde le corresponde, porque el reinicio anual es parte del formato.
+
+## 5.5 Colaciones
 
 *(Histórico §5.3, sin cambio de criterio.)* **No se introduce una colación no determinista por
 costumbre.** Se decide columna por columna según la comparación real.
@@ -373,12 +435,30 @@ costumbre.** Se decide columna por columna según la comparación real.
 
 ## 6.1 Historial de pedidos del cliente
 
-M04 ya reserva el hueco en la ficha. El contrato permite consultar pedidos por `customer_id`
-**sin que M04 lea tablas de `sales`**.
+**M03 publica el contrato. Nadie está obligado a consumirlo.**
 
-**OBSERVADO:** `docs/modules/crm/SPEC.md:341-345` — el hueco «se declara, no se improvisa», y lo
-hace **pidiendo el contrato al contenedor y comprobando si vino**, no preguntando al registro de
-módulos.
+El contrato permite consultar pedidos por `customer_id` **sin que quien pregunte lea tablas de
+`sales`**. M03, además, **muestra sus propios pedidos al cliente** en su pantalla «Mis pedidos»
+(§9.4): esa superficie es de M03 y no espera a ningún otro módulo.
+
+**Quién hace qué con esto, y es la línea que conviene no torcer:**
+
+| Módulo | Qué le corresponde | Estado |
+|---|---|---|
+| **M03** | **Publicar el contrato** y mostrar «Mis pedidos» (§9.4) y el detalle (§9.5) | Este documento |
+| **M04** | **Rellenar su propio hueco** en la ficha del cliente, **pidiendo el contrato al contenedor y comprobando si vino** —no al registro de módulos—. Su perfil de tienda ya existe y es suyo | En `main`, aprobado |
+| **M08** | Un portal que **consolidaría** pedidos y trabajos de M06 en una sola superficie | **Detenido, Fase 3** |
+
+> **M08 no es dueño del historial de pedidos, y no se declara consumidor obligatorio.** El dueño de
+> la función es M03, que la publica y la muestra; M04 la consume hoy en su hueco. `ARQUITECTURA_MODULAR.md:116`
+> describe M08 como algo que «muestra pedidos **si M03 está activo**» — es decir, **un consumidor
+> condicional de un contrato ajeno, no el titular de la función**, y ni esa consolidación ni su
+> alcance están ratificados. **M03 no escribe nada para M08**, no adapta su contrato a un consumidor
+> detenido, y no se bloquea por él.
+>
+> **OBSERVADO:** `docs/modules/crm/SPEC.md:341-345` — el hueco de M04 «se declara, no se improvisa»,
+> y lo hace pidiendo el contrato al contenedor: «el registro responde según la foto de las
+> activaciones; **el contenedor, según lo que de verdad se puede llamar**».
 
 ## 6.2 Consulta de pedido
 
@@ -505,7 +585,27 @@ información, que pertenece a M07**; M03 no implementa el módulo vecino.
 
 **Cero es gratis y sí se vende.** `null` y `0` no se confunden nunca. 26/09 §4.
 
-*La modalidad de acceso sigue abierta — (d).*
+### Lo cerrado y lo que no, porque la mitad de esta regla es de otro
+
+**Cerrado, y es de M03:** un item con precio nulo **no entra al carrito ni al pedido**, y el rechazo
+está **en la operación**, no en la pantalla (§3.3). Esa mitad no depende de nadie y sus pruebas están
+en §11.
+
+**No cerrado, y no es de M03:** **a dónde** conduce la acción y **con qué acceso**.
+
+- **No se presupone ningún endpoint de M07.** Los cuatro de su SPEC son para crear y consultar
+  solicitudes y cotizaciones; **ninguno está declarado como destino de «a consultar»**, y M03 no
+  inventa uno.
+- **No se presupone ninguna modalidad de acceso.** Que su SPEC exija hoy sesión de cliente en todo
+  lo público es **el estado de su documento**, no una ratificación de que consultar un precio
+  requiera cuenta.
+- **La coordinación con frente B alcanza solo a la redacción del contrato y al método de consumo
+  permitido.** M07 es de frente B: M03 no modifica su SPEC ni le inventa API.
+- **Y falta la vía declarada:** hoy ningún módulo del frontend tiene forma de enlazar a la pantalla
+  de otro sin importar de él, lo cual está prohibido. Es costura de Integración.
+
+**Mientras esto no se cierre, la pantalla de un producto «a consultar» no se define** — y M03 sigue
+funcionando: sin destino, la acción no se pinta y nada falla. Ver (d).
 
 ## R-12 · El pago tardío siempre se puede registrar · **NUEVA**
 
@@ -523,8 +623,33 @@ El personal **siempre** puede registrar un pago, aunque el pedido esté **Vencid
 **Ningún texto, indicador, estado ni notificación promete existencia garantizada.** Las fechas de
 pago **no constituyen una reserva**. 26/09 §9.
 
-Es la regla que cierra el cambio de eje: si sobreviviera una sola frase que diga «reservado», el
-producto seguiría prometiendo lo que ya no puede cumplir. **Tiene prueba propia** (§11).
+Es la regla que cierra el cambio de eje: si sobreviviera una sola frase que diga «te reservamos el
+producto», el producto seguiría prometiendo lo que ya no puede cumplir.
+
+### Lo que prohíbe es la promesa, no la palabra
+
+**Distinción obligatoria, y la SPEC ya la necesitaba:** R-03 dice que el pedido vencido «**deja de
+estar garantizado**», y §9.8 prescribe decírselo al cliente con «el pedido sigue en pie, pero **ya no
+está garantizado**». Las dos son **negaciones correctas** y las dos contienen la palabra.
+
+| Se prohíbe — **afirma** una retención | Se acepta — **la niega** |
+|---|---|
+| «te reservamos el producto» · «producto apartado» | «ya no está garantizado» |
+| «stock garantizado» · «unidades reservadas para ti» | «no está garantizado» |
+| «tu reserva vence el…» · «te lo guardamos 48 horas» | «sin garantía de existencia» |
+| «disponibilidad asegurada» | «no reservamos existencias» |
+
+> **Un barrido por palabras habría parado en falso sobre la frase que esta misma SPEC aprueba.**
+> Es exactamente el modo de fallo que `ANTES-DE-EMPEZAR-UN-MODULO.md` §2 pone en su tabla —«la
+> guarda de `.media-e2e`… **Paraba en falso**: confundía "no soy el dueño" con "la creó root"»— y su
+> conclusión vale igual aquí: «una barrera que calla te deja seguir; una que para en falso te para.
+> **Son la misma enfermedad: no haberla provocado.**»
+>
+> Esta se cazó sobre el papel, antes de escribir la prueba y antes de que costara nada. **Por eso la
+> barrera se provoca en las dos direcciones**, y por eso el corpus positivo de §11 no es un adorno:
+> es la mitad que faltaba.
+
+**Tiene prueba propia, con corpus en las dos direcciones** (§11).
 
 ## R-14 · Quién actuó se guarda como nombre, nunca como FK · **NUEVA**
 
@@ -689,7 +814,8 @@ el sistema garantiza. Las pruebas de lógica **no tocan la base**.
 | **Vencer el plazo pasa el pedido a Vencido** | Forzar el reloj más allá del vencimiento y comprobar el estado *(reemplaza a «Vencer reserva libera stock», **suprimido**)* |
 | **Vencer no cancela** | Tras la misma expiración, comprobar explícitamente que el pedido sigue existiendo y **no pasó a Cancelado** |
 | Vencer avisa al personal | Provocar la expiración y observar el aviso en el panel |
-| **Ningún texto promete mercancía garantizada** | Barrido sobre las cadenas visibles: ni «reserva», ni «reservado», ni «apartado», ni «garantizado». **R-13** |
+| **Ningún texto promete mercancía garantizada** | Barrido sobre las cadenas visibles con **dos corpus**: el **negativo** rechaza las construcciones que **afirman** una retención; el **positivo** exige que pasen las **negaciones correctas** —«ya no está garantizado», «no reservamos existencias»—, que son las que esta SPEC prescribe. **Rechazar la palabra en vez de la promesa pararía en falso sobre R-03 y §9.8.** **R-13** |
+| **El propio barrido se falsifica** | Introducir a propósito «te reservamos el producto por 48 horas» en un texto visible y comprobar que **se pone rojo**; y después «ya no está garantizado» y comprobar que **pasa**. Sin las dos, el barrido solo protege la versión sana de sí mismo |
 | Confirmación de pago es manual | Un pedido pendiente no pasa a confirmado sin acción autorizada del personal |
 | **Un pago tardío sobre un pedido Vencido siempre deja resultado o pendiente visible** | Registrarlo y comprobar que **nunca** queda un pago huérfano. **R-12** |
 | **Quién cobró y quién cambió el estado se guardan como nombre** | Inspección de schema: **ninguna FK a `core.admin_users`**. **R-14** |
@@ -697,7 +823,8 @@ el sistema garantiza. Las pruebas de lógica **no tocan la base**.
 | Auditoría nombra la fila | Crear dos pedidos y comprobar que sus resúmenes permiten distinguirlos sin abrir el detalle |
 | `orders` y `order_lines` usan `uuid` v7 | Comprobar versión 7 de las PK y presencia de `origin_node` y `row_version` |
 | Los carritos locales **no** llevan metadatos de replicación | Inspección de schema |
-| **Dos pedidos simultáneos no obtienen el mismo código, y no se salta ninguno** | N inserciones concurrentes |
+| **Dos pedidos simultáneos no obtienen el mismo código** | N creaciones concurrentes: ninguna colisión. **Unicidad, y solo unicidad** — el `UNIQUE` no mira la continuidad (§5.4) |
+| **La continuidad de la serie NO se prueba** | **Deliberado.** No es un requisito ratificado: se decide con (a), y su prueba depende del mecanismo que se elija (§5.4) |
 | Ningún `uuid` se presenta al cliente ni al personal | E2E sobre pantallas y respuestas visibles |
 | No entra dependencia nueva por el pago manual | Comparar manifiestos antes y después; cualquier alta exige §6 |
 | Las pantallas cubren vacío, datos, carga y conflicto | E2E/visual por cada pantalla del §9, claro/oscuro, móvil/escritorio |
@@ -726,7 +853,7 @@ contra la autoridad de stock que se decida en B-01». No hay liberación ni auto
 | **Entregar a domicilio, calcular envío** | **Nada de v1** (R-10) |
 | **Saldo a favor, devoluciones** | Pendientes con disparador propio |
 | **Recordatorio a las 24 horas** | Pendiente: **cuando el envío de correo esté comprobado en producción**. Hoy se acreditó con Mailpit, «solo para desarrollo/pruebas» (`ROADMAP_MODULAR.md:67`) |
-| Mostrar el historial de pedidos en el portal del cliente | M08, Fase 3 |
+| **Un portal de cliente con historial consolidado** de pedidos **y** trabajos de M06 | **M08, Fase 3 · detenido.** Ver la nota de §6.1: **M08 no es dueño del historial de pedidos** ni se declara consumidor |
 | **Decidir políticas de producto que JP no haya cerrado** | §0.3 |
 
 # 13. Deducciones separadas
