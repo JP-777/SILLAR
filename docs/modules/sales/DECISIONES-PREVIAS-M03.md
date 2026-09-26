@@ -3,6 +3,35 @@
 **Creación:** 21 de septiembre de 2026, 12:12:36 -05:00 — America/Lima
 **Última verificación:** 21 de septiembre de 2026, 19:47:14 -05:00 — America/Lima
 **Commit verificado:** `21b3897003aee4d9dde1b346be64dc2ca03ada70`
+**Enmendado:** 26 de septiembre de 2026 — America/Lima, sobre `711bfba7cf3be80baa146b44e79ddf7a633d695d`
+
+> ## ENMENDADO el 26 de septiembre de 2026 — no leer §1 y §2 como vigentes
+>
+> **Qué lo enmienda:** el encargo de producto del 26 de septiembre de 2026, recibido por el
+> colíder a través de JP. Su texto vigente está en
+> `docs/modules/sales/DECISIONES-VIGENTES-M03.md`.
+>
+> **Motivo:** M09 Inventario salió de la Fase 1 y pasó a SILLAR ERP
+> (`docs/ROADMAP_MODULAR.md:122`). **Sin inventario no hay existencia que apartar**, así que
+> SILLAR WEB v1 no tiene reserva de existencias. Las §1 y §2 de abajo hablan de una reserva de
+> stock que el producto ya no tiene.
+>
+> **Qué queda desplazado, y qué lo sustituye:**
+>
+> | Este documento decía | Vigente desde el 26/09/2026 |
+> |---|---|
+> | §1 — al vencer la **reserva de stock** se libera el stock y el pedido no se cancela | No hay reserva. Al vencer el **plazo para pagar**, el pedido pasa a **Vencido**, deja de estar garantizado, **no se cancela por ese hecho** y se avisa al personal |
+> | §2 — **48 horas** naturales configurables = plazo de la **reserva de stock** | **48 horas** naturales configurables = **plazo para pagar**. El mismo número; otro objeto. **No es una reserva** |
+> | §1 — los dos estados distintos son **reserva** y **pedido** | Los dos estados distintos son **hecho de pago** y **estado del pedido** |
+>
+> **Lo que sobrevive sin cambio:** la §3 —dependencias duras de M01 y M04, y el pedido conserva
+> snapshots—, y el criterio de §1 de que **vencer no es cancelar**, que el encargo del 26/09
+> repite palabra por palabra sobre otro sujeto.
+>
+> **El texto de abajo no se ha tocado.** Se conserva porque registra con qué criterio se decidió
+> el 21 de septiembre, y ese criterio sigue explicando por qué hoy vencer no cancela.
+
+---
 
 Decisiones de producto que deben quedar escritas **antes de especificar M03**.
 
