@@ -30,7 +30,10 @@ const { e2e } = identidadDeLaWorktree(RAIZ);
 const r = spawnSync(
   'docker',
   ['compose', '-p', e2e.proyecto, '--env-file', path.join(AQUI, '.env.e2e'),
-   '-f', path.join(RAIZ, 'docker-compose.yml'), 'down', '-v'],
+   '-f', path.join(RAIZ, 'docker-compose.yml'),
+   '-f', path.join(RAIZ, 'docker-compose.mailpit.yml'),
+   '--profile', 'full',
+   'down', '-v'],
   {
     cwd: RAIZ,
     stdio: 'inherit',
@@ -41,6 +44,7 @@ const r = spawnSync(
       POSTGRES_PORT: String(e2e.puertoDb),
       API_PORT: String(e2e.puertoApi),
       FRONTEND_PORT: String(e2e.puertoFrontend),
+      MAILPIT_HTTP_PORT: String(e2e.puertoMailpitHttp),
     },
   },
 );

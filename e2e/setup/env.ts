@@ -79,6 +79,10 @@ export const FRONTEND_PORT = String(IDENTIDAD.e2e.puertoFrontend);
 /** El proxy de Vite: lo que Playwright navega, igual que un navegador real. */
 export const FRONTEND_URL = `http://localhost:${FRONTEND_PORT}`;
 
+export const MAILPIT_HTTP_PORT = String(IDENTIDAD.e2e.puertoMailpitHttp);
+/** API HTTP del capturador de correo de desarrollo/pruebas. */
+export const MAILPIT_URL = `http://localhost:${MAILPIT_HTTP_PORT}`;
+
 const POSTGRES_USER = values.POSTGRES_USER ?? 'postgres';
 const POSTGRES_PASSWORD = values.POSTGRES_PASSWORD ?? '';
 
@@ -115,6 +119,7 @@ export const ENTORNO_DE_COMPOSE: Record<string, string> = {
   POSTGRES_PORT: DB_PORT,
   API_PORT,
   FRONTEND_PORT,
+  MAILPIT_HTTP_PORT,
   ConnectionStrings__Default: CONNECTION_STRING,
 };
 

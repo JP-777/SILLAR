@@ -1,0 +1,42 @@
+[OK esperado=1 exit=1] F7 import() plantilla con sustitución :: F7 modules/crm/routes.tsx:124 importa 'import(`../catalog/${n}`)' — referencia que no se puede verificar estáticamente (import() con ruta calculada)
+[OK esperado=1 exit=1] F7 import() con variable :: F7 modules/crm/routes.tsx:124 importa 'import(p)' — referencia que no se puede verificar estáticamente (import() con ruta calculada)
+[OK esperado=1 exit=1] F7 import() concatenado :: F7 modules/crm/routes.tsx:124 importa 'import('../cat' + 'alog/routes')' — referencia que no se puede verificar estáticamente (import() con ruta calcu
+[OK esperado=1 exit=1] F7 import() literal entre paréntesis (cierre prudente) :: F7 modules/crm/routes.tsx:124 importa 'import(('../catalog/routes'))' — referencia que no se puede verificar estáticamente (import() con ruta calculad
+[OK esperado=1 exit=1] F1 import.meta.glob hacia otro módulo :: F1 modules/crm/routes.tsx:124 importa '../catalog/' — un módulo no importa de otro módulo (modules/crm → modules/catalog)
+[OK esperado=1 exit=1] F1 glob en array, uno ajeno :: F1 modules/crm/routes.tsx:124 importa '../catalog/' — un módulo no importa de otro módulo (modules/crm → modules/catalog)
+[OK esperado=1 exit=1] F1 globEager hacia otro módulo :: F1 modules/crm/routes.tsx:124 importa '../catalog/' — un módulo no importa de otro módulo (modules/crm → modules/catalog)
+[OK esperado=1 exit=1] F7 glob que sube tras comodín :: F7 modules/crm/routes.tsx:124 importa ''./**/../../catalog/*.tsx'' — referencia que no se puede verificar estáticamente (el glob vuelve a subir despué
+[OK esperado=1 exit=1] F7 glob que abarca todo src :: F7 modules/crm/routes.tsx:124 importa '../../' — referencia que no se puede verificar estáticamente (el glob abarca todo src/)
+[OK esperado=1 exit=1] F7 glob con patrón calculado :: F7 modules/crm/routes.tsx:124 importa 'import.meta.glob(p)' — referencia que no se puede verificar estáticamente (import.meta.glob con patrón calculad
+[OK esperado=1 exit=1] F7 glob sin llamar (alias) :: F7 modules/crm/routes.tsx:124 importa 'import.meta.glob' — referencia que no se puede verificar estáticamente (uso de import.meta que no se puede veri
+[OK esperado=1 exit=1] F7 import.meta suelto :: F7 modules/crm/routes.tsx:124 importa 'm = import.meta' — referencia que no se puede verificar estáticamente (uso de import.meta que no se puede verif
+[OK esperado=1 exit=1] F7 import.meta['glob'](…) :: F7 modules/crm/routes.tsx:124 importa 'import.meta['glob']' — referencia que no se puede verificar estáticamente (uso de import.meta que no se puede v
+[OK esperado=1 exit=1] F1 new URL relativo entre módulos :: F1 modules/crm/routes.tsx:124 importa '../catalog/components/x.png' — un módulo no importa de otro módulo (modules/crm → modules/catalog)
+[OK esperado=1 exit=1] F1 new Worker(new URL ajeno) :: F1 modules/crm/routes.tsx:124 importa '../catalog/w.ts' — un módulo no importa de otro módulo (modules/crm → modules/catalog)
+[OK esperado=1 exit=1] F7 new URL calculado con import.meta.url :: F7 modules/crm/routes.tsx:124 importa 'new URL(p, import.meta.url)' — referencia que no se puede verificar estáticamente (new URL(…, import.meta.url) 
+[OK esperado=1 exit=1] F1 import con sufijo ?url :: F1 modules/crm/routes.tsx:124 importa '../catalog/components/x.png?url' — un módulo no importa de otro módulo (modules/crm → modules/catalog)
+[OK esperado=1 exit=1] F1 url() CSS entre módulos, con comillas :: F1 modules/crm/crm.css:307 importa '../catalog/components/x.png' — un módulo no importa de otro módulo (modules/crm → modules/catalog)
+[OK esperado=1 exit=1] F1 url() CSS sin comillas :: F1 modules/crm/crm.css:307 importa '../catalog/components/x.png' — un módulo no importa de otro módulo (modules/crm → modules/catalog)
+[OK esperado=1 exit=1] F1 @import url() sin comillas :: F1 modules/crm/crm.css:307 importa '../catalog/components/tienda.css' — un módulo no importa de otro módulo (modules/crm → modules/catalog)
+[OK esperado=1 exit=1] F5 url() CSS con /src/ :: F5 modules/crm/crm.css:307 importa '/src/modules/catalog/x.png' — ruta no relativa hacia el árbol
+[OK esperado=1 exit=1] F2 url() desde shared hacia un módulo :: F2 shared/ui/no-photo.css:36 importa '../../modules/catalog/x.png' — shared/ no importa de fuera de shared/ (shared → modules/catalog)
+[OK esperado=0 exit=0] import.meta.env :: 
+[OK esperado=0 exit=0] import.meta.hot :: 
+[OK esperado=0 exit=0] glob dentro del propio módulo :: 
+[OK esperado=0 exit=0] glob propio con exclusión ajena :: 
+[OK esperado=0 exit=0] import() literal propio :: 
+[OK esperado=0 exit=0] import() plantilla sin sustitución propia :: 
+[OK esperado=0 exit=0] new URL con base de la página :: 
+[OK esperado=0 exit=0] new URL relativo propio :: 
+[OK esperado=0 exit=0] url() data:, https:, /public, #id :: 
+[OK esperado=0 exit=0] url() ajeno dentro de comentario CSS :: 
+[OK esperado=0 exit=0] url() relativo propio :: 
+[OK esperado=0 exit=0] cadena con forma de import() ajeno :: 
+[OK esperado=0 exit=0] require() calculado (declarado fuera) :: 
+[OK esperado=0 exit=0] image-set() sin url() en CSS (declarado fuera) :: 
+[glob '{../catalog,./pages}/*.tsx'] exit=1   F7 modules/crm/routes.tsx:124 importa ''{../catalog,./pages}/*.tsx'' — referencia que no se puede verificar estáticame
+[glob './{..,x}/catalog/*.tsx'] exit=1   F7 modules/crm/routes.tsx:124 importa ''./{..,x}/catalog/*.tsx'' — referencia que no se puede verificar estáticamente 
+[M8 import() calculado ignorado] exit=1 ℹ pass 33 ℹ fail 1 
+[M9 url() de CSS ignorado] exit=1 ℹ pass 32 ℹ fail 2 
+[M10 glob sin juzgar] exit=1 ℹ pass 31 ℹ fail 3 
+[M11 new URL ignorado] exit=1 ℹ pass 32 ℹ fail 2 

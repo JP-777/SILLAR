@@ -155,3 +155,282 @@ stemming español y además ignora diacríticos.
 La extensión `unaccent` es compartida y no se elimina al desinstalar CRM;
 la configuración `crm.spanish_unaccent` sí pertenece al módulo y desaparece
 con su schema.
+---
+
+### Criterio 5 — el espacio final no choca con `uq_customers_email` — **FAIL** (22 sep 2026)
+
+**Base comprobada:** `a7416aece5117433ff5d1ab96d69cc24120065ac`.
+
+El criterio 5 de `SPEC.md` §9 exige demostrar, a nivel de base de datos, que una
+segunda ficha con el mismo correo escrito con un espacio final choque con el
+índice único `uq_customers_email`.
+
+Se añadió la prueba durable
+`CrmPersistenceTests.Test14b_correo_con_espacio_final_choca_en_uq_customers_email`.
+La prueba evita deliberadamente las normalizaciones de la aplicación:
+
+1. inserta por SQL directo `espacio-final@ejemplo.pe`;
+2. intenta insertar por SQL directo `espacio-final@ejemplo.pe `, con un espacio final;
+3. exige `23505 unique_violation` de `uq_customers_email`.
+
+**Resultado observado:** PostgreSQL aceptó el segundo `INSERT`. xUnit informó
+`Assert.Throws() Failure: No exception was thrown`. La suite
+`Sillar.Modules.Crm.Tests` terminó con **93 pruebas: 92 PASS y 1 FAIL**, siendo
+este caso el único fallo. La puerta se detuvo correctamente en
+`pruebas del backend`.
+
+**Conclusión:** el criterio 5 queda **FAIL** tal como está escrito. El índice
+`uq_customers_email` no constituye por sí solo una barrera contra una variante
+que difiere únicamente por espacio final.
+
+Esto no implica que las vías normales de la aplicación estén insertando hoy
+esa variante. Las vías de aplicación que escriben `crm.customers.email`
+verificadas en esta base son:
+
+- **Registro público** — `CustomerRegistrationService.cs:38-40,63`:
+  aplica `Trim()` y normalización NFC antes de escribir.
+- **Alta desde el panel** — `CustomerAdminService.cs:169-189`:
+  escribe `request.Email!.Trim()`.
+- **Edición desde el panel** — `CustomerAdminService.cs:228-258`:
+  escribe `request.Email!.Trim()`.
+- **Edición del perfil propio** — `CustomerProfileService.cs:82-102`:
+  escribe `request.Email!.Trim()`.
+- **Invitación** — `CustomerAdminService.cs:458` y
+  `CustomerAccountTokenService.cs:107+`: **no escribe el correo**; usa el
+  valor ya guardado en la ficha para emitir la invitación.
+
+**No se corrige aquí.** Por instrucción del cierre de M04, decidir si debe
+cambiar el criterio, la colación/índice o alguna otra barrera corresponde al
+líder técnico después de ver esta evidencia.
+
+**Detención de la unidad:** al haberse revelado un fallo real, no se avanzó
+con las nuevas pruebas de los criterios 1, 13 y 17, no se ejecutaron las dos
+puertas consecutivas del criterio 19 y no se añadió todavía la nota histórica
+de M02 en `PENDIENTES.md`.
+---
+
+### Cierre parcial M04 — criterios 5, 13 y 17 tras decisión del líder técnico — 22 sep 2026
+
+**Base de trabajo:** `01f7e42bb6ec25b1687094c2b4138a86d653bec8`.
+
+#### Criterio 5 — **PASS tras corrección autorizada**
+
+El líder técnico decidió el 22 de septiembre de 2026 que **la base de datos
+es la autoridad** para impedir blancos al principio o al final de
+`crm.customers.email`.
+
+La enumeración se hizo en ejecución con **.NET 10.0.10** usando
+`char.IsWhiteSpace` sobre todo `char`. El conjunto obtenido fue de
+**25 caracteres**:
+
+`U+0009`, `U+000A`, `U+000B`, `U+000C`, `U+000D`, `U+0020`,
+`U+0085`, `U+00A0`, `U+1680`, `U+2000`, `U+2001`, `U+2002`,
+`U+2003`, `U+2004`, `U+2005`, `U+2006`, `U+2007`, `U+2008`,
+`U+2009`, `U+200A`, `U+2028`, `U+2029`, `U+202F`, `U+205F`,
+`U+3000`.
+
+`U+200B` devolvió `char.IsWhiteSpace == false` y se conserva como caso
+válido: PostgreSQL no debe rechazar más de lo que `String.Trim()` recorta.
+
+La migración
+`20260922115958_CrmCustomersEmailTrimAuthority` añade
+`ck_customers_email_sin_blancos_en_bordes`. Tanto el precheck como el
+`CHECK` comparan bajo **`COLLATE "C"`**. La migración cuenta primero las
+filas incompatibles y, si encuentra alguna, falla con `23514`, informa la
+cantidad y entrega una consulta para encontrarlas; **no modifica ningún
+correo**.
+
+`Test14b_base_rechaza_todos_los_blancos_que_dotnet_trim_recorta` inserta
+por SQL directo y demuestra las tres direcciones:
+
+- un correo limpio pasa;
+- U+200B al inicio y al final pasa;
+- los 25 `char.IsWhiteSpace` son rechazados tanto al inicio como al final
+  con `ck_customers_email_sin_blancos_en_bordes`.
+
+`Test14c_migracion_falla_y_no_corrige_correos_preexistentes` reproduce una
+instalación anterior con un correo terminado en U+00A0: la migración falla,
+anuncia **1 fila**, muestra cómo localizarla y el valor queda intacto.
+
+**Barrera deliberada.** Se quitó temporalmente únicamente
+`AddCheckConstraint` de la migración, manteniendo el resto. Entre
+**2026-09-22 08:55:12 -0500 America/Lima** y **2026-09-22 08:57:53 -0500 America/Lima**, la puerta quedó roja
+específicamente en
+`Test14b_base_rechaza_todos_los_blancos_que_dotnet_trim_recorta` porque no
+se lanzó la excepción esperada. El fichero de migración se restauró
+byte a byte antes de continuar. Esto demuestra que la prueba protege la
+barrera y no pasa por accidente.
+
+#### Criterio 13 — **PASS**
+
+Hay evidencia durable en dos niveles:
+
+- `CustomerPasswordExposureTests` afirma que los contratos públicos de
+  respuesta de CRM no exponen propiedades `Password` ni `Hash`.
+- `CierreM04SeguridadYCorreoTests` registra una contraseña centinela mediante
+  el host real y afirma que no aparece en la respuesta HTTP, en
+  `core.audit_log` ni en stdout/stderr del proceso.
+
+Las pruebas focales pasaron con la restricción del criterio 5 restaurada.
+
+#### Criterio 17 — **PASS**
+
+`CierreM04SeguridadYCorreoTests` registra un cliente con SMTP sin configurar.
+El registro HTTP sigue funcionando; después espera el `email_send` de
+**ese correo concreto** en `core.audit_log`, inicia sesión como
+`super_admin`, consulta `GET /api/admin/audit` y exige que quien administra
+vea exactamente el mismo fallo de envío.
+
+La prueba focal pasó con el host y PostgreSQL reales.
+
+**Criterios todavía fuera de esta unidad:** el 1 espera la decisión de JP
+sobre un capturador de correo; el 19 se comprueba después, sobre un SHA
+limpio y fijo, con dos puertas consecutivas.
+
+## Medición temporal del recorrido integral — 2026-09-23
+
+Antes de integrar se midió `e2e/tests/recorrido.spec.ts` para comprobar si el margen local de 90 segundos ocultaba una regresión del candidato o únicamente absorbía el coste variable del propio arnés.
+
+Se compararon `a7416aece5117433ff5d1ab96d69cc24120065ac` (`main`) y `92062f8e72e19ef89ee8bf301c680eded34fd47f` (candidato). Se hicieron cinco ejecuciones independientes por SHA, alternadas entre ambas worktrees, levantando un stack E2E nuevo en cada vuelta y usando el mismo techo de 90 segundos. La medida registrada es la duración que Playwright atribuye al test, no el tiempo de `globalSetup`, migraciones ni `globalTeardown`.
+
+Resultados:
+
+| Ejecución | `main` | candidato |
+| --- | ---: | ---: |
+| 1 | 38.0 s | 43.2 s |
+| 2 | 38.2 s | 40.6 s |
+| 3 | 35.0 s | 35.4 s |
+| 4 | 38.6 s | 36.1 s |
+| 5 | 36.1 s | 35.6 s |
+| Media | 37.18 s | 38.18 s |
+| Mediana | 38.00 s | 36.10 s |
+| Mínimo | 35.00 s | 35.40 s |
+| Máximo | 38.60 s | 43.20 s |
+
+Las diez ejecuciones pasaron. La diferencia de medias fue de `+1.00 s` (`+2.69 %`) para el candidato, mientras que su mediana fue `1.90 s` menor (`-5.00 %`). Los rangos se solapan y no aparece un desplazamiento sistemático que permita atribuir al candidato una regresión temporal.
+
+Conclusión: se conserva `test.setTimeout(90_000)` únicamente en el recorrido integral. El margen cubre la variabilidad instrumental de un test que ejecuta comprobaciones de accesibilidad y capturas en varios hitos; no se usa para encubrir un aumento claro del tiempo introducido por M04.
+
+---
+
+### Criterio 1 — correo real capturado y consumido — 23 sep 2026
+
+**Decisión de herramienta.** JP autorizó el 23 de septiembre de 2026,
+America/Lima, adoptar Mailpit exclusivamente para desarrollo y pruebas.
+
+Antes de incorporarlo se abrió el fichero `LICENSE` de **Mailpit v1.31.1** en su
+repositorio oficial:
+
+<https://github.com/axllent/mailpit/blob/v1.31.1/LICENSE>
+
+La licencia declarada es **The MIT License (MIT)**. La imagen utilizada queda fijada como
+`axllent/mailpit:v1.31.1`; no se usa `latest`. Mailpit vive en
+`docker-compose.mailpit.yml`, que no forma parte del Compose normal de producción, y no se
+añadió como dependencia de ejecución del producto.
+
+#### Recorrido demostrado
+
+`e2e/tests/crm-email-verification.spec.ts` comprueba de punta a punta:
+
+1. levanta Mailpit;
+2. configura `smtp_server`, `smtp_port` y `smtp_from` a través del API real;
+3. registra un cliente real desde la interfaz;
+4. espera por la API HTTP de Mailpit un mensaje `Verifica tu correo` destinado exactamente
+   al correo creado durante esa corrida;
+5. lee el cuerpo capturado;
+6. extrae del propio correo el enlace `/verificar-correo?token=...`;
+7. navega ese enlace y consume el token;
+8. entra con la cuenta y comprueba `emailVerified: true`.
+
+El token no se obtiene directamente de PostgreSQL ni se reconstruye desde código interno.
+Si el mensaje SMTP no llega al capturador, la prueba falla.
+
+**Primer verde real:** `1/1 PASS`; duración del caso Playwright: **26.7 s**. El stack
+quedó completamente destruido después de la ejecución.
+
+#### Barrera deliberada
+
+Para demostrar que la prueba no pasa sin entrega real, se cambió temporalmente únicamente
+`smtp_server` de `mailpit` a `mailpit-disabled`.
+
+Con el envío roto:
+
+- Playwright devolvió código **1**;
+- el caso terminó en rojo;
+- la causa observada fue exactamente la ausencia del correo:
+  `Mailpit no recibió 'Verifica tu correo' ... en 15 s.`
+
+Después se restauró la prueba **byte a byte**. SHA-256 antes y después:
+
+`17e4a3a72833772be3e99f81a259fd84659f081766dd21d781a2d39ce62b0dee`
+
+Restaurada la prueba, el mismo recorrido volvió a pasar `1/1`; duración del caso:
+**27.0 s**. El stack volvió a quedar vacío.
+
+**Resultado:** criterio 1 **PASS**.
+
+#### El recorrido integral vuelve al techo global de 60 s
+
+La medición temporal anterior se conserva: cinco ejecuciones sobre `main` y cinco sobre el
+candidato quedaron entre **35.0 y 43.2 s**, con medias de **37.18 s** y **38.18 s**.
+
+Esa medición demuestra que no hubo una regresión temporal clara, pero también demuestra que
+el comentario que justificaba un límite local de 90 s era falso: ninguna de las diez
+ejecuciones superó 60 s.
+
+Por ello se retiraron `test.setTimeout(90_000)` y su comentario. El recorrido vuelve a
+heredar el techo global de **60 s**.
+
+#### Estado previo a la certificación final
+
+Los criterios **1 a 18** tienen evidencia. El criterio 19 solo se acepta mediante dos
+ejecuciones consecutivas de `node scripts/verificar.mjs` sobre el mismo SHA final que
+contiene esta documentación y la infraestructura de Mailpit.
+
+La marca de cierre incluida en este candidato queda sometida a esas dos puertas. Si alguna
+falla, el candidato no se publica como propuesta de cierre ni se fusiona a `main`.
+
+
+---
+
+## Certificación final del candidato 9f9015b — 26 de septiembre de 2026
+
+**SHA del candidato certificado:**
+`9f9015b4186a55f9f305222b320477e79aea7028`
+
+**Árbol Git invariable:** `c099ca88abcf36c561e8f4cc69db18ac35988b8b`
+
+Se ejecutó `node scripts/verificar.mjs` dos veces
+consecutivas, sin modificar el árbol ni cambiar el
+commit entre ejecuciones.
+
+| Puerta | Inicio (America/Lima) | Fin (America/Lima) | Resultado |
+|---|---|---|---|
+| 1 | 2026-09-25 23:59:23 -0500 | 2026-09-26 00:24:29 -0500 | 6/6 PASS; RC=0 |
+| 2 | 2026-09-26 00:24:29 -0500 | 2026-09-26 00:51:35 -0500 | 6/6 PASS; RC=0 |
+
+**Criterio 19:** PASS. Las dos puertas aprobaron
+consecutivamente sobre el mismo SHA y árbol.
+
+**Criterios 1–18:** conservan la evidencia ya registrada,
+incluida la verificación mediante Mailpit, las restricciones
+de correo de la base y las comprobaciones de seguridad.
+
+### Registros
+
+- Puerta 1: `evidencias/M04-PUERTA-1-20260926.txt`. SHA-256 del original íntegro: `7e944f6afd537c99e3225e974d6d466d226081a40cb4cd69988b3795768a2050`.
+- Puerta 2: `evidencias/M04-PUERTA-2-20260926.txt`. SHA-256 del original íntegro: `f555105fcdf66f5935ee05d99f386ce1846d3f199b9452a317fc8b99c331ac2a`.
+
+### Alcance de la certificación
+
+Las dos ejecuciones certifican el candidato indicado.
+El commit posterior, que incorpora estos registros,
+la tabla y la marca del ROADMAP, es documental y
+tendrá necesariamente otro SHA.
+
+No se atribuyen al commit documental ejecuciones
+que se realizaron sobre el candidato anterior.
+
+**Decisión:** propuesta de cierre de M04 pendiente
+de revisión del colíder y autorización de JP.
+No se ha fusionado a `main`.

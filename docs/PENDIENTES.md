@@ -1,8 +1,8 @@
 # Pendientes
 
 **Creación:** 25 de agosto de 2026, 21:04:02 -05:00 — America/Lima (`1d3f78874cae9a57659166495bb84151b0797db4`)
-**Última verificación:** 21 de septiembre de 2026, 23:36:14 -05:00 — America/Lima
-**Commit verificado:** `986b8cb4ae1942f031c5559e290b2d18d5e8d6cb`
+**Última verificación:** 22 de septiembre de 2026, 06:55:03 -05:00 — America/Lima
+**Commit verificado:** `01f7e42bb6ec25b1687094c2b4138a86d653bec8`
 
 Lo que está decidido pero no hecho, y lo que está aplazado a propósito.
 
@@ -425,6 +425,30 @@ no se escribe «M11 no antes que M09» como restricción en ningún otro documen
 
 ---
 
+## 26 · `core.admin_users.email` tiene el mismo hueco de blancos en los bordes
+
+**Qué pasa.** La aplicación recorta el correo administrativo antes de escribirlo:
+`AdminUserService.cs:70` usa `request.Email!.Trim()` y `SetupService.cs:220` usa
+`admin.Email!.Trim()`. Sin embargo, en la base `core.admin_users.email` solo tiene la barrera
+`ck_admin_users_email_not_empty`; no existe todavía una restricción equivalente a la decidida
+para `crm.customers.email` que haga a PostgreSQL autoridad también frente a escrituras que
+salten la aplicación.
+
+**Riesgo.** Una escritura directa, importación o ruta futura que no pase por esos dos `Trim()`
+puede guardar un correo con blancos al principio o al final y dejar una semántica distinta entre
+aplicación y base.
+
+**Disparador.** **Antes de la primera instalación real.**
+
+**Decide/corrige:** CORE, fuera del cierre de M04. La regla deberá comparar bajo una colación
+determinista y no debe limpiar datos existentes automáticamente: si hubiera filas incompatibles,
+la decisión sobre esos datos corresponde a una persona.
+
+**No hacer dentro de M04.** No se modifica `core.admin_users`, sus migraciones ni sus servicios
+en esta unidad.
+
+---
+
 ## Resueltos recientemente
 
 *(se borran de arriba y se anotan aquí solo hasta que entren en la bitácora del módulo)*
@@ -441,6 +465,15 @@ no se escribe «M11 no antes que M09» como restricción en ningún otro documen
   `'con-contenido'` según la respuesta (`catalog/routes.tsx`). Los casos vacíos viven en
   `e2e/tests/aa-vacios.spec.ts`, que es el único momento de la suite en que el catálogo está
   de verdad vacío. Registrado entero en `BITACORA.md` §7.
+
+  **Nota de verificación — 22 sep 2026.** La frase anterior se conserva porque documenta cómo
+  se produjo el error, pero el inventario de cierre M02/M04 realizado por Chat 2 sobre
+  `a7416ae` comprobó que **M02 no estaba formalmente cerrado el 3 de septiembre**: al contrastar
+  `docs/modules/cms/SPEC.md` §11 quedaron **22 criterios PASS, 0 FAIL y 11 SIN EVIDENCIA**,
+  sin una bitácora que demostrara todos los criterios de cierre. Lo que sí se cumplió ese día
+  fue el **disparador operativo** usado para resolver este pendiente de la portada en
+  `1f620c1`: M02 estaba construido e integrado lo suficiente para ejercer su contribución a la
+  portada y cerrar ese comportamiento concreto. Eso no equivale al cierre formal del módulo.
 
 - **El cajón del producto no se cerraba tras asociar una imagen.** (3 sep 2026) Era el 12, y su
   disparador —la tercera aparición— se cumplió en la puerta de la reconciliación. Ya no es un

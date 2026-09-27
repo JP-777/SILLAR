@@ -13,6 +13,9 @@ internal sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         {
             table.HasCheckConstraint("ck_customers_full_name_no_vacio", "btrim(full_name) <> ''");
             table.HasCheckConstraint("ck_customers_email_no_vacio", "btrim(email) <> ''");
+            table.HasCheckConstraint(
+                "ck_customers_email_sin_blancos_en_bordes",
+                """(email COLLATE "C") !~ U&'^[\0009\000A\000B\000C\000D\0020\0085\00A0\1680\2000\2001\2002\2003\2004\2005\2006\2007\2008\2009\200A\2028\2029\202F\205F\3000]|[\0009\000A\000B\000C\000D\0020\0085\00A0\1680\2000\2001\2002\2003\2004\2005\2006\2007\2008\2009\200A\2028\2029\202F\205F\3000]$'""");
             table.HasCheckConstraint("ck_customers_document_pair",
                 "(document_type IS NULL AND document_number IS NULL) OR (document_type IS NOT NULL AND document_number IS NOT NULL)");
             table.HasCheckConstraint("ck_customers_document_type",

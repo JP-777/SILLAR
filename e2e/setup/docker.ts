@@ -1,8 +1,26 @@
-import { DB_NAME, ENTORNO_DE_COMPOSE, ENV_FILE, PROJECT_NAME, ROOT } from './env.js';
+import { randomUUID } from 'node:crypto';
+import {
+  DB_NAME,
+  ENTORNO_DE_COMPOSE,
+  ENV_FILE,
+  FRONTEND_URL,
+  PROJECT_NAME,
+  ROOT,
+} from './env.js';
 import { problemaDeStackAjeno } from './identidad.js';
 import { run, runCapture, sleep } from './shell.js';
 
-const BASE_ARGS = ['compose', '-p', PROJECT_NAME, '--env-file', ENV_FILE];
+const BASE_ARGS = [
+  'compose',
+  '-f',
+  'docker-compose.yml',
+  '-f',
+  'docker-compose.mailpit.yml',
+  '-p',
+  PROJECT_NAME,
+  '--env-file',
+  ENV_FILE,
+];
 
 /**
  * **Toda llamada a compose pasa por aquí, y ése es el punto.**
@@ -20,8 +38,21 @@ const BASE_ARGS = ['compose', '-p', PROJECT_NAME, '--env-file', ENV_FILE];
  */
 const OPCIONES = { cwd: ROOT, env: ENTORNO_DE_COMPOSE } as const;
 
-function compose(args: string[]): Promise<void> {
-  return run('docker', [...BASE_ARGS, ...args], OPCIONES);
+function compose(
+  args: string[],
+  extraEnv: NodeJS.ProcessEnv = {},
+): Promise<void> {
+  return run(
+    'docker',
+    [...BASE_ARGS, ...args],
+    {
+      cwd: ROOT,
+      env: {
+        ...ENTORNO_DE_COMPOSE,
+        ...extraEnv,
+      },
+    },
+  );
 }
 
 function composeCapture(args: string[]): Promise<string> {
@@ -48,7 +79,7 @@ export async function composeDown(): Promise<void> {
     return;
   }
 
-  return compose(['down', '-v']);
+  return compose(['--profile', 'full', 'down', '-v']);
 }
 
 /**
@@ -64,7 +95,9 @@ export async function composeDown(): Promise<void> {
  * compartido bloquearía a los dos frentes en vez de a uno.
  */
 export async function duenoDelStackEnPie(): Promise<string | null> {
-  const ids = await composeCapture(['ps', '-q']).catch(() => '');
+  const ids = await composeCapture(
+    ['--profile', 'full', 'ps', '-q'],
+  ).catch(() => '');
   const primero = ids.trim().split('\n').filter(Boolean)[0];
 
   if (!primero) {
@@ -85,6 +118,11 @@ export function composeUpDb(): Promise<void> {
   return compose(['up', '-d', 'db']);
 }
 
+/** Levanta el capturador SMTP solo cuando una prueba lo necesita. */
+export function composeUpMailpit(): Promise<void> {
+  return compose(['up', '-d', 'mailpit']);
+}
+
 /**
  * Construye y levanta la API con el perfil `full`. `.env.e2e` fija
  * `BUILD_CONFIGURATION=Debug` y `MODULES_INCLUDE_DEMO=true`, así que esta
@@ -93,6 +131,36 @@ export function composeUpDb(): Promise<void> {
  */
 export function composeBuildAndUpApi(): Promise<void> {
   return compose(['--profile', 'full', 'up', '-d', '--build', 'api']);
+}
+
+async function recreateApi(extraEnv: NodeJS.ProcessEnv): Promise<void> {
+  const previous = await serviceRuntimeIdentity('api');
+
+  await compose(
+    ['--profile', 'full', 'up', '-d', '--no-deps', '--force-recreate', 'api'],
+    extraEnv,
+  );
+
+  await waitServiceRestarted('api', previous);
+}
+
+/**
+ * Inyecta una credencial SMTP efímera únicamente para la prueba con Mailpit.
+ * El valor nace en memoria, no se escribe en ningún archivo ni se imprime.
+ */
+export function recreateApiForMailpit(): Promise<void> {
+  return recreateApi({
+    SILLAR_SMTP_PASSWORD: randomUUID(),
+    Sillar__PublicBaseUrl: FRONTEND_URL,
+  });
+}
+
+/** Restituye la API E2E sin credencial SMTP. */
+export function recreateApiWithoutSmtp(): Promise<void> {
+  return recreateApi({
+    SILLAR_SMTP_PASSWORD: '',
+    Sillar__PublicBaseUrl: '',
+  });
 }
 
 /** Ejecuta un comando dentro de un servicio ya levantado (para `psql`, típicamente). */
