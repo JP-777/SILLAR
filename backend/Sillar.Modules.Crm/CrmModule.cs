@@ -57,7 +57,8 @@ public sealed class CrmModule : IModule, IModuleMigrations
         "Clientes, cuentas de tienda, direcciones y contacto. " +
         "Es dueño de la identidad de la clientela.";
 
-    public string Version => "1.0.0";
+    // 1.1.0: ICustomerSnapshotReader añade la variante sin dirección (aditivo).
+    public string Version => "1.1.0";
 
     // M01=10, M02=20; M04 conserva el orden del catálogo modular.
     public int DisplayOrder => 40;
