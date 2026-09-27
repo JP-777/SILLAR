@@ -1,6 +1,6 @@
 # Pendientes
 
-**Última modificación parcial:** 2026-09-27 11:40:43 -0500 — America/Lima. **Base verificada de esta entrada:** `2191150635935a5b58c7c4edc2d77c7cbc258019`.
+**Última modificación parcial:** 2026-09-27 15:45:30 -0500 — America/Lima (entrada 28). **Base verificada de esta entrada:** `3758b6e3a9367bde8a262b4efd9f6927343aa1cd`.
 
 **Creación:** 25 de agosto de 2026, 21:04:02 -05:00 — America/Lima (`1d3f78874cae9a57659166495bb84151b0797db4`)
 **Última verificación:** 22 de septiembre de 2026, 06:55:03 -05:00 — America/Lima
@@ -467,6 +467,48 @@ en esta unidad.
 **Propuesta separada para el líder técnico, NO implementada ni aprobada:** Evaluar incorporar a `scripts/verificar.mjs` un vigía que registre memoria y, ante un umbral de seguridad acordado, interrumpa ordenadamente la puerta preservando artefactos. El vigía empleado por B en la QA fue externo a la puerta: no presentarlo como una protección existente en `main`.
 
 **Responsable de seguimiento:** Integración y líder técnico. **Estado:** ABIERTO hasta que se cumpla el disparador o se formalice una decisión de tratamiento.
+
+---
+
+## 28 · Evidencia de desmontaje de esquema confundible con evidencia de desmontaje de módulo (RIESGO DE CRITERIO)
+
+**Creación:** 27/09/2026, America/Lima. **Última revisión de esta entrada:** 2026-09-27 15:45:30 -0500 (America/Lima).
+**Base verificada:** `3758b6e3a9367bde8a262b4efd9f6927343aa1cd` (rama `integration/m04-contrato-snapshot`). **Escrita por:** Claude Code D, como escritor único de costuras en este turno, a petición del colíder.
+
+**Disparador:** «Al revisar los criterios de cierre de cualquier módulo ya cerrado».
+
+**El riesgo.** Hay dos cosas distintas que se pueden llamar «desinstalar»:
+
+- **Desmontar el esquema:** borrar y recrear las tablas del módulo sin tocar las de los demás. Se
+  acredita con pruebas de persistencia, sin aplicación.
+- **Desmontar el módulo:** desactivarlo desde la plataforma, desinstalarlo, reinstalarlo y
+  activarlo, comprobando lo que ve una persona —menú, rutas, portada, enlaces— y que los demás
+  módulos siguen en pie.
+
+El criterio de cierre de `CLAUDE.md` («se puede instalar y desinstalar sin romper nada… si al
+desactivarlo aparece un enlace roto, una ruta muerta, un hueco visual…») exige el segundo. Una
+evidencia del primero puede leerse como si acreditara el segundo, y no lo hace.
+
+**De dónde sale.** Al contrastar las pruebas de M04 `Test12_eliminar_schema_crm_no_toca_core_ni_catalog`
+y `Test13_reinstalar_crminitial_sobre_schema_limpio_funciona` (`CrmPersistenceTests.cs:333` y `:414`)
+con el criterio 16 de su cierre («Se desinstala M04 y CORE y el catálogo siguen enteros; se
+reinstala y arranca», `docs/modules/crm/CIERRE-M04-PROPUESTA.md:37`): las dos acreditan el esquema.
+En `e2e/tests/` no había un spec del ciclo de M04 como módulo; los que lo desactivan
+(`aa-vacios.spec.ts:250`, `contenido.spec.ts:848`) lo hacen como medio para vaciar la portada, sin
+comprobar que desaparezcan sus rutas y su navegación. Para M04 se añade
+`e2e/tests/zz-z-m04-ciclo.spec.ts` en la rama indicada arriba.
+
+**Lo que no se afirma.** **No se ha verificado** si CORE o M01 tienen un vacío semejante; conviene
+examinarlo con el disparador. Puntos de partida, sin veredicto: `e2e/tests/zz-desmontaje.spec.ts`
+contiene «Desactivar M01 no borra nada, y al volver el catálogo está donde lo dejaron» y
+`zz-instalacion.spec.ts` contiene «El schema catalog se elimina sin llevarse nada de core»; y para
+CORE hay que decidir primero qué significa el ciclo en la plataforma misma.
+
+**Lo que no se reabre.** El cierre histórico de M04 y su `SPEC.md` no se tocan por esta
+observación.
+
+**Responsable de seguimiento:** Integración. **Estado:** ABIERTO hasta el próximo repaso de
+criterios de cierre de un módulo cerrado.
 
 ---
 

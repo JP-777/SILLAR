@@ -485,3 +485,33 @@ diseño».
   Hueco anotado, no cubierto en este encargo.
 
 **Decisión:** ninguna fusión. Parada 5 pendiente de JP.
+
+### Ampliación: prueba del ciclo real del módulo — 27 de septiembre de 2026
+
+**Última modificación:** 27 de septiembre de 2026 — America/Lima. Pedida por el colíder antes de
+entregar la candidata a la QA local de B. **Parada 3.5 resuelta como «sin nuevo diseño»** por el
+colíder, con el líder técnico informado.
+
+**Precisión sobre lo dicho arriba.** «No hay un spec dedicado» es exacto, pero incompleto: M04 sí se
+desactiva en `aa-vacios.spec.ts:250` y `contenido.spec.ts:848`, **como medio** para vaciar la
+portada. Ninguno comprueba que desaparezcan sus rutas y su navegación, ni desinstala ni reinstala.
+
+**`e2e/tests/zz-z-m04-ciclo.spec.ts`** recorre el procedimiento real, el mismo que
+`zz-z-m02-ciclo-diagnostico.spec.ts`: desactivar desde `/admin/modulos` → `99_drop.sql` dos veces →
+migraciones de CRM y `02_seed.sql` dos veces → activar. En cada fase comprueba las superficies de
+M04 (capacidades, `/api/customer/auth/me`, menú del panel, las ocho rutas públicas y las dos del
+panel, la sección de la portada, los enlaces) y que CORE, M01 y M02 siguen en pie, con las cuentas
+de sus tablas iguales antes y después. Al final crea una ficha sobre la instalación nueva y la
+encuentra en la lista.
+
+**Controles negativos dentro de la misma corrida,** sobre la aplicación real y sin sabotear el
+producto: con M04 activo, el detector de restos **tiene que** encontrarlos; con M04 apagado, el de
+faltas **tiene que** encontrarlas; y un enlace a `/mi-cuenta` inyectado en la portada **tiene que**
+salir en el detector de enlaces.
+
+**Estado: escrita y con tipos comprobados (`pnpm --dir e2e typecheck`, rc 0), NO ejecutada.** La
+etapa 6 no corre en la nube (TLS en el `docker build` del API). La ejecuta B en la puerta local.
+Hasta entonces, el ciclo de módulo de M04 **no está acreditado**.
+
+**Registro transversal:** `docs/PENDIENTES.md` §28, sobre no confundir la evidencia de desmontaje
+de esquema con la de módulo.

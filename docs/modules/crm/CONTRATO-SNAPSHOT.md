@@ -137,5 +137,5 @@ tocar). Corren contra la base efímera de la puerta, etapa `[5/6]`.
 
 | Dónde | Qué |
 | --- | --- |
-| **M04, esta rama** | Las 112 pruebas de `Sillar.Modules.Crm.Tests`, incluidas `Test12`/`Test13` (borrar y reinstalar el esquema `crm` sin tocar `core` ni `catalog`), y la puerta canónica completa |
+| **M04, esta rama** | Las 112 pruebas de `Sillar.Modules.Crm.Tests`, incluidas `Test12`/`Test13` (borrar y reinstalar el **esquema** `crm` sin tocar `core` ni `catalog`); `e2e/tests/zz-z-m04-ciclo.spec.ts` (desactivar, desinstalar, reinstalar y activar el **módulo** en la aplicación, con controles negativos); y la puerta canónica completa |
 | **M03, integración de A** | Que su proyecto referencia solo `Sillar.Modules.Crm.Contracts` (barrera de módulos); que el pedido de recojo usa la variante sin dirección y **guarda copia**; que un `null` produce un conflicto explicado y no un pedido; que un correo sin verificar no compra; y el ciclo instalar/desinstalar M03 sin romper M04 |
