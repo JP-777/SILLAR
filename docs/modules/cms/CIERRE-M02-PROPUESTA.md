@@ -116,3 +116,88 @@ acreditados y el criterio innegociable aprobado.
 La aprobación de esta propuesta corresponde al colíder.
 
 No se autoriza ninguna fusión desde esta entrega.
+
+---
+
+## Revalidación sobre la rama candidata — 27/09/2026
+
+**Añadido el 27 de septiembre de 2026, America/Lima.** Lo anterior se
+conserva sin editar: describe el estado de `test/m02-cierre-evidencia`
+(`b86738d`) antes de incorporar `main`.
+
+**Rama candidata:** `integration/m02-cierre-candidata`. La rama original
+`test/m02-cierre-evidencia` queda intacta en `b86738d`.
+
+**`main` incorporado:** `9fe08b86a543ab7f8bf3dcf31d084bf16cdcf650`, por
+merge normal (`6e01a20`). Trae la barrera de fronteras entre módulos del
+frontend, que corre en la etapa `[1/6]` de la puerta.
+
+### Por qué hacía falta
+
+`cmsHome.tsx:3` importaba `NoPhoto` de `../catalog/components/ProductCard`:
+un módulo importando de otro. La barrera lo rechaza (F1) y la puerta se
+detiene en la etapa 1. `NoPhoto` vive en `frontend/src/shared/ui/NoPhoto.tsx`
+desde `345dd88`, **trasladado sin cambios** y con las mismas clases
+`ti-nophoto*`.
+
+**Consecuencia sobre el criterio 21.** Donde la sección «Corrección del
+criterio 21» dice que CMS reutiliza `NoPhoto` de Catálogo, desde `94ed702`
+lo reutiliza de `shared/ui`. Es el mismo componente, que el catálogo también
+toma de ahí, así que la comparación de C21 sigue midiendo lo mismo. **Su
+acreditación sobre la candidata depende de la etapa 6**, pendiente abajo.
+
+### Evidencia
+
+| Momento | Registro | Resultado |
+|---|---|---|
+| Antes, barrera | `evidencias/FRONTERAS-ANTES-20260927.txt` | F1 en `modules/cms/cmsHome.tsx:3`, rc=1, sobre `6e01a20` |
+| Antes, puerta | `evidencias/PUERTA-ANTES-20260927.txt` | Se detiene en `[1/6]`, paso «fronteras entre módulos», por ese F1. **Fallo intencional** |
+| Corrección | commit `94ed702` | Solo `cmsHome.tsx:3` → `import { NoPhoto } from '../../shared/ui/NoPhoto';` |
+| Después, barrera | `evidencias/FRONTERAS-DESPUES-20260927.txt` | Sin violaciones (151 ficheros, 686 referencias), rc=0; pruebas de la barrera 34/34 |
+| Después, puerta (cloud) | `evidencias/PUERTA-DESPUES-20260927.txt` | Etapas 1–5 PASS; etapa 6 FAIL **de entorno** |
+
+### Puerta sobre la candidata
+
+| Etapa | Resultado en el entorno cloud |
+|---|---|
+| 1 Tipos del frontend (incluye la barrera) | PASS |
+| 2 Tipos del arnés e2e | PASS |
+| 3 Compilación del backend | PASS |
+| 4 Migraciones sobre BD efímera | PASS |
+| 5 Pruebas del backend | PASS |
+| 6 Suite e2e | **FAIL de entorno**: `NU1301 … UntrustedRoot` en el `docker build` del API. El proxy TLS del entorno cloud no es de confianza dentro de la construcción; no ocurre en el equipo local |
+
+**La candidata no está acreditada 6/6.** El «6/6 PASS» de la sección
+«Puerta canónica» corresponde al estado anterior a incorporar `main`.
+
+### Pendiente — puerta local, por B
+
+Sobre la cabeza de `integration/m02-cierre-candidata`:
+
+```bash
+git fetch origin integration/m02-cierre-candidata
+git worktree add ../sillar-m02-candidata origin/integration/m02-cierre-candidata
+cd ../sillar-m02-candidata
+node scripts/estrenar.mjs          # y rellena POSTGRES_PASSWORD / Password= en .env
+pnpm install --dir frontend && pnpm install --dir e2e
+docker compose up -d db
+node frontend/scripts/fronteras-frontend.mjs   # sin violaciones
+node scripts/verificar.mjs                     # 6/6 esperado, incluido [M02-C21]
+```
+
+Conviene repetir además el ciclo innegociable (`tests/zz-z-m02-ciclo-diagnostico.spec.ts`)
+sobre la candidata, porque `main` trae cambios de M04 y de la puerta.
+
+### Observación sobre la evidencia anterior
+
+`evidencias/C21-CIERRE-20260925.txt` resume la puerta 6/6 y el ciclo con
+los SHA-256 de sus registros locales, pero no nombra el commit de código
+sobre el que corrieron. Para la revalidación conviene anotarlo.
+
+### Decisión solicitada, actualizada
+
+Se propone el cierre de M02 **sobre la cabeza de
+`integration/m02-cierre-candidata`**, condicionado a que la puerta local
+dé 6/6 sobre ese SHA. La aprobación corresponde al colíder.
+
+**No se autoriza ninguna fusión desde esta entrega.**
