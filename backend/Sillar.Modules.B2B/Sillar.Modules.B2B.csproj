@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- M07 solo referencia la plataforma y los contratos de sus dependencias duras: M01 y M04. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
+    <ProjectReference Include="..\Sillar.Shared.Data\Sillar.Shared.Data.csproj" />
+    <ProjectReference Include="..\Sillar.Core.Contracts\Sillar.Core.Contracts.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Catalog.Contracts\Sillar.Modules.Catalog.Contracts.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Crm.Contracts\Sillar.Modules.Crm.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Sillar.Modules.B2B.Tests" />
+  </ItemGroup>
+
+</Project>
