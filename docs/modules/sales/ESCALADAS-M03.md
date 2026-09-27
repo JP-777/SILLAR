@@ -13,7 +13,8 @@ las tiene.**
 | § | Estado tras la ronda |
 |---|---|
 | **§a** SPEC de Diseño | **RESUELTA el 26/09/2026.** Recibida **completa**: 897 líneas, §7 y §8 presentes, cierra en B-05 con «ESTADO FINAL: DETENIDO». Conservada íntegra e idéntica byte a byte en `SPEC-M03-ORIGINAL-DISENO-2026-09-23.md`. La reconciliación está en `SPEC.md` §0 |
-| **§b1** Código visible `2026-0147` frente a `ADR-016` | **Abierta, expresamente.** «No inventes respuestas» |
+| **§b1** Código visible | **RESUELTA el 27/09/2026: `W-2026-0147`.** JP ratificó la opción 2 de las tres que esta cola ofrecía |
+| **§b1-bis** Continuidad del correlativo | **ABIERTA.** El 27/09 menciona que no debe saltar ni reiniciarse, pero eso no es un mecanismo. Ver abajo |
 | **§b2** Cancelación y reactivación | **Abierta** |
 | **§c** Efectivo frente a Yape | **Abierta** |
 | **§d** Navegación entre módulos para «a consultar» | **Pasa a Chat 2.** La *modalidad de acceso* —si «a consultar» exige cuenta— sigue siendo decisión comercial abierta |
@@ -87,7 +88,23 @@ hay tiempo *después*.
 
 ## §b — Transiciones y política que el encargo no fija
 
-### §b1 · El formato del código visible · **NO REVERSIBLE** · decidir antes de la primera migración
+### §b1 · El formato del código visible · **RESUELTA el 27/09/2026**
+
+> **`W-2026-0147`** — nodo delante, año y correlativo. Ratificado por JP el 27 de septiembre de 2026,
+> comunicado por Chat 2 vía JP, **para alinear con la regla 2 de la ADR-016**.
+>
+> **Se eligió la opción 2 de las tres de abajo, literalmente**, incluida la letra del ejemplo. El
+> texto se conserva sin tocar porque registra qué se sopesó: la opción 1 —dejar `2026-0147`— se
+> apoyaba en que hoy hay un solo nodo, y **es exactamente el razonamiento que la ADR-016 rechaza**,
+> porque la circunstancia de hoy no debe grabarse en un dato que viajará a comprobantes.
+>
+> **Lo que NO resolvió:** la continuidad del correlativo. Pasa a **§b1-bis**.
+
+---
+
+#### Lo que se sopesó, conservado sin tocar
+
+*Acumula el planteamiento del 26/09 y las precisiones sobre las reglas de la ADR-016 añadidas en la revisión posterior. Se conserva entero: es el registro de por qué la opción 1 no valía.*
 
 - **Fecha:** 26/09/2026.
 - **El conflicto, con las dos citas:**
@@ -125,6 +142,51 @@ hay tiempo *después*.
 - **Qué sigue mientras espera:** todo el resto del diseño de datos, que no depende del formato;
   y el **mecanismo** del correlativo, que sí se puede diseñar salvo su prefijo.
 - **No decido yo qué código ve el cliente.**
+
+### §b1-bis · La continuidad del correlativo · **ABIERTA desde el 27/09/2026**
+
+- **Fecha:** 27/09/2026.
+- **Lo que la instrucción dice:** el correlativo **«no debe saltar ni reiniciarse»**. Se recibe como
+  mención dentro de la decisión del formato, **no como mecanismo**.
+- **Lo que hace falta para poder cumplirlo**, y son tres cosas más una contradicción:
+
+  1. **Continuidad.** Que el no-salto se confirme como requisito. **Si se confirma, la secuencia de
+     PostgreSQL queda excluida**, no penalizada: `nextval` es no transaccional y **una transacción
+     revertida consume el número igual**. Esta cola no afirma en ningún sitio que una secuencia
+     garantice continuidad, y la SPEC lo dice explícito en §5.4.
+  2. **Concurrencia.** El contador que sí da continuidad **serializa la creación de pedidos**: la
+     fila se bloquea y el segundo pedido espera. Falta concretar qué espera se acepta y qué ocurre si
+     el bloqueo no se obtiene.
+  3. **Cambio de año.** **No se presupone reinicio anual.**
+
+- **La contradicción aparente que el colíder debe examinar:**
+
+  > **`W-2026-0147` lleva el año dentro, y el correlativo no debe reiniciarse.** Si el año parte la
+  > serie, el correlativo **reinicia** cada 1 de enero, contra la propia instrucción. Si el año es
+  > descriptivo y la serie es continua entre años, entonces el año **no identifica** ningún tramo:
+  > `W-2026-9999` sería seguido por `W-2027-10000`.
+  >
+  > `ADR-016:77` **no desempata**: dice «se puede renumerar: sí, mientras no salte ni reinicie»,
+  > que apoya la serie continua, pero habla de **renumerar**, que es otra operación.
+
+- **Y dos precisiones que el prefijo de nodo introduce, ninguna decidida:**
+  - **La continuidad es de cada serie, no global.** Con serie por nodo, dos nodos numerando cada uno
+    desde 1 es lo correcto y no un salto — `ADR-016:79`, «SUNAT exige serie propia por punto de
+    emisión». Hoy hay **un solo nodo**, y por eso no se nota: es el caso del §1 de
+    `ANTES-DE-EMPEZAR-UN-MODULO.md`, una regla que se graba mal cuando solo hay uno.
+  - **De dónde sale la `W` no está definido en ninguna parte.** El código de nodo que el producto
+    usa hoy es **`principal`** (`backend/Sillar.Shared/Replication/NodeIdentity.cs:38`, clave de
+    configuración `Sillar:Node:Code` en `:28`), y **nada traduce `principal` a `W`**. El ejemplo de la
+    propia ADR-016 es `V-03-000459`, con **número** de sucursal y no letra. Falta decidir si la serie
+    visible **se configura aparte** o **se deriva** del código de nodo, y quién la valida para que dos
+    nodos no acaben con la misma letra.
+- **Consecuencia de no resolver:** no se puede escribir la tabla del contador —puede ser una fila o
+  una por año—, ni la prueba de continuidad. **El formato ya no bloquea; el mecanismo sí.**
+- **Qué sigue mientras espera:** todo lo demás del modelo de datos, que no depende del mecanismo, y la
+  prueba de **unicidad**, que sí se puede escribir hoy.
+- **No elijo el mecanismo unilateralmente.**
+
+---
 
 ### §b2 · Cancelación y reactivación
 

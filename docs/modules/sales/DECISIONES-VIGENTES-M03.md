@@ -70,15 +70,29 @@ llega a M03 como `ItemSnapshot.Price == null`
   vecino.
 - El contrato y las SPEC de M03 y M07 deben expresar **exactamente la misma frontera**.
 
-## 5 · Código visible de pedido: año y correlativo
+## 5 · Código visible de pedido: nodo, año y correlativo
 
-**Ejemplo obligatorio: `2026-0147`.** Nunca se muestra un identificador interno. La generación
-debe **prevenir duplicados y concurrencia**.
+**RATIFICADO POR JP EL 27/09/2026: `W-2026-0147`.**
 
-> **Conflicto con la ADR-016, y es el caro de deshacer.** `ADR-016:66` y `CLAUDE.md` exigen que
-> los códigos visibles **lleven la serie de su nodo delante** (`V-03-000459`). `2026-0147` no la
-> lleva. Un código que ya se dictó por teléfono no se reformatea. **Se escala antes de escribir
-> la primera migración** — `ESCALADAS-M03.md` §b1.
+**Composición:** nodo delante, año y correlativo. Nunca se muestra un identificador interno. La
+generación debe **prevenir duplicados y concurrencia**.
+
+**Motivo:** alinear el formato visible con la **regla 2 de la ADR-016**, que separa las PK internas
+de los códigos legibles y establece una **serie visible por nodo**.
+
+> **El conflicto que había, resuelto.** El encargo del 26/09 §5 fijaba `2026-0147`, **sin serie de
+> nodo**, contra lo que exigen `ADR-016:66` y `CLAUDE.md`. Se escaló sin decidirlo
+> (`ESCALADAS-M03.md` §b1) y **JP resolvió el 27/09 por el formato con serie**. `2026-0147` **deja
+> de ser el formato autorizado**.
+
+**La clave primaria sigue siendo `uuid` v7** generada por la aplicación. **El código visible es una
+columna independiente**, que es exactamente la separación que la regla 2 sostiene.
+
+> **Lo que sigue abierto, y no se presupone:** la instrucción del 27/09 menciona además que el
+> correlativo **no debe saltar ni reiniciarse**. Eso deja tres cosas por concretar —**continuidad,
+> concurrencia y cambio de año**— y **una contradicción aparente que el colíder debe examinar: un
+> código que lleva el año dentro y un correlativo que no reinicia no pueden ser las dos cosas a la
+> vez.** `SPEC.md` §5.4 y `ESCALADAS-M03.md` §b1-bis. **No se elige mecanismo.**
 
 ## 6 · Siete estados visibles, idénticos para cliente y personal
 

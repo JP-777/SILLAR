@@ -4,6 +4,7 @@
 **Última verificación:** 21 de septiembre de 2026, 19:47:14 -05:00 — America/Lima
 **Commit verificado:** `21b3897003aee4d9dde1b346be64dc2ca03ada70`
 **Enmendado:** 26 de septiembre de 2026 — America/Lima, sobre `711bfba7cf3be80baa146b44e79ddf7a633d695d`
+**Ampliado:** 27 de septiembre de 2026 — America/Lima, sobre `74ab0773a8ea1101b30a9888d132d79b88b7d8f4`
 
 > ## ENMENDADO el 26 de septiembre de 2026 — no leer §1 y §2 como vigentes
 >
@@ -30,6 +31,38 @@
 >
 > **El texto de abajo no se ha tocado.** Se conserva porque registra con qué criterio se decidió
 > el 21 de septiembre, y ese criterio sigue explicando por qué hoy vencer no cancela.
+
+> ## AMPLIADO el 27 de septiembre de 2026 — el código visible del pedido
+>
+> **Decisión de JP, 27 de septiembre de 2026, America/Lima.** Comunicada por Chat 2 vía JP.
+>
+> ### El código visible de pedido de M03 es **`W-2026-0147`**
+>
+> **Composición:** **nodo delante, año y correlativo.**
+>
+> **Motivo, en palabras de la decisión:** alinear el formato visible con la **regla 2 de la
+> ADR-016**, que separa las PK internas de los códigos legibles y establece **una serie visible por
+> nodo**.
+>
+> **Qué desplaza.** Nada de este documento: el código visible no aparecía en él. Desplaza al
+> **ejemplo obligatorio `2026-0147`** del encargo del 26/09 §5, que **deja de ser el formato
+> autorizado**. Queda registrado aquí porque es donde se guarda la traza de las decisiones de
+> producto de M03, y porque este documento ya lleva la enmienda del 26/09: las dos se leen juntas.
+>
+> **Trazabilidad de la decisión:**
+>
+> | Fecha | Qué se dijo | Estado |
+> |---|---|---|
+> | 26/09/2026 | Encargo §5: «código visible de pedido con año y correlativo: **ejemplo obligatorio `2026-0147`**» | **Desplazado** el 27/09 |
+> | 26/09/2026 | Frente A escala el conflicto con la regla 2 de la ADR-016 y ofrece tres opciones, la segunda «`2026-0147` **con serie delante**, p. ej. `W-2026-0147`» (`ESCALADAS-M03.md` §b1) | Escalado, no decidido |
+> | **27/09/2026** | **JP ratifica `W-2026-0147`** | **VIGENTE** |
+>
+> **Lo que esta decisión NO cambia:** la clave primaria sigue siendo **`uuid` v7** generada por la
+> aplicación. **El identificador visible es una columna independiente**, y esa separación es
+> precisamente lo que la regla 2 existe para sostener.
+>
+> **Lo que queda pendiente de concretar**, y no se presupone: la **continuidad** del correlativo, su
+> **concurrencia** y el **cambio de año**. Están en `SPEC.md` §5.4 y `ESCALADAS-M03.md` §b1-bis.
 
 ---
 
