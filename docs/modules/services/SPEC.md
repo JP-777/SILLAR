@@ -3,14 +3,14 @@
 - **Código:** `services`
 - **Nombre:** M05a Servicios — Vitrina
 - **Schema reservado:** `services`
-- **Versión propuesta:** 0.1.0
-- **Estado:** Borrador propuesto · pendiente de ratificación
+- **Versión:** 1.0.0
+- **Estado:** Ratificada para pasos 2 y 3 · pendiente de diseño 3.5
 - **Fase:** MVP · paso 1 SPEC
 - **Fecha de creación:** 26 de septiembre de 2026
 - **Última verificación:** 26 de septiembre de 2026
 - **Zona horaria:** America/Lima
 - **Base de referencia y SHA efectivamente leído:** `711bfba7cf3be80baa146b44e79ddf7a633d695d`
-- **Estado de esta SPEC:** propuesta documental; ningún criterio de implementación se declara cumplido
+- **Ratificación:** JP y líder técnico, 27 de septiembre de 2026. Persistencia editorial propia, CORE como única dependencia dura y contrato de snapshots hacia M05b sin FK entre schemas.
 
 ## 0. Trazabilidad de decisiones
 
@@ -50,15 +50,15 @@ La consecuencia es que la vitrina debe:
 - La decisión de replicación se revisará al escribir la SPEC de M13 o antes si la observación confirma que los servicios se cobran en caja.
 - Cambiar identificadores cuando ya existen datos sería una migración costosa; el disparador no debe omitirse.
 
-### 0.5 Cuestión principal pendiente
+### 0.5 Fuente de datos ratificada
 
-Debe ratificarse cuál será la fuente de datos de M05a:
+Se consideraron tres fuentes:
 
 1. contenido editorial propio y autónomo;
 2. proyección de artículos de M01;
 3. modelo híbrido con referencias o snapshots de M01.
 
-Esta SPEC recomienda la primera alternativa porque es la única que mantiene el comportamiento autónomo declarado en la arquitectura. La recomendación sigue siendo una propuesta, no una decisión ratificada.
+JP ratificó la primera: contenido editorial propio y autónomo. Las otras dos se conservan como trazabilidad y no son la base de la implementación.
 
 ---
 
@@ -165,7 +165,7 @@ Si una futura necesidad de M05a exige alguno de esos comportamientos, debe escal
 | Módulo | Tipo | Necesidad | Comportamiento ante ausencia |
 |---|---|---|---|
 | CORE | Dura | Capacidades, activación, autenticación administrativa, CSRF, auditoría y medios si se usan imágenes | No aplica: CORE forma parte de la plataforma |
-| M01 Catálogo | Ninguna confirmada | Puede aportar una futura fuente de contenido o vinculación | M05a debe seguir mostrando y administrando su vitrina sin errores |
+| M01 Catálogo | Ninguna | No aporta la fuente de verdad de M05a | M05a muestra y administra su vitrina sin errores |
 | M05b Órdenes | No es dependencia de M05a | M05b podrá depender de M05a según la arquitectura | M05a no cambia si M05b está ausente |
 | M06 Seguimiento | Ninguna | M06 pertenece al flujo operativo de órdenes | Sin efecto |
 | M13 Punto de Venta | Futura revisión, no dependencia actual | Dispara la revisión de replicación si los servicios se cobran en caja | Sin efecto actual |
@@ -194,9 +194,9 @@ Si JP ratifica una integración futura:
 
 ## 5. Modelo conceptual de datos
 
-### 5.1 Decisión propuesta
+### 5.1 Decisión ratificada
 
-Se propone persistencia propia mínima para mantener la independencia frente a M01. No se especifican todavía tablas, DDL, migraciones ni diccionario físico.
+M05a utiliza persistencia propia mínima para mantener la independencia frente a M01. El diccionario físico se concreta en `DATOS.md`.
 
 La propuesta se limita a conceptos indispensables para una vitrina administrable.
 
@@ -313,7 +313,7 @@ Todo lo descrito en esta sección es borrador. No representa rutas existentes.
 
 ### 6.1 Contrato público propuesto
 
-Solo se justificaría un contrato interno cuando exista un consumidor confirmado, previsiblemente M05b.
+M05a publica un contrato de lectura para que el futuro M05b copie un snapshot propio sin FK entre schemas.
 
 Propuesta mínima futura:
 
@@ -335,7 +335,7 @@ public interface IServicesShowcase
 }
 ```
 
-Antes de ratificarlo debe resolverse si M05b necesita una referencia viva o un snapshot. Un contrato no debe congelarse únicamente porque M05b aparece como dependiente en el mapa.
+El contrato devuelve una fotografía puntual. M05b deberá copiarla y será dueño de su historia; no conservará una referencia viva ni FK hacia `services`. La supervivencia del binario fotográfico tras retirar un medio de CORE sigue escalada y no se promete aquí.
 
 ### 6.2 Endpoints públicos propuestos
 
@@ -830,20 +830,13 @@ La alternativa se conserva como trazabilidad, pero no revoca la existencia de M0
 
 ## 12. Fuera de alcance y pendientes de ratificación
 
-Quedan pendientes:
+Quedan pendientes después de la ratificación:
 
-1. fuente de datos definitiva;
-2. persistencia propia sí/no;
-3. precio informativo propio sí/no;
-4. opciones propias sí/no;
-5. relación futura con M01;
-6. identidad o snapshot que necesitará M05b;
-7. política de archivo y posible restauración;
-8. política de pérdida o conservación al desinstalar;
-9. necesidad real de ficha individual frente a listado suficiente;
-10. necesidad de imagen;
-11. contribución concreta a portada;
-12. roles administrativos autorizados;
-13. disparador de replicación ligado a M13 y observación de caja.
+1. política de conservación del binario fotográfico en snapshots históricos de M05b;
+2. opciones propias sí/no;
+3. restauración desde Archivado sí/no;
+4. política de pérdida o conservación al desinstalar;
+5. contribución concreta a portada;
+6. disparador de replicación ligado a M13 y observación de caja.
 
-No se avanza a DATOS mientras los puntos 1, 2, 5, 6 y 8 no hayan sido ratificados.
+Los puntos pendientes no bloquean DATOS ni API. Sí bloquean cualquier garantía sobre fotografía histórica y cualquier implementación de opciones o restauración.
