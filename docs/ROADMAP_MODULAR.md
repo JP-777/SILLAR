@@ -1,5 +1,9 @@
 # SILLAR — Roadmap Modular
 
+**Última modificación:** 2026-09-27 11:40:43 -0500 — America/Lima
+**Última verificación parcial:** 2026-09-27 11:40:43 -0500 — America/Lima
+**Commit de código verificado:** `2191150635935a5b58c7c4edc2d77c7cbc258019`
+
 **Versión:** 2.0 — reemplaza al roadmap BD → Backend → Frontend
 **Fecha:** 14 de agosto de 2026
 
@@ -63,7 +67,7 @@ Módulos que entran en la primera entrega, en orden de construcción. El orden r
 |---|---|---|
 | 1 | **CORE** ✅ | Todo lo demás se enchufa aquí. Incluye licencias, activación, settings y usuarios admin. **Cerrado** — commit `73988ce`, 181 pruebas |
 | 2 | **M01 Catálogo** ✅ | Base del negocio. La búsqueda va por `to_tsvector('spanish', …)` sobre índice GIN, no por `pg_trgm` ni `unaccent`: el nombre lleva colación no determinista y PostgreSQL no admite esas operaciones sobre ella. **Cerrado** — 17 de 17 criterios con su prueba |
-| 3 | **M02 Contenido Web** ✅ | **Cierre propuesto** — 33/33 criterios acreditados, puerta canónica 6/6 PASS y ciclo innegociable PASS. Pendiente de revisión del colíder y fusión; evidencia en `docs/modules/cms/CIERRE-M02-PROPUESTA.md`. Esa puerta se acreditó antes de incorporar `main` (`9fe08b8`, barrera de fronteras); la revalidación sobre la rama candidata consta en la misma propuesta. |
+| 3 | **M02 Contenido Web** ✅ | **CERRADO** — dictamen favorable del colíder y autorización de JP, 27/09/2026 (America/Lima); 33/33 criterios y QA local sobre `2e6c721`: barrera 34/34, puerta 6/6, E2E 159/159, C21 y ciclo de desinstalación/reinstalación PASS. Evidencias originales y puerta roja previa declarada en `docs/modules/cms/evidencias/QA-B-INDICE-20260927.md`. Integrado con fast-forward desde `2191150`; el riesgo intermitente queda abierto en `PENDIENTES.md` §27. |
 | 4 | **M04 Clientes** ✅ | Necesario para que Ventas tenga a quién asociar el pedido. **Y la identidad del cliente vive aquí, no en CORE**: `core.admin_users` es del personal —rol obligatorio y restringido a los tres de administración—, así que la cuenta de quien compra es de M04. **Cierre propuesto** — 19/19 criterios acreditados; doble puerta 6/6 PASS sobre `9f9015b`; pendiente de aprobación y fusión; verificación de correo E2E mediante Mailpit v1.31.1 solo para desarrollo/pruebas |
 | 5 | **M03 Ventas Online** | Carrito y pedidos: prioridad número tres. **Requiere M01 y requiere M04**: la dependencia sobre Clientes era blanda y **la cuenta obligatoria para comprar la vuelve dura** (21 ago 2026). Este orden ya era el correcto; lo que estaba mal escrito era «aprovecha». |
 | 6 | **M05a Servicios (vitrina)** | El PRD insiste en que los servicios permanentes no queden escondidos. **Su construcción está pendiente de una decisión de producto: puede no llegar a existir como módulo.** Ver `docs/modules/services/DECISIONES-PREVIAS-M05a.md` |

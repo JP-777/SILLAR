@@ -1,5 +1,7 @@
 # Pendientes
 
+**Última modificación parcial:** 2026-09-27 11:40:43 -0500 — America/Lima. **Base verificada de esta entrada:** `2191150635935a5b58c7c4edc2d77c7cbc258019`.
+
 **Creación:** 25 de agosto de 2026, 21:04:02 -05:00 — America/Lima (`1d3f78874cae9a57659166495bb84151b0797db4`)
 **Última verificación:** 22 de septiembre de 2026, 06:55:03 -05:00 — America/Lima
 **Commit verificado:** `01f7e42bb6ec25b1687094c2b4138a86d653bec8`
@@ -446,6 +448,25 @@ la decisión sobre esos datos corresponde a una persona.
 
 **No hacer dentro de M04.** No se modifica `core.admin_users`, sus migraciones ni sus servicios
 en esta unidad.
+
+---
+
+## 27 · M02 — posible inestabilidad E2E bajo presión de memoria (RIESGO RESIDUAL)
+
+**Creación:** 27/09/2026, America/Lima. **Última revisión de esta entrada:** 2026-09-27 11:40:43 -0500 (America/Lima).
+**Código verificado:** `2e6c72151a7046aad8269acbe2e5e4bff8f452cf`. **Evidencia publicada:** `docs/modules/cms/evidencias/QA-B-INDICE-20260927.md` (commit documental `2191150`).
+
+**Observado y limitado:** La primera puerta local del 27/09/2026, 01:13–01:40, tuvo 157 E2E aprobadas y 2 fallidas: `catalogo.spec.ts:209` y `[M02-C32]`. Sus originales desaparecieron al reiniciarse la sesión; solo sobreviven los hashes registrados por Claude B. Una segunda puerta se interrumpió por agotamiento de memoria. No reconstruir ni reinterpretar dichos registros.
+
+**Revalidación posterior:** Con memoria liberada y monitorizada, la puerta completa sobre el mismo SHA finalizó 6/6 y Playwright 159/159, sin fallos, inestables ni omisiones; C21, C32 y el ciclo obligatorio aprobados. Registros auténticos disponibles en la ruta de evidencias indicada.
+
+**Hipótesis, NO demostrada:** Los dos fallos anteriores pudieron depender de presión de memoria o de la carga del equipo; durante la puerta roja no se midió la memoria. Una ejecución posterior verde no demuestra que no exista un defecto intermitente.
+
+**Disparador obligatorio:** Si vuelve a fallar `catalogo.spec.ts:209` **o** `[M02-C32]`, conservar de inmediato los registros, trazas, DOM y mediciones de memoria fuera del scratchpad; abrir diagnóstico reproducible y no atribuir automáticamente el fallo al entorno.
+
+**Propuesta separada para el líder técnico, NO implementada ni aprobada:** Evaluar incorporar a `scripts/verificar.mjs` un vigía que registre memoria y, ante un umbral de seguridad acordado, interrumpa ordenadamente la puerta preservando artefactos. El vigía empleado por B en la QA fue externo a la puerta: no presentarlo como una protección existente en `main`.
+
+**Responsable de seguimiento:** Integración y líder técnico. **Estado:** ABIERTO hasta que se cumpla el disparador o se formalice una decisión de tratamiento.
 
 ---
 

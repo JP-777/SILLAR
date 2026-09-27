@@ -5,7 +5,10 @@
 - **Decide:** JP
 - **Enmienda:** la convención de claves primarias de `CLAUDE.md`
 - **Bloquea a:** M13, M14, M15, M16 — hay que resolverlo **antes** de construirlos
-- **Enmendada por:** ADR-018 — la tabla de clasificación de abajo. «Archivos y sus metadatos» quedó del lado equivocado: el catálogo se replica y referencia a los medios, así que los medios se replican. El criterio y las cuatro reglas siguen vigentes.
+- **Última modificación:** 2026-09-27 11:40:43 -0500 — America/Lima. **Última verificación de esta excepción:** 2026-09-27 11:40:43 -0500 — America/Lima. **Commit base verificado:** `2191150635935a5b58c7c4edc2d77c7cbc258019`.
+**Excepción a la regla 2, ratificada por el líder técnico el 27/09/2026:** ver sección «Excepción ratificada» al final.
+
+**Enmendada por:** ADR-018 — la tabla de clasificación de abajo. «Archivos y sus metadatos» quedó del lado equivocado: el catálogo se replica y referencia a los medios, así que los medios se replican. El criterio y las cuatro reglas siguen vigentes.
 
 ## Contexto
 
@@ -98,3 +101,47 @@ La regla actual dice:
 Pasa a decir:
 
 > Claves primarias: `uuid` v7 generado por la aplicación en **tablas que se replican entre nodos**; `integer GENERATED ALWAYS AS IDENTITY` en las que no. Nunca `SERIAL`. Ante la duda, la pregunta es si esa fila puede nacer en un nodo y tener que existir en otro. Los identificadores nunca se muestran al usuario: los códigos visibles son campos aparte.
+
+---
+
+## Excepción ratificada el 27/09/2026 — reinicio anual de códigos visibles
+
+**Decisión de producto:** JP, 27 de septiembre de 2026, America/Lima.
+**Ratificación de arquitectura:** líder técnico, 27 de septiembre de 2026, America/Lima.
+**Última modificación:** 2026-09-27 11:40:43 -0500 — America/Lima.
+**Última verificación:** 2026-09-27 11:40:43 -0500 — America/Lima; commit base `2191150635935a5b58c7c4edc2d77c7cbc258019`.
+
+**Alcance limitado.** Los códigos **visibles** de pedidos M03 y cotizaciones M07 son
+campos independientes de la PK UUID v7. Conservan la **etiqueta del nodo al
+principio**, como exige la regla 2. Se autoriza que **la serie visible reinicie
+cada año por nodo y tipo de documento**, exceptuando exclusivamente el «no
+reinicia» de la tabla de códigos visibles de esta ADR. Las reglas sobre PK,
+`origin_node`, FK replicables y nodos autónomos no cambian; el texto histórico
+permanece arriba para conservar trazabilidad.
+
+**Ejemplo ratificado para pedidos M03:** `P-2026-0147` para nodo técnico
+`principal`, con etiqueta de presentación `P` derivada de `NodeIdentity.Code`
+y fijada en un ajuste propio durante la instalación; no confundir la etiqueta
+visible con la identidad técnica del nodo. Una etiqueta vacía o repetida entre
+las ya registradas **en esa base** impide la instalación. M07 sigue la misma
+convención con una letra de serie diferente, todavía por decidir para ese módulo.
+
+**Continuidad transaccional dentro de cada serie `(nodo, año, tipo)`:** no dejar
+huecos por rollback; el contador se almacena en una fila por serie y se
+actualiza mediante `UPDATE ... RETURNING` en la misma transacción que crea
+el pedido/cotización. Pedir número **al final**, justo antes de confirmar,
+nunca al abrir el carrito. No se acepta `nextval()` como garantía de ausencia
+de huecos, pues puede consumir números al revertir.
+
+**Prueba negativa y falsificación exigidas a cada frente:** dos altas
+concurrentes en la misma serie obtienen códigos distintos y consecutivos;
+una transacción de alta revertida no consume correlativo; desactivar a propósito
+la guarda debe poner su prueba en rojo y restaurarla en verde. La política no
+promete llenar huecos causados por borrados manuales posteriores ni resolver
+mágicamente conflictos entre nodos desconectados.
+
+**Límite explícito:** la comparación con una sola base no prueba unicidad de
+etiquetas entre nodos desconectados. El diseño de asignación/coordinación
+inter-nodo debe ser presentado al líder técnico cuando M16 lo requiera; no
+inventar un registro central obligatorio en esta excepción ni reinterpretar
+la ratificación como garantía offline de letras únicas.
