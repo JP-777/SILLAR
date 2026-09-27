@@ -6,6 +6,59 @@
 **Enmendado:** 26 de septiembre de 2026 — America/Lima, sobre `711bfba7cf3be80baa146b44e79ddf7a633d695d`
 **Ampliado:** 27 de septiembre de 2026 — America/Lima, sobre `74ab0773a8ea1101b30a9888d132d79b88b7d8f4`
 
+**Última modificación parcial:** 2026-09-27 12:21:48 -0500 — America/Lima.
+**Última verificación de esta rectificación:** 2026-09-27 12:21:48 -0500 — America/Lima; base de código `9ccc4228fe70578f28aad71bf0f4f2fa8806997b`.
+
+> ## RECTIFICACIÓN FINAL DE JP — 27/09/2026, America/Lima
+>
+> **FORMATO VIGENTE DE PEDIDOS M03: `P-2026-0147`.** Esta decisión posterior de JP
+> **sustituye** al formato provisional `W-2026-0147` consignado en el bloque histórico
+> siguiente. Aunque allí figure «VIGENTE» como estado de aquella fecha, ya no lo está.
+> Se conserva el bloque anterior como trazabilidad y no se modifica la SPEC histórica.
+>
+> **Composición:** etiqueta visible del nodo + año + correlativo. `P` es el ejemplo
+> correspondiente al nodo cuyo `NodeIdentity.Code` es `principal`, no una letra
+> universal que pueda grabarse por defecto en todos los nodos. La etiqueta se
+> **deriva del `Code` real y se fija en un ajuste propio durante la instalación**.
+> El instalador debe negarse a arrancar si la etiqueta es vacía o coincide con
+> otra ya existente en la base. Verificar expresamente el alcance de esa garantía
+> en futuros nodos autónomos y sincronización: la base local no puede demostrar
+> por sí sola unicidad entre instalaciones desconectadas; elevar la solución
+> inter-nodo al líder técnico sin inventarla.
+>
+> **Reinicio anual APROBADO Y RATIFICADO:** la serie es por nodo y año, y
+> vuelve al inicio al cambiar el año. El líder técnico **ratificó el 27/09/2026**
+> la excepción de ADR-016: se conserva el nodo delante y se excepciona solo el
+> «no reinicia». Su texto se incorpora a ADR-016 mediante la rama documental
+> del modo `m02`; la publicación es trazabilidad, NO una condición para que A
+> implemente desde ahora `P-2026-0147` y su contador transaccional.
+>
+> **Sin huecos APROBADO:** usar una fila de contador por serie `(nodo, año)`;
+> asignar mediante `UPDATE ... RETURNING` dentro de la MISMA transacción que
+> persiste el pedido. Pedir el número al final, justo antes de confirmar el
+> pedido, nunca al crear el carrito. No usar `nextval()` porque una transacción
+> revertida consume números de secuencia. Resolver concurrencia y rollback
+> transaccional sin prometer continuidad ante borrados, correcciones manuales o
+> repartición entre nodos no definida en este documento.
+>
+> **Pruebas obligatorias:** dos pedidos concurrentes reciben números distintos
+> y consecutivos dentro de su serie; un pedido que falla a mitad no consume
+> número; además, provocar deliberadamente una falla de la guarda y demostrar
+> que la prueba pasa a rojo antes de restaurarla.
+>
+> **M07:** sus cotizaciones siguen la misma convención por nodo/año, con una
+> **letra de serie diferente**, cuyo valor no se inventa aquí.
+>
+> **Motivo de la rectificación:** `NodeIdentity.cs` define un `Code` configurable
+> con valor por defecto `principal`. La letra `W` anterior no corresponde a
+> ningún nodo reconocido del sistema. JP corrigió expresamente el ejemplo y
+> fijó las reglas anteriores el 27/09/2026, America/Lima.
+>
+> **Propagación:** corresponde a A actualizar su propia SPEC, decisiones vigentes,
+> escaladas y pruebas en el siguiente turno; este commit modifica únicamente
+> `DECISIONES-PREVIAS-M03.md`. No interpretar su documentación anterior como vigente.
+
+
 > ## ENMENDADO el 26 de septiembre de 2026 — no leer §1 y §2 como vigentes
 >
 > **Qué lo enmienda:** el encargo de producto del 26 de septiembre de 2026, recibido por el
