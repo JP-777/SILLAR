@@ -203,4 +203,7 @@ Numeración estable: una entrada resuelta se tacha y conserva su número.
 - **C10 — Residuo de una instalación rechazada.** Si Integración quiere que un módulo rechazado no
   deje su schema vacío, el cambio es en `Sillar.Shared.Data` (crear el historial dentro de la
   transacción, o limpiarlo al fallar). Hoy es un límite documentado, no un fallo.
-
+- **C11 — La puerta acumula nodos de MSBuild.** Observado el 27/09 en la puerta de M07: más de
+  veinte nodos reutilizables vivos (~4 GiB) durante el e2e, memoria disponible mínima 1218 MiB y un
+  e2e casi el doble de lento. Efecto pedido: que `scripts/verificar.mjs` no deje nodos de MSBuild
+  vivos entre etapas. Detalle en `BITACORA-M07.md`.
