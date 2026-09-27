@@ -17,6 +17,8 @@ las tiene.**
 | **§b1-bis** Continuidad y mecanismo | **RESUELTA el 27/09/2026.** Reinicio anual ratificado como excepción a la ADR-016; contador transaccional por serie `(nodo, año)` |
 | **§g** Etiqueta: ¿por nodo o por nodo × tipo? | **ABIERTA** — nueva |
 | **§h** Unicidad de etiqueta entre nodos desconectados | **ELEVADA al líder técnico** — nueva |
+| **§i** `core.media_assets → core.admin_users` cruza la ADR-018 | **HALLAZGO del 27/09, de CORE, no de M03** — ver abajo |
+| **§j** Dos costuras para que la puerta vea a M03 | **PEDIDAS a Integración** — ver abajo |
 | **§b2** Cancelación y reactivación | **Abierta** |
 | **§c** Efectivo frente a Yape | **Abierta** |
 | **§d** Navegación entre módulos para «a consultar» | **Pasa a Chat 2.** La *modalidad de acceso* —si «a consultar» exige cuenta— sigue siendo decisión comercial abierta |
@@ -405,3 +407,76 @@ efecto, no el cambio.**
   carrito al recargar, y eso se ve en pantalla.
 - **Consecuencia de no resolver:** ninguna hoy. El paso 2 está bloqueado por §e4 de todas formas.
 - **Qué sigue mientras espera:** todo.
+
+
+---
+
+## §i · La ADR-018 disparó, y no sobre M03 · **HALLAZGO · territorio de CORE**
+
+- **Fecha:** 27/09/2026. **Cómo apareció:** al escribir la migración de M03 convertí el barrido de la
+  ADR-018 en una consulta y la lancé **sobre los cuatro schemas**, no solo sobre el mío. Devolvió una
+  fila, y no era de `sales`.
+
+```
+origen             destino             constraint
+core.media_assets  core.admin_users    fk_media_assets_created_by
+```
+
+- **Comprobado columna por columna, no deducido:**
+
+| Tabla | `origin_node` | `row_version` | ¿Se replica? |
+|---|---|---|---|
+| `core.media_assets` | **sí** | **sí** | **Sí** — ADR-018, decisión 1 |
+| `core.admin_users` | no | no | **No** — ADR-018, decisión 4 |
+
+  Y la restricción es `core.media_assets.created_by → core.admin_users.admin_user_id`, con
+  `ON DELETE SET NULL`.
+
+- **Es el tercer renglón de la tabla de la propia ADR-018** (`:28`): origen que se replica, destino
+  que no. «La fila viaja y su referencia se queda. Apunta a otra cosa, o a nada.»
+
+- **Y la ADR-018 afirma que esto no pasa.** Su decisión 4 dice: «Sesiones, auditoría, configuración y
+  activación de módulos siguen siendo enteras y locales. Son del nodo por naturaleza, **y ninguna tabla
+  replicada las referencia**». **Esa última frase es falsa desde su propia decisión 1**, que convirtió
+  `core.media_assets` en replicada sin revisar a quién referencia.
+
+- **Qué produciría:** una fila de medios que viaja lleva `created_by = 7`, y en el otro nodo el 7 es
+  otra persona o no es nadie. Es el mismo síntoma que la ADR-018 describe para las fotos —«un catálogo
+  sin fotos, y sin error»—, aquí aplicado a **quién subió el archivo**.
+
+- **La salida ya está escrita en la propia ADR**, para el caso que ella sí previó: «guardar el nombre
+  del vendedor como dato snapshot y renunciar a la FK». Es lo que M03 hace en `order_payments` y
+  `order_status_changes`.
+
+- **No lo corrijo.** `core` no es mi territorio y M03 no lo necesita para avanzar. Pero **la ADR-018
+  llevaba desde el 15 de agosto sin que nadie la provocara como consulta**, y es exactamente el §2 de
+  `ANTES-DE-EMPEZAR-UN-MODULO.md`: «una barrera que calla no se distingue de una barrera que funciona».
+  Esta calló seis semanas.
+
+- **Sugerencia, no petición:** el barrido es una consulta de doce líneas y podría vivir en la puerta.
+  Una regla comprobable que nadie comprueba es una regla escrita, no puesta.
+
+---
+
+## §j · Dos costuras para que la puerta vea a M03 · **PEDIDAS a Integración**
+
+Ninguna bloquea escribir M03; las dos bloquean **verificarlo en la puerta**.
+
+| Fichero | Efecto observable que necesito |
+|---|---|
+| `backend/Sillar.Api/Sillar.Api.csproj` | Que `Sillar.Modules.Sales.dll` se publique junto al host, para que `ModuleDiscovery` lo encuentre recorriendo los ensamblados. El propio fichero dice en su `:9` que «cuando se añada un módulo nuevo, su `ProjectReference` va aquí y en ningún [otro sitio]» |
+| `scripts/verificar.mjs` | Que la etapa de migraciones incluya `Sillar.Modules.Sales` en su lista de módulos, para que el schema `sales` exista en la base efímera |
+
+**Por qué la segunda importa más de lo que parece.** Las pruebas de persistencia de este proyecto solo
+corren contra la base efímera de la puerta —el `Fixture` lo exige comparando `SILLAR_VERIFY_DATABASE`
+con la base de la conexión, y falla antes de tocar nada—. Mientras `sales` no se migre en esa base,
+**no se pueden escribir las pruebas de persistencia de M03 sin poner la puerta roja**: no serían
+omitidas declaradas, serían fallos. Por eso este turno entrega solo las de lógica, y las cinco de
+persistencia que la rectificación exige —concurrencia, rollback que no consume número, carrito que no
+consume, cambio de año, y falsificación de la guarda— van en la entrega siguiente, con estas dos
+costuras dentro.
+
+**Mientras tanto están verificadas a mano** contra PostgreSQL real, y las salidas están en el informe
+del turno: siete tablas, seis claves foráneas con sus dos cruzadas en `RESTRICT`, siete triggers,
+diecinueve `CHECK`, cero cruces de la ADR-018 en `sales`, cero FK hacia `core.admin_users`, y el ciclo
+desinstalar/reinstalar con `catalog`, `cms`, `core` y `crm` intactos.
