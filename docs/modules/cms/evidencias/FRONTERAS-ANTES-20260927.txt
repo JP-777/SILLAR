@@ -1,0 +1,10 @@
+# Barrera de fronteras ANTES de corregir NoPhoto
+# Rama: integration/m02-cierre-candidata · HEAD: 6e01a20192eb1f8afac04dbd43158ed41b6efab4
+# Fecha: 2026-09-27 01:03:04 -05
+# cmsHome.tsx:3 → import { NoPhoto } from '../catalog/components/ProductCard';
+# Comando: node frontend/scripts/fronteras-frontend.mjs
+
+Fronteras del frontend: 1 problema(s) en 151 ficheros.
+  F1 modules/cms/cmsHome.tsx:3 importa '../catalog/components/ProductCard' — un módulo no importa de otro módulo (modules/cms → modules/catalog)
+
+# rc=1

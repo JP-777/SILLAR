@@ -1,0 +1,453 @@
+# Puerta canónica ANTES de corregir NoPhoto (fallo intencional)
+# Rama: integration/m02-cierre-candidata · HEAD: 6e01a20192eb1f8afac04dbd43158ed41b6efab4
+# Inicio: 2026-09-27 01:03:11 -05 · Fin: 2026-09-27 01:03:18 -05
+# Comando: node scripts/verificar.mjs
+
+Comprobando el entorno...
+  Suspensión bloqueada durante la corrida (1/2 inhibidores).
+  Sin kde-inhibit: la corrida NO está protegida de la suspensión.
+Preflight: coherencia de .env.example...
+Base backend efímera: sillar_verify_1790488991578_1779
+Barrido: sin bases huérfanas antiguas.
+[1/6] tipos del frontend...
+
+FALLÓ en la etapa: tipos del frontend
+  Terminó con código 1.
+--- vocabulario de auditoría (pnpm test:audit-vocabulary) ---
+
+> sillar-frontend@1.0.0 test:audit-vocabulary /home/user/SILLAR-m02/frontend
+> node --test tests/auditEntityVocabulary.test.mjs
+
+TAP version 13
+# Subtest: CORE + M01 + M02 + M04 activos componen exactamente las veinte etiquetas
+ok 1 - CORE + M01 + M02 + M04 activos componen exactamente las veinte etiquetas
+  ---
+  duration_ms: 3.693661
+  type: 'test'
+  ...
+# Subtest: sin M02 social_link no queda registrado y degrada al código técnico
+ok 2 - sin M02 social_link no queda registrado y degrada al código técnico
+  ---
+  duration_ms: 0.603114
+  type: 'test'
+  ...
+# Subtest: sin M01 product_item no queda registrado y degrada al código técnico
+ok 3 - sin M01 product_item no queda registrado y degrada al código técnico
+  ---
+  duration_ms: 1.405301
+  type: 'test'
+  ...
+# Subtest: solo CORE aporta exactamente sus siete etiquetas
+ok 4 - solo CORE aporta exactamente sus siete etiquetas
+  ---
+  duration_ms: 0.398098
+  type: 'test'
+  ...
+# Subtest: el registro pasa el predicado de actividad al compositor
+ok 5 - el registro pasa el predicado de actividad al compositor
+  ---
+  duration_ms: 0.333857
+  type: 'test'
+  ...
+# Subtest: el registro contiene las cuatro contribuciones y ninguna etiqueta concreta
+ok 6 - el registro contiene las cuatro contribuciones y ninguna etiqueta concreta
+  ---
+  duration_ms: 0.436938
+  type: 'test'
+  ...
+# Subtest: un entityType desconocido degrada al código técnico exacto
+ok 7 - un entityType desconocido degrada al código técnico exacto
+  ---
+  duration_ms: 0.101864
+  type: 'test'
+  ...
+# Subtest: duplicado entre módulos no tiene ganador y reporta ambas procedencias
+ok 8 - duplicado entre módulos no tiene ganador y reporta ambas procedencias
+  ---
+  duration_ms: 0.152969
+  type: 'test'
+  ...
+# Subtest: duplicado dentro de una contribución tampoco tiene ganador
+ok 9 - duplicado dentro de una contribución tampoco tiene ganador
+  ---
+  duration_ms: 0.353423
+  type: 'test'
+  ...
+# Subtest: la señal de duplicado existe en desarrollo e identifica clave y módulos
+ok 10 - la señal de duplicado existe en desarrollo e identifica clave y módulos
+  ---
+  duration_ms: 0.423823
+  type: 'test'
+  ...
+# Subtest: en producción una inconsistencia no emite señal ni rompe composición
+ok 11 - en producción una inconsistencia no emite señal ni rompe composición
+  ---
+  duration_ms: 0.315525
+  type: 'test'
+  ...
+# Subtest: el registro conecta la señal de conflicto exclusivamente a import.meta.env.DEV
+ok 12 - el registro conecta la señal de conflicto exclusivamente a import.meta.env.DEV
+  ---
+  duration_ms: 0.18994
+  type: 'test'
+  ...
+# Subtest: AuditPage consulta capacidades y no recentraliza vocabulario en ninguna representación
+ok 13 - AuditPage consulta capacidades y no recentraliza vocabulario en ninguna representación
+  ---
+  duration_ms: 4.518632
+  type: 'test'
+  ...
+# Subtest: package.json expone un comando permanente para las focales
+ok 14 - package.json expone un comando permanente para las focales
+  ---
+  duration_ms: 0.23697
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 283.153761
+
+--- errores del API (pnpm test:api-errors) ---
+
+> sillar-frontend@1.0.0 test:api-errors /home/user/SILLAR-m02/frontend
+> node --test tests/apiErrors.test.mjs
+
+TAP version 13
+# Subtest: la validación manda: el primer error de campo gana al título y al detalle
+ok 1 - la validación manda: el primer error de campo gana al título y al detalle
+  ---
+  duration_ms: 1.229717
+  type: 'test'
+  ...
+# Subtest: sin errores de campo, una validación cae a la frase del servidor
+ok 2 - sin errores de campo, una validación cae a la frase del servidor
+  ---
+  duration_ms: 0.346433
+  type: 'test'
+  ...
+# Subtest: 423: el detalle dice cuándo se puede volver a intentar, y llega
+ok 3 - 423: el detalle dice cuándo se puede volver a intentar, y llega
+  ---
+  duration_ms: 0.187629
+  type: 'test'
+  ...
+# Subtest: 503 de la instalación: llega el detalle entero, con sus saltos de línea
+ok 4 - 503 de la instalación: llega el detalle entero, con sus saltos de línea
+  ---
+  duration_ms: 0.279349
+  type: 'test'
+  ...
+# Subtest: 403 CSRF: título y detalle juntos, como ya hacía describe()
+ok 5 - 403 CSRF: título y detalle juntos, como ya hacía describe()
+  ---
+  duration_ms: 0.220233
+  type: 'test'
+  ...
+# Subtest: sin detalle, la frase es solo el título: no se añade nada
+ok 6 - sin detalle, la frase es solo el título: no se añade nada
+  ---
+  duration_ms: 0.171376
+  type: 'test'
+  ...
+# Subtest: 413: el título llega y el detalle de Kestrel no
+ok 7 - 413: el título llega y el detalle de Kestrel no
+  ---
+  duration_ms: 0.237337
+  type: 'test'
+  ...
+# Subtest: 500 de producción: ni el título en inglés ni nada del servidor
+ok 8 - 500 de producción: ni el título en inglés ni nada del servidor
+  ---
+  duration_ms: 0.159281
+  type: 'test'
+  ...
+# Subtest: 500 con el mensaje de una excepción en el detalle: no llega nada de él
+ok 9 - 500 con el mensaje de una excepción en el detalle: no llega nada de él
+  ---
+  duration_ms: 0.599377
+  type: 'test'
+  ...
+# Subtest: el fallo de red conserva la frase que escribe el propio cliente
+ok 10 - el fallo de red conserva la frase que escribe el propio cliente
+  ---
+  duration_ms: 1.850379
+  type: 'test'
+  ...
+# Subtest: displayMessage nunca devuelve vacío ni «Ha ocurrido un error»
+ok 11 - displayMessage nunca devuelve vacío ni «Ha ocurrido un error»
+  ---
+  duration_ms: 0.70201
+  type: 'test'
+  ...
+# Subtest: describe() pide la frase a displayMessage y no pega el detalle a mano
+ok 12 - describe() pide la frase a displayMessage y no pega el detalle a mano
+  ---
+  duration_ms: 0.699829
+  type: 'test'
+  ...
+# Subtest: describe() no enseña texto del servidor en 404 ni en el caso genérico
+ok 13 - describe() no enseña texto del servidor en 404 ni en el caso genérico
+  ---
+  duration_ms: 0.48961
+  type: 'test'
+  ...
+# Subtest: la instalación conserva los saltos de línea del detalle
+ok 14 - la instalación conserva los saltos de línea del detalle
+  ---
+  duration_ms: 0.38042
+  type: 'test'
+  ...
+# Subtest: package.json expone la focal como comando permanente
+ok 15 - package.json expone la focal como comando permanente
+  ---
+  duration_ms: 0.249146
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 160.251125
+
+--- seguidor de conexión en modo instalación (pnpm test:connection-setup) ---
+
+> sillar-frontend@1.0.0 test:connection-setup /home/user/SILLAR-m02/frontend
+> node --test tests/seguidorEnModoInstalacion.test.mjs
+
+TAP version 13
+# Subtest: contraste: en modo normal, tras un corte, el seguidor se recupera y la petición sale
+ok 1 - contraste: en modo normal, tras un corte, el seguidor se recupera y la petición sale
+  ---
+  duration_ms: 1059.649596
+  type: 'test'
+  ...
+# Subtest: en modo instalación, tras un corte, en cuanto la API vuelve la petición sale
+ok 2 - en modo instalación, tras un corte, en cuanto la API vuelve la petición sale
+  ---
+  duration_ms: 1004.204246
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2240.121075
+
+--- descripción de fallos de arranque e instalación (pnpm test:startup-errors) ---
+
+> sillar-frontend@1.0.0 test:startup-errors /home/user/SILLAR-m02/frontend
+> node --test tests/describirFallos.test.mjs
+
+TAP version 13
+# Subtest: H03: un 503 explicado, un 503 sin explicación y un corte de red no comparten título
+ok 1 - H03: un 503 explicado, un 503 sin explicación y un corte de red no comparten título
+  ---
+  duration_ms: 0.991473
+  type: 'test'
+  ...
+# Subtest: H03: si el servidor explicó el 503, su título y su detalle son los del aviso
+ok 2 - H03: si el servidor explicó el 503, su título y su detalle son los del aviso
+  ---
+  duration_ms: 0.160148
+  type: 'test'
+  ...
+# Subtest: H03: un 5xx sin explicación no se presenta como un fallo del instalador
+ok 3 - H03: un 5xx sin explicación no se presenta como un fallo del instalador
+  ---
+  duration_ms: 0.264005
+  type: 'test'
+  ...
+# Subtest: H03: el 500 del framework no se enseña aunque traiga título (H-01)
+ok 4 - H03: el 500 del framework no se enseña aunque traiga título (H-01)
+  ---
+  duration_ms: 0.175591
+  type: 'test'
+  ...
+# Subtest: H22: un fallo del estado del servidor no se atribuye a los módulos
+ok 5 - H22: un fallo del estado del servidor no se atribuye a los módulos
+  ---
+  duration_ms: 0.181884
+  type: 'test'
+  ...
+# Subtest: H22: ninguna descripción afirma que alguien activó un módulo
+ok 6 - H22: ninguna descripción afirma que alguien activó un módulo
+  ---
+  duration_ms: 0.329242
+  type: 'test'
+  ...
+# Subtest: H22: cada paso dice qué pregunta falló, y son distintas
+ok 7 - H22: cada paso dice qué pregunta falló, y son distintas
+  ---
+  duration_ms: 0.225808
+  type: 'test'
+  ...
+# Subtest: H22 (contraste): si fallan las capacidades, sí se dice que eran los módulos
+ok 8 - H22 (contraste): si fallan las capacidades, sí se dice que eran los módulos
+  ---
+  duration_ms: 0.09036
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 150.896893
+
+--- higiene del frontend (pnpm test:frontend-hygiene) ---
+
+> sillar-frontend@1.0.0 test:frontend-hygiene /home/user/SILLAR-m02/frontend
+> node --test tests/frontendHygiene.test.mjs
+
+TAP version 13
+# Subtest: H-20 tiene un único nombre visible por rol
+ok 1 - H-20 tiene un único nombre visible por rol
+  ---
+  duration_ms: 1.099747
+  type: 'test'
+  ...
+# Subtest: H-20 no permite volver a Principal
+ok 2 - H-20 no permite volver a Principal
+  ---
+  duration_ms: 0.29323
+  type: 'test'
+  ...
+# Subtest: H-20 sus tres consumidores no tienen ROLE_LABELS local
+ok 3 - H-20 sus tres consumidores no tienen ROLE_LABELS local
+  ---
+  duration_ms: 0.369895
+  type: 'test'
+  ...
+# Subtest: H-20 UserForm conserva las descripciones actuales
+ok 4 - H-20 UserForm conserva las descripciones actuales
+  ---
+  duration_ms: 0.122128
+  type: 'test'
+  ...
+# Subtest: H-19 mantiene Usuarios y cambia el alta
+ok 5 - H-19 mantiene Usuarios y cambia el alta
+  ---
+  duration_ms: 1.279719
+  type: 'test'
+  ...
+# Subtest: H-15 traduce code con displayName de AdminModule
+ok 6 - H-15 traduce code con displayName de AdminModule
+  ---
+  duration_ms: 0.216314
+  type: 'test'
+  ...
+# Subtest: H-15 Media y Auditoría usan la misma traducción
+ok 7 - H-15 Media y Auditoría usan la misma traducción
+  ---
+  duration_ms: 0.398173
+  type: 'test'
+  ...
+# Subtest: H-14 interpreta 10/09/2026 como 10 de septiembre
+ok 8 - H-14 interpreta 10/09/2026 como 10 de septiembre
+  ---
+  duration_ms: 1.788947
+  type: 'test'
+  ...
+# Subtest: H-14 fecha inválida no genera valor API
+ok 9 - H-14 fecha inválida no genera valor API
+  ---
+  duration_ms: 0.396837
+  type: 'test'
+  ...
+# Subtest: H-14 vacío significa sin filtro
+ok 10 - H-14 vacío significa sin filtro
+  ---
+  duration_ms: 0.357412
+  type: 'test'
+  ...
+# Subtest: H-14 Media y Audit comparten DateFilterField
+ok 11 - H-14 Media y Audit comparten DateFilterField
+  ---
+  duration_ms: 0.272835
+  type: 'test'
+  ...
+# Subtest: H-14 conserva el día visible incluso al cambiar timezone
+ok 12 - H-14 conserva el día visible incluso al cambiar timezone
+  ---
+  duration_ms: 1.620554
+  type: 'test'
+  ...
+# Subtest: H-12 Inicio usa Setting.description
+ok 13 - H-12 Inicio usa Setting.description
+  ---
+  duration_ms: 0.164078
+  type: 'test'
+  ...
+# Subtest: H-13 Inicio refleja el producto actual
+ok 14 - H-13 Inicio refleja el producto actual
+  ---
+  duration_ms: 0.36322
+  type: 'test'
+  ...
+# Subtest: H-18 CTA administrativo depende de sesión
+ok 15 - H-18 CTA administrativo depende de sesión
+  ---
+  duration_ms: 0.232792
+  type: 'test'
+  ...
+# Subtest: §18 oculta valores vacíos y PENDIENTE_DEFINIR
+ok 16 - §18 oculta valores vacíos y PENDIENTE_DEFINIR
+  ---
+  duration_ms: 0.20578
+  type: 'test'
+  ...
+# Subtest: §18 CORE convierte su WhatsApp principal en enlace público
+ok 17 - §18 CORE convierte su WhatsApp principal en enlace público
+  ---
+  duration_ms: 0.135807
+  type: 'test'
+  ...
+# Subtest: §18 usa CORE en footer y contacto, y CMS no compite por WhatsApp
+ok 18 - §18 usa CORE en footer y contacto, y CMS no compite por WhatsApp
+  ---
+  duration_ms: 0.267427
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 165.701107
+
+--- fronteras entre módulos (pnpm test:fronteras) ---
+
+> sillar-frontend@1.0.0 test:fronteras /home/user/SILLAR-m02/frontend
+> node scripts/fronteras-frontend.mjs && node --test tests/fronterasFrontend.test.mjs
+
+ ELIFECYCLE  Command failed with exit code 1.
+Fronteras del frontend: 1 problema(s) en 151 ficheros.
+  F1 modules/cms/cmsHome.tsx:3 importa '../catalog/components/ProductCard' — un módulo no importa de otro módulo (modules/cms → modules/catalog)
+
+Esta rama toca 1 fichero(s) del ámbito de la etapa, contra origin/main:
+  - frontend/src/modules/cms/cmsHome.tsx
+
+Lo que NO se pudo comprobar (1):
+  - suspensión: el diario no devolvió nada para la ventana pedida (desde 2026-09-27 06:03:11)
+
+# rc=1

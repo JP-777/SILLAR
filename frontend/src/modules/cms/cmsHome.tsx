@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
-import { NoPhoto } from '../catalog/components/ProductCard';
+import { NoPhoto } from '../../shared/ui/NoPhoto';
 import { useAporteDePortada } from '../../platform/homeState';
 import type { EstadoAporte } from '../../platform/surfaceState';
 import type { HomeSection } from '../../platform/homeSections';
