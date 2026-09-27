@@ -2004,8 +2004,8 @@ for (const senal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
  *   4. `test:fronteras` — las fronteras entre módulos del frontend: ningún
  *      módulo importa de otro, `shared/` no importa de fuera, y solo los
  *      puntos de composición enumerados llegan a un módulo
- *      (`frontend/scripts/fronteras-frontend.mjs`). Lee el árbol, sin
- *      compilar: menos de dos segundos.
+ *      (`frontend/scripts/fronteras-frontend.mjs`). Lee el árbol sintáctico
+ *      sin compilar ni comprobar tipos: unos segundos.
  *   5. `typecheck` — `tsc --build --force` sobre todo `src`.
  *
  * **Por qué la focal va primero.** Es la más barata y la más específica: si el

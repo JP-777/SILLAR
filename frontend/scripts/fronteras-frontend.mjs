@@ -16,6 +16,37 @@
  *       `@/…`, `~/…`): sería la forma de saltarse las cuatro anteriores con un
  *       alias.
  *   F6. Nadie sale de `src/` con un import relativo.
+ *   F7. Lo que no se puede verificar sin ejecutar el código **falla**, no se
+ *       ignora: un `import()` o un `import.meta.glob` con ruta calculada, un
+ *       glob que abarca todo `src/` o que vuelve a subir tras un comodín, y
+ *       cualquier otro uso de `import.meta` que no sea `.env`, `.url`, `.hot`
+ *       o `.glob`.
+ *
+ * **Qué cuenta como referencia**, además de `import`/`export … from`,
+ * `import type` y `typeof import('…')`:
+ *
+ *   - `import('literal')` y `` import(`sin sustituciones`) ``.
+ *   - `import.meta.glob('patrón' | ['patrón', …])`: cada patrón se juzga por su
+ *     **directorio base** —lo que hay antes del primer comodín—, que es lo más
+ *     lejos que puede llegar. Los patrones de exclusión (`!…`) no amplían nada.
+ *   - `new URL('literal', import.meta.url)`: un recurso del propio árbol,
+ *     resuelto por Vite respecto del fichero. **Con cualquier otra base** —
+ *     `new URL(asset.url, window.location.origin)` en `core/pages/MediaPage.tsx`—
+ *     es una URL de la página, no una referencia al árbol, y no se mira.
+ *   - `url(…)` e `@import` en CSS, con los comentarios quitados antes. Se
+ *     ignoran los esquemas (`data:`, `https:`…), `//…`, `#…` y las rutas
+ *     absolutas `/…`, que Vite sirve desde `public/`, no desde `src/`; salvo
+ *     `/src/…`, que es F5.
+ *
+ * **Fuera de alcance, a propósito:**
+ *
+ *   - `url(…)` dentro de un `style` en línea de un componente: el navegador lo
+ *     resuelve respecto de la **página**, no del fichero; Vite no lo empaqueta
+ *     y no puede alcanzar el árbol de otro módulo.
+ *   - `image-set("…")` con cadenas sin `url()` en CSS: no hay ningún uso, y
+ *     reconocerlo exige un analizador de CSS. Si aparece, se amplía aquí.
+ *   - `require()`: el frontend es ESM puro y Vite no empaqueta `require` en
+ *     `src/`. Un `require('literal')` se sigue juzgando; uno calculado, no.
  *
  * **Por qué `COMPOSICION` es una lista de ficheros y no de carpetas.** Una
  * excepción por carpeta —«`platform/` puede importar módulos»— deja pasar el
@@ -25,9 +56,10 @@
  * **Y una entrada que ya no se usa también es un fallo.** Una excepción que
  * sobrevive a su motivo es permiso para el próximo que llegue.
  *
- * Los imports se extraen con `ts.preProcessFile`, el mismo analizador del
- * compilador: ve `import type`, `export … from`, `import()` y los imports de
- * efecto, y no confunde un comentario ni una cadena con un import.
+ * Las referencias se extraen recorriendo el **árbol sintáctico** de
+ * TypeScript: un comentario o una cadena que parece un import no lo es. No se
+ * usa `ts.preProcessFile` porque ignora en silencio un `import()` calculado,
+ * que es justo el caso que tiene que fallar.
  */
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
@@ -76,6 +108,7 @@ const REGLAS = {
   F4: 'solo un punto de composición declarado importa de un módulo',
   F5: 'ruta no relativa hacia el árbol',
   F6: 'import relativo que sale de src/',
+  F7: 'referencia que no se puede verificar estáticamente',
 };
 
 function listarFicheros(dir) {
@@ -129,16 +162,143 @@ function lineaDe(texto, posicion) {
   return linea;
 }
 
-function importsDe(ruta, texto) {
-  if (ruta.endsWith('.css')) {
-    const salida = [];
-    const re = /@import\s+(?:url\(\s*)?['"]([^'"]+)['"]/g;
-    let m;
-    while ((m = re.exec(texto))) salida.push({ especificador: m[1], linea: lineaDe(texto, m.index) });
-    return salida;
+/**
+ * Un recurso referido por `url(…)` o `new URL(…, import.meta.url)`. Las rutas
+ * `/…` son de `public/` y no del árbol, salvo `/src/…`; un valor sin `./`
+ * también es relativo al fichero.
+ */
+function clasificarRecurso(valor) {
+  const v = valor.trim();
+  if (v === '' || /^[a-z][a-z0-9+.-]*:/i.test(v) || v.startsWith('//') || v.startsWith('#')) return null;
+  if (/^(\/src\/|@\/|~\/)/.test(v)) return v; // F5 en el análisis
+  if (v.startsWith('/')) return null;
+  return v.startsWith('.') ? v : `./${v}`;
+}
+
+/** Primer carácter de comodín de un glob: `*`, `?`, `{`, `[` o un extglob `(`. */
+const COMODIN = /[*?{[(]/;
+
+/**
+ * Lo más lejos que puede llegar un patrón de `import.meta.glob`: su directorio
+ * base. Devuelve la referencia a juzgar, un F7, o nada si es una exclusión.
+ */
+function juzgarGlob(patron) {
+  if (patron.startsWith('!')) return null;
+  const corte = patron.search(COMODIN);
+  const base = corte < 0 ? patron : patron.slice(0, corte);
+  const resto = corte < 0 ? '' : patron.slice(corte);
+  if (resto.split(/[/,{}]/).includes('..')) {
+    return { f7: 'el glob vuelve a subir después de un comodín', texto: patron };
   }
-  const info = ts.preProcessFile(texto, true, true);
-  return info.importedFiles.map((f) => ({ especificador: f.fileName, linea: lineaDe(texto, f.pos) }));
+  const directorio = base.slice(0, base.lastIndexOf('/') + 1);
+  if (esRutaNoRelativaAlArbol(directorio)) return { especificador: directorio, glob: true };
+  if (!directorio.startsWith('.')) {
+    return { f7: 'glob sin ruta relativa desde el fichero', texto: patron };
+  }
+  return { especificador: directorio, glob: true };
+}
+
+function tipoDeScript(ruta) {
+  if (ruta.endsWith('.tsx')) return ts.ScriptKind.TSX;
+  if (ruta.endsWith('.jsx')) return ts.ScriptKind.JSX;
+  if (/\.(m|c)?js$/.test(ruta)) return ts.ScriptKind.JS;
+  return ts.ScriptKind.TS;
+}
+
+function esLiteral(nodo) {
+  return nodo && (ts.isStringLiteral(nodo) || ts.isNoSubstitutionTemplateLiteral(nodo));
+}
+
+function esImportMeta(nodo) {
+  return ts.isMetaProperty(nodo) && nodo.keywordToken === ts.SyntaxKind.ImportKeyword && nodo.name.text === 'meta';
+}
+
+function esImportMetaPunto(nodo, nombre) {
+  return nodo && ts.isPropertyAccessExpression(nodo) && esImportMeta(nodo.expression) && nodo.name.text === nombre;
+}
+
+const USOS_DE_IMPORT_META = new Set(['env', 'url', 'hot', 'glob', 'globEager']);
+
+/** Referencias de un fichero de código, recorriendo su árbol sintáctico. */
+function referenciasDeCodigo(ruta, texto) {
+  const sf = ts.createSourceFile(ruta, texto, ts.ScriptTarget.Latest, true, tipoDeScript(ruta));
+  const salida = [];
+  const linea = (nodo) => sf.getLineAndCharacterOfPosition(nodo.getStart(sf)).line + 1;
+  const ref = (nodo, especificador) => salida.push({ especificador, linea: linea(nodo) });
+  const f7 = (nodo, motivo) => salida.push({ f7: motivo, texto: nodo.getText(sf).slice(0, 80), linea: linea(nodo) });
+
+  const visitar = (nodo) => {
+    if ((ts.isImportDeclaration(nodo) || ts.isExportDeclaration(nodo)) && nodo.moduleSpecifier && esLiteral(nodo.moduleSpecifier)) {
+      ref(nodo, nodo.moduleSpecifier.text);
+    } else if (ts.isImportEqualsDeclaration(nodo) && ts.isExternalModuleReference(nodo.moduleReference)
+      && esLiteral(nodo.moduleReference.expression)) {
+      ref(nodo, nodo.moduleReference.expression.text);
+    } else if (ts.isImportTypeNode(nodo) && ts.isLiteralTypeNode(nodo.argument) && esLiteral(nodo.argument.literal)) {
+      ref(nodo, nodo.argument.literal.text);
+    } else if (ts.isCallExpression(nodo)) {
+      const [primero] = nodo.arguments;
+      if (nodo.expression.kind === ts.SyntaxKind.ImportKeyword) {
+        if (esLiteral(primero)) ref(nodo, primero.text);
+        else f7(nodo, 'import() con ruta calculada');
+      } else if (ts.isIdentifier(nodo.expression) && nodo.expression.text === 'require' && esLiteral(primero)) {
+        ref(nodo, primero.text);
+      } else if (esImportMetaPunto(nodo.expression, 'glob') || esImportMetaPunto(nodo.expression, 'globEager')) {
+        const patrones = esLiteral(primero)
+          ? [primero]
+          : primero && ts.isArrayLiteralExpression(primero) && primero.elements.every(esLiteral)
+            ? primero.elements
+            : null;
+        if (!patrones || patrones.length === 0) {
+          f7(nodo, 'import.meta.glob con patrón calculado');
+        } else {
+          for (const p of patrones) {
+            const juicio = juzgarGlob(p.text);
+            if (juicio?.f7) f7(p, `${juicio.f7}: '${juicio.texto}'`);
+            else if (juicio) salida.push({ ...juicio, linea: linea(p) });
+          }
+        }
+      }
+    } else if (ts.isNewExpression(nodo) && ts.isIdentifier(nodo.expression) && nodo.expression.text === 'URL'
+      && nodo.arguments?.length >= 2 && esImportMetaPunto(nodo.arguments[1], 'url')) {
+      const [primero] = nodo.arguments;
+      if (esLiteral(primero)) {
+        const recurso = clasificarRecurso(primero.text);
+        if (recurso) ref(nodo, recurso);
+      } else {
+        f7(nodo, 'new URL(…, import.meta.url) con ruta calculada');
+      }
+    } else if (esImportMeta(nodo)) {
+      const padre = nodo.parent;
+      const nombre = ts.isPropertyAccessExpression(padre) && padre.expression === nodo ? padre.name.text : null;
+      const esLlamadaGlob = (nombre === 'glob' || nombre === 'globEager')
+        && ts.isCallExpression(padre.parent) && padre.parent.expression === padre;
+      if (!nombre || !USOS_DE_IMPORT_META.has(nombre) || ((nombre === 'glob' || nombre === 'globEager') && !esLlamadaGlob)) {
+        f7(padre ?? nodo, 'uso de import.meta que no se puede verificar');
+      }
+    }
+    ts.forEachChild(nodo, visitar);
+  };
+  visitar(sf);
+  return salida;
+}
+
+/** Referencias de una hoja de estilo: `@import` y `url(…)`, sin comentarios. */
+function referenciasDeCss(texto) {
+  const limpio = texto.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '));
+  const salida = [];
+  let m;
+  const reImport = /@import\s+(['"])(.*?)\1/g;
+  while ((m = reImport.exec(limpio))) salida.push({ especificador: m[2], linea: lineaDe(limpio, m.index) });
+  const reUrl = /url\(\s*(?:(['"])(.*?)\1|([^'")\s]*))\s*\)/g;
+  while ((m = reUrl.exec(limpio))) {
+    const recurso = clasificarRecurso(m[2] ?? m[3] ?? '');
+    if (recurso) salida.push({ especificador: recurso, linea: lineaDe(limpio, m.index) });
+  }
+  return salida;
+}
+
+function referenciasDe(ruta, texto) {
+  return ruta.endsWith('.css') ? referenciasDeCss(texto) : referenciasDeCodigo(ruta, texto);
 }
 
 function permitidoPorComposicion(composicion, origenCanonico, destinoCanonico) {
@@ -175,9 +335,14 @@ export function analizarFronteras(raiz, { composicion = COMPOSICION } = {}) {
     const zonaOrigen = zona(origen);
     const texto = readFileSync(ruta, 'utf8');
 
-    for (const { especificador, linea } of importsDe(ruta, texto)) {
+    for (const referencia of referenciasDe(ruta, texto)) {
       imports += 1;
+      const { especificador, linea } = referencia;
 
+      if (referencia.f7) {
+        anotar('F7', origen, linea, referencia.texto, referencia.f7);
+        continue;
+      }
       if (esRutaNoRelativaAlArbol(especificador)) {
         anotar('F5', origen, linea, especificador);
         continue;
@@ -188,6 +353,10 @@ export function analizarFronteras(raiz, { composicion = COMPOSICION } = {}) {
       const destino = aSrc(raizAbs, destinoAbs);
       if (destino.startsWith('..')) {
         anotar('F6', origen, linea, especificador);
+        continue;
+      }
+      if (referencia.glob && destino === '') {
+        anotar('F7', origen, linea, especificador, 'el glob abarca todo src/');
         continue;
       }
       const destinoCanonico = canonica(destino);

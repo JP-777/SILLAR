@@ -247,6 +247,199 @@ test('F6: un import relativo que sale de src es rechazado', () => {
   assert.deepEqual(reglas(r), ['F6']);
 });
 
+// --- Vías que no son un import escrito: 1) import() calculado ------------
+
+test('F7: import() con ruta calculada falla, no se ignora', () => {
+  for (const forma of [
+    'const m = import(`../${codigo}/routes`);',
+    'const m = import(nombre);',
+    "const m = import('../' + 'catalog/components/Card');",
+    'const m = import();',
+  ]) {
+    const r = analizar({ ...MODULO_LIMPIO, 'modules/cms/Banner.tsx': `const codigo = 'x'; const nombre = 'y';\n${forma}\n` });
+    assert.deepEqual(reglas(r), ['F7'], `se escapó: ${forma}`);
+    assert.equal(r.violaciones[0].linea, 2);
+  }
+});
+
+test('import() con plantilla sin sustituciones se juzga como un import literal', () => {
+  const cruzado = analizar({ ...MODULO_LIMPIO, 'modules/cms/Banner.tsx': 'const m = import(`../catalog/components/Card`);\n' });
+  assert.deepEqual(reglas(cruzado), ['F1']);
+  const propio = analizar({ ...MODULO_LIMPIO, 'modules/catalog/pages/Lista.tsx': 'const m = import(`../components/Card`);\n' });
+  assert.deepEqual(propio.violaciones, []);
+});
+
+test('typeof import() de otro módulo en un tipo es F1', () => {
+  const r = analizar({ ...MODULO_LIMPIO, 'modules/cms/Banner.ts': "type C = typeof import('../catalog/components/Card');\n" });
+  assert.deepEqual(reglas(r), ['F1']);
+});
+
+// --- 2) import.meta.glob -------------------------------------------------
+
+test('import.meta.glob dentro del propio módulo, de shared o con exclusión pasa', () => {
+  const r = analizar({
+    ...MODULO_LIMPIO,
+    'modules/catalog/pages/Lista.tsx': [
+      "const a = import.meta.glob('./secciones/*.tsx');",
+      "const b = import.meta.glob(['../components/**/*.tsx', '!../components/**/*.test.tsx']);",
+      "const c = import.meta.glob('../../../shared/ui/*.tsx', { eager: true });",
+      "const d = import.meta.glob('!../../cms/**');",
+      "const e = import.meta.glob('../*/index.tsx');",
+      '',
+    ].join('\n'),
+  });
+  assert.deepEqual(r.violaciones, []);
+});
+
+test('import.meta.glob que alcanza otro módulo es F1, con la línea del patrón', () => {
+  for (const forma of [
+    "import.meta.glob('../../catalog/components/*.tsx')",
+    "import.meta.glob('../../*/routes.tsx')",
+    "import.meta.globEager('../../catalog/**/*.tsx')",
+    "import.meta.glob(['./propio/*.ts', '../../catalog/components/*.tsx'])",
+  ]) {
+    const r = analizar({ ...MODULO_LIMPIO, 'modules/cms/pages/Portada.tsx': `\nconst m = ${forma};\n` });
+    assert.deepEqual(reglas(r), ['F1'], `se escapó: ${forma}`);
+    assert.equal(r.violaciones[0].linea, 2);
+  }
+});
+
+test('import.meta.glob calculado, que abarca src/ o que vuelve a subir tras un comodín es F7', () => {
+  for (const forma of [
+    'import.meta.glob(patron)',
+    'import.meta.glob(`../${codigo}/*.tsx`)',
+    'import.meta.glob([patron])',
+    "import.meta.glob('../../../**/*.tsx')",
+    "import.meta.glob('./propio/**/../../../catalog/*.tsx')",
+    "import.meta.glob('./{propio,../../catalog}/*.tsx')",
+    "import.meta.glob('**/*.tsx')",
+  ]) {
+    const r = analizar({
+      ...MODULO_LIMPIO,
+      'modules/cms/pages/Portada.tsx': `const patron = 'x'; const codigo = 'y';\nconst m = ${forma};\n`,
+    });
+    assert.deepEqual(reglas(r), ['F7'], `se escapó: ${forma}`);
+  }
+});
+
+test('import.meta.glob desde la plataforma hacia un módulo es F4', () => {
+  const r = analizar({ ...MODULO_LIMPIO, 'platform/Registro.ts': "const m = import.meta.glob('../modules/*/routes.tsx');\n" });
+  assert.deepEqual(reglas(r), ['F4']);
+});
+
+test('import.meta que no se puede verificar es F7; env, url y hot pasan', () => {
+  const limpio = analizar({
+    ...MODULO_LIMPIO,
+    'platform/x.ts': [
+      'const dev = import.meta.env.DEV;',
+      'const aqui = import.meta.url;',
+      'if (import.meta.hot) import.meta.hot.accept();',
+      '',
+    ].join('\n'),
+  });
+  assert.deepEqual(limpio.violaciones, []);
+  for (const forma of [
+    'const g = import.meta.glob;',
+    "const g = import.meta['glob']('../../catalog/*.tsx');",
+    'const m = import.meta;',
+    'const { glob } = import.meta;',
+  ]) {
+    const r = analizar({ ...MODULO_LIMPIO, 'modules/cms/Banner.ts': `${forma}\n` });
+    assert.deepEqual(reglas(r), ['F7'], `se escapó: ${forma}`);
+  }
+});
+
+// --- 3) new URL(…, import.meta.url) --------------------------------------
+
+test('new URL con import.meta.url hacia otro módulo es F1; hacia lo propio pasa', () => {
+  const cruzado = analizar({
+    ...MODULO_LIMPIO,
+    'modules/cms/Banner.ts': "const u = new URL('../catalog/components/foto.png', import.meta.url);\n",
+  });
+  assert.deepEqual(reglas(cruzado), ['F1']);
+  const sinPunto = analizar({
+    ...MODULO_LIMPIO,
+    'modules/cms/Banner.ts': "const u = new URL('../catalog/components/foto.png', import.meta.url);\nconst w = new Worker(new URL('../catalog/w.ts', import.meta.url));\n",
+  });
+  assert.deepEqual(reglas(sinPunto), ['F1', 'F1']);
+  const propio = analizar({
+    ...MODULO_LIMPIO,
+    'modules/catalog/pages/Lista.ts': "const u = new URL('../components/foto.png', import.meta.url);\nconst v = new URL('foto.png', import.meta.url);\n",
+  });
+  assert.deepEqual(propio.violaciones, []);
+});
+
+test('new URL con import.meta.url y ruta calculada es F7; hacia /src es F5', () => {
+  const calculada = analizar({ ...MODULO_LIMPIO, 'modules/cms/Banner.ts': 'const r = "x";\nconst u = new URL(r, import.meta.url);\n' });
+  assert.deepEqual(reglas(calculada), ['F7']);
+  const absoluta = analizar({
+    ...MODULO_LIMPIO,
+    'modules/cms/Banner.ts': "const u = new URL('/src/modules/catalog/foto.png', import.meta.url);\n",
+  });
+  assert.deepEqual(reglas(absoluta), ['F5']);
+});
+
+test('new URL con otra base no es una referencia al árbol, como en MediaPage', () => {
+  const r = analizar({
+    ...MODULO_LIMPIO,
+    'modules/cms/Banner.ts': [
+      'const asset = { url: "/media/x.png" };',
+      'const a = new URL(asset.url, window.location.origin).href;',
+      "const b = new URL('../catalog/foto.png', window.location.origin);",
+      "const c = new URL('https://ejemplo.pe/x');",
+      '',
+    ].join('\n'),
+  });
+  assert.deepEqual(r.violaciones, []);
+  assert.match(
+    readFileSync(join(srcReal, 'modules/core/pages/MediaPage.tsx'), 'utf8'),
+    /new URL\(asset\.url, window\.location\.origin\)/,
+    'el uso real de CORE que esta prueba protege ya no está: revisa la prueba',
+  );
+});
+
+// --- 4) url(…) en CSS ------------------------------------------------------
+
+test('url() en CSS hacia otro módulo es F1, con o sin comillas', () => {
+  for (const valor of ["'../catalog/components/foto.png'", '"../catalog/components/foto.png"', '../catalog/components/foto.png']) {
+    const r = analizar({ ...MODULO_LIMPIO, 'modules/cms/cms.css': `.a {\n  background: url(${valor});\n}\n` });
+    assert.deepEqual(reglas(r), ['F1'], `se escapó: url(${valor})`);
+    assert.equal(r.violaciones[0].linea, 2);
+  }
+});
+
+test('url() en CSS: shared hacia un módulo es F2, plataforma es F4, /src es F5', () => {
+  assert.deepEqual(
+    reglas(analizar({ ...MODULO_LIMPIO, 'shared/ui/x.css': ".a { background: url('../../modules/catalog/foto.png'); }\n" })),
+    ['F2'],
+  );
+  assert.deepEqual(
+    reglas(analizar({ ...MODULO_LIMPIO, 'platform/x.css': ".a { background: url('../modules/catalog/foto.png'); }\n" })),
+    ['F4'],
+  );
+  assert.deepEqual(
+    reglas(analizar({ ...MODULO_LIMPIO, 'modules/cms/cms.css': ".a { background: url('/src/modules/catalog/foto.png'); }\n" })),
+    ['F5'],
+  );
+});
+
+test('url() en CSS hacia lo propio, shared, public, esquemas o anclas pasa; y un comentario no cuenta', () => {
+  const r = analizar({
+    ...MODULO_LIMPIO,
+    'modules/catalog/components/tienda.css': [
+      '.a { background: url(./foto.png); }',
+      ".b { background: url('../../../shared/ui/icono.svg'); }",
+      ".c { src: url('/fuentes/inter.woff2'); }",
+      '.d { background: url("data:image/svg+xml;utf8,<svg/>"); }',
+      ".e { background: url('https://cdn.ejemplo.pe/x.png'); }",
+      ".f { mask: url(#recorte); }",
+      '/* .g { background: url(../../cms/foto.png); } */',
+      '',
+    ].join('\n'),
+  });
+  assert.deepEqual(r.violaciones, []);
+});
+
 // --- Falsificación deliberada -------------------------------------------
 
 test('romper el frontend real: el import de NoPhoto de M02 desde catálogo se rechaza', () => {
