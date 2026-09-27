@@ -3,10 +3,27 @@
 - **Código:** `b2b`
 - **Schema:** `b2b`
 - **Versión:** 1.0.0
-- **Estado:** Borrador — **enmendado el 26/09/2026**, con cuatro tramos en suspenso (ver abajo)
+- **Estado:** Borrador — enmendado el 26/09/2026 y **el 27/09/2026** con las decisiones de JP (ver abajo)
 - **Fase:** MVP
-- **Creado:** 25/08/2026 (`d97cd02`) · **Última verificación:** 26/09/2026, America/Lima ·
-  **Commit base comprobado:** `711bfba7cf3be80baa146b44e79ddf7a633d695d` (`origin/main` ese día)
+- **Creado:** 25/08/2026 (`d97cd02`) · **Última modificación:** 27/09/2026 · **Última verificación:**
+  27/09/2026, America/Lima · **Commit base comprobado:** `e839989432283c755edf7d4ae47b2c37697215ec`
+  (`origin/main` ese día; la verificación del 26/09 fue sobre `711bfba`)
+
+> ### Enmiendas del 27/09/2026 — decisiones de JP (encargo `B_M07_B2B.md`), no se reabren
+>
+> | Tramo | Estado | Qué queda |
+> |---|---|---|
+> | E2 — ¿la consulta «a consultar» exige sesión? | **Resuelto: sí.** Toda consulta de precio es autenticada, con la sesión de cliente de M04 | Nada. No se crea autenticación propia |
+> | E3 — ¿línea de cotización por producto o por presentación? | **Resuelto: por presentación**, `catalog.product_items`, con snapshot (§4, `quote_lines`, enmienda 27/09) | E3b: qué hace la caducidad cuando una presentación «a consultar» pasa a tener precio |
+> | E4 — foto de referencia del cliente | **Resuelto: aplazada.** Sale de la 1.0.0; no hay almacenamiento privado y no se presenta el público como privado | Nada en esta versión |
+> | E5 — formato de `quote_number` | **Resuelto en parte:** nodo delante, año y correlativo, **letra de serie distinta de la de pedidos**, reinicio anual, sin huecos por rollback (ADR-016, excepción del 27/09, `:107-146`) | **La letra no está decidida.** Tampoco el mecanismo de unicidad entre nodos. No se inventa |
+> | E1 — dónde vive la consulta «a consultar» | **Abierto** | Pregunta 1 al final de `ESCALADAS-M07.md` |
+> | E9 — de dónde sale una solicitud de volumen sin producto en catálogo | **Abierto** | Ídem |
+> | M08 Portal del Cliente | **No se activa**, aplazado hasta que M03 y M06 publiquen contratos | — |
+>
+> Y una frontera que el encargo manda proteger (C6): **desinstalar M01 o M04 con M07 instalado se
+> rechaza** en los scripts soportados; lo que no se puede proteger (un `DROP SCHEMA … CASCADE`
+> arbitrario) se declara como límite. Detalle en `C6-AUDITORIA-M07.md`.
 
 > ### Enmiendas del 26/09/2026 — cómo leerlas
 >
@@ -141,7 +158,7 @@ distinta de las que se ofrecen»*.
 | `product_slug` | `text` | no | | Instantánea del slug | No vacío | |
 | `pending_relink` | `boolean` | no | | El origen se perdió | Se marca al desactivarse el producto | `false` |
 | `description` | `text` | no | | Qué quiere exactamente | No vacío | |
-| `reference_image_id` | `uuid` | sí | FK → `core.media_assets` | Foto que trae el cliente | Opcional · **en suspenso, E4** | `null` |
+| ~~`reference_image_id`~~ | ~~`uuid`~~ | | | ~~Foto que trae el cliente~~ | **Aplazada el 27/09 (E4): no existe en la 1.0.0** | |
 | `quantity` | `integer` | sí | | Cuántos | Si viene, `> 0` | `null` |
 | `needed_by` | `date` | sí | | Para cuándo lo quiere | **Informativa**: no calcula ni bloquea nada | `null` |
 | `status` | `text` | no | | Estado de la bandeja | Regla 5 | `'recibida'` |
@@ -303,6 +320,43 @@ cotizaron**.
 > **La distinción refresca / congela no cambia:** `special_order_leads` refresca su instantánea;
 > la cotización congela el precio de su fecha. Las dos siguen con sus pruebas (§9).
 
+> **Enmienda 27/09 — `quote_lines` se ata a la presentación (E3 resuelto).** La tabla de arriba
+> queda como antecedente. **La vigente es esta:**
+>
+> | Campo | Tipo | Nulo | Clave | Descripción | Regla | Default |
+> |---|---|---|---|---|---|---|
+> | `quote_line_id` | `integer` | no | PK | Identidad | `GENERATED ALWAYS AS IDENTITY` | |
+> | `quote_id` | `integer` | no | FK → `quotes` | A qué cotización pertenece | `ON DELETE CASCADE` | |
+> | `item_id` | `uuid` | sí | FK → `catalog.product_items` | **La presentación concreta** | Nulo = línea libre («100 cordones») | `null` |
+> | `product_name` | `text` | sí | | Snapshot del nombre del producto | Obligatorio si hay `item_id`; nulo si no | `null` |
+> | `variant_value` | `text` | sí | | Snapshot de lo que distingue la presentación | Nulo si el producto tiene una sola | `null` |
+> | `sale_unit` | `text` | sí | | Snapshot de la unidad de venta | | `null` |
+> | `description` | `text` | no | | Qué es esta línea, como se lee en el documento | No vacío | |
+> | `quantity` | `integer` | no | | Cuántos | `> 0` | |
+> | `unit_price` | `numeric(12,2)` | no | | **Lo que se le cobra** | `>= 0`. **Siempre lo pone el personal**, también en una presentación «a consultar» | |
+> | `catalog_price_at_quote` | `numeric(12,2)` | sí | | `ItemSnapshot.Price` en el momento de cotizar | `IS NULL OR >= 0`; **nulo con `item_id` = «a consultar»** | `null` |
+> | `sort_order` | `integer` | no | | Orden en el documento | `>= 0` | `0` |
+>
+> **Tres casos, que se distinguen sin mirar ningún otro dato:**
+>
+> | `item_id` | `catalog_price_at_quote` | Significa |
+> |---|---|---|
+> | nulo | nulo | Línea libre, sin catálogo. La caducidad no la mira |
+> | presente | valor | Presentación con precio. Caduca si `ItemSnapshot.Price` cambia |
+> | presente | nulo | **Presentación «a consultar».** El precio lo puso el personal; qué hace la caducidad si el catálogo publica después un precio es **E3b, abierto** |
+>
+> `ck_quote_lines_snapshot`: `item_id IS NOT NULL OR (product_name IS NULL AND catalog_price_at_quote IS NULL)`
+> —una línea libre no puede traer datos de catálogo— y `item_id IS NULL OR product_name IS NOT NULL`
+> —una de catálogo no puede quedarse sin nombre—.
+>
+> **Congela, no refresca.** Estos snapshots registran lo que se cotizó; no se reescriben con
+> `ProductoActualizado`. Lo único que ese evento hace aquí es comparar precio y, si toca, invalidar la
+> cotización `enviada` (regla 7). Y la regla 8 queda así: **nulo en `catalog_price_at_quote` no dice
+> por sí solo «no viene del catálogo»; eso lo dice `item_id` nulo.**
+>
+> `special_order_leads` **sigue en el producto** (`product_id → catalog.products`): una
+> personalización se describe por diferencia con el producto, no con una presentación.
+
 ### Relaciones internas
 
 ```
@@ -319,8 +373,9 @@ quotes                1 ─── 1..N quote_lines
 | `b2b.institution_requests.customer_id` | `crm.customers` | dura | **sí** | migración de M07 |
 | `b2b.quotes.customer_id` | `crm.customers` | dura | **sí** | migración de M07 |
 | `b2b.special_order_leads.product_id` | `catalog.products` | dura | **sí** | migración de M07 |
-| `b2b.quote_lines.product_id` | `catalog.products` | dura | **sí** | migración de M07 |
-| `b2b.special_order_leads.reference_image_id` | `core.media_assets` | dura | **sí** | migración de M07 |
+| `b2b.quote_lines.product_id` | `catalog.products` | dura | **sí** | migración de M07 · **sustituida el 27/09 por la fila siguiente** |
+| `b2b.quote_lines.item_id` | `catalog.product_items` | dura | **sí** | migración de M07 |
+| ~~`b2b.special_order_leads.reference_image_id`~~ | ~~`core.media_assets`~~ | | | **Aplazada el 27/09 (E4)** |
 
 ### Datos semilla
 
