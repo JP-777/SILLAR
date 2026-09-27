@@ -434,3 +434,54 @@ que se realizaron sobre el candidato anterior.
 **Decisión:** propuesta de cierre de M04 pendiente
 de revisión del colíder y autorización de JP.
 No se ha fusionado a `main`.
+
+---
+
+## Contrato de instantánea 1.1.0: pedido sin dirección — 27 de septiembre de 2026
+
+**Creación:** 27 de septiembre de 2026 — America/Lima
+**Última modificación:** 27 de septiembre de 2026 — America/Lima
+**Última verificación:** 27 de septiembre de 2026 — America/Lima
+**Commit verificado:** `31089971a0a9aa334d533adeacb8ec26a5bf30ff`, rama `integration/m04-contrato-snapshot`, sobre `main` = `e839989`
+
+**Encargo:** `D_M04_Contrato` (JP, vía colíder). M03 v1 solo recoge en tienda y no debe inventar
+una dirección para crear un pedido; el contrato 1.0.0 la exigía.
+
+### Qué se decidió
+
+**Una sobrecarga sin dirección, no una dirección opcional.** `GetForOrderAsync(customerId, ct)`
+devuelve `CustomerOrderContactSnapshot`, que no tiene dirección. La variante 1.0.0 queda idéntica en
+firma, record y consulta. Hacer `Address` anulable habría vuelto permisivo, sin aviso, el camino
+con entrega: el tipo de retorno es ahora quien dice si hay dirección.
+
+**Las mismas guardas en las dos:** ficha activa —que excluye baja y bloqueo, porque
+`ck_customers_lifecycle_state` pone `is_active = false` en ambos— y cuenta obligatoria.
+
+**`CrmModule.Version` pasa a `1.1.0`.** Es informativa: `ModuleSynchronizer` la copia a
+`core.modules` al arrancar. Cambio aditivo, versión menor.
+
+**No cambia ninguna pantalla** de M04. Parada 3.5: se pide al líder técnico registrar «sin nuevo
+diseño».
+
+### Evidencia
+
+- Contrato para A: `CONTRATO-SNAPSHOT.md`.
+- 16 pruebas nuevas en `CustomerSnapshotReaderTests.cs`; la de contrato cubre el record nuevo.
+- Diagnóstico no canónico (base propia, migraciones de CORE, Catálogo, CMS y CRM): **112/112** en
+  `Sillar.Modules.Crm.Tests`, incluidas `Test12` y `Test13` (borrar y reinstalar `crm` sin tocar
+  `core` ni `catalog`).
+- Cuatro sabotajes de las guardas, cada uno detectado y restaurado:
+  `evidencias/CONTRATO-1.1-SABOTAJES-20260927.txt`.
+- Puerta canónica sobre `3108997`, 13:21:48 → 13:25:10: **etapas 1–5 PASS**, etapa 6 FAIL de
+  entorno (TLS del proxy en el `docker build` del API): `evidencias/CONTRATO-1.1-PUERTA-CLOUD-20260927.txt`.
+
+### Lo que no está acreditado
+
+- **La etapa 6.** La doble puerta 6/6 del 26/09 sobre `9f9015b` es anterior al cambio y no lo
+  certifica. Queda la puerta local por B, una a la vez.
+- **Activar y desactivar el módulo M04 en la aplicación en marcha.** El esquema sí (`Test12`,
+  `Test13`, etapa 5). No hay en `e2e/tests/` un spec dedicado a desactivar M04 como módulo: lo que
+  existe con «reactiva» (`crm-admin-customers.spec.ts:4`) es la reactivación de una **ficha**.
+  Hueco anotado, no cubierto en este encargo.
+
+**Decisión:** ninguna fusión. Parada 5 pendiente de JP.
