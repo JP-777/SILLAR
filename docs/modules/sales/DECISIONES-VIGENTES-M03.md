@@ -70,29 +70,54 @@ llega a M03 como `ItemSnapshot.Price == null`
   vecino.
 - El contrato y las SPEC de M03 y M07 deben expresar **exactamente la misma frontera**.
 
-## 5 · Código visible de pedido: nodo, año y correlativo
+## 5 · Código visible de pedido: etiqueta de nodo, año y correlativo
 
-**RATIFICADO POR JP EL 27/09/2026: `W-2026-0147`.**
+**RECTIFICACIÓN FINAL DE JP, 27/09/2026: `P-2026-0147`.** Sustituye a `W-2026-0147`, que fue
+provisional y **ya no está vigente**. Fuente literal: `DECISIONES-PREVIAS-M03.md`, bloque
+«RECTIFICACIÓN FINAL DE JP», commit `dfec915`.
 
-**Composición:** nodo delante, año y correlativo. Nunca se muestra un identificador interno. La
-generación debe **prevenir duplicados y concurrencia**.
+**Composición:** **etiqueta visible del nodo + año + correlativo.**
 
-**Motivo:** alinear el formato visible con la **regla 2 de la ADR-016**, que separa las PK internas
-de los códigos legibles y establece una **serie visible por nodo**.
+**`P` no es una letra universal.** Es el ejemplo que corresponde al nodo cuyo `NodeIdentity.Code` es
+`principal` (`backend/Sillar.Shared/Replication/NodeIdentity.cs:38`). La etiqueta **se deriva del
+`Code` real y se fija en un ajuste propio durante la instalación**. **Nunca se graba una letra por
+defecto en todos los nodos.**
 
-> **El conflicto que había, resuelto.** El encargo del 26/09 §5 fijaba `2026-0147`, **sin serie de
-> nodo**, contra lo que exigen `ADR-016:66` y `CLAUDE.md`. Se escaló sin decidirlo
-> (`ESCALADAS-M03.md` §b1) y **JP resolvió el 27/09 por el formato con serie**. `2026-0147` **deja
-> de ser el formato autorizado**.
+**El instalador se niega a arrancar** si la etiqueta es vacía o si coincide con otra ya existente en
+la base.
 
-**La clave primaria sigue siendo `uuid` v7** generada por la aplicación. **El código visible es una
-columna independiente**, que es exactamente la separación que la regla 2 sostiene.
+> **Y el alcance de esa garantía hay que verificarlo, no darlo por hecho:** la base local **no puede
+> demostrar por sí sola** unicidad entre instalaciones desconectadas. La solución inter-nodo **se
+> eleva al líder técnico y no se inventa aquí.**
 
-> **Lo que sigue abierto, y no se presupone:** la instrucción del 27/09 menciona además que el
-> correlativo **no debe saltar ni reiniciarse**. Eso deja tres cosas por concretar —**continuidad,
-> concurrencia y cambio de año**— y **una contradicción aparente que el colíder debe examinar: un
-> código que lleva el año dentro y un correlativo que no reinicia no pueden ser las dos cosas a la
-> vez.** `SPEC.md` §5.4 y `ESCALADAS-M03.md` §b1-bis. **No se elige mecanismo.**
+### Reinicio anual · **APROBADO Y RATIFICADO**
+
+La serie es **por nodo y año**, y **vuelve al inicio al cambiar el año**. El líder técnico ratificó
+el 27/09/2026 **la excepción a la ADR-016**: se conserva el nodo delante y **se excepciona solo el
+«no reinicia»**.
+
+Su texto se incorpora a la ADR-016 por la rama documental de Integración. **Esa publicación es
+trazabilidad, NO una condición** para implementar desde ahora `P-2026-0147` y su contador
+transaccional.
+
+### Sin huecos · **APROBADO**
+
+- Una **fila de contador por serie `(nodo, año)`**.
+- Asignación mediante **`UPDATE … RETURNING` dentro de la MISMA transacción** que persiste el pedido.
+- **El número se pide al final, justo antes de confirmar el pedido. Nunca al crear el carrito.**
+- **No `nextval()`**: una transacción revertida consume números de secuencia.
+- Se resuelven concurrencia y rollback **sin prometer continuidad** ante borrados, correcciones
+  manuales ni repartición entre nodos no definida.
+
+### La clave primaria no se toca
+
+Sigue siendo **`uuid` v7** generada por la aplicación. **El código visible es una columna
+independiente**, que es exactamente la separación que la regla 2 de la ADR-016 sostiene.
+
+### M07
+
+Sus cotizaciones siguen la misma convención por nodo y año, **con una letra de serie diferente, cuyo
+valor no se fija aquí**. Ver `ESCALADAS-M03.md` §g.
 
 ## 6 · Siete estados visibles, idénticos para cliente y personal
 

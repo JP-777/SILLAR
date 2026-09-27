@@ -13,8 +13,10 @@ las tiene.**
 | § | Estado tras la ronda |
 |---|---|
 | **§a** SPEC de Diseño | **RESUELTA el 26/09/2026.** Recibida **completa**: 897 líneas, §7 y §8 presentes, cierra en B-05 con «ESTADO FINAL: DETENIDO». Conservada íntegra e idéntica byte a byte en `SPEC-M03-ORIGINAL-DISENO-2026-09-23.md`. La reconciliación está en `SPEC.md` §0 |
-| **§b1** Código visible | **RESUELTA el 27/09/2026: `W-2026-0147`.** JP ratificó la opción 2 de las tres que esta cola ofrecía |
-| **§b1-bis** Continuidad del correlativo | **ABIERTA.** El 27/09 menciona que no debe saltar ni reiniciarse, pero eso no es un mecanismo. Ver abajo |
+| **§b1** Código visible | **RESUELTA y rectificada el 27/09/2026: `P-2026-0147`.** `W-` fue provisional y **ya no está vigente** |
+| **§b1-bis** Continuidad y mecanismo | **RESUELTA el 27/09/2026.** Reinicio anual ratificado como excepción a la ADR-016; contador transaccional por serie `(nodo, año)` |
+| **§g** Etiqueta: ¿por nodo o por nodo × tipo? | **ABIERTA** — nueva |
+| **§h** Unicidad de etiqueta entre nodos desconectados | **ELEVADA al líder técnico** — nueva |
 | **§b2** Cancelación y reactivación | **Abierta** |
 | **§c** Efectivo frente a Yape | **Abierta** |
 | **§d** Navegación entre módulos para «a consultar» | **Pasa a Chat 2.** La *modalidad de acceso* —si «a consultar» exige cuenta— sigue siendo decisión comercial abierta |
@@ -88,17 +90,26 @@ hay tiempo *después*.
 
 ## §b — Transiciones y política que el encargo no fija
 
-### §b1 · El formato del código visible · **RESUELTA el 27/09/2026**
+### §b1 · El formato del código visible · **RESUELTA · rectificada el 27/09/2026**
 
-> **`W-2026-0147`** — nodo delante, año y correlativo. Ratificado por JP el 27 de septiembre de 2026,
-> comunicado por Chat 2 vía JP, **para alinear con la regla 2 de la ADR-016**.
+> **`P-2026-0147`** — etiqueta visible del nodo, año y correlativo. **Rectificación final de JP del
+> 27/09/2026**, commit `dfec915`, que **sustituye a `W-2026-0147`**: aquél fue provisional y **ya no
+> está vigente**, aunque su bloque figure como «VIGENTE» con la fecha de aquel momento.
 >
-> **Se eligió la opción 2 de las tres de abajo, literalmente**, incluida la letra del ejemplo. El
-> texto se conserva sin tocar porque registra qué se sopesó: la opción 1 —dejar `2026-0147`— se
-> apoyaba en que hoy hay un solo nodo, y **es exactamente el razonamiento que la ADR-016 rechaza**,
-> porque la circunstancia de hoy no debe grabarse en un dato que viajará a comprobantes.
+> **`P` no es una letra universal.** Es el ejemplo del nodo cuyo `NodeIdentity.Code` es `principal`.
+> La etiqueta **se deriva del `Code` real** y se fija en un ajuste propio en la instalación.
 >
-> **Lo que NO resolvió:** la continuidad del correlativo. Pasa a **§b1-bis**.
+> **El motivo de la rectificación es el hallazgo que esta cola había enviado a la auditoría:** «la
+> letra `W` anterior **no corresponde a ningún nodo reconocido del sistema**», y el `Code` por defecto
+> es `principal` (`NodeIdentity.cs:38`). Lo señalé el 27/09 en la tercera contradicción del informe.
+>
+> **Y la continuidad también quedó cerrada** en la misma rectificación → **§b1-bis**.
+>
+> **De las tres opciones de abajo, ninguna era la definitiva.** La 2 acertó en poner serie delante y
+> **falló en la letra**, por la razón que yo mismo había escrito dos párrafos más abajo: el prefijo
+> tiene que salir de algo que el sistema reconozca. Queda registrado porque es el caso del §1 de
+> `ANTES-DE-EMPEZAR-UN-MODULO.md` en su forma más pura: **propuse una letra porque hoy solo hay un
+> nodo.**
 
 ---
 
@@ -143,48 +154,66 @@ hay tiempo *después*.
   y el **mecanismo** del correlativo, que sí se puede diseñar salvo su prefijo.
 - **No decido yo qué código ve el cliente.**
 
-### §b1-bis · La continuidad del correlativo · **ABIERTA desde el 27/09/2026**
+### §b1-bis · La continuidad del correlativo · **RESUELTA el 27/09/2026**
 
-- **Fecha:** 27/09/2026.
-- **Lo que la instrucción dice:** el correlativo **«no debe saltar ni reiniciarse»**. Se recibe como
-  mención dentro de la decisión del formato, **no como mecanismo**.
-- **Lo que hace falta para poder cumplirlo**, y son tres cosas más una contradicción:
+> **Todo lo que esta entrada pedía, concretado en la rectificación de JP.** Las tres cosas que faltaban
+> y la contradicción, una por una:
+>
+> | Lo que pedí | Cómo quedó |
+> |---|---|
+> | Que el no-salto se confirme **como requisito** | **«Sin huecos APROBADO»** |
+> | Qué mecanismo, sabiendo que **la secuencia queda excluida** | **Fila de contador por serie `(nodo, año)`**, `UPDATE … RETURNING` en la misma transacción. **No `nextval()`, y por la razón que yo había documentado**: una transacción revertida consume el número |
+> | Qué se acepta en la **concurrencia** | Se resuelve concurrencia y rollback **sin prometer continuidad** ante borrados, correcciones manuales ni repartición entre nodos |
+> | **El año dentro del código frente al no-reinicio** | **Resuelto por la primera lectura:** reinicio anual, **como excepción expresa a la ADR-016 ratificada por el líder técnico** |
+> | Que la continuidad es **por serie y no global** | Confirmado: «la serie es por nodo y año» |
+>
+> **Y una precisión que la rectificación añade y yo no había visto:** el número se pide **al final,
+> justo antes de confirmar el pedido, nunca al crear el carrito**. Sin eso, cada carrito abandonado
+> consumiría un número — y los carritos abandonados son la mayoría. Mi diseño decía «en la misma
+> transacción que inserta el pedido», que es compatible pero **no lo decía**.
+>
+> El mecanismo completo, con su coste de serialización y el caso del cambio de año, está en
+> `SPEC.md` §5.4.
 
-  1. **Continuidad.** Que el no-salto se confirme como requisito. **Si se confirma, la secuencia de
-     PostgreSQL queda excluida**, no penalizada: `nextval` es no transaccional y **una transacción
-     revertida consume el número igual**. Esta cola no afirma en ningún sitio que una secuencia
-     garantice continuidad, y la SPEC lo dice explícito en §5.4.
-  2. **Concurrencia.** El contador que sí da continuidad **serializa la creación de pedidos**: la
-     fila se bloquea y el segundo pedido espera. Falta concretar qué espera se acepta y qué ocurre si
-     el bloqueo no se obtiene.
-  3. **Cambio de año.** **No se presupone reinicio anual.**
+---
 
-- **La contradicción aparente que el colíder debe examinar:**
+### §g · La etiqueta de serie: ¿por nodo, o por nodo × tipo de documento? · **ABIERTA**
 
-  > **`W-2026-0147` lleva el año dentro, y el correlativo no debe reiniciarse.** Si el año parte la
-  > serie, el correlativo **reinicia** cada 1 de enero, contra la propia instrucción. Si el año es
-  > descriptivo y la serie es continua entre años, entonces el año **no identifica** ningún tramo:
-  > `W-2026-9999` sería seguido por `W-2027-10000`.
-  >
-  > `ADR-016:77` **no desempata**: dice «se puede renumerar: sí, mientras no salte ni reinicie»,
-  > que apoya la serie continua, pero habla de **renumerar**, que es otra operación.
+- **Fecha:** 27/09/2026. **Origen:** la propia rectificación, leída entera.
+- **Las dos frases que no cierran juntas:**
+  - «`P` es el ejemplo correspondiente al nodo cuyo `NodeIdentity.Code` es `principal`» → la etiqueta
+    **es del nodo**;
+  - «**M07:** sus cotizaciones siguen la misma convención por nodo/año, **con una letra de serie
+    diferente**» → para **el mismo nodo**, M07 usa otra letra.
+- **Por tanto la etiqueta no es del nodo: es de la pareja (nodo, tipo de documento).** Si lo fuera solo
+  del nodo, M07 y M03 compartirían letra en la misma instalación.
+- **Y de eso depende una guarda concreta.** La rectificación dice que el instalador «se niega a
+  arrancar si la etiqueta es vacía o **coincide con otra ya existente en la base**». ¿Coincide con qué?
+  - Si la etiqueta es del nodo: con las de **otros nodos** — y eso es justo lo que una base local no
+    puede comprobar (§h).
+  - Si es de (nodo, tipo): con las de **otros tipos de documento del mismo nodo** — comprobable en
+    local, pero es **otra validación**, y entonces `P` de pedidos y la letra de M07 **deben** diferir
+    dentro de la misma instalación.
+- **Consecuencia de no resolver:** no se puede escribir la guarda de arranque ni su prueba, y la
+  coordinación con frente B sobre la letra de M07 no tiene criterio.
+- **Qué sigue mientras espera:** todo el resto del contador y del modelo. La etiqueta se lee de un
+  ajuste; **qué valida quién es lo pendiente, no de dónde se lee.**
+- **No la decido:** afecta a un código que ve el cliente y a un módulo que no es mío.
 
-- **Y dos precisiones que el prefijo de nodo introduce, ninguna decidida:**
-  - **La continuidad es de cada serie, no global.** Con serie por nodo, dos nodos numerando cada uno
-    desde 1 es lo correcto y no un salto — `ADR-016:79`, «SUNAT exige serie propia por punto de
-    emisión». Hoy hay **un solo nodo**, y por eso no se nota: es el caso del §1 de
-    `ANTES-DE-EMPEZAR-UN-MODULO.md`, una regla que se graba mal cuando solo hay uno.
-  - **De dónde sale la `W` no está definido en ninguna parte.** El código de nodo que el producto
-    usa hoy es **`principal`** (`backend/Sillar.Shared/Replication/NodeIdentity.cs:38`, clave de
-    configuración `Sillar:Node:Code` en `:28`), y **nada traduce `principal` a `W`**. El ejemplo de la
-    propia ADR-016 es `V-03-000459`, con **número** de sucursal y no letra. Falta decidir si la serie
-    visible **se configura aparte** o **se deriva** del código de nodo, y quién la valida para que dos
-    nodos no acaben con la misma letra.
-- **Consecuencia de no resolver:** no se puede escribir la tabla del contador —puede ser una fila o
-  una por año—, ni la prueba de continuidad. **El formato ya no bloquea; el mecanismo sí.**
-- **Qué sigue mientras espera:** todo lo demás del modelo de datos, que no depende del mecanismo, y la
-  prueba de **unicidad**, que sí se puede escribir hoy.
-- **No elijo el mecanismo unilateralmente.**
+---
+
+### §h · Unicidad de la etiqueta entre instalaciones desconectadas · **ELEVADA AL LÍDER TÉCNICO**
+
+- **Fecha:** 27/09/2026. **La rectificación la eleva ella misma**, y con la razón escrita: «la base
+  local **no puede demostrar por sí sola** unicidad entre instalaciones desconectadas; elevar la
+  solución inter-nodo al líder técnico **sin inventarla**».
+- **Lo que M03 sí hace, y es todo lo que puede hacer:** el instalador rechaza etiqueta vacía y rechaza
+  la que ya esté en **su** base. **Eso no es unicidad global**, y el documento no dirá que lo sea.
+- **Lo que queda fuera de M03:** quién reparte las etiquetas entre nodos, y qué ocurre si dos
+  instalaciones desconectadas eligieron la misma y después sincronizan. Es terreno de M16 y del reparto
+  de series, no de Ventas.
+- **Qué sigue mientras espera:** todo. Hoy hay un solo nodo.
+- **No la invento.**
 
 ---
 

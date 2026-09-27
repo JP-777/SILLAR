@@ -69,11 +69,30 @@ H-20, §18—, **no fronteras de importación entre módulos**: sus aserciones l
 concretos por su ruta (`frontendHygiene.test.mjs:35,44,72,103,323`). No cubre la regla de
 `CLAUDE.md` de que un módulo nunca importa de otro.
 
-**PASO 2 BLOQUEADO.** No se crea ninguna tabla, migración, seed ni `99_drop.sql` hasta que esa
-barrera esté en `main` con sus pruebas y llamada desde la puerta, y se anote aquí el SHA que la
-incorpora. **Una espera no autoriza crear tablas provisionalmente.**
+~~**PASO 2 BLOQUEADO.**~~ **DESBLOQUEADO el 27/09/2026.** El texto se conserva porque fija el criterio
+con el que se desbloqueó: la barrera en `main`, con sus pruebas y llamada desde la puerta, y **el SHA
+anotado**. Las tres cosas están. *(Y la frase que lo acompañaba sigue valiendo para la próxima vez:
+una espera no autoriza crear tablas provisionalmente.)*
 
-**SHA de la barrera:** *pendiente — no ha llegado a `main`.*
+### RESUELTO el 27/09/2026 · la barrera está en `main`
+
+| | |
+|---|---|
+| **SHA que la introduce** | **`9219cd1`** — `feat(frontend): barrera de fronteras entre módulos en la etapa 1` |
+| **Endurecida en** | `e2760f8` — cubre `import()` calculado, glob, `new URL` y `url()` de CSS |
+| **QA independiente** | `9fe08b8` |
+| **Ancestro de `origin/main`** | **Sí.** `origin/main` está hoy en `2191150` |
+| **Cableada en la puerta** | `scripts/verificar.mjs:2043` → `['fronteras entre módulos', 'test:fronteras']`, documentada en `:2004-2007` |
+| **Script y prueba** | `frontend/scripts/fronteras-frontend.mjs` · `frontend/tests/fronterasFrontend.test.mjs` |
+| **Cómo se invoca** | `test:fronteras` = `node scripts/fronteras-frontend.mjs && node --test tests/fronterasFrontend.test.mjs` |
+
+**La condición del paso 2 queda cumplida.** Lo comprobé sobre `origin/main`, no sobre una promesa:
+los dos archivos están en su árbol y la puerta los llama.
+
+> **Y el endurecimiento posterior importa para M03**, no es ruido: `e2760f8` extiende la barrera a
+> `import()` calculado, glob, `new URL` y `url()` de CSS. Un módulo que cruzara la frontera por una
+> de esas vías **no lo habría detectado la versión inicial**. Es la barrera provocada después de
+> puesta, que es lo que `ANTES-DE-EMPEZAR-UN-MODULO.md` §2 pide.
 
 ---
 
@@ -88,7 +107,7 @@ incorpora. **Una espera no autoriza crear tablas provisionalmente.**
 | 5 | «El pago se guarda como **hecho consumado** —cuándo, método, referencia y **el nombre** del trabajador—, **nunca una FK a `core.admin_users`**» | `docs/PENDIENTES.md:493-495` | Coincide con «distingue el hecho de pago del estado del pedido» | **APLICAR** — restricción cerrada |
 | 6 | «**El estado del pago y el estado del pedido son dos cosas distintas.** Fundirlos obliga a rehacer la máquina de estados con pedidos reales dentro» | `docs/PENDIENTES.md:497-499` | Idéntico al encargo §2 | **APLICAR** |
 | 7 | «Sin verificar se puede entrar y mirar. **Comprar, no** — eso lo exigirá M03» | `docs/modules/crm/SPEC.md:238` | No lo contradice nada | **APLICAR** — el checkout exige `EmailVerified` |
-| 8 | Los códigos visibles «llevan la **serie de su nodo** delante»: `V-03-000459` | `ADR-016:66-79`; `CLAUDE.md`, §convenciones | **RESUELTA el 27/09/2026.** El encargo del 26/09 fijaba `2026-0147` sin serie; **JP ratificó `W-2026-0147`**, que sí la lleva | **APLICAR** — el repositorio tenía razón. Lo pendiente es la continuidad, §b1-bis |
+| 8 | Los códigos visibles «llevan la **serie de su nodo** delante»: `V-03-000459`; y se puede renumerar «mientras no salte **ni reinicie**» (`:77`) | `ADR-016:66-79`; `CLAUDE.md`, §convenciones | **RESUELTA el 27/09/2026: `P-2026-0147`.** Lleva etiqueta de nodo, **y el reinicio anual queda excepcionado expresamente** por el líder técnico | **APLICAR.** El repositorio tenía razón en la serie; la excepción del reinicio está ratificada, no interpretada |
 | 9 | Un pedido vende **la variante**: «Identificador de la variante, no del producto: quien vende, cuenta o factura lo hace contra ella» | `backend/Sillar.Modules.Catalog.Contracts/ItemSnapshot.cs:9-11`; `DECISIONES-PREVIAS-M03.md` §3 | Coincide | **APLICAR** |
 | 10 | `sales.order_items.product_id → catalog.products` | `docs/ARQUITECTURA_MODULAR.md:213` | **Contradice la fila 9.** Vende `catalog.product_items`, no `products` | **PEDIR** §e1 — corrección de documento compartido |
 | 11 | `sales.order_statuses` es una **tabla**, y `orders.order_status_id` la referencia | `docs/ARQUITECTURA_MODULAR.md:195` y `:214` | Siete estados **fijos**, idénticos para cliente y personal | **PEDIR** §e2 — y ver §4 de abajo: choca con la ADR-018 |

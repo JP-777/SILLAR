@@ -51,7 +51,7 @@ Todo esto se lee de módulos que ya están en `main`. Se copia el patrón; no se
 | Sesión de cliente | Política `CustomerAuthorization.PolicyName` (`"crm:customer"`), y `ICurrentCustomer` para saber quién es | `backend/Sillar.Modules.Crm.Contracts/CustomerAuthorization.cs`; `ICurrentCustomer.cs` |
 | CSRF | `CustomerCsrfEndpointFilter` en las escrituras de cliente, `CsrfEndpointFilter` en las de personal | `Sillar.Modules.Crm.Contracts/CustomerCsrfEndpointFilter.cs`; `Sillar.Core.Contracts/CsrfEndpointFilter.cs` |
 | Configuración | El plazo de pago se lee con `ISettingsReader.Get<T>`, nunca tocando `core.site_settings` | `Sillar.Core.Contracts/ISettingsReader.cs` |
-| Auditoría | `IAuditWriter`, y **la entidad concreta en el resumen**: «Pedido W-2026-0147 pasa a Preparando», no «cambio de estado» | `Sillar.Core.Contracts/IAuditWriter.cs`; `docs/ANTES-DE-EMPEZAR-UN-MODULO.md` §5 |
+| Auditoría | `IAuditWriter`, y **la entidad concreta en el resumen**: «Pedido P-2026-0147 pasa a Preparando», no «cambio de estado» | `Sillar.Core.Contracts/IAuditWriter.cs`; `docs/ANTES-DE-EMPEZAR-UN-MODULO.md` §5 |
 | Colaciones | El código visible se busca **exacto**: no necesita colación no determinista ni trigram. **Pero si la lista del panel busca por nombre de cliente**, ese snapshot lleva `core.es_search` y su índice, y entonces `LIKE` está prohibido sobre él — la salida es `COLLATE "C"` en la expresión. **Lo decide la SPEC**, y cuesta un minuto antes del primer `CREATE TABLE` y un bloqueo después | `docs/ANTES-DE-EMPEZAR-UN-MODULO.md` §7; la salida ya trabajada en `docs/modules/crm/DATOS.md:102` |
 
 ## 2 · Lo que M03 consume de M01 y de M04 — contratos reales, leídos

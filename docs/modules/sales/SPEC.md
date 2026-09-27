@@ -56,7 +56,7 @@ hoy aprobado e integrado**, y ese criterio está satisfecho (§11 de este docume
 |---|---|---|---|
 | **B-01** | ¿Quién es la autoridad de stock que reserva y libera de forma atómica? | **DISUELTA** — no respondida: **desaparecida** | 26/09 §1: no hay reserva de existencias en v1. Sin operación de reserva no hay autoridad que designar. Con ella se disuelve también **D-01** |
 | **B-02** | ¿Qué constituye exactamente el total que paga el cliente? | **RESUELTA** | 26/09 §3: solo recojo, sin entrega ni tarifa. 26/09 §4: «a consultar» fuera del carrito. **Total = suma de las líneas.** Con ella se resuelve **D-02** |
-| **B-03** | ¿Qué formato ve una persona como código del pedido? | **RESUELTA el 27/09/2026** | **`W-2026-0147`**: nodo delante, año, correlativo. Ratificado por JP, alineando con la **regla 2 de `ADR-016`** (`:66`). *(El `2026-0147` del 26/09 §5 queda desplazado.)* **Su continuidad sigue abierta** — §0.3 (a′) y §5.4 |
+| **B-03** | ¿Qué formato ve una persona como código del pedido? | **RESUELTA · rectificada el 27/09/2026** | **`P-2026-0147`**: etiqueta de nodo, año, correlativo. `P` ← nodo `principal`, **no una letra universal**. Alinea con la **regla 2 de `ADR-016`** (`:66`), **con excepción ratificada para el reinicio anual**. *(Desplazan a `2026-0147` del 26/09 y a `W-2026-0147` del 27/09.)* **Su mecanismo también quedó cerrado** — §5.4 |
 | **B-04** | ¿Qué estados ve el cliente y cuáles maneja el personal? | **RESUELTA** | 26/09 §6: **siete estados, idénticos para cliente y personal.** Con ella se resuelve **D-04** |
 | **B-05** | ¿Qué pasa si el Yape llega después de vencer? | **RESUELTA EN SU PARTE CRÍTICA** | 26/09 §8: el personal **siempre** puede registrar el pago; con mercancía se reactiva, sin ella queda aviso operativo visible. **Sigue abierto a qué estado vuelve** — §0.3 (b). **D-03** queda así |
 
@@ -71,8 +71,10 @@ hoy aprobado e integrado**, y ese criterio está satisfecho (§11 de este docume
 
 | | Qué falta | Dónde |
 |---|---|---|
-| ~~(a)~~ | ~~**Formato del código visible.**~~ **RESUELTA el 27/09/2026: `W-2026-0147`** | `DECISIONES-VIGENTES-M03.md` §5 |
-| **(a′)** | **La continuidad del correlativo, y lo que arrastra.** La instrucción del 27/09 menciona que **no debe saltar ni reiniciarse**. Quedan por concretar **continuidad, concurrencia y cambio de año**, y hay **una contradicción aparente entre el año del código y el no-reinicio**. **No se elige mecanismo** | §5.4 · `ESCALADAS-M03.md` §b1-bis |
+| ~~(a)~~ | ~~**Formato del código visible.**~~ **RESUELTA y rectificada el 27/09/2026: `P-2026-0147`** | `DECISIONES-VIGENTES-M03.md` §5 |
+| ~~(a′)~~ | ~~**La continuidad del correlativo.**~~ **RESUELTA el 27/09/2026:** reinicio anual ratificado como excepción a la ADR-016, y **contador transaccional por serie `(nodo, año)`** | §5.4 |
+| **(g)** | **La etiqueta de serie: ¿por nodo, o por nodo × tipo de documento?** M07 usa «una letra diferente» para el mismo nodo, así que la etiqueta **no es solo del nodo** — y de ello depende contra qué compara el instalador al negarse a arrancar | `ESCALADAS-M03.md` §g |
+| **(h)** | **Unicidad de la etiqueta entre instalaciones desconectadas.** La base local no puede demostrarla. **Elevada al líder técnico; no se inventa** | `ESCALADAS-M03.md` §h |
 | **(b)** | **Cancelación y reactivación.** A qué estado vuelve un Vencido pagado; quién cancela y desde dónde; si exige motivo; si se cancela un Entregado | `ESCALADAS-M03.md` §b2 |
 | **(c)** | **Efectivo.** `PENDIENTES.md:487-488` dice «Yape **y efectivo**»; el 26/09 nombra solo Yape y no lo resuelve | `ESCALADAS-M03.md` §c |
 | **(d)** | **La frontera con M07: la vía y la modalidad de acceso.** Hoy su SPEC exige sesión de cliente en sus cuatro endpoints públicos, pero **eso es el estado de su SPEC, no una modalidad ratificada** para «a consultar». **No se presupone ningún endpoint ni ningún acceso aprobado** | `ESCALADAS-M03.md` §d |
@@ -286,13 +288,18 @@ entre las replicables.
 > |---|---|---|
 > | **Decisión** (`:45`) | Las tablas que se replican usan `uuid` v7 como PK; las que no, `integer IDENTITY` | **Adoptada sin reserva.** `orders` y `order_lines` con `uuid` v7; `carts`, `cart_items` y el contador con `integer IDENTITY` |
 > | **Regla 1** (`:65`) | El identificador lo genera **la aplicación**, no la base | **Adoptada sin reserva** |
-> | **Regla 2** (`:66`, con su tabla `:70-79`) | Ningún identificador se muestra al usuario, y los códigos visibles son campos aparte «**con su propia serie por nodo**» | **Adoptada entera desde el 27/09/2026.** Ningún `uuid` se presenta, y el código visible **`W-2026-0147`** lleva la serie del nodo delante |
+> | **Regla 2** (`:66`, con su tabla `:70-79`) | Ningún identificador se muestra al usuario, y los códigos visibles son campos aparte «**con su propia serie por nodo**» | **Adoptada, con una excepción ratificada.** Ningún `uuid` se presenta, y **`P-2026-0147`** lleva la etiqueta del nodo delante. **Excepcionado solo el «ni reinicie»** de su tabla `:77`: la serie **reinicia cada año**, ratificado por el líder técnico el 27/09 |
 > | **Regla 3** (`:80`) | Las FK entre replicadas también `uuid`; y una replicada no referencia a una que no lo es (ADR-018) | **Adoptada sin reserva.** El barrido está en §5.2 |
 > | **Regla 4** (`:82`) | Las replicadas llevan nodo de origen y marca de versión | **Adoptada sin reserva** |
 >
-> **Las cinco entradas están adoptadas enteras.** El conflicto que hubo con la regla 2 se cerró el
-> 27/09 al ratificar `W-2026-0147`, y **nunca tocó la clave primaria**: `uuid` v7 y código visible son
-> dos columnas con dos oficios, que es justo lo que la regla 2 existe para sostener. Las cuatro columnas las rellena el `DbContext` al guardar, no quien escribe
+> **Las cinco entradas están adoptadas, cuatro enteras y la regla 2 con una excepción expresa.** El
+> conflicto se cerró el 27/09 al ratificar `P-2026-0147` más el reinicio anual, y **nunca tocó la
+> clave primaria**: `uuid` v7 y código visible son dos columnas con dos oficios, que es justo lo que
+> la regla 2 existe para sostener.
+>
+> **La excepción está ratificada, no interpretada.** No se deduce de que el formato lleve el año: la
+> ratificó el líder técnico el 27/09 y su texto entra en la ADR-016 por la rama documental de
+> Integración. **Esa publicación es trazabilidad, no una condición previa.** Las cuatro columnas las rellena el `DbContext` al guardar, no quien escribe
 la entidad (`backend/Sillar.Shared/Replication/IReplicatedEntity.cs`).
 
 **Carrito y sesión de compra: no.** **OBSERVADO:** ADR-017 los coloca en el lado exclusivo de WEB.
@@ -336,9 +343,9 @@ reescriban lo que ocurrió**. Conceptualmente:
   lo llama así.
 - **`total_amount`:** `numeric(12,2)`, `CHECK >= 0`. Es la suma de las líneas y nada más (R-15).
 - **`is_active`:** baja lógica siempre; nunca `DELETE` físico.
-- **código visible:** `text` con `UNIQUE`. **Formato `W-2026-0147`** —nodo, año, correlativo—
-  ratificado el 27/09. **Su continuidad sigue abierta** — (a′) y §5.4. Es una columna
-  **independiente de la PK**, no una representación de ella.
+- **código visible:** `text` con `UNIQUE`. **Formato `P-2026-0147`** —etiqueta de nodo, año,
+  correlativo— rectificado el 27/09. Es una columna **independiente de la PK**, no una
+  representación de ella. Su mecanismo está en §5.4.
 
 ### `sales.order_lines` — replicada, PK `uuid` v7
 
@@ -366,88 +373,85 @@ su motivo escrito: «Fundirlos obliga a rehacer la máquina de estados **con ped
   `text` con `CHECK` sobre lista cerrada, **y cuál es esa lista está abierto** — (c).
 - **Historial de estados:** de qué estado a cuál, cuándo, y **el nombre** de quien lo cambió.
 
-### El correlativo · su mecanismo, no su formato
+### El contador de la serie · `sales.order_series` — no replicada
 
-Una tabla contador por año, **local al nodo**, `integer GENERATED ALWAYS AS IDENTITY`, **no
-replicada**. El número se toma con `UPDATE … RETURNING` en la misma transacción que inserta el
-pedido. **Ninguna tabla replicada la referencia:** el pedido guarda el código como `text`, no una FK.
+**Una fila por serie `(origin_node, year)`.** PK `integer GENERATED ALWAYS AS IDENTITY`, `UNIQUE
+(origin_node, year)`, y `last_number` con `CHECK >= 0`. **No se replica**, porque el contador es del
+nodo: es exactamente la pregunta de la `ADR-016` respondida con un no —esta fila no puede nacer en un
+nodo y tener que existir en otro, y **si existiera en los dos dejaría de contar**.
 
-**El formato está ratificado: `W-2026-0147`.** Lo que sigue abierto es **si la serie debe ser
-continua**, y con ello el mecanismo — §5.4.
+**ADR-018 limpia:** ninguna tabla replicada la referencia. El pedido guarda el código como `text`,
+**no una FK** hacia ella. Comprobado en el barrido de §5.2.
 
-## 5.4 Unicidad y continuidad son dos cosas · y la segunda sigue sin concretar
+**La etiqueta visible del nodo no vive aquí.** Se **deriva del `NodeIdentity.Code`** y se fija en un
+ajuste propio durante la instalación, leído por `ISettingsReader`. **Nunca una letra por defecto**:
+`P` es el ejemplo del nodo `principal`, no un valor universal. **El instalador se niega a arrancar**
+si la etiqueta está vacía o coincide con otra ya presente en la base — y el alcance real de esa
+garantía está en (h), porque una base local no demuestra unicidad entre instalaciones desconectadas.
 
-**`UNIQUE` demuestra unicidad. No demuestra continuidad.** Son propiedades distintas, con pruebas
-distintas y precios distintos, y confundirlas hace creer que un índice garantiza algo que ni mira.
+## 5.4 El número visible · unicidad y continuidad, las dos decididas
 
-| | Qué es | Cómo se demuestra | Estado |
-|---|---|---|---|
-| **Unicidad** | No hay dos pedidos con el mismo código **dentro de su serie** | `UNIQUE` sobre la columna, más N creaciones concurrentes sin colisión | **Exigida.** 26/09 §5: «la generación debe prevenir duplicados/concurrencia» |
-| **Continuidad** | La serie no salta ningún número | Solo observando la serie completa en los tres casos de abajo | **Mencionada el 27/09, sin concretar.** Ver (a′) |
+**Rectificación de JP del 27/09/2026.** Lo que en la versión anterior de este documento quedaba
+abierto —el mecanismo— **está cerrado**, y las dos propiedades siguen siendo distintas aunque ahora
+las dos se exijan.
 
-**El `UNIQUE` es la barrera de la unicidad, y solo de ella.** Un índice único deja pasar
-`W-2026-0001, W-2026-0002, W-2026-0007` sin decir una palabra, porque los tres son distintos. Si la
-continuidad hace falta, la da **el mecanismo**, no el índice.
+| | Qué es | Estado |
+|---|---|---|
+| **Unicidad** | No hay dos pedidos con el mismo código dentro de su serie | **Exigida.** `UNIQUE` sobre la columna |
+| **Continuidad** | La serie no salta ningún número | **Exigida desde el 27/09** — «sin huecos APROBADO» |
 
-### Lo que la instrucción del 27/09 menciona, y lo que falta para poder cumplirlo
+**`UNIQUE` demuestra unicidad y no continuidad**, y por eso no basta: un índice único deja pasar
+`P-2026-0001, P-2026-0002, P-2026-0007` sin decir una palabra, porque los tres son distintos. **La
+continuidad la da el mecanismo.**
 
-La instrucción dice que el correlativo **no debe saltar ni reiniciarse**. Eso **no es todavía un
-mecanismo**, y tres cosas quedan por concretar. **No se elige ninguna aquí.**
+### El mecanismo · decidido, no elegido por mí
 
-**1 · Continuidad y rollback.** Aquí está la diferencia entre los dos mecanismos, y **descarta uno**:
+1. **Una fila de contador por serie `(nodo, año)`** — `sales.order_series`.
+2. **`UPDATE … RETURNING` dentro de la MISMA transacción** que persiste el pedido.
+3. **El número se pide al final, justo antes de confirmar el pedido. Nunca al crear el carrito.**
+4. **No `nextval()`.**
 
-| Mecanismo | Si la transacción del pedido se deshace |
-|---|---|
-| **Contador en una fila**, con `UPDATE … RETURNING` dentro de la misma transacción | El incremento **se deshace con ella**. No queda hueco |
-| **Secuencia de PostgreSQL** (`nextval`) | El número **se consume igual, y el hueco queda** |
+**Por qué no una secuencia, y es la razón que esta SPEC ya documentaba antes de que se decidiera:**
+`nextval` es **deliberadamente no transaccional** —entrega el número fuera de la transacción para no
+serializar a quien lo pide—, así que **una transacción revertida consume el número igual** y el hueco
+queda para siempre. No es configurable: es lo que una secuencia es. Con «sin huecos» aprobado, **la
+secuencia queda excluida**, no penalizada.
 
-> **Una secuencia de PostgreSQL NO garantiza continuidad, y esta SPEC no lo afirma en ningún sitio.**
-> `nextval` es deliberadamente **no transaccional**: entrega el número fuera de la transacción para no
-> serializar a quien lo pide, así que **una transacción revertida consume el número igual** y deja un
-> hueco permanente. No es un defecto de implementación ni algo que se pueda configurar: es lo que una
-> secuencia es. **Si el no-salto se confirma como requisito, la secuencia queda excluida** — no
-> «penalizada», excluida.
+**El punto 3 no es un detalle de implementación.** Pedir el número al crear el carrito lo consumiría
+en cada carrito abandonado, y los carritos abandonados son la mayoría. Pedirlo al final significa que
+**solo un pedido que llega a confirmarse gasta un número**.
 
-**2 · Concurrencia.** La continuidad del contador **no es gratis**: la fila se bloquea, y el segundo
-pedido simultáneo **espera** a que el primero confirme o deshaga. **Eso serializa la creación de
-pedidos.** A escala de una tienda es irrelevante, pero es la contrapartida que hay que decir en voz
-alta, porque es justo lo que la secuencia evita. **Qué se acepta como espera máxima, y qué pasa si el
-bloqueo no se obtiene, está sin concretar.**
+### Lo que el mecanismo cuesta, dicho en voz alta
 
-**3 · Cambio de año.** **No se presupone reinicio anual.** Y aquí hay una contradicción aparente que
-conviene poner delante en vez de resolverla por inferencia:
+La fila de la serie **se bloquea** mientras la transacción vive, así que **la confirmación de pedidos
+de una misma serie se serializa**: el segundo espera a que el primero confirme o deshaga. A escala de
+una tienda es irrelevante —y el punto 3 lo acota al tramo más corto posible—, pero es la contrapartida
+de la continuidad y **no se esconde**.
 
-> **`W-2026-0147` lleva el año dentro, y la instrucción dice que el correlativo no debe reiniciarse.**
-> Las dos cosas juntas admiten dos lecturas incompatibles:
->
-> | Lectura | Qué implica | Contra qué choca |
-> |---|---|---|
-> | **El año parte la serie** | El correlativo reinicia el 1 de enero: `W-2026-9999` → `W-2027-0001` | Contra el «no debe reiniciarse» de la propia instrucción del 27/09 |
-> | **El año es descriptivo** | El correlativo es continuo entre años: `W-2026-0147` → `W-2027-0148` | Contra nada explícito, pero hace que el año **no identifique** un tramo de la serie |
->
-> **No elijo entre las dos.** Y la tabla de la **regla 2** de `ADR-016` (`:77`) no desempata: dice de
-> los códigos visibles «se puede renumerar: **sí, mientras no salte ni reinicie**», que apoya la
-> segunda lectura, pero habla de **renumerar**, que es otra operación.
->
-> **Si es la primera lectura**, hace falta además crear la fila del año nuevo de forma atómica: el
-> primer pedido del 1 de enero puede llegar dos veces a la vez.
+### Reinicio anual · con excepción ratificada a la ADR-016
 
-**4 · Y una precisión que el prefijo de nodo introduce.** Con serie por nodo, **la continuidad es de
-cada serie, no global**: `ADR-016:79` recuerda que la serie por punto de emisión «no es una
-preferencia: **SUNAT exige serie propia**». Dos nodos numerando cada uno del 1 es lo correcto, no un
-salto. **Hoy hay un solo nodo**, así que no se nota — y es exactamente el tipo de regla que
-`ANTES-DE-EMPEZAR-UN-MODULO.md` §1 avisa que se graba mal cuando solo hay uno.
+**La serie vuelve al inicio al cambiar el año.** `P-2026-9999` → `P-2027-0001`.
 
-### Por qué no elijo el mecanismo
+Eso contradice la tabla de la **regla 2** de la `ADR-016` (`:77`), que admite renumerar «mientras no
+salte **ni reinicie**». **El líder técnico ratificó expresamente la excepción el 27/09:** se conserva
+el nodo delante y **se excepciona solo el «no reinicia»**. Su texto entra en la ADR-016 por la rama
+documental de Integración, y **esa publicación es trazabilidad, no una condición previa**.
 
-Porque la elección **se sigue** de lo que quede concretado, y al revés no: si el no-salto se
-confirma, el contador es el único camino y su serialización es un coste aceptado; si no, la secuencia
-vuelve a estar disponible. **Y la lectura del cambio de año decide si el contador es uno o uno por
-año**, que es una tabla distinta.
+**Consecuencia concreta:** el primer pedido de un año nuevo puede llegar **dos veces a la vez**, y
+entonces las dos transacciones intentan crear la fila `(nodo, año)` que no existe. Se resuelve con un
+`INSERT … ON CONFLICT DO NOTHING` seguido del `UPDATE … RETURNING`, dentro de la misma transacción, y
+**se prueba provocándolo**: dos confirmaciones simultáneas sobre un año sin fila previa.
 
-**Mientras no se concrete:** la SPEC exige **unicidad**, describe los dos mecanismos con su
-comportamiento real, **no afirma que ninguno garantice continuidad** y **§11 no prueba la
-continuidad**. Lo pendiente está en (a′).
+### Hasta dónde llega la promesa de continuidad
+
+**No se promete continuidad** ante borrados, correcciones manuales ni repartición entre nodos no
+definida. La garantía es estrecha y exacta: **dentro de una serie `(nodo, año)`, un pedido confirmado
+consume un número y uno que falla no consume ninguno.**
+
+**Y la continuidad es de cada serie, no global.** Dos nodos numerando cada uno desde 1 es lo correcto
+y no un salto — `ADR-016:79`, «SUNAT exige serie propia por punto de emisión». Hoy hay **un solo
+nodo**, y por eso no se nota: es el caso del §1 de `ANTES-DE-EMPEZAR-UN-MODULO.md`, una regla que se
+graba mal cuando solo hay uno.
 
 ## 5.5 Colaciones
 
@@ -538,7 +542,7 @@ usuarios.
 **Incorrecto:** «Creación de un pedido.» · «Actualización de pago.» · «Modificación de reserva.»
 
 El `uuid` técnico **no sustituye** al nombre humano de la fila. **El código visible tiene la forma
-`W-2026-0147`** desde el 27/09.
+`P-2026-0147`** desde la rectificación del 27/09.
 
 # 8. Reglas de negocio cerradas
 
@@ -857,9 +861,14 @@ el sistema garantiza. Las pruebas de lógica **no tocan la base**.
 | Auditoría nombra la fila | Crear dos pedidos y comprobar que sus resúmenes permiten distinguirlos sin abrir el detalle |
 | `orders` y `order_lines` usan `uuid` v7 | Comprobar versión 7 de las PK y presencia de `origin_node` y `row_version` |
 | Los carritos locales **no** llevan metadatos de replicación | Inspección de schema |
-| **El código visible tiene la forma `W-2026-0147`** | Nodo, año y correlativo. Ratificado el 27/09. Y **el `uuid` no aparece en ninguna superficie**, que es la otra mitad de la regla 2 |
-| **Dos pedidos simultáneos no obtienen el mismo código** | N creaciones concurrentes: ninguna colisión. **Unicidad, y solo unicidad** — el `UNIQUE` no mira la continuidad (§5.4) |
-| **La continuidad de la serie NO se prueba todavía** | **Deliberado.** El 27/09 la menciona pero no concreta mecanismo, concurrencia ni cambio de año, y **su prueba depende del mecanismo**. Escribirla ahora fijaría por la puerta de atrás una decisión que no está tomada (a′) |
+| **El código visible tiene la forma `P-2026-0147`** | Etiqueta de nodo, año y correlativo. Y **el `uuid` no aparece en ninguna superficie**, que es la otra mitad de la regla 2 |
+| **La etiqueta se deriva del `Code` del nodo y no es una letra por defecto** | Cambiar `Sillar:Node:Code` y comprobar que el código visible cambia con él. **Ninguna letra grabada en el producto** |
+| **El instalador se niega a arrancar con etiqueta vacía o repetida** | Provocar los dos casos y observar el rechazo explícito; y el caso válido pasando |
+| **Dos pedidos concurrentes reciben números distintos y consecutivos dentro de su serie** | N confirmaciones simultáneas: sin colisión **y sin hueco** |
+| **Un pedido que falla a mitad no consume número** | Provocar el rollback después de pedir el número y comprobar que el siguiente pedido toma **ese mismo** número |
+| **El carrito no consume número** | Abrir y abandonar carritos, y comprobar que la serie no avanzó |
+| **El cambio de año crea la serie nueva sin colisión** | Dos confirmaciones simultáneas sobre un año **sin fila previa**: ambas obtienen número, ninguna falla, ninguna repite |
+| **La guarda del contador se falsifica** | Romper a propósito la asignación y demostrar que la prueba **pasa a rojo** antes de restaurarla |
 | Ningún `uuid` se presenta al cliente ni al personal | E2E sobre pantallas y respuestas visibles |
 | No entra dependencia nueva por el pago manual | Comparar manifiestos antes y después; cualquier alta exige §6 |
 | Las pantallas cubren vacío, datos, carga y conflicto | E2E/visual por cada pantalla del §9, claro/oscuro, móvil/escritorio |
