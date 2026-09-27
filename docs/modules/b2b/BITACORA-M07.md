@@ -47,13 +47,13 @@ copias en `evidencias/PUERTA-*-20260927.*`):
 | Corrida | Resultado |
 |---|---|
 | 1 · 13:57 → 14:29 | **rc=1, de entorno.** Etapas 1–5 PASS. La 6 no llegó a ejecutar pruebas: el `dotnet publish` de la imagen e2e agotó sus reintentos de NuGet («no data was received for 60000ms»). Diez minutos después, `api.nuget.org` respondía 200 desde el equipo y desde Docker. SHA-256 `c6c38217…acef5d` |
-| 2 · 14:39 → 15:24 | **6/6 PASS, rc=0.** e2e **159/159, 0 fallidas, 0 inestables, 0 omitidas**. Las 19 pruebas de M07 corren en la etapa 5. SHA-256 `8a090413…c09591`; informe de Playwright `c46c5f9c…f9b7a3` |
+| 2 · 14:39 → 15:24 | **6/6 PASS, rc=0.** e2e **159/159, 0 fallidas, 0 inestables, 0 omitidas**. Las 19 pruebas de M07 corren en la etapa 5. SHA-256 `8a090413…c09591`; informe de Playwright `c46c5f9c…0f23b9a7` |
 
 **Hallazgo para Integración (C11), OBSERVADO en la corrida 2:** la memoria disponible bajó a
 **1218 MiB** (14:58:04, vigía a 1 GiB), y el e2e tardó **39,2 min** frente a unos 21 en corridas
 anteriores. Lo que la llenaba no era la API: eran **nodos de MSBuild reutilizables** que la propia
 puerta deja vivos —más de veinte procesos de 160–220 MiB, lanzados en las etapas 3–5 y durante el
-e2e—, porque nada desactiva la reutilización de nodos. **DEDUCIDO, no demostrado:** encaja con la
+e2e—, porque nada desactiva la reutilización de nodos (sin coincidencias de `nodeReuse`, `MSBUILDDISABLENODEREUSE` ni `build-server` en `scripts/verificar.mjs` ni en `e2e/setup/`). **DEDUCIDO, no demostrado:** encaja con la
 presión de memoria de la puerta roja de M02. Efecto pedido: que la puerta no acumule nodos de
 MSBuild entre etapas.
 
