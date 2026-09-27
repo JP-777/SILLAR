@@ -1,0 +1,62 @@
+# SHA de main probado: 49dd7c8b619f868b496e2e40ee6acaca08f36c5a (árbol de la rama, scripts 99_drop sin modificar)
+# Base efímera: sillar_c6_hoy_1790531540 · inicio 2026-09-27 12:52:20 -0500
+## 1 · Instalar CORE, M01, M04
+  migraciones de Sillar.Core aplicadas
+  migraciones de Sillar.Modules.Catalog aplicadas
+  migraciones de Sillar.Modules.Crm aplicadas
+## 2 · Esquema b2b mínimo con las FK duras que declarará M07
+FK de b2b antes:
+b2b.quote_lines → catalog.product_items (fk_quote_lines_item)
+b2b.special_order_leads → catalog.products (fk_special_order_leads_product)
+b2b.special_order_leads → crm.customers (fk_special_order_leads_customer)
+## 3 · catalog/99_drop.sql de main, ejecutado directamente
+DO
+psql:/scripts/modules/catalog/99_drop.sql:61: NOTICE:  drop cascades to 10 other objects
+DETAIL:  drop cascades to table catalog.__migrations
+drop cascades to table catalog.brands
+drop cascades to table catalog.categories
+drop cascades to table catalog.products
+drop cascades to constraint fk_special_order_leads_product on table b2b.special_order_leads
+drop cascades to table catalog.product_categories
+drop cascades to table catalog.product_images
+drop cascades to table catalog.product_items
+drop cascades to constraint fk_quote_lines_item on table b2b.quote_lines
+drop cascades to function catalog.set_updated_at()
+DROP SCHEMA
+  rc=0
+FK de b2b después:
+b2b.special_order_leads → crm.customers (fk_special_order_leads_customer)
+Tablas de b2b después: 2
+Insertar en b2b un item_id que no existe en ningún catálogo:
+  ACEPTADO: sin integridad referencial
+## 4 · Reinstalar M01 (sus migraciones)
+  migraciones de Sillar.Modules.Catalog aplicadas
+FK de b2b tras reinstalar M01:
+b2b.special_order_leads → crm.customers (fk_special_order_leads_customer)
+## 5 · crm/99_drop.sql de main, ejecutado directamente
+psql:/scripts/modules/crm/99_drop.sql:24: NOTICE:  drop cascades to 11 other objects
+DETAIL:  drop cascades to table crm.__migrations
+drop cascades to text search configuration crm.spanish_unaccent
+drop cascades to table crm.customers
+drop cascades to constraint fk_special_order_leads_customer on table b2b.special_order_leads
+drop cascades to table crm.customer_addresses
+drop cascades to table crm.customer_accounts
+drop cascades to table crm.customer_sessions
+drop cascades to table crm.customer_tokens
+drop cascades to table crm.contact_messages
+drop cascades to function crm.set_updated_at()
+drop cascades to function crm.invalidate_customer_email_verification()
+DROP SCHEMA
+  rc=0
+FK de b2b después:
+## 6 · DROP SCHEMA catalog CASCADE arbitrario, fuera de los scripts
+  migraciones de Sillar.Modules.Catalog aplicadas
+FK antes:
+b2b.quote_lines → catalog.product_items (fk_quote_lines_item)
+drop cascades to table catalog.product_items
+drop cascades to constraint fk_quote_lines_item on table b2b.quote_lines
+drop cascades to function catalog.set_updated_at()
+  rc=0
+FK después:
+# Fin 2026-09-27 12:54:41 -0500
+# Base efímera sillar_c6_hoy_1790531540 eliminada
