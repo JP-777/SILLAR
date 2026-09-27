@@ -2,6 +2,14 @@
 
 - **Creación / última modificación / última verificación:** 28/09/2026 · America/Lima
 - **Base integrada:** `e839989432283c755edf7d4ae47b2c37697215ec`
+- **Commit de implementación verificado:** `c30c9666534edd4ddaa570870f3e992fe2552c30`
+
+## Evidencia de etapa
+
+- Pruebas focales: 7/7, sin omitidas.
+- Falsificación B2: guarda de precio debilitada deliberadamente; 1 fallo esperado. Restauración: 7/7.
+- Generación SQL mediante EF: no ejecutada; el proyecto no incorpora `Microsoft.EntityFrameworkCore.Design` y la costura de host aún no está autorizada.
+- Montaje/desmontaje real: pendiente de costura con host/solución y prueba con infraestructura; no se declara superado.
 
 ## Estado de etapas
 

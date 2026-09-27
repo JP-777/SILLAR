@@ -2,6 +2,7 @@
 
 - **Creación / última modificación / última verificación:** 28/09/2026 · America/Lima
 - **Base verificada:** `e839989432283c755edf7d4ae47b2c37697215ec`
+- **Commit de implementación verificado:** `c30c9666534edd4ddaa570870f3e992fe2552c30`
 
 ## E1 · Supervivencia del binario fotográfico
 
