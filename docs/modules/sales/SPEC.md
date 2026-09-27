@@ -84,7 +84,7 @@ hoy aprobado e integrado**, y ese criterio está satisfecho (§11 de este docume
 | | Qué falta | Dónde |
 |---|---|---|
 | **(e)** | **Barrera de fronteras del frontend**, en `main` con pruebas y llamada desde la puerta. Recomprobado tras `git fetch --all`: **no está** | `MATRIZ-DIFERENCIAS-M03.md` §2 · `ESCALADAS-M03.md` §e4 |
-| **(f)** | **Contrato de M04 para pedidos sin dirección.** `ICustomerSnapshotReader` exige `customerAddressId` y devuelve dirección no nulable; con solo recojo no hay dirección. **Escalado al líder técnico** | `ESCALADAS-M03.md` §e3 |
+| **(f)** | ~~**Contrato de M04 para pedidos sin dirección.**~~ **RESPONDIDO por D el 27/09/2026 — contrato 1.1.0**, con la sobrecarga sin dirección. **Pendiente de certificación e integración**: vive en `integration/m04-contrato-snapshot` (`3758b6e`), **no en `main`**. Sin merge, rebase ni cherry-pick | §6.3 · `ESCALADAS-M03.md` §e3 |
 
 ## 0.4 Trazabilidad · cada afirmación histórica desplazada, con su sustituto
 
@@ -502,7 +502,41 @@ El contrato permite consultar pedidos por `customer_id` **sin que quien pregunte
 Devuelve una representación **basada en snapshots históricos**. No recompone un pedido antiguo con
 los nombres actuales.
 
-## 6.3 Eventos publicados
+## 6.3 Lo que M03 consume de M04 · contrato 1.1.0
+
+**Fuente:** `docs/modules/crm/CONTRATO-SNAPSHOT.md` y
+`backend/Sillar.Modules.Crm.Contracts/ICustomerSnapshotReader.cs`, en
+`integration/m04-contrato-snapshot` = `3758b6e3a9367bde8a262b4efd9f6927343aa1cd`. **Rama pendiente
+de certificación: se lee, no se fusiona.**
+
+**Con solo recojo, M03 usa la sobrecarga sin dirección:**
+
+```
+Task<CustomerOrderContactSnapshot?> GetForOrderAsync(Guid customerId, CancellationToken ct)
+```
+
+Y devuelve exactamente los campos que §5.3 congela: `FullName`, `Email`, `Phone`, `DocumentType`,
+`DocumentNumber`, `EmailVerified`. **Ningún campo de más, ninguno de menos.**
+
+**Un cliente válido sin ninguna dirección guardada recibe instantánea.** Era la carencia que D-05
+describía y es la que el contrato resuelve: **nadie deja de poder comprar por no tener dirección.**
+
+### Las tres cosas que este contrato deja en manos de M03
+
+1. **`EmailVerified` no decide nada por sí solo.** El contrato lo entrega; **la regla es R-07**.
+2. **`null` no dice por qué**, y no se deduce. Ver el conflicto de §9.8.
+3. **La instantánea es una foto, no una referencia.** M03 **guarda su propia copia** en `sales.orders`.
+   Una lectura posterior devolvería el estado actual, que ya no es lo que ocurrió (R-08).
+
+### Y una regla de acoplamiento que conviene escribir ahora
+
+`DocumentType`, cuando existe, es `"dni"` o `"ruc"` — lo impone `ck_customers_document_type`, que es
+**de M04**. **La columna snapshot de M03 no lleva `CHECK` que replique esa lista.** Copiar la
+restricción de otro módulo en la propia tabla ataría el historial de pedidos a una regla ajena: el día
+que M04 admita un tercer tipo, un pedido válido dejaría de poder guardarse. **Un snapshot guarda lo
+que había, no lo que hoy es válido.**
+
+## 6.4 Eventos publicados
 
 - pedido creado;
 - pago confirmado manualmente;
@@ -511,7 +545,7 @@ los nombres actuales.
 
 Los nombres técnicos definitivos pertenecen a la implementación.
 
-## 6.4 Eventos consumidos
+## 6.5 Eventos consumidos
 
 **Ninguno modifica pedidos históricos.** Los pedidos conservan snapshots precisamente para no
 reescribirse cuando cambie M01.
@@ -812,6 +846,13 @@ frase que dice **qué lo impide y qué hacer**; un botón **nombra la acción qu
 | Item con precio nulo | «Este producto se cotiza. Pide información y te decimos el precio.» | «Producto no disponible» |
 | Plazo vencido | «El plazo para pagar venció el 28 de septiembre. El pedido sigue en pie, pero ya no está garantizado.» | «Tu reserva expiró» — **R-13** |
 | Precio cambiado | «El precio de {producto} cambió de S/ 12,00 a S/ 14,00. Revisa el carrito antes de continuar.» | «Ha ocurrido un error» |
+| **La cuenta ya no puede comprar** — `GetForOrderAsync` devolvió `null` | «Esta cuenta no puede completar pedidos ahora mismo. Escríbenos y lo revisamos contigo.» | «Cliente no encontrado» · «Cuenta bloqueada» · «Cuenta dada de baja» — **el contrato no dice el motivo y M03 no lo adivina** |
+
+> **La última fila es la que más tienta a inventar una causa.** M03 llega ahí **con sesión de cliente
+> abierta**, así que un `null` significa que la ficha cambió de estado entre el acceso y el pago —de
+> baja, bloqueada, o sin cuenta—. El contrato **devuelve `null` sin distinguir el motivo, a propósito**,
+> y nombrar uno sería inventarlo. La frase dice **qué lo impide y qué hacer**, que es lo que
+> `CLAUDE.md` pide, sin afirmar por qué.
 
 # 10. Endpoints — contrato funcional, no implementación
 

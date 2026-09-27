@@ -20,7 +20,8 @@ las tiene.**
 | **§b2** Cancelación y reactivación | **Abierta** |
 | **§c** Efectivo frente a Yape | **Abierta** |
 | **§d** Navegación entre módulos para «a consultar» | **Pasa a Chat 2.** La *modalidad de acceso* —si «a consultar» exige cuenta— sigue siendo decisión comercial abierta |
-| **§e1** `ARQUITECTURA_MODULAR.md:213` apunta al producto | Documento compartido: **de Chat 2** desde el principio |
+| **§e1** `ARQUITECTURA_MODULAR.md:213` apunta al producto | Documento compartido: **de Chat 2** desde el principio. **Repetida el 27/09**: no consta en `docs/integracion/COLA-COSTURAS.md` |
+| **§e3** Contrato de M04 sin dirección | **RESPONDIDO el 27/09 — contrato 1.1.0**, pendiente de certificación. Ver abajo |
 | **§e2** `order_statuses` como tabla replicada | **Pasa a Chat 2** |
 | **§e3** Contrato de M04 para pedidos sin dirección | **Pasa a Chat 2** |
 | **§e4** Barrera de fronteras del frontend | **Pendiente de integración.** Cuando llegue a `main`: **merge normal, nunca rebase**, y se registra el SHA en `MATRIZ-DIFERENCIAS-M03.md` §2 |
@@ -358,9 +359,22 @@ efecto, no el cambio.**
 - **Y hay precedente escrito de que esto se esperaba:** `docs/modules/crm/SPEC.md:328` — «**Este
   contrato no está cerrado hasta que M03 lo estrene.** En M01, mirarlo desde fuera dio dos
   carencias; **usarlo dio cuatro más**… Un contrato no se cierra: se estrena.» Esta es la primera.
-- **Dueño: escalado al líder técnico**, por encima de Chat 2 (26/09/2026, segunda ronda). M04 está en `main` y **aprobado e integrado**; el cambio
-  es de `Contracts`, y lo decide Integración. Lo que M03 necesita observar sigue siendo lo de
-  arriba: congelar al cliente sin pasar una dirección.
+- **RESPONDIDO el 27/09/2026 por D · contrato M04 1.1.0 · pendiente de certificación.**
+
+  > Sobrecarga `GetForOrderAsync(customerId, ct)` → `CustomerOrderContactSnapshot?`, **sin dirección**,
+  > en `integration/m04-contrato-snapshot` = `3758b6e`. **No está en `main`**, así que se lee y **no se
+  > fusiona**: ni merge, ni rebase, ni cherry-pick.
+  >
+  > **Resuelve el caso exacto que esta entrada describía:** «un cliente válido sin ninguna dirección
+  > recibe instantánea». Nadie deja de poder comprar por no tener dirección guardada.
+  >
+  > **Y la resolvió por la vía que no rompe la otra mitad.** Yo había pedido «congelar al cliente sin
+  > pasar dirección», que admitía hacer `Address` anulable — y eso habría vuelto permisivo el camino
+  > con entrega sin avisar a nadie: quien hoy lee `snapshot.Address.AddressLine` recibiría `null` donde
+  > el contrato le garantizaba una dirección. **Con dos métodos, el tipo de retorno dice si hay
+  > dirección y el compilador impide el error.** Es mejor que lo que pedí.
+  >
+  > Cómo lo consume M03: `SPEC.md` §6.3. Verificado sin fusionar, leyendo el árbol del SHA.
 
 ### §e4 · La barrera de fronteras del frontend
 
