@@ -467,7 +467,6 @@ El detalle técnico podrá conservar el identificador, pero no sustituirá el no
 
 | Situación | Comportamiento observable |
 |---|---|
-| Slug duplicado | 409 y mensaje para elegir otra dirección |
 | Publicación incompleta | 409 o 400 con campos que deben completarse |
 | Precio negativo | 400; nunca se guarda |
 | Servicio público inexistente o no publicado | 404; la interfaz presenta una ausencia pública amigable cuando consulta o vuelve a validar la ficha. No se promete detección automática en tiempo real |
