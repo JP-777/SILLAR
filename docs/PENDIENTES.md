@@ -1,6 +1,6 @@
 # Pendientes
 
-**Última modificación parcial:** 2026-09-27 15:45:30 -0500 — America/Lima (entrada 28). **Base verificada de esta entrada:** `3758b6e3a9367bde8a262b4efd9f6927343aa1cd`.
+**Última modificación parcial:** 2026-09-28 22:39:44 -0500 — America/Lima (entrada 29). **Base verificada de esta entrada:** `4ab41738615feb0e72eb36c305e87d805ff7a534`.
 
 **Creación:** 25 de agosto de 2026, 21:04:02 -05:00 — America/Lima (`1d3f78874cae9a57659166495bb84151b0797db4`)
 **Última verificación:** 22 de septiembre de 2026, 06:55:03 -05:00 — America/Lima
@@ -509,6 +509,52 @@ observación.
 
 **Responsable de seguimiento:** Integración. **Estado:** ABIERTO hasta el próximo repaso de
 criterios de cierre de un módulo cerrado.
+
+---
+
+## 29 · La regla de ADR-018 no tiene comprobación automática · **APROBADA, NO IMPLEMENTADA**
+
+**Creación:** 28/09/2026, America/Lima. **Última revisión de esta entrada:** 2026-09-28 22:39:44 -0500 (America/Lima).
+**Base verificada:** `4ab41738615feb0e72eb36c305e87d805ff7a534` (rama `integration/cola-costuras`). **Aprobación:** JP, vía Chat 2.
+**Escrita por:** Claude Code D, como escritor único de costuras. **Se registra, no se implementa.**
+
+**Disparador:** antes de certificar la primera candidata integrada de M03 que incorpore sus
+migraciones.
+
+**La regla.** «Una tabla que se replica no puede referenciar una que no se replica»
+(`docs/adr/ADR-018-medios-replicables.md:28`). Hoy solo la vigila quien escribe la FK: el fallo no
+salta en ninguna base, porque cada una es coherente por dentro; el síntoma aparece después, en otro
+nodo (ADR-018, tabla de `:32-36`). M03 trae el primer esquema nuevo con tablas replicadas desde
+que se escribió la regla.
+
+**Viable y aprobada. No es una investigación.** Lo que queda fijado:
+
+1. **Qué se replica lo dice el modelo EF, no una lista.** Una tabla es replicada si su entidad se
+   configura con `MapReplication()` (`backend/Sillar.Shared.Data/Replication/ReplicationMapping.cs:28`);
+   hoy la usan CORE (`media_assets`), Catálogo y CRM. **No se mantiene una lista manual de tablas**:
+   una lista escrita a mano se queda atrás el día que alguien añade una tabla.
+2. **Qué FK existen lo dice PostgreSQL, no el modelo.** Se consultan en `pg_constraint` sobre la
+   base real, porque hay FK creadas con SQL crudo que el modelo EF no tiene por qué conocer: por
+   ejemplo las de Catálogo y CMS hacia `core.media_assets`
+   (`CatalogInitial.cs:446-470`, `CmsInitial.cs:194-206`).
+3. **Se cruzan las dos fuentes** y se clasifica cada FK en una de las tres combinaciones de ADR-018:
+   replicada → replicada (**permitida**), local → replicada (**permitida**) y replicada → local
+   (**prohibida**). Una FK cuyo origen o destino no se pueda clasificar no pasa en silencio.
+4. **La base tiene que estar migrada entera.** Corre sobre la base efímera de la puerta con las
+   migraciones de **todos** los módulos del candidato. Sobre una base migrada a medias, un verde
+   no vale: una FK que no existe no puede infringir nada.
+5. **Es una prueba de backend dentro de la etapa `[4/6]` de la puerta**, sobre PostgreSQL real
+   tras migrar. No es un análisis de ficheros ni de texto.
+6. **Con pruebas positivas y negativas:** que acepta las dos combinaciones permitidas y rechaza la
+   prohibida, provocándola a propósito, para demostrar que no es una barrera muda
+   (`ANTES-DE-EMPEZAR-UN-MODULO.md` §2).
+
+**Relación con C2** (`docs/integracion/COLA-COSTURAS.md`): C2 añade `Sillar.Modules.Sales` a las
+migraciones de la etapa 4. Esta comprobación exige lo mismo, así que las dos entran en el mismo
+candidato.
+
+**Responsable:** Integración. **Estado:** ABIERTO. Pasa a hecho cuando la comprobación esté en
+`main` y haya certificado la primera candidata con M03.
 
 ---
 
