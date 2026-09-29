@@ -20,6 +20,13 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
 
             table.HasCheckConstraint("ck_order_payments_amount_no_negativo", "amount >= 0");
             table.HasCheckConstraint("ck_order_payments_registered_by_no_vacio", "btrim(registered_by) <> ''");
+
+            // La atribución de un pago es completa siempre: un pago lo registra una
+            // persona, no el sistema. El identificador cero queda prohibido porque
+            // sería un trabajador ficticio con apariencia de real.
+            table.HasCheckConstraint(
+                "ck_order_payments_atribucion_local_positiva",
+                "registered_by_admin_user_id_origin > 0");
         });
 
         builder.HasKey(x => x.OrderPaymentId).HasName("pk_order_payments");
@@ -39,10 +46,15 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
 
         builder.Property(x => x.Reference).HasColumnName("reference");
 
-        // El NOMBRE, jamás una FK a core.admin_users: esa tabla no se replica y
-        // esta sí (ADR-018), y el dato que hace falta dentro de un año es quién
-        // cobró — que sobrevive a que la cuenta se dé de baja o se renombre.
+        // La atribución es un PAR: nombre congelado más identificador local. Jamás
+        // una FK a core.admin_users — esa tabla no se replica y esta sí (ADR-018).
         builder.Property(x => x.RegisteredBy).HasColumnName("registered_by").IsRequired();
+
+        // Dato de bitácora, no puntero. Se interpreta junto al origin_node de ESTA
+        // fila, que es el nodo donde la persona actuó.
+        builder.Property(x => x.RegisteredByAdminUserIdOrigin)
+            .HasColumnName("registered_by_admin_user_id_origin")
+            .IsRequired();
 
         builder.Property(x => x.RegisteredAt)
             .HasColumnName("registered_at")

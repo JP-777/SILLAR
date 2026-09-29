@@ -19,6 +19,8 @@ las tiene.**
 | **§h** Unicidad de etiqueta entre nodos desconectados | **ELEVADA al líder técnico** — nueva |
 | **§i** `core.media_assets → core.admin_users` cruza la ADR-018 | **HALLAZGO del 27/09, de CORE, no de M03** — ver abajo |
 | **§j** Dos costuras para que la puerta vea a M03 | **PEDIDAS a Integración** — ver abajo |
+| **§k** Atribución del personal cuando el nodo del trabajador no es el del pedido | **RESPONDIDA el 28/09 con propuesta corregida del colíder · PENDIENTE de ratificación del líder técnico** |
+| **§l** ¿El tercer dato es el nodo de pertenencia o el de actuación? | **ABIERTA** — nueva, del 28/09 |
 | **§b2** Cancelación y reactivación | **Abierta** |
 | **§c** Efectivo frente a Yape | **Abierta** |
 | **§d** Navegación entre módulos para «a consultar» | **Pasa a Chat 2.** La *modalidad de acceso* —si «a consultar» exige cuenta— sigue siendo decisión comercial abierta |
@@ -480,3 +482,57 @@ costuras dentro.
 del turno: siete tablas, seis claves foráneas con sus dos cruzadas en `RESTRICT`, siete triggers,
 diecinueve `CHECK`, cero cruces de la ADR-018 en `sales`, cero FK hacia `core.admin_users`, y el ciclo
 desinstalar/reinstalar con `catalog`, `cms`, `core` y `crm` intactos.
+
+
+---
+
+## §k · La atribución del personal · **ratificada en su par, pendiente en su trío**
+
+- **27/09/2026 · RATIFICADO por el líder técnico.** La atribución es una **fotografía inmutable**:
+  nombre visible congelado al actuar, más **identificador local del trabajador** con un nombre que
+  declare su localidad al nodo, **sin FK a `core.admin_users`**, documentado como **«dato de bitácora,
+  no puntero»**. Vale para pago, confirmación de Yape, cancelación, reactivación y cambios de estado. Y
+  una transición del sistema **no se atribuye a un trabajador ficticio**.
+
+  **Implementado y aplicado** — R-14 y §5.3 de la SPEC, esquema verificado contra PostgreSQL.
+
+- **28/09/2026 · CORRECCIÓN DEL COLÍDER, pendiente de ratificación.** Los datos pasan de dos a
+  **tres**: se añade el **identificador del nodo al que pertenece el trabajador**, porque el
+  identificador **no debe interpretarse con el `origin_node` del pedido** — un pedido puede nacer en una
+  sucursal y ser atendido desde otra.
+
+  **No se cierra en el esquema.** La instrucción lo dice y además es lo barato: añadir una columna es
+  aditivo y no hay datos, mientras cerrar un diseño sin ratificar y tener que deshacerlo no lo es.
+
+- **Qué hay que adaptar cuando se ratifique**, y es poco: dos columnas nuevas, sus dos `CHECK` de
+  coherencia del trío, los dos comentarios de columna y las pruebas del par. **El modelo no cambia de
+  forma**: la atribución ya vive en la fila de la actuación y no en la cabecera.
+
+- **Lo que ya cumple la corrección sin cambio:** ninguna FK a `core.admin_users`; **ningún campo
+  `atendido_por` en la cabecera del pedido** —comprobado: `sales.orders` no tiene ninguna columna de
+  atribución de personal—; y cada atribución vive solo en el registro de su actuación.
+
+---
+
+## §l · ¿El tercer dato es el nodo de pertenencia o el de actuación? · **ABIERTA**
+
+- **Fecha:** 28/09/2026. **Origen:** leer la corrección entera, no solo su enunciado.
+- **La corrección dice una cosa y la justifica con otra:**
+  - **Enunciado:** «Identificador del nodo **al que pertenece** el trabajador».
+  - **Justificación:** «un pedido puede nacer en una sucursal y **ser atendido desde otra**».
+- **No son el mismo hecho.** Alguien de la sucursal A puede atender desde un terminal de la B.
+
+| Lectura | Para qué sirve | Qué deja sin responder |
+|---|---|---|
+| **Nodo de pertenencia** | **Resolver el identificador.** `admin_user_id` solo es único dentro del `admin_users` que lo emitió | Dónde ocurrió la actuación |
+| **Nodo de actuación** | **Historia operativa:** en qué mostrador se cobró | Cómo resolver el identificador |
+
+- **Para el propósito declarado —interpretar el identificador— hace falta el de pertenencia.** Para el
+  caso que se usa como justificación hace falta el de actuación. **Puede que hagan falta los dos**, y
+  entonces la fotografía tiene cuatro datos, no tres.
+- **Consecuencia de no resolver:** se escribiría una columna con un nombre que no dice cuál de los dos
+  hechos guarda, y dentro de un año nadie podrá saberlo mirándola. Es el error que la propia frase
+  «dato de bitácora, no puntero» existe para evitar, un nivel más arriba.
+- **Qué sigue mientras espera:** todo. El par ratificado está aplicado y las pruebas verdes.
+- **No lo elijo.** Es el mismo tipo de decisión que el formato del código visible, y por el mismo
+  motivo: se escribe una vez y viaja a comprobantes.

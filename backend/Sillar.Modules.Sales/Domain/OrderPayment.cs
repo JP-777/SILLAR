@@ -50,17 +50,39 @@ public class OrderPayment : IReplicatedEntity
     public string? Reference { get; set; }
 
     /// <summary>
-    /// <b>El nombre</b> de quien lo registró. Jamás una clave foránea.
+    /// <b>El nombre</b> de quien lo registró, congelado en el momento de actuar.
     /// </summary>
     /// <remarks>
-    /// <c>core.admin_users</c> no se replica y esta tabla sí: la ADR-018 prohíbe
-    /// que una fila que viaja referencie a una que se queda, y no avisa cuando se
-    /// incumple. Es además el precedente ya escrito de <c>b2b.quotes</c>, y por la
-    /// misma razón de fondo: el dato que hace falta dentro de un año es
-    /// <b>quién cobró</b>, y eso sobrevive a que la cuenta se dé de baja o se
-    /// renombre.
+    /// Es la mitad legible de la atribución. Sobrevive a que la cuenta se dé de
+    /// baja o se renombre, que es justo el dato que hace falta dentro de un año:
+    /// <b>quién cobró</b>.
     /// </remarks>
     public required string RegisteredBy { get; set; }
+
+    /// <summary>
+    /// Identificador del trabajador <b>en el nodo donde actuó</b>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Dato de bitácora, no puntero.</b> No es una clave foránea hacia
+    /// <c>core.admin_users</c> y no se resuelve con un <c>JOIN</c>: esa tabla no se
+    /// replica y esta sí, así que el 7 de este nodo no es el 7 de otro. La ADR-018
+    /// prohíbe cruzar esa línea, y no avisa cuando se incumple.
+    /// </para>
+    /// <para>
+    /// <b>Solo significa algo junto a la identidad del nodo donde se actuó</b>, y
+    /// ese nodo es el <c>OriginNode</c> <b>de esta misma fila</b> —no el del
+    /// pedido—: esta tabla se replica, así que el sello se pone donde la fila nace,
+    /// que es donde estaba la persona. Un pago de un pedido nacido en otro nodo
+    /// lleva su propio origen, y por eso el par es interpretable sin columna nueva.
+    /// </para>
+    /// <para>
+    /// El sufijo <c>Origin</c> está en el nombre a propósito: sin él, el primero que
+    /// lo vea escribirá el <c>JOIN</c> y funcionará —en un solo nodo, que es lo peor
+    /// que puede pasar.
+    /// </para>
+    /// </remarks>
+    public int RegisteredByAdminUserIdOrigin { get; set; }
 
     /// <summary>Cuándo se registró el pago.</summary>
     public DateTimeOffset RegisteredAt { get; set; }

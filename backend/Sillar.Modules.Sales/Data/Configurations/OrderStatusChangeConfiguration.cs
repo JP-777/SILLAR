@@ -32,6 +32,20 @@ internal sealed class OrderStatusChangeConfiguration : IEntityTypeConfiguration<
             table.HasCheckConstraint(
                 "ck_order_status_changes_changed_by_no_vacio",
                 "changed_by IS NULL OR btrim(changed_by) <> ''");
+
+            // La atribución va junta o no va: las dos nulas es «lo hizo el
+            // sistema», las dos presentes es una persona. Media atribución es peor
+            // que ninguna porque parece completa, y esto lo impide la base y no una
+            // convención.
+            table.HasCheckConstraint(
+                "ck_order_status_changes_atribucion_completa",
+                "(changed_by IS NULL AND changed_by_admin_user_id_origin IS NULL) " +
+                "OR (changed_by IS NOT NULL AND changed_by_admin_user_id_origin IS NOT NULL)");
+
+            // Cero prohibido: sería un trabajador ficticio con apariencia de real.
+            table.HasCheckConstraint(
+                "ck_order_status_changes_atribucion_local_positiva",
+                "changed_by_admin_user_id_origin IS NULL OR changed_by_admin_user_id_origin > 0");
         });
 
         builder.HasKey(x => x.OrderStatusChangeId).HasName("pk_order_status_changes");
@@ -50,7 +64,14 @@ internal sealed class OrderStatusChangeConfiguration : IEntityTypeConfiguration<
             .HasColumnType("timestamptz")
             .IsRequired();
 
+        // La atribución es un PAR. Jamás una FK a core.admin_users.
         builder.Property(x => x.ChangedBy).HasColumnName("changed_by");
+
+        // Dato de bitácora, no puntero. Se interpreta junto al origin_node de ESTA
+        // fila, no del pedido: pueden diferir, y la política de ese caso está
+        // abierta (SPEC §0.3 (k)).
+        builder.Property(x => x.ChangedByAdminUserIdOrigin)
+            .HasColumnName("changed_by_admin_user_id_origin");
 
         builder.MapReplication();
 

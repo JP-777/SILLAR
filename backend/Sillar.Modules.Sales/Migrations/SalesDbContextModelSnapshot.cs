@@ -334,6 +334,10 @@ namespace Sillar.Modules.Sales.Migrations
                         .HasColumnType("text")
                         .HasColumnName("registered_by");
 
+                    b.Property<int>("RegisteredByAdminUserIdOrigin")
+                        .HasColumnType("integer")
+                        .HasColumnName("registered_by_admin_user_id_origin");
+
                     b.Property<long>("RowVersion")
                         .HasColumnType("bigint")
                         .HasDefaultValue(1L)
@@ -363,6 +367,8 @@ namespace Sillar.Modules.Sales.Migrations
                     b.ToTable("order_payments", "sales", t =>
                         {
                             t.HasCheckConstraint("ck_order_payments_amount_no_negativo", "amount >= 0");
+
+                            t.HasCheckConstraint("ck_order_payments_atribucion_local_positiva", "registered_by_admin_user_id_origin > 0");
 
                             t.HasCheckConstraint("ck_order_payments_method", "method IN ('yape')");
 
@@ -436,6 +442,10 @@ namespace Sillar.Modules.Sales.Migrations
                         .HasColumnType("text")
                         .HasColumnName("changed_by");
 
+                    b.Property<int?>("ChangedByAdminUserIdOrigin")
+                        .HasColumnType("integer")
+                        .HasColumnName("changed_by_admin_user_id_origin");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamptz")
@@ -479,6 +489,10 @@ namespace Sillar.Modules.Sales.Migrations
 
                     b.ToTable("order_status_changes", "sales", t =>
                         {
+                            t.HasCheckConstraint("ck_order_status_changes_atribucion_completa", "(changed_by IS NULL AND changed_by_admin_user_id_origin IS NULL) OR (changed_by IS NOT NULL AND changed_by_admin_user_id_origin IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_order_status_changes_atribucion_local_positiva", "changed_by_admin_user_id_origin IS NULL OR changed_by_admin_user_id_origin > 0");
+
                             t.HasCheckConstraint("ck_order_status_changes_changed_by_no_vacio", "changed_by IS NULL OR btrim(changed_by) <> ''");
 
                             t.HasCheckConstraint("ck_order_status_changes_from_status", "from_status IS NULL OR from_status IN ('pending_payment', 'payment_to_verify', 'preparing', 'ready_for_pickup', 'delivered', 'expired', 'cancelled')");

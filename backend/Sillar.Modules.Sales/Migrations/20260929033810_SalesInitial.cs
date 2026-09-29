@@ -19,6 +19,14 @@ namespace Sillar.Modules.Sales.Migrations
     /// <c>updated_at</c> y las dos FK cruzadas.
     /// </para>
     /// <para>
+    /// <b>Rehecha el 28 de septiembre de 2026</b> para incorporar la atribución del
+    /// personal como par —nombre congelado más identificador local— ratificada por
+    /// el líder técnico. Se rehízo la inicial en vez de añadir una segunda migración
+    /// porque <b>M03 no ha llegado a <c>main</c> y no existe ninguna instalación</b>:
+    /// el schema de un módulo se describe una vez. En cuanto M03 se integre, las
+    /// migraciones vuelven a ser solo-añadir.
+    /// </para>
+    /// <para>
     /// <b>Ninguna colación no determinista.</b> M03 no introduce ninguna: el código
     /// visible se busca exacto y los nombres congelados son evidencia histórica, no
     /// claves de búsqueda. Por eso aquí no hay <c>core.es_ci</c> ni
@@ -34,9 +42,11 @@ namespace Sillar.Modules.Sales.Migrations
     /// replicación.
     /// </para>
     /// <para>
-    /// <b>No hay ninguna clave foránea hacia <c>core.admin_users</c>.</b> Quién
-    /// cobró y quién cambió el estado se guardan como nombre: esa tabla no se
-    /// replica y estas sí, y la ADR-018 no avisa cuando se cruza esa línea.
+    /// <b>No hay ninguna clave foránea hacia <c>core.admin_users</c>.</b> La
+    /// atribución del personal es una fotografía inmutable: nombre congelado más
+    /// identificador local, y el identificador es <b>dato de bitácora, no
+    /// puntero</b>. Se interpreta junto al <c>origin_node</c> de su propia fila —el
+    /// nodo donde la persona actuó—, que no tiene por qué ser el del pedido.
     /// </para>
     /// </remarks>
     public partial class SalesInitial : Migration
@@ -205,6 +215,7 @@ namespace Sillar.Modules.Sales.Migrations
                     amount = table.Column<decimal>(type: "numeric(12,2)", nullable: false),
                     reference = table.Column<string>(type: "text", nullable: true),
                     registered_by = table.Column<string>(type: "text", nullable: false),
+                    registered_by_admin_user_id_origin = table.Column<int>(type: "integer", nullable: false),
                     registered_at = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false),
                     was_late = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     origin_node = table.Column<string>(type: "text", nullable: false),
@@ -216,6 +227,7 @@ namespace Sillar.Modules.Sales.Migrations
                 {
                     table.PrimaryKey("pk_order_payments", x => x.order_payment_id);
                     table.CheckConstraint("ck_order_payments_amount_no_negativo", "amount >= 0");
+                    table.CheckConstraint("ck_order_payments_atribucion_local_positiva", "registered_by_admin_user_id_origin > 0");
                     table.CheckConstraint("ck_order_payments_method", "method IN ('yape')");
                     table.CheckConstraint("ck_order_payments_registered_by_no_vacio", "btrim(registered_by) <> ''");
                     table.ForeignKey(
@@ -238,6 +250,7 @@ namespace Sillar.Modules.Sales.Migrations
                     to_status = table.Column<string>(type: "text", nullable: false),
                     changed_at = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false),
                     changed_by = table.Column<string>(type: "text", nullable: true),
+                    changed_by_admin_user_id_origin = table.Column<int>(type: "integer", nullable: true),
                     origin_node = table.Column<string>(type: "text", nullable: false),
                     row_version = table.Column<long>(type: "bigint", nullable: false, defaultValue: 1L),
                     created_at = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false, defaultValueSql: "now()"),
@@ -246,6 +259,8 @@ namespace Sillar.Modules.Sales.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_order_status_changes", x => x.order_status_change_id);
+                    table.CheckConstraint("ck_order_status_changes_atribucion_completa", "(changed_by IS NULL AND changed_by_admin_user_id_origin IS NULL) OR (changed_by IS NOT NULL AND changed_by_admin_user_id_origin IS NOT NULL)");
+                    table.CheckConstraint("ck_order_status_changes_atribucion_local_positiva", "changed_by_admin_user_id_origin IS NULL OR changed_by_admin_user_id_origin > 0");
                     table.CheckConstraint("ck_order_status_changes_changed_by_no_vacio", "changed_by IS NULL OR btrim(changed_by) <> ''");
                     table.CheckConstraint("ck_order_status_changes_from_status", "from_status IS NULL OR from_status IN ('pending_payment', 'payment_to_verify', 'preparing', 'ready_for_pickup', 'delivered', 'expired', 'cancelled')");
                     table.CheckConstraint("ck_order_status_changes_no_es_el_mismo", "from_status IS NULL OR from_status <> to_status");
@@ -368,6 +383,33 @@ namespace Sillar.Modules.Sales.Migrations
             }
 
             // ================================================================
+            // Comentarios de columna: «dato de bitácora, no puntero»
+            //
+            // La frase va en la base, no solo en el código C#, y no es
+            // decoración. Quien inspeccione el schema con \d+ o desde una
+            // herramienta gráfica ve un entero llamado *_admin_user_id_* y su
+            // primer impulso es resolverlo con un JOIN contra core.admin_users.
+            // Funcionaría —en un solo nodo, que es lo peor que puede pasar—.
+            // El comentario es el único sitio donde el aviso alcanza a quien
+            // nunca abrirá el C#.
+            // ================================================================
+            migrationBuilder.Sql(
+                """
+                COMMENT ON COLUMN sales.order_payments.registered_by_admin_user_id_origin IS
+                    'Dato de bitacora, no puntero. Identificador del trabajador en el nodo donde actuo; '
+                    'solo se interpreta junto a origin_node DE ESTA FILA. Sin FK a core.admin_users '
+                    '(ADR-018): esa tabla no se replica y esta si.';
+                """);
+
+            migrationBuilder.Sql(
+                """
+                COMMENT ON COLUMN sales.order_status_changes.changed_by_admin_user_id_origin IS
+                    'Dato de bitacora, no puntero. Nulo junto con changed_by significa que lo hizo el '
+                    'sistema: nunca un trabajador ficticio. Solo se interpreta junto a origin_node DE '
+                    'ESTA FILA. Sin FK a core.admin_users (ADR-018).';
+                """);
+
+            // ================================================================
             // Claves foráneas cruzadas
             //
             // Las dos están permitidas porque sus módulos son dependencias DURAS,
@@ -388,15 +430,9 @@ namespace Sillar.Modules.Sales.Migrations
             //   · un cliente con pedidos no se puede borrar físicamente, y si
             //     alguien lo intenta debe fallar con un error explícito;
             //   · una variante con ventas tampoco — es el comportamiento que
-            //     ARQUITECTURA_MODULAR describe como el correcto: «el instalador
-            //     debe impedir esa operación antes de intentarla».
+            //     ARQUITECTURA_MODULAR describe como el correcto.
             // Ninguna es CASCADE ni SET NULL: un pedido sin su cliente o sin su
             // variante no es un pedido degradado, es un pedido corrupto.
-            //
-            // Al desinstalar M03 se van con su schema. Al desinstalar M04 o M01
-            // con ventas dentro, DROP SCHEMA ... CASCADE eliminaría estas FK y
-            // los pedidos sobrevivirían con sus snapshots — que es justo para lo
-            // que los snapshots existen.
             // ================================================================
             migrationBuilder.Sql(
                 """

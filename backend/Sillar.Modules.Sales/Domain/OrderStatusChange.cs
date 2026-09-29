@@ -39,9 +39,29 @@ public class OrderStatusChange : IReplicatedEntity
     public DateTimeOffset ChangedAt { get; set; }
 
     /// <summary>
-    /// <b>El nombre</b> de quien lo cambió, o nulo si lo hizo el sistema.
+    /// <b>El nombre</b> de quien lo cambió, congelado, o nulo si lo hizo el sistema.
     /// </summary>
     public string? ChangedBy { get; set; }
+
+    /// <summary>
+    /// Identificador del trabajador <b>en el nodo donde actuó</b>, o nulo si lo hizo
+    /// el sistema.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Dato de bitácora, no puntero.</b> No es clave foránea hacia
+    /// <c>core.admin_users</c> y no se resuelve con un <c>JOIN</c>. Se interpreta
+    /// junto al <c>OriginNode</c> <b>de esta misma fila</b>, que es donde estaba la
+    /// persona — no junto al del pedido, que puede ser otro.
+    /// </para>
+    /// <para>
+    /// <b>Va con <see cref="ChangedBy"/> o no va.</b> Las dos nulas significan «lo
+    /// hizo el sistema»; las dos presentes, una persona. Media atribución es peor
+    /// que ninguna, porque parece completa — y lo impone un <c>CHECK</c>, no una
+    /// convención.
+    /// </para>
+    /// </remarks>
+    public int? ChangedByAdminUserIdOrigin { get; set; }
 
     /// <inheritdoc />
     public string OriginNode { get; set; } = string.Empty;
