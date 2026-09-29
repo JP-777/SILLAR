@@ -1,4 +1,4 @@
-import { expect, test, type Page, type Route } from '@playwright/test';
+import { expect, test, type Browser, type Page, type Route } from '@playwright/test';
 
 /**
  * H03, H08 y H22: cómo cuenta la interfaz un fallo cuya causa no conoce.
@@ -57,19 +57,61 @@ async function tituloDelAviso(page: Page, setupPost: (route: Route) => Promise<v
   return (await aviso.innerText()).split('\n')[0];
 }
 
+/**
+ * Una página propia, fuera del fixture, que **se cierra pase lo que pase**.
+ *
+ * `browser.newPage()` crea su propio contexto, y el fixture no lo cierra: el
+ * navegador vive todo el worker y Playwright solo detiene el trazado de los
+ * contextos que sobran al terminar cada prueba. Sin esto, las dos páginas de
+ * H03 seguían vivas —renderizador y memoria compartida incluidos— el resto de
+ * la corrida. Cerrar una página de `browser.newPage()` cierra también su
+ * contexto.
+ */
+async function conPaginaPropia<T>(browser: Browser, fn: (page: Page) => Promise<T>): Promise<T> {
+  const page = await browser.newPage();
+  try {
+    return await fn(page);
+  } finally {
+    await page.close();
+  }
+}
+
 // ==========================================================================
 // H03 — un fallo del POST no siempre es un fallo del instalador.
 // ==========================================================================
 
 test('H03: un 503 sin respuesta del servidor no se presenta igual que una negativa del instalador', async ({ browser }) => {
-  const conProblema = await tituloDelAviso(await browser.newPage(), (route) =>
-    route.fulfill({ ...json(503, NEGATIVA_DEL_INSTALADOR), contentType: 'application/problem+json' }));
-  const sinCuerpo = await tituloDelAviso(await browser.newPage(), (route) => route.fulfill({ status: 503, body: '' }));
+  const contextosAntes = browser.contexts().length;
+
+  const conProblema = await conPaginaPropia(browser, (page) => tituloDelAviso(page, (route) =>
+    route.fulfill({ ...json(503, NEGATIVA_DEL_INSTALADOR), contentType: 'application/problem+json' })));
+  const sinCuerpo = await conPaginaPropia(browser, (page) =>
+    tituloDelAviso(page, (route) => route.fulfill({ status: 503, body: '' })));
 
   // El primero es el instalador negándose, con su motivo. El segundo es que el
   // servidor no estaba disponible, y nadie sabe por qué. Enseñarlos bajo el
   // mismo título atribuye el segundo al instalador.
   expect(sinCuerpo).not.toBe(conProblema);
+
+  // Y no deja nada abierto para las pruebas que vienen detrás.
+  expect(browser.contexts().length, 'H03 dejó contextos abiertos').toBe(contextosAntes);
+});
+
+test('Arnés: una página propia se cierra aunque la prueba falle dentro', async ({ browser }) => {
+  const contextosAntes = browser.contexts().length;
+  let pagina: Page | undefined;
+
+  await expect(
+    conPaginaPropia(browser, async (page) => {
+      pagina = page;
+      expect(browser.contexts().length, 'la página propia no abrió su contexto').toBe(contextosAntes + 1);
+      throw new Error('fallo provocado dentro de la prueba');
+    }),
+  ).rejects.toThrow('fallo provocado dentro de la prueba');
+
+  expect(pagina, 'la función no llegó a recibir la página').toBeDefined();
+  expect(pagina!.isClosed(), 'la página quedó abierta tras el fallo').toBe(true);
+  expect(browser.contexts().length, 'el contexto quedó abierto tras el fallo').toBe(contextosAntes);
 });
 
 test('H03: tras un corte de red en modo instalación, reintentar vuelve a enviar la instalación', async ({ page }) => {
