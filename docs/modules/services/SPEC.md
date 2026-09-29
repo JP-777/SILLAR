@@ -371,7 +371,7 @@ Resultados y errores:
 - 401 para ausencia de sesión;
 - 403 para CSRF o autorización insuficiente;
 - 404 sin revelar información técnica;
-- 409 para slug duplicado, transición inválida o conflicto de concurrencia;
+- 409 para slug duplicado, transición editorial no permitida u orden de servicios inválido;
 - Problem Details o formato común de plataforma, sin nombres de tablas, SQL, stack traces ni identificadores internos innecesarios.
 
 ### 6.4 Eventos
@@ -470,10 +470,13 @@ El detalle técnico podrá conservar el identificador, pero no sustituirá el no
 | Slug duplicado | 409 y mensaje para elegir otra dirección |
 | Publicación incompleta | 409 o 400 con campos que deben completarse |
 | Precio negativo | 400; nunca se guarda |
-| Servicio público inexistente o no publicado | 404 indistinguible |
-| Transición editorial inválida | 409 con la acción válida sugerida |
-| Edición concurrente | 409; no sobrescribe silenciosamente |
-| Medio eliminado | La entrada debe degradar sin imagen ni hueco roto; política física en paso 2 |
+| Servicio público inexistente o no publicado | 404; la interfaz presenta una ausencia pública amigable cuando consulta o vuelve a validar la ficha. No se promete detección automática en tiempo real |
+| Slug duplicado | 409 con el mensaje específico «Ya existe un servicio con esa dirección.» |
+| Transición editorial no permitida | 409 con el mensaje devuelto por la operación, que nombra el estado de origen y el solicitado |
+| Orden de servicios inválido | 409 con el mensaje «El orden debe incluir cada servicio exactamente una vez.» |
+| Datos editoriales inválidos | 400 con validación contextual junto al dato o acción correspondiente |
+| Imagen no disponible o que falla al cargar | Fallback visual; nombre, descripciones, precio y unidad permanecen legibles |
+| Fallo de red | Error recuperable con acción de reintento; no se presenta como conflicto editorial |
 | Módulo desactivado | Rutas y enlaces ausentes, no pantallas de error |
 | Schema ausente al activar | Activación rechazada con diagnóstico accionable |
 | Error interno | Mensaje genérico correlacionable; sin SQL, stack trace ni detalles del schema |
@@ -595,6 +598,12 @@ La falsificación deliberada se realizará únicamente durante implementación, 
 
 No se diseñan componentes en esta etapa.
 
+**Rectificación de conflictos — decisión del colíder, 29/09/2026.** El diseño representa
+únicamente respuestas y estados respaldados por el contrato existente. La versión anterior
+prometía detectar una edición simultánea y ofrecer recarga sin sobrescritura, pero
+`UpdateAsync` no verifica una versión de edición. Esa promesa se retira; el control de
+concurrencia queda pendiente con disparador explícito en el §12.
+
 ### 9.1 Listado público de servicios
 
 - **Ruta propuesta:** `/servicios`
@@ -604,7 +613,7 @@ No se diseñan componentes en esta etapa.
 - **Vacío:** “Todavía no hay servicios publicados”, sin cuadrícula vacía.
 - **Con datos:** tarjetas ordenadas editorialmente.
 - **Cargando:** esqueleto o indicador no bloqueante siguiendo la plataforma.
-- **Error:** mensaje comprensible y posibilidad de reintentar; sin detalles técnicos.
+- **Error:** ante fallo de red, mensaje recuperable y acción de reintento; una imagen que no carga usa fallback sin ocultar la información textual.
 - **Claro/oscuro:** mismos estados y jerarquía; colores mediante tokens.
 - **Móvil:** una columna, zonas táctiles amplias, contenido esencial primero.
 - **Escritorio:** cuadrícula adaptable, sin barra de filtros mientras no exista necesidad confirmada.
@@ -620,7 +629,7 @@ No se diseñan componentes en esta etapa.
 - **Vacío:** no aplica para una entidad válida; contenido incompleto impide publicar.
 - **Con datos:** ficha legible con opciones si existen.
 - **Cargando:** indicador con etiqueta específica.
-- **Error/conflicto:** 404 amable si no existe o dejó de publicarse; error recuperable ante fallo de red.
+- **Error/conflicto:** ausencia pública amigable si al consultar o volver a validar la ficha el servicio no existe o dejó de publicarse; no se promete detección automática en tiempo real. Una imagen no disponible usa fallback sin perder textos. Un fallo de red permite reintentar.
 - **Claro/oscuro:** paridad funcional y contraste.
 - **Móvil:** flujo vertical, medios responsivos.
 - **Escritorio:** contenido y medio en una composición legible, sin simular checkout.
@@ -636,7 +645,7 @@ No se diseñan componentes en esta etapa.
 - **Vacío:** explicación y acción “Crear servicio”.
 - **Con datos:** lista o tabla adaptable con estado explícito.
 - **Cargando:** esqueleto que conserva la estructura.
-- **Error/conflicto:** alerta accionable; un conflicto no descarta cambios silenciosamente.
+- **Error/conflicto:** orden inválido muestra el mensaje contractual «El orden debe incluir cada servicio exactamente una vez.»; transición no permitida muestra los estados implicados; fallo de red permite reintentar.
 - **Claro/oscuro:** controles y estados no dependen solo del color.
 - **Móvil:** lista apilada; acciones secundarias agrupadas.
 - **Escritorio:** tabla o lista densa con acciones por fila.
@@ -652,7 +661,7 @@ No se diseñan componentes en esta etapa.
 - **Vacío:** formulario inicial sin datos comerciales precargados.
 - **Con datos:** valores persistidos y estado visible.
 - **Cargando:** formulario bloqueado temporalmente con indicador accesible.
-- **Error/conflicto:** errores junto al campo; conflicto concurrente con opción de recargar, sin sobrescritura.
+- **Error/conflicto:** slug duplicado muestra «Ya existe un servicio con esa dirección.» junto al campo; datos inválidos muestran validación contextual; transición no permitida conserva el mensaje de la operación; fallo de red permite reintentar. No se promete detectar edición simultánea.
 - **Claro/oscuro:** paridad y foco visible.
 - **Móvil:** una columna y acción primaria accesible.
 - **Escritorio:** agrupación por contenido, publicación y medios.
@@ -838,5 +847,6 @@ Quedan pendientes después de la ratificación:
 4. política de pérdida o conservación al desinstalar;
 5. contribución concreta a portada;
 6. disparador de replicación ligado a M13 y observación de caja.
+7. control de concurrencia de edición. El contrato actual no usa versión, ETag ni bloqueo y no detecta ediciones simultáneas. **Disparador:** cuando el editor de vitrina tenga más de una persona utilizándolo simultáneamente.
 
 Los puntos pendientes no bloquean DATOS ni API. Sí bloquean cualquier garantía sobre fotografía histórica y cualquier implementación de opciones o restauración.

@@ -19,3 +19,11 @@ Opciones/presentaciones y restauración desde Archivado no se implementan. Requi
 ## E3 · Costuras compartidas para Integración / frente D
 
 Se solicita turno acotado para: referencia del host API al proyecto M05a, inclusión de proyectos en `backend/Sillar.sln`, descubrimiento modular, vocabulario de auditoría y futuras contribuciones de navegación. Este frente no modifica navegación ni UI antes de la parada 3.5.
+
+## E4 · Control de concurrencia editorial
+
+- **Discrepancia:** la SPEC prometía 409, recarga y ausencia de sobrescritura ante edición simultánea, pero `UpdateAsync` no recibe ni comprueba versión de edición.
+- **Decisión:** opción B adoptada por el colíder el 29/09/2026: retirar esa representación del diseño actual.
+- **Estado:** pendiente; no se añaden ahora versiones, ETag, bloqueos ni cambios de backend.
+- **Disparador:** cuando el editor de vitrina tenga más de una persona utilizándolo simultáneamente.
+- **Dueño:** producto y arquitectura de M05a.
