@@ -19,8 +19,8 @@ las tiene.**
 | **§h** Unicidad de etiqueta entre nodos desconectados | **ELEVADA al líder técnico** — nueva |
 | **§i** `core.media_assets → core.admin_users` cruza la ADR-018 | **HALLAZGO del 27/09, de CORE, no de M03** — ver abajo |
 | **§j** Dos costuras para que la puerta vea a M03 | **PEDIDAS a Integración** — ver abajo |
-| **§k** Atribución del personal cuando el nodo del trabajador no es el del pedido | **RESPONDIDA el 28/09 con propuesta corregida del colíder · PENDIENTE de ratificación del líder técnico** |
-| **§l** ¿El tercer dato es el nodo de pertenencia o el de actuación? | **ABIERTA** — nueva, del 28/09 |
+| **§k** Atribución del personal cuando el nodo del trabajador no es el del pedido | **RESUELTA.** Tres datos ratificados e implementados; R-14 es autoritativa |
+| **§l** ¿El tercer dato es el nodo de pertenencia o el de actuación? | **RESUELTA: son los dos, en columnas distintas** |
 | **§b2** Cancelación y reactivación | **Abierta** |
 | **§c** Efectivo frente a Yape | **Abierta** |
 | **§d** Navegación entre módulos para «a consultar» | **Pasa a Chat 2.** La *modalidad de acceso* —si «a consultar» exige cuenta— sigue siendo decisión comercial abierta |
@@ -536,3 +536,48 @@ desinstalar/reinstalar con `catalog`, `cms`, `core` y `crm` intactos.
 - **Qué sigue mientras espera:** todo. El par ratificado está aplicado y las pruebas verdes.
 - **No lo elijo.** Es el mismo tipo de decisión que el formato del código visible, y por el mismo
   motivo: se escribe una vez y viaja a comprobantes.
+
+
+---
+
+## §k y §l · **CERRADAS** · la atribución quedó en tres datos y dos nodos
+
+**Comunicado por Chat 2 el 30/09/2026:** el líder técnico **ratificó finalmente** la corrección del
+colíder. La regla autoritativa está en `SPEC.md` R-14; la cronología documental —con la formulación de
+dos datos marcada como histórica— también.
+
+**§l se resolvió por la vía que no había considerado: no era «uno de los dos», eran los dos.**
+
+| Columna | Qué guarda | Semántica |
+|---|---|---|
+| `..._admin_user_home_node` | El nodo **de la cuenta** | Contra él se interpreta el identificador local |
+| `origin_node` de la fila de actuación | El nodo **donde se actuó** | Replicación, `ADR-016` regla 4. **Intacta** |
+
+**Y el esquema admite que difieran.** Probado contra PostgreSQL con los tres nodos distintos a
+propósito: cuenta en `CUENTA_DEL_NODO_A`, actuación en `ACTUACION_EN_NODO_B`, pedido nacido en
+`PEDIDO_NACIO_EN_C`. **Ningún `CHECK` compara `origin_node` con `home_node`**, y es deliberado:
+exigirlo prohibiría un hecho real del negocio.
+
+**Lo que aprendí de mi propio planteamiento de §l.** Puse las dos lecturas como alternativas —«para
+resolver el identificador hace falta el de pertenencia; para la historia operativa, el de actuación»— y
+añadí «puede que hagan falta los dos» como una posibilidad remota. **Era la respuesta.** Las dos hacían
+falta, y una de las dos ya estaba en la tabla desde el primer día: `origin_node`. La pregunta correcta
+no era «cuál de los dos», sino «¿cuántas columnas hay que no estoy contando».
+
+---
+
+## §m · Una barrera que paró en falso sobre su propia documentación · **resuelta en el acto**
+
+La primera versión de la prueba «cero FK hacia `core.admin_users`» buscaba **la palabra**
+`admin_users` en la migración. Se puso roja — y el culpable era el **comentario de columna que explica
+que NO hay clave foránea**.
+
+**Es el mismo defecto que ya tuvo el barrido de R-13**, y por el mismo motivo: **prohibir la palabra en
+vez del hecho**. Ahora busca la declaración —`REFERENCES core.admin_users`, `principalTable:
+"admin_users"`, `FOREIGN KEY … admin_users`— y la prueba hermana comprueba que la migración referencia
+exactamente dos schemas ajenos, `catalog` y `crm`.
+
+Se anota aquí porque es la segunda vez en este módulo, y la lección de
+`ANTES-DE-EMPEZAR-UN-MODULO.md` §2 va justo a eso: «una barrera que calla te deja seguir; una que para
+en falso te para. **Son la misma enfermedad.**» La forma de evitarla las dos veces fue la misma:
+**escribir qué se prohíbe, no qué palabra se prohíbe.**

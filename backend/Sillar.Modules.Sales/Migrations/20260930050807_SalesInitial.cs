@@ -19,9 +19,10 @@ namespace Sillar.Modules.Sales.Migrations
     /// <c>updated_at</c> y las dos FK cruzadas.
     /// </para>
     /// <para>
-    /// <b>Rehecha el 28 de septiembre de 2026</b> para incorporar la atribución del
-    /// personal como par —nombre congelado más identificador local— ratificada por
-    /// el líder técnico. Se rehízo la inicial en vez de añadir una segunda migración
+    /// <b>Rehecha el 30 de septiembre de 2026</b> para incorporar la atribución del
+    /// personal como los <b>tres</b> datos ratificados: nombre congelado,
+    /// identificador local y <b>nodo de pertenencia de la cuenta</b>. Se rehízo la
+    /// inicial en vez de añadir una segunda migración
     /// porque <b>M03 no ha llegado a <c>main</c> y no existe ninguna instalación</b>:
     /// el schema de un módulo se describe una vez. En cuanto M03 se integre, las
     /// migraciones vuelven a ser solo-añadir.
@@ -43,10 +44,12 @@ namespace Sillar.Modules.Sales.Migrations
     /// </para>
     /// <para>
     /// <b>No hay ninguna clave foránea hacia <c>core.admin_users</c>.</b> La
-    /// atribución del personal es una fotografía inmutable: nombre congelado más
-    /// identificador local, y el identificador es <b>dato de bitácora, no
-    /// puntero</b>. Se interpreta junto al <c>origin_node</c> de su propia fila —el
-    /// nodo donde la persona actuó—, que no tiene por qué ser el del pedido.
+    /// atribución del personal es una fotografía inmutable de <b>tres</b> datos, y
+    /// todos son <b>dato de bitácora, no puntero</b>. El identificador local se
+    /// interpreta contra el <b>nodo de pertenencia de la cuenta</b>, que tiene su
+    /// propia columna. <c>origin_node</c> conserva su semántica —<b>dónde ocurrió la
+    /// actuación</b>— y los dos nodos <b>pueden diferir</b>: ningún <c>CHECK</c>
+    /// exige que coincidan.
     /// </para>
     /// </remarks>
     public partial class SalesInitial : Migration
@@ -215,7 +218,8 @@ namespace Sillar.Modules.Sales.Migrations
                     amount = table.Column<decimal>(type: "numeric(12,2)", nullable: false),
                     reference = table.Column<string>(type: "text", nullable: true),
                     registered_by = table.Column<string>(type: "text", nullable: false),
-                    registered_by_admin_user_id_origin = table.Column<int>(type: "integer", nullable: false),
+                    registered_by_admin_user_local_id = table.Column<int>(type: "integer", nullable: false),
+                    registered_by_admin_user_home_node = table.Column<string>(type: "text", nullable: false),
                     registered_at = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false),
                     was_late = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     origin_node = table.Column<string>(type: "text", nullable: false),
@@ -227,7 +231,8 @@ namespace Sillar.Modules.Sales.Migrations
                 {
                     table.PrimaryKey("pk_order_payments", x => x.order_payment_id);
                     table.CheckConstraint("ck_order_payments_amount_no_negativo", "amount >= 0");
-                    table.CheckConstraint("ck_order_payments_atribucion_local_positiva", "registered_by_admin_user_id_origin > 0");
+                    table.CheckConstraint("ck_order_payments_atribucion_home_node_no_vacio", "btrim(registered_by_admin_user_home_node) <> ''");
+                    table.CheckConstraint("ck_order_payments_atribucion_local_positiva", "registered_by_admin_user_local_id > 0");
                     table.CheckConstraint("ck_order_payments_method", "method IN ('yape')");
                     table.CheckConstraint("ck_order_payments_registered_by_no_vacio", "btrim(registered_by) <> ''");
                     table.ForeignKey(
@@ -250,7 +255,8 @@ namespace Sillar.Modules.Sales.Migrations
                     to_status = table.Column<string>(type: "text", nullable: false),
                     changed_at = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false),
                     changed_by = table.Column<string>(type: "text", nullable: true),
-                    changed_by_admin_user_id_origin = table.Column<int>(type: "integer", nullable: true),
+                    changed_by_admin_user_local_id = table.Column<int>(type: "integer", nullable: true),
+                    changed_by_admin_user_home_node = table.Column<string>(type: "text", nullable: true),
                     origin_node = table.Column<string>(type: "text", nullable: false),
                     row_version = table.Column<long>(type: "bigint", nullable: false, defaultValue: 1L),
                     created_at = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false, defaultValueSql: "now()"),
@@ -259,8 +265,9 @@ namespace Sillar.Modules.Sales.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_order_status_changes", x => x.order_status_change_id);
-                    table.CheckConstraint("ck_order_status_changes_atribucion_completa", "(changed_by IS NULL AND changed_by_admin_user_id_origin IS NULL) OR (changed_by IS NOT NULL AND changed_by_admin_user_id_origin IS NOT NULL)");
-                    table.CheckConstraint("ck_order_status_changes_atribucion_local_positiva", "changed_by_admin_user_id_origin IS NULL OR changed_by_admin_user_id_origin > 0");
+                    table.CheckConstraint("ck_order_status_changes_atribucion_completa", "(changed_by IS NULL AND changed_by_admin_user_local_id IS NULL   AND changed_by_admin_user_home_node IS NULL) OR (changed_by IS NOT NULL AND changed_by_admin_user_local_id IS NOT NULL   AND changed_by_admin_user_home_node IS NOT NULL)");
+                    table.CheckConstraint("ck_order_status_changes_atribucion_home_node_no_vacio", "changed_by_admin_user_home_node IS NULL OR btrim(changed_by_admin_user_home_node) <> ''");
+                    table.CheckConstraint("ck_order_status_changes_atribucion_local_positiva", "changed_by_admin_user_local_id IS NULL OR changed_by_admin_user_local_id > 0");
                     table.CheckConstraint("ck_order_status_changes_changed_by_no_vacio", "changed_by IS NULL OR btrim(changed_by) <> ''");
                     table.CheckConstraint("ck_order_status_changes_from_status", "from_status IS NULL OR from_status IN ('pending_payment', 'payment_to_verify', 'preparing', 'ready_for_pickup', 'delivered', 'expired', 'cancelled')");
                     table.CheckConstraint("ck_order_status_changes_no_es_el_mismo", "from_status IS NULL OR from_status <> to_status");
@@ -395,18 +402,49 @@ namespace Sillar.Modules.Sales.Migrations
             // ================================================================
             migrationBuilder.Sql(
                 """
-                COMMENT ON COLUMN sales.order_payments.registered_by_admin_user_id_origin IS
-                    'Dato de bitacora, no puntero. Identificador del trabajador en el nodo donde actuo; '
-                    'solo se interpreta junto a origin_node DE ESTA FILA. Sin FK a core.admin_users '
-                    '(ADR-018): esa tabla no se replica y esta si.';
+                COMMENT ON COLUMN sales.order_payments.registered_by_admin_user_local_id IS
+                    'Dato de bitacora, no puntero. Identificador del trabajador dentro de SU NODO DE '
+                    'PERTENENCIA, que es registered_by_admin_user_home_node y NO origin_node. Sin FK a '
+                    'core.admin_users y sin JOIN (ADR-018): esa tabla no se replica y esta si.';
                 """);
 
             migrationBuilder.Sql(
                 """
-                COMMENT ON COLUMN sales.order_status_changes.changed_by_admin_user_id_origin IS
-                    'Dato de bitacora, no puntero. Nulo junto con changed_by significa que lo hizo el '
-                    'sistema: nunca un trabajador ficticio. Solo se interpreta junto a origin_node DE '
-                    'ESTA FILA. Sin FK a core.admin_users (ADR-018).';
+                COMMENT ON COLUMN sales.order_payments.registered_by_admin_user_home_node IS
+                    'Nodo al que pertenece la CUENTA del trabajador. NO es origin_node, que dice donde '
+                    'OCURRIO LA ACTUACION, y NO se deriva de el: una cuenta del nodo A puede registrar '
+                    'un pago desde el nodo B. No hay CHECK que exija que coincidan, a proposito.';
+                """);
+
+            migrationBuilder.Sql(
+                """
+                COMMENT ON COLUMN sales.order_status_changes.changed_by_admin_user_local_id IS
+                    'Dato de bitacora, no puntero. Se interpreta contra changed_by_admin_user_home_node, '
+                    'NO contra origin_node ni contra el origin_node del pedido. Nulo junto con los otros '
+                    'dos significa que lo hizo el sistema: nunca un trabajador ficticio.';
+                """);
+
+            migrationBuilder.Sql(
+                """
+                COMMENT ON COLUMN sales.order_status_changes.changed_by_admin_user_home_node IS
+                    'Nodo al que pertenece la CUENTA del trabajador. Independiente de origin_node, que es '
+                    'el nodo de la actuacion, y no derivado de el. Los tres datos de atribucion van '
+                    'juntos o los tres nulos.';
+                """);
+
+            migrationBuilder.Sql(
+                """
+                COMMENT ON COLUMN sales.order_payments.origin_node IS
+                    'Nodo DONDE OCURRIO LA ACTUACION (semantica de replicacion, ADR-016 regla 4). NO es '
+                    'el nodo de pertenencia de la cuenta del trabajador: eso es '
+                    'registered_by_admin_user_home_node, y pueden diferir.';
+                """);
+
+            migrationBuilder.Sql(
+                """
+                COMMENT ON COLUMN sales.order_status_changes.origin_node IS
+                    'Nodo DONDE OCURRIO LA ACTUACION (semantica de replicacion, ADR-016 regla 4). NO es '
+                    'el nodo de pertenencia de la cuenta: eso es changed_by_admin_user_home_node.';
                 """);
 
             // ================================================================

@@ -21,12 +21,18 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
             table.HasCheckConstraint("ck_order_payments_amount_no_negativo", "amount >= 0");
             table.HasCheckConstraint("ck_order_payments_registered_by_no_vacio", "btrim(registered_by) <> ''");
 
-            // La atribución de un pago es completa siempre: un pago lo registra una
-            // persona, no el sistema. El identificador cero queda prohibido porque
-            // sería un trabajador ficticio con apariencia de real.
+            // La atribución de un pago es completa SIEMPRE, con sus tres datos: un
+            // pago lo registra una persona, no el sistema. Cada CHECK prohíbe un
+            // valor ficticio distinto, y los tres hacen falta: el cero sería un
+            // trabajador que no existe con apariencia de real, y un nodo en blanco
+            // dejaría el identificador sin universo.
             table.HasCheckConstraint(
                 "ck_order_payments_atribucion_local_positiva",
-                "registered_by_admin_user_id_origin > 0");
+                "registered_by_admin_user_local_id > 0");
+
+            table.HasCheckConstraint(
+                "ck_order_payments_atribucion_home_node_no_vacio",
+                "btrim(registered_by_admin_user_home_node) <> ''");
         });
 
         builder.HasKey(x => x.OrderPaymentId).HasName("pk_order_payments");
@@ -50,10 +56,17 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
         // una FK a core.admin_users — esa tabla no se replica y esta sí (ADR-018).
         builder.Property(x => x.RegisteredBy).HasColumnName("registered_by").IsRequired();
 
-        // Dato de bitácora, no puntero. Se interpreta junto al origin_node de ESTA
-        // fila, que es el nodo donde la persona actuó.
-        builder.Property(x => x.RegisteredByAdminUserIdOrigin)
-            .HasColumnName("registered_by_admin_user_id_origin")
+        // Dato de bitácora, no puntero. Se interpreta contra el nodo de pertenencia
+        // de la cuenta —la columna de abajo—, NO contra origin_node.
+        builder.Property(x => x.RegisteredByAdminUserLocalId)
+            .HasColumnName("registered_by_admin_user_local_id")
+            .IsRequired();
+
+        // El nodo de la CUENTA. No es origin_node, que dice dónde ocurrió la
+        // actuación, y no se deriva de él: una cuenta del nodo A puede registrar un
+        // pago desde el nodo B. No hay CHECK que exija que coincidan, a propósito.
+        builder.Property(x => x.RegisteredByAdminUserHomeNode)
+            .HasColumnName("registered_by_admin_user_home_node")
             .IsRequired();
 
         builder.Property(x => x.RegisteredAt)

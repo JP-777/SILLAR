@@ -33,19 +33,27 @@ internal sealed class OrderStatusChangeConfiguration : IEntityTypeConfiguration<
                 "ck_order_status_changes_changed_by_no_vacio",
                 "changed_by IS NULL OR btrim(changed_by) <> ''");
 
-            // La atribución va junta o no va: las dos nulas es «lo hizo el
-            // sistema», las dos presentes es una persona. Media atribución es peor
-            // que ninguna porque parece completa, y esto lo impide la base y no una
-            // convención.
+            // Los TRES datos van juntos o no va ninguno: los tres nulos es «lo hizo
+            // el sistema», los tres presentes es una persona. Las seis combinaciones
+            // intermedias quedan prohibidas por la base y no por una convención,
+            // porque media atribución es peor que ninguna: parece completa.
             table.HasCheckConstraint(
                 "ck_order_status_changes_atribucion_completa",
-                "(changed_by IS NULL AND changed_by_admin_user_id_origin IS NULL) " +
-                "OR (changed_by IS NOT NULL AND changed_by_admin_user_id_origin IS NOT NULL)");
+                "(changed_by IS NULL AND changed_by_admin_user_local_id IS NULL " +
+                "  AND changed_by_admin_user_home_node IS NULL) " +
+                "OR (changed_by IS NOT NULL AND changed_by_admin_user_local_id IS NOT NULL " +
+                "  AND changed_by_admin_user_home_node IS NOT NULL)");
 
             // Cero prohibido: sería un trabajador ficticio con apariencia de real.
             table.HasCheckConstraint(
                 "ck_order_status_changes_atribucion_local_positiva",
-                "changed_by_admin_user_id_origin IS NULL OR changed_by_admin_user_id_origin > 0");
+                "changed_by_admin_user_local_id IS NULL OR changed_by_admin_user_local_id > 0");
+
+            // Nodo en blanco prohibido: dejaría el identificador sin universo.
+            table.HasCheckConstraint(
+                "ck_order_status_changes_atribucion_home_node_no_vacio",
+                "changed_by_admin_user_home_node IS NULL " +
+                "OR btrim(changed_by_admin_user_home_node) <> ''");
         });
 
         builder.HasKey(x => x.OrderStatusChangeId).HasName("pk_order_status_changes");
@@ -67,11 +75,14 @@ internal sealed class OrderStatusChangeConfiguration : IEntityTypeConfiguration<
         // La atribución es un PAR. Jamás una FK a core.admin_users.
         builder.Property(x => x.ChangedBy).HasColumnName("changed_by");
 
-        // Dato de bitácora, no puntero. Se interpreta junto al origin_node de ESTA
-        // fila, no del pedido: pueden diferir, y la política de ese caso está
-        // abierta (SPEC §0.3 (k)).
-        builder.Property(x => x.ChangedByAdminUserIdOrigin)
-            .HasColumnName("changed_by_admin_user_id_origin");
+        // Dato de bitácora, no puntero. Se interpreta contra el nodo de pertenencia
+        // de la cuenta, NO contra origin_node ni contra el del pedido.
+        builder.Property(x => x.ChangedByAdminUserLocalId)
+            .HasColumnName("changed_by_admin_user_local_id");
+
+        // El nodo de la CUENTA, independiente de origin_node y no derivado de él.
+        builder.Property(x => x.ChangedByAdminUserHomeNode)
+            .HasColumnName("changed_by_admin_user_home_node");
 
         builder.MapReplication();
 

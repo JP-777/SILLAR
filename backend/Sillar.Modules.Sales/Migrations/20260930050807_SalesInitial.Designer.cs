@@ -12,7 +12,7 @@ using Sillar.Modules.Sales.Data;
 namespace Sillar.Modules.Sales.Migrations
 {
     [DbContext(typeof(SalesDbContext))]
-    [Migration("20260929033810_SalesInitial")]
+    [Migration("20260930050807_SalesInitial")]
     partial class SalesInitial
     {
         /// <inheritdoc />
@@ -337,9 +337,14 @@ namespace Sillar.Modules.Sales.Migrations
                         .HasColumnType("text")
                         .HasColumnName("registered_by");
 
-                    b.Property<int>("RegisteredByAdminUserIdOrigin")
+                    b.Property<string>("RegisteredByAdminUserHomeNode")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("registered_by_admin_user_home_node");
+
+                    b.Property<int>("RegisteredByAdminUserLocalId")
                         .HasColumnType("integer")
-                        .HasColumnName("registered_by_admin_user_id_origin");
+                        .HasColumnName("registered_by_admin_user_local_id");
 
                     b.Property<long>("RowVersion")
                         .HasColumnType("bigint")
@@ -371,7 +376,9 @@ namespace Sillar.Modules.Sales.Migrations
                         {
                             t.HasCheckConstraint("ck_order_payments_amount_no_negativo", "amount >= 0");
 
-                            t.HasCheckConstraint("ck_order_payments_atribucion_local_positiva", "registered_by_admin_user_id_origin > 0");
+                            t.HasCheckConstraint("ck_order_payments_atribucion_home_node_no_vacio", "btrim(registered_by_admin_user_home_node) <> ''");
+
+                            t.HasCheckConstraint("ck_order_payments_atribucion_local_positiva", "registered_by_admin_user_local_id > 0");
 
                             t.HasCheckConstraint("ck_order_payments_method", "method IN ('yape')");
 
@@ -445,9 +452,13 @@ namespace Sillar.Modules.Sales.Migrations
                         .HasColumnType("text")
                         .HasColumnName("changed_by");
 
-                    b.Property<int?>("ChangedByAdminUserIdOrigin")
+                    b.Property<string>("ChangedByAdminUserHomeNode")
+                        .HasColumnType("text")
+                        .HasColumnName("changed_by_admin_user_home_node");
+
+                    b.Property<int?>("ChangedByAdminUserLocalId")
                         .HasColumnType("integer")
-                        .HasColumnName("changed_by_admin_user_id_origin");
+                        .HasColumnName("changed_by_admin_user_local_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -492,9 +503,11 @@ namespace Sillar.Modules.Sales.Migrations
 
                     b.ToTable("order_status_changes", "sales", t =>
                         {
-                            t.HasCheckConstraint("ck_order_status_changes_atribucion_completa", "(changed_by IS NULL AND changed_by_admin_user_id_origin IS NULL) OR (changed_by IS NOT NULL AND changed_by_admin_user_id_origin IS NOT NULL)");
+                            t.HasCheckConstraint("ck_order_status_changes_atribucion_completa", "(changed_by IS NULL AND changed_by_admin_user_local_id IS NULL   AND changed_by_admin_user_home_node IS NULL) OR (changed_by IS NOT NULL AND changed_by_admin_user_local_id IS NOT NULL   AND changed_by_admin_user_home_node IS NOT NULL)");
 
-                            t.HasCheckConstraint("ck_order_status_changes_atribucion_local_positiva", "changed_by_admin_user_id_origin IS NULL OR changed_by_admin_user_id_origin > 0");
+                            t.HasCheckConstraint("ck_order_status_changes_atribucion_home_node_no_vacio", "changed_by_admin_user_home_node IS NULL OR btrim(changed_by_admin_user_home_node) <> ''");
+
+                            t.HasCheckConstraint("ck_order_status_changes_atribucion_local_positiva", "changed_by_admin_user_local_id IS NULL OR changed_by_admin_user_local_id > 0");
 
                             t.HasCheckConstraint("ck_order_status_changes_changed_by_no_vacio", "changed_by IS NULL OR btrim(changed_by) <> ''");
 

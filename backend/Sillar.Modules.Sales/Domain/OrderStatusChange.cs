@@ -39,29 +39,44 @@ public class OrderStatusChange : IReplicatedEntity
     public DateTimeOffset ChangedAt { get; set; }
 
     /// <summary>
-    /// <b>El nombre</b> de quien lo cambió, congelado, o nulo si lo hizo el sistema.
+    /// Nombre del trabajador que lo cambió, congelado, o nulo si lo hizo el sistema.
     /// </summary>
     public string? ChangedBy { get; set; }
 
     /// <summary>
-    /// Identificador del trabajador <b>en el nodo donde actuó</b>, o nulo si lo hizo
-    /// el sistema.
+    /// Identificador del trabajador dentro de su nodo de pertenencia, o nulo si lo
+    /// hizo el sistema.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Dato de bitácora, no puntero.</b> No es clave foránea hacia
-    /// <c>core.admin_users</c> y no se resuelve con un <c>JOIN</c>. Se interpreta
-    /// junto al <c>OriginNode</c> <b>de esta misma fila</b>, que es donde estaba la
-    /// persona — no junto al del pedido, que puede ser otro.
-    /// </para>
-    /// <para>
-    /// <b>Va con <see cref="ChangedBy"/> o no va.</b> Las dos nulas significan «lo
-    /// hizo el sistema»; las dos presentes, una persona. Media atribución es peor
-    /// que ninguna, porque parece completa — y lo impone un <c>CHECK</c>, no una
-    /// convención.
-    /// </para>
+    /// <b>Dato de bitácora, no puntero.</b> Sin FK a <c>core.admin_users</c> y sin
+    /// <c>JOIN</c>. Se interpreta contra
+    /// <see cref="ChangedByAdminUserHomeNode"/>, no contra ningún otro nodo.
     /// </remarks>
-    public int? ChangedByAdminUserIdOrigin { get; set; }
+    public int? ChangedByAdminUserLocalId { get; set; }
+
+    /// <summary>
+    /// Nodo al que pertenece la <b>cuenta</b> del trabajador, o nulo si lo hizo el
+    /// sistema.
+    /// </summary>
+    /// <remarks>
+    /// <b>NO es <see cref="OrderStatusChange.OriginNode"/></b>, que dice dónde
+    /// ocurrió la actuación. Pueden diferir y el esquema lo admite. Tampoco se
+    /// deriva de él, ni del <c>origin_node</c> del pedido, que no interviene en
+    /// absoluto.
+    /// </remarks>
+    public string? ChangedByAdminUserHomeNode { get; set; }
+
+    /// <summary>
+    /// La atribución como unidad, o <c>null</c> si la actuación fue del sistema.
+    /// </summary>
+    /// <remarks>
+    /// Los tres datos van juntos o no van. Esta propiedad los lee como lo que son
+    /// —una sola cosa— y falla si están unos y faltan otros: media atribución es
+    /// peor que ninguna, porque parece completa.
+    /// </remarks>
+    public StaffAttribution? Atribucion()
+        => StaffAttribution.DeOpcional(
+            ChangedBy, ChangedByAdminUserLocalId, ChangedByAdminUserHomeNode);
 
     /// <inheritdoc />
     public string OriginNode { get; set; } = string.Empty;

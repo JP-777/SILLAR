@@ -75,8 +75,8 @@ hoy aprobado e integrado**, y ese criterio está satisfecho (§11 de este docume
 | ~~(a′)~~ | ~~**La continuidad del correlativo.**~~ **RESUELTA el 27/09/2026:** reinicio anual ratificado como excepción a la ADR-016, y **contador transaccional por serie `(nodo, año)`** | §5.4 |
 | **(g)** | **La etiqueta de serie: ¿por nodo, o por nodo × tipo de documento?** M07 usa «una letra diferente» para el mismo nodo, así que la etiqueta **no es solo del nodo** — y de ello depende contra qué compara el instalador al negarse a arrancar | `ESCALADAS-M03.md` §g |
 | **(h)** | **Unicidad de la etiqueta entre instalaciones desconectadas.** La base local no puede demostrarla. **Elevada al líder técnico; no se inventa** | `ESCALADAS-M03.md` §h |
-| **(k)** | **Un trabajador que actúa desde un nodo distinto del del pedido.** El colíder respondió el 28/09 con la **propuesta corregida de tres datos**, que **espera ratificación del líder técnico**. El esquema conserva el par ratificado y no adelanta el trío | R-14 · `ESCALADAS-M03.md` §k |
-| **(l)** | **¿El tercer dato es el nodo al que el trabajador pertenece, o el nodo desde el que actuó?** La corrección nombra uno y lo justifica con el otro, y **pueden diferir**. Para resolver el identificador hace falta el de pertenencia; para la historia operativa, el de actuación. Quizá los dos | R-14 · `ESCALADAS-M03.md` §l |
+| ~~(k)~~ | ~~Un trabajador que actúa desde un nodo distinto del del pedido.~~ **RESUELTA.** Los tres datos están ratificados e implementados: R-14 |
+| ~~(l)~~ | ~~¿Pertenencia o actuación?~~ **RESUELTA: son las dos, en columnas distintas.** `..._admin_user_home_node` guarda la **pertenencia de la cuenta**; `origin_node` conserva la **actuación**. Pueden diferir, y el esquema lo admite |
 | **(b)** | **Cancelación y reactivación.** A qué estado vuelve un Vencido pagado; quién cancela y desde dónde; si exige motivo; si se cancela un Entregado | `ESCALADAS-M03.md` §b2 |
 | **(c)** | **Efectivo.** `PENDIENTES.md:487-488` dice «Yape **y efectivo**»; el 26/09 nombra solo Yape y no lo resuelve | `ESCALADAS-M03.md` §c |
 | **(d)** | **La frontera con M07: la vía y la modalidad de acceso.** Hoy su SPEC exige sesión de cliente en sus cuatro endpoints públicos, pero **eso es el estado de su SPEC, no una modalidad ratificada** para «a consultar». **No se presupone ningún endpoint ni ningún acceso aprobado** | `ESCALADAS-M03.md` §d |
@@ -323,7 +323,7 @@ están del mismo lado de la línea.**
 | `order_lines.item_id → catalog.product_items` | replicada | replicada | **Sí** — dependencia dura, FK cruzada en la migración de M03 |
 | `orders.customer_id → crm.customers` | replicada | replicada | **Sí** — dura desde el 21/08, sin script de integración |
 | `cart_items.item_id → catalog.product_items` | **no** replicada | replicada | **Sí** — segundo renglón de `ADR-018:28`: la fila origen se queda en su nodo y su destino está ahí |
-| **quién cobró / quién cambió el estado → `core.admin_users`** | replicada | **no** replicada | **NO.** Se guarda el **nombre congelado más un identificador local**, documentado como «dato de bitácora, no puntero». Ver R-14 |
+| **quién cobró / quién cambió el estado → `core.admin_users`** | replicada | **no** replicada | **NO.** Se guardan **tres datos congelados** —nombre, identificador local y nodo de pertenencia de la cuenta—, documentados como «dato de bitácora, no puntero». Ver R-14 |
 | **`orders.order_status_id → sales.order_statuses`** | replicada | tabla de catálogo `integer`, **no** replicada | **NO.** Tercer renglón de `ADR-018:28`, **y no da error**: cada base queda coherente por dentro. El estado va en una columna `text` con `CHECK` |
 
 > **La última fila es un hallazgo y no una preferencia.** `docs/ARQUITECTURA_MODULAR.md:195` y `:214`
@@ -371,15 +371,20 @@ falta para fijar su no replicación, y el histórico ya lo dejaba así.
 Separar el **hecho de pago** del **estado del pedido** está cerrado en `PENDIENTES.md:497-499`, con
 su motivo escrito: «Fundirlos obliga a rehacer la máquina de estados **con pedidos reales dentro**».
 
-- **Pagos:** cuándo, método, referencia y **la atribución del personal** —nombre congelado más
-  identificador local—, las dos obligatorias. `payment_method` es `text` con `CHECK` sobre lista
-  cerrada, **y cuál es esa lista está abierto** — (c).
-- **Historial de estados:** de qué estado a cuál, cuándo, y **la atribución**, que aquí admite ser
-  nula por entero cuando el cambio lo hizo el sistema.
+- **Pagos:** cuándo, método, referencia y **la atribución del personal** —los **tres** datos, todos
+  obligatorios—. `payment_method` es `text` con `CHECK` sobre lista cerrada, **y cuál es esa lista está
+  abierto** — (c).
+- **Historial de estados:** de qué estado a cuál, cuándo, y **la atribución**, que aquí es **los tres o
+  ninguno**: los tres `NULL` significa que lo hizo el sistema.
 
-**Las dos atribuciones son fotografías inmutables, no punteros** (R-14). El identificador local se
-interpreta junto al `origin_node` **de su propia fila** —el nodo donde la persona actuó—, que las dos
-tablas ya llevan por ser replicadas. **Ninguna FK hacia `core.admin_users`.**
+**Las dos atribuciones son fotografías inmutables de tres datos, no punteros** (R-14): nombre congelado,
+identificador local, y **nodo de pertenencia de la cuenta**. **Ninguna FK hacia `core.admin_users`, y
+ningún `JOIN`.**
+
+> **`origin_node` de estas dos tablas es otra cosa y la conserva:** es **dónde ocurrió la actuación**.
+> El nodo de pertenencia de la cuenta va en su propia columna y **no se deriva de él** — una cuenta del
+> nodo A puede registrar una actuación desde el nodo B. Y el `origin_node` **del pedido** no interviene
+> en absoluto.
 
 ### El contador de la serie · `sales.order_series` — no replicada
 
@@ -731,148 +736,129 @@ está garantizado**». Las dos son **negaciones correctas** y las dos contienen 
 
 **Tiene prueba propia, con corpus en las dos direcciones** (§11).
 
-## R-14 · La atribución del personal es una fotografía inmutable, no un puntero · **AMPLIADA el 27/09/2026**
+## R-14 · La atribución del personal congela tres datos independientes · **AUTORITATIVA**
 
-**Instrucción arquitectónica del líder técnico, ratificada el 27 de septiembre de 2026.** Amplía la
-R-14 anterior, que solo exigía el nombre.
+**Ratificada por el líder técnico.** Es la regla vigente de M03 para toda atribución de personal.
 
-### Las dos columnas, y por qué hacen falta las dos
+### Los tres datos
 
-Toda atribución de personal en M03 guarda **un par**:
+| # | Dato | Qué responde | Sin él |
+|---|---|---|---|
+| **1** | **Nombre visible del trabajador**, congelado al actuar | *Quién fue*, legible dentro de un año | Queda un número que nadie puede resolver si la cuenta se renombró o se dio de baja |
+| **2** | **Identificador local del trabajador** | *Cuál de los homónimos*, y permite agrupar y auditar | Dos trabajadores con el mismo nombre son indistinguibles |
+| **3** | **Nodo al que pertenece la cuenta** del trabajador | *Contra qué `admin_users` se interpreta el identificador 2* | El identificador es un entero sin universo: el 7 de un nodo no es el 7 de otro |
 
-| Columna | Qué es | Sin ella |
-|---|---|---|
-| **Nombre visible**, congelado en el momento de actuar | Lo que se lee dentro de un año | Queda un número que nadie puede resolver si la cuenta se renombró o se dio de baja |
-| **Identificador local del trabajador**, con un nombre que declare que **solo significa algo en su nodo** | Lo que permite agrupar, auditar y cruzar con el nodo donde ocurrió | Dos trabajadores homónimos son indistinguibles, y el nombre por sí solo no es identidad |
+**Los tres forman una unidad.** Ninguno se deduce de los otros ni de nada más.
 
-**Ninguna clave foránea hacia `core.admin_users`.** La razón no cambia: las ventas se replican, esa
-tabla no, y la `ADR-018` prohíbe que una fila que viaja referencie a una que se queda — sin avisar
-cuando se incumple.
+### El tercer dato NO es el `origin_node` de la actuación · y es el corazón de la regla
 
-### La frase que va en el código, y no es decorativa
+`order_payments` y `order_status_changes` **ya llevan `origin_node`**, porque se replican. Esa columna
+**conserva íntegra su semántica** y significa **dónde ocurrió la actuación** — el nodo donde la fila
+nació, que es donde estaba la persona en ese momento.
 
-> **Dato de bitácora, no puntero.**
+**Nodo de pertenencia y nodo de actuación son hechos distintos y pueden diferir:**
 
-Se documenta así en cada columna. Un identificador que parece una clave foránea invita a tratarlo
-como tal: a resolverlo con un `JOIN`, a confiar en que la fila del otro lado existe, a asumir que el
-7 de aquí es el 7 de allá. **No lo es.** Sin la frase, el primero que lo vea escribirá ese `JOIN`, y
-funcionará en un solo nodo, que es lo peor que puede pasar.
-
-### PROPUESTA CORREGIDA DEL COLÍDER — 28/09/2026 · **PENDIENTE DE RATIFICACIÓN**
-
-> **Esto no es todavía decisión arquitectónica, y el esquema no la incorpora.** El colíder detectó
-> una insuficiencia en la instrucción del 27/09 y la corrigió; **falta la ratificación final del líder
-> técnico**. Se documenta aquí porque hay que tenerla delante al construir, no porque esté cerrada.
-
-**La fotografía pasaría de dos datos a tres:**
-
-| # | Dato | ¿Está en el esquema hoy? |
-|---|---|---|
-| 1 | Nombre visible del trabajador, congelado al actuar | **Sí** |
-| 2 | Identificador local de ese trabajador | **Sí** |
-| 3 | **Identificador del nodo al que pertenece el trabajador** | **No.** Sería la columna nueva |
-
-**Los tres formarían una unidad**, y la razón de la tercera es concreta: **no se debe interpretar el
-identificador usando el `origin_node` del pedido**, porque un pedido puede nacer en una sucursal y ser
-atendido desde otra.
-
-**Qué cambiaría respecto a lo implementado.** Hoy el par se interpreta junto al `origin_node` de la
-**propia fila de atribución** —no la del pedido—, que el `DbContext` sella donde la fila nace. Eso ya
-evita el error que la corrección señala, pero **apoya la atribución en una columna cuyo significado no
-le pertenece**: `origin_node` responde «dónde nació esta fila», y es contrato de replicación que
-gobierna M16. Que hoy coincida con «dónde estaba la persona» es una coincidencia del diseño actual, no
-una garantía. **Una columna propia lo dice en vez de deducirlo**, y ese es el fondo de la corrección.
-
-**Coste de esperar: ninguno.** Añadir una columna es una migración aditiva, y **el esquema no tiene
-datos**. Cerrarla ahora y que la ratificación la cambie sí costaría. Por eso el esquema conserva el par
-ratificado y no adelanta el trío.
-
-> **Una ambigüedad que hay que resolver antes de implementarla, y no la decido.** La corrección nombra
-> el tercer dato como «el nodo **al que pertenece** el trabajador», pero lo justifica con «un pedido
-> puede nacer en una sucursal y **ser atendido desde otra**». **Son dos hechos distintos y pueden
-> diferir:** alguien de la sucursal A puede atender desde un terminal de la B.
+> Una cuenta que pertenece al nodo **A** puede registrar una actuación desde el nodo **B**.
 >
-> | Lectura | Para qué sirve | Qué no responde |
+> | Columna | Valor | Significa |
 > |---|---|---|
-> | **El nodo al que pertenece** | **Resolver el identificador**: `admin_user_id` solo es único dentro del `admin_users` que lo emitió, así que para interpretarlo hace falta este | Dónde ocurrió la actuación |
-> | **El nodo desde el que actuó** | **Historia operativa**: en qué mostrador se cobró | Cómo resolver el identificador |
+> | `..._admin_user_home_node` | **A** | La cuenta vive en el `admin_users` de A. **Contra A se resuelve el identificador local** |
+> | `origin_node` de la fila | **B** | La actuación ocurrió en B |
 >
-> Para el propósito declarado —interpretar el identificador— hace falta **el de pertenencia**. Para
-> el caso que se usa como justificación hace falta **el de actuación**. Puede que hagan falta los dos,
-> y entonces son cuatro datos, no tres. **Se eleva; no se elige.**
+> **Ese caso es válido y el esquema lo admite.** No hay `CHECK` que exija que coincidan, y no lo habrá:
+> exigirlo prohibiría un hecho real del negocio.
 
-### Lo que NO se hace, confirmado
+**Tres prohibiciones que se siguen de lo anterior, y ninguna es redundante:**
 
-**No existe ningún campo `atendido_por` en la cabecera del pedido**, y no se creará: si intervienen
-varias personas, un único responsable histórico sería ambiguo. `sales.orders` no tiene ninguna columna
-de atribución de personal — comprobado en el esquema aplicado.
+1. **El nodo de pertenencia no se deriva del `origin_node` de la actuación.** Rellenarlo con el nodo
+   actual sería correcto **solo mientras nadie atienda desde otra sucursal**, y fallaría en silencio el
+   día que ocurra — que es la peor forma de fallar.
+2. **No se usa el `origin_node` del pedido** para resolver al trabajador. Es una tercera columna, en una
+   tercera tabla, y puede diferir de las dos anteriores.
+3. **No se resuelve con un `JOIN`.** Ver abajo.
 
-**Cada atribución vive exclusivamente en el registro de su actuación**: hoy `order_payments` y
-`order_status_changes`. Cualquier actuación futura —cancelación, reactivación— trae la suya en su propia
-fila, no en la cabecera.
+### Dato de bitácora, no puntero
 
-### El identificador solo se interpreta junto a la identidad del nodo donde se actuó
+> **Ninguna clave foránea hacia `core.admin_users`, y ningún `JOIN` para resolver estos datos.**
 
-Y **ese nodo ya está en la fila**, sin columna nueva: `order_payments` y `order_status_changes` son
-tablas replicadas, así que llevan su propio `origin_node`, y el `DbContext` lo sella **en el nodo
-donde la fila nace** — es decir, donde la persona actuó. El par que se interpreta es
-`(origin_node de la fila de atribución, identificador local)`.
+La razón no es de estilo: `core.admin_users` **no se replica** y estas tablas **sí**, y la `ADR-018`
+prohíbe que una fila que viaja referencie a una que se queda — **sin avisar cuando se incumple**.
 
-> **No es el `origin_node` del pedido.** Son dos columnas distintas en dos tablas distintas, y pueden
-> diferir: un pedido nacido en un nodo puede recibir un pago registrado en otro. Leer el
-> identificador contra el `origin_node` del *pedido* es precisamente el error que esta redacción
-> existe para evitar. La política de ese caso está abierta — §0.3 (k).
+La frase va en el código **y en el comentario de la columna en la base**, porque quien inspeccione el
+schema con `\d+` ve un entero llamado `..._admin_user_local_id` y su primer impulso es el `JOIN`.
+Funcionaría —**en un solo nodo, que es lo peor que puede pasar**.
 
-### Una transición del sistema no se atribuye a nadie
+### Una actuación del sistema no se atribuye a nadie
 
-`order_status_changes` admite **las dos columnas nulas a la vez**, y significa exactamente «lo hizo
-el sistema»: el vencimiento del plazo lo provoca el tiempo, no una persona.
-
-**Y van juntas o no van:** ambas nulas, o ambas presentes. Un nombre sin identificador, o un
-identificador sin nombre, es media atribución — y media atribución es peor que ninguna, porque
-parece completa. Lo impone un `CHECK`, no una convención.
-
-**Un trabajador ficticio queda prohibido.** Ni «Sistema», ni «—», ni el identificador cero: cualquiera
-de los tres convierte una ausencia honesta en una persona que no existe, y dentro de un año nadie
-sabrá distinguirla de una real.
-
-En `order_payments` las dos son **obligatorias**: un pago lo registra siempre una persona.
-
-### Alcance: todas las atribuciones, no solo el pago
-
-Vale para **confirmación de Yape, cancelación, reactivación y cualquier cambio de estado**. Hoy eso son
-dos tablas —`order_payments` y `order_status_changes`—; cualquier atribución futura nace con el par.
-
-**OBSERVADO:** `PENDIENTES.md:493-495` lo fijó para el pago; `docs/modules/b2b/SPEC.md:188` y
-`:209-217` ya guardan el nombre en `paid_registered_by`. La instrucción del 27/09 **añade el
-identificador local**, que ninguno de los dos tenía.
-
-### Diferencia con lo publicado en `c4be225`
-
-`c4be225` **no es la versión definitiva** del modelo. Publicó solo la mitad de esta regla:
-
-| | `c4be225` | Vigente |
+| Tabla | Actuación humana | Actuación del sistema |
 |---|---|---|
-| `order_payments` | `registered_by` (nombre) | `registered_by` **+ identificador local**, ambos obligatorios |
-| `order_status_changes` | `changed_by` (nombre, nulable) | `changed_by` **+ identificador local**, ambos nulos o ambos presentes |
-| `CHECK` de coherencia del par | no existe | **obligatorio** |
-| «dato de bitácora, no puntero» | no está escrito | en las cuatro columnas |
+| `order_payments` | **Los tres obligatorios** | **No existe.** Un pago lo registra siempre una persona |
+| `order_status_changes` | **Los tres presentes** | **Los tres `NULL`** |
 
-El modelo, la configuración y la migración se armonizan **después de este apartado**, que es el orden
-que la instrucción fija.
+**Van los tres o ninguno.** Lo impone un `CHECK`, no una convención: una atribución parcial es peor que
+ninguna, porque **parece completa**.
 
-### Una ambigüedad de nomenclatura, resuelta por defecto y declarada
+**Trabajador ficticio prohibido.** Ni «Sistema», ni «—», ni identificador cero, ni nodo vacío:
+cualquiera de los cuatro convierte una ausencia honesta en una persona que no existe, y dentro de un año
+nadie la distinguirá de una real. Los `CHECK` de valor lo impiden uno por uno.
 
-La instrucción ejemplifica el nombre como `atendido_por_admin_user_id_origen`. **Es un ejemplo, no un
-literal** —lo que exige es que el nombre declare la localidad al nodo—, y en español choca con
-`CLAUDE.md`, que fija las columnas en **snake_case, inglés técnico**.
+### Alcance
 
-Se adoptan **`registered_by_admin_user_id_origin`** y **`changed_by_admin_user_id_origin`**: conservan
-lo que el ejemplo pedía —el sufijo `_origin` dice que el identificador es del nodo de origen de la
-fila— y respetan la convención. **Si el líder técnico quiere el literal en español, se cambia: es una
-columna sin datos.**
+**Toda atribución de personal:** confirmación de Yape, cancelación, reactivación y cualquier cambio de
+estado. Hoy son dos tablas; cualquier actuación futura nace con los tres datos.
 
-## R-15 · El total es la suma de las líneas · **NUEVA**
+**Y en ningún caso en la cabecera del pedido.** `sales.orders` **no tiene ninguna columna de atribución
+de personal** y no la tendrá: si intervienen varias personas, un único responsable histórico sería
+ambiguo. **Cada atribución vive exclusivamente en el registro de su actuación.**
+
+### Las columnas
+
+| Tabla | Nombre congelado | Identificador local | Nodo de la cuenta |
+|---|---|---|---|
+| `order_payments` | `registered_by` | `registered_by_admin_user_local_id` | `registered_by_admin_user_home_node` |
+| `order_status_changes` | `changed_by` | `changed_by_admin_user_local_id` | `changed_by_admin_user_home_node` |
+
+**Por qué `local_id` y `home_node`, y no `_origin`.** La formulación histórica llamaba al identificador
+`..._admin_user_id_origin`. Ese sufijo **se leería contra `origin_node`**, que significa otra cosa —el
+nodo de actuación—, y confundir las dos es exactamente el error que esta regla existe para evitar.
+`local_id` declara que el identificador solo vale dentro de un universo; `home_node` nombra ese universo
+sin ambigüedad. **Inglés técnico**, como fija `CLAUDE.md`.
+
+---
+
+### Cronología documental de esta regla
+
+Se conserva entera porque la regla cambió dos veces y conviene saber por qué.
+
+| Fecha | Qué se dijo | Estado |
+|---|---|---|
+| 26/09/2026 | `PENDIENTES.md:493-495`: el pago guarda **el nombre** del trabajador, «nunca una FK a `core.admin_users`». Precedente ya escrito en `b2b.quotes` (`:188`) | **Vigente en su prohibición**, insuficiente en su alcance |
+| 27/09/2026 | Instrucción del líder técnico: la atribución es una **fotografía inmutable** de **dos datos** —nombre congelado más identificador local—, con la frase «dato de bitácora, no puntero» | **SUPERSEDED.** Ver abajo |
+| 28/09/2026 | El colíder detecta la insuficiencia y corrige a **tres datos**, añadiendo el nodo de pertenencia de la cuenta. Llegó marcada como pendiente de ratificación | **Corrección aceptada** |
+| *(sin fecha en el material recibido)* | **El líder técnico ratificó finalmente la corrección de tres datos.** Chat 2 lo comunicó el 30/09/2026 | **AUTORITATIVA** |
+
+> **Sobre la última fila.** El material recibido **no da la fecha** de esa ratificación final, y **no se
+> inventa ninguna**. Lo que consta es el hecho: la corrección **fue ratificada finalmente**, y la
+> comunicación llegó el 30/09/2026.
+
+#### La formulación de dos datos · **HISTÓRICA / SUPERSEDED**
+
+Se conserva sin reescribir porque explica qué faltaba:
+
+> *27/09/2026 — «Toda atribución guarda un par: nombre visible congelado, e identificador local del
+> trabajador con un nombre que declare que solo significa algo en su nodo. El identificador se interpreta
+> junto a la identidad del nodo donde se actuó.»*
+
+**Qué le faltaba, y no era un detalle.** Decía «junto a la identidad del nodo donde se actuó», y eso
+llevaba a resolver el identificador contra el nodo **de la actuación**. **Es el nodo equivocado:** el
+identificador solo es único dentro del `admin_users` que lo emitió, o sea el nodo **de pertenencia de la
+cuenta**. Mientras nadie atienda desde otra sucursal los dos coinciden y el error no se ve — el patrón
+del §1 de `ANTES-DE-EMPEZAR-UN-MODULO.md`, una regla cierta «porque hoy solo hay uno».
+
+**Y lo implementado bajo esa formulación también queda superseded:** `c4be225` publicó solo el nombre;
+`da4a4f7` publicó el par con el sufijo `_origin`. **Ninguno de los dos es el modelo definitivo.**
+
+## R-15 · El total es la suma de las líneas## R-15 · El total es la suma de las líneas · **NUEVA**
 
 ## R-15 · El total es la suma de las líneas · **NUEVA**
 
@@ -1035,11 +1021,15 @@ el sistema garantiza. Las pruebas de lógica **no tocan la base**.
 | **El propio barrido se falsifica** | Introducir a propósito «te reservamos el producto por 48 horas» en un texto visible y comprobar que **se pone rojo**; y después «ya no está garantizado» y comprobar que **pasa**. Sin las dos, el barrido solo protege la versión sana de sí mismo |
 | Confirmación de pago es manual | Un pedido pendiente no pasa a confirmado sin acción autorizada del personal |
 | **Un pago tardío sobre un pedido Vencido siempre deja resultado o pendiente visible** | Registrarlo y comprobar que **nunca** queda un pago huérfano. **R-12** |
-| **La atribución del personal es un par: nombre congelado más identificador local** | Inspección de schema: las cuatro columnas existen y **ninguna FK a `core.admin_users`** en todo el schema `sales`. **R-14** |
-| **El par va junto o no va** | Provocar las dos mitades: nombre sin identificador e identificador sin nombre, y comprobar que el `CHECK` rechaza las dos. Después el caso válido, y el caso de sistema con las dos nulas |
-| **Una transición del sistema no se atribuye a nadie** | Vencer un plazo y comprobar que el asiento tiene **las dos columnas nulas** — ni «Sistema», ni identificador cero |
-| **Un pago siempre tiene atribución completa** | Intentar registrar un pago sin nombre o sin identificador y observar el rechazo |
-| **El identificador no se resuelve con un `JOIN`** | Barrido sobre el código de M03: ninguna consulta cruza `admin_user_id_origin` contra `core.admin_users`. Es lo que «dato de bitácora, no puntero» impide, y una regla que nadie comprueba es una regla escrita |
+| **Un pago humano exige los tres datos** | Nombre, identificador local y nodo de la cuenta: faltando cualquiera, se rechaza |
+| **Un cambio de estado humano lleva los tres presentes** | Y el `CHECK` lo impone, no el código que llama |
+| **Un cambio automático lleva los tres `NULL`** | Vencer un plazo y comprobar que el asiento no atribuye nada — ni «Sistema», ni identificador cero, ni nodo vacío |
+| **Ninguna atribución parcial es posible** | Provocar las seis combinaciones incompletas y comprobar que el `CHECK` rechaza las seis; después el caso completo y el caso nulo |
+| **El nodo de la cuenta puede diferir del nodo de la actuación** | Atribución con `home_node = A` y `origin_node = B`: **válida**. Es un hecho real del negocio y ningún `CHECK` lo prohíbe |
+| **El nodo de la cuenta no se deriva del nodo de la actuación** | La atribución se construye con su nodo explícito; el código nunca lo rellena con el nodo actual |
+| **El `origin_node` del pedido no interviene en la interpretación** | La atribución es autosuficiente: lleva sus tres datos y no alcanza al pedido |
+| **Cero FK hacia `core.admin_users`** | Inspección del esquema y de la migración en todo `sales` |
+| **Cero columnas de atribución en `sales.orders`** | Inspección: la cabecera del pedido no atribuye a nadie |
 | Confirmar el pago queda auditado | Comprobar la entrada con el pedido humano concreto, no «un pedido» |
 | Auditoría nombra la fila | Crear dos pedidos y comprobar que sus resúmenes permiten distinguirlos sin abrir el detalle |
 | `orders` y `order_lines` usan `uuid` v7 | Comprobar versión 7 de las PK y presencia de `origin_node` y `row_version` |

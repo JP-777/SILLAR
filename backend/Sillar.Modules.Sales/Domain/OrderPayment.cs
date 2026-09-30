@@ -50,39 +50,50 @@ public class OrderPayment : IReplicatedEntity
     public string? Reference { get; set; }
 
     /// <summary>
-    /// <b>El nombre</b> de quien lo registró, congelado en el momento de actuar.
+    /// Nombre del trabajador que registró el pago, congelado al actuar.
     /// </summary>
     /// <remarks>
-    /// Es la mitad legible de la atribución. Sobrevive a que la cuenta se dé de
-    /// baja o se renombre, que es justo el dato que hace falta dentro de un año:
-    /// <b>quién cobró</b>.
+    /// Primero de los <b>tres datos</b> de la atribución (<see cref="StaffAttribution"/>).
+    /// En un pago los tres son obligatorios: un pago lo registra siempre una persona.
     /// </remarks>
     public required string RegisteredBy { get; set; }
 
     /// <summary>
-    /// Identificador del trabajador <b>en el nodo donde actuó</b>.
+    /// Identificador del trabajador <b>dentro de su nodo de pertenencia</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>Dato de bitácora, no puntero.</b> No es clave foránea hacia
+    /// <c>core.admin_users</c> y no se resuelve con un <c>JOIN</c>: esa tabla no se
+    /// replica y esta sí, así que el 7 de un nodo no es el 7 de otro (ADR-018).
+    /// Solo es único dentro del <c>admin_users</c> que lo emitió, y cuál es ese lo
+    /// dice <see cref="RegisteredByAdminUserHomeNode"/>.
+    /// </remarks>
+    public int RegisteredByAdminUserLocalId { get; set; }
+
+    /// <summary>
+    /// Nodo al que pertenece la <b>cuenta</b> del trabajador.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Dato de bitácora, no puntero.</b> No es una clave foránea hacia
-    /// <c>core.admin_users</c> y no se resuelve con un <c>JOIN</c>: esa tabla no se
-    /// replica y esta sí, así que el 7 de este nodo no es el 7 de otro. La ADR-018
-    /// prohíbe cruzar esa línea, y no avisa cuando se incumple.
+    /// Tercero de los tres datos, y el que la formulación anterior no tenía. Es el
+    /// universo contra el que se interpreta
+    /// <see cref="RegisteredByAdminUserLocalId"/>.
     /// </para>
     /// <para>
-    /// <b>Solo significa algo junto a la identidad del nodo donde se actuó</b>, y
-    /// ese nodo es el <c>OriginNode</c> <b>de esta misma fila</b> —no el del
-    /// pedido—: esta tabla se replica, así que el sello se pone donde la fila nace,
-    /// que es donde estaba la persona. Un pago de un pedido nacido en otro nodo
-    /// lleva su propio origen, y por eso el par es interpretable sin columna nueva.
+    /// <b>NO es <see cref="OrderPayment.OriginNode"/>.</b> Aquella dice <b>dónde
+    /// ocurrió la actuación</b> y la sella el <c>DbContext</c> al nacer la fila; esta
+    /// dice <b>de qué nodo es la cuenta</b>. Pueden diferir —una cuenta del nodo A
+    /// puede registrar un pago desde el nodo B— y el esquema lo admite: <b>no hay
+    /// ningún <c>CHECK</c> que exija que coincidan</b>, porque exigirlo prohibiría un
+    /// hecho real del negocio.
     /// </para>
     /// <para>
-    /// El sufijo <c>Origin</c> está en el nombre a propósito: sin él, el primero que
-    /// lo vea escribirá el <c>JOIN</c> y funcionará —en un solo nodo, que es lo peor
-    /// que puede pasar.
+    /// <b>Y no se deriva de aquella.</b> Rellenarla con el nodo actual sería correcto
+    /// solo mientras nadie atienda desde otra sucursal, y fallaría en silencio el día
+    /// que ocurra.
     /// </para>
     /// </remarks>
-    public int RegisteredByAdminUserIdOrigin { get; set; }
+    public required string RegisteredByAdminUserHomeNode { get; set; }
 
     /// <summary>Cuándo se registró el pago.</summary>
     public DateTimeOffset RegisteredAt { get; set; }
