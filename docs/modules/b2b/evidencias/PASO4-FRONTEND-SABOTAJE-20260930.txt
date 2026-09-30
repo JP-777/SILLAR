@@ -1,0 +1,6 @@
+# Sabotaje del paso 4, tramo 1 (frontend) · base 3b69e34 + cambios sin commitear · 2026-09-30 13:19:32 -0500
+[S-F1 pago visible al editor] rojas: ✖ 3 · el editor no ve pago ni bajas en ningún estado (1.972829ms) ✖ 3 · el editor no ve pago ni bajas en ningún estado (1.972829ms) 
+[S-F2 tarjeta como opción de pago] rojas: ✖ 9 · tarjeta no aparece como opción (2.757546ms) ✖ 9 · tarjeta no aparece como opción (2.757546ms) 
+[S-F3 customerId pintado en la bandeja] rojas: ✖ 14 · ningún customerId se pinta: las pantallas no lo leen (3.080899m ✖ 14 · ningún customerId se pinta: las pantallas no lo leen (3.080899m 
+[S-F4 rutas montadas sin mirar la capacidad] rojas: ✖ 1 · con b2b inactivo no hay menú ni rutas: todo cuelga de la capacid ✖ 1 · con b2b inactivo no hay menú ni rutas: todo cuelga de la capacid 
+[restaurado] ℹ pass 16 ℹ fail 0 

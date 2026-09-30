@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Routing;
 using Sillar.Core.Contracts;
 using Sillar.Modules.B2B.Bandeja;
 using Sillar.Modules.B2B.Cotizaciones;
+using Sillar.Modules.Catalog.Contracts;
 
 namespace Sillar.Modules.B2B.Endpoints;
 
@@ -90,6 +91,15 @@ public static class BandejaAdminEndpoints
             .RequireAuthorization(AdminRole.Admin)
             .WithName("B2bAdminDeleteQuote").WithSummary("Da de baja una cotización, sin borrarla.")
             .Produces<CotizacionPanel>().Produces(StatusCodes.Status404NotFound);
+
+        // Selectores, sobre el contrato real de M01 (mismo patrón que M02 en
+        // FeaturedProductEndpoints): el frontend de M07 nunca habla con M01.
+        admin.MapGet("/catalog/products", BuscarProductos)
+            .WithName("B2bAdminSearchCatalogProducts").WithSummary("Busca productos activos de M01 para reenlazar una personalización.")
+            .Produces<IReadOnlyList<ProductoParaElegir>>();
+        admin.MapGet("/catalog/items", BuscarPresentaciones)
+            .WithName("B2bAdminSearchCatalogItems").WithSummary("Busca presentaciones de M01 para una línea de cotización.")
+            .Produces<IReadOnlyList<PresentacionParaElegir>>();
 
         return endpoints;
     }
@@ -189,6 +199,23 @@ public static class BandejaAdminEndpoints
     /// <summary>Baja lógica de una cotización (solo <c>admin</c>), y lo audita.</summary>
     internal static async Task<IResult> BajaCotizacion(int id, CotizacionesService s, IAuditWriter a, ICurrentAdmin u, CancellationToken ct)
         => await Escritura(await s.BajaAsync(id, ct), a, u, AuditAction.Delete, "quote", id, n => $"Baja lógica de la cotización {n}.", ct);
+
+    /// <summary>Busca productos activos para reenlazar; sin texto no devuelve nada.</summary>
+    private static async Task<IResult> BuscarProductos(string? q, ICatalogService catalogo, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(q)) return Results.Ok(Array.Empty<ProductoParaElegir>());
+        var productos = await catalogo.BuscarParaSeleccionAsync(q, 20, ct);
+        return Results.Ok(productos.Where(p => p.IsActive)
+            .Select(p => new ProductoParaElegir(p.ProductId, p.Name, p.IsPublic)).ToArray());
+    }
+
+    /// <summary>Busca presentaciones para una línea de cotización; sin texto no devuelve nada.</summary>
+    private static async Task<IResult> BuscarPresentaciones(string? q, ICatalogService catalogo, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(q)) return Results.Ok(Array.Empty<PresentacionParaElegir>());
+        var items = await catalogo.BuscarAsync(q, 20, ct);
+        return Results.Ok(items.Select(i => new PresentacionParaElegir(i.ItemId, i.ProductName, i.VariantValue, i.SaleUnit, i.Price)).ToArray());
+    }
 
     private static async Task<IResult> ListarConFiltro<T>(string? estado, Func<string?, Task<IReadOnlyList<T>>> listar)
     {

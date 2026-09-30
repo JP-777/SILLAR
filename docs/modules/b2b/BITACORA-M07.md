@@ -16,8 +16,8 @@ con `sillar-footer` y no se ha levantado nada en ella. Se retiró `sillar-qa-m02
 estaba limpia y chocaba con una worktree de A.
 
 **Decisiones de JP aplicadas** (encargo `B_M07_B2B.md`): consultas autenticadas, fotos privadas
-aplazadas, líneas de cotización por presentación con snapshot, convención de códigos sin letra.
-En `SPEC.md` como enmiendas del 27/09; E1, E9, E3b, E10 y la letra quedan en `ESCALADAS-M07.md`.
+aplazadas, líneas de cotización por presentación con snapshot, convención de códigos sin letra *(letra ratificada el 30/09: `C-AAAA-NNNN`)*.
+En `SPEC.md` como enmiendas del 27/09; E1, E9, E3b, E10 y la letra quedan en `ESCALADAS-M07.md` *(E3b y la letra, cerradas el 30/09)*.
 
 **Construido:**
 
@@ -58,7 +58,7 @@ presión de memoria de la puerta roja de M02. Efecto pedido: que la puerta no ac
 MSBuild entre etapas.
 
 **Pendiente del ciclo:** paso 3 (API) sobre este esquema; la creación de cotizaciones espera a la
-letra de serie. Después, parada 3.5.
+letra de serie *(superado el 30/09: `C-AAAA-NNNN`)*. Después, parada 3.5.
 
 ---
 
@@ -85,7 +85,7 @@ cotización sin filtrar por cliente (P3) ponen su prueba en rojo; restaurado, 31
 
 **Sin puerta de este tramo todavía:** la máquina tiene memoria justa y la ventana de QA de M04
 tiene prioridad. **Pendiente:** rutas de administración; creación de cotizaciones, bloqueada por la
-letra de serie (pregunta 3); manejadores de eventos de M01 (refresco y caducidad, E3b).
+letra de serie (pregunta 3) *(superado el 30/09: `C-AAAA-NNNN`)*; manejadores de eventos de M01 (refresco y caducidad, E3b).
 
 ---
 
@@ -128,7 +128,7 @@ rojo; restaurado, 49/49.
 
 **Sigue abierto:**
 
-- **Crear cotizaciones**: la letra de serie (pregunta 3). Con ella, el ciclo `send` / `approve` /
+- **Crear cotizaciones**: la letra de serie (pregunta 3) *(superado el 30/09: `C-AAAA-NNNN`, construido en el tercer tramo)*. Con ella, el ciclo `send` / `approve` /
   `payment` / edición de líneas / baja, que sin creación no tiene nada sobre lo que actuar.
 - **E3b**, y el **umbral mayorista** (regla 4), que vive en `core.site_settings` y no tiene clave.
 - **La mitad HTTP de los permisos y del CSRF** (401/403 reales, filtro CSRF): los metadatos no
@@ -169,4 +169,43 @@ las dos a la vez, en rojo**. Restaurado: 69/69.
 
 **Sigue abierto:** C12 (fila del umbral en CORE) y C13 (nombre en `ICurrentAdmin`), ninguno
 bloqueante; C9 (desplegar M07) y con él la mitad HTTP de permisos y CSRF; parada 3.5 (Diseño).
+
+---
+
+## 30/09/2026 · Paso 4, tramo 1: frontend de A3, A8 y A9
+
+**Diseño seguido:** `JP-777/SILLAR-DESIGN` @ `9d59e37`, `propuestas/M07/vigente-3b69e34/`
+(adenda, matriz A1–A9, permisos, inventario). Paso 3.5 aprobado por Chat 2.
+
+**Construido** en `frontend/src/modules/b2b/`:
+
+- `routes.tsx` + `navegacion.ts`: grupo «Solicitudes» y rutas `/admin/solicitudes/…`, montados en
+  `layout/navigation.ts` y `app/routes.tsx` **solo con la capacidad `b2b`** (los dos únicos puntos
+  de composición que la barrera de fronteras admite).
+- `services/`: tipos uno a uno con los DTO y llamadas por el cliente HTTP compartido.
+- `logica/`: la decisión de qué ve cada rol en cada estado, pago, líneas, Subir/Bajar y el texto
+  mayorista, **pura** y probada en Node.
+- `pages/`: bandejas (estructura), A3 en el panel lateral, A8 editor de borrador y A9 ciclo.
+
+**Backend, añadido pequeño:** dos lecturas de selección sobre el contrato real de M01
+(`GET /api/admin/b2b/catalog/products` y `/catalog/items`), mismo patrón que M02: el frontend de
+M07 nunca habla con M01.
+
+**Decisiones del tramo, reversibles:**
+
+- **Importes con `currency_code`** (ajuste público) vía `fetchPublicSettings`; sin código, número a
+  secas. No se copia el `'PEN'` escrito que usa M01.
+- **«Preparar para enviar»** abre un texto para copiar; ni envía ni registra nada.
+- **Crear cotización** desde el panel lateral de la solicitud: estructura necesaria para llegar a
+  A8; la identidad de A7 sigue pendiente.
+- **Sin identidad de cliente en ninguna pantalla**: ni `customerId` ni «Cliente no disponible».
+
+**Pruebas:** `tests/b2bModulo.test.mjs`, 16/16, las 14 pedidas incluidas. Sabotaje en
+`evidencias/PASO4-FRONTEND-SABOTAJE-20260930.txt` (S-F1…S-F4, los cuatro en rojo).
+
+**Costura nueva — C14:** que la etapa 1 de `scripts/verificar.mjs` ejecute `pnpm test:b2b`, como
+hace con `test:fronteras`. Sin eso, la puerta no corre estas focales.
+
+**Queda bloqueado solo por la identidad de CRM** (`integration/crm-identidad-cliente` @ `70cfee5`,
+no integrada): el bloque humano de A1, A2, A4, A5, A6 y A7.
 

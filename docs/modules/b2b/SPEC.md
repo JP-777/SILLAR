@@ -32,7 +32,7 @@
 > | E2 — ¿la consulta «a consultar» exige sesión? | **Resuelto: sí.** Toda consulta de precio es autenticada, con la sesión de cliente de M04 | Nada. No se crea autenticación propia |
 > | E3 — ¿línea de cotización por producto o por presentación? | **Resuelto: por presentación**, `catalog.product_items`, con snapshot (§4, `quote_lines`, enmienda 27/09) | E3b: qué hace la caducidad cuando una presentación «a consultar» pasa a tener precio |
 > | E4 — foto de referencia del cliente | **Resuelto: aplazada.** Sale de la 1.0.0; no hay almacenamiento privado y no se presenta el público como privado | Nada en esta versión |
-> | E5 — formato de `quote_number` | **Resuelto en parte:** nodo delante, año y correlativo, **letra de serie distinta de la de pedidos**, reinicio anual, sin huecos por rollback (ADR-016, excepción del 27/09, `:107-146`) | **La letra no está decidida.** Tampoco el mecanismo de unicidad entre nodos. No se inventa |
+> | E5 — formato de `quote_number` | **Resuelto en parte:** nodo delante, año y correlativo, **letra de serie distinta de la de pedidos**, reinicio anual, sin huecos por rollback (ADR-016, excepción del 27/09, `:107-146`) | **La letra no está decidida.** Tampoco el mecanismo de unicidad entre nodos. No se inventa — *superado el 30/09: `C-AAAA-NNNN`, ver enmiendas del 30/09* |
 > | E1 — dónde vive la consulta «a consultar» | **Abierto** | Pregunta 1 al final de `ESCALADAS-M07.md` |
 > | E9 — de dónde sale una solicitud de volumen sin producto en catálogo | **Abierto** | Ídem |
 > | M08 Portal del Cliente | **No se activa**, aplazado hasta que M03 y M06 publiquen contratos | — |

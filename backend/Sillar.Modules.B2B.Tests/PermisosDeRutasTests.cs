@@ -20,7 +20,7 @@ public sealed class PermisosDeRutasTests
         // Solo para que el enlazador reconozca estos tipos como servicios al
         // inferir parámetros: aquí se leen metadatos, ninguna ruta se ejecuta.
         foreach (var servicio in new[] { typeof(Sillar.Modules.B2B.Bandeja.BandejaService), typeof(Sillar.Modules.B2B.Solicitudes.SolicitudesService),
-                     typeof(Sillar.Modules.B2B.Cotizaciones.CotizacionesService),
+                     typeof(Sillar.Modules.B2B.Cotizaciones.CotizacionesService), typeof(Sillar.Modules.Catalog.Contracts.ICatalogService),
                      typeof(Sillar.Core.Contracts.IAuditWriter), typeof(Sillar.Core.Contracts.ICurrentAdmin), typeof(Sillar.Modules.Crm.Contracts.ICurrentCustomer) })
         {
             builder.Services.AddScoped(servicio, _ => throw new InvalidOperationException("no se ejecuta"));
@@ -50,7 +50,7 @@ public sealed class PermisosDeRutasTests
     {
         var panel = Rutas().Where(r => r.Ruta.StartsWith("/api/admin/b2b")).ToList();
 
-        Assert.Equal(19, panel.Count);
+        Assert.Equal(21, panel.Count);
         Assert.All(panel, r => Assert.Contains("editor", r.Politicas));
     }
 

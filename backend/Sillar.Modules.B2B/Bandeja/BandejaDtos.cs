@@ -40,3 +40,12 @@ public sealed record CotizacionEnBandeja(
 /// <summary>El detalle de una cotización con sus líneas.</summary>
 public sealed record CotizacionDetalle(CotizacionEnBandeja Cotizacion, IReadOnlyList<LineaDeCotizacionAdmin> Lines,
     DateTimeOffset? ApprovedAt, DateTimeOffset? PaidAt, string? PaymentMethod, string? PaymentReference, string? PaidRegisteredBy);
+
+/// <summary>Un producto de M01 que se puede elegir para reenlazar. Sin URL ni imagen: no hacen falta.</summary>
+public sealed record ProductoParaElegir(Guid ProductId, string Name, bool IsPublic);
+
+/// <summary>
+/// Una presentación de M01 para una línea de cotización. <c>Price</c> nulo = «a
+/// consultar», nunca «gratis» (<c>ItemSnapshot.Price</c>).
+/// </summary>
+public sealed record PresentacionParaElegir(Guid ItemId, string ProductName, string? VariantValue, string? SaleUnit, decimal? Price);

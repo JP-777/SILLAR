@@ -6,6 +6,7 @@ import { LoginPage } from '../platform/LoginPage';
 import { PublicLayout } from '../platform/PublicLayout';
 import { PublicSite } from '../platform/PublicSite';
 import { RequireAuth } from '../session';
+import { b2bRoutes } from '../modules/b2b/routes';
 import { catalogPublicRoutes, catalogRoutes } from '../modules/catalog/routes';
 import { cmsRoutes } from '../modules/cms/routes';
 import { coreRoutes } from '../modules/core/routes';
@@ -52,6 +53,7 @@ export function AppRoutes() {
           {has('catalog') && catalogRoutes}
           {has('cms') && cmsRoutes}
           {has('crm') && crmAdminRoutes}
+          {has('b2b') && b2bRoutes}
         </Route>
       </Route>
 

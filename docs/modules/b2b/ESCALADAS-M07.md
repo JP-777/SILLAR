@@ -179,7 +179,10 @@ Numeración estable: una entrada resuelta se tacha y conserva su número.
 2. **SQL directo con M07 instalado.** Hoy los `99_drop.sql` soportados de M01 y M04 **rechazan**,
    con y sin `ON_ERROR_STOP`, y no borran nada. Límites: E10 y los otros tres de
    `C6-AUDITORIA-M07.md` §5.
-3. **Letra de serie de las cotizaciones y unicidad entre nodos.** **No está decidida.** La
+3. ~~**Letra de serie de las cotizaciones y unicidad entre nodos.** **No está decidida.**~~
+   **Superado el 30/09/2026:** JP ratificó `C-AAAA-NNNN` (sección «30/09/2026 — decisiones de JP
+   ratificadas», abajo); la coordinación entre nodos desconectados no bloquea M07. Se conserva el
+   texto de entonces: La
    excepción de la ADR-016 fija la convención —nodo delante, año, correlativo, reinicio anual, sin
    huecos por rollback, contador por fila de serie— pero deja la letra de M07 «todavía por decidir»
    (`docs/adr/ADR-016-identificadores-replicables.md:126-127`). Registrado para JP y el líder
@@ -231,4 +234,7 @@ Numeración estable: una entrada resuelta se tacha y conserva su número.
 - **C13 — Nombre de quien registra el pago.** `paid_registered_by` pide el nombre (SPEC §4), y
   `ICurrentAdmin` solo da id, correo y rol. Hoy se guarda el correo. Efecto pedido: que el contrato
   de CORE exponga el nombre visible del usuario de la sesión. **No bloquea.**
+- **C14 — Focales del frontend de M07 en la puerta.** `frontend/package.json` tiene ya
+  `test:b2b`. Efecto pedido: que la etapa 1 de `scripts/verificar.mjs` lo ejecute, junto a
+  `test:fronteras`.
 
