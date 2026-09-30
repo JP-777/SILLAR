@@ -3,14 +3,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Sillar.Core.Contracts;
 using Sillar.Modules.B2B.Bandeja;
+using Sillar.Modules.B2B.Cotizaciones;
 
 namespace Sillar.Modules.B2B.Endpoints;
 
 /// <summary>
 /// Las rutas de administración de M07 (SPEC §6). Mínimo <c>editor</c>; las bajas,
 /// <c>admin</c>. CSRF en todas; toda escritura deja auditoría <c>b2b</c> que
-/// nombra la fila. La creación y el ciclo de las cotizaciones llegan cuando se
-/// decida la letra de serie (pregunta 3 de <c>ESCALADAS-M07.md</c>).
+/// nombra la fila; las de cotización, por su número visible <c>C-AAAA-NNNN</c>.
 /// </summary>
 public static class BandejaAdminEndpoints
 {
@@ -66,8 +66,30 @@ public static class BandejaAdminEndpoints
             .WithName("B2bAdminListQuotes").WithSummary("Bandeja de cotizaciones, con filtro por estado.")
             .Produces<IReadOnlyList<CotizacionEnBandeja>>().ProducesValidationProblem();
         admin.MapGet("/quotes/{id:int}", ObtenerCotizacion)
-            .WithName("B2bAdminGetQuote").WithSummary("Detalle de una cotización con sus líneas y su precio de catálogo.")
-            .Produces<CotizacionDetalle>().Produces(StatusCodes.Status404NotFound);
+            .WithName("B2bAdminGetQuote").WithSummary("Detalle de una cotización con sus líneas, su precio de catálogo y la evaluación mayorista.")
+            .Produces<CotizacionPanel>().Produces(StatusCodes.Status404NotFound);
+        admin.MapPost("/quotes", CrearCotizacion)
+            .WithName("B2bAdminCreateQuote").WithSummary("Crea una cotización en borrador desde una solicitud, con su número C-AAAA-NNNN.")
+            .Produces<CotizacionPanel>(StatusCodes.Status201Created).ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        admin.MapPut("/quotes/{id:int}", EditarCotizacion)
+            .WithName("B2bAdminEditQuoteLines").WithSummary("Sustituye las líneas de una cotización. Solo en borrador.")
+            .Produces<CotizacionPanel>().ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        admin.MapPut("/quotes/{id:int}/send", EnviarCotizacion)
+            .WithName("B2bAdminSendQuote").WithSummary("Marca enviada una cotización en borrador con al menos una línea.")
+            .Produces<CotizacionPanel>().Produces(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        admin.MapPut("/quotes/{id:int}/approve", AprobarCotizacion)
+            .WithName("B2bAdminApproveQuote").WithSummary("Registra que el cliente aprobó una cotización enviada y vigente.")
+            .Produces<CotizacionPanel>().Produces(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        admin.MapPut("/quotes/{id:int}/payment", PagarCotizacion)
+            .RequireAuthorization(AdminRole.Admin)
+            .WithName("B2bAdminRegisterQuotePayment").WithSummary("Registra el pago (Yape o efectivo) de una cotización aprobada.")
+            .Produces<CotizacionPanel>().Produces(StatusCodes.Status404NotFound).ProducesProblem(StatusCodes.Status409Conflict);
+        admin.MapDelete("/quotes/{id:int}", BajaCotizacion)
+            .RequireAuthorization(AdminRole.Admin)
+            .WithName("B2bAdminDeleteQuote").WithSummary("Da de baja una cotización, sin borrarla.")
+            .Produces<CotizacionPanel>().Produces(StatusCodes.Status404NotFound);
 
         return endpoints;
     }
@@ -131,9 +153,42 @@ public static class BandejaAdminEndpoints
         return Results.Ok(await s.ListarCotizacionesAsync(status, ct));
     }
 
-    /// <summary>Devuelve una cotización con sus líneas y su precio de catálogo.</summary>
-    private static async Task<IResult> ObtenerCotizacion(int id, BandejaService s, CancellationToken ct)
-        => await s.ObtenerCotizacionAsync(id, ct) is { } v ? Results.Ok(v) : Results.NotFound();
+    /// <summary>Devuelve una cotización con sus líneas, su precio de catálogo y la evaluación mayorista.</summary>
+    private static async Task<IResult> ObtenerCotizacion(int id, CotizacionesService s, CancellationToken ct)
+        => await s.ObtenerAsync(id, ct) is { } v ? Results.Ok(v) : Results.NotFound();
+
+    /// <summary>Crea una cotización desde una solicitud, y lo audita con su número.</summary>
+    internal static async Task<IResult> CrearCotizacion(CrearCotizacionRequest r, CotizacionesService s, IAuditWriter a, ICurrentAdmin u, CancellationToken ct)
+    {
+        var op = await s.CrearAsync(r, ct);
+        var resultado = await Escritura(op, a, u, AuditAction.Create, "quote", op.Valor?.Detalle.Cotizacion.Id ?? 0,
+            n => $"Cotización {n}, creada en borrador.", ct);
+        return op.Resultado == ResultadoBandeja.Hecho
+            ? Results.Created($"/api/admin/b2b/quotes/{op.Valor!.Detalle.Cotizacion.Id}", op.Valor)
+            : resultado;
+    }
+
+    /// <summary>Sustituye las líneas de una cotización en borrador, y lo audita.</summary>
+    internal static async Task<IResult> EditarCotizacion(int id, EditarLineasRequest r, CotizacionesService s, IAuditWriter a, ICurrentAdmin u, CancellationToken ct)
+        => await Escritura(await s.EditarLineasAsync(id, r.Lines, ct), a, u, AuditAction.Update, "quote", id,
+            n => $"Líneas de la cotización {n} actualizadas.", ct);
+
+    /// <summary>Marca enviada una cotización, y lo audita.</summary>
+    internal static async Task<IResult> EnviarCotizacion(int id, CotizacionesService s, IAuditWriter a, ICurrentAdmin u, CancellationToken ct)
+        => await Escritura(await s.EnviarAsync(id, ct), a, u, AuditAction.Update, "quote", id, n => $"Cotización {n} enviada.", ct);
+
+    /// <summary>Registra la aprobación del cliente, y lo audita.</summary>
+    internal static async Task<IResult> AprobarCotizacion(int id, CotizacionesService s, IAuditWriter a, ICurrentAdmin u, CancellationToken ct)
+        => await Escritura(await s.AprobarAsync(id, ct), a, u, AuditAction.Update, "quote", id, n => $"Cotización {n} aprobada por el cliente.", ct);
+
+    /// <summary>Registra el pago (solo <c>admin</c>), y lo audita con el método.</summary>
+    internal static async Task<IResult> PagarCotizacion(int id, PagoRequest r, CotizacionesService s, IAuditWriter a, ICurrentAdmin u, CancellationToken ct)
+        => await Escritura(await s.RegistrarPagoAsync(id, r, u.Email ?? "desconocido", ct), a, u, AuditAction.Update, "quote", id,
+            n => $"Pago de la cotización {n} registrado ({r.PaymentMethod}).", ct);
+
+    /// <summary>Baja lógica de una cotización (solo <c>admin</c>), y lo audita.</summary>
+    internal static async Task<IResult> BajaCotizacion(int id, CotizacionesService s, IAuditWriter a, ICurrentAdmin u, CancellationToken ct)
+        => await Escritura(await s.BajaAsync(id, ct), a, u, AuditAction.Delete, "quote", id, n => $"Baja lógica de la cotización {n}.", ct);
 
     private static async Task<IResult> ListarConFiltro<T>(string? estado, Func<string?, Task<IReadOnlyList<T>>> listar)
     {

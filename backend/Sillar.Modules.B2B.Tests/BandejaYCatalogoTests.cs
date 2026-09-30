@@ -127,6 +127,7 @@ public sealed class BandejaYCatalogoTests
         var servicios = new ServiceCollection()
             .AddScoped(_ => Db(cadena))
             .AddSingleton<ICatalogService>(catalogo)
+            .AddSingleton<Sillar.Core.Contracts.ISettingsReader>(new MonedaPen())
             .BuildServiceProvider();
         return new ReaccionAlCatalogo(servicios.GetRequiredService<IServiceScopeFactory>(), TimeProvider.System);
     }
@@ -143,7 +144,7 @@ public sealed class BandejaYCatalogoTests
             await Reaccion(cadena, new CatalogoFalso { PrecioItem = 12 }).ProductoActualizadoAsync(Producto, default);
 
             Assert.Equal("enviada", await InvalidadasAsync(cadena));
-            Assert.Contains("se cotizó con S/ 10.00 y ahora está S/ 12.00", await BaseEfimera.EscalarAsync<string>(cadena,
+            Assert.Contains("se cotizó con 10.00 PEN y ahora está 12.00 PEN", await BaseEfimera.EscalarAsync<string>(cadena,
                 "SELECT invalidated_reason FROM b2b.quotes WHERE invalidated_at IS NOT NULL"));
         });
 
@@ -163,9 +164,9 @@ public sealed class BandejaYCatalogoTests
             Assert.Equal(primera, await BaseEfimera.EscalarAsync<DateTime>(cadena, "SELECT invalidated_at FROM b2b.quotes WHERE invalidated_at IS NOT NULL"));
         });
 
-    /// <summary>E3b abierta: una línea «a consultar» (precio de catálogo nulo) no se evalúa.</summary>
+    /// <summary>E3b, cerrada por JP el 30/09: una línea «a consultar» (precio de catálogo nulo) no se evalúa.</summary>
     [Fact]
-    public Task Una_linea_a_consultar_no_invalida_su_cotizacion_mientras_E3b_siga_abierta()
+    public Task E3b_una_linea_a_consultar_no_invalida_su_cotizacion_aunque_el_precio_cambie()
         => ConInstalacionAsync(async cadena =>
         {
             await SembrarCotizacionesAsync(cadena);
@@ -218,5 +219,12 @@ public sealed class BandejaYCatalogoTests
         public Task<IReadOnlyList<ItemSnapshot>> BuscarAsync(string texto, int limite, CancellationToken ct) => throw new NotSupportedException();
         public Task<bool> ItemExisteYEstaActivoAsync(Guid itemId, CancellationToken ct) => throw new NotSupportedException();
         public Task<IReadOnlyList<ProductPickerItem>> BuscarParaSeleccionAsync(string texto, int limite, CancellationToken ct) => throw new NotSupportedException();
+    }
+
+    private sealed class MonedaPen : Sillar.Core.Contracts.ISettingsReader
+    {
+        public string? Get(string key) => key == "currency_code" ? "PEN" : null;
+        public T? Get<T>(string key) => default;
+        public IReadOnlyDictionary<string, string> GetPublic() => new Dictionary<string, string>();
     }
 }

@@ -17,6 +17,7 @@ public sealed class B2bDbContext : DbContext
     public DbSet<InstitutionRequest> InstitutionRequests => Set<InstitutionRequest>();
     public DbSet<Quote> Quotes => Set<Quote>();
     public DbSet<QuoteLine> QuoteLines => Set<QuoteLine>();
+    public DbSet<QuoteNumberSeries> QuoteNumberSeries => Set<QuoteNumberSeries>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

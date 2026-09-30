@@ -150,3 +150,21 @@ internal sealed class QuoteLineConfiguration : IEntityTypeConfiguration<QuoteLin
         b.HasIndex(x => x.ItemId).HasDatabaseName("idx_quote_lines_item");
     }
 }
+
+internal sealed class QuoteNumberSeriesConfiguration : IEntityTypeConfiguration<QuoteNumberSeries>
+{
+    public void Configure(EntityTypeBuilder<QuoteNumberSeries> b)
+    {
+        b.ToTable("quote_number_series", t =>
+        {
+            t.HasCheckConstraint("ck_quote_number_series_series_code", "series_code ~ '^[A-Z]$'");
+            t.HasCheckConstraint("ck_quote_number_series_year", "year BETWEEN 2000 AND 9999");
+            t.HasCheckConstraint("ck_quote_number_series_last_value", "last_value >= 0");
+        });
+        b.HasKey(x => new { x.SeriesCode, x.Year }).HasName("pk_quote_number_series");
+        b.Property(x => x.SeriesCode).HasColumnName("series_code");
+        b.Property(x => x.Year).HasColumnName("year");
+        b.Property(x => x.LastValue).HasColumnName("last_value").HasDefaultValue(0);
+    }
+}
+

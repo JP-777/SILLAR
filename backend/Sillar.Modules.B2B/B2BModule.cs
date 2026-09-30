@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sillar.Modules.B2B.Bandeja;
 using Sillar.Modules.B2B.Catalogo;
+using Sillar.Modules.B2B.Cotizaciones;
 using Sillar.Modules.B2B.Data;
 using Sillar.Modules.B2B.Endpoints;
 using Sillar.Modules.B2B.Solicitudes;
@@ -72,6 +73,8 @@ public sealed class B2BModule : IModule, IModuleMigrations
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<SolicitudesService>();
         services.AddScoped<BandejaService>();
+        services.AddScoped<UmbralMayorista>();
+        services.AddScoped<CotizacionesService>();
         services.AddSingleton<ReaccionAlCatalogo>();
         services.AddSingleton<IEventHandler<ProductoActualizado>, ProductoActualizadoEnB2b>();
         services.AddSingleton<IEventHandler<ProductoDesactivado>, ProductoDesactivadoEnB2b>();

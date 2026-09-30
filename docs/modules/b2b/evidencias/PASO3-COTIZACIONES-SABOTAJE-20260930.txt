@@ -1,0 +1,12 @@
+# Sabotaje del paso 3, ciclo de cotizaciones · base 7d002d0 + cambios sin commitear · 2026-09-30 11:44:45 -0500
+[R1 guarda de serie: count(*)+1 sin bloqueo] Failed!  - Failed:     1, Passed:     1, Skipped:     0, Total:     2, Duration:
+[R2 numerador sin exigir transacción] Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration:
+[R3 edición de líneas fuera de borrador] Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration:
+[R4 pago sin rol admin] Failed!  - Failed:     1, Passed:     2, Skipped:     0, Total:     3, Duration:
+[R5 E3b violada: a consultar → precio invalida] Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2, Duration:
+[R5b E3b violada también en la consulta] Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2, Duration:
+[R6 umbral leído con Get<decimal>] Failed!  - Failed:     6, Passed:     1, Skipped:     0, Total:     7, Duration:
+[R7 aprobar una enviada caducada] Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration:
+[restaurado] Passed!  - Failed:     0, Passed:    69, Skipped:     0, Total:    69, Duration:
+[R5c E3b violada en las dos guardas a la vez] Failed!  - Failed:     2, Passed:     0, Skipped:     0, Total:     2, Duration:
+[restaurado tras R5c] Passed!  - Failed:     0, Passed:    69, Skipped:     0, Total:    69, Duration:

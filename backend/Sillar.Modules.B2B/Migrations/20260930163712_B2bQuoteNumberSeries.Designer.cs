@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Sillar.Modules.B2B.Data;
@@ -11,9 +12,11 @@ using Sillar.Modules.B2B.Data;
 namespace Sillar.Modules.B2B.Migrations
 {
     [DbContext(typeof(B2bDbContext))]
-    partial class B2bDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260930163712_B2bQuoteNumberSeries")]
+    partial class B2bQuoteNumberSeries
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

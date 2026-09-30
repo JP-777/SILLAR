@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Sillar.Core.Contracts;
 using Sillar.Modules.B2B.Data;
 using Sillar.Modules.B2B.Domain;
 using Sillar.Modules.Catalog.Contracts;
@@ -33,13 +34,13 @@ public sealed class ReaccionAlCatalogo(IServiceScopeFactory scopes, TimeProvider
 
     /// <summary>Refresca instantáneas e invalida cotizaciones enviadas cuyo precio cambió.</summary>
     public Task ProductoActualizadoAsync(Guid productoId, CancellationToken ct)
-        => EnTurnoAsync(productoId, async (db, catalogo) =>
+        => EnTurnoAsync(productoId, async (db, catalogo, moneda) =>
         {
             var producto = await catalogo.ObtenerParaSeleccionAsync(productoId, ct);
             await RefrescarSolicitudesAsync(db, productoId, producto, ct);
             if (producto is not null)
             {
-                await InvalidarPorPrecioAsync(db, catalogo, productoId, ct);
+                await InvalidarPorPrecioAsync(db, catalogo, moneda, productoId, ct);
             }
             await db.SaveChangesAsync(ct);
         }, ct);
@@ -49,7 +50,7 @@ public sealed class ReaccionAlCatalogo(IServiceScopeFactory scopes, TimeProvider
     /// cambia el trato con el cliente es el precio, no la disponibilidad (SPEC §5).
     /// </summary>
     public Task ProductoDesactivadoAsync(Guid productoId, CancellationToken ct)
-        => EnTurnoAsync(productoId, async (db, _) =>
+        => EnTurnoAsync(productoId, async (db, _, _) =>
         {
             await db.SpecialOrderLeads.Where(x => x.ProductId == productoId && !x.PendingRelink)
                 .ExecuteUpdateAsync(s => s.SetProperty(x => x.PendingRelink, true), ct);
@@ -74,15 +75,19 @@ public sealed class ReaccionAlCatalogo(IServiceScopeFactory scopes, TimeProvider
         }
     }
 
-    private async Task InvalidarPorPrecioAsync(B2bDbContext db, ICatalogService catalogo, Guid productoId, CancellationToken ct)
+    private async Task InvalidarPorPrecioAsync(B2bDbContext db, ICatalogService catalogo, string? moneda, Guid productoId, CancellationToken ct)
     {
         var precios = (await catalogo.VariantesDeAsync(productoId, ct)).ToDictionary(v => v.ItemId, v => v.Price);
         if (precios.Count == 0) return;
         var items = precios.Keys.ToList();
 
-        // Solo las ENVIADAS y aún válidas (SPEC regla 7). Solo líneas con precio
-        // de catálogo registrado: las «a consultar» (nulo con presentación) no
-        // se evalúan mientras E3b siga abierta (ESCALADAS-M07.md).
+        // Solo las ENVIADAS y aún válidas (SPEC regla 7). Regla final de E3b,
+        // ratificada por JP el 30/09/2026:
+        //   precio conocido → otro precio      ⇒ invalida;
+        //   precio conocido → «a consultar»    ⇒ invalida (desapareció la referencia);
+        //   «a consultar» → aparece un precio  ⇒ NO invalida (no había contra qué comparar);
+        //   línea libre                        ⇒ no participa.
+        // Por eso solo se miran líneas con presentación Y precio de catálogo registrado.
         var candidatas = await db.Quotes.Include(q => q.Lines)
             .Where(q => q.Status == QuoteStatus.Enviada && q.InvalidatedAt == null && q.IsActive
                 && q.Lines.Any(l => l.ItemId != null && items.Contains(l.ItemId.Value) && l.CatalogPriceAtQuote != null))
@@ -95,17 +100,22 @@ public sealed class ReaccionAlCatalogo(IServiceScopeFactory scopes, TimeProvider
                 && precios.TryGetValue(item, out var ahora) && ahora != cotizado);
             if (movida is null) continue;
 
-            var ahoraTexto = precios[movida.ItemId!.Value] is { } p ? $"S/ {p:0.00}" : "a consultar";
+            // La moneda es la de la instalación (currency_code, de CORE por su
+            // contrato), no un símbolo escrito aquí.
+            var ahoraTexto = precios[movida.ItemId!.Value] is { } p ? Importe(p, moneda) : "a consultar";
             cotizacion.InvalidatedAt = reloj.GetUtcNow();
             cotizacion.InvalidatedReason =
-                $"Cambió el precio de catálogo de «{Presentacion(movida)}»: se cotizó con S/ {movida.CatalogPriceAtQuote:0.00} y ahora está {ahoraTexto}.";
+                $"Cambió el precio de catálogo de «{Presentacion(movida)}»: se cotizó con {Importe(movida.CatalogPriceAtQuote!.Value, moneda)} y ahora está {ahoraTexto}.";
         }
     }
 
     private static string Presentacion(QuoteLine l)
         => l.VariantValue is { Length: > 0 } variante ? $"{l.ProductName} — {variante}" : l.ProductName ?? l.Description;
 
-    private async Task EnTurnoAsync(Guid productoId, Func<B2bDbContext, ICatalogService, Task> trabajo, CancellationToken ct)
+    private static string Importe(decimal valor, string? moneda)
+        => string.IsNullOrWhiteSpace(moneda) ? $"{valor:0.00}" : $"{valor:0.00} {moneda}";
+
+    private async Task EnTurnoAsync(Guid productoId, Func<B2bDbContext, ICatalogService, string?, Task> trabajo, CancellationToken ct)
     {
         var turno = turnos.GetOrAdd(productoId, static _ => new SemaphoreSlim(1, 1));
         await turno.WaitAsync(ct);
@@ -113,7 +123,8 @@ public sealed class ReaccionAlCatalogo(IServiceScopeFactory scopes, TimeProvider
         {
             await using var scope = scopes.CreateAsyncScope();
             await trabajo(scope.ServiceProvider.GetRequiredService<B2bDbContext>(),
-                scope.ServiceProvider.GetRequiredService<ICatalogService>());
+                scope.ServiceProvider.GetRequiredService<ICatalogService>(),
+                scope.ServiceProvider.GetService<ISettingsReader>()?.Get("currency_code"));
         }
         finally
         {

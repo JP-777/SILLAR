@@ -5,9 +5,25 @@
 - **Versión:** 1.0.0
 - **Estado:** Borrador — enmendado el 26/09/2026 y **el 27/09/2026** con las decisiones de JP (ver abajo)
 - **Fase:** MVP
-- **Creado:** 25/08/2026 (`d97cd02`) · **Última modificación:** 27/09/2026 · **Última verificación:**
-  27/09/2026, America/Lima · **Commit base comprobado:** `e839989432283c755edf7d4ae47b2c37697215ec`
+- **Creado:** 25/08/2026 (`d97cd02`) · **Última modificación:** 30/09/2026 · **Última verificación:**
+  30/09/2026, America/Lima · **Commit base comprobado:** `e839989432283c755edf7d4ae47b2c37697215ec`
   (`origin/main` ese día; la verificación del 26/09 fue sobre `711bfba`)
+
+> ### Enmiendas del 30/09/2026 — decisiones de JP ratificadas, no se reabren
+>
+> | Tema | Decisión |
+> |---|---|
+> | **Número visible de cotización** | **`C-2026-0147`**: `C` = cotización de M07, año, correlativo de al menos cuatro cifras, **reinicio anual**, serie independiente de la de M03. Sin UUID ni `origin_node`. Contador en `b2b.quote_number_series` (una fila por serie y año), incrementado con `… RETURNING` en la misma transacción que crea la cotización: un rollback no consume número (ADR-016, excepción del 27/09). El año es el de America/Lima. La coordinación entre nodos desconectados no bloquea M07 y queda en el problema posterior ya documentado |
+> | **E3b** | **Cerrada.** Precio conocido → otro precio: invalida la `enviada`. Precio conocido → «a consultar»: **invalida** (desapareció la referencia cotizada). «A consultar» → aparece precio: **no invalida**. Línea libre: no participa |
+> | **Umbral mayorista** | Clave **`b2b_wholesale_threshold_amount`**, `value_type = number`, privada, activa, inicial `PENDIENTE_DEFINIR`. Importe, no cantidad, sobre precio de lista; moneda de `currency_code`. **M07 la lee solo con `ISettingsReader`.** Sin configurar, el panel lo dice (`configuracion_pendiente`) y **no inventa importe ni aplica descuento**: la regla 4 hace del umbral un criterio del personal, y M07 solo informa si se alcanza |
+>
+> **Tabla nueva** (migración `B2bQuoteNumberSeries`, aditiva): `b2b.quote_number_series` — `series_code text`
+> (`^[A-Z]$`), `year integer` (2000–9999), `last_value integer >= 0`; PK `(series_code, year)`. No replica, como
+> el resto de M07.
+>
+> **Hallazgo, no corrección:** `paid_registered_by` pide el **nombre** de quien registra el pago, pero el
+> contrato `ICurrentAdmin` solo expone id, correo y rol (`backend/Sillar.Core.Contracts/ICurrentAdmin.cs`).
+> Hoy se guarda el **correo**; ver C13 en `ESCALADAS-M07.md`.
 
 > ### Enmiendas del 27/09/2026 — decisiones de JP (encargo `B_M07_B2B.md`), no se reabren
 >

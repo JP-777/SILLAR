@@ -1,6 +1,6 @@
 # Escaladas de M07 — cola abierta
 
-Creado: 26/09/2026, America/Lima · Última modificación: 27/09/2026 · Última verificación: 27/09/2026 ·
+Creado: 26/09/2026, America/Lima · Última modificación: 30/09/2026 · Última verificación: 30/09/2026 ·
 Commit base comprobado: `e839989432283c755edf7d4ae47b2c37697215ec` (hasta el 26/09, `711bfba`).
 
 > ### Estado al 27/09/2026 — encargo `B_M07_B2B.md`
@@ -148,7 +148,7 @@ Numeración estable: una entrada resuelta se tacha y conserva su número.
 
 ## Añadido el 27/09/2026
 
-### E3b — ¿Caduca una cotización `enviada` si una presentación «a consultar» pasa a tener precio? · reversible en código
+### ~~E3b~~ — **Cerrada por JP el 30/09/2026: no caduca.** Antecedente: ¿Caduca una cotización `enviada` si una presentación «a consultar» pasa a tener precio?
 
 - **Contexto:** con E3 resuelta, una línea con `item_id` y `catalog_price_at_quote` nulo es una
   presentación «a consultar» cuyo precio puso el personal (`SPEC.md` §4, enmienda 27/09).
@@ -207,3 +207,28 @@ Numeración estable: una entrada resuelta se tacha y conserva su número.
   veinte nodos reutilizables vivos (~4 GiB) durante el e2e, memoria disponible mínima 1218 MiB y un
   e2e casi el doble de lento. Efecto pedido: que `scripts/verificar.mjs` no deje nodos de MSBuild
   vivos entre etapas. Detalle en `BITACORA-M07.md`.
+
+---
+
+## 30/09/2026 — decisiones de JP ratificadas
+
+- **E5 cerrada:** `C-2026-0147`, reinicio anual, serie propia. Construido y probado (concurrencia,
+  rollback, sabotaje de la guarda de serie). Ver `SPEC.md`, enmiendas del 30/09.
+- **E3b cerrada:** «a consultar» → precio **no** invalida; precio → «a consultar» **sí**. Construido y
+  probado, con sabotaje de las dos guardas a la vez (R5c).
+- **Umbral mayorista:** clave `b2b_wholesale_threshold_amount`, consumida solo por `ISettingsReader`.
+
+### Peticiones de costura nuevas
+
+- **C12 — Provisionar el ajuste del umbral en CORE.** M07 no toca CORE. Efecto pedido: que
+  `core.site_settings` tenga la fila `b2b_wholesale_threshold_amount` en toda instalación.
+  **Archivo:** `database/modules/core/02_seed.sql`, en el `INSERT … ON CONFLICT (setting_key) DO
+  NOTHING` de los ajustes privados (hoy `:51-55`, el de SMTP), con esta fila:
+  `('b2b_wholesale_threshold_amount', 'PENDIENTE_DEFINIR', 'number', 'Importe mínimo, a precio de
+  lista, a partir del cual una cotización se considera mayorista', false, true)`. Si Integración
+  prefiere que un módulo no siembre ajustes de CORE, la alternativa es que CORE exponga su alta en
+  el contrato; **mientras no exista, M07 funciona igual** y el panel dice `configuracion_pendiente`.
+- **C13 — Nombre de quien registra el pago.** `paid_registered_by` pide el nombre (SPEC §4), y
+  `ICurrentAdmin` solo da id, correo y rol. Hoy se guarda el correo. Efecto pedido: que el contrato
+  de CORE exponga el nombre visible del usuario de la sesión. **No bloquea.**
+

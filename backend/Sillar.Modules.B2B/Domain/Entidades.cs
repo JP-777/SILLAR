@@ -109,3 +109,16 @@ public static class QuoteStatus
     public const string Pagada = "pagada";
     public const string Anulada = "anulada";
 }
+
+/// <summary>
+/// El contador de una serie de números visibles de cotización: una fila por
+/// (código de serie, año). ADR-016, excepción del 27/09/2026: se actualiza con
+/// <c>UPDATE … RETURNING</c> en la misma transacción que crea la cotización,
+/// así que un rollback no consume número. Nunca <c>nextval()</c>.
+/// </summary>
+public sealed class QuoteNumberSeries
+{
+    public string SeriesCode { get; set; } = string.Empty;
+    public int Year { get; set; }
+    public int LastValue { get; set; }
+}

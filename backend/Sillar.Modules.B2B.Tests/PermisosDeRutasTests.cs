@@ -20,6 +20,7 @@ public sealed class PermisosDeRutasTests
         // Solo para que el enlazador reconozca estos tipos como servicios al
         // inferir parámetros: aquí se leen metadatos, ninguna ruta se ejecuta.
         foreach (var servicio in new[] { typeof(Sillar.Modules.B2B.Bandeja.BandejaService), typeof(Sillar.Modules.B2B.Solicitudes.SolicitudesService),
+                     typeof(Sillar.Modules.B2B.Cotizaciones.CotizacionesService),
                      typeof(Sillar.Core.Contracts.IAuditWriter), typeof(Sillar.Core.Contracts.ICurrentAdmin), typeof(Sillar.Modules.Crm.Contracts.ICurrentCustomer) })
         {
             builder.Services.AddScoped(servicio, _ => throw new InvalidOperationException("no se ejecuta"));
@@ -49,17 +50,18 @@ public sealed class PermisosDeRutasTests
     {
         var panel = Rutas().Where(r => r.Ruta.StartsWith("/api/admin/b2b")).ToList();
 
-        Assert.Equal(13, panel.Count);
+        Assert.Equal(19, panel.Count);
         Assert.All(panel, r => Assert.Contains("editor", r.Politicas));
     }
 
     [Fact]
-    public void Las_bajas_exigen_admin_y_nada_mas_lo_exige()
+    public void Las_bajas_y_el_pago_exigen_admin_y_nada_mas_lo_exige()
     {
         var conAdmin = Rutas().Where(r => r.Politicas.Contains("admin")).Select(r => $"{r.Metodo} {r.Ruta}").Order().ToArray();
 
         Assert.Equal(
-            ["DELETE /api/admin/b2b/institution-requests/{id:int}", "DELETE /api/admin/b2b/special-orders/{id:int}"],
+            ["DELETE /api/admin/b2b/institution-requests/{id:int}", "DELETE /api/admin/b2b/quotes/{id:int}",
+             "DELETE /api/admin/b2b/special-orders/{id:int}", "PUT /api/admin/b2b/quotes/{id:int}/payment"],
             conAdmin);
     }
 }

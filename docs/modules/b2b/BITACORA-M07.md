@@ -135,3 +135,38 @@ rojo; restaurado, 49/49.
   muestran los filtros; se cubre con e2e cuando M07 se despliegue (C9).
 - **El límite de 5 por hora** sigue siendo provisional y configurable.
 
+---
+
+## 30/09/2026 · Paso 3, tercer tramo: el ciclo de cotizaciones
+
+**Rutas** (grupo `/api/admin/b2b`): `POST /quotes` (crea en borrador desde una solicitud, con su
+número), `PUT /quotes/{id}` (sustituye líneas, **solo en borrador**), `PUT /quotes/{id}/send`,
+`PUT /quotes/{id}/approve`, `PUT /quotes/{id}/payment` (**admin**) y `DELETE /quotes/{id}`
+(**admin**). `GET /quotes/{id}` devuelve además la evaluación mayorista. La auditoría nombra la
+cotización por su número: «Cotización C-2026-0001 enviada.».
+
+**Numeración** (`Cotizaciones/NumeradorDeCotizaciones.cs`): contador por serie y año con
+`… RETURNING` dentro de la transacción que crea la cotización; se niega a trabajar fuera de ella.
+
+**Decisiones del tramo, reversibles editando código:**
+
+- **Crear una cotización pasa la solicitud a `cotizada`** si no lo estaba, y no se cotiza una
+  `cerrada` o `rechazada`. La regla 5 gobierna los cambios manuales; este es el paso automático
+  que el diagrama implica.
+- **Enviar exige al menos una línea**; **aprobar exige que no haya caducado**.
+- **Pago:** Yape exige código de operación; efectivo no; **tarjeta se rechaza** hasta M11 (regla 9).
+- **El umbral no aplica descuentos**: informa `alcanza`, `no_alcanza`, `no_evaluable` o
+  `configuracion_pendiente`. Se lee el texto del ajuste, no `Get<decimal>`, que daría 0 con
+  `PENDIENTE_DEFINIR`.
+- **Corrección de un fallo propio del tramo anterior:** el motivo de invalidación escribía «S/» a
+  fuego. Ahora usa `currency_code` por `ISettingsReader`.
+
+**Pruebas:** **69/69** (49 de antes + 20 nuevas), las 14 obligatorias incluidas. **Sabotaje** en
+`evidencias/PASO3-COTIZACIONES-SABOTAJE-20260930.txt`: R1 (guarda de serie: `count(*)+1` sin
+bloqueo), R2, R3, R4, R6 y R7 en rojo a la primera. **R5 y R5b, por separado, quedaron verdes**:
+E3b está protegida dos veces (consulta y comparación) y romper una sola deja la otra en pie; **R5c,
+las dos a la vez, en rojo**. Restaurado: 69/69.
+
+**Sigue abierto:** C12 (fila del umbral en CORE) y C13 (nombre en `ICurrentAdmin`), ninguno
+bloqueante; C9 (desplegar M07) y con él la mitad HTTP de permisos y CSRF; parada 3.5 (Diseño).
+
