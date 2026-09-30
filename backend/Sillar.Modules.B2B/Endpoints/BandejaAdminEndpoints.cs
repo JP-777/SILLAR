@@ -201,7 +201,7 @@ public static class BandejaAdminEndpoints
         => await Escritura(await s.BajaAsync(id, ct), a, u, AuditAction.Delete, "quote", id, n => $"Baja lógica de la cotización {n}.", ct);
 
     /// <summary>Busca productos activos para reenlazar; sin texto no devuelve nada.</summary>
-    private static async Task<IResult> BuscarProductos(string? q, ICatalogService catalogo, CancellationToken ct)
+    internal static async Task<IResult> BuscarProductos(string? q, ICatalogService catalogo, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(q)) return Results.Ok(Array.Empty<ProductoParaElegir>());
         var productos = await catalogo.BuscarParaSeleccionAsync(q, 20, ct);
@@ -210,7 +210,14 @@ public static class BandejaAdminEndpoints
     }
 
     /// <summary>Busca presentaciones para una línea de cotización; sin texto no devuelve nada.</summary>
-    private static async Task<IResult> BuscarPresentaciones(string? q, ICatalogService catalogo, CancellationToken ct)
+    /// <remarks>
+    /// Se apoya en <c>ICatalogService.BuscarAsync</c>, que solo devuelve
+    /// presentaciones activas de productos activos (<c>CatalogService.cs:37-43</c>).
+    /// <b>Hoy esa consulta falla en M01</b>: <c>CatalogService.Rows()</c> no se
+    /// traduce a SQL, y con ella los demás métodos que la usan (C15 en
+    /// <c>ESCALADAS-M07.md</c>). Se corrige en M01, no aquí.
+    /// </remarks>
+    internal static async Task<IResult> BuscarPresentaciones(string? q, ICatalogService catalogo, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(q)) return Results.Ok(Array.Empty<PresentacionParaElegir>());
         var items = await catalogo.BuscarAsync(q, 20, ct);

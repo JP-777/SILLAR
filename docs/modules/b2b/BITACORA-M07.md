@@ -209,3 +209,23 @@ hace con `test:fronteras`. Sin eso, la puerta no corre estas focales.
 **Queda bloqueado solo por la identidad de CRM** (`integration/crm-identidad-cliente` @ `70cfee5`,
 no integrada): el bloque humano de A1, A2, A4, A5, A6 y A7.
 
+---
+
+## 30/09/2026 · Microcierre del paso 4, tramo 1
+
+- **Evidencia normalizada:** `PASO4-FRONTEND-SABOTAJE-20260930.txt` sin espacios finales, con nota;
+  `git diff --check` limpio.
+- **Pruebas de los dos selectores** (`SelectoresDeCatalogoTests`, 7): sin texto no preguntan al
+  catálogo; proyectan solo el DTO de M07 (sin códigos internos de M01); el de productos, con el
+  **servicio real de M01**, no ofrece productos de baja; el frontend solo llama a `/admin/b2b/…`.
+  Sabotaje T1–T3 en rojo (`evidencias/SELECTORES-SABOTAJE-20260930.txt`).
+- **Hallazgo al escribirlas — C15, bloqueante:** probar el selector de presentaciones con el
+  catálogo real destapó que **`CatalogService.Rows()` no se traduce a SQL**, y con él cuatro
+  métodos del contrato. **Corrige lo afirmado en el tramo 1:** las **líneas de catálogo de A8**, el
+  **selector de presentaciones** y la **invalidación por precio** no funcionan contra el M01 real;
+  las pruebas de M07 pasaban porque usaban catálogos falsos. Lección, ya escrita en §2 de
+  `ANTES-DE-EMPEZAR-UN-MODULO.md` y que aquí no se aplicó: **una prueba con un doble del contrato
+  no demuestra que el contrato funcione**. Se probó una alternativa dentro de M07
+  (`BuscarParaSeleccionAsync` + `VariantesDeAsync`) y se descartó: `VariantesDeAsync` también
+  falla. El selector vuelve a `BuscarAsync`, que es lo aceptado, y el arreglo es de M01.
+

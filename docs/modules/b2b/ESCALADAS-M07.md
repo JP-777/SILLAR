@@ -237,4 +237,21 @@ Numeración estable: una entrada resuelta se tacha y conserva su número.
 - **C14 — Focales del frontend de M07 en la puerta.** `frontend/package.json` tiene ya
   `test:b2b`. Efecto pedido: que la etapa 1 de `scripts/verificar.mjs` lo ejecute, junto a
   `test:fronteras`.
+- **C15 — BLOQUEANTE para parte de A8 y para la invalidación: `CatalogService.Rows()` de M01 no se
+  traduce a SQL.** Observado el 30/09 con el servicio real de M01 sobre una base efímera
+  (`evidencias/C15-DIAGNOSTICO-CATALOGO-REAL-20260930.txt`): fallan con
+  `InvalidOperationException: The LINQ expression … could not be translated` **los cuatro métodos
+  del contrato que usan `Rows()`** —`ObtenerItemAsync`, `VariantesDeAsync`, `BuscarAsync` y
+  `BuscarPorCodigoAsync`— y funcionan los que no —`ItemExisteYEstaActivoAsync`,
+  `BuscarParaSeleccionAsync`, `ObtenerParaSeleccionAsync`—. **Ningún consumidor ni prueba del
+  repositorio ejecutaba esos cuatro**; M07 es el primero, y sus pruebas usaban catálogos falsos.
+  - **Dónde:** `backend/Sillar.Modules.Catalog/Services/CatalogService.cs:86-92`: la unión se
+    proyecta en `new Row(item, product)` y después se filtra por `row.Item…`, que EF no traduce.
+  - **Efecto en M07:** añadir una **línea de catálogo** en A8 (`ObtenerItemAsync`) y el
+    **selector de presentaciones** (`BuscarAsync`) responderían 500; la **invalidación por precio**
+    (`VariantesDeAsync`) fallaría en silencio —el bus la aísla y solo la registra en el log
+    (`InProcessEventBus.cs:35-44`)—, así que **una cotización `enviada` no caducaría** al cambiar
+    el precio. Las líneas libres, el resto del ciclo y el selector de productos funcionan.
+  - **Efecto pedido (a M01 / Integración):** que esos cuatro métodos se ejecuten contra una base
+    real, con una prueba que lo afirme. M07 no toca M01 ni rehace el contrato.
 
