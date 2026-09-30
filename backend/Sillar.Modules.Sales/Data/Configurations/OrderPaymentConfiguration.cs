@@ -12,8 +12,9 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
     {
         builder.ToTable("order_payments", table =>
         {
-            // Solo lo ratificado. El efectivo está escalado, no autorizado ni
-            // eliminado: añadir un valor después es barato, quitarlo con filas no.
+            // Los dos medios de v1, cerrados por JP: yape y efectivo. La lista vive en
+            // el contrato y el CHECK se escribe desde ella, para que no puedan
+            // separarse. La tarjeta llega con M11 y no está aquí.
             table.HasCheckConstraint(
                 "ck_order_payments_method",
                 $"method IN ({string.Join(", ", PaymentMethod.All.Select(m => $"'{m}'"))})");

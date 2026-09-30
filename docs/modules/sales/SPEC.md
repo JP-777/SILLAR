@@ -58,7 +58,7 @@ hoy aprobado e integrado**, y ese criterio está satisfecho (§11 de este docume
 | **B-02** | ¿Qué constituye exactamente el total que paga el cliente? | **RESUELTA** | 26/09 §3: solo recojo, sin entrega ni tarifa. 26/09 §4: «a consultar» fuera del carrito. **Total = suma de las líneas.** Con ella se resuelve **D-02** |
 | **B-03** | ¿Qué formato ve una persona como código del pedido? | **RESUELTA · rectificada el 27/09/2026** | **`P-2026-0147`**: etiqueta de nodo, año, correlativo. `P` ← nodo `principal`, **no una letra universal**. Alinea con la **regla 2 de `ADR-016`** (`:66`), **con excepción ratificada para el reinicio anual**. *(Desplazan a `2026-0147` del 26/09 y a `W-2026-0147` del 27/09.)* **Su mecanismo también quedó cerrado** — §5.4 |
 | **B-04** | ¿Qué estados ve el cliente y cuáles maneja el personal? | **RESUELTA** | 26/09 §6: **siete estados, idénticos para cliente y personal.** Con ella se resuelve **D-04** |
-| **B-05** | ¿Qué pasa si el Yape llega después de vencer? | **RESUELTA EN SU PARTE CRÍTICA** | 26/09 §8: el personal **siempre** puede registrar el pago; con mercancía se reactiva, sin ella queda aviso operativo visible. **Sigue abierto a qué estado vuelve** — §0.3 (b). **D-03** queda así |
+| **B-05** | ¿Qué pasa si el Yape llega después de vencer? | **RESUELTA POR ENTERO** | 26/09 §8 más el cierre de JP: el personal **siempre** registra el pago. Con mercancía, **Vencido → Preparando, sin escala en «Pago por verificar»**. Sin ella, el pago se registra, el pedido no se mueve y queda un **pendiente operativo**. R-12 |
 
 > **B-01 merece una frase aparte.** Diseño la marcó como contradicción arquitectónica y se negó a
 > resolverla metiendo stock en M01 o aceptándolo del llamador — con razón. La salida no fue ninguna
@@ -73,13 +73,13 @@ hoy aprobado e integrado**, y ese criterio está satisfecho (§11 de este docume
 |---|---|---|
 | ~~(a)~~ | ~~**Formato del código visible.**~~ **RESUELTA y rectificada el 27/09/2026: `P-2026-0147`** | `DECISIONES-VIGENTES-M03.md` §5 |
 | ~~(a′)~~ | ~~**La continuidad del correlativo.**~~ **RESUELTA el 27/09/2026:** reinicio anual ratificado como excepción a la ADR-016, y **contador transaccional por serie `(nodo, año)`** | §5.4 |
-| **(g)** | **La etiqueta de serie: ¿por nodo, o por nodo × tipo de documento?** M07 usa «una letra diferente» para el mismo nodo, así que la etiqueta **no es solo del nodo** — y de ello depende contra qué compara el instalador al negarse a arrancar | `ESCALADAS-M03.md` §g |
+| ~~(g)~~ | ~~¿Etiqueta por nodo o por nodo × tipo?~~ **CERRADA por JP: la serie es nodo × año × tipo de documento.** `P` para pedidos, `C` para cotizaciones. La coordinación inter-nodo queda **deliberadamente en M16** | §5.4 · `ESCALADAS-M03.md` §g |
 | **(h)** | **Unicidad de la etiqueta entre instalaciones desconectadas.** La base local no puede demostrarla. **Elevada al líder técnico; no se inventa** | `ESCALADAS-M03.md` §h |
 | ~~(k)~~ | ~~Un trabajador que actúa desde un nodo distinto del del pedido.~~ **RESUELTA.** Los tres datos están ratificados e implementados: R-14 |
 | ~~(l)~~ | ~~¿Pertenencia o actuación?~~ **RESUELTA: son las dos, en columnas distintas.** `..._admin_user_home_node` guarda la **pertenencia de la cuenta**; `origin_node` conserva la **actuación**. Pueden diferir, y el esquema lo admite |
-| **(b)** | **Cancelación y reactivación.** A qué estado vuelve un Vencido pagado; quién cancela y desde dónde; si exige motivo; si se cancela un Entregado | `ESCALADAS-M03.md` §b2 |
-| **(c)** | **Efectivo.** `PENDIENTES.md:487-488` dice «Yape **y efectivo**»; el 26/09 nombra solo Yape y no lo resuelve | `ESCALADAS-M03.md` §c |
-| **(d)** | **La frontera con M07: la vía y la modalidad de acceso.** Hoy su SPEC exige sesión de cliente en sus cuatro endpoints públicos, pero **eso es el estado de su SPEC, no una modalidad ratificada** para «a consultar». **No se presupone ningún endpoint ni ningún acceso aprobado** | `ESCALADAS-M03.md` §d |
+| ~~(b)~~ | ~~Cancelación y reactivación.~~ **CERRADA por JP.** R-12 y R-16 |
+| ~~(c)~~ | ~~Efectivo.~~ **CERRADA por JP: Yape y efectivo.** R-01 |
+| ~~(d)~~ | ~~Modalidad de acceso a «a consultar».~~ **CERRADA por JP: exige cuenta.** R-11 |
 
 **Condiciones técnicas — no de JP, pero bloquean igual.**
 
@@ -484,6 +484,23 @@ y no un salto — `ADR-016:79`, «SUNAT exige serie propia por punto de emisión
 nodo**, y por eso no se nota: es el caso del §1 de `ANTES-DE-EMPEZAR-UN-MODULO.md`, una regla que se
 graba mal cuando solo hay uno.
 
+### Qué es una serie · **CERRADO por JP**
+
+> Una serie es **nodo × año × tipo de documento**.
+
+| Tipo | Presentación visible | Módulo |
+|---|---|---|
+| Pedido | **`P-2026-0147`** | M03 |
+| Cotización | `C-2026-0147` | M07 |
+
+**`P` es la presentación visible de la serie de pedidos de este nodo**, y el mecanismo de M03 se
+conserva tal cual: contador por `(node_code, year)`, sin cambiar schema ni formato.
+
+**La coordinación y la garantía de unicidad entre nodos desconectados queda deliberadamente en M16.**
+No es un hueco de M03: es el módulo cuyo trabajo es precisamente eso, y adelantarlo aquí sería inventar
+una solución inter-nodo desde un módulo que solo ve su propia base. Con ello se cierra también la
+condición abierta (h).
+
 ## 5.5 Colaciones
 
 *(Histórico §5.3, sin cambio de criterio.)* **No se introduce una colación no determinista por
@@ -611,13 +628,22 @@ El `uuid` técnico **no sustituye** al nombre humano de la fila. **El código vi
 
 # 8. Reglas de negocio cerradas
 
-## R-01 · Medio de pago inicial · *sin cambio*
+## R-01 · Medios de pago de v1 · **CERRADA por JP**
 
-Pago por **Yape**, con **confirmación manual por personal**. No se integra pasarela automática.
-**El hecho de pago no se marca por la pantalla de agradecimiento ni por una declaración del
-cliente**: lo confirma una persona que lo comprueba.
+**Yape y efectivo.** Los dos con **confirmación manual por personal**: el hecho de pago no se marca
+por la pantalla de agradecimiento ni por una declaración del cliente, lo confirma una persona que lo
+comprueba. No se integra pasarela automática.
 
-*El efectivo sigue abierto — (c).*
+**La tarjeta llega con M11**, en la fase 4, y no se adelanta nada de ella.
+
+> **Una asimetría operativa del efectivo, escrita para que no sorprenda.** En un pedido de recojo en
+> tienda el efectivo se cobra **en el mostrador**, así que su registro suele coincidir con la entrega
+> y no con una verificación previa. **No cambia el modelo** —sigue siendo un pago registrado por una
+> persona, con su atribución de tres datos— pero sí el momento en que ocurre.
+
+> *Histórico: el encargo del 26/09 §2 nombraba solo Yape y no resolvía el efectivo, que
+> `PENDIENTES.md:487-488` sí mencionaba desde el 26 de agosto. Quedó escalado como (c) y **JP lo cerró
+> a favor de los dos**.*
 
 ## R-02 · Duración del plazo para pagar · **REEMPLAZA a la R-02 histórica**
 
@@ -694,21 +720,29 @@ información, que pertenece a M07**; M03 no implementa el módulo vecino.
 está **en la operación**, no en la pantalla (§3.3). Esa mitad no depende de nadie y sus pruebas están
 en §11.
 
-**No cerrado, y no es de M03:** **a dónde** conduce la acción y **con qué acceso**.
+### El acceso · **CERRADO por JP: exige cuenta**
 
-- **No se presupone ningún endpoint de M07.** Los cuatro de su SPEC son para crear y consultar
-  solicitudes y cotizaciones; **ninguno está declarado como destino de «a consultar»**, y M03 no
-  inventa uno.
-- **No se presupone ninguna modalidad de acceso.** Que su SPEC exija hoy sesión de cliente en todo
-  lo público es **el estado de su documento**, no una ratificación de que consultar un precio
-  requiera cuenta.
-- **La coordinación con frente B alcanza solo a la redacción del contrato y al método de consumo
-  permitido.** M07 es de frente B: M03 no modifica su SPEC ni le inventa API.
-- **Y falta la vía declarada:** hoy ningún módulo del frontend tiene forma de enlazar a la pantalla
-  de otro sin importar de él, lo cual está prohibido. Es costura de Integración.
+**Flujo ratificado:**
 
-**Mientras esto no se cierre, la pantalla de un producto «a consultar» no se define** — y M03 sigue
-funcionando: sin destino, la acción no se pinta y nada falla. Ver (d).
+> visitante sin sesión → **iniciar sesión o registrarse** → continuar hacia M07.
+
+**No se abre ninguna vía anónima.** Eso encaja con lo que M07 ya tiene construido: sus cuatro
+endpoints públicos están bajo `RequireAuthorization(CustomerAuthorization.PolicyName)` —comprobado en
+`SolicitudesClienteEndpoints.cs:23`—, así que un visitante sin sesión recibiría **401**. La decisión
+evita que M03 lleve a un cliente a una puerta cerrada.
+
+**Lo que M03 hace y lo que no:**
+
+| Hace | No hace |
+|---|---|
+| Rechazar la línea con precio nulo, **en la operación** | Crear endpoints de M07 |
+| Llevar a iniciar sesión o registrarse si no hay sesión | Importar frontend de M07 |
+| Conducir después hacia M07 | Duplicar formularios B2B |
+
+**Lo que queda, y es de Integración, no de producto:** la **vía declarada** para que M03 obtenga ese
+destino sin conocer `modules/b2b/`. Hoy ningún módulo del frontend puede enlazar a la pantalla de otro
+sin importar de él, y eso está prohibido. Sin destino declarado, **la acción no se pinta y nada falla**
+— la dependencia sobre M07 es blanda.
 
 ## R-12 · El pago tardío siempre se puede registrar · **NUEVA**
 
@@ -719,7 +753,35 @@ El personal **siempre** puede registrar un pago, aunque el pedido esté **Vencid
 - **Nunca se acepta un pago sin resultado operativo o pendiente visible.**
 - **No hay saldo a favor ni devoluciones automáticas:** son deuda con disparador propio.
 
-26/09 §8. *A qué estado vuelve un pedido reactivado sigue abierto — (b).*
+26/09 §8, **completado por JP**: a qué estado vuelve ya está decidido.
+
+### Con mercancía: **Vencido → Preparando**, sin escala
+
+**No pasa por «Pago por verificar», y el motivo no es un atajo: la persona que registra el pago ya lo
+verificó.** Mandarlo a ese estado pediría que alguien verifique lo que acaba de verificar, y dejaría al
+cliente viendo un estado que no describe lo que ocurrió.
+
+### Sin mercancía: el pago se registra y el pedido no se mueve
+
+- **El pago se registra igual.** Nunca se rechaza por el estado del pedido.
+- **No se inventa un octavo estado.** Siguen siendo siete.
+- **No se produce ninguna transición automática falsa**: afirmar que el sistema resolvió algo que no
+  resolvió es peor que no decir nada.
+- **Queda un pendiente operativo visible** para que una persona lo resuelva — llamar al cliente.
+
+### Dónde vive ese pendiente · **no hace falta esquema nuevo**
+
+**Es derivable del modelo actual, sin ambigüedad:**
+
+> un pedido en **Vencido** que **tiene al menos un pago registrado**.
+
+Y no se confunde con nada: *Vencido sin pago* es un plazo que pasó; *Vencido con pago* es alguien que
+pagó y nadie ha resuelto. La consulta del panel filtra por eso y el pendiente aparece.
+
+> **Lo que sí necesitaría almacenamiento, y por eso NO se diseña aquí:** marcar ese pendiente como
+> **atendido** —quién lo resolvió y cuándo— sin mover el pedido de estado. Eso no es derivable: haría
+> falta una columna o una tabla, y **se reporta como costura de datos en vez de inventarla**. Ver
+> `ESCALADAS-M03.md` §o.
 
 ## R-13 · Nada promete mercancía garantizada · **NUEVA · transversal**
 
@@ -876,11 +938,28 @@ del §1 de `ANTES-DE-EMPEZAR-UN-MODULO.md`, una regla cierta «porque hoy solo h
 **Y lo implementado bajo esa formulación también queda superseded:** `c4be225` publicó solo el nombre;
 `da4a4f7` publicó el par con el sufijo `_origin`. **Ninguno de los dos es el modelo definitivo.**
 
-## R-15 · El total es la suma de las líneas## R-15 · El total es la suma de las líneas · **NUEVA**
-
 ## R-15 · El total es la suma de las líneas · **NUEVA**
 
 Sin costo de entrega, sin tarifas, sin cargos. 26/09 §3. Resuelve B-02.
+
+## R-16 · Cancelación · **NUEVA · CERRADA por JP**
+
+| Regla | |
+|---|---|
+| **Solo el personal cancela** | El cliente **no cancela directamente** en v1 |
+| **Exige motivo** | Sin él, dentro de un mes nadie sabe por qué, y el cliente que pregunte no tiene respuesta |
+| **Un pedido Entregado no se cancela** | Ya salió de la tienda. Lo que corresponda entonces es una devolución, que es deuda con su propio disparador |
+| **Vencido no equivale a Cancelado** | Y **vencer el plazo nunca cancela por sí solo** |
+
+**Las tres primeras son mecánicamente demostrables** y lo están: `OrderTransitionPolicy.Cancelar`
+rechaza sin persona, rechaza sin motivo y rechaza desde *Entregado*, con prueba para cada una.
+
+> **Un pedido Vencido sí se puede cancelar**, con persona y motivo. Lo que se prohíbe no es cancelar un
+> vencido: es que el vencimiento cancele solo.
+
+> **El motivo necesita almacenamiento que hoy no existe.** `order_status_changes` no tiene columna de
+> motivo. La política pura **lo exige ya** —y por eso su prueba pasa—, pero persistirlo hará falta una
+> columna. **Se reporta, no se diseña.** Ver `ESCALADAS-M03.md` §o.
 
 # 9. Pantallas y estados
 

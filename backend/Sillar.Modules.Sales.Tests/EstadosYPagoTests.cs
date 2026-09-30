@@ -85,19 +85,11 @@ public sealed class EstadosYPagoTests
         });
     }
 
-    [Fact]
-    public void El_unico_medio_de_pago_ratificado_es_yape()
-    {
-        // El efectivo que PENDIENTES.md menciona está escalado: ni autorizado ni
-        // eliminado. Si aparece aquí sin que JP lo decida, esta prueba se pone roja
-        // — que es exactamente para lo que está.
-        Assert.Equal(["yape"], PaymentMethod.All);
-    }
-
-    [Fact]
-    public void La_tarjeta_no_esta_entre_los_medios_de_pago()
-    {
-        // Llega con M11, en la fase 4, y no se adelanta nada de ella.
-        Assert.DoesNotContain("tarjeta", PaymentMethod.All);
-    }
+    // Las pruebas de medios de pago vivían aquí y se han mudado a
+    // MediosDePagoTests, que es más estricta.
+    //
+    // La que había —«el único medio ratificado es yape»— hizo exactamente su trabajo:
+    // guardaba una decisión abierta, y cuando JP cerró el efectivo se puso roja y
+    // obligó a un acto deliberado para cambiarla. No se pudo añadir el efectivo sin
+    // pasar por ella, que es para lo que estaba.
 }

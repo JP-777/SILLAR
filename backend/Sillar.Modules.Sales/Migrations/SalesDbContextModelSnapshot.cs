@@ -377,7 +377,7 @@ namespace Sillar.Modules.Sales.Migrations
 
                             t.HasCheckConstraint("ck_order_payments_atribucion_local_positiva", "registered_by_admin_user_local_id > 0");
 
-                            t.HasCheckConstraint("ck_order_payments_method", "method IN ('yape')");
+                            t.HasCheckConstraint("ck_order_payments_method", "method IN ('yape', 'efectivo')");
 
                             t.HasCheckConstraint("ck_order_payments_registered_by_no_vacio", "btrim(registered_by) <> ''");
                         });

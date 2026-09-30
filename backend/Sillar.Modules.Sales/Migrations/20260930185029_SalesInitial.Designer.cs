@@ -12,7 +12,7 @@ using Sillar.Modules.Sales.Data;
 namespace Sillar.Modules.Sales.Migrations
 {
     [DbContext(typeof(SalesDbContext))]
-    [Migration("20260930050807_SalesInitial")]
+    [Migration("20260930185029_SalesInitial")]
     partial class SalesInitial
     {
         /// <inheritdoc />
@@ -380,7 +380,7 @@ namespace Sillar.Modules.Sales.Migrations
 
                             t.HasCheckConstraint("ck_order_payments_atribucion_local_positiva", "registered_by_admin_user_local_id > 0");
 
-                            t.HasCheckConstraint("ck_order_payments_method", "method IN ('yape')");
+                            t.HasCheckConstraint("ck_order_payments_method", "method IN ('yape', 'efectivo')");
 
                             t.HasCheckConstraint("ck_order_payments_registered_by_no_vacio", "btrim(registered_by) <> ''");
                         });

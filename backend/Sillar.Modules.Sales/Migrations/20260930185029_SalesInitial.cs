@@ -233,7 +233,7 @@ namespace Sillar.Modules.Sales.Migrations
                     table.CheckConstraint("ck_order_payments_amount_no_negativo", "amount >= 0");
                     table.CheckConstraint("ck_order_payments_atribucion_home_node_no_vacio", "btrim(registered_by_admin_user_home_node) <> ''");
                     table.CheckConstraint("ck_order_payments_atribucion_local_positiva", "registered_by_admin_user_local_id > 0");
-                    table.CheckConstraint("ck_order_payments_method", "method IN ('yape')");
+                    table.CheckConstraint("ck_order_payments_method", "method IN ('yape', 'efectivo')");
                     table.CheckConstraint("ck_order_payments_registered_by_no_vacio", "btrim(registered_by) <> ''");
                     table.ForeignKey(
                         name: "fk_order_payments_order_id",

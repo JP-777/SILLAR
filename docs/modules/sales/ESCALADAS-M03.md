@@ -15,15 +15,19 @@ las tiene.**
 | **§a** SPEC de Diseño | **RESUELTA el 26/09/2026.** Recibida **completa**: 897 líneas, §7 y §8 presentes, cierra en B-05 con «ESTADO FINAL: DETENIDO». Conservada íntegra e idéntica byte a byte en `SPEC-M03-ORIGINAL-DISENO-2026-09-23.md`. La reconciliación está en `SPEC.md` §0 |
 | **§b1** Código visible | **RESUELTA y rectificada el 27/09/2026: `P-2026-0147`.** `W-` fue provisional y **ya no está vigente** |
 | **§b1-bis** Continuidad y mecanismo | **RESUELTA el 27/09/2026.** Reinicio anual ratificado como excepción a la ADR-016; contador transaccional por serie `(nodo, año)` |
-| **§g** Etiqueta: ¿por nodo o por nodo × tipo? | **ABIERTA** — nueva |
-| **§h** Unicidad de etiqueta entre nodos desconectados | **ELEVADA al líder técnico** — nueva |
+| **§b2** Cancelación y reactivación | ✅ **CERRADA por JP.** R-12 y R-16, con política pura demostrable |
+| **§c** Efectivo | ✅ **CERRADA por JP: Yape y efectivo.** R-01 |
+| **§d** Acceso a «a consultar» | ✅ **CERRADA por JP: exige cuenta.** R-11 |
+| **§o** Dos necesidades de datos, reportadas sin diseñar | **COSTURA DE DATOS** — ver abajo |
+| **§g** ¿Etiqueta por nodo o por nodo × tipo? | ✅ **CERRADA por JP: la serie es nodo × año × tipo.** Coordinación inter-nodo → **M16** |
+| **§h** Unicidad de etiqueta entre nodos desconectados | ✅ **CERRADA: queda deliberadamente en M16**, con §g |
 | **§i** `core.media_assets → core.admin_users` cruza la ADR-018 | **HALLAZGO del 27/09, de CORE, no de M03** — ver abajo |
 | **§j** Dos costuras para que la puerta vea a M03 | **PEDIDAS a Integración** — ver abajo |
 | **§k** Atribución del personal cuando el nodo del trabajador no es el del pedido | **RESUELTA.** Tres datos ratificados e implementados; R-14 es autoritativa |
 | **§l** ¿El tercer dato es el nodo de pertenencia o el de actuación? | **RESUELTA: son los dos, en columnas distintas** |
-| **§b2** Cancelación y reactivación | **Abierta** |
-| **§c** Efectivo frente a Yape | **Abierta** |
-| **§d** Navegación entre módulos para «a consultar» | **Pasa a Chat 2.** La *modalidad de acceso* —si «a consultar» exige cuenta— sigue siendo decisión comercial abierta |
+| ~~**§b2**~~ ~~Cancelación y reactivación~~ | ~~Abierta~~ → **CERRADA por JP.** Fila del 26/09 conservada; el estado vigente está arriba |
+| ~~**§c**~~ ~~Efectivo frente a Yape~~ | ~~Abierta~~ → **CERRADA por JP: los dos medios.** Fila del 26/09 conservada |
+| ~~**§d**~~ ~~Navegación entre módulos para «a consultar»~~ | ~~La modalidad de acceso sigue siendo decisión comercial abierta~~ → **CERRADA por JP: exige cuenta.** Lo que queda es solo la vía declarada, de Integración |
 | **§e1** `ARQUITECTURA_MODULAR.md:213` apunta al producto | Documento compartido: **de Chat 2** desde el principio. **Repetida el 27/09**: no consta en `docs/integracion/COLA-COSTURAS.md` |
 | **§e3** Contrato de M04 sin dirección | **RESPONDIDO el 27/09 — contrato 1.1.0**, pendiente de certificación. Ver abajo |
 | **§e2** `order_statuses` como tabla replicada | **Pasa a Chat 2** |
@@ -631,3 +635,83 @@ Lo que consta en código, sin interpretarlo:
 | Tablas replicadas | Sí | **Ninguna** |
 
 **Es decisión de arquitectura y producto. Queda escalada.**
+
+
+---
+
+## §b2 · §c · §d · **CERRADAS por JP**
+
+Las tres eran decisiones comerciales y **las tres las cerró JP**. El texto anterior de cada una se
+conserva más arriba sin reescribir: registraba qué se sopesó, y sigue explicando por qué hubo que
+preguntar.
+
+| § | Estaba abierto | Cerrado así |
+|---|---|---|
+| **§c** | `PENDIENTES.md:487-488` decía «Yape **y efectivo**»; el encargo del 26/09 nombraba solo Yape | **Los dos.** La tarjeta llega con M11 |
+| **§b2** | A qué estado vuelve un Vencido pagado; quién cancela; si exige motivo; si se cancela un Entregado | **Vencido → Preparando** con mercancía, **sin escala**. Solo el personal cancela, **exige motivo**, y **Entregado no se cancela** |
+| **§d** | Si «a consultar» exige cuenta | **La exige.** Visitante → iniciar sesión o registrarse → M07. **Sin vía anónima nueva** |
+
+**Lo único que sobrevive de §d, y no es de producto:** la **vía declarada** para que M03 obtenga el
+destino de M07 sin conocer `modules/b2b/`. Es costura de Integración, sigue en §j, y **no bloquea**: sin
+destino la acción no se pinta y nada falla.
+
+---
+
+## §g y §h · **CERRADAS** · la serie es nodo × año × tipo, y M16 coordina
+
+**Ratificado por JP.** Los pedidos mantienen `P-AAAA-NNNN` y las cotizaciones `C-AAAA-NNNN`; la serie se
+entiende conceptualmente por **nodo × año × tipo de documento**. **M03 no cambia schema ni formato otra
+vez**, y **M07 no se toca ni se reinterpreta desde esta rama**.
+
+**La coordinación y la garantía de unicidad inter-nodo quedan deliberadamente en M16**, que es el
+módulo cuyo trabajo es precisamente eso. Con ello se cierra también §h: **no es un hueco de M03**, y
+adelantarlo aquí sería inventar una solución inter-nodo desde un módulo que solo ve su propia base.
+
+### La deuda que queda, para Integración y M16 · **no reabre P/C**
+
+Registrada como pedía el encargo, **sin corregir ninguno de los dos módulos**:
+
+> El almacenamiento actual de M07 guarda la serie como `(series_code, year)` — **sin columna de
+> nodo**—, mientras la definición ratificada es **nodo × año × tipo**. Hoy coinciden porque hay un solo
+> nodo; el día que haya dos, la tabla de M07 **no puede distinguir** las cotizaciones de cada uno.
+> M03 sí puede, porque su clave es `(node_code, year)`.
+>
+> **No es un error de M07:** su módulo no replica ninguna tabla, así que el problema no se le presenta
+> hoy. Es una tensión entre la definición y el almacenamiento, y **le corresponde a quien construya
+> M16**, que es donde la multiplicidad de nodos deja de ser hipotética.
+>
+> **La decisión P/C no se reabre.** Las letras están ratificadas.
+
+---
+
+## §o · Dos necesidades de datos · **REPORTADAS, no diseñadas**
+
+El encargo pide detenerse y reportar en vez de diseñar en silencio. **Ni una ni otra bloquean el
+Tramo 1.**
+
+### §o1 · El motivo de la cancelación no tiene dónde guardarse
+
+`order_status_changes` tiene `from_status`, `to_status`, `changed_at` y los tres datos de atribución.
+**No tiene columna de motivo.**
+
+- **La política pura ya lo exige** —`OrderTransitionPolicy.Cancelar` rechaza sin motivo, con prueba— así
+  que la regla está viva **antes** de que exista la columna.
+- **Persistirlo necesita una columna.** El precedente más cercano es `b2b.quotes.invalidated_reason`
+  (`docs/modules/b2b/SPEC.md:183`).
+- **No la diseño.** Pertenece al tramo que implemente la cancelación, y entonces la pediré con su
+  efecto observable.
+
+### §o2 · El pendiente operativo se puede detectar, pero no marcar como atendido
+
+**Detectarlo no necesita nada nuevo:** es derivable sin ambigüedad —*un pedido en Vencido con al menos
+un pago registrado*—, y esa consulta alimenta el panel. Está en R-12.
+
+**Lo que no es derivable** es marcarlo **atendido**: quién lo resolvió y cuándo, sin mover el pedido de
+estado. Para eso haría falta una columna o una tabla.
+
+> **Y la pregunta que va antes que el esquema, que no es mía:** ¿hace falta? Un pendiente que
+> desaparece cuando el pedido cambia de estado puede bastar — el personal llama al cliente, y lo que
+> ocurra después mueve el pedido. **Si basta, no hay nada que construir.** Si no basta, es una costura
+> de datos y la pido entonces.
+>
+> No añado la columna «por si acaso»: sin un segundo caso real no se generaliza.
