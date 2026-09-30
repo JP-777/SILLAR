@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { reorderedIds } from '../src/modules/services/state/reorder.ts';
+import { validateServiceDraft } from '../src/modules/services/state/validation.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const source = (path) => readFileSync(resolve(root, path), 'utf8');
@@ -27,6 +28,29 @@ test('S4 conserva datos y muestra validación y conflictos reales sin concurrenc
   assert.match(form, /imageAltText/);
   assert.match(form, /setFailure\(describe/);
   assert.doesNotMatch(allServices, /otra persona editó|ver versión actual|ETag|rowVersion|concurrenc/i);
+});
+
+const validDraft = {
+  name: 'Anillado', slug: '', shortDescription: 'Terminación resistente',
+  description: '', price: '', imageId: null, imageAltText: '',
+};
+
+test('S4 asocia las reglas editoriales con sus campos', () => {
+  assert.equal(validateServiceDraft({ ...validDraft, name: '' }).name, 'El nombre del servicio es obligatorio.');
+  const descriptions = validateServiceDraft({ ...validDraft, shortDescription: '', description: '' });
+  assert.ok(descriptions.shortDescription);
+  assert.ok(descriptions.description);
+  assert.ok(validateServiceDraft({ ...validDraft, price: '-0.01' }).price);
+  assert.ok(validateServiceDraft({ ...validDraft, imageId: '018f', imageAltText: '  ' }).imageAltText);
+  assert.deepEqual(validateServiceDraft(validDraft), {});
+});
+
+test('S4 valida la dirección resultante y conserva el mapeo del slug duplicado', () => {
+  assert.ok(validateServiceDraft({ ...validDraft, name: '---', slug: '' }).slug);
+  const form = source('src/modules/services/components/ServiceForm.tsx');
+  assert.match(form, /Ya existe un servicio con esa dirección\./);
+  assert.match(form, /fieldErrors: \{ slug: error\.message \}/);
+  assert.match(form, /focusField\('slug'\)/);
 });
 
 test('la navegación y las rutas dependen de la capacidad services', () => {

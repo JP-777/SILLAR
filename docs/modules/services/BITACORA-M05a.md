@@ -1,6 +1,6 @@
 # Bitácora M05a
 
-- **Creación / última modificación / última verificación:** 28/09/2026 · America/Lima
+- **Creación:** 28/09/2026 · **Última modificación / verificación:** 30/09/2026 · America/Lima
 - **Base integrada:** `e839989432283c755edf7d4ae47b2c37697215ec`
 - **Commit de implementación verificado:** `c30c9666534edd4ddaa570870f3e992fe2552c30`
 
@@ -16,9 +16,11 @@
 1. SPEC: ratificada y consolidada.
 2. DATOS: diseñado e implementado en migración inicial y scripts.
 3. API: implementada para vitrina pública, administración editorial y snapshots.
-3.5. DISEÑO: **PARADA obligatoria**; no iniciada.
-4. UI: no iniciada.
+3.5. DISEÑO: publicado en `JP-777/SILLAR-DESIGN`, rama `diseno/m05a-paso-3-5`, SHA `40f6b2c48a3ba2398f3a927826a1f48a51917f99`.
+4. UI: implementación estructural de S1, S2, S3, S4, S5-admin y S5-public publicada sobre `68a09aa744ce3bea27fff005e4f49378fb24ace8`; microcorrección de validación contextual incorporada posteriormente en esta rama. La validación visual final de S1/S2/S5-public sigue pendiente del tema real de una instalación cliente.
 5. CIERRE: no iniciado.
+
+No se declara ejecutada la QA canónica ni cerrado el módulo.
 
 ## Decisiones aplicadas
 
