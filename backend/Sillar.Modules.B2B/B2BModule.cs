@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sillar.Modules.B2B.Data;
+using Sillar.Modules.B2B.Endpoints;
+using Sillar.Modules.B2B.Solicitudes;
 using Sillar.Shared.Data.Modularity;
 using Sillar.Shared.Modularity;
 
@@ -58,13 +60,18 @@ public sealed class B2BModule : IModule, IModuleMigrations
 
         services.AddDbContext<B2bDbContext>(options => PersistenciaDeModulo.Configurar(
             options, connectionString, B2bDbContext.Schema, B2bDbContext.MigrationsHistoryTable));
+
+        // El límite por cuenta: parámetro comercial, configurable sin tocar código.
+        var maximo = configuration.GetValue("B2b:LimiteSolicitudes:Maximo", LimiteDeSolicitudes.PorDefecto.Maximo);
+        var minutos = configuration.GetValue("B2b:LimiteSolicitudes:VentanaMinutos", (int)LimiteDeSolicitudes.PorDefecto.Ventana.TotalMinutes);
+        services.AddSingleton(new LimitePorCuenta(new LimiteDeSolicitudes(maximo, TimeSpan.FromMinutes(minutos))));
+        services.AddSingleton(TimeProvider.System);
+        services.AddScoped<SolicitudesService>();
     }
 
-    /// <summary>
-    /// Sin rutas todavía: los endpoints son el paso 3 del ciclo, y este paso
-    /// es el de datos.
-    /// </summary>
+    /// <summary>Monta las rutas de cliente. Las de administración llegan en el siguiente tramo.</summary>
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
+        endpoints.MapSolicitudesClienteEndpoints();
     }
 }

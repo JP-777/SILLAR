@@ -1,7 +1,7 @@
 # Bitácora de M07 — Solicitudes B2B y Especiales
 
-Creado: 27/09/2026, America/Lima · Última modificación: 27/09/2026 · Última verificación:
-27/09/2026 · Commit base verificado: `e839989432283c755edf7d4ae47b2c37697215ec`.
+Creado: 27/09/2026, America/Lima · Última modificación: 29/09/2026 · Última verificación:
+29/09/2026 · Commit base verificado: `e839989432283c755edf7d4ae47b2c37697215ec`.
 
 La escribe el frente B (`DIVISION-DE-TRABAJO.md`, regla 6). Criterio y hechos, no un diario.
 
@@ -59,3 +59,31 @@ MSBuild entre etapas.
 
 **Pendiente del ciclo:** paso 3 (API) sobre este esquema; la creación de cotizaciones espera a la
 letra de serie. Después, parada 3.5.
+
+---
+
+## 29/09/2026 · Paso 3, primer tramo: el lado del cliente
+
+**Construido** (`backend/Sillar.Modules.B2B/Solicitudes`, `Endpoints/SolicitudesClienteEndpoints.cs`):
+`POST /api/b2b/special-orders`, `POST /api/b2b/institution-requests`, `GET /api/b2b/my-requests` y
+`GET /api/b2b/quotes/{quoteNumber}`. Todas con la política de cliente y el CSRF **del contrato de
+M04**, sin autenticación propia. El cliente sale siempre de la sesión.
+
+**Decisiones del tramo, todas reversibles editando código:**
+
+- **Límite por cuenta, no por IP**, compartido por los dos tipos, y consumido **después** de validar
+  (una petición inválida no gasta cupo). Valores por configuración (`B2b:LimiteSolicitudes:*`), 5
+  por hora por defecto hasta que alguien decida otros: son un parámetro comercial.
+- **Una personalización solo nace de un producto activo y publicado** de M01; si no, 409.
+- **El cliente no ve cotizaciones en `borrador`**: todavía no se le han enviado.
+- **Sin campo de título** en la respuesta de «mis solicitudes»: la SPEC fija su forma (§5) y un
+  campo pedido por una pantalla es un hallazgo, no una corrección.
+
+**Pruebas:** 31/31 en verde (19 de antes + 12 nuevas). **Sabotaje** en
+`evidencias/PASO3-SABOTAJE-20260929.txt`: límite por clave común (P1), nota interna filtrada (P2) y
+cotización sin filtrar por cliente (P3) ponen su prueba en rojo; restaurado, 31/31.
+
+**Sin puerta de este tramo todavía:** la máquina tiene memoria justa y la ventana de QA de M04
+tiene prioridad. **Pendiente:** rutas de administración; creación de cotizaciones, bloqueada por la
+letra de serie (pregunta 3); manejadores de eventos de M01 (refresco y caducidad, E3b).
+

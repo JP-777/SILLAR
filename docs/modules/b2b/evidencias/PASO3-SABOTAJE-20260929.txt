@@ -1,0 +1,5 @@
+# Sabotaje del paso 3 · 6d74aae + cambios sin commitear · 2026-09-29 23:33:35 -0500
+[P1 límite por clave común (como por IP)] Failed!  - Failed:     2, Passed:     3, Skipped:     0, Total:     5, Duration:
+[P2 nota interna filtrada en las propias] Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration:
+[P3 cotización sin filtrar por cliente] Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration:
+[restaurado] Passed!  - Failed:     0, Passed:    31, Skipped:     0, Total:    31, Duration:
