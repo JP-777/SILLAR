@@ -113,6 +113,7 @@ public sealed class CrmModule : IModule, IModuleMigrations
         services.AddScoped<CustomerAdminService>();
         services.AddScoped<CustomerProfileService>();
         services.AddScoped<ICustomerSnapshotReader, CustomerSnapshotReader>();
+        services.AddScoped<ICustomerIdentityReader, CustomerIdentityReader>();
         services.AddScoped<CurrentCustomer>();
         services.AddScoped<ICurrentCustomer>(
             provider => provider.GetRequiredService<CurrentCustomer>());

@@ -9,6 +9,7 @@ public sealed class CustomerProfileContractTests
     [InlineData(typeof(CustomerProfileResponse))]
     [InlineData(typeof(CustomerAddressResponse))]
     [InlineData(typeof(CustomerOrderSnapshot))]
+    [InlineData(typeof(CustomerIdentity))]
     [InlineData(typeof(CustomerOrderAddressSnapshot))]
     public void Contratos_publicos_no_exponen_campos_internos(
         Type type)
