@@ -1,10 +1,14 @@
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Sillar.Modules.B2B.Bandeja;
+using Sillar.Modules.B2B.Catalogo;
 using Sillar.Modules.B2B.Data;
 using Sillar.Modules.B2B.Endpoints;
 using Sillar.Modules.B2B.Solicitudes;
+using Sillar.Modules.Catalog.Contracts.Events;
 using Sillar.Shared.Data.Modularity;
+using Sillar.Shared.Events;
 using Sillar.Shared.Modularity;
 
 namespace Sillar.Modules.B2B;
@@ -67,11 +71,16 @@ public sealed class B2BModule : IModule, IModuleMigrations
         services.AddSingleton(new LimitePorCuenta(new LimiteDeSolicitudes(maximo, TimeSpan.FromMinutes(minutos))));
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<SolicitudesService>();
+        services.AddScoped<BandejaService>();
+        services.AddSingleton<ReaccionAlCatalogo>();
+        services.AddSingleton<IEventHandler<ProductoActualizado>, ProductoActualizadoEnB2b>();
+        services.AddSingleton<IEventHandler<ProductoDesactivado>, ProductoDesactivadoEnB2b>();
     }
 
-    /// <summary>Monta las rutas de cliente. Las de administración llegan en el siguiente tramo.</summary>
+    /// <summary>Monta las rutas de cliente y las del panel.</summary>
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         endpoints.MapSolicitudesClienteEndpoints();
+        endpoints.MapBandejaAdminEndpoints();
     }
 }

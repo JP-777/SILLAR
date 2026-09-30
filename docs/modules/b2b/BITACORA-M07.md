@@ -1,7 +1,7 @@
 # Bitácora de M07 — Solicitudes B2B y Especiales
 
-Creado: 27/09/2026, America/Lima · Última modificación: 29/09/2026 · Última verificación:
-29/09/2026 · Commit base verificado: `e839989432283c755edf7d4ae47b2c37697215ec`.
+Creado: 27/09/2026, America/Lima · Última modificación: 30/09/2026 · Última verificación:
+30/09/2026 · Commit base verificado: `e839989432283c755edf7d4ae47b2c37697215ec`.
 
 La escribe el frente B (`DIVISION-DE-TRABAJO.md`, regla 6). Criterio y hechos, no un diario.
 
@@ -86,4 +86,52 @@ cotización sin filtrar por cliente (P3) ponen su prueba en rojo; restaurado, 31
 **Sin puerta de este tramo todavía:** la máquina tiene memoria justa y la ventana de QA de M04
 tiene prioridad. **Pendiente:** rutas de administración; creación de cotizaciones, bloqueada por la
 letra de serie (pregunta 3); manejadores de eventos de M01 (refresco y caducidad, E3b).
+
+---
+
+## 30/09/2026 · Paso 3, segundo tramo: el panel y los eventos de M01
+
+**Rutas del panel** (`Endpoints/BandejaAdminEndpoints.cs`), grupo `/api/admin/b2b` con mínimo
+`editor` y CSRF del panel; bajas solo `admin`; toda escritura audita con `module_code = 'b2b'` y
+**nombra la fila** («La solicitud de volumen de «Colegio…» pasó a en revisión.»):
+
+| Ruta | Qué hace |
+|---|---|
+| `GET /special-orders`, `GET /special-orders/{id}` | Bandeja con filtro por estado; detalle **con** notas internas |
+| `PUT /special-orders/{id}/status` · `/notes` · `/relink` | Estado (regla 5), notas internas, reenlace a un producto **activo** |
+| `DELETE /special-orders/{id}` | Baja lógica (`admin`) |
+| `GET /institution-requests`, `GET /institution-requests/{id}` | Igual, para volumen |
+| `PUT /institution-requests/{id}/status` · `/notes` | Estado y notas |
+| `DELETE /institution-requests/{id}` | Baja lógica (`admin`) |
+| `GET /quotes`, `GET /quotes/{id}` | Cotizaciones, **solo lectura**, con su precio de catálogo |
+
+**Eventos de M01** (`Catalogo/ReaccionAlCatalogo.cs`), respaldados por `CatalogEvents.cs:40` y
+`:45`: `ProductoActualizado` refresca la instantánea de las personalizaciones e **invalida solo las
+cotizaciones `enviada`** cuya presentación cambió de precio (vía `VariantesDeAsync`), con un
+motivo legible; `ProductoDesactivado` marca `pending_relink` y **no invalida nada**. Idempotente y
+serializado por producto.
+
+**Decisiones del tramo, reversibles editando código:**
+
+- **`cerrada` y `rechazada` son finales**; «rechazada desde cualquiera» se lee como desde las tres
+  primeras. Reabrir no está en la SPEC.
+- **Las líneas «a consultar» no se evalúan** al invalidar, mientras E3b siga abierta. Un precio que
+  pasa de valor a «a consultar» **sí** invalida: el precio cotizado ya no existe en el catálogo.
+- **Invalidar no cambia el estado**: la cotización sigue `enviada` con `invalidated_at` y su motivo;
+  lo que ve el cliente es `SigueValida = false`.
+
+**Pruebas:** 49/49 (31 de antes + 18 nuevas). Los permisos de cada ruta se afirman sobre los
+metadatos reales de los endpoints. **Sabotaje** en `evidencias/PASO3-PANEL-SABOTAJE-20260930.txt`:
+Q1–Q6 (transiciones sin guarda, baja sin `admin`, invalidación en cualquier estado, reenlace sin
+comprobar actividad, rutas públicas con política de panel, desactivar que invalida), los seis en
+rojo; restaurado, 49/49.
+
+**Sigue abierto:**
+
+- **Crear cotizaciones**: la letra de serie (pregunta 3). Con ella, el ciclo `send` / `approve` /
+  `payment` / edición de líneas / baja, que sin creación no tiene nada sobre lo que actuar.
+- **E3b**, y el **umbral mayorista** (regla 4), que vive en `core.site_settings` y no tiene clave.
+- **La mitad HTTP de los permisos y del CSRF** (401/403 reales, filtro CSRF): los metadatos no
+  muestran los filtros; se cubre con e2e cuando M07 se despliegue (C9).
+- **El límite de 5 por hora** sigue siendo provisional y configurable.
 
