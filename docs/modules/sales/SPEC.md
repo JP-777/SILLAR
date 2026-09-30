@@ -424,6 +424,24 @@ continuidad la da el mecanismo.**
 3. **El número se pide al final, justo antes de confirmar el pedido. Nunca al crear el carrito.**
 4. **No `nextval()`.**
 
+**El punto 2 está impuesto, no solo escrito.** `OrderCodeAllocator` comprueba
+`Database.CurrentTransaction` y **se niega a numerar** si no hay ninguna abierta, antes de tocar la
+configuración o la base. Estaba documentado y no impuesto, que es la definición de una barrera escrita
+y no puesta: fuera de una transacción el `UPDATE` del contador **se confirma solo**, así que un fallo
+posterior al insertar el pedido dejaría el número consumido y un hueco permanente — el mismo mecanismo
+por el que se descartó `nextval`.
+
+### El año de la serie es el de Lima, no el de UTC
+
+`OrderCode.AnioDe` convierte explícitamente a `America/Lima`. **No es un detalle de presentación:
+decide a qué serie pertenece el pedido.** El 31 de diciembre a las 20:00 de Lima ya es el 1 de enero en
+UTC, así que un pedido de esa tarde abriría la serie del año siguiente **y el cliente leería por
+teléfono un año que no es el de su calendario**.
+
+Es además la zona en la que M07 ya numera sus cotizaciones. **Dos módulos del mismo producto
+discrepando sobre qué año es sería un defecto que solo se ve una tarde al año**, y por eso su frontera
+tiene prueba propia.
+
 **Por qué no una secuencia, y es la razón que esta SPEC ya documentaba antes de que se decidiera:**
 `nextval` es **deliberadamente no transaccional** —entrega el número fuera de la transacción para no
 serializar a quien lo pide—, así que **una transacción revertida consume el número igual** y el hueco

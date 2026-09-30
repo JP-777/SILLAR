@@ -28,7 +28,7 @@ las tiene.**
 | **§e3** Contrato de M04 sin dirección | **RESPONDIDO el 27/09 — contrato 1.1.0**, pendiente de certificación. Ver abajo |
 | **§e2** `order_statuses` como tabla replicada | **Pasa a Chat 2** |
 | **§e3** Contrato de M04 para pedidos sin dirección | **Pasa a Chat 2** |
-| **§e4** Barrera de fronteras del frontend | **Pendiente de integración.** Cuando llegue a `main`: **merge normal, nunca rebase**, y se registra el SHA en `MATRIZ-DIFERENCIAS-M03.md` §2 |
+| **§e4** Barrera de fronteras del frontend | ✅ **SUPERADO.** Está en `main`: `frontend/scripts/fronteras-frontend.mjs`, `frontend/tests/fronterasFrontend.test.mjs`, e invocada por `scripts/verificar.mjs:2043`. **Deja de ser bloqueo.** SHA en `MATRIZ-DIFERENCIAS-M03.md` §2 |
 
 **Instrucción de la ronda del 26/09:** no se ejecutan tareas bloqueadas ni se piden autorizaciones.
 La entrega se conserva para la fase siguiente. Por eso esta cabecera **no añade ninguna entrada
@@ -581,3 +581,53 @@ Se anota aquí porque es la segunda vez en este módulo, y la lección de
 `ANTES-DE-EMPEZAR-UN-MODULO.md` §2 va justo a eso: «una barrera que calla te deja seguir; una que para
 en falso te para. **Son la misma enfermedad.**» La forma de evitarla las dos veces fue la misma:
 **escribir qué se prohíbe, no qué palabra se prohíbe.**
+
+
+---
+
+## §n · Dos defectos técnicos propios, corregidos el 30/09/2026
+
+Los dos salieron de la auditoría comparando M03 con el numerador que M07 ya tenía escrito. **Ninguno
+es una decisión de producto:** son defectos demostrados, y se corrigen sin tocar formato, etiqueta,
+schema ni §g.
+
+**1 · El año era el de UTC.** `OrderCodeAllocator` usaba `clock.GetUtcNow().Year`. El 31 de diciembre a
+las 20:00 de Lima ya es el 1 de enero en UTC, así que **el pedido de esa tarde habría abierto la serie
+del año siguiente** y el cliente habría leído un año que no era el de su calendario. Ahora
+`OrderCode.AnioDe` convierte explícitamente a `America/Lima`, que es la zona en la que M07 ya numeraba.
+
+> **Por qué no se vio antes.** Es un defecto que solo se manifiesta **una tarde al año**, y ninguna
+> prueba lo miraba. Lo destapó comparar con otro módulo que resolvía el mismo problema — que es
+> exactamente la segunda vía del §4 de `ANTES-DE-EMPEZAR-UN-MODULO.md`.
+
+**2 · La guarda de transacción estaba escrita y no puesta.** El `<remarks>` decía «se llama dentro de
+la transacción que persiste el pedido» y **nada lo comprobaba**. Ahora se comprueba
+`Database.CurrentTransaction` y se lanza antes de tocar configuración o base. Mismo efecto que la que
+M07 ya demostró.
+
+> Es el §2 de `ANTES-DE-EMPEZAR-UN-MODULO.md` en su forma exacta: **una barrera que nunca ha dicho no
+> no se distingue de una que funciona.** Esta no podía decir no.
+
+**Y la continuidad no se debilitó:** verificado contra PostgreSQL que un `ROLLBACK` devuelve el número
+—tomó el 1, se deshizo, el siguiente volvió a tomar el 1— y que dos transacciones de la misma serie
+reciben **números distintos y consecutivos**, porque la segunda espera el bloqueo de fila.
+
+---
+
+## §g · **SIGUE ABIERTA**, y ahora con una tensión documental confirmada
+
+**No se cierra en este turno y no se toca ni M03 ni M07 para «resolverla».**
+
+Chat 2 verificó que la `ADR-016` contiene hoy una tensión: dice que la etiqueta del nodo va delante,
+pero M07 usa **otra letra en el mismo nodo**, y la serie queda definida como `(nodo, año, tipo)`.
+**Y M07 no replica ninguna tabla**, así que el motivo que obliga a M03 a llevar nodo no le aplica igual.
+
+Lo que consta en código, sin interpretarlo:
+
+| | M03 | M07 |
+|---|---|---|
+| Letra | `P`, **derivada del nodo** | `C`, **tipo de documento** |
+| Clave de la serie | `(node_code, year)` | `(series_code, year)` — sin nodo |
+| Tablas replicadas | Sí | **Ninguna** |
+
+**Es decisión de arquitectura y producto. Queda escalada.**

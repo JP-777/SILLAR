@@ -52,8 +52,18 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
 
         builder.Property(x => x.Reference).HasColumnName("reference");
 
-        // La atribución es un PAR: nombre congelado más identificador local. Jamás
-        // una FK a core.admin_users — esa tabla no se replica y esta sí (ADR-018).
+        // La atribución son TRES datos que forman una unidad, y en un pago los tres
+        // son obligatorios porque un pago lo registra siempre una persona:
+        //
+        //   registered_by                        nombre congelado al actuar
+        //   registered_by_admin_user_local_id    identificador dentro de su nodo
+        //   registered_by_admin_user_home_node   nodo al que pertenece la CUENTA
+        //
+        // origin_node es independiente de los tres: dice dónde OCURRIÓ LA ACTUACIÓN,
+        // y puede diferir del nodo de la cuenta —una cuenta del nodo A puede registrar
+        // un pago desde el nodo B—. Ningún CHECK exige que coincidan, a propósito.
+        //
+        // Jamás una FK a core.admin_users: esa tabla no se replica y esta sí (ADR-018).
         builder.Property(x => x.RegisteredBy).HasColumnName("registered_by").IsRequired();
 
         // Dato de bitácora, no puntero. Se interpreta contra el nodo de pertenencia

@@ -72,7 +72,17 @@ internal sealed class OrderStatusChangeConfiguration : IEntityTypeConfiguration<
             .HasColumnType("timestamptz")
             .IsRequired();
 
-        // La atribución es un PAR. Jamás una FK a core.admin_users.
+        // La atribución son TRES datos que forman una unidad, y aquí van los tres o
+        // ninguno: los tres nulos significan que lo hizo el sistema.
+        //
+        //   changed_by                        nombre congelado al actuar
+        //   changed_by_admin_user_local_id    identificador dentro de su nodo
+        //   changed_by_admin_user_home_node   nodo al que pertenece la CUENTA
+        //
+        // origin_node es independiente: dice dónde OCURRIÓ LA ACTUACIÓN, y puede
+        // diferir del nodo de la cuenta. Tampoco interviene el origin_node del pedido.
+        //
+        // Jamás una FK a core.admin_users (ADR-018).
         builder.Property(x => x.ChangedBy).HasColumnName("changed_by");
 
         // Dato de bitácora, no puntero. Se interpreta contra el nodo de pertenencia

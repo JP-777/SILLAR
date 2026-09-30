@@ -19,6 +19,43 @@ namespace Sillar.Modules.Sales.Data;
 /// </remarks>
 public static class OrderCode
 {
+    /// <summary>
+    /// La zona del negocio. El año visible de un pedido es el de Lima, no el de UTC.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>No es un detalle de presentación: decide a qué serie pertenece el pedido.</b>
+    /// El 31 de diciembre a las 20:00 de Lima ya es el 1 de enero en UTC, así que un
+    /// pedido hecho esa tarde llevaría el año siguiente y abriría una serie que
+    /// todavía no le corresponde. Y el cliente que lo dicte por teléfono estaría
+    /// leyendo un año que no es el de su calendario.
+    /// </para>
+    /// <para>
+    /// Es además la zona en la que ya numera M07 sus cotizaciones, y dos módulos del
+    /// mismo producto discrepando sobre qué año es sería un defecto que solo se ve
+    /// una tarde al año.
+    /// </para>
+    /// <para>
+    /// Se resuelve por identificador IANA, que .NET traduce también en Windows —el
+    /// desarrollo alterna entre Windows y Arch Linux—.
+    /// </para>
+    /// </remarks>
+    public const string ZonaDelNegocio = "America/Lima";
+
+    private static readonly TimeZoneInfo Lima = TimeZoneInfo.FindSystemTimeZoneById(ZonaDelNegocio);
+
+    /// <summary>
+    /// El año al que pertenece la serie de un instante dado, en hora de Lima.
+    /// </summary>
+    /// <remarks>
+    /// Está aquí, en la parte pura y sin base ni reloj inyectado, para que su
+    /// frontera se pueda provocar en milisegundos: la del 31 de diciembre es la única
+    /// que importa y no hace falta una base de datos para verla.
+    /// </remarks>
+    /// <param name="instante">El momento, con su desplazamiento.</param>
+    public static int AnioDe(DateTimeOffset instante)
+        => TimeZoneInfo.ConvertTime(instante, Lima).Year;
+
     /// <summary>Cuántos dígitos lleva el correlativo, rellenando con ceros.</summary>
     /// <remarks>
     /// Cuatro, como el ejemplo ratificado. <b>No es un techo:</b> el número 10 000

@@ -12,7 +12,8 @@ namespace Sillar.Modules.Sales.Data;
 /// <para>
 /// <b>Se llama dentro de la transacción que persiste el pedido, y al final.</b>
 /// Las dos condiciones son del mecanismo aprobado el 27 de septiembre de 2026 y
-/// ninguna es un detalle:
+/// ninguna es un detalle. <b>La primera está impuesta</b>, no solo escrita: sin
+/// transacción abierta este método lanza antes de tocar nada.
 /// </para>
 /// <list type="bullet">
 ///   <item>
@@ -76,6 +77,28 @@ internal sealed class OrderCodeAllocator(
     /// </exception>
     public async Task<string> SiguienteAsync(CancellationToken cancellationToken)
     {
+        // Lo primero, y antes de tocar la configuración o la base: sin transacción
+        // abierta este método NO numera.
+        //
+        // Hasta ahora esto estaba documentado y no impuesto, que es la definición de
+        // una barrera escrita y no puesta. Fuera de una transacción el UPDATE del
+        // contador se confirma solo, así que un fallo posterior al insertar el pedido
+        // dejaría el número consumido y un hueco permanente en la serie — exactamente
+        // lo que «sin huecos» prohíbe, y por el mismo mecanismo que descartó nextval.
+        //
+        // La guarda va en la operación y no en quien llama: ponerla en el llamador
+        // protegería de ese llamador, y aquí protege de todos, incluidos los que
+        // todavía no existen. Mismo efecto que la que M07 ya demostró en su numerador
+        // de cotizaciones.
+        if (database.Database.CurrentTransaction is null)
+        {
+            throw new InvalidOperationException(
+                "El número de pedido se pide dentro de la misma transacción que " +
+                "persiste el pedido, y no hay ninguna abierta. Fuera de ella el " +
+                "contador se confirmaría solo: si el pedido fallara después, el número " +
+                "quedaría consumido y la serie tendría un hueco permanente.");
+        }
+
         var label = settings.Get(SalesSettingsKeys.OrderSeriesLabel);
 
         if (string.IsNullOrWhiteSpace(label))
@@ -88,7 +111,11 @@ internal sealed class OrderCodeAllocator(
                 "letra igual en dos nodos produce dos pedidos con el mismo código.");
         }
 
-        var year = clock.GetUtcNow().Year;
+        // El año es el de Lima, no el de UTC: el 31 de diciembre a las 20:00 de Lima
+        // ya es el 1 de enero en UTC, y el pedido de esa tarde pertenece a la serie
+        // del año que el cliente tiene en su calendario. La conversión vive en
+        // OrderCode.AnioDe, que es puro y por eso su frontera se prueba sin base.
+        var year = OrderCode.AnioDe(clock.GetUtcNow());
 
         // La fila de la serie puede no existir todavía: primer pedido del año, o
         // primera instalación. ON CONFLICT deja que dos transacciones simultáneas
