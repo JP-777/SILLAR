@@ -183,6 +183,39 @@ public sealed class CatalogContractPostgresTests
         }
     }
 
+    [Fact]
+    public async Task ItemExisteYEstaActivo_traduce_en_postgresql_y_distingue_activa_inactiva_e_inexistente()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var (db, sql) = await OpenAsync(ct);
+        await using (db)
+        await using (var tx = await db.Database.BeginTransactionAsync(ct))
+        {
+            var marker = Guid.NewGuid().ToString("N");
+            var product = Product(marker);
+            var item = Item(marker);
+            product.Items.Add(item);
+            db.Products.Add(product);
+            await db.SaveChangesAsync(ct);
+
+            var itemId = item.Id;
+            var service = new CatalogService(db);
+            sql.Clear();
+
+            Assert.True(await service.ItemExisteYEstaActivoAsync(itemId, ct));
+
+            item.IsActive = false;
+            await db.SaveChangesAsync(ct);
+            db.ChangeTracker.Clear();
+
+            Assert.False(await service.ItemExisteYEstaActivoAsync(itemId, ct));
+            Assert.False(await service.ItemExisteYEstaActivoAsync(Guid.NewGuid(), ct));
+
+            Assert.Contains("catalog.product_items", sql.All, StringComparison.OrdinalIgnoreCase);
+            await tx.RollbackAsync(ct);
+        }
+    }
+
     private sealed class SqlCapture : DbCommandInterceptor
     {
         private readonly List<string> commands = [];
