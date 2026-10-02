@@ -2,7 +2,10 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Sillar.Modules.Sales.Contracts;
 using Sillar.Modules.Sales.Data;
+using Sillar.Modules.Sales.Endpoints;
+using Sillar.Modules.Sales.Pedidos;
 using Sillar.Shared.Data.Modularity;
 using Sillar.Shared.Modularity;
 using Sillar.Shared.Replication;
@@ -92,14 +95,24 @@ public sealed class SalesModule : IModule, IModuleMigrations
             options, connectionString, SalesDbContext.Schema, SalesDbContext.MigrationsHistoryTable));
 
         services.AddScoped<OrderCodeAllocator>();
+        services.AddScoped<CongeladorDeCliente>();
+        services.AddScoped<VencimientoDePlazos>();
+
+        // El hueco que M04 declara en su ficha de cliente. Se registra el contrato,
+        // no la clase: M04 lo pide al contenedor y comprueba si vino, así que sin M03
+        // instalado el hueco se explica y no falla.
+        services.AddScoped<ICustomerOrderHistory, HistorialDePedidos>();
     }
 
     /// <inheritdoc />
     /// <remarks>
-    /// Todavía sin endpoints: el paso 3 del ciclo llega después de DATOS. El
-    /// módulo ya se descubre, migra y se desinstala.
+    /// Solo las rutas de lectura del cliente. La creación del pedido necesita la
+    /// autoridad de precio de M01 y espera la certificación de C15; las operaciones
+    /// del personal esperan que <c>ICurrentAdmin</c> pueda dar los tres datos de
+    /// atribución que R-14 exige, y hoy no puede.
     /// </remarks>
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
+        endpoints.MapPedidosDelClienteEndpoints();
     }
 }

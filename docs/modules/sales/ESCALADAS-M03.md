@@ -19,6 +19,7 @@ las tiene.**
 | **§c** Efectivo | ✅ **CERRADA por JP: Yape y efectivo.** R-01 |
 | **§d** Acceso a «a consultar» | ✅ **CERRADA por JP: exige cuenta.** R-11 |
 | **§o** Dos necesidades de datos, reportadas sin diseñar | **COSTURA DE DATOS** — ver abajo |
+| **§p** `ICurrentAdmin` no da dos de los tres datos de R-14 | **ELEVADA por Chat 2** al líder/colíder — ver abajo |
 | **§g** ¿Etiqueta por nodo o por nodo × tipo? | ✅ **CERRADA por JP: la serie es nodo × año × tipo.** Coordinación inter-nodo → **M16** |
 | **§h** Unicidad de etiqueta entre nodos desconectados | ✅ **CERRADA: queda deliberadamente en M16**, con §g |
 | **§i** `core.media_assets → core.admin_users` cruza la ADR-018 | **HALLAZGO del 27/09, de CORE, no de M03** — ver abajo |
@@ -715,3 +716,74 @@ estado. Para eso haría falta una columna o una tabla.
 > de datos y la pido entonces.
 >
 > No añado la columna «por si acaso»: sin un segundo caso real no se generaliza.
+
+
+---
+
+## §p · `ICurrentAdmin` no puede alimentar R-14 · **ELEVADA**
+
+Apareció al planificar el tramo de API, y es un bloqueo **independiente de C15**.
+
+`ICurrentAdmin` en `main` expone `AdminUserId`, `Email`, `Role` e `IsInRole`. R-14 exige tres datos:
+
+| R-14 exige | Fuente |
+|---|---|
+| Identificador local | ✅ `AdminUserId` |
+| **Nombre visible congelado** | ❌ **No existe.** Da `Email`, que no es un nombre |
+| **Nodo de pertenencia de la cuenta** | ❌ **No existe** |
+
+`core.admin_users` **sí tiene `full_name`** —comprobado en la base— pero **M03 no puede leer esa
+tabla**: su propio `<remarks>` dice que ni la tabla ni la cookie ni el token le pertenecen. Y la tabla
+**no tiene ninguna columna de nodo**.
+
+**Qué bloquea:** registrar pago, cancelar y cualquier cambio de estado por personal. **Qué no
+bloquea:** el vencimiento automático, porque es acción del sistema y sus tres datos van `NULL`.
+
+**Lo que NO se hizo, por instrucción expresa y porque las tres son trampas:**
+
+| Atajo | Por qué no |
+|---|---|
+| Derivar `home_node` de `NodeIdentity.Code` | Hoy sería correcto —`admin_users` no se replica, así que toda cuenta es local— pero es **la derivación que R-14 prohíbe**, y solo vale mientras ninguna cuenta venga de fuera |
+| Usar `Email` como nombre visible | Identifica, pero **no es un nombre**. Y congelarlo sería congelar la decisión |
+| Leer `core.admin_users` desde M03 | Prohibido, y además rompería la frontera que hace desmontable el módulo |
+
+**Elevada por Chat 2.** M03 no modifica `ICurrentAdmin`.
+
+---
+
+## Tramo D1–D3 + vencimiento · hecho el 02/10/2026
+
+Primer tramo de API de M03, con `main` (`fb44057`) incorporado por merge normal. **Sin creación de
+pedido, sin Catálogo, sin operaciones de personal.**
+
+| Pieza | Qué consume | Estado |
+|---|---|---|
+| **D1** Congelar al cliente | `ICustomerSnapshotReader`, **sobrecarga sin dirección** | Hecho |
+| **D2** Lectura propia | `ICurrentCustomer` | Hecho, dos rutas |
+| **D3** `ICustomerOrderHistory` | **Nada de CRM** | Implementado sobre `sales` |
+| **Vencimiento** | Nada | Hecho, atribución `NULL` |
+
+**Y el tramo encontró un defecto propio.** `VencimientoDePlazos` abría su transacción **sin mirar si
+ya había una**, así que no se podía componer: PostgreSQL no admite anidarlas y la operación reventaba
+dentro de otra. Lo destapó la propia prueba, que envuelve cada caso en una transacción para no dejar
+filas. Ahora **se une a la del llamador si existe** y solo abre la suya si no hay ninguna.
+
+> **El criterio queda escrito porque las dos operaciones del módulo hacen lo contrario:**
+> `OrderCodeAllocator` **exige** transacción abierta —numerar fuera dejaría un hueco en la serie—,
+> y `VencimientoDePlazos` **la abre si falta** —vencer plazos es una operación completa por sí misma—.
+> La atomicidad la garantiza quien abre la transacción.
+
+### Las pruebas de persistencia y la puerta · **dicho sin adorno**
+
+Las 13 pruebas de D2, D3 y vencimiento corren **contra PostgreSQL real**, no con EF InMemory: lo que
+comprueban es traducción, aislamiento y que el `CHECK` de atribución **acepte** tres nulos, y un
+proveedor en memoria daría verde sin tocar nada de eso.
+
+**No son destructivas** —cada una vive en una transacción que se deshace—, así que corren contra la
+base de desarrollo sin estropearla, al contrario que las de M04 y M02.
+
+> **Pero en la puerta canónica fallarán hasta que se resuelva §j.** La etapa de migraciones de
+> `scripts/verificar.mjs` no incluye `Sillar.Modules.Sales`, así que la base efímera no tiene el schema
+> `sales` y el `SalesDbFixture` **falla diciendo exactamente eso y nombrando §j**. No se saltan en
+> silencio: una omitida sin declarar es peor que una roja, porque la roja se ve. **No toqué
+> `verificar.mjs` ni ejecuté la puerta**, las dos cosas por instrucción.
