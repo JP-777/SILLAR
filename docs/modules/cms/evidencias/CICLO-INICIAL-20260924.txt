@@ -1,0 +1,214 @@
+[WebServer] $ vite --port 56119 --strictPort
+[WebServer]
+[WebServer]   VITE v7.3.6  ready in 417 ms
+[WebServer]
+[WebServer]   ➜  Local:   http://localhost:56119/
+[WebServer]   ➜  Network: use --host to expose
+[e2e] destruyendo un stack anterior, si quedó alguno...
+time="2026-09-24T12:53:18-05:00" level=warning msg="Warning: No resource found to remove for project \"sillar_m02_cierre_evidencia_e2e\"."
+[e2e] levantando la base de datos...
+ Network sillar_m02_cierre_evidencia_e2e_default Creating
+ Network sillar_m02_cierre_evidencia_e2e_default Created
+ Volume sillar_m02_cierre_evidencia_e2e_db_data Creating
+ Volume sillar_m02_cierre_evidencia_e2e_db_data Created
+ Container sillar_m02_cierre_evidencia_e2e_db Creating
+ Container sillar_m02_cierre_evidencia_e2e_db Created
+ Container sillar_m02_cierre_evidencia_e2e_db Starting
+ Container sillar_m02_cierre_evidencia_e2e_db Started
+[e2e] aplicando migraciones (CORE, Catalog, Cms, CRM)...
+Build started...
+Build succeeded.
+Failed executing DbCommand (78ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM core.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260816073536_CoreInitial'.
+Applying migration '20260828200857_CoreEmailSettings'.
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260829011000_CoreSmtpSettings'.
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Done.
+Build started...
+Build succeeded.
+Failed executing DbCommand (59ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM catalog.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260816073647_CatalogInitial'.
+Done.
+Build started...
+Build succeeded.
+Failed executing DbCommand (81ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM cms.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260820050000_CmsInitial'.
+Done.
+Build started...
+Build succeeded.
+Failed executing DbCommand (56ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM crm.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260824190200_CrmInitial'.
+Done.
+[e2e] aplicando seeds (sin datos de negocio)...
+BEGIN
+INSERT 0 11
+INSERT 0 0
+UPDATE 3
+COMMIT
+BEGIN
+COMMIT
+BEGIN
+COMMIT
+ ?column?
+----------
+        1
+(1 row)
+
+[e2e] construyendo y levantando la API (Debug, con módulos de mentira)...
+ Image sillar_m02_cierre_evidencia_e2e-api Building
+#1 [internal] load local bake definitions
+#1 reading from stdin 646B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 2.39kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:10.0
+#3 DONE 0.0s
+
+#4 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:10.0
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 1.40kB done
+#5 DONE 0.0s
+
+#6 [build 1/4] FROM mcr.microsoft.com/dotnet/sdk:10.0
+#6 DONE 0.0s
+
+#7 [final 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 22.29kB 0.0s done
+#8 DONE 0.0s
+
+#9 [final 2/3] WORKDIR /app
+#9 CACHED
+
+#10 [build 2/4] WORKDIR /src
+#10 CACHED
+
+#11 [build 3/4] COPY . .
+#11 CACHED
+
+#12 [build 4/4] RUN dotnet publish Sillar.Api/Sillar.Api.csproj -c Debug -o /app
+#12 CACHED
+
+#13 [final 3/3] COPY --from=build /app .
+#13 CACHED
+
+#14 exporting to image
+#14 exporting layers done
+#14 writing image sha256:7be43923656ff908f077939133d117d488a596591905142cf159ed2024059a49 done
+#14 naming to docker.io/library/sillar_m02_cierre_evidencia_e2e-api done
+#14 DONE 0.0s
+
+#15 resolving provenance for metadata file
+#15 DONE 0.0s
+ Image sillar_m02_cierre_evidencia_e2e-api Built
+ Container sillar_m02_cierre_evidencia_e2e_db Running
+ Container sillar_m02_cierre_evidencia_e2e_api Creating
+ Container sillar_m02_cierre_evidencia_e2e_api Created
+ Container sillar_m02_cierre_evidencia_e2e_db Waiting
+ Container sillar_m02_cierre_evidencia_e2e_db Healthy
+ Container sillar_m02_cierre_evidencia_e2e_api Starting
+ Container sillar_m02_cierre_evidencia_e2e_api Started
+[e2e] completando la instalación...
+[e2e] iniciando sesión (reintenta hasta que el proceso nuevo esté arriba)...
+[e2e] creando el segundo usuario, de rol admin...
+[e2e] montando el grafo de módulos de mentira (las cuatro variantes de tarjeta)...
+[e2e] activando M01 catálogo...
+[e2e] activando M02 contenido...
+[e2e] activando M04 clientes y contacto...
+[e2e] entorno listo.
+
+Running 1 test using 1 worker
+
+DO
+DO
+[WebServer] 12:56:45 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 12:56:47 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 12:56:50 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+DO
+psql:/scripts/integrations/cms_catalog_drop.sql:23: NOTICE:  constraint "fk_featured_products_product_id" of relation "featured_products" does not exist, skipping
+DO
+psql:/scripts/modules/cms/99_drop.sql:11: NOTICE:  drop cascades to 7 other objects
+DETAIL:  drop cascades to table cms.__migrations
+drop cascades to table cms.banners
+drop cascades to table cms.promotions
+drop cascades to table cms.featured_products
+drop cascades to table cms.featured_projects
+drop cascades to table cms.social_links
+drop cascades to function cms.set_updated_at()
+DROP SCHEMA
+DROP SCHEMA
+psql:/scripts/modules/cms/99_drop.sql:11: NOTICE:  schema "cms" does not exist, skipping
+Build started...
+Build succeeded.
+Failed executing DbCommand (34ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM cms.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260820050000_CmsInitial'.
+Done.
+BEGIN
+COMMIT
+BEGIN
+COMMIT
+DO
+DO
+[WebServer] 12:57:28 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 12:57:30 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+  ✓  1 [chromium] › tests/zz-z-m02-ciclo-diagnostico.spec.ts:234:1 › [M02-CICLO] desmontar e instalar sin romper CORE, Catálogo ni superficies (1.1m)
+[e2e] generando la galería de capturas...
+[e2e] destruyendo el stack e2e...
+ Container sillar_m02_cierre_evidencia_e2e_api Stopping
+ Container sillar_m02_cierre_evidencia_e2e_api Stopped
+ Container sillar_m02_cierre_evidencia_e2e_api Removing
+ Container sillar_m02_cierre_evidencia_e2e_api Removed
+ Container sillar_m02_cierre_evidencia_e2e_db Stopping
+ Container sillar_m02_cierre_evidencia_e2e_db Stopped
+ Container sillar_m02_cierre_evidencia_e2e_db Removing
+ Container sillar_m02_cierre_evidencia_e2e_db Removed
+ Volume sillar_m02_cierre_evidencia_e2e_db_data Removing
+ Network sillar_m02_cierre_evidencia_e2e_default Removing
+ Volume sillar_m02_cierre_evidencia_e2e_db_data Removed
+ Network sillar_m02_cierre_evidencia_e2e_default Removed
+
+  1 passed (4.5m)
+
+To open last HTML report run:
+
+  pnpm exec playwright show-report

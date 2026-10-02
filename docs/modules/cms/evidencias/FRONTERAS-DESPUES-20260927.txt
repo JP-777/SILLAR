@@ -1,0 +1,47 @@
+# Barrera de fronteras DESPUÉS de corregir NoPhoto
+# Rama: integration/m02-cierre-candidata · base del cambio: 6e01a20192eb1f8afac04dbd43158ed41b6efab4 + corrección de cmsHome.tsx:3 (sin commitear al registrar)
+# Fecha: 2026-09-27 01:03:36 -05
+# cmsHome.tsx:3 → import { NoPhoto } from '../../shared/ui/NoPhoto';
+
+## node frontend/scripts/fronteras-frontend.mjs
+Fronteras del frontend: 151 ficheros, 686 imports, sin violaciones.
+# rc=0
+
+## node --test tests/fronterasFrontend.test.mjs (resumen)
+ok 1 - el frontend real cumple las fronteras entre módulos
+ok 2 - cada excepción de composición se usa en el frontend real
+ok 3 - la lista de composición no nombra ningún fichero de un módulo
+ok 4 - un módulo importa de shared, de sí mismo y de paquetes sin violación
+ok 5 - un punto de composición declarado importa el routes de cualquier módulo
+ok 6 - un comentario o una cadena con forma de import no cuentan
+ok 7 - F1: un módulo que importa de otro módulo es rechazado, con fichero y línea
+ok 8 - F1: ninguna forma de import se escapa
+ok 9 - F1: el CSS de otro módulo tampoco se importa
+ok 10 - F1: ninguna entrada de composición afloja la regla entre módulos
+ok 11 - F2: shared no importa de un módulo, de platform ni de app
+ok 12 - F3: un módulo no importa de app ni de main
+ok 13 - F4: un fichero de plataforma no declarado no importa de un módulo
+ok 14 - F4: un punto de composición solo importa lo que tiene declarado
+ok 15 - F4: una excepción de composición que ya no se usa hace fallar
+ok 16 - F5: una ruta no relativa hacia el árbol es rechazada
+ok 17 - F6: un import relativo que sale de src es rechazado
+ok 18 - F7: import() con ruta calculada falla, no se ignora
+ok 19 - import() con plantilla sin sustituciones se juzga como un import literal
+ok 20 - typeof import() de otro módulo en un tipo es F1
+ok 21 - import.meta.glob dentro del propio módulo, de shared o con exclusión pasa
+ok 22 - import.meta.glob que alcanza otro módulo es F1, con la línea del patrón
+ok 23 - import.meta.glob calculado, que abarca src/ o que vuelve a subir tras un comodín es F7
+ok 24 - import.meta.glob desde la plataforma hacia un módulo es F4
+ok 25 - import.meta que no se puede verificar es F7; env, url y hot pasan
+ok 26 - new URL con import.meta.url hacia otro módulo es F1; hacia lo propio pasa
+ok 27 - new URL con import.meta.url y ruta calculada es F7; hacia /src es F5
+ok 28 - new URL con otra base no es una referencia al árbol, como en MediaPage
+ok 29 - url() en CSS hacia otro módulo es F1, con o sin comillas
+ok 30 - url() en CSS: shared hacia un módulo es F2, plataforma es F4, /src es F5
+ok 31 - url() en CSS hacia lo propio, shared, public, esquemas o anclas pasa; y un comentario no cuenta
+ok 32 - romper el frontend real: el import de NoPhoto de M02 desde catálogo se rechaza
+ok 33 - el comando termina en 1 con una violación y en 0 sin ella
+ok 34 - el comando falla si la carpeta a analizar no existe
+# tests 34
+# pass 34
+# fail 0

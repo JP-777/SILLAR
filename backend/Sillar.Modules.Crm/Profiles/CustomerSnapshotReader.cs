@@ -65,4 +65,27 @@ internal sealed class CustomerSnapshotReader(
                 data.Department,
                 data.Reference));
     }
+
+    public async Task<CustomerOrderContactSnapshot?> GetForOrderAsync(
+        Guid customerId,
+        CancellationToken cancellationToken)
+    {
+        // Mismas guardas que la variante con dirección —ficha activa y con
+        // cuenta—, sin tocar las direcciones. InternalNotes no se selecciona.
+        return await (
+            from customer in database.Customers.AsNoTracking()
+            join account in database.CustomerAccounts.AsNoTracking()
+                on customer.CustomerId equals account.CustomerId
+            where customer.CustomerId == customerId
+                  && customer.IsActive
+            select new CustomerOrderContactSnapshot(
+                customer.CustomerId,
+                customer.FullName,
+                customer.Email,
+                customer.Phone,
+                customer.DocumentType,
+                customer.DocumentNumber,
+                account.EmailVerifiedAt != null))
+            .SingleOrDefaultAsync(cancellationToken);
+    }
 }

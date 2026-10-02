@@ -1,0 +1,44 @@
+$ node scripts/fronteras-frontend.mjs && node --test tests/fronterasFrontend.test.mjs
+Fronteras del frontend: 151 ficheros, 685 imports, sin violaciones.
+✔ el frontend real cumple las fronteras entre módulos (427.60479ms)
+✔ cada excepción de composición se usa en el frontend real (212.477685ms)
+✔ la lista de composición no nombra ningún fichero de un módulo (0.344303ms)
+✔ un módulo importa de shared, de sí mismo y de paquetes sin violación (2.246182ms)
+✔ un punto de composición declarado importa el routes de cualquier módulo (1.508308ms)
+✔ un comentario o una cadena con forma de import no cuentan (2.617891ms)
+✔ F1: un módulo que importa de otro módulo es rechazado, con fichero y línea (2.045479ms)
+✔ F1: ninguna forma de import se escapa (13.178547ms)
+✔ F1: el CSS de otro módulo tampoco se importa (2.699518ms)
+✔ F1: ninguna entrada de composición afloja la regla entre módulos (2.016578ms)
+✔ F2: shared no importa de un módulo, de platform ni de app (5.456578ms)
+✔ F3: un módulo no importa de app ni de main (3.278822ms)
+✔ F4: un fichero de plataforma no declarado no importa de un módulo (1.559791ms)
+✔ F4: un punto de composición solo importa lo que tiene declarado (1.582481ms)
+✔ F4: una excepción de composición que ya no se usa hace fallar (1.293312ms)
+✔ F5: una ruta no relativa hacia el árbol es rechazada (4.967037ms)
+✔ F6: un import relativo que sale de src es rechazado (1.949227ms)
+✔ F7: import() con ruta calculada falla, no se ignora (6.138264ms)
+✔ import() con plantilla sin sustituciones se juzga como un import literal (2.495276ms)
+✔ typeof import() de otro módulo en un tipo es F1 (1.949186ms)
+✔ import.meta.glob dentro del propio módulo, de shared o con exclusión pasa (2.480097ms)
+✔ import.meta.glob que alcanza otro módulo es F1, con la línea del patrón (5.732175ms)
+✔ import.meta.glob calculado, que abarca src/ o que vuelve a subir tras un comodín es F7 (9.334315ms)
+✔ import.meta.glob desde la plataforma hacia un módulo es F4 (1.538514ms)
+✔ import.meta que no se puede verificar es F7; env, url y hot pasan (5.905582ms)
+✔ new URL con import.meta.url hacia otro módulo es F1; hacia lo propio pasa (4.228923ms)
+✔ new URL con import.meta.url y ruta calculada es F7; hacia /src es F5 (2.380514ms)
+✔ new URL con otra base no es una referencia al árbol, como en MediaPage (1.581399ms)
+✔ url() en CSS hacia otro módulo es F1, con o sin comillas (3.476805ms)
+✔ url() en CSS: shared hacia un módulo es F2, plataforma es F4, /src es F5 (3.024241ms)
+✔ url() en CSS hacia lo propio, shared, public, esquemas o anclas pasa; y un comentario no cuenta (1.149679ms)
+✔ romper el frontend real: el import de NoPhoto de M02 desde catálogo se rechaza (229.142297ms)
+✔ el comando termina en 1 con una violación y en 0 sin ella (1212.492614ms)
+✔ el comando falla si la carpeta a analizar no existe (415.962886ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3145.538336

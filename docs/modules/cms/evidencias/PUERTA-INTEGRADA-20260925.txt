@@ -1,0 +1,668 @@
+Comprobando el entorno...
+  Suspensión bloqueada durante la corrida (2/2 inhibidores).
+Preflight: coherencia de .env.example...
+Base backend efímera: sillar_verify_1790371376385_59676
+Barrido: sin bases huérfanas antiguas.
+[1/6] tipos del frontend...
+[2/6] tipos del arnés e2e...
+[3/6] compilación del backend...
+[4/6] migraciones backend (BD efímera)...
+[5/6] pruebas del backend...
+[6/6] suite e2e...
+
+FALLÓ en la etapa: suite e2e
+  Terminó con código 1.
+[WebServer]
+[WebServer]   VITE v7.3.6  ready in 277 ms
+[WebServer]
+[WebServer]   ➜  Local:   http://localhost:56119/
+[WebServer]   ➜  Network: use --host to expose
+[e2e] destruyendo un stack anterior, si quedó alguno...
+[e2e] levantando la base de datos...
+[e2e] aplicando migraciones (CORE, Catalog, Cms, CRM)...
+Build started...
+Build succeeded.
+Failed executing DbCommand (41ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM core.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260816073536_CoreInitial'.
+Applying migration '20260828200857_CoreEmailSettings'.
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260829011000_CoreSmtpSettings'.
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Done.
+Build started...
+Build succeeded.
+Failed executing DbCommand (41ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM catalog.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260816073647_CatalogInitial'.
+Done.
+Build started...
+Build succeeded.
+Failed executing DbCommand (44ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM cms.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260820050000_CmsInitial'.
+Done.
+Build started...
+Build succeeded.
+Failed executing DbCommand (41ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM crm.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260824190200_CrmInitial'.
+Done.
+[e2e] aplicando seeds (sin datos de negocio)...
+BEGIN
+INSERT 0 11
+INSERT 0 0
+UPDATE 3
+COMMIT
+BEGIN
+COMMIT
+BEGIN
+COMMIT
+ ?column?
+----------
+        1
+(1 row)
+
+[e2e] construyendo y levantando la API (Debug, con módulos de mentira)...
+#1 [internal] load local bake definitions
+#1 reading from stdin 646B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 2.39kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:10.0
+#3 DONE 0.0s
+
+#4 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:10.0
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 1.40kB done
+#5 DONE 0.0s
+
+#6 [final 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0
+#6 DONE 0.0s
+
+#7 [build 1/4] FROM mcr.microsoft.com/dotnet/sdk:10.0
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 22.29kB 0.0s done
+#8 DONE 0.0s
+
+#9 [final 2/3] WORKDIR /app
+#9 CACHED
+
+#10 [build 2/4] WORKDIR /src
+#10 CACHED
+
+#11 [build 3/4] COPY . .
+#11 CACHED
+
+#12 [build 4/4] RUN dotnet publish Sillar.Api/Sillar.Api.csproj -c Debug -o /app
+#12 CACHED
+
+#13 [final 3/3] COPY --from=build /app .
+#13 CACHED
+
+#14 exporting to image
+#14 exporting layers done
+#14 writing image sha256:7be43923656ff908f077939133d117d488a596591905142cf159ed2024059a49 done
+#14 naming to docker.io/library/sillar_m02_cierre_evidencia_e2e-api
+#14 naming to docker.io/library/sillar_m02_cierre_evidencia_e2e-api done
+#14 DONE 0.0s
+
+#15 resolving provenance for metadata file
+#15 DONE 0.0s
+[e2e] completando la instalación...
+[e2e] iniciando sesión (reintenta hasta que el proceso nuevo esté arriba)...
+[e2e] creando el segundo usuario, de rol admin...
+[e2e] montando el grafo de módulos de mentira (las cuatro variantes de tarjeta)...
+[e2e] activando M01 catálogo...
+[e2e] activando M02 contenido...
+[e2e] activando M04 clientes y contacto...
+[e2e] entorno listo.
+
+Running 158 tests using 1 worker
+
+  ✓    1 [chromium] › tests/aa-vacios.spec.ts:39:1 › Sin marcas, la pantalla invita a crear la primera (7.8s)
+  ✓    2 [chromium] › tests/aa-vacios.spec.ts:62:1 › Sin categorías, la pantalla invita a crear la primera (5.4s)
+  ✓    3 [chromium] › tests/aa-vacios.spec.ts:79:1 › Sin productos, la pantalla invita a crear el primero (5.0s)
+  ✓    4 [chromium] › tests/aa-vacios.spec.ts:96:1 › El sitio recién instalado tiene nombre, sin que nadie lo escriba dos veces (1.6s)
+  ✓    5 [chromium] › tests/aa-vacios.spec.ts:136:1 › Sin contenido publicado, la portada no enseña ningún bloque de M02 (1.9s)
+  ✓    6 [chromium] › tests/aa-vacios.spec.ts:189:1 › Con el catálogo vacío, la portada no invita a verlo (1.6s)
+  ✓    7 [chromium] › tests/aa-vacios.spec.ts:246:1 › Con el catálogo vacío y nadie más aportando, la portada lo dice (31.2s)
+  ✓    8 [chromium] › tests/aa-vacios.spec.ts:311:1 › Con M02 activo y sin redes publicadas, no hay pie en el documento (1.7s)
+  ✓    9 [chromium] › tests/aa-vacios.spec.ts:359:1 › Mientras las redes se cargan, el pie no aparece ni parpadea (6.4s)
+  ✓   10 [chromium] › tests/api-traduccion.spec.ts:111:1 › Ningún endpoint de M01 revienta al traducir su consulta a SQL (2.5s)
+  ✓   11 [chromium] › tests/api-traduccion.spec.ts:136:1 › Ningún endpoint responde 200 con el cuerpo vacío (1.1s)
+  ✓   12 [chromium] › tests/api-traduccion.spec.ts:179:1 › La lista de endpoints vigilados no se queda corta (748ms)
+  ✓   13 [chromium] › tests/auditoria.spec.ts:19:1 › Para filtrar por persona no hace falta saberse ningún identificador (3.5s)
+  ✓   14 [chromium] › tests/catalogo.spec.ts:46:1 › Una marca creada aparece en el listado con su dirección web (5.2s)
+  ✓   15 [chromium] › tests/catalogo.spec.ts:65:1 › Crear ARTESCO existiendo Artesco explica que los nombres no distinguen mayúsculas (6.2s)
+  ✓   16 [chromium] › tests/catalogo.spec.ts:102:1 › Dar de baja una marca avisa sin contar productos y no actúa en cascada (7.9s)
+  ✓   17 [chromium] › tests/catalogo.spec.ts:139:1 › El indicador de carga no parpadea en una respuesta rápida (2.9s)
+  ✓   18 [chromium] › tests/catalogo.spec.ts:177:1 › El foco no se pierde y Escape cierra el panel sin guardar (2.2s)
+  ✓   19 [chromium] › tests/catalogo.spec.ts:209:1 › Con M01 desactivado no queda entrada de menú, ni ruta viva, ni hueco en el inicio (38.1s)
+  ✓   20 [chromium] › tests/categorias.spec.ts:40:1 › Una subcategoría se ve colgando de su padre, no suelta (8.5s)
+  ✓   21 [chromium] › tests/categorias.spec.ts:68:1 › Una categoría no puede colgar de su propia descendiente (2.8s)
+  ✓   22 [chromium] › tests/categorias.spec.ts:94:1 › Dar de baja una categoría con productos dice cuántos se quedan sin ella (11.7s)
+  ✓   23 [chromium] › tests/categorias.spec.ts:182:1 › El slug repetido de una categoría se explica sin jerga (3.4s)
+  ✓   24 [chromium] › tests/categorias.spec.ts:206:1 › El foco no se pierde y Escape cierra el panel sin guardar (2.4s)
+  ✓   25 [chromium] › tests/componentes.spec.ts:45:1 › El contraste de lo designado se cumple en los dos temas (4.8s)
+  ✓   26 [chromium] › tests/componentes.spec.ts:65:1 › Un filtro encendido lo dice sin depender del color (3.2s)
+  ✓   27 [chromium] › tests/componentes.spec.ts:87:1 › Los controles pequeños llegan al mínimo táctil (2.6s)
+  ✓   28 [chromium] › tests/configuracion.spec.ts:12:1 › Los datos sin definir se destacan y se cuentan (7.9s)
+  ✓   29 [chromium] › tests/configuracion.spec.ts:41:1 › Con rol admin el interruptor de publicación está deshabilitado y dice por qué (6.9s)
+  ✓   30 [chromium] › tests/configuracion.spec.ts:65:1 › Con rol super_admin el interruptor de publicación sí se puede usar (2.3s)
+  ✓   31 [chromium] › tests/contenido.spec.ts:88:1 › Un banner se crea, se edita, cambia de sitio y se desactiva, y la portada lo sigue (15.4s)
+  ✓   32 [chromium] › tests/contenido.spec.ts:204:1 › Reactivar una red social recupera su misma fila, no crea otra (12.9s)
+  ✓   33 [chromium] › tests/contenido.spec.ts:299:1 › Un producto se busca, se destaca y su snapshot se pone al día cuando el catálogo cambia (15.1s)
+  ✓   34 [chromium] › tests/contenido.spec.ts:446:1 › Con contenido de los cuatro tipos, la portada enseña los cuatro bloques (5.2s)
+  ✓   35 [chromium] › tests/contenido.spec.ts:608:1 › Una red publicada aparece en el pie de toda la web pública (4.2s)
+  ✓   36 [chromium] › tests/contenido.spec.ts:664:1 › Navegar por la web pública no remonta al contribuyente del pie (3.7s)
+  ✓   37 [chromium] › tests/contenido.spec.ts:757:1 › Al retirar todo el contenido, la portada vuelve a quedarse sin bloques (2.7s)
+  ✓   38 [chromium] › tests/contenido.spec.ts:836:1 › Con M02 activo y sin nada publicado, la portada lo dice en vez de quedarse muda (1.2m)
+  ✓   39 [chromium] › tests/core-email-settings.spec.ts:7:1 › CORE/M04 — super_admin configura y diagnostica SMTP sin exponer el secreto (4.8s)
+  ✓   40 [chromium] › tests/core-email-settings.spec.ts:47:1 › CORE/M04 — admin puede ver SMTP pero no editarlo ni probarlo (2.3s)
+  ✓   41 [chromium] › tests/crm-admin-customers.spec.ts:4:1 › M04 — panel crea, edita, invita y reactiva una ficha (4.4s)
+  ✓   42 [chromium] › tests/crm-auth-isolation.spec.ts:58:3 › M04 — aislamiento HTTP de identidades › la cookie de cliente no autentica rutas del panel (2.9s)
+  ✓   43 [chromium] › tests/crm-auth-isolation.spec.ts:70:3 › M04 — aislamiento HTTP de identidades › la cookie administrativa no autentica rutas de cliente (772ms)
+  ✓   44 [chromium] › tests/crm-contact.spec.ts:4:1 › M04 — contacto público llega al panel y admite baja lógica (4.4s)
+  ✓   45 [chromium] › tests/crm-customer-auth.spec.ts:6:1 › M04 — registro, login y sesiones cliente/panel coexisten (5.3s)
+  ✓   46 [chromium] › tests/crm-customer-profile.spec.ts:5:1 › M04 — perfil muestra verificación y cambia dirección preferida (5.4s)
+  ✓   47 [chromium] › tests/crm-final-accessibility.spec.ts:6:1 › M04 — contacto público y panel quedan limpios en axe, claro y oscuro (7.8s)
+  ✓   48 [chromium] › tests/crm-final-accessibility.spec.ts:19:1 › M04 — contacto respeta reduced motion y sigue limpio en axe (2.2s)
+  ✓   49 [chromium] › tests/errores-de-arranque-y-reinicio.spec.ts:64:1 › H03: un 503 sin respuesta del servidor no se presenta igual que una negativa del instalador (2.6s)
+  ✓   50 [chromium] › tests/errores-de-arranque-y-reinicio.spec.ts:75:1 › H03: tras un corte de red en modo instalación, reintentar vuelve a enviar la instalación (6.3s)
+  ✓   51 [chromium] › tests/errores-de-arranque-y-reinicio.spec.ts:134:1 › H08: tras el reinicio, el primer Reintentar ya alcanza al servidor en cuanto ha vuelto (1.8s)
+  ✓   52 [chromium] › tests/errores-de-arranque-y-reinicio.spec.ts:152:1 › H08: si el servidor vuelve todavía en modo instalación, Reintentar lo alcanza (5.9s)
+  ✓   53 [chromium] › tests/errores-de-arranque-y-reinicio.spec.ts:169:1 › H22: un fallo de /api/setup/status no se atribuye a los módulos (1.3s)
+  ✓   54 [chromium] › tests/errores-de-arranque-y-reinicio.spec.ts:181:1 › H22: un corte de red no aconseja revisar un módulo recién activado si nadie activó ninguno (1.3s)
+  ✓   55 [chromium] › tests/errores-de-arranque-y-reinicio.spec.ts:191:1 › H22 (contraste): si fallan las capacidades, se ve una página de error con Reintentar, no una pantalla vacía (1.4s)
+  ✓   56 [chromium] › tests/h29-navegacion-estrecha.spec.ts:54:1 › H29: a 390 px hay topbar compacta y 16 destinos usan grupos plegables (3.1s)
+  ✓   57 [chromium] › tests/h29-navegacion-estrecha.spec.ts:103:1 › H29: editor con 10 destinos conserva disclosures (2.2s)
+  ✓   58 [chromium] › tests/h29-navegacion-estrecha.spec.ts:118:1 › H29: editor con CORE y Catálogo tiene 5 destinos sin disclosures (2.1s)
+  ✓   59 [chromium] › tests/h29-navegacion-estrecha.spec.ts:139:1 › H29: cuenta estrecha conserva tema, contraseña y cierre de sesión (2.5s)
+  ✓   60 [chromium] › tests/h29-navegacion-estrecha.spec.ts:169:1 › H29: movimiento reducido elimina el desplazamiento de las superficies (2.5s)
+  ✓   61 [chromium] › tests/h29-navegacion-estrecha.spec.ts:216:1 › H29: escritorio conserva la barra lateral y oculta los controles móviles (2.1s)
+  ✓   62 [chromium] › tests/imagenes-asociadas.spec.ts:40:1 › Quitar la asociación de una imagen no borra el archivo, y otro producto la sigue viendo (4.0s)
+  ✓   63 [chromium] › tests/imagenes-asociadas.spec.ts:152:1 › Una recarga de la ficha que llega tarde no reabre el cajón que el guardado cerró (3.0s)
+  ✓   64 [chromium] › tests/imagenes-asociadas.spec.ts:262:1 › Una asociación de imagen que termina después del guardado no reabre el cajón (3.0s)
+  ✓   65 [chromium] › tests/m02-cierre-evidencia.spec.ts:242:1 › [M02-C3] módulo inactivo: arranque, menú, portada y pie sin huecos (45.5s)
+  ✓   66 [chromium] › tests/m02-cierre-evidencia.spec.ts:316:1 › [M02-C5] banner móvil: fallback real y dos proporciones (6.6s)
+  ✓   67 [chromium] › tests/m02-cierre-evidencia.spec.ts:350:1 › [M02-C13] corregir slug cambia el enlace público de verdad (7.1s)
+  ✓   68 [chromium] › tests/m02-cierre-evidencia.spec.ts:371:1 › [M02-C16] precios variables: Desde; sin precio: A consultar (3.8s)
+  ✓   69 [chromium] › tests/m02-cierre-evidencia.spec.ts:389:1 › [M02-C17] gratis puro no se confunde con gratis + pago (2.8s)
+  ✓   70 [chromium] › tests/m02-cierre-evidencia.spec.ts:406:1 › [M02-C18] retirar presentación cara cambia el estado de precio en portada (4.2s)
+  ✓   71 [chromium] › tests/m02-cierre-evidencia.spec.ts:426:1 › [M02-C19] editar precio de presentación llega al destacado (2.7s)
+  ✘   72 [chromium] › tests/m02-cierre-evidencia.spec.ts:440:1 › [M02-C21] destacado sin foto compara nombre y categoría con tarjeta Catálogo (15.3s)
+  ✓   73 [chromium] › tests/m02-cierre-evidencia.spec.ts:470:1 › [M02-C24] Catálogo inactivo: ninguna solicitud al selector (42.2s)
+  ✓   74 [chromium] › tests/m02-cierre-evidencia.spec.ts:509:1 › [M02-C25] prefijos explican que hace falta una palabra completa (3.8s)
+  ✓   75 [chromium] › tests/m02-cierre-evidencia.spec.ts:543:1 › [M02-C32] móvil, escritorio, teclado y colores solo desde tokens (18.5s)
+  ✓   76 [chromium] › tests/medios-compartidos.spec.ts:23:1 › Dar de baja un archivo usado por cuatro cosas no rompe ninguna (1.6s)
+  ✓   77 [chromium] › tests/medios.spec.ts:48:1 › Los tres rechazos de subida dicen cosas distintas entre sí (10.0s)
+  ✓   78 [chromium] › tests/medios.spec.ts:89:1 › Subir dos veces el mismo archivo avisa, no falla (6.9s)
+  ✓   79 [chromium] › tests/medios.spec.ts:109:1 › Antes de dar de baja un archivo se avisa sin contar cuántos lo usan (6.8s)
+  ✓   80 [chromium] › tests/medios.spec.ts:155:1 › El resumen de una subida no contiene el identificador, y la entrada sigue completa (886ms)
+  ✓   81 [chromium] › tests/modulos.spec.ts:15:1 › Las cuatro variantes de tarjeta se ven correctas (5.9s)
+  ✓   82 [chromium] › tests/modulos.spec.ts:30:1 › Se pinta una tarjeta por cada módulo que el servidor conoce (2.0s)
+  ✓   83 [chromium] › tests/modulos.spec.ts:57:1 › CORE aparece sin interruptor, no con uno deshabilitado (2.0s)
+  ✓   84 [chromium] › tests/modulos.spec.ts:77:1 › Una tarjeta bloqueada nombra el módulo que le falta y enlaza a él (8.4s)
+  ✓   85 [chromium] › tests/modulos.spec.ts:101:1 › El diálogo de confirmación dice la verdad sobre el reinicio (11.0s)
+  ✓   86 [chromium] › tests/modulos.spec.ts:159:1 › El 409 al desactivar nombra quién bloquea y no reinicia nada (6.8s)
+  ✓   87 [chromium] › tests/modulos.spec.ts:228:1 › Activar lleva al estado de reconexión y vuelve solo, con la sesión abierta (23.0s)
+  ✓   88 [chromium] › tests/movil-teclado.spec.ts:99:1 › A 390 px, ninguna pantalla del panel se sale por la derecha (17.8s)
+  ✓   89 [chromium] › tests/movil-teclado.spec.ts:120:1 › A 390 px, ninguna pantalla pública se sale por la derecha (4.9s)
+  ✓   90 [chromium] › tests/movil-teclado.spec.ts:155:1 › A 390 px, el menú del panel sigue estando y lleva a todas partes (3.4s)
+  ✓   91 [chromium] › tests/movil-teclado.spec.ts:196:1 › Con el teclado se llega al contenido de cada pantalla, y el foco se ve (15.5s)
+  ✓   92 [chromium] › tests/presentaciones.spec.ts:45:1 › El momento: los valores se quedan, se anuncia con palabras y el cursor va a la segunda (9.8s)
+  ✓   93 [chromium] › tests/presentaciones.spec.ts:91:1 › El momento funciona entero con movimiento reducido (3.9s)
+  ✓   94 [chromium] › tests/presentaciones.spec.ts:115:1 › La vuelta atrás cambia de nombre según si destruye algo (3.7s)
+  ✓   95 [chromium] › tests/presentaciones.spec.ts:130:1 › Ninguna celda de precio queda en blanco: dice de qué hereda y con qué valor (11.8s)
+  ✓   96 [chromium] › tests/presentaciones.spec.ts:157:1 › Dos presentaciones sin código conviven, y la interfaz dice que está bien (4.8s)
+  ✓   97 [chromium] › tests/presentaciones.spec.ts:185:1 › El caso del plumón: tres colores, tres códigos de barras, un solo nombre y precio (9.7s)
+  ✓   98 [chromium] › tests/presentaciones.spec.ts:239:1 › El caso del cuaderno: dos precios propios conviven con el del producto (6.0s)
+  ✓   99 [chromium] › tests/presentaciones.spec.ts:268:1 › Desactivar la última presentación activa propone desactivar el producto (3.9s)
+  ✓  100 [chromium] › tests/presentaciones.spec.ts:302:1 › Un código repetido dice con qué producto choca (6.9s)
+  ✓  101 [chromium] › tests/presentaciones.spec.ts:327:1 › A 390 px la tabla es una tarjeta por presentación, sin perder campos ni acciones (3.9s)
+  ✓  102 [chromium] › tests/producto-categorias.spec.ts:66:1 › Con una sola categoría no hay nada que elegir, y se dice por qué (7.2s)
+  ✓  103 [chromium] › tests/producto-categorias.spec.ts:85:1 › Dos categorías: se elige la principal, y la elección sobrevive al guardado (7.7s)
+  ✓  104 [chromium] › tests/producto-categorias.spec.ts:125:1 › Quitar la principal promueve otra y lo dice con palabras (3.1s)
+  ✓  105 [chromium] › tests/productos.spec.ts:56:1 › El caso del restaurante: un plato sin código ni precio, y sin la palabra «variante» (7.0s)
+  ✓  106 [chromium] › tests/productos.spec.ts:102:1 › Nulo es «consultar» y cero es «gratis», y no se confunden (6.9s)
+  ✓  107 [chromium] › tests/productos.spec.ts:128:1 › Renombrar un producto no cambia su dirección web (3.0s)
+  ✓  108 [chromium] › tests/productos.spec.ts:149:1 › El código de la variante única se guarda y se relee como campo del producto (3.5s)
+  ✓  109 [chromium] › tests/productos.spec.ts:174:1 › El listado pagina, y se llega a la página 2 con controles alcanzables en móvil (2.4s)
+  ✓  110 [chromium] › tests/productos.spec.ts:228:1 › Un campo y un botón puestos en la misma fila miden lo mismo (2.1s)
+  ✓  111 [chromium] › tests/public-contact.spec.ts:47:1 › §18 — CORE publica contacto y su WhatsApp prevalece sobre CMS (3.0s)
+  ✓  112 [chromium] › tests/public-contact.spec.ts:130:1 › §18 — valores pendientes o vacíos no se publican (2.8s)
+  ✓  113 [chromium] › tests/recorrido.spec.ts:28:1 › El recorrido de la demostración, de entrar al panel a verlo en la tienda (31.3s)
+  ✓  114 [chromium] › tests/sesion-csrf.spec.ts:31:1 › Dos pestañas escriben alternando sin que ninguna reciba un 403 (5.6s)
+  ✓  115 [chromium] › tests/setup-arranque.spec.ts:3:1 › migraciones pendientes no abren el asistente (1.6s)
+  ✓  116 [chromium] › tests/setup-arranque.spec.ts:40:1 › Ir al acceso espera modo normal antes de cambiar de URL (3.0s)
+  ✓  117 [chromium] › tests/tarjeta-precio.spec.ts:72:1 › Con presentaciones de distinto precio, la tarjeta dice «Desde» y el más barato (5.0s)
+  ✓  118 [chromium] › tests/tarjeta-precio.spec.ts:110:1 › Si una presentación es «a consultar», toda la tarjeta lo es (2.3s)
+  ✓  119 [chromium] › tests/tarjeta-precio.spec.ts:140:1 › Con todas al mismo precio, la tarjeta no dice «Desde» (2.2s)
+  ✓  120 [chromium] › tests/tarjeta-precio.spec.ts:168:1 › El listado de una categoría enseña el mismo precio que el general (2.1s)
+  ✓  121 [chromium] › tests/teclado.spec.ts:70:1 › El foco nunca se pierde al recorrer Módulos con Tab (2.9s)
+  ✓  122 [chromium] › tests/teclado.spec.ts:78:1 › El foco nunca se pierde al recorrer Usuarios con Tab (9.3s)
+  ✓  123 [chromium] › tests/teclado.spec.ts:86:1 › El Tab no se escapa del diálogo abierto (2.8s)
+  ✓  124 [chromium] › tests/teclado.spec.ts:110:1 › Escape cierra el diálogo sin ejecutar la acción (2.6s)
+  ✓  125 [chromium] › tests/teclado.spec.ts:130:1 › El anillo de foco se ve al abrir el diálogo con el ratón (6.1s)
+  ✓  126 [chromium] › tests/teclado.spec.ts:174:1 › Un aviso que caduca no mueve el foco del panel ni del diálogo abiertos (12.5s)
+  ✓  127 [chromium] › tests/tema.spec.ts:19:1 › Con el sistema en oscuro, elegir tema claro deja la interfaz clara de verdad (2.4s)
+  ✓  128 [chromium] › tests/tienda.spec.ts:129:1 › El caso del cono: en las dos categorías, y la miga usa solo la principal (7.0s)
+  ✓  129 [chromium] › tests/tienda.spec.ts:158:1 › Buscar «lapiz» devuelve «LÁPIZ», y el término se queda en el campo (2.4s)
+  ✓  130 [chromium] › tests/tienda.spec.ts:174:1 › Cero y vacío se distinguen sin leer la letra pequeña (6.9s)
+  ✓  131 [chromium] › tests/tienda.spec.ts:204:1 › Los productos sin foto llenan su cuadrado y la rejilla no parece rota (2.3s)
+  ✓  132 [chromium] › tests/tienda.spec.ts:229:1 › Un producto despublicado responde 404, no 403 (2.1s)
+  ✓  133 [chromium] › tests/tienda.spec.ts:276:1 › Con la categoría principal desactivada, la miga cae a otra activa (2.3s)
+  ✓  134 [chromium] › tests/tienda.spec.ts:314:1 › Cambiar de filtro vuelve a la página 1, y la paginación se usa a 390 px (2.8s)
+  ✓  135 [chromium] › tests/tienda.spec.ts:364:1 › Con M01 desactivado, las rutas públicas desaparecen y el inicio no deja hueco (39.1s)
+  ✓  136 [chromium] › tests/transversal.spec.ts:41:1 › Ninguna pantalla dice «Ha ocurrido un error» (19.2s)
+  ✓  137 [chromium] › tests/transversal.spec.ts:51:1 › Ningún botón se llama «Aceptar» (15.2s)
+  ✓  138 [chromium] › tests/transversal.spec.ts:99:1 › Ninguna pantalla enseña un identificador al usuario (13.5s)
+  ✓  139 [chromium] › tests/transversal.spec.ts:131:1 › La auditoría no enseña identificadores (4.3s)
+  ✓  140 [chromium] › tests/transversal.spec.ts:204:1 › Con movimiento reducido, el indicador se detiene y sigue diciendo qué espera (3.9s)
+  ✓  141 [chromium] › tests/transversal.spec.ts:269:1 › El proyecto dice qué preferencia de movimiento aplica, y coincide (2.0s)
+  ✓  142 [chromium] › tests/transversal.spec.ts:293:1 › Cada pantalla tiene su propio título de documento (14.9s)
+  ✓  143 [chromium] › tests/transversal.spec.ts:313:1 › Al cambiar de ruta el foco va al contenido, no se queda en el menú (3.1s)
+  ✓  144 [chromium] › tests/transversal.spec.ts:344:1 › El enlace de salto existe, está oculto y aparece al enfocarlo (2.1s)
+  ✓  145 [chromium] › tests/zz-desmontaje.spec.ts:104:1 › Desactivar M01 no borra nada, y al volver el catálogo está donde lo dejaron (41.1s)
+  ✓  146 [chromium] › tests/zz-instalacion.spec.ts:44:1 › Swagger lleva las rutas de M01, y ningún cuerpo de ningún módulo se queda sin ejemplo (4.6s)
+BEGIN
+COMMIT
+  ✓  147 [chromium] › tests/zz-instalacion.spec.ts:97:1 › Los scripts del catálogo son idempotentes (626ms)
+DO
+DROP SCHEMA
+DO
+DROP SCHEMA
+Build started...
+Build succeeded.
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+No migrations were applied. The database is already up to date.
+Done.
+Build started...
+Build succeeded.
+Failed executing DbCommand (67ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM catalog.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260816073647_CatalogInitial'.
+Done.
+Build started...
+Build succeeded.
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+No migrations were applied. The database is already up to date.
+Done.
+Build started...
+Build succeeded.
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+No migrations were applied. The database is already up to date.
+Done.
+BEGIN
+INSERT 0 0
+INSERT 0 0
+UPDATE 3
+COMMIT
+BEGIN
+COMMIT
+BEGIN
+COMMIT
+ ?column?
+----------
+        1
+(1 row)
+
+  ✓  148 [chromium] › tests/zz-instalacion.spec.ts:114:1 › El schema catalog se elimina sin llevarse nada de core (1.3m)
+DO
+DO
+DO
+DO
+DROP SCHEMA
+DROP SCHEMA
+Build started...
+Build succeeded.
+Failed executing DbCommand (46ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM cms.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260820050000_CmsInitial'.
+Done.
+BEGIN
+COMMIT
+BEGIN
+COMMIT
+DO
+DO
+  ✓  149 [chromium] › tests/zz-z-m02-ciclo-diagnostico.spec.ts:285:1 › [M02-CICLO] desmontar e instalar sin romper CORE, Catálogo ni superficies (1.2m)
+  ✓  150 [chromium-movimiento-reducido] › tests/transversal.spec.ts:41:1 › Ninguna pantalla dice «Ha ocurrido un error» (17.6s)
+  ✓  151 [chromium-movimiento-reducido] › tests/transversal.spec.ts:51:1 › Ningún botón se llama «Aceptar» (14.8s)
+  ✓  152 [chromium-movimiento-reducido] › tests/transversal.spec.ts:99:1 › Ninguna pantalla enseña un identificador al usuario (13.1s)
+  ✓  153 [chromium-movimiento-reducido] › tests/transversal.spec.ts:131:1 › La auditoría no enseña identificadores (4.5s)
+  ✓  154 [chromium-movimiento-reducido] › tests/transversal.spec.ts:204:1 › Con movimiento reducido, el indicador se detiene y sigue diciendo qué espera (3.9s)
+  ✓  155 [chromium-movimiento-reducido] › tests/transversal.spec.ts:269:1 › El proyecto dice qué preferencia de movimiento aplica, y coincide (1.7s)
+  ✓  156 [chromium-movimiento-reducido] › tests/transversal.spec.ts:293:1 › Cada pantalla tiene su propio título de documento (14.0s)
+  ✓  157 [chromium-movimiento-reducido] › tests/transversal.spec.ts:313:1 › Al cambiar de ruta el foco va al contenido, no se queda en el menú (2.6s)
+  ✓  158 [chromium-movimiento-reducido] › tests/transversal.spec.ts:344:1 › El enlace de salto existe, está oculto y aparece al enfocarlo (1.8s)
+[e2e] generando la galería de capturas...
+[e2e] destruyendo el stack e2e...
+
+
+  1) [chromium] › tests/m02-cierre-evidencia.spec.ts:440:1 › [M02-C21] destacado sin foto compara nombre y categoría con tarjeta Catálogo
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: locator('section[aria-labelledby="cms-featured-products-title"] article').filter({ hasText: 'Sin foto M02 1790372006177' }).locator('.ti-nophoto__context')
+    Expected: "Escolar sin foto 1790372006177"
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" with timeout 10000ms
+      - waiting for locator('section[aria-labelledby="cms-featured-products-title"] article').filter({ hasText: 'Sin foto M02 1790372006177' }).locator('.ti-nophoto__context')
+
+
+      464 |   await expect(cms.getByRole('link', { name })).toBeVisible();
+      465 |   // Paridad visual real, no solo que el nombre se repite fuera del cuadro.
+    > 466 |   await expect(cms.locator('.ti-nophoto__context')).toHaveText(catName);
+          |                                                     ^
+      467 |   await expect(cms.locator('.ti-nophoto__name')).toHaveText(name);
+      468 | });
+      469 |
+        at /home/JP777/sillar-m02-cierre-evidencia/e2e/tests/m02-cierre-evidencia.spec.ts:466:53
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/m02-cierre-evidencia--M02--c3930-egoría-con-tarjeta-Catálogo-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/m02-cierre-evidencia--M02--c3930-egoría-con-tarjeta-Catálogo-chromium/test-failed-3.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/m02-cierre-evidencia--M02--c3930-egoría-con-tarjeta-Catálogo-chromium/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #4: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/m02-cierre-evidencia--M02--c3930-egoría-con-tarjeta-Catálogo-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/m02-cierre-evidencia--M02--c3930-egoría-con-tarjeta-Catálogo-chromium/error-context.md
+
+    attachment #6: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/m02-cierre-evidencia--M02--c3930-egoría-con-tarjeta-Catálogo-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/m02-cierre-evidencia--M02--c3930-egoría-con-tarjeta-Catálogo-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › tests/m02-cierre-evidencia.spec.ts:440:1 › [M02-C21] destacado sin foto compara nombre y categoría con tarjeta Catálogo
+  157 passed (23.6m)
+[WebServer] $ vite --port 56119 --strictPort
+time="2026-09-25T16:25:01-05:00" level=warning msg="Warning: No resource found to remove for project \"sillar_m02_cierre_evidencia_e2e\"."
+ Network sillar_m02_cierre_evidencia_e2e_default Creating
+ Network sillar_m02_cierre_evidencia_e2e_default Created
+ Volume sillar_m02_cierre_evidencia_e2e_db_data Creating
+ Volume sillar_m02_cierre_evidencia_e2e_db_data Created
+ Container sillar_m02_cierre_evidencia_e2e_db Creating
+ Container sillar_m02_cierre_evidencia_e2e_db Created
+ Container sillar_m02_cierre_evidencia_e2e_db Starting
+ Container sillar_m02_cierre_evidencia_e2e_db Started
+ Image sillar_m02_cierre_evidencia_e2e-api Building
+ Image sillar_m02_cierre_evidencia_e2e-api Built
+ Container sillar_m02_cierre_evidencia_e2e_db Running
+ Container sillar_m02_cierre_evidencia_e2e_api Creating
+ Container sillar_m02_cierre_evidencia_e2e_api Created
+ Container sillar_m02_cierre_evidencia_e2e_db Waiting
+ Container sillar_m02_cierre_evidencia_e2e_db Healthy
+ Container sillar_m02_cierre_evidencia_e2e_api Starting
+ Container sillar_m02_cierre_evidencia_e2e_api Started
+[WebServer] 4:27:07 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:27:09 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:27:12 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:27:24 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:27:26 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:28:20 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:28:22 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:28:25 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:28:39 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:28:41 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:28:44 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:30:54 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:30:56 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:30:59 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:31:10 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:31:12 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:31:15 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:31:28 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:31:30 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:31:33 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: socket hang up
+[WebServer]     at Socket.socketOnEnd (node:_http_client:617:25)
+[WebServer]     at Socket.emit (node:events:521:24)
+[WebServer]     at endReadableNT (node:internal/streams/readable:1744:12)
+[WebServer]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[WebServer] 4:31:44 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:31:46 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:31:49 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:33:30 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:33:32 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: socket hang up
+[WebServer]     at Socket.socketOnEnd (node:_http_client:617:25)
+[WebServer]     at Socket.emit (node:events:521:24)
+[WebServer]     at endReadableNT (node:internal/streams/readable:1744:12)
+[WebServer]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[WebServer] 4:33:35 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:33:51 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:33:53 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:33:56 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:35:02 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:35:04 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:35:07 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:35:20 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:35:22 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:35:25 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:37:07 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:37:09 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:37:12 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:42:04 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:42:06 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:42:09 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:42:24 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:42:26 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:42:29 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:44:01 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:44:03 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:44:06 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:44:23 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:44:25 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:44:28 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+psql:/scripts/modules/catalog/99_drop.sql:61: NOTICE:  drop cascades to 8 other objects
+DETAIL:  drop cascades to table catalog.__migrations
+drop cascades to table catalog.brands
+drop cascades to table catalog.categories
+drop cascades to table catalog.products
+drop cascades to table catalog.product_categories
+drop cascades to table catalog.product_images
+drop cascades to table catalog.product_items
+drop cascades to function catalog.set_updated_at()
+psql:/scripts/modules/catalog/99_drop.sql:61: NOTICE:  schema "catalog" does not exist, skipping
+[WebServer] 4:46:13 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:46:15 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:46:18 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+psql:/scripts/integrations/cms_catalog_drop.sql:23: NOTICE:  constraint "fk_featured_products_product_id" of relation "featured_products" does not exist, skipping
+psql:/scripts/modules/cms/99_drop.sql:11: NOTICE:  drop cascades to 7 other objects
+DETAIL:  drop cascades to table cms.__migrations
+drop cascades to table cms.banners
+drop cascades to table cms.promotions
+drop cascades to table cms.featured_products
+drop cascades to table cms.featured_projects
+drop cascades to table cms.social_links
+drop cascades to function cms.set_updated_at()
+psql:/scripts/modules/cms/99_drop.sql:11: NOTICE:  schema "cms" does not exist, skipping
+[WebServer] 4:46:57 PM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 4:46:59 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 4:47:02 PM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+ Container sillar_m02_cierre_evidencia_e2e_api Stopping
+ Container sillar_m02_cierre_evidencia_e2e_api Stopped
+ Container sillar_m02_cierre_evidencia_e2e_api Removing
+ Container sillar_m02_cierre_evidencia_e2e_api Removed
+ Container sillar_m02_cierre_evidencia_e2e_db Stopping
+ Container sillar_m02_cierre_evidencia_e2e_db Stopped
+ Container sillar_m02_cierre_evidencia_e2e_db Removing
+ Container sillar_m02_cierre_evidencia_e2e_db Removed
+ Volume sillar_m02_cierre_evidencia_e2e_db_data Removing
+ Network sillar_m02_cierre_evidencia_e2e_default Removing
+ Volume sillar_m02_cierre_evidencia_e2e_db_data Removed
+ Network sillar_m02_cierre_evidencia_e2e_default Removed
+
+Sin veredicto: a la suite e2e la rompe cualquier capa, así que no se
+afirma de quién es. Abre e2e/test-results/<prueba>/error-context.md,
+que trae el DOM del fallo — docs/ENTORNO.md, hallazgo 9.

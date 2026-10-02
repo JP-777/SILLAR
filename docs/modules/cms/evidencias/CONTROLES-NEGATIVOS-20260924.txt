@@ -1,0 +1,666 @@
+[WebServer] $ vite --port 56119 --strictPort
+[WebServer]
+[WebServer]   VITE v7.3.6  ready in 393 ms
+[WebServer]
+[WebServer]   ➜  Local:   http://localhost:56119/
+[WebServer]   ➜  Network: use --host to expose
+[e2e] destruyendo un stack anterior, si quedó alguno...
+time="2026-09-24T11:16:34-05:00" level=warning msg="Warning: No resource found to remove for project \"sillar_m02_cierre_evidencia_e2e\"."
+[e2e] levantando la base de datos...
+ Network sillar_m02_cierre_evidencia_e2e_default Creating
+ Network sillar_m02_cierre_evidencia_e2e_default Created
+ Volume sillar_m02_cierre_evidencia_e2e_db_data Creating
+ Volume sillar_m02_cierre_evidencia_e2e_db_data Created
+ Container sillar_m02_cierre_evidencia_e2e_db Creating
+ Container sillar_m02_cierre_evidencia_e2e_db Created
+ Container sillar_m02_cierre_evidencia_e2e_db Starting
+ Container sillar_m02_cierre_evidencia_e2e_db Started
+[e2e] aplicando migraciones (CORE, Catalog, Cms, CRM)...
+Build started...
+Build succeeded.
+Failed executing DbCommand (52ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM core.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260816073536_CoreInitial'.
+Applying migration '20260828200857_CoreEmailSettings'.
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260829011000_CoreSmtpSettings'.
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Done.
+Build started...
+Build succeeded.
+Failed executing DbCommand (75ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM catalog.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260816073647_CatalogInitial'.
+Done.
+Build started...
+Build succeeded.
+Failed executing DbCommand (54ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM cms.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260820050000_CmsInitial'.
+Done.
+Build started...
+Build succeeded.
+Failed executing DbCommand (52ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM crm.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260824190200_CrmInitial'.
+Done.
+[e2e] aplicando seeds (sin datos de negocio)...
+BEGIN
+INSERT 0 11
+INSERT 0 0
+UPDATE 3
+COMMIT
+BEGIN
+COMMIT
+BEGIN
+COMMIT
+ ?column?
+----------
+        1
+(1 row)
+
+[e2e] construyendo y levantando la API (Debug, con módulos de mentira)...
+ Image sillar_m02_cierre_evidencia_e2e-api Building
+#1 [internal] load local bake definitions
+#1 reading from stdin 646B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 2.39kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:10.0
+#3 DONE 0.0s
+
+#4 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:10.0
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 1.40kB done
+#5 DONE 0.0s
+
+#6 [final 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0
+#6 DONE 0.0s
+
+#7 [build 1/4] FROM mcr.microsoft.com/dotnet/sdk:10.0
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 22.29kB 0.1s done
+#8 DONE 0.1s
+
+#9 [final 2/3] WORKDIR /app
+#9 CACHED
+
+#10 [build 2/4] WORKDIR /src
+#10 CACHED
+
+#11 [build 3/4] COPY . .
+#11 CACHED
+
+#12 [build 4/4] RUN dotnet publish Sillar.Api/Sillar.Api.csproj -c Debug -o /app
+#12 CACHED
+
+#13 [final 3/3] COPY --from=build /app .
+#13 CACHED
+
+#14 exporting to image
+#14 exporting layers done
+#14 writing image sha256:7be43923656ff908f077939133d117d488a596591905142cf159ed2024059a49 done
+#14 naming to docker.io/library/sillar_m02_cierre_evidencia_e2e-api done
+#14 DONE 0.0s
+
+#15 resolving provenance for metadata file
+#15 DONE 0.0s
+ Image sillar_m02_cierre_evidencia_e2e-api Built
+ Container sillar_m02_cierre_evidencia_e2e_db Running
+ Container sillar_m02_cierre_evidencia_e2e_api Creating
+ Container sillar_m02_cierre_evidencia_e2e_api Created
+ Container sillar_m02_cierre_evidencia_e2e_db Waiting
+ Container sillar_m02_cierre_evidencia_e2e_db Healthy
+ Container sillar_m02_cierre_evidencia_e2e_api Starting
+ Container sillar_m02_cierre_evidencia_e2e_api Started
+[e2e] completando la instalación...
+[e2e] iniciando sesión (reintenta hasta que el proceso nuevo esté arriba)...
+[e2e] creando el segundo usuario, de rol admin...
+[e2e] montando el grafo de módulos de mentira (las cuatro variantes de tarjeta)...
+[e2e] activando M01 catálogo...
+[e2e] activando M02 contenido...
+[e2e] activando M04 clientes y contacto...
+[e2e] entorno listo.
+
+Running 11 tests using 1 worker
+
+[WebServer] 11:19:31 AM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 11:19:33 AM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 11:19:36 AM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 11:20:00 AM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 11:20:02 AM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 11:20:05 AM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+  ✘   1 [chromium] › tests/m02-control-negativo.spec.ts:204:1 › [NEG-M02-C3] módulo inactivo: arranque, menú, portada y pie sin huecos (54.7s)
+  ✘   2 [chromium] › tests/m02-control-negativo.spec.ts:252:1 › [NEG-M02-C5] banner móvil: fallback real y dos proporciones (17.2s)
+  ✘   3 [chromium] › tests/m02-control-negativo.spec.ts:294:1 › [NEG-M02-C13] corregir slug cambia el enlace público de verdad (16.1s)
+  ✘   4 [chromium] › tests/m02-control-negativo.spec.ts:323:1 › [NEG-M02-C16] precios variables: Desde; sin precio: A consultar (14.2s)
+  ✘   5 [chromium] › tests/m02-control-negativo.spec.ts:349:1 › [NEG-M02-C17] gratis puro no se confunde con gratis + pago (14.6s)
+  ✘   6 [chromium] › tests/m02-control-negativo.spec.ts:374:1 › [NEG-M02-C18] retirar presentación cara cambia el estado de precio en portada (15.3s)
+  ✘   7 [chromium] › tests/m02-control-negativo.spec.ts:402:1 › [NEG-M02-C19] editar precio de presentación llega al destacado (14.4s)
+  -   8 [chromium] › tests/m02-control-negativo.spec.ts:424:6 › [NEG-M02-C21] destacado sin foto compara nombre y categoría con tarjeta Catálogo
+[WebServer] 11:22:05 AM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 11:22:07 AM [vite] http proxy error: /api/setup/status
+[WebServer] Error: socket hang up
+[WebServer]     at Socket.socketOnEnd (node:_http_client:617:25)
+[WebServer]     at Socket.emit (node:events:521:24)
+[WebServer]     at endReadableNT (node:internal/streams/readable:1744:12)
+[WebServer]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[WebServer] 11:22:19 AM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]:
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 11:22:21 AM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 11:22:24 AM [vite] http proxy error: /api/setup/status
+[WebServer] Error: socket hang up
+[WebServer]     at Socket.socketOnEnd (node:_http_client:617:25)
+[WebServer]     at Socket.emit (node:events:521:24)
+[WebServer]     at endReadableNT (node:internal/streams/readable:1744:12)
+[WebServer]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+  ✘   9 [chromium] › tests/m02-control-negativo.spec.ts:454:1 › [NEG-M02-C24] Catálogo inactivo: ninguna solicitud al selector (39.7s)
+  ✘  10 [chromium] › tests/m02-control-negativo.spec.ts:497:1 › [NEG-M02-C25] prefijos explican que hace falta una palabra completa (17.4s)
+  ✘  11 [chromium] › tests/m02-control-negativo.spec.ts:541:1 › [NEG-M02-C32] móvil, escritorio, teclado y colores solo desde tokens (3.6s)
+[e2e] generando la galería de capturas...
+[e2e] destruyendo el stack e2e...
+ Container sillar_m02_cierre_evidencia_e2e_api Stopping
+ Container sillar_m02_cierre_evidencia_e2e_api Stopped
+ Container sillar_m02_cierre_evidencia_e2e_api Removing
+ Container sillar_m02_cierre_evidencia_e2e_api Removed
+ Container sillar_m02_cierre_evidencia_e2e_db Stopping
+ Container sillar_m02_cierre_evidencia_e2e_db Stopped
+ Container sillar_m02_cierre_evidencia_e2e_db Removing
+ Container sillar_m02_cierre_evidencia_e2e_db Removed
+ Volume sillar_m02_cierre_evidencia_e2e_db_data Removing
+ Network sillar_m02_cierre_evidencia_e2e_default Removing
+ Volume sillar_m02_cierre_evidencia_e2e_db_data Removed
+ Network sillar_m02_cierre_evidencia_e2e_default Removed
+
+
+  1) [chromium] › tests/m02-control-negativo.spec.ts:204:1 › [NEG-M02-C3] módulo inactivo: arranque, menú, portada y pie sin huecos
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('navigation', { name: 'Secciones del panel' }).locator('a[href^="/admin/contenido/"]')
+    Expected: 0
+    Received: 1
+    Timeout:  10000ms
+
+    Call log:
+      - Expect "toHaveCount" with timeout 10000ms
+      - waiting for getByRole('navigation', { name: 'Secciones del panel' }).locator('a[href^="/admin/contenido/"]')
+        24 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      224 |       node.appendChild(wrong);
+      225 |     });
+    > 226 |     await expect(menu.locator('a[href^="/admin/contenido/"]')).toHaveCount(0);
+          |                                                                ^
+      227 |     await page.goto('/admin/contenido/banners');
+      228 |     await expect(page).not.toHaveURL(/\/admin\/contenido\/banners$/);
+      229 |     await page.goto('/');
+        at /home/JP777/sillar-m02-cierre-evidencia/e2e/tests/m02-control-negativo.spec.ts:226:64
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--ed02d-nú-portada-y-pie-sin-huecos-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--ed02d-nú-portada-y-pie-sin-huecos-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/m02-control-negativo--NEG--ed02d-nú-portada-y-pie-sin-huecos-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--ed02d-nú-portada-y-pie-sin-huecos-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/m02-control-negativo--NEG--ed02d-nú-portada-y-pie-sin-huecos-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › tests/m02-control-negativo.spec.ts:252:1 › [NEG-M02-C5] banner móvil: fallback real y dos proporciones
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0.5
+    Received: 2
+
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+
+      281 |     const img = el as HTMLImageElement;
+      282 |     return img.complete ? img.naturalWidth / img.naturalHeight : 0;
+    > 283 |   })).toBe(0.5);
+          |       ^
+      284 |   const inherited = bannerCard(page, fallback);
+      285 |   await expect(inherited.locator('picture source')).toHaveCount(0);
+      286 |   const original = inherited.locator('img');
+        at /home/JP777/sillar-m02-cierre-evidencia/e2e/tests/m02-control-negativo.spec.ts:283:7
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--54136-ack-real-y-dos-proporciones-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--54136-ack-real-y-dos-proporciones-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/m02-control-negativo--NEG--54136-ack-real-y-dos-proporciones-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--54136-ack-real-y-dos-proporciones-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/m02-control-negativo--NEG--54136-ack-real-y-dos-proporciones-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chromium] › tests/m02-control-negativo.spec.ts:294:1 › [NEG-M02-C13] corregir slug cambia el enlace público de verdad
+
+    Error: expect(locator).toHaveAttribute(expected) failed
+
+    Locator:  locator('section[aria-labelledby="cms-featured-products-title"] article').filter({ hasText: 'Enlace slug 1790266838680' }).getByRole('link', { name: 'Enlace slug 1790266838680' })
+    Expected: "/producto/despues-m02-1790266838680"
+    Received: "/producto/antes-m02-1790266838680"
+    Timeout:  10000ms
+
+    Call log:
+      - Expect "toHaveAttribute" with timeout 10000ms
+      - waiting for locator('section[aria-labelledby="cms-featured-products-title"] article').filter({ hasText: 'Enlace slug 1790266838680' }).getByRole('link', { name: 'Enlace slug 1790266838680' })
+        20 × locator resolved to <a data-discover="true" href="/producto/antes-m02-1790266838680">Enlace slug 1790266838680</a>
+           - unexpected value "/producto/antes-m02-1790266838680"
+
+
+      314 |   await page.reload();
+      315 |   const link = tarjeta(page, name).getByRole('link', { name });
+    > 316 |   await expect(link).toHaveAttribute('href', `/producto/${after}`);
+          |                      ^
+      317 |   await expect(page.locator(`a[href="/producto/${before}"]`)).toHaveCount(0);
+      318 |   await link.click();
+      319 |   await expect(page).toHaveURL(new RegExp(`/producto/${after}$`));
+        at /home/JP777/sillar-m02-cierre-evidencia/e2e/tests/m02-control-negativo.spec.ts:316:22
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--94807-el-enlace-público-de-verdad-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--94807-el-enlace-público-de-verdad-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/m02-control-negativo--NEG--94807-el-enlace-público-de-verdad-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--94807-el-enlace-público-de-verdad-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/m02-control-negativo--NEG--94807-el-enlace-público-de-verdad-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [chromium] › tests/m02-control-negativo.spec.ts:323:1 › [NEG-M02-C16] precios variables: Desde; sin precio: A consultar
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('section[aria-labelledby="cms-featured-products-title"] article').filter({ hasText: 'Variable M02 1790266856005' })
+    Expected pattern: /Desde\s+S\/\s*5(?:[.,]00)?/
+    Received string:  "Variable M02 1790266856005S/ 5.00"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 10000ms
+      - waiting for locator('section[aria-labelledby="cms-featured-products-title"] article').filter({ hasText: 'Variable M02 1790266856005' })
+        23 × locator resolved to <article>…</article>
+           - unexpected value "Variable M02 1790266856005S/ 5.00"
+
+
+      342 |   });
+      343 |   await page.goto('/');
+    > 344 |   await expect(tarjeta(page, variable)).toContainText(/Desde\s+S\/\s*5(?:[.,]00)?/);
+          |                                         ^
+      345 |   await expect(tarjeta(page, none)).toContainText('A consultar');
+      346 |   await expect(tarjeta(page, none)).not.toContainText('Desde');
+      347 | });
+        at /home/JP777/sillar-m02-cierre-evidencia/e2e/tests/m02-control-negativo.spec.ts:344:41
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--75587-esde-sin-precio-A-consultar-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--75587-esde-sin-precio-A-consultar-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/m02-control-negativo--NEG--75587-esde-sin-precio-A-consultar-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--75587-esde-sin-precio-A-consultar-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/m02-control-negativo--NEG--75587-esde-sin-precio-A-consultar-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [chromium] › tests/m02-control-negativo.spec.ts:349:1 › [NEG-M02-C17] gratis puro no se confunde con gratis + pago
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('section[aria-labelledby="cms-featured-products-title"] article').filter({ hasText: 'Gratis mixto M02 1790266871321' })
+    Expected substring: "Desde Gratis"
+    Received string:    "Gratis mixto M02 1790266871321Gratis"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 10000ms
+      - waiting for locator('section[aria-labelledby="cms-featured-products-title"] article').filter({ hasText: 'Gratis mixto M02 1790266871321' })
+        24 × locator resolved to <article>…</article>
+           - unexpected value "Gratis mixto M02 1790266871321Gratis"
+
+
+      369 |   await expect(tarjeta(page, pure)).toContainText('Gratis');
+      370 |   await expect(tarjeta(page, pure)).not.toContainText('Desde Gratis');
+    > 371 |   await expect(tarjeta(page, mixed)).toContainText('Desde Gratis');
+          |                                      ^
+      372 | });
+      373 |
+      374 | test('[NEG-M02-C18] retirar presentación cara cambia el estado de precio en portada', async ({ page }) => {
+        at /home/JP777/sillar-m02-cierre-evidencia/e2e/tests/m02-control-negativo.spec.ts:371:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--82700-se-confunde-con-gratis-pago-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--82700-se-confunde-con-gratis-pago-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/m02-control-negativo--NEG--82700-se-confunde-con-gratis-pago-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--82700-se-confunde-con-gratis-pago-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/m02-control-negativo--NEG--82700-se-confunde-con-gratis-pago-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [chromium] › tests/m02-control-negativo.spec.ts:374:1 › [NEG-M02-C18] retirar presentación cara cambia el estado de precio en portada
+
+    Error: expect(locator).not.toContainText(expected) failed
+
+    Locator: locator('section[aria-labelledby="cms-featured-products-title"] article').filter({ hasText: 'Retiro cara M02 1790266887122' })
+    Expected substring: not "Desde"
+    Received string: "Retiro cara M02 1790266887122Desde S/ 5.00"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "not toContainText" with timeout 10000ms
+      - waiting for locator('section[aria-labelledby="cms-featured-products-title"] article').filter({ hasText: 'Retiro cara M02 1790266887122' })
+        24 × locator resolved to <article>…</article>
+           - unexpected value "Retiro cara M02 1790266887122Desde S/ 5.00"
+
+
+      397 |   await page.reload();
+      398 |   await expect(tarjeta(page, name)).toContainText(/S\/\s*5(?:[.,]00)?/);
+    > 399 |   await expect(tarjeta(page, name)).not.toContainText('Desde');
+          |                                         ^
+      400 | });
+      401 |
+      402 | test('[NEG-M02-C19] editar precio de presentación llega al destacado', async ({ page }) => {
+        at /home/JP777/sillar-m02-cierre-evidencia/e2e/tests/m02-control-negativo.spec.ts:399:41
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--f76ee-estado-de-precio-en-portada-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--f76ee-estado-de-precio-en-portada-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/m02-control-negativo--NEG--f76ee-estado-de-precio-en-portada-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--f76ee-estado-de-precio-en-portada-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/m02-control-negativo--NEG--f76ee-estado-de-precio-en-portada-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) [chromium] › tests/m02-control-negativo.spec.ts:402:1 › [NEG-M02-C19] editar precio de presentación llega al destacado
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('section[aria-labelledby="cms-featured-products-title"] article').filter({ hasText: 'Edición precio M02 1790266903752' })
+    Expected pattern: /Desde\s+S\/\s*7(?:[.,]00)?/
+    Received string:  "Edición precio M02 1790266903752Desde S/ 5.00"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 10000ms
+      - waiting for locator('section[aria-labelledby="cms-featured-products-title"] article').filter({ hasText: 'Edición precio M02 1790266903752' })
+        23 × locator resolved to <article>…</article>
+           - unexpected value "Edición precio M02 1790266903752Desde S/ 5.00"
+
+
+      419 |   });
+      420 |   await page.goto('/');
+    > 421 |   await expect(tarjeta(page, name)).toContainText(/Desde\s+S\/\s*7(?:[.,]00)?/);
+          |                                     ^
+      422 | });
+      423 |
+      424 | test.skip('[NEG-M02-C21] destacado sin foto compara nombre y categoría con tarjeta Catálogo', async ({ page }) => {
+        at /home/JP777/sillar-m02-cierre-evidencia/e2e/tests/m02-control-negativo.spec.ts:421:37
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--5739d-entación-llega-al-destacado-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--5739d-entación-llega-al-destacado-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/m02-control-negativo--NEG--5739d-entación-llega-al-destacado-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--5739d-entación-llega-al-destacado-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/m02-control-negativo--NEG--5739d-entación-llega-al-destacado-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) [chromium] › tests/m02-control-negativo.spec.ts:454:1 › [NEG-M02-C24] Catálogo inactivo: ninguna solicitud al selector
+
+    Error: panel pidió selector con Catálogo inactivo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: 1
+
+      483 |     });
+      484 |     await page.waitForLoadState('networkidle');
+    > 485 |     expect(requests, 'panel pidió selector con Catálogo inactivo').toBe(0);
+          |                                                                    ^
+      486 |     for (const action of ['Destacar producto', 'Destacar el primer producto', 'Actualizar todos', 'Actualizar datos', 'Volver a enlazar']) {
+      487 |       await expect(page.getByRole('button', { name: action, exact: true })).toHaveCount(0);
+      488 |     }
+        at /home/JP777/sillar-m02-cierre-evidencia/e2e/tests/m02-control-negativo.spec.ts:485:68
+
+    Error: La consola del navegador tuvo 1 error(es) durante la prueba
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "[consola] Failed to load resource: the server responded with a status of 404 (Not Found)",
+    + ]
+
+       at ../fixtures/base.ts:96
+
+      94 |       collector.errors,
+      95 |       `La consola del navegador tuvo ${collector.errors.length} error(es) durante la prueba`,
+    > 96 |     ).toEqual([]);
+         |       ^
+      97 |   },
+      98 | });
+      99 |
+        at Object.page (/home/JP777/sillar-m02-cierre-evidencia/e2e/fixtures/base.ts:96:7)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--42317-nguna-solicitud-al-selector-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: errores-de-consola.txt (text/plain) ─────────────────────────────────────────────
+    [consola] Failed to load resource: the server responded with a status of 404 (Not Found)
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--42317-nguna-solicitud-al-selector-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/m02-control-negativo--NEG--42317-nguna-solicitud-al-selector-chromium/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--42317-nguna-solicitud-al-selector-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/m02-control-negativo--NEG--42317-nguna-solicitud-al-selector-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  9) [chromium] › tests/m02-control-negativo.spec.ts:497:1 › [NEG-M02-C25] prefijos explican que hace falta una palabra completa
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog').getByText(/palabra completa/).first()
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 10000ms
+      - waiting for getByRole('dialog').getByText(/palabra completa/).first()
+
+
+      516 |       }
+      517 |     });
+    > 518 |     await expect(drawer.getByText(/palabra completa/).first()).toBeVisible();
+          |                                                                ^
+      519 |   }
+      520 |   // Dirección positiva: una palabra completa sí tiene resultado y acción.
+      521 |   await input.fill('Plumón');
+        at /home/JP777/sillar-m02-cierre-evidencia/e2e/tests/m02-control-negativo.spec.ts:518:64
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--31756--falta-una-palabra-completa-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--31756--falta-una-palabra-completa-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/m02-control-negativo--NEG--31756--falta-una-palabra-completa-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--31756--falta-una-palabra-completa-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/m02-control-negativo--NEG--31756--falta-una-palabra-completa-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10) [chromium] › tests/m02-control-negativo.spec.ts:541:1 › [NEG-M02-C32] móvil, escritorio, teclado y colores solo desde tokens
+
+    Error: /admin/contenido/banners desborda a 390px
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      557 |         client: document.documentElement.clientWidth,
+      558 |       }));
+    > 559 |       expect(width.scroll <= width.client + 1, `${route} desborda a ${viewport.width}px`).toBe(true);
+          |                                                                                           ^
+      560 |       await page.evaluate(() => document.body.focus());
+      561 |       await page.keyboard.press('Tab');
+      562 |       const focus = await page.evaluate(() => {
+        at /home/JP777/sillar-m02-cierre-evidencia/e2e/tests/m02-control-negativo.spec.ts:559:91
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--4814b-y-colores-solo-desde-tokens-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--4814b-y-colores-solo-desde-tokens-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/m02-control-negativo--NEG--4814b-y-colores-solo-desde-tokens-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/m02-control-negativo--NEG--4814b-y-colores-solo-desde-tokens-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/m02-control-negativo--NEG--4814b-y-colores-solo-desde-tokens-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10 failed
+    [chromium] › tests/m02-control-negativo.spec.ts:204:1 › [NEG-M02-C3] módulo inactivo: arranque, menú, portada y pie sin huecos
+    [chromium] › tests/m02-control-negativo.spec.ts:252:1 › [NEG-M02-C5] banner móvil: fallback real y dos proporciones
+    [chromium] › tests/m02-control-negativo.spec.ts:294:1 › [NEG-M02-C13] corregir slug cambia el enlace público de verdad
+    [chromium] › tests/m02-control-negativo.spec.ts:323:1 › [NEG-M02-C16] precios variables: Desde; sin precio: A consultar
+    [chromium] › tests/m02-control-negativo.spec.ts:349:1 › [NEG-M02-C17] gratis puro no se confunde con gratis + pago
+    [chromium] › tests/m02-control-negativo.spec.ts:374:1 › [NEG-M02-C18] retirar presentación cara cambia el estado de precio en portada
+    [chromium] › tests/m02-control-negativo.spec.ts:402:1 › [NEG-M02-C19] editar precio de presentación llega al destacado
+    [chromium] › tests/m02-control-negativo.spec.ts:454:1 › [NEG-M02-C24] Catálogo inactivo: ninguna solicitud al selector
+    [chromium] › tests/m02-control-negativo.spec.ts:497:1 › [NEG-M02-C25] prefijos explican que hace falta una palabra completa
+    [chromium] › tests/m02-control-negativo.spec.ts:541:1 › [NEG-M02-C32] móvil, escritorio, teclado y colores solo desde tokens
+  1 skipped
+
+To open last HTML report run:
+
+  pnpm exec playwright show-report
