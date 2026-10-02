@@ -1,0 +1,36 @@
+# Contrato ICustomerIdentityReader — sabotajes deliberados
+# Base: main e839989 + cambios sin commitear de integration/crm-identidad-cliente
+# Fecha: 2026-09-30 11:51:43 -05
+# Diagnóstico NO canónico: base propia sillar_diag_ident (migraciones Core, Catalog, Cms, Crm);
+#   dotnet test backend/Sillar.Modules.Crm.Tests --filter CustomerIdentityReaderTests|CustomerProfileContractTests
+# I3 no es una guarda: IN (...) ya devuelve cada fila una vez; Distinct() solo reduce parámetros.
+
+== I1 individual: sin la guarda de ficha activa
+  Failed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.Un_cliente_de_baja_o_bloqueado_devuelve_null(estado: "bloqueo") [79 ms]
+  Failed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.Un_cliente_de_baja_o_bloqueado_devuelve_null(estado: "baja") [68 ms]
+Total tests: 17
+     Passed: 15
+     Failed: 2
+rc=1
+== I2 por lotes: sin la guarda de ficha activa
+  Failed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.Por_lotes_devuelve_solo_los_activos_existentes_una_vez_cada_uno [133 ms]
+Total tests: 17
+     Passed: 16
+     Failed: 1
+rc=1
+== I3 por lotes: sin quitar repetidos
+Total tests: 17
+     Passed: 17
+rc=0
+== I4 el record gana una propiedad de notas internas
+  Failed Sillar.Modules.Crm.Tests.CustomerProfileContractTests.Contratos_publicos_no_exponen_campos_internos(type: typeof(Sillar.Modules.Crm.Contracts.CustomerIdentity)) [20 ms]
+  Failed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.No_expone_notas_internas [2 s]
+  Failed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.La_identidad_solo_lleva_id_nombre_correo_y_telefono [13 ms]
+Total tests: 17
+     Passed: 14
+     Failed: 3
+rc=1
+== restaurados, idénticos
+== tras restaurar
+Total tests: 17
+     Passed: 17
