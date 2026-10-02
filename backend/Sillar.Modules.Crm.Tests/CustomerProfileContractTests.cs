@@ -6,6 +6,7 @@ namespace Sillar.Modules.Crm.Tests;
 public sealed class CustomerProfileContractTests
 {
     [Theory]
+    [InlineData(typeof(CustomerIdentity))]
     [InlineData(typeof(CustomerProfileResponse))]
     [InlineData(typeof(CustomerAddressResponse))]
     [InlineData(typeof(CustomerOrderSnapshot))]
