@@ -558,6 +558,43 @@ candidato.
 
 ---
 
+## 30 · Los métodos de los contratos no tienen comprobación de ejecución real contra PostgreSQL · **CONSTRUIR, NO TODAVÍA**
+
+**Creación:** 02/10/2026, America/Lima. **Última revisión de esta entrada:** 2026-10-02 00:16:36 -0500 (America/Lima).
+**Base verificada:** `ee6155309a2511406ac7e41c77e9e4ca0098abf9` (rama `integration/cola-costuras`). **Disposición:** CONSTRUIR, por Chat 2 vía JP.
+**Prioridad:** sin prioridad todavía. **Escrita por:** Claude Code D, como escritor único de costuras. **Se registra, no se implementa.**
+
+**Disparador:** cuando la auditoría manual de contratos se haya hecho **dos veces**. **No antes.**
+
+**Qué se construirá.** Una comprobación automática en `scripts/verificar.mjs` que enumere los
+métodos públicos de los contratos de cada módulo y señale los que no tienen evidencia de
+**ejecución real contra PostgreSQL**.
+
+**Las tres direcciones que deberá tener cuando se construya:**
+
+1. Un contrato con todos sus métodos cubiertos **pasa**.
+2. Un contrato con al menos un método sin cobertura **falla**.
+3. Se rompe a propósito la autoprueba de la barrera y se **ve roja**: si no, no se distingue de
+   una barrera muda (`ANTES-DE-EMPEZAR-UN-MODULO.md` §2).
+
+**Por qué se espera a la segunda vuelta.** La primera auditoría todavía está fijando qué significa
+exactamente «cubierto», y construir ahora la barrera podría automatizar una definición equivocada.
+C15 ya enseñó una sutileza: una prueba puede existir y usar PostgreSQL, pero saltarse con
+`Assert.Skip` cuando no hay base (por ejemplo, `CatalogTranslationTests.cs:59` y `:66`). **«Existe
+una prueba» y «esa prueba se ejecutó de verdad contra PostgreSQL» no son lo mismo**, y la
+definición tiene que distinguirlos antes de convertirse en código.
+
+**Estado temporal.** Las dos primeras vueltas las audita a mano el colíder. Es aceptable para dos
+vueltas y **no es sostenible cuando haya doce módulos**: entonces la auditoría manual deja de
+caber en una revisión y esta comprobación tiene que estar construida.
+
+**Lo que no se afirma.** No se fija aquí cómo se medirá la evidencia de ejecución ni dónde vive la
+lista de contratos: eso sale de las dos auditorías manuales.
+
+**Responsable:** Integración. **Estado:** ABIERTO. Se construye al cumplirse el disparador.
+
+---
+
 ## Resueltos recientemente
 
 *(se borran de arriba y se anotan aquí solo hasta que entren en la bitácora del módulo)*
