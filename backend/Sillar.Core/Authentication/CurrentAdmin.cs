@@ -18,6 +18,12 @@ internal sealed class CurrentAdmin(IHttpContextAccessor accessor) : ICurrentAdmi
     public string? Role => Find(ClaimTypes.Role);
 
     /// <inheritdoc />
+    public string? DisplayName => Find(ClaimTypes.Name);
+
+    /// <inheritdoc />
+    public string? HomeNode => Find(AdminSessionClaims.HomeNode);
+
+    /// <inheritdoc />
     public bool IsInRole(string role) => RoleHierarchy.Satisfies(Role, role);
 
     /// <summary>Identificador de la sesión en curso, para revocarla o conservarla.</summary>

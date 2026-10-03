@@ -22,6 +22,26 @@ public interface ICurrentAdmin
     string? Role { get; }
 
     /// <summary>
+    /// Nombre visible del administrador (<c>full_name</c>), o <c>null</c> si no hay sesión.
+    /// </summary>
+    /// <remarks>
+    /// Es el nombre para enseñar a una persona o para congelarlo en una
+    /// fotografía. No es <see cref="Email"/>: el correo identifica, pero no es un nombre.
+    /// </remarks>
+    string? DisplayName { get; }
+
+    /// <summary>
+    /// Nodo al que pertenece la cuenta, o <c>null</c> si no hay sesión.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="AdminUserId"/> es un entero local: solo identifica a alguien
+    /// junto a este nodo. Una fotografía del autor guardada en una tabla que se
+    /// replica lleva los dos. No es el nodo de la instalación que atiende la
+    /// petición, aunque hoy coincidan.
+    /// </remarks>
+    string? HomeNode { get; }
+
+    /// <summary>
     /// Indica si el usuario alcanza el rol indicado, contando la jerarquía:
     /// un <c>super_admin</c> satisface también <c>admin</c> y <c>editor</c>.
     /// </summary>

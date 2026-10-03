@@ -110,6 +110,7 @@ public sealed class AdminSessionAuthenticationHandler(
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Name, user.FullName),
             new Claim(ClaimTypes.Role, user.Role),
+            new Claim(AdminSessionClaims.HomeNode, user.HomeNode),
             new Claim(AdminSessionClaims.SessionId, session.AdminSessionId.ToString()),
             new Claim(CsrfEndpointFilter.ClaimType, session.CsrfTokenHash)
         ], SchemeName);

@@ -50,18 +50,19 @@ internal sealed class MediaService(
         string originalName,
         string ownerModuleCode,
         string? altText,
-        int actingUserId,
+        AutorDelMedio autor,
         string actingEmail,
         CancellationToken cancellationToken)
     {
-        var asset = await storage.SaveAsync(content, originalName, ownerModuleCode, cancellationToken);
+        var actingUserId = autor.LocalId;
+        var asset = await storage.SaveAsync(content, originalName, ownerModuleCode, autor, cancellationToken);
 
-        // El autor y el texto alternativo se completan después: no forman parte
-        // del contrato de IMediaStorage, que los demás módulos usan sin sesión.
+        // El texto alternativo se completa después: no forma parte del contrato
+        // de IMediaStorage, que los demás módulos usan sin sesión. El autor ya
+        // entró en el INSERT.
         var row = await database.MediaAssets
             .FirstAsync(candidate => candidate.MediaAssetId == asset.MediaAssetId, cancellationToken);
 
-        row.CreatedBy = actingUserId;
         row.AltText = string.IsNullOrWhiteSpace(altText) ? null : altText.Trim();
         await database.SaveChangesAsync(cancellationToken);
 

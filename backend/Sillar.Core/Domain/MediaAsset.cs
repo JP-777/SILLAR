@@ -70,15 +70,29 @@ public class MediaAsset : IReplicatedEntity
     /// <summary>Eliminación lógica.</summary>
     public bool IsActive { get; set; } = true;
 
-    /// <summary>Quién lo subió. Nulo si ese usuario fue eliminado.</summary>
-    public int? CreatedBy { get; set; }
+    // --- Fotografía del autor -------------------------------------------
+    //
+    // core.media_assets se replica y core.admin_users no (ADR-018), así que no
+    // hay clave foránea: la fila viajaría y la referencia apuntaría a otra
+    // persona en el otro nodo. Se guarda una fotografía de tres datos, todos o
+    // ninguno, y no cambia después de escrita (lo impone un trigger).
+    // Sin autor —subida sin sesión— los tres son nulos, y es válido.
+
+    /// <summary>Identificador local de quien lo subió, en su nodo de pertenencia.</summary>
+    public int? CreatedByAdminUserLocalId { get; set; }
+
+    /// <summary>Nombre visible de quien lo subió, en el momento de subirlo.</summary>
+    public string? CreatedByAdminUserName { get; set; }
+
+    /// <summary>
+    /// Nodo de pertenencia de la cuenta que lo subió. Se copia de
+    /// <c>admin_users.home_node</c>, no de <see cref="OriginNode"/>.
+    /// </summary>
+    public string? CreatedByAdminUserHomeNode { get; set; }
 
     /// <summary>Fecha de alta.</summary>
     public DateTimeOffset CreatedAt { get; set; }
 
     /// <summary>Fecha de la última modificación. La escribe un trigger.</summary>
     public DateTimeOffset UpdatedAt { get; set; }
-
-    /// <summary>Usuario que subió el archivo.</summary>
-    public AdminUser? CreatedByUser { get; set; }
 }
