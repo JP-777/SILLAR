@@ -39,6 +39,26 @@ public static class PedidosDelClienteEndpoints
             .WithTags(Tag)
             .RequireAuthorization(CustomerAuthorization.PolicyName);
 
+        // La creación va en su propio grupo porque es la única que escribe, y por
+        // tanto la única que necesita CSRF: toda petición que modifique datos lo
+        // exige.
+        var creacion = endpoints.MapGroup("/api/sales/orders")
+            .WithTags(Tag)
+            .RequireAuthorization(CustomerAuthorization.PolicyName)
+            .AddEndpointFilter<CustomerCsrfEndpointFilter>();
+
+        creacion.MapPost("", (Delegate)CrearPedido)
+            .WithName("SalesOrderCreate")
+            .WithSummary("Crea un pedido de recojo en tienda con las líneas indicadas.")
+            .WithDescription(
+                "El cliente envía variantes y cantidades; nunca precios. El precio de " +
+                "cada línea y el total los resuelve el servidor contra M01 en el " +
+                "momento de confirmar. Un producto cuyo precio es «a consultar» no " +
+                "entra: se cotiza.")
+            .Produces<PedidoCreadoRespuesta>(StatusCodes.Status201Created)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
         propios.MapGet("", (Delegate)ListarPropios)
             .WithName("SalesMyOrdersList")
             .WithSummary("Devuelve los pedidos propios, del más reciente al más antiguo.")
@@ -58,6 +78,77 @@ public static class PedidosDelClienteEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         return endpoints;
+    }
+
+    /// <summary>Crea un pedido para el cliente de la sesión.</summary>
+    /// <remarks>
+    /// <b>409 y no 400 para los conflictos de negocio.</b> Un producto que se cotiza o
+    /// una variante que dejó de venderse no son errores de forma de la petición: la
+    /// petición era correcta cuando el cliente la compuso, y el estado del mundo
+    /// cambió. Y la frase dice <b>qué lo impide y qué hacer</b>, sin ningún «ha
+    /// ocurrido un error».
+    /// </remarks>
+    private static async Task<IResult> CrearPedido(
+        CrearPedidoPeticion peticion,
+        ICurrentCustomer current,
+        CreadorDePedidos creador,
+        CancellationToken cancellationToken)
+    {
+        if (current.CustomerId is not { } customerId)
+        {
+            return Results.Unauthorized();
+        }
+
+        var r = await creador.CrearAsync(customerId, peticion.Lines ?? [], cancellationToken);
+
+        if (r.Creado)
+        {
+            return Results.Created(
+                $"/api/sales/my-orders/{r.OrderCode}",
+                new PedidoCreadoRespuesta(
+                    r.OrderCode!, OrderStatus.PendingPayment, r.TotalAmount, r.PaymentDueAt!.Value));
+        }
+
+        return r.Motivo switch
+        {
+            MotivoDeNoCreacion.SinLineas => Results.Problem(
+                title: "El carrito está vacío",
+                detail: "Añade algún producto antes de confirmar el pedido.",
+                statusCode: StatusCodes.Status400BadRequest),
+
+            MotivoDeNoCreacion.CantidadNoPositiva => Results.Problem(
+                title: "Hay una cantidad que no se puede pedir",
+                detail: "Indica al menos una unidad de cada producto.",
+                statusCode: StatusCodes.Status400BadRequest),
+
+            MotivoDeNoCreacion.CorreoSinVerificar => Results.Problem(
+                title: "Falta verificar tu correo",
+                detail:
+                    "Te enviamos un correo para confirmar tu dirección. Verifícala y " +
+                    "vuelve a intentarlo: así podemos avisarte del estado de tu pedido.",
+                statusCode: StatusCodes.Status409Conflict),
+
+            MotivoDeNoCreacion.LaCuentaNoPuedeComprar => Results.Problem(
+                // M04 devuelve null sin distinguir el motivo, a propósito. No se
+                // nombra una causa que nadie garantiza.
+                title: "Esta cuenta no puede completar pedidos ahora mismo",
+                detail: "Escríbenos y lo revisamos contigo.",
+                statusCode: StatusCodes.Status409Conflict),
+
+            MotivoDeNoCreacion.ItemNoVendible => Results.Problem(
+                title: "Un producto de tu carrito dejó de estar disponible",
+                detail: "Quítalo del carrito y vuelve a confirmar.",
+                statusCode: StatusCodes.Status409Conflict),
+
+            MotivoDeNoCreacion.ItemAConsultar => Results.Problem(
+                title: "Hay un producto que se cotiza",
+                detail:
+                    "Ese producto no tiene precio publicado. Pide información y te " +
+                    "decimos el precio.",
+                statusCode: StatusCodes.Status409Conflict),
+
+            _ => Results.Problem(statusCode: StatusCodes.Status409Conflict)
+        };
     }
 
     /// <summary>Los pedidos del cliente de la sesión.</summary>

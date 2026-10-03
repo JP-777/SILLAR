@@ -97,6 +97,7 @@ public sealed class SalesModule : IModule, IModuleMigrations
         services.AddScoped<OrderCodeAllocator>();
         services.AddScoped<CongeladorDeCliente>();
         services.AddScoped<VencimientoDePlazos>();
+        services.AddScoped<CreadorDePedidos>();
 
         // El hueco que M04 declara en su ficha de cliente. Se registra el contrato,
         // no la clase: M04 lo pide al contenedor y comprueba si vino, así que sin M03
@@ -106,10 +107,10 @@ public sealed class SalesModule : IModule, IModuleMigrations
 
     /// <inheritdoc />
     /// <remarks>
-    /// Solo las rutas de lectura del cliente. La creación del pedido necesita la
-    /// autoridad de precio de M01 y espera la certificación de C15; las operaciones
-    /// del personal esperan que <c>ICurrentAdmin</c> pueda dar los tres datos de
-    /// atribución que R-14 exige, y hoy no puede.
+    /// Las rutas del cliente: crear un pedido y leer los propios. Las operaciones del
+    /// personal —registrar pago, cancelar, cambiar estado— esperan que
+    /// <c>ICurrentAdmin</c> pueda dar los tres datos de atribución que R-14 exige, y
+    /// hoy no puede (§p).
     /// </remarks>
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {

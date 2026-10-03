@@ -84,11 +84,8 @@ internal sealed class VencimientoDePlazos(SalesDbContext database, TimeProvider 
             return new ResultadoDeVencimiento(0, []);
         }
 
-        // Si el llamador ya tiene una transacción, es suya: no se abre otra ni se
-        // confirma la ajena.
-        var propia = database.Database.CurrentTransaction is null
-            ? await database.Database.BeginTransactionAsync(cancellationToken)
-            : null;
+        await using var transaccion =
+            await TransaccionDeOperacion.AbrirSiHaceFaltaAsync(database, cancellationToken);
 
         var codigos = new List<string>(pendientes.Count);
 
@@ -121,12 +118,7 @@ internal sealed class VencimientoDePlazos(SalesDbContext database, TimeProvider 
         }
 
         await database.SaveChangesAsync(cancellationToken);
-
-        if (propia is not null)
-        {
-            await propia.CommitAsync(cancellationToken);
-            await propia.DisposeAsync();
-        }
+        await transaccion.CompletarAsync(cancellationToken);
 
         return new ResultadoDeVencimiento(codigos.Count, codigos);
     }

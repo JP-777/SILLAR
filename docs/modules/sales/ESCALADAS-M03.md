@@ -20,6 +20,7 @@ las tiene.**
 | **§d** Acceso a «a consultar» | ✅ **CERRADA por JP: exige cuenta.** R-11 |
 | **§o** Dos necesidades de datos, reportadas sin diseñar | **COSTURA DE DATOS** — ver abajo |
 | **§p** `ICurrentAdmin` no da dos de los tres datos de R-14 | **ELEVADA por Chat 2** al líder/colíder — ver abajo |
+| **§q** `ItemExisteYEstaActivoAsync` no mira el estado del producto | **HALLAZGO del 03/10**, de M01 — ver abajo |
 | **§g** ¿Etiqueta por nodo o por nodo × tipo? | ✅ **CERRADA por JP: la serie es nodo × año × tipo.** Coordinación inter-nodo → **M16** |
 | **§h** Unicidad de etiqueta entre nodos desconectados | ✅ **CERRADA: queda deliberadamente en M16**, con §g |
 | **§i** `core.media_assets → core.admin_users` cruza la ADR-018 | **HALLAZGO del 27/09, de CORE, no de M03** — ver abajo |
@@ -787,3 +788,81 @@ base de desarrollo sin estropearla, al contrario que las de M04 y M02.
 > `sales` y el `SalesDbFixture` **falla diciendo exactamente eso y nombrando §j**. No se saltan en
 > silencio: una omitida sin declarar es peor que una roja, porque la roja se ve. **No toqué
 > `verificar.mjs` ni ejecuté la puerta**, las dos cosas por instrucción.
+
+
+---
+
+## §q · `ItemExisteYEstaActivoAsync` no considera si el producto está de baja
+
+- **Fecha:** 03/10/2026. **Cómo apareció:** M03 es el primer consumidor que usa ese método
+  **para vender**, y al leerlo junto a sus vecinos la asimetría salta.
+
+```
+ItemExisteYEstaActivoAsync  →  item.Id == itemId && item.IsActive
+BuscarPorCodigoAsync        →  item.IsActive && item.Product!.IsActive && …
+BuscarAsync                 →  item.IsActive && item.Product!.IsActive && …
+```
+
+- **Las búsquedas excluyen las variantes de un producto dado de baja; la comprobación de
+  vendibilidad, no.** Así que una variante activa cuyo **producto** se desactivó **pasa** el método
+  que pregunta si se puede vender, mientras no aparece en ninguna búsqueda.
+
+- **Qué produciría en M03:** un pedido de un producto que la tienda ya no muestra. No es un error de
+  integridad —la FK aguanta— sino de criterio: el catálogo dice «esto no se enseña» y la venta dice
+  «esto se vende».
+
+- **No lo compenso, y no puedo.** `ItemSnapshot` no lleva el estado del producto, así que M03 **no
+  tiene con qué** comprobarlo; y añadir una comprobación propia sería poner en el consumidor una
+  guarda que pertenece a la operación de M01 — exactamente lo que el §3 de
+  `ANTES-DE-EMPEZAR-UN-MODULO.md` dice que no hace.
+
+- **M03 usa el contrato certificado como autoridad**, que es lo que el encargo manda, y deja el
+  hallazgo escrito. **De frente B / Integración.**
+
+---
+
+## §r · El numerador nunca se había ejecutado por su propio camino
+
+**Lo destapó el primer pedido creado de verdad**, y merece quedar escrito porque es la lección del
+§4 de `ANTES-DE-EMPEZAR-UN-MODULO.md` en su forma más limpia.
+
+`OrderCodeAllocator` tomaba el número con `SqlQueryRaw<int>(...).SingleAsync()`. **No funciona:** un
+`UPDATE … RETURNING` no es SQL componible, así que EF Core intenta envolverlo en una subconsulta al
+añadirle el `Single()` y **falla al traducir**.
+
+> **Y estaba «verificado».** En el turno del paso 2 comprobé a mano, con `psql`, que el rollback
+> devolvía el número y que dos transacciones concurrentes recibían números consecutivos. **Las dos
+> cosas eran ciertas y ninguna acreditaba el código**: el `psql` no pasa por `SqlQueryRaw`. Comprobar
+> por otra vía no acredita la vía que el código usa.
+>
+> Es además el defecto que C15 acaba de documentar en `main` el 02/10 —«nada que solo se rompa cuando
+> EF Core traduce queda demostrado por una prueba en memoria»— y que ahí costó cuatro métodos del
+> contrato de M01. Aquí costó uno del numerador, y lo encontró la primera ejecución real.
+
+**Corregido** con un `DbCommand` enlistado en la transacción en curso y un solo
+`INSERT … ON CONFLICT DO UPDATE … RETURNING` — el mismo mecanismo que M07 ya usaba, cuya razón ahora
+se entiende.
+
+---
+
+## Tramo M03 ↔ Catálogo · hecho el 03/10/2026, con `main` (`4561d9b`) incorporado
+
+| Pieza | Autoridad | Estado |
+|---|---|---|
+| Vendibilidad de la variante | `ICatalogService.ItemExisteYEstaActivoAsync` | Hecho — ver §q |
+| Precio de la línea | `ICatalogService.ObtenerItemAsync` | Hecho. **Nunca del navegador** |
+| «A consultar» fuera del pedido | `ItemSnapshot.Price is null` | Hecho. **Cero sí se vende** |
+| `ItemSnapshot` congelado en la línea | — | Hecho, con prueba de que no se mueve |
+| Cliente congelado | D1, contrato de M04 | Integrado |
+| Número al final, en la transacción | `OrderCodeAllocator` | Hecho — ver §r |
+| `POST /api/sales/orders` | — | Hecho, con CSRF |
+
+**La forma fuerte de R-09:** la petición **no tiene dónde poner un precio**. No es que se valide y se
+descarte — es que `LineaPedida` solo lleva `ItemId` y `Quantity`, y hay una prueba que se pone roja si
+alguien añade un campo cuyo nombre contenga precio, total o importe. Un campo que se ignora sigue
+invitando a leerlo el día que a alguien le venga bien.
+
+**Y nace `TransaccionDeOperacion`**, porque el mismo defecto apareció **dos veces**: tanto el
+vencimiento como la creación abrían su transacción sin mirar si ya había una, y PostgreSQL no las
+anida. Se generaliza ahora y no antes porque ahora hay un segundo caso real. **No se aplica al
+numerador**, que al contrario **exige** una abierta: numerar fuera dejaría un hueco permanente.

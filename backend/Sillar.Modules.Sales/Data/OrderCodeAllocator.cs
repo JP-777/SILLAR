@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
 using Sillar.Core.Contracts;
 using Sillar.Shared.Replication;
@@ -117,40 +118,49 @@ internal sealed class OrderCodeAllocator(
         // OrderCode.AnioDe, que es puro y por eso su frontera se prueba sin base.
         var year = OrderCode.AnioDe(clock.GetUtcNow());
 
-        // La fila de la serie puede no existir todavía: primer pedido del año, o
-        // primera instalación. ON CONFLICT deja que dos transacciones simultáneas
-        // lo intenten sin que ninguna falle.
-        const string abrirSerie =
-            "INSERT INTO sales.order_series (node_code, year, last_number) " +
-            "VALUES (@p0, @p1, 0) " +
-            "ON CONFLICT (node_code, year) DO NOTHING;";
-
-        await database.Database.ExecuteSqlRawAsync(
-            abrirSerie,
-            [
-                new NpgsqlParameter("p0", node.Code),
-                new NpgsqlParameter("p1", year)
-            ],
-            cancellationToken);
-
-        // UPDATE … RETURNING: incrementar y leer en un solo paso. El bloqueo de
-        // fila que PostgreSQL toma aquí es lo que serializa a dos confirmaciones de
-        // la misma serie, y lo que hace que no haya huecos. Un leer-luego-escribir
-        // desde el rastreador de EF dejaría un hueco entre ambos por el que dos
-        // transacciones obtendrían el mismo número.
+        // Un solo comando: inserta la serie si no existe y, si ya existía, incrementa.
+        // El RETURNING devuelve el número en la misma ida y vuelta.
+        //
+        // Va por DbCommand y no por SqlQueryRaw<int>, y la razón es concreta: un
+        // UPDATE … RETURNING no es SQL componible, así que EF Core intenta envolverlo
+        // en una subconsulta al añadirle el Single() y falla al traducir. Se descubrió
+        // ejecutándolo de verdad contra PostgreSQL —el barrido a mano con psql no pasa
+        // por este camino—, que es exactamente lo que el §4 de
+        // ANTES-DE-EMPEZAR-UN-MODULO advierte: una comprobación por otra vía no
+        // acredita la vía que el código usa.
+        //
+        // El ON CONFLICT resuelve además el cambio de año: el primer pedido de enero
+        // puede llegar dos veces a la vez y las dos intentarían crear la fila.
         const string tomarNumero =
-            "UPDATE sales.order_series " +
-            "SET last_number = last_number + 1 " +
-            "WHERE node_code = @p0 AND year = @p1 " +
-            "RETURNING last_number AS \"Value\";";
+            """
+            INSERT INTO sales.order_series (node_code, year, last_number)
+            VALUES (@nodo, @anio, 1)
+            ON CONFLICT (node_code, year)
+            DO UPDATE SET last_number = sales.order_series.last_number + 1
+            RETURNING last_number
+            """;
 
-        var correlative = await database.Database
-            .SqlQueryRaw<int>(
-                tomarNumero,
-                new NpgsqlParameter("p0", node.Code),
-                new NpgsqlParameter("p1", year))
-            .SingleAsync(cancellationToken);
+        var conexion = database.Database.GetDbConnection();
+        await using var comando = conexion.CreateCommand();
+
+        comando.CommandText = tomarNumero;
+        comando.Transaction = database.Database.CurrentTransaction!.GetDbTransaction();
+        Parametro(comando, "nodo", node.Code);
+        Parametro(comando, "anio", year);
+
+        var correlative = Convert.ToInt32(
+            await comando.ExecuteScalarAsync(cancellationToken),
+            System.Globalization.CultureInfo.InvariantCulture);
 
         return OrderCode.Componer(label, year, correlative);
+    }
+
+    /// <summary>Un parámetro con nombre, sin repetir las cuatro líneas en cada uso.</summary>
+    private static void Parametro(System.Data.Common.DbCommand comando, string nombre, object valor)
+    {
+        var p = comando.CreateParameter();
+        p.ParameterName = nombre;
+        p.Value = valor;
+        comando.Parameters.Add(p);
     }
 }
