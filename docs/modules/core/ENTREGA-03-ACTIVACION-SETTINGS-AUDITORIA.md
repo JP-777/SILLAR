@@ -228,3 +228,42 @@ La depuración por antigüedad queda fuera de alcance. Se decidirá cuando haya 
 | Depuración de auditoría por antigüedad | Cuando exista volumen real |
 | Exportación de auditoría | Cuando alguien la pida |
 | Creación de claves de configuración desde el panel | Sin caso de uso; las claves nacen del módulo que las necesita |
+
+---
+
+## 7. Cierre de cobertura de `IModuleRegistry.IsActive` — 03/10/2026
+
+### Causa del `NO`
+
+`IModuleRegistry.IsActive(string moduleCode)` ya existía en el contrato y
+`ModuleRegistry` ya lo implementaba sobre `ModuleActivationSnapshot`. El hueco no
+era de producto ni de implementación: el método no tenía un llamador de
+producción que lo ejercitara directamente ni una prueba dedicada que fijara su
+semántica, por lo que no había evidencia propia para acreditarlo.
+
+### Decisión
+
+No se modifica el contrato ni la implementación.
+
+`ModuleRegistry` recibe la foto de activaciones tomada durante el arranque y
+construye a partir de ella el conjunto de códigos activos. `IsActive` únicamente
+consulta ese conjunto en memoria; no ejecuta EF ni consulta PostgreSQL.
+
+Por esa razón no corresponde introducir PostgreSQL artificialmente en la prueba
+de `IsActive`. La frontera persistente está antes: el arranque obtiene las
+activaciones desde `core.module_activations` y construye la foto que recibe el
+registro.
+
+Se añaden dos pruebas de contrato en
+`Sillar.Core.Tests/ModuleRegistryTests.cs`:
+
+- positiva: un módulo presente en `ModuleActivationSnapshot.ActiveModules`
+  devuelve `true`;
+- negativa: un módulo ausente de esa foto devuelve `false`.
+
+La negativa expresa deliberadamente la semántica pública disponible:
+`IModuleRegistry` responde si un código está activo; no distingue entre un
+módulo conocido pero inactivo y un código inexistente.
+
+`ISettingsReader.Get<T>` no forma parte de este cierre y permanece fuera de
+alcance.
