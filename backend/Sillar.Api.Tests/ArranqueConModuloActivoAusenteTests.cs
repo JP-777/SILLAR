@@ -34,15 +34,30 @@ namespace Sillar.Api.Tests;
 public sealed class ArranqueConModuloActivoAusenteTests
 {
     /// <summary>
-    /// Un código que ningún binario de este repositorio declara.
+    /// Un código que ningún binario de este repositorio puede declarar.
     /// </summary>
     /// <remarks>
-    /// Es el caso real que destapó la ADR-019 y el mismo que usa la prueba de
-    /// la función. Los módulos de mentira se llaman <c>demo_*</c>
-    /// (<c>DemoModule.cs:102</c>), así que <c>sales</c> no aparece ni siquiera
-    /// encendiendo los de demostración.
+    /// <para>
+    /// <b>Hasta el 3 de octubre de 2026 aquí decía <c>sales</c>, y se rompió el día
+    /// que M03 entró en el binario.</b> Era un código real que resultaba estar
+    /// ausente, no un código imposible: lo que esta prueba comprueba es una propiedad
+    /// <b>de la plataforma</b> —un módulo activo que el binario no trae impide
+    /// arrancar— y le puso el nombre del único módulo que entonces faltaba.
+    /// </para>
+    /// <para>
+    /// Es el §1 de <c>ANTES-DE-EMPEZAR-UN-MODULO.md</c> en su tercera señal: ponerle a
+    /// algo transversal el nombre del único que lo usa hoy. Por eso ahora el código
+    /// <b>no es de nadie y no puede serlo</b>: ningún módulo del catálogo modular se
+    /// llama así, y los de mentira se llaman <c>demo_*</c>
+    /// (<c>DemoModule.cs:102</c>).
+    /// </para>
+    /// <para>
+    /// Cumple <c>ck_modules_code_format</c> —minúsculas, dígitos y guion bajo— para
+    /// que la fila se pueda insertar: lo que la prueba necesita es un código válido y
+    /// ausente, no un código inválido.
+    /// </para>
     /// </remarks>
-    private const string CodigoAusente = "sales";
+    private const string CodigoAusente = "modulo_que_no_existe";
 
     private static CancellationTokenSource Limite(CancellationToken ct, int segundos)
     {

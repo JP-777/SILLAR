@@ -2081,11 +2081,22 @@ const etapas = [
   {
     nombre: 'migraciones backend (BD efímera)',
     correr: () => {
+      // El orden respeta las dependencias duras: CORE primero, y Sales al final
+      // porque sus dos claves foráneas cruzadas apuntan a catalog y a crm, así que
+      // sus tablas tienen que existir antes.
+      //
+      // Un módulo que falte aquí no produce un rojo en esta etapa —sus migraciones
+      // simplemente no corren— sino en la de pruebas, cuando algo pide el schema que
+      // nadie creó. Es lo que pasó con Sales hasta el 3 de octubre de 2026: dieciocho
+      // pruebas de persistencia caían en la etapa 5 diciendo que faltaba el schema.
+      // La evidencia de ese rojo, y del verde al añadirlo, está en
+      // docs/modules/sales/evidencias/J-PUERTA-*.txt
       const modulos = [
         'Sillar.Core',
         'Sillar.Modules.Catalog',
         'Sillar.Modules.Cms',
         'Sillar.Modules.Crm',
+        'Sillar.Modules.Sales',
       ];
       let salida = '';
       for (const modulo of modulos) {

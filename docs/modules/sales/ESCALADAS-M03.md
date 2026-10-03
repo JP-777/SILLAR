@@ -24,7 +24,7 @@ las tiene.**
 | **§g** ¿Etiqueta por nodo o por nodo × tipo? | ✅ **CERRADA por JP: la serie es nodo × año × tipo.** Coordinación inter-nodo → **M16** |
 | **§h** Unicidad de etiqueta entre nodos desconectados | ✅ **CERRADA: queda deliberadamente en M16**, con §g |
 | **§i** `core.media_assets → core.admin_users` cruza la ADR-018 | **HALLAZGO del 27/09, de CORE, no de M03** — ver abajo |
-| **§j** Dos costuras para que la puerta vea a M03 | **PEDIDAS a Integración** — ver abajo |
+| **§j** Dos costuras para que la puerta vea a M03 | ✅ **RESUELTA el 03/10/2026 por frente A**, por traspaso expreso. Evidencias en `evidencias/J-PUERTA-*.txt` — ver abajo |
 | **§k** Atribución del personal cuando el nodo del trabajador no es el del pedido | **RESUELTA.** Tres datos ratificados e implementados; R-14 es autoritativa |
 | **§l** ¿El tercer dato es el nodo de pertenencia o el de actuación? | **RESUELTA: son los dos, en columnas distintas** |
 | ~~**§b2**~~ ~~Cancelación y reactivación~~ | ~~Abierta~~ → **CERRADA por JP.** Fila del 26/09 conservada; el estado vigente está arriba |
@@ -866,3 +866,65 @@ invitando a leerlo el día que a alguien le venga bien.
 vencimiento como la creación abrían su transacción sin mirar si ya había una, y PostgreSQL no las
 anida. Se generaliza ahora y no antes porque ahora hay un segundo caso real. **No se aplica al
 numerador**, que al contrario **exige** una abierta: numerar fuera dejaría un hueco permanente.
+
+
+---
+
+## §j · **RESUELTA el 03/10/2026** · la puerta migra Sales
+
+Absorbida por frente A por traspaso expreso de Chat 2. **Nadie la había empezado:** el worktree
+`integration/sales-puerta-j` existía reservado y estaba en `main` con **cero** referencias a Sales.
+
+### Los dos cambios, y por qué hacían falta los dos
+
+| Fichero | Por qué |
+|---|---|
+| `scripts/verificar.mjs` | Añade `Sillar.Modules.Sales` a la lista de la etapa 4, **al final**: sus dos FK cruzadas apuntan a `catalog` y a `crm`, así que esas tablas tienen que existir antes |
+| `backend/Sillar.Api/Sillar.Api.csproj` | `migrar()` invoca `dotnet ef` con `--startup-project backend/Sillar.Api`, así que **sin el `ProjectReference` el DLL no está** y la migración no corre. Comprobado: `File '…/Sillar.Modules.Sales.dll' not found`. El propio fichero dice en su cabecera que el `ProjectReference` de un módulo nuevo «va aquí y en ningún otro sitio» |
+
+### La prueba, en las dos direcciones
+
+**SIN Sales en la lista → puerta ROJA**, y no por donde parecía: la etapa 4 pasa —sus migraciones
+simplemente no corren— y el rojo sale en la **etapa 5**, cuando el `SalesDbFixture` pide el schema que
+nadie creó. Dieciocho pruebas de persistencia, con la causa escrita en el propio mensaje. Evidencia
+completa en `evidencias/J-PUERTA-A-SIN-SALES-20261003.txt`.
+
+**CON Sales → etapas 1 a 5 en verde.** Sales migra, las dieciocho pasan a cero y `Sillar.Api.Tests`
+queda 3/3.
+
+> **Un módulo que falta en esa lista no se nota donde se añade.** Es la asimetría que conviene tener
+> escrita: el hueco está en la etapa 4 y el rojo aparece en la 5, así que quien lea el veredicto irá a
+> mirar las pruebas y no la lista.
+
+### Dos cosas que §j rompió, y las dos eran reglas escritas con el nombre de hoy
+
+**1 · `ArranqueConModuloActivoAusenteTests` usaba `CodigoAusente = "sales"`.** Una prueba **de
+plataforma** —un módulo activo que el binario no trae impide arrancar— con el nombre del único módulo
+que entonces faltaba. **Se rompió el día que M03 entró en el binario.** Es el §1 de
+`ANTES-DE-EMPEZAR-UN-MODULO.md` en su tercera señal, literal: ponerle a algo transversal el nombre del
+único que lo usa hoy. Ahora el código es `modulo_que_no_existe`, que no puede ser de nadie.
+
+> **Es territorio de CORE/Integración y se tocó porque §j lo rompió.** Si se prefiere revertirlo y
+> pedirlo por el cauce, el cambio es una constante y su `<remarks>`.
+
+**2 · Cinco de mis propias pruebas solo pasaban con el catálogo sembrado.** Buscaban una variante
+existente con `SELECT … LIMIT 1`, lo encontraban en la base de desarrollo y morían en un
+`Assert.NotNull` en la base efímera, que migra el catálogo **vacío**. Ahora cada prueba crea su
+producto y su variante dentro de la transacción que se deshace.
+
+> **Una prueba que solo pasa cuando alguien sembró antes no acredita lo que dice acreditar: acredita
+> la semilla.** Y lo peor es que su rojo no lo dice — dice que faltaba un dato.
+
+### La etapa 6 y lo que la tumbó, que no es M03
+
+Tres intentos, tres causas **ajenas al módulo**:
+
+| Intento | Causa |
+|---|---|
+| 1 | `Permission denied` en `/app/appsettings.Development.json`. Archivo **gitignored**, con solo niveles de registro —ningún secreto—, modo `0600` en esta copia de trabajo; `COPY . .` lo mete en la imagen y el usuario del contenedor no puede leerlo. **Arreglado solo en local** con `chmod 644`: es configuración de máquina y no entra en un commit de producto |
+| 2 | Descargas de NuGet fallando dentro del build de Docker. Transitorio |
+| 3 | La corrida se interrumpió sin escribir veredicto |
+
+> **Recomendación para Integración, no aplicada:** `backend/.dockerignore` no excluye
+> `appsettings.Development.json`, y un archivo de desarrollo local no tiene nada que hacer en la
+> imagen. Es infraestructura compartida y **no se toca desde aquí**.

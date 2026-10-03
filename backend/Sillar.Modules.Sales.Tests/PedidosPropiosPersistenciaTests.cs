@@ -135,26 +135,29 @@ public sealed class PedidosPropiosPersistenciaTests(SalesDbFixture fixture)
         db.Orders.Add(pedido);
         await db.SaveChangesAsync(ct);
 
-        // Las líneas necesitan una variante real del catálogo: la FK cruzada es dura
-        // y RESTRICT, que es justo el comportamiento que se quiere.
-        var item = await db.Database
-            .SqlQueryRaw<Guid>("SELECT id AS \"Value\" FROM catalog.product_items LIMIT 1")
-            .ToListAsync(ct);
+        // La línea necesita una variante real del catálogo: la FK cruzada es dura y
+        // RESTRICT, que es justo el comportamiento que se quiere. Se crea aquí en vez
+        // de buscar una sembrada: una prueba que solo pasa cuando alguien sembró antes
+        // acredita la semilla, no la regla.
+        var producto = Guid.CreateVersion7();
+        var item = Guid.CreateVersion7();
 
-        if (item.Count == 0)
-        {
-            // Sin catálogo sembrado no se puede crear una línea. El resumen sigue
-            // siendo comprobable: cero líneas es cero.
-            var vacio = await HistorialDePedidos.Consulta(db, ana).SingleAsync(ct);
-            Assert.Equal(0, vacio.LineCount);
-            await tx.RollbackAsync(ct);
-            return;
-        }
+        await db.Database.ExecuteSqlRawAsync(
+            "INSERT INTO catalog.products (id, name, slug, origin_node) " +
+            "VALUES ({0}, {1}, {2}, 'principal')",
+            [producto, $"Producto de prueba {producto:N}", $"producto-{producto:N}"],
+            ct);
+
+        await db.Database.ExecuteSqlRawAsync(
+            "INSERT INTO catalog.product_items (id, product_id, origin_node) " +
+            "VALUES ({0}, {1}, 'principal')",
+            [item, producto],
+            ct);
 
         db.OrderLines.Add(new OrderLine
         {
             OrderId = pedido.OrderId,
-            ItemId = item[0],
+            ItemId = item,
             ProductId = Guid.CreateVersion7(),
             ProductName = "Cuaderno universitario cuadriculado A4 100 hojas",
             Quantity = 3,

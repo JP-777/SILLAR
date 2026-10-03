@@ -36,14 +36,42 @@ public sealed class CrearPedidoPersistenciaTests(SalesDbFixture fixture)
             [id, $"Cliente {id:N}", $"{id:N}@prueba.pe"],
             ct);
 
-    /// <summary>Una variante real del catálogo: la FK cruzada es dura y RESTRICT.</summary>
-    private static async Task<Guid?> AlgunItemDelCatalogoAsync(SalesDbContext db, CancellationToken ct)
+    /// <summary>
+    /// Crea una variante real del catálogo, dentro de la transacción de la prueba.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>No se busca una que ya exista, y la primera versión de esta prueba lo
+    /// hacía.</b> Funcionaba contra la base de desarrollo, que tiene catálogo
+    /// sembrado, y fallaba en la base efímera de la puerta, que lo migra vacío: cinco
+    /// pruebas murieron en un <c>Assert.NotNull</c> que solo decía que faltaba el
+    /// dato. <b>Una prueba que solo pasa cuando alguien sembró antes no acredita lo
+    /// que dice acreditar</b> — acredita la semilla.
+    /// </para>
+    /// <para>
+    /// Se crea por SQL porque M03 no mapea las tablas de M01 y no puede: su
+    /// <c>DbContext</c> no las conoce. Y se va con el <c>ROLLBACK</c> de la prueba,
+    /// igual que el cliente.
+    /// </para>
+    /// </remarks>
+    private static async Task<Guid> CrearItemDelCatalogoAsync(SalesDbContext db, CancellationToken ct)
     {
-        var ids = await db.Database
-            .SqlQueryRaw<Guid>("SELECT id AS \"Value\" FROM catalog.product_items LIMIT 1")
-            .ToListAsync(ct);
+        var producto = Guid.CreateVersion7();
+        var item = Guid.CreateVersion7();
 
-        return ids.Count == 0 ? null : ids[0];
+        await db.Database.ExecuteSqlRawAsync(
+            "INSERT INTO catalog.products (id, name, slug, origin_node) " +
+            "VALUES ({0}, {1}, {2}, 'principal')",
+            [producto, $"Producto de prueba {producto:N}", $"producto-{producto:N}"],
+            ct);
+
+        await db.Database.ExecuteSqlRawAsync(
+            "INSERT INTO catalog.product_items (id, product_id, origin_node) " +
+            "VALUES ({0}, {1}, 'principal')",
+            [item, producto],
+            ct);
+
+        return item;
     }
 
     private CreadorDePedidos Creador(
@@ -77,17 +105,16 @@ public sealed class CrearPedidoPersistenciaTests(SalesDbFixture fixture)
         await using var db = fixture.NuevoContexto(new Dobles.RelojFijo(Ahora));
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
-        var item = await AlgunItemDelCatalogoAsync(db, ct);
-        Assert.NotNull(item);
+        var item = await CrearItemDelCatalogoAsync(db, ct);
 
         var ana = Guid.CreateVersion7();
         await CrearClienteAsync(db, ana, ct);
 
         var catalogo = new Dobles.CatalogoDice()
-            .Con(item!.Value, activo: true, precio: 8.50m, nombre: "Cuaderno universitario A4 100 hojas");
+            .Con(item, activo: true, precio: 8.50m, nombre: "Cuaderno universitario A4 100 hojas");
 
         var r = await Creador(db, ana, catalogo)
-            .CrearAsync(ana, [new LineaPedida(item.Value, 3)], ct);
+            .CrearAsync(ana, [new LineaPedida(item, 3)], ct);
 
         Assert.True(r.Creado);
         Assert.Equal(25.50m, r.TotalAmount);                     // 8.50 × 3, calculado aquí
@@ -104,7 +131,7 @@ public sealed class CrearPedidoPersistenciaTests(SalesDbFixture fixture)
         Assert.Equal("Cuaderno universitario A4 100 hojas", linea.ProductName);
         Assert.Equal("Verde", linea.VariantValue);
         Assert.Equal("unidad", linea.SaleUnit);
-        Assert.Equal(item.Value, linea.ItemId);
+        Assert.Equal(item, linea.ItemId);
 
         // El primer asiento: nace sin estado anterior y sin atribuir a ningún
         // trabajador, porque lo creó el cliente.
@@ -126,16 +153,15 @@ public sealed class CrearPedidoPersistenciaTests(SalesDbFixture fixture)
         await using var db = fixture.NuevoContexto(new Dobles.RelojFijo(Ahora));
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
-        var item = await AlgunItemDelCatalogoAsync(db, ct);
-        Assert.NotNull(item);
+        var item = await CrearItemDelCatalogoAsync(db, ct);
         var ana = Guid.CreateVersion7();
         await CrearClienteAsync(db, ana, ct);
 
-        var catalogo = new Dobles.CatalogoDice().Con(item!.Value, true, 8.50m, "Nombre de entonces");
-        var r = await Creador(db, ana, catalogo).CrearAsync(ana, [new LineaPedida(item.Value, 1)], ct);
+        var catalogo = new Dobles.CatalogoDice().Con(item, true, 8.50m, "Nombre de entonces");
+        var r = await Creador(db, ana, catalogo).CrearAsync(ana, [new LineaPedida(item, 1)], ct);
 
         // M01 cambia: otro precio y otro nombre. El pedido no se entera.
-        catalogo.Con(item.Value, true, 99.00m, "Nombre de ahora");
+        catalogo.Con(item, true, 99.00m, "Nombre de ahora");
 
         // OrderLine no tiene propiedad de navegación a propósito: la FK se declara sin
         // ella, así que se resuelve el pedido primero.
@@ -192,22 +218,21 @@ public sealed class CrearPedidoPersistenciaTests(SalesDbFixture fixture)
         await using var db = fixture.NuevoContexto(new Dobles.RelojFijo(Ahora));
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
-        var item = await AlgunItemDelCatalogoAsync(db, ct);
-        Assert.NotNull(item);
+        var item = await CrearItemDelCatalogoAsync(db, ct);
         var ana = Guid.CreateVersion7();
         await CrearClienteAsync(db, ana, ct);
 
         // Nulo: se cotiza, fuera del pedido.
-        var aConsultar = new Dobles.CatalogoDice().Con(item!.Value, true, precio: null);
-        var r1 = await Creador(db, ana, aConsultar).CrearAsync(ana, [new LineaPedida(item.Value, 1)], ct);
+        var aConsultar = new Dobles.CatalogoDice().Con(item, true, precio: null);
+        var r1 = await Creador(db, ana, aConsultar).CrearAsync(ana, [new LineaPedida(item, 1)], ct);
 
         Assert.False(r1.Creado);
         Assert.Equal(MotivoDeNoCreacion.ItemAConsultar, r1.Motivo);
-        Assert.Equal(item.Value, r1.ItemConflictivo);
+        Assert.Equal(item, r1.ItemConflictivo);
 
         // Cero: es GRATIS y se vende. La distinción que ya mordió una vez.
-        var gratis = new Dobles.CatalogoDice().Con(item.Value, true, precio: 0m);
-        var r2 = await Creador(db, ana, gratis).CrearAsync(ana, [new LineaPedida(item.Value, 2)], ct);
+        var gratis = new Dobles.CatalogoDice().Con(item, true, precio: 0m);
+        var r2 = await Creador(db, ana, gratis).CrearAsync(ana, [new LineaPedida(item, 2)], ct);
 
         Assert.True(r2.Creado);
         Assert.Equal(0m, r2.TotalAmount);
@@ -226,13 +251,12 @@ public sealed class CrearPedidoPersistenciaTests(SalesDbFixture fixture)
         await using var db = fixture.NuevoContexto(new Dobles.RelojFijo(Ahora));
         await using var tx = await db.Database.BeginTransactionAsync(ct);
 
-        var item = await AlgunItemDelCatalogoAsync(db, ct);
-        Assert.NotNull(item);
+        var item = await CrearItemDelCatalogoAsync(db, ct);
         var ana = Guid.CreateVersion7();
         await CrearClienteAsync(db, ana, ct);
 
-        var catalogo = new Dobles.CatalogoDice().Con(item!.Value, true, precio: 12.34m);
-        var r = await Creador(db, ana, catalogo).CrearAsync(ana, [new LineaPedida(item.Value, 2)], ct);
+        var catalogo = new Dobles.CatalogoDice().Con(item, true, precio: 12.34m);
+        var r = await Creador(db, ana, catalogo).CrearAsync(ana, [new LineaPedida(item, 2)], ct);
 
         var pedidoId = await db.Orders.AsNoTracking()
             .Where(o => o.OrderCode == r.OrderCode).Select(o => o.OrderId).SingleAsync(ct);
@@ -330,13 +354,12 @@ public sealed class CrearPedidoPersistenciaTests(SalesDbFixture fixture)
 
         await using (var tx = await db.Database.BeginTransactionAsync(ct))
         {
-            var item = await AlgunItemDelCatalogoAsync(db, ct);
-            Assert.NotNull(item);
+            var item = await CrearItemDelCatalogoAsync(db, ct);
             var ana = Guid.CreateVersion7();
             await CrearClienteAsync(db, ana, ct);
 
-            var catalogo = new Dobles.CatalogoDice().Con(item!.Value, true, 8.50m);
-            var r = await Creador(db, ana, catalogo).CrearAsync(ana, [new LineaPedida(item.Value, 1)], ct);
+            var catalogo = new Dobles.CatalogoDice().Con(item, true, 8.50m);
+            var r = await Creador(db, ana, catalogo).CrearAsync(ana, [new LineaPedida(item, 1)], ct);
 
             Assert.True(r.Creado);
             Assert.Equal(antes + 1, await SerieAsync(db, ct));   // dentro: consumido
