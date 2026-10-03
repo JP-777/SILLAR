@@ -63,7 +63,8 @@ public sealed class CoreModule : IModule, IModuleMigrations
         "administradores, autenticación, configuración del sitio, gestión de archivos y auditoría.";
 
     /// <inheritdoc />
-    public string Version => "1.0.0";
+    // 1.1.0: ICurrentAdmin.DisplayName y HomeNode (aditivo); autor de medios sin FK.
+    public string Version => "1.1.0";
 
     /// <inheritdoc />
     public int DisplayOrder => 0;

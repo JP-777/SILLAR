@@ -43,4 +43,7 @@ internal static class AdminSessionClaims
 {
     /// <summary>Identificador de la fila de sesión.</summary>
     public const string SessionId = "sillar:admin:session_id";
+
+    /// <summary>Nodo de pertenencia de la cuenta (<c>admin_users.home_node</c>).</summary>
+    public const string HomeNode = "sillar:admin:home_node";
 }

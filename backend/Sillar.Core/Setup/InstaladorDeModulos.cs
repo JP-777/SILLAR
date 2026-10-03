@@ -1,5 +1,7 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Sillar.Core.Data;
 using Sillar.Core.Modularity;
 using Sillar.Shared.Data.Modularity;
 using Sillar.Shared.Modularity;
@@ -32,8 +34,17 @@ internal sealed record PreparacionDeLaBase(DiagnosticoDelDestino Diagnostico, IR
 /// puede <b>reanudar</b>: las aplicadas no se repiten, y una base a medias que
 /// solo contiene cosas de SILLAR vuelve a pasar la comprobación del destino.
 /// </para>
+/// <para>
+/// <b>El nodo configurado viaja en la conexión de las migraciones</b>
+/// (<see cref="NodoParaMigrar"/>): la de CORE lo necesita para rellenar
+/// <c>admin_users.home_node</c> si encuentra cuentas. Sin nodo configurado no se
+/// pone ninguno.
+/// </para>
 /// </remarks>
-internal sealed class InstaladorDeModulos(DeclaredModules declared, ILogger<InstaladorDeModulos>? logger = null)
+internal sealed class InstaladorDeModulos(
+    DeclaredModules declared,
+    IConfiguration configuration,
+    ILogger<InstaladorDeModulos>? logger = null)
 {
     private readonly ILogger log = logger ?? NullLogger<InstaladorDeModulos>.Instance;
 
@@ -106,11 +117,12 @@ internal sealed class InstaladorDeModulos(DeclaredModules declared, ILogger<Inst
         }
 
         var migrados = new List<string>();
+        var conNodo = NodoParaMigrar.ConNodo(connectionString, NodoParaMigrar.Configurado(configuration));
 
         foreach (var (modulo, (_, migraciones)) in orden.Zip(modulos))
         {
             log.LogInformation("Instalación: aplicando las migraciones de '{Modulo}'.", modulo.Code);
-            await migraciones.ApplyMigrationsAsync(connectionString, cancellationToken);
+            await migraciones.ApplyMigrationsAsync(conNodo, cancellationToken);
             migrados.Add(modulo.Code);
         }
 

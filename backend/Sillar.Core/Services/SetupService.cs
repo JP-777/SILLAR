@@ -220,7 +220,9 @@ internal sealed class SetupService(
             Email = admin.Email!.Trim(),
             PasswordHash = hasher.Hash(admin.Password!),
             Role = AdminRole.SuperAdmin,
-            IsActive = true
+            IsActive = true,
+            // La cuenta nace en este nodo y pertenece a él.
+            HomeNode = database.Node.Code
         };
 
         database.AdminUsers.Add(user);

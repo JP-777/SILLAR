@@ -27,6 +27,18 @@ public class AdminUser
     /// <summary>Rol. Ver <see cref="Contracts.AdminRole"/>.</summary>
     public required string Role { get; set; }
 
+    /// <summary>
+    /// Nodo al que pertenece la cuenta: donde se creó y contra el que se
+    /// interpreta su <see cref="AdminUserId"/>.
+    /// </summary>
+    /// <remarks>
+    /// <c>admin_users</c> no se replica, así que el identificador entero solo
+    /// significa algo junto a su nodo. Quien guarda una fotografía del autor en
+    /// una tabla replicada copia este valor, no el nodo de la instalación que
+    /// la lee (ver <c>docs/modules/core/ENTREGA-05-NODO-Y-AUTORIA.md</c>).
+    /// </remarks>
+    public required string HomeNode { get; set; }
+
     /// <summary>Teléfono de contacto.</summary>
     public string? Phone { get; set; }
 

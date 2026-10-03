@@ -15,6 +15,24 @@ internal sealed class MediaAssetConfiguration : IEntityTypeConfiguration<MediaAs
             table.HasCheckConstraint("ck_media_assets_stored_name_not_empty", Check.NotEmpty("stored_name"));
             table.HasCheckConstraint("ck_media_assets_relative_path_not_empty", Check.NotEmpty("relative_path"));
             table.HasCheckConstraint("ck_media_assets_mime_type_not_empty", Check.NotEmpty("mime_type"));
+
+            // La fotografía del autor va entera o no va: tres nulos (subida sin
+            // sesión) o tres valores. Media fotografía no identifica a nadie.
+            table.HasCheckConstraint(
+                "ck_media_assets_autor_completo",
+                "(created_by_admin_user_local_id IS NULL AND created_by_admin_user_name IS NULL "
+                + "AND created_by_admin_user_home_node IS NULL) OR "
+                + "(created_by_admin_user_local_id IS NOT NULL AND created_by_admin_user_name IS NOT NULL "
+                + "AND created_by_admin_user_home_node IS NOT NULL)");
+            table.HasCheckConstraint(
+                "ck_media_assets_autor_local_id_positivo",
+                "created_by_admin_user_local_id IS NULL OR created_by_admin_user_local_id > 0");
+            table.HasCheckConstraint(
+                "ck_media_assets_autor_nombre_no_vacio",
+                "created_by_admin_user_name IS NULL OR " + Check.NotEmpty("created_by_admin_user_name"));
+            table.HasCheckConstraint(
+                "ck_media_assets_autor_home_node_no_vacio",
+                "created_by_admin_user_home_node IS NULL OR " + Check.NotEmpty("created_by_admin_user_home_node"));
         });
 
         builder.HasKey(x => x.MediaAssetId).HasName("pk_media_assets");
@@ -79,15 +97,18 @@ internal sealed class MediaAssetConfiguration : IEntityTypeConfiguration<MediaAs
             .HasDefaultValue(true)
             .ValueGeneratedNever();
 
-        builder.Property(x => x.CreatedBy).HasColumnName("created_by");
+        // Sin clave foránea hacia core.admin_users, y es deliberado: esta tabla
+        // se replica y aquella no (ADR-018). Ver la fotografía en MediaAsset.
+        builder.Property(x => x.CreatedByAdminUserLocalId)
+            .HasColumnName("created_by_admin_user_local_id");
 
-        // Si se elimina el usuario, el archivo se queda: pierde el autor, no el
-        // contenido.
-        builder.HasOne(x => x.CreatedByUser)
-            .WithMany()
-            .HasForeignKey(x => x.CreatedBy)
-            .HasConstraintName("fk_media_assets_created_by")
-            .OnDelete(DeleteBehavior.SetNull);
+        builder.Property(x => x.CreatedByAdminUserName)
+            .HasColumnName("created_by_admin_user_name")
+            .HasMaxLength(150);
+
+        // text, como origin_node (ReplicationMapping): un nodo no tiene longitud arbitraria.
+        builder.Property(x => x.CreatedByAdminUserHomeNode)
+            .HasColumnName("created_by_admin_user_home_node");
 
         builder.HasIndex(x => x.StoredName)
             .IsUnique()
@@ -96,10 +117,10 @@ internal sealed class MediaAssetConfiguration : IEntityTypeConfiguration<MediaAs
         builder.HasIndex(x => x.OwnerModuleCode)
             .HasDatabaseName("idx_media_assets_owner_module_code");
 
-        // EF crea solo el índice de la clave foránea; se nombra a mano para que
-        // siga la convención idx_ en lugar de la suya.
-        builder.HasIndex(x => x.CreatedBy)
-            .HasDatabaseName("idx_media_assets_created_by");
+        // Era el índice de la antigua clave foránea; se conserva para buscar
+        // lo subido por una cuenta, que se pregunta con su nodo.
+        builder.HasIndex(x => new { x.CreatedByAdminUserHomeNode, x.CreatedByAdminUserLocalId })
+            .HasDatabaseName("idx_media_assets_created_by_admin_user");
 
         builder.HasIndex(x => x.Checksum)
             .HasDatabaseName("idx_media_assets_checksum");

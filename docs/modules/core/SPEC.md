@@ -2,7 +2,7 @@
 
 - **Código:** `core`
 - **Schema:** `core`
-- **Versión:** 1.0.0
+- **Versión:** 1.1.0 — nodo de las cuentas, autor de medios sin FK y `ICurrentAdmin` ampliado (`ENTREGA-05-NODO-Y-AUTORIA.md`)
 - **Estado:** Aprobado
 - **Fase:** 0 y 1 — es lo primero que se construye
 
@@ -157,6 +157,7 @@ Qué está activo **en esta instalación**. Se separa de `modules` porque tienen
 | email | varchar(150) | No | UNIQUE | Sirve de identificador de acceso |
 | password_hash | varchar(255) | No | | BCrypt, factor ≥ 12 |
 | role | varchar(20) | No | | `super_admin`, `admin`, `editor` |
+| home_node | text | No | | Nodo de pertenencia de la cuenta. Lo escribe la aplicación al crearla, sin DEFAULT en la base (ENTREGA-05) |
 | phone | varchar(30) | Sí | | |
 | is_active | boolean | No | | Eliminación lógica |
 | last_login_at | timestamptz | Sí | | |
@@ -224,15 +225,17 @@ regla 4: `origin_node`, `row_version`, `created_at`, `updated_at`.
 | checksum | varchar(64) | Sí | | SHA-256, para detectar duplicados |
 | is_orphan | boolean | No | | Su módulo fue desinstalado |
 | is_active | boolean | No | | |
-| created_by | integer | Sí | FK → admin_users, ON DELETE SET NULL | |
+| created_by_admin_user_local_id | integer | Sí | **Sin FK** | Fotografía del autor: id local en su nodo (antes `created_by`) |
+| created_by_admin_user_name | varchar(150) | Sí | | Fotografía del autor: nombre visible al subir |
+| created_by_admin_user_home_node | text | Sí | | Fotografía del autor: copiado de `admin_users.home_node`, **no** de `origin_node` |
 | created_at / updated_at | timestamptz | | | |
 
 `owner_module_code` se guarda como texto y sin clave foránea a propósito: el módulo puede desinstalarse y el archivo tiene que sobrevivir marcado como huérfano.
 
-`created_by` sigue siendo `integer` y local: `admin_users` todavía no se replica. Es la segunda aplicación de la regla que anota la ADR-018, pendiente de decidir antes de M13, no aquí.
+**El autor es una fotografía, no una referencia** (ENTREGA-05, 03/10/2026). Esta tabla se replica y `admin_users` no: la antigua `fk_media_assets_created_by` era el renglón que la ADR-018 prohíbe. Los tres datos van todos o ninguno (`ck_media_assets_autor_completo`); sin autor —subida sin sesión— los tres son nulos y es válido. Se escriben en el `INSERT` y no cambian después (`trg_media_assets_autor_inmutable`).
 
-**Restricciones:** `ck_media_assets_size_bytes CHECK (size_bytes > 0)`.
-**Índices:** `uq_media_assets_stored_name`, `idx_media_assets_owner_module_code`, `idx_media_assets_created_by`, `idx_media_assets_checksum`.
+**Restricciones:** `ck_media_assets_size_bytes CHECK (size_bytes > 0)`, `ck_media_assets_autor_completo`, `ck_media_assets_autor_local_id_positivo`, `ck_media_assets_autor_nombre_no_vacio`, `ck_media_assets_autor_home_node_no_vacio`.
+**Índices:** `uq_media_assets_stored_name`, `idx_media_assets_owner_module_code`, `idx_media_assets_created_by_admin_user` (`home_node`, `local_id`), `idx_media_assets_checksum`.
 
 ### 4.9 `core.audit_log`
 
@@ -261,7 +264,7 @@ modules 1 ─── 1 module_activations
 modules 1 ─── N module_dependencies (module_id)
 modules 1 ─── N module_dependencies (depends_on_module_id)
 admin_users 1 ─── N admin_sessions
-admin_users 1 ─── N media_assets      (created_by, opcional)
+admin_users ··· media_assets         (fotografía del autor, SIN FK desde ENTREGA-05: ADR-018)
 admin_users 1 ─── N audit_log         (opcional)
 ```
 
@@ -302,6 +305,8 @@ public interface ICurrentAdmin
     int?    AdminUserId { get; }
     string? Email       { get; }
     string? Role        { get; }
+    string? DisplayName { get; }   // 1.1.0: nombre visible (full_name)
+    string? HomeNode    { get; }   // 1.1.0: nodo de pertenencia de la cuenta
     bool    IsInRole(string role);
 }
 
