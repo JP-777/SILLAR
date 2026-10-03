@@ -1,0 +1,5 @@
+Corrida NO usada como certificación de C15 combinado (947b36a). rc=1.
+Etapas 1-5 PASS (backend 484/484, 0 no ejecutadas). Etapa 6: 164 pasaron, 2 fallaron, 0 omitidas.
+Las dos fallas (categorias.spec.ts:206 a las 00:00:21 y configuracion.spec.ts:41 a las 00:01:06) son
+net::ERR_NETWORK_CHANGED en Chromium: el wifi wlan0 se desautenticó a las 00:00:02 y cambió de red
+e IP a las 00:00:22 y a las 00:01:06 (journalctl, NetworkManager/wpa_supplicant). Fallo ambiental.

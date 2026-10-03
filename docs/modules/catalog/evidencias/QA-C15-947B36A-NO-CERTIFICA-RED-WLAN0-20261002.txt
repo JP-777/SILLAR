@@ -1,0 +1,31 @@
+Oct 02 23:40:31 archlinux kernel: wlan0: associated
+Oct 02 23:40:31 archlinux wpa_supplicant[535]: wlan0: CTRL-EVENT-CONNECTED - Connection to d8:9a:0d:fb:53:47 completed [id=0 id_str=]
+Oct 02 23:40:35 archlinux NetworkManager[530]: <info>  [1791002435.7657] dhcp4 (wlan0): state changed new lease, address=192.168.15.59
+Oct 02 23:40:58 192.168.15.59 wpa_supplicant[535]: wlan0: CTRL-EVENT-DISCONNECTED bssid=d8:9a:0d:fb:53:47 reason=3 locally_generated=1
+Oct 02 23:40:58 archlinux kernel: wlan0: associated
+Oct 02 23:41:02 archlinux kernel: wlan0: deauthenticated from e2:30:1e:6b:4a:83 (Reason: 15=4WAY_HANDSHAKE_TIMEOUT)
+Oct 02 23:41:02 archlinux wpa_supplicant[535]: wlan0: CTRL-EVENT-DISCONNECTED bssid=e2:30:1e:6b:4a:83 reason=15
+Oct 02 23:41:17 archlinux kernel: wlan0: associated
+Oct 02 23:41:21 archlinux kernel: wlan0: deauthenticated from e2:30:1e:6b:4a:83 (Reason: 15=4WAY_HANDSHAKE_TIMEOUT)
+Oct 02 23:41:21 archlinux wpa_supplicant[535]: wlan0: CTRL-EVENT-DISCONNECTED bssid=e2:30:1e:6b:4a:83 reason=15
+Oct 02 23:41:34 archlinux kernel: wlan0: associated
+Oct 02 23:41:38 archlinux kernel: wlan0: deauthenticated from e2:30:1e:6b:4a:83 (Reason: 15=4WAY_HANDSHAKE_TIMEOUT)
+Oct 02 23:41:38 archlinux wpa_supplicant[535]: wlan0: CTRL-EVENT-DISCONNECTED bssid=e2:30:1e:6b:4a:83 reason=15
+Oct 02 23:41:54 archlinux kernel: wlan0: associated
+Oct 02 23:41:58 archlinux kernel: wlan0: deauthenticated from e2:30:1e:6b:4a:83 (Reason: 15=4WAY_HANDSHAKE_TIMEOUT)
+Oct 02 23:41:58 archlinux wpa_supplicant[535]: wlan0: CTRL-EVENT-DISCONNECTED bssid=e2:30:1e:6b:4a:83 reason=15
+Oct 02 23:42:21 archlinux kernel: wlan0: associated
+Oct 02 23:42:25 archlinux kernel: wlan0: deauthenticated from e2:30:1e:6b:4a:83 (Reason: 15=4WAY_HANDSHAKE_TIMEOUT)
+Oct 02 23:42:25 archlinux wpa_supplicant[535]: wlan0: CTRL-EVENT-DISCONNECTED bssid=e2:30:1e:6b:4a:83 reason=15
+Oct 02 23:43:49 archlinux kernel: wlan0: associated
+Oct 02 23:43:49 archlinux wpa_supplicant[535]: wlan0: CTRL-EVENT-CONNECTED - Connection to e2:30:1e:6b:4a:83 completed [id=0 id_str=]
+Oct 02 23:43:49 archlinux NetworkManager[530]: <info>  [1791002629.6537] dhcp4 (wlan0): state changed new lease, address=10.183.105.66
+Oct 03 00:00:02 archlinux kernel: wlan0: deauthenticated from e2:30:1e:6b:4a:83 (Reason: 1=UNSPECIFIED)
+Oct 03 00:00:02 archlinux wpa_supplicant[535]: wlan0: CTRL-EVENT-DISCONNECTED bssid=e2:30:1e:6b:4a:83 reason=1
+Oct 03 00:00:22 archlinux kernel: wlan0: associated
+Oct 03 00:00:22 archlinux wpa_supplicant[535]: wlan0: CTRL-EVENT-CONNECTED - Connection to d8:9a:0d:fb:53:47 completed [id=0 id_str=]
+Oct 03 00:00:22 archlinux NetworkManager[530]: <info>  [1791003622.9858] dhcp4 (wlan0): state changed new lease, address=192.168.15.59
+Oct 03 00:01:06 192.168.15.59 wpa_supplicant[535]: wlan0: CTRL-EVENT-DISCONNECTED bssid=d8:9a:0d:fb:53:47 reason=3 locally_generated=1
+Oct 03 00:01:06 archlinux kernel: wlan0: associated
+Oct 03 00:01:06 archlinux wpa_supplicant[535]: wlan0: CTRL-EVENT-CONNECTED - Connection to 3e:e9:39:0c:96:14 completed [id=0 id_str=]
+Oct 03 00:01:06 archlinux NetworkManager[530]: <info>  [1791003666.6216] dhcp4 (wlan0): state changed new lease, address=10.183.105.66
