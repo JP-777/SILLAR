@@ -1,0 +1,20 @@
+import sys,glob,xml.etree.ElementTree as ET,collections
+ns={'t':'http://microsoft.com/schemas/VisualStudio/TeamTest/2010'}
+d=sys.argv[1]; tot=collections.Counter(); filas=[]
+for f in sorted(glob.glob(d+'/*.trx')):
+    r=ET.parse(f).getroot()
+    defs={u.get('id'):u for u in r.iterfind('.//t:UnitTest',ns)}
+    c=r.find('.//t:ResultSummary/t:Counters',ns)
+    st=r.find('.//t:ResultSummary',ns).get('outcome')
+    src={u.find('t:TestMethod',ns).get('codeBase').split('/')[-1] for u in defs.values()}
+    print(f"{f.split('/')[-1]}\t{','.join(src)}\ttotal={c.get('total')} executed={c.get('executed')} passed={c.get('passed')} failed={c.get('failed')} notExecuted={c.get('notExecuted')} outcome={st}")
+    for k in ('total','executed','passed','failed','notExecuted'): tot[k]+=int(c.get(k))
+    for res in r.iterfind('.//t:UnitTestResult',ns):
+        u=defs[res.get('testId')]; m=u.find('t:TestMethod',ns)
+        filas.append((res.get('outcome'),m.get('className'),res.get('testName'),res.get('startTime'),res.get('duration')))
+print('TOTAL',dict(tot))
+print('outcomes',collections.Counter(f[0] for f in filas))
+if len(sys.argv)>2:
+    with open(sys.argv[2],'w') as o:
+        o.write('outcome\tclase\tprueba\tinicio\tduracion\n')
+        for f in sorted(filas,key=lambda x:(x[1],x[2])): o.write('\t'.join(f)+'\n')
