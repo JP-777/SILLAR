@@ -1,8 +1,10 @@
 # SILLAR — Roadmap Modular
 
-**Última modificación:** 2026-09-27 11:40:43 -0500 — America/Lima
-**Última verificación parcial:** 2026-09-27 11:40:43 -0500 — America/Lima
-**Commit de código verificado:** `2191150635935a5b58c7c4edc2d77c7cbc258019`
+**Última modificación:** 2026-10-02 14:40:40 -0500 — America/Lima
+**Última verificación parcial:** 2026-10-02 14:40:40 -0500 — America/Lima (fila de M04 y convención de estado)
+**Commit de código verificado:** `c1dcc5bd42a069eaf0e1259e71f54d605264759e`
+
+**Convención de estado:** ✅ se reserva exclusivamente para **CERRADO**, y en toda fila que lo lleva la explicación empieza por CERRADO. Un cierre propuesto, una entrega en curso o una candidata no llevan ✅.
 
 **Versión:** 2.0 — reemplaza al roadmap BD → Backend → Frontend
 **Fecha:** 14 de agosto de 2026
@@ -46,14 +48,14 @@ Es la única fase que no es un módulo. Sin ella no se puede empezar.
 
 | ID | Tarea | Estado |
 |---|---|---|
-| **F-01** | Repositorio, estructura de carpetas, `.gitattributes`, `.gitignore` | ✅ Completado |
-| **F-02** | Entorno Docker Compose con PostgreSQL 16 funcionando en Windows | ✅ Completado |
-| **F-03** | ADRs y arquitectura modular documentada | ✅ Completado |
-| **F-04** | Material previo archivado **fuera del repositorio** (PRD, diccionario, ER, scripts, prototipo) | ✅ Completado |
-| **F-05** | `CLAUDE.md` y plantilla de especificación de módulo | ✅ Completado |
-| **F-06** | Decisión del nombre del producto: **SILLAR** (ADR-007) | ✅ Completado |
-| **F-07** | Solución .NET base: `Api`, `Shared`, `Core`, contrato `IModule`, orquestador de módulos | ✅ Completado |
-| **F-08** | Proyecto React base: `shared`, `layout`, `capabilities`, composición de rutas | ✅ Completado |
+| **F-01** | Repositorio, estructura de carpetas, `.gitattributes`, `.gitignore` | ✅ CERRADO |
+| **F-02** | Entorno Docker Compose con PostgreSQL 16 funcionando en Windows | ✅ CERRADO |
+| **F-03** | ADRs y arquitectura modular documentada | ✅ CERRADO |
+| **F-04** | Material previo archivado **fuera del repositorio** (PRD, diccionario, ER, scripts, prototipo) | ✅ CERRADO |
+| **F-05** | `CLAUDE.md` y plantilla de especificación de módulo | ✅ CERRADO |
+| **F-06** | Decisión del nombre del producto: **SILLAR** (ADR-007) | ✅ CERRADO |
+| **F-07** | Solución .NET base: `Api`, `Shared`, `Core`, contrato `IModule`, orquestador de módulos | ✅ CERRADO |
+| **F-08** | Proyecto React base: `shared`, `layout`, `capabilities`, composición de rutas | ✅ CERRADO |
 
 F-06 quedó resuelto antes de escribir código, que era justamente el objetivo: renombrar ahora costó una sustitución de texto.
 
@@ -65,10 +67,10 @@ Módulos que entran en la primera entrega, en orden de construcción. El orden r
 
 | Orden | Módulo | Por qué va aquí |
 |---|---|---|
-| 1 | **CORE** ✅ | Todo lo demás se enchufa aquí. Incluye licencias, activación, settings y usuarios admin. **Cerrado** — commit `73988ce`, 181 pruebas |
-| 2 | **M01 Catálogo** ✅ | Base del negocio. La búsqueda va por `to_tsvector('spanish', …)` sobre índice GIN, no por `pg_trgm` ni `unaccent`: el nombre lleva colación no determinista y PostgreSQL no admite esas operaciones sobre ella. **Cerrado** — 17 de 17 criterios con su prueba |
+| 1 | **CORE** ✅ | **CERRADO** — commit `73988ce`, 181 pruebas. Todo lo demás se enchufa aquí. Incluye licencias, activación, settings y usuarios admin. |
+| 2 | **M01 Catálogo** ✅ | **CERRADO** — 17 de 17 criterios con su prueba. Base del negocio. La búsqueda va por `to_tsvector('spanish', …)` sobre índice GIN, no por `pg_trgm` ni `unaccent`: el nombre lleva colación no determinista y PostgreSQL no admite esas operaciones sobre ella. |
 | 3 | **M02 Contenido Web** ✅ | **CERRADO** — dictamen favorable del colíder y autorización de JP, 27/09/2026 (America/Lima); 33/33 criterios y QA local sobre `2e6c721`: barrera 34/34, puerta 6/6, E2E 159/159, C21 y ciclo de desinstalación/reinstalación PASS. Evidencias originales y puerta roja previa declarada en `docs/modules/cms/evidencias/QA-B-INDICE-20260927.md`. Integrado con fast-forward desde `2191150`; el riesgo intermitente queda abierto en `PENDIENTES.md` §27. |
-| 4 | **M04 Clientes** ✅ | Necesario para que Ventas tenga a quién asociar el pedido. **Y la identidad del cliente vive aquí, no en CORE**: `core.admin_users` es del personal —rol obligatorio y restringido a los tres de administración—, así que la cuenta de quien compra es de M04. **Cierre propuesto** — 19/19 criterios acreditados; doble puerta 6/6 PASS sobre `9f9015b`; pendiente de aprobación y fusión; verificación de correo E2E mediante Mailpit v1.31.1 solo para desarrollo/pruebas |
+| 4 | **M04 Clientes** ✅ | **CERRADO** en 1.2.0, 02/10/2026 — ver `docs/modules/crm/CIERRE-M04.md`. Original `9f9015b` (19/19 criterios, doble puerta 6/6, registro `711bfba`); 1.1.0, instantánea sin dirección, certificada sobre `37c0fbf`; 1.2.0, identidad mínima, candidata `defebaf` con puerta 6/6, 645 PASS y 0 omitidas (evidencia `c1dcc5b`). Necesario para que Ventas tenga a quién asociar el pedido. **Y la identidad del cliente vive aquí, no en CORE**: `core.admin_users` es del personal —rol obligatorio y restringido a los tres de administración—, así que la cuenta de quien compra es de M04. Verificación de correo E2E mediante Mailpit v1.31.1 solo para desarrollo/pruebas. |
 | 5 | **M03 Ventas Online** | Carrito y pedidos: prioridad número tres. **Requiere M01 y requiere M04**: la dependencia sobre Clientes era blanda y **la cuenta obligatoria para comprar la vuelve dura** (21 ago 2026). Este orden ya era el correcto; lo que estaba mal escrito era «aprovecha». |
 | 6 | **M05a Servicios (vitrina)** | El PRD insiste en que los servicios permanentes no queden escondidos. **Su construcción está pendiente de una decisión de producto: puede no llegar a existir como módulo.** Ver `docs/modules/services/DECISIONES-PREVIAS-M05a.md` |
 | 7 | **M07 Solicitudes B2B** | Colegios, empresas y pedidos especiales: parte del valor diferencial del negocio. **Depende duro de M04, así que no puede empezar hasta que M04 cierre** (24 ago 2026). Ver `docs/modules/b2b/DECISIONES-PREVIAS-M07.md` |
@@ -81,13 +83,13 @@ CORE es demasiado grande para un solo ciclo de cinco pasos, así que se parte en
 
 | Entrega | Alcance | Estado |
 |---|---|---|
-| **01** | Esqueleto del módulo, `IModule`, sincronización de `core.modules`, `/api/capabilities` | ✅ Cerrada |
-| **02** | Instalación, login, sesiones por cookie, CSRF, cambio de contraseña, CRUD de usuarios | ✅ Cerrada — commit `de4994a`, 95 pruebas |
-| **02.1** | Token CSRF determinista derivado de la sesión (ADR-012) | ✅ Cerrada — commit `4c37cdc` |
-| **03** | Activación de módulos, `site_settings`, auditoría consultable | ✅ Cerrada — commit `4fe76b4`, 152 pruebas |
-| **03b** | Gestión de medios | ✅ Cerrada — commit `dd14431` |
-| **04a** | Pantallas de módulos y usuarios | ✅ Cerrada — commit `005e8fb` |
-| **04b** | Configuración, auditoría y medios en el panel | ✅ Cerrada — commit `73988ce`, 181 pruebas |
+| **01** | Esqueleto del módulo, `IModule`, sincronización de `core.modules`, `/api/capabilities` | ✅ CERRADO |
+| **02** | Instalación, login, sesiones por cookie, CSRF, cambio de contraseña, CRUD de usuarios | ✅ CERRADO — commit `de4994a`, 95 pruebas |
+| **02.1** | Token CSRF determinista derivado de la sesión (ADR-012) | ✅ CERRADO — commit `4c37cdc` |
+| **03** | Activación de módulos, `site_settings`, auditoría consultable | ✅ CERRADO — commit `4fe76b4`, 152 pruebas |
+| **03b** | Gestión de medios | ✅ CERRADO — commit `dd14431` |
+| **04a** | Pantallas de módulos y usuarios | ✅ CERRADO — commit `005e8fb` |
+| **04b** | Configuración, auditoría y medios en el panel | ✅ CERRADO — commit `73988ce`, 181 pruebas |
 
 **CORE está cerrado.** Siete entregas, 9 tablas, 20 rutas, 181 pruebas y 6 entradas de menú filtradas por rol. Lo único pendiente es la **verificación visual del panel**, que Claude Code no puede hacer porque no ve la interfaz — la lista está en la §6 de la bitácora.
 

@@ -8,8 +8,8 @@
 > condición sobre el próximo módulo no es un pendiente: es algo que hay que
 > tener delante **al empezar**, no algo que alguien tenga que acordarse de hacer.
 
-Creado: 5 de septiembre de 2026 · Última verificación: 6 de septiembre de 2026 ·
-Commit verificado: `d617688`.
+Creado: 5 de septiembre de 2026 · Última verificación: 2 de octubre de 2026 ·
+Commit verificado: `41d3109`.
 
 ---
 
@@ -123,6 +123,36 @@ cuatro ficheros existían, contenían la palabra, y ninguno contenía la regla.
 
 **Ni el fallo ni el acierto de una búsqueda son una respuesta. Abrir el fichero lo
 es.**
+
+### Si EF tiene que traducirlo, una prueba en memoria no lo ha demostrado
+
+**Nada que solo se rompa cuando EF Core traduce una expresión a SQL queda
+demostrado por una prueba en memoria.** Una consulta puede compilar, devolver lo
+esperado con lógica pura o fakes y, aun así, romperse cuando el proveedor de
+PostgreSQL intenta traducirla.
+
+Ya pasó dos veces:
+
+- **16 de agosto de 2026 — `GET /api/admin/catalog/brands`.**
+  `BrandService.ListAsync` proyectaba mediante un método de instancia. Las
+  pruebas de lógica estaban verdes, pero la primera ejecución real del endpoint
+  devolvió 500 cuando EF Core intentó traducir la consulta.
+- **1 de octubre de 2026 — C15, contrato de `ICatalogService`.**
+  Cuatro métodos proyectaban mediante el record auxiliar `Row`; compilaban y
+  podían pasar comprobaciones que no obligaban al proveedor a traducir la
+  expresión, pero fallaban al ejecutar esas consultas contra PostgreSQL real.
+
+**La regla:** cuando la corrección de un contrato depende de la traducción
+EF -> SQL, hace falta al menos una ejecución real que obligue a EF Core a
+traducir **y ejecutar esa consulta contra PostgreSQL**. Que compile o que una
+prueba en memoria pase no acredita esa propiedad.
+
+Y la ejecución tiene que haber ocurrido de verdad. **`Assert.Skip` permite que
+una prueba exista sin haber acreditado PostgreSQL en una corrida concreta.**
+Una prueba que terminó `SKIPPED` no cuenta como evidencia de ejecución real. Si
+la puerta canónica es la evidencia usada para acreditar esta propiedad, esa
+corrida debe haber proporcionado PostgreSQL y terminado **sin omisiones
+relevantes** de las pruebas que demuestran la traducción.
 
 ---
 

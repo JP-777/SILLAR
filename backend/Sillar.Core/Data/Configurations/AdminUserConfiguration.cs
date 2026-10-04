@@ -16,6 +16,7 @@ internal sealed class AdminUserConfiguration : IEntityTypeConfiguration<AdminUse
             table.HasCheckConstraint("ck_admin_users_full_name_not_empty", Check.NotEmpty("full_name"));
             table.HasCheckConstraint("ck_admin_users_email_not_empty", Check.NotEmpty("email"));
             table.HasCheckConstraint("ck_admin_users_password_hash_not_empty", Check.NotEmpty("password_hash"));
+            table.HasCheckConstraint("ck_admin_users_home_node_not_empty", Check.NotEmpty("home_node"));
         });
 
         builder.HasKey(x => x.AdminUserId).HasName("pk_admin_users");
@@ -50,6 +51,13 @@ internal sealed class AdminUserConfiguration : IEntityTypeConfiguration<AdminUse
         builder.Property(x => x.Role)
             .HasColumnName("role")
             .HasMaxLength(20)
+            .IsRequired();
+
+        // Sin DEFAULT en la base, por la misma razón que origin_node
+        // (NodeIdentity): la migración es igual en todos los nodos. Lo escribe
+        // la aplicación al crear la cuenta.
+        builder.Property(x => x.HomeNode)
+            .HasColumnName("home_node")
             .IsRequired();
 
         builder.Property(x => x.Phone)

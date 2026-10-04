@@ -1,0 +1,60 @@
+QA READACTIVE — SABOTAJE ROJO — 03/10/2026
+
+HEAD=32932c692fc383fc80c9ea7a5c6cc7c425970979
+
+=== SABOTAJE APLICADO ===
+Se elimina temporalmente '&& module.Activation.IsActive'
+del predicado EF de ReadActiveAsync.
+
+=== DIFF TEMPORAL ===
+diff --git a/backend/Sillar.Core/Modularity/ModuleSynchronizer.cs b/backend/Sillar.Core/Modularity/ModuleSynchronizer.cs
+index 1a09058..3f77250 100644
+--- a/backend/Sillar.Core/Modularity/ModuleSynchronizer.cs
++++ b/backend/Sillar.Core/Modularity/ModuleSynchronizer.cs
+@@ -291,7 +291,7 @@ public sealed class ModuleSynchronizer(CoreDbContext database, ILogger<ModuleSyn
+         CancellationToken cancellationToken)
+     {
+         var rows = await database.Modules
+-            .Where(module => module.Activation != null && module.Activation.IsActive)
++            .Where(module => module.Activation != null)
+             .OrderBy(module => module.DisplayOrder)
+             .ThenBy(module => module.Code)
+             .Select(module => new { module.Code, module.Activation!.ExpiresAt })
+
+=== PRUEBA ===
+  Sillar.Shared -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Shared/bin/Debug/net10.0/Sillar.Shared.dll
+  Sillar.Shared.Data -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Shared.Data/bin/Debug/net10.0/Sillar.Shared.Data.dll
+  Sillar.Modules.Catalog.Contracts -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Catalog.Contracts/bin/Debug/net10.0/Sillar.Modules.Catalog.Contracts.dll
+  Sillar.Core.Contracts -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Contracts/bin/Debug/net10.0/Sillar.Core.Contracts.dll
+  Sillar.Modules.Demo -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Demo/bin/Debug/net10.0/Sillar.Modules.Demo.dll
+  Sillar.Modules.Crm.Contracts -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Crm.Contracts/bin/Debug/net10.0/Sillar.Modules.Crm.Contracts.dll
+  Sillar.Modules.Cms -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Cms/bin/Debug/net10.0/Sillar.Modules.Cms.dll
+  Sillar.Modules.Catalog -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Catalog/bin/Debug/net10.0/Sillar.Modules.Catalog.dll
+  Sillar.Modules.Crm -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Crm/bin/Debug/net10.0/Sillar.Modules.Crm.dll
+  Sillar.Core -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core/bin/Debug/net10.0/Sillar.Core.dll
+  Sillar.Core.Tests -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/bin/Debug/net10.0/Sillar.Core.Tests.dll
+Test run for /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/bin/Debug/net10.0/Sillar.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:13.76]     Sillar.Core.Tests.ModuleSynchronizerReadActivePostgresTests.ReadActiveAsync_devuelve_exactamente_el_modulo_activo_de_PostgreSQL [FAIL]
+  Failed Sillar.Core.Tests.ModuleSynchronizerReadActivePostgresTests.ReadActiveAsync_devuelve_exactamente_el_modulo_activo_de_PostgreSQL [10 s]
+  Error Message:
+   Assert.Equal() Failure: Collections differ
+Expected: ["core", "demo_catalog"]
+Actual:   ["core", "demo_catalog", "demo_crm"]
+                                   ↑ (pos 2)
+  Stack Trace:
+     at Sillar.Core.Tests.ModuleSynchronizerReadActivePostgresTests.<>c__DisplayClass0_0.<<ReadActiveAsync_devuelve_exactamente_el_modulo_activo_de_PostgreSQL>b__0>d.MoveNext() in /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/ModuleSynchronizerReadActivePostgresTests.cs:line 82
+--- End of stack trace from previous location ---
+   at Sillar.Core.Tests.ModuleSynchronizerReadActivePostgresTests.<>c__DisplayClass0_0.<<ReadActiveAsync_devuelve_exactamente_el_modulo_activo_de_PostgreSQL>b__0>d.MoveNext() in /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/ModuleSynchronizerReadActivePostgresTests.cs:line 83
+--- End of stack trace from previous location ---
+   at Sillar.Core.Tests.BaseDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct) in /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/BaseDePrueba.cs:line 137
+   at Sillar.Core.Tests.BaseDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct) in /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/BaseDePrueba.cs:line 149
+   at Sillar.Core.Tests.ModuleSynchronizerReadActivePostgresTests.ReadActiveAsync_devuelve_exactamente_el_modulo_activo_de_PostgreSQL() in /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/ModuleSynchronizerReadActivePostgresTests.cs:line 19
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 10 s - Sillar.Core.Tests.dll (net10.0)
+
+SABOTAGE_TEST_RC=1
+SABOTAGE_EXPECTED_RED=1
+
+TRAZABILIDAD: esta corrida se ejecutó sobre el árbol de trabajo que posteriormente quedó commitado como deaff4e07c0fc9c7baa45ce348170f5f89b2383f. En el momento de ejecutar la prueba, HEAD todavía era su padre 32932c692fc383fc80c9ea7a5c6cc7c425970979; por eso el HEAD impreso en este log corresponde al padre y no al commit de cierre.

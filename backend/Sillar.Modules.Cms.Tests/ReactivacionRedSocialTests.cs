@@ -32,6 +32,8 @@ public sealed class ReactivacionRedSocialTests
         public int? AdminUserId => 7;
         public string? Email => "admin-prueba@sillar.test";
         public string? Role => AdminRole.Admin;
+        public string? DisplayName => "Admin Prueba";
+        public string? HomeNode => "nodo-de-prueba";
         public bool IsInRole(string role) => role == AdminRole.Editor || role == AdminRole.Admin;
     }
 

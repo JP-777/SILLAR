@@ -21,6 +21,15 @@ public class CoreDbContext(
     public const string Schema = "core";
 
     /// <summary>
+    /// El nodo de esta instalación: donde nace lo que este contexto escribe.
+    /// </summary>
+    /// <remarks>
+    /// Lo usa el alta de cuentas para su <c>home_node</c>. La fotografía del
+    /// autor de un medio <b>no</b> lo lee: copia el nodo de la cuenta.
+    /// </remarks>
+    internal NodeIdentity Node => node;
+
+    /// <summary>
     /// Tabla de historial de migraciones, dentro del schema del módulo: instalar
     /// el módulo es aplicar sus migraciones y desinstalarlo es soltar su schema,
     /// historial incluido.

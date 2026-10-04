@@ -1,0 +1,38 @@
+# Contrato de instantánea 1.1.0 — sabotajes deliberados de las guardas
+# Código: 31089971a0a9aa334d533adeacb8ec26a5bf30ff (CustomerSnapshotReader.cs modificado en cada sabotaje y restaurado)
+# Fecha: 2026-09-27, America/Lima
+# Diagnóstico NO canónico: base propia sillar_diag_m04 (migraciones Core, Catalog, Cms, Crm),
+#   dotnet test backend/Sillar.Modules.Crm.Tests --filter CustomerSnapshotReaderTests|Snapshot_para_M03
+# La acreditación canónica es la puerta (etapa 5).
+
+== S1 sin dirección: se quita la guarda de ficha activa
+  Failed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Cliente_de_baja_o_bloqueado_devuelve_null_en_las_dos_variantes(estado: "baja") [158 ms]
+  Failed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Cliente_de_baja_o_bloqueado_devuelve_null_en_las_dos_variantes(estado: "bloqueo") [89 ms]
+Total tests: 17
+     Passed: 15
+     Failed: 2
+rc=1
+== S2 sin dirección: se quita la guarda de cuenta (cualquier ficha sirve)
+  Failed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Ficha_sin_cuenta_devuelve_null_en_las_dos_variantes [67 ms]
+  Failed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Un_cambio_posterior_del_perfil_no_altera_la_instantanea_ya_tomada [190 ms]
+  Failed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Sin_direccion_devuelve_los_datos_del_cliente_aunque_no_tenga_ninguna_direccion [102 ms]
+Total tests: 17
+     Passed: 14
+     Failed: 3
+rc=1
+== S3 con dirección: la dirección ya no se ata al cliente (dirección ajena aceptada)
+  Failed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Con_direccion_ajena_devuelve_null [64 ms]
+Total tests: 17
+     Passed: 16
+     Failed: 1
+rc=1
+== S4 con dirección: se acepta una dirección de baja
+  Failed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Con_direccion_de_baja_devuelve_null [80 ms]
+Total tests: 17
+     Passed: 16
+     Failed: 1
+rc=1
+== restaurado, idéntico
+== tras restaurar
+Total tests: 17
+     Passed: 17

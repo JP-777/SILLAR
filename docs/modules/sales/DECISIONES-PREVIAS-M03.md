@@ -3,6 +3,121 @@
 **Creación:** 21 de septiembre de 2026, 12:12:36 -05:00 — America/Lima
 **Última verificación:** 21 de septiembre de 2026, 19:47:14 -05:00 — America/Lima
 **Commit verificado:** `21b3897003aee4d9dde1b346be64dc2ca03ada70`
+**Enmendado:** 26 de septiembre de 2026 — America/Lima, sobre `711bfba7cf3be80baa146b44e79ddf7a633d695d`
+**Ampliado:** 27 de septiembre de 2026 — America/Lima, sobre `74ab0773a8ea1101b30a9888d132d79b88b7d8f4`
+
+**Última modificación parcial:** 2026-09-27 12:21:48 -0500 — America/Lima.
+**Última verificación de esta rectificación:** 2026-09-27 12:21:48 -0500 — America/Lima; base de código `9ccc4228fe70578f28aad71bf0f4f2fa8806997b`.
+
+> ## RECTIFICACIÓN FINAL DE JP — 27/09/2026, America/Lima
+>
+> **FORMATO VIGENTE DE PEDIDOS M03: `P-2026-0147`.** Esta decisión posterior de JP
+> **sustituye** al formato provisional `W-2026-0147` consignado en el bloque histórico
+> siguiente. Aunque allí figure «VIGENTE» como estado de aquella fecha, ya no lo está.
+> Se conserva el bloque anterior como trazabilidad y no se modifica la SPEC histórica.
+>
+> **Composición:** etiqueta visible del nodo + año + correlativo. `P` es el ejemplo
+> correspondiente al nodo cuyo `NodeIdentity.Code` es `principal`, no una letra
+> universal que pueda grabarse por defecto en todos los nodos. La etiqueta se
+> **deriva del `Code` real y se fija en un ajuste propio durante la instalación**.
+> El instalador debe negarse a arrancar si la etiqueta es vacía o coincide con
+> otra ya existente en la base. Verificar expresamente el alcance de esa garantía
+> en futuros nodos autónomos y sincronización: la base local no puede demostrar
+> por sí sola unicidad entre instalaciones desconectadas; elevar la solución
+> inter-nodo al líder técnico sin inventarla.
+>
+> **Reinicio anual APROBADO Y RATIFICADO:** la serie es por nodo y año, y
+> vuelve al inicio al cambiar el año. El líder técnico **ratificó el 27/09/2026**
+> la excepción de ADR-016: se conserva el nodo delante y se excepciona solo el
+> «no reinicia». Su texto se incorpora a ADR-016 mediante la rama documental
+> del modo `m02`; la publicación es trazabilidad, NO una condición para que A
+> implemente desde ahora `P-2026-0147` y su contador transaccional.
+>
+> **Sin huecos APROBADO:** usar una fila de contador por serie `(nodo, año)`;
+> asignar mediante `UPDATE ... RETURNING` dentro de la MISMA transacción que
+> persiste el pedido. Pedir el número al final, justo antes de confirmar el
+> pedido, nunca al crear el carrito. No usar `nextval()` porque una transacción
+> revertida consume números de secuencia. Resolver concurrencia y rollback
+> transaccional sin prometer continuidad ante borrados, correcciones manuales o
+> repartición entre nodos no definida en este documento.
+>
+> **Pruebas obligatorias:** dos pedidos concurrentes reciben números distintos
+> y consecutivos dentro de su serie; un pedido que falla a mitad no consume
+> número; además, provocar deliberadamente una falla de la guarda y demostrar
+> que la prueba pasa a rojo antes de restaurarla.
+>
+> **M07:** sus cotizaciones siguen la misma convención por nodo/año, con una
+> **letra de serie diferente**, cuyo valor no se inventa aquí.
+>
+> **Motivo de la rectificación:** `NodeIdentity.cs` define un `Code` configurable
+> con valor por defecto `principal`. La letra `W` anterior no corresponde a
+> ningún nodo reconocido del sistema. JP corrigió expresamente el ejemplo y
+> fijó las reglas anteriores el 27/09/2026, America/Lima.
+>
+> **Propagación:** corresponde a A actualizar su propia SPEC, decisiones vigentes,
+> escaladas y pruebas en el siguiente turno; este commit modifica únicamente
+> `DECISIONES-PREVIAS-M03.md`. No interpretar su documentación anterior como vigente.
+
+
+> ## ENMENDADO el 26 de septiembre de 2026 — no leer §1 y §2 como vigentes
+>
+> **Qué lo enmienda:** el encargo de producto del 26 de septiembre de 2026, recibido por el
+> colíder a través de JP. Su texto vigente está en
+> `docs/modules/sales/DECISIONES-VIGENTES-M03.md`.
+>
+> **Motivo:** M09 Inventario salió de la Fase 1 y pasó a SILLAR ERP
+> (`docs/ROADMAP_MODULAR.md:122`). **Sin inventario no hay existencia que apartar**, así que
+> SILLAR WEB v1 no tiene reserva de existencias. Las §1 y §2 de abajo hablan de una reserva de
+> stock que el producto ya no tiene.
+>
+> **Qué queda desplazado, y qué lo sustituye:**
+>
+> | Este documento decía | Vigente desde el 26/09/2026 |
+> |---|---|
+> | §1 — al vencer la **reserva de stock** se libera el stock y el pedido no se cancela | No hay reserva. Al vencer el **plazo para pagar**, el pedido pasa a **Vencido**, deja de estar garantizado, **no se cancela por ese hecho** y se avisa al personal |
+> | §2 — **48 horas** naturales configurables = plazo de la **reserva de stock** | **48 horas** naturales configurables = **plazo para pagar**. El mismo número; otro objeto. **No es una reserva** |
+> | §1 — los dos estados distintos son **reserva** y **pedido** | Los dos estados distintos son **hecho de pago** y **estado del pedido** |
+>
+> **Lo que sobrevive sin cambio:** la §3 —dependencias duras de M01 y M04, y el pedido conserva
+> snapshots—, y el criterio de §1 de que **vencer no es cancelar**, que el encargo del 26/09
+> repite palabra por palabra sobre otro sujeto.
+>
+> **El texto de abajo no se ha tocado.** Se conserva porque registra con qué criterio se decidió
+> el 21 de septiembre, y ese criterio sigue explicando por qué hoy vencer no cancela.
+
+> ## AMPLIADO el 27 de septiembre de 2026 — el código visible del pedido
+>
+> **Decisión de JP, 27 de septiembre de 2026, America/Lima.** Comunicada por Chat 2 vía JP.
+>
+> ### El código visible de pedido de M03 es **`W-2026-0147`**
+>
+> **Composición:** **nodo delante, año y correlativo.**
+>
+> **Motivo, en palabras de la decisión:** alinear el formato visible con la **regla 2 de la
+> ADR-016**, que separa las PK internas de los códigos legibles y establece **una serie visible por
+> nodo**.
+>
+> **Qué desplaza.** Nada de este documento: el código visible no aparecía en él. Desplaza al
+> **ejemplo obligatorio `2026-0147`** del encargo del 26/09 §5, que **deja de ser el formato
+> autorizado**. Queda registrado aquí porque es donde se guarda la traza de las decisiones de
+> producto de M03, y porque este documento ya lleva la enmienda del 26/09: las dos se leen juntas.
+>
+> **Trazabilidad de la decisión:**
+>
+> | Fecha | Qué se dijo | Estado |
+> |---|---|---|
+> | 26/09/2026 | Encargo §5: «código visible de pedido con año y correlativo: **ejemplo obligatorio `2026-0147`**» | **Desplazado** el 27/09 |
+> | 26/09/2026 | Frente A escala el conflicto con la regla 2 de la ADR-016 y ofrece tres opciones, la segunda «`2026-0147` **con serie delante**, p. ej. `W-2026-0147`» (`ESCALADAS-M03.md` §b1) | Escalado, no decidido |
+> | **27/09/2026** | **JP ratifica `W-2026-0147`** | **VIGENTE** |
+>
+> **Lo que esta decisión NO cambia:** la clave primaria sigue siendo **`uuid` v7** generada por la
+> aplicación. **El identificador visible es una columna independiente**, y esa separación es
+> precisamente lo que la regla 2 existe para sostener.
+>
+> **Lo que queda pendiente de concretar**, y no se presupone: la **continuidad** del correlativo, su
+> **concurrencia** y el **cambio de año**. Están en `SPEC.md` §5.4 y `ESCALADAS-M03.md` §b1-bis.
+
+---
 
 Decisiones de producto que deben quedar escritas **antes de especificar M03**.
 

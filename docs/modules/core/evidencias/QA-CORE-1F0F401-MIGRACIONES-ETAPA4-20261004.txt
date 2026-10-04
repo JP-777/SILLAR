@@ -1,0 +1,14 @@
+sillar_verify_1791135904833_1788306
+schemas: catalog,cms,core,crm,sales
+catalog.__migrations: 20260816073647_CatalogInitial
+cms.__migrations: 20260820050000_CmsInitial
+core.__migrations: 20260816073536_CoreInitial
+core.__migrations: 20260828200857_CoreEmailSettings
+core.__migrations: 20260829011000_CoreSmtpSettings
+core.__migrations: 20261003203701_CoreHomeNodeYAutorDeMedios
+crm.__migrations: 20260824190200_CrmInitial
+crm.__migrations: 20260922115958_CrmCustomersEmailTrimAuthority
+sales.__migrations: 20260930185029_SalesInitial
+tablas sales: 8
+columnas nuevas core: admin_users.home_node, media_assets.origin_node, media_assets.created_by_admin_user_home_node
+2026-10-04 12:46:46 -0500

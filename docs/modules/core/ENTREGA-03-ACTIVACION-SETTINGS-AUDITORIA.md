@@ -228,3 +228,224 @@ La depuración por antigüedad queda fuera de alcance. Se decidirá cuando haya 
 | Depuración de auditoría por antigüedad | Cuando exista volumen real |
 | Exportación de auditoría | Cuando alguien la pida |
 | Creación de claves de configuración desde el panel | Sin caso de uso; las claves nacen del módulo que las necesita |
+
+---
+
+## 7. Cierre de cobertura de `IModuleRegistry.IsActive` — 03/10/2026
+
+### Causa del `NO`
+
+`IModuleRegistry.IsActive(string moduleCode)` ya existía en el contrato y
+`ModuleRegistry` ya lo implementaba sobre `ModuleActivationSnapshot`. El hueco no
+era de producto ni de implementación: el método no tenía un llamador de
+producción que lo ejercitara directamente ni una prueba dedicada que fijara su
+semántica, por lo que no había evidencia propia para acreditarlo.
+
+### Decisión
+
+No se modifica el contrato ni la implementación.
+
+`ModuleRegistry` recibe la foto de activaciones tomada durante el arranque y
+construye a partir de ella el conjunto de códigos activos. `IsActive` únicamente
+consulta ese conjunto en memoria; no ejecuta EF ni consulta PostgreSQL.
+
+Por esa razón no corresponde introducir PostgreSQL artificialmente en la prueba
+de `IsActive`. La frontera persistente está antes: el arranque obtiene las
+activaciones desde `core.module_activations` y construye la foto que recibe el
+registro.
+
+Se añaden dos pruebas de contrato en
+`Sillar.Core.Tests/ModuleRegistryTests.cs`:
+
+- positiva: un módulo presente en `ModuleActivationSnapshot.ActiveModules`
+  devuelve `true`;
+- negativa: un módulo ausente de esa foto devuelve `false`.
+
+La negativa expresa deliberadamente la semántica pública disponible:
+`IModuleRegistry` responde si un código está activo; no distingue entre un
+módulo conocido pero inactivo y un código inexistente.
+
+`ISettingsReader.Get<T>` no forma parte de este cierre y permanece fuera de
+alcance.
+
+---
+
+## 8. Corrección de clasificación: frontera PostgreSQL de módulos activos — 03/10/2026
+
+La clasificación anterior de `IModuleRegistry.IsActive` mezclaba dos fronteras
+distintas.
+
+`IModuleRegistry.IsActive(string moduleCode)` no toca datos persistentes:
+consume `ModuleActivationSnapshot` en memoria y responde sobre la foto que el
+arranque ya construyó. Esa semántica queda acreditada directamente por las
+pruebas positiva y negativa de `ModuleRegistryTests`.
+
+La frontera real con PostgreSQL está antes, en:
+
+`ModuleSynchronizer.SynchronizeAsync(...)`
+→ `ReadActiveAsync(...)`
+→ consulta EF sobre los módulos y su activación persistida.
+
+### Lección para la ficha/inventario
+
+Un `NO` mal clasificado no se elimina sin más.
+
+Primero hay que localizar dónde está realmente la frontera de datos y después
+verificar si esa frontera tiene cobertura ejecutable contra la tecnología real
+que afirma tocar.
+
+En este caso:
+
+- `IModuleRegistry.IsActive` estaba correctamente delimitado como lectura en
+  memoria;
+- la frontera PostgreSQL no acreditada era `ReadActiveAsync`;
+- la corrección consiste en conservar la cobertura unitaria de `IsActive` y
+  añadir cobertura real de PostgreSQL para la construcción de la foto activa.
+
+### Acreditación de `ReadActiveAsync`
+
+Se añadió
+`Sillar.Core.Tests/ModuleSynchronizerReadActivePostgresTests.cs`.
+
+La prueba usa `ConBaseVaciaAsync` y PostgreSQL real. El escenario es:
+
+1. aplica las migraciones de CORE;
+2. declara `core`, `demo_catalog` y `demo_crm`;
+3. ejecuta una primera sincronización para crear el catálogo y las activaciones;
+4. escribe en PostgreSQL `demo_catalog` como activo y `demo_crm` como inactivo;
+5. cierra ese contexto;
+6. abre un contexto nuevo;
+7. ejecuta nuevamente `ModuleSynchronizer.SynchronizeAsync`, que llega a
+   `ReadActiveAsync`;
+8. comprueba que `ModuleSyncResult.Active` contiene exactamente
+   `core` y `demo_catalog`, y excluye `demo_crm`.
+
+CORE aparece en el resultado porque es una dependencia dura e invariante del
+grafo; entre los dos módulos cuyo estado se contrasta, entra exactamente el
+activo y queda fuera el inactivo.
+
+### Control negativo
+
+Para demostrar que la prueba detecta una rotura de la frontera, se eliminó
+temporalmente del predicado EF de `ReadActiveAsync`:
+
+`&& module.Activation.IsActive`
+
+Con ese sabotaje la misma prueba quedó ROJA porque el resultado pasó de:
+
+`["core", "demo_catalog"]`
+
+a:
+
+`["core", "demo_catalog", "demo_crm"]`
+
+Después se restauró `ModuleSynchronizer.cs` exactamente a su contenido previo
+y la misma prueba volvió a VERDE contra PostgreSQL real.
+
+Evidencias:
+
+- `docs/modules/core/evidencias/QA-READACTIVE-SABOTAJE-ROJO-20261003.txt`
+- `docs/modules/core/evidencias/QA-READACTIVE-POSTGRES-VERDE-20261003.txt`
+
+No se modificó código de producción para obtener este cierre.
+
+`ISettingsReader.Get<T>`, M03 y atribución CORE permanecen fuera de alcance.
+
+---
+
+## 9. Corrección de clasificación: `ISettingsReader.Get<T>` y PostgreSQL — 03/10/2026
+
+`ISettingsReader.Get<T>(string key)` no se clasifica como una lectura
+exclusivamente en memoria.
+
+Su camino real es:
+
+`ISettingsReader.Get<T>`
+→ `SettingsCache.Get<T>`
+→ `Get(key)`
+→ `Entries()`
+→ `Load()` cuando la caché está fría
+→ `CoreDbContext.SiteSettings`
+→ PostgreSQL.
+
+Por tanto, a diferencia de `IModuleRegistry.IsActive`, aquí el propio contrato
+público puede atravesar la frontera persistente durante su primera lectura.
+
+Después de que `Load()` completa, la misma instancia singleton de
+`SettingsCache` conserva las entradas en memoria y las lecturas posteriores
+consumen esa caché hasta que se invalida.
+
+### Frontera acreditada
+
+La frontera está en `SettingsCache.Load()`.
+
+La carga crea un ámbito, obtiene `CoreDbContext` y consulta
+`database.SiteSettings` mediante EF. Además filtra:
+
+`setting.IsActive`
+
+por lo que una configuración inactiva no debe formar parte de las entradas
+servidas por `ISettingsReader`.
+
+Se añadió:
+
+`Sillar.Core.Tests/SettingsReaderPostgresTests.cs`
+
+La prueba usa PostgreSQL real mediante `ConBaseVaciaAsync` y parte de una
+instancia nueva de `SettingsCache`, de manera que su caché está inicialmente
+fría.
+
+El escenario comprueba mediante el contrato `ISettingsReader.Get<T>`:
+
+1. una configuración activa con valor `"42"` se convierte correctamente a
+   `int` y devuelve `42`;
+2. una clave inexistente devuelve `default`;
+3. un valor existente pero no convertible a `int` devuelve `default`;
+4. una clave persistida como inactiva no se sirve y devuelve `default`;
+5. después de la primera carga, se cambia en PostgreSQL el valor válido de
+   `"42"` a `"84"` y la misma instancia continúa devolviendo `42`, demostrando
+   que la primera lectura atravesó la frontera persistente y las posteriores
+   consumen la caché ya cargada.
+
+### Control negativo
+
+Se retiró temporalmente de `SettingsCache.Load()`:
+
+`.Where(setting => setting.IsActive)`
+
+Sin ese filtro, la clave inactiva `qa_gett_inactiva` entró en la caché y la
+misma prueba quedó ROJA:
+
+`Expected: 0`
+
+`Actual: 99`
+
+El archivo de producción fue restaurado exactamente a su contenido anterior
+antes de continuar.
+
+Evidencia del control negativo:
+
+`docs/modules/core/evidencias/QA-SETTINGSREADER-SABOTAJE-ROJO-20261003.txt`
+
+Esta evidencia ROJA es precommit y se conserva únicamente como control
+negativo. La corrida VERDE acreditante se ejecutará después de crear el commit
+del entregable, con árbol limpio y con `HEAD` exactamente igual al SHA que se
+certifique.
+
+No se modifica código de producción para este cierre.
+
+M03, atribución CORE, `main` y otros contratos permanecen fuera de alcance.
+
+## 10. Observación de QA: timeouts en la limpieza de bases efímeras — 04/10/2026
+
+Registrada por orden del colíder, antes de publicar la candidata
+`integration/core-inventario-final`.
+
+> Se observaron 11 timeouts durante cleanup de bases PostgreSQL efímeras en una corrida paralela de
+> `Sillar.Core.Tests`. Ya se había observado un síntoma comparable en otra corrida anterior. No se
+> atribuye todavía una causa. No bloquea esta integración.
+
+**DISPARADOR:** si vuelve a aparecer en otra suite o certificación, escalar como patrón recurrente
+de infraestructura o aislamiento de QA.
+
+Solo se registra. No se cambia código de producción ni pruebas.

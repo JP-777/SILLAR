@@ -6,9 +6,11 @@ namespace Sillar.Modules.Crm.Tests;
 public sealed class CustomerProfileContractTests
 {
     [Theory]
+    [InlineData(typeof(CustomerIdentity))]
     [InlineData(typeof(CustomerProfileResponse))]
     [InlineData(typeof(CustomerAddressResponse))]
     [InlineData(typeof(CustomerOrderSnapshot))]
+    [InlineData(typeof(CustomerOrderContactSnapshot))]
     [InlineData(typeof(CustomerOrderAddressSnapshot))]
     public void Contratos_publicos_no_exponen_campos_internos(
         Type type)

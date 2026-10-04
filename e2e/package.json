@@ -11,7 +11,8 @@
     "test:headed": "playwright test --headed",
     "//stack:down": "El nombre de proyecto se deriva del directorio del arbol, y un package.json no puede derivar nada. Ver stack-down.mjs.",
     "stack:down": "node ./stack-down.mjs",
-    "report": "playwright show-report"
+    "report": "playwright show-report",
+    "test:unit": "node --test unit/*.test.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",

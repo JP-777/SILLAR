@@ -127,7 +127,9 @@ public static class MediaEndpoints
                 file.FileName,
                 ownerModuleCode,
                 form["altText"].ToString(),
-                currentUser.AdminUserId!.Value,
+                // La fotografía sale de la sesión: su nodo es el de la cuenta,
+                // no el de esta instalación (ver ENTREGA-05 de CORE).
+                new AutorDelMedio(currentUser.AdminUserId!.Value, currentUser.DisplayName!, currentUser.HomeNode!),
                 currentUser.Email!,
                 cancellationToken);
 

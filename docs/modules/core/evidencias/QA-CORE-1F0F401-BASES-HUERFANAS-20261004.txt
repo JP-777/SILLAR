@@ -1,0 +1,3 @@
+Bases en el PostgreSQL de la worktree de QA (sillar_qa_m04_db), columnas: sillar_vacia_* | sillar_verify_* [| *prueba*]
+Antes (2026-10-04 00:18, línea base): 0|0|0
+Después de la corrida (2026-10-04 13:20): 0|0

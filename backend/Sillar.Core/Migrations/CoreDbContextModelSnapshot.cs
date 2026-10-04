@@ -126,6 +126,11 @@ namespace Sillar.Core.Migrations
                         .HasColumnType("character varying(150)")
                         .HasColumnName("full_name");
 
+                    b.Property<string>("HomeNode")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("home_node");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasDefaultValue(true)
@@ -179,6 +184,8 @@ namespace Sillar.Core.Migrations
                             t.HasCheckConstraint("ck_admin_users_failed_login_count", "failed_login_count >= 0");
 
                             t.HasCheckConstraint("ck_admin_users_full_name_not_empty", "btrim(full_name) <> ''");
+
+                            t.HasCheckConstraint("ck_admin_users_home_node_not_empty", "btrim(home_node) <> ''");
 
                             t.HasCheckConstraint("ck_admin_users_password_hash_not_empty", "btrim(password_hash) <> ''");
 
@@ -361,9 +368,18 @@ namespace Sillar.Core.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<int?>("CreatedBy")
+                    b.Property<string>("CreatedByAdminUserHomeNode")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_admin_user_home_node");
+
+                    b.Property<int?>("CreatedByAdminUserLocalId")
                         .HasColumnType("integer")
-                        .HasColumnName("created_by");
+                        .HasColumnName("created_by_admin_user_local_id");
+
+                    b.Property<string>("CreatedByAdminUserName")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("created_by_admin_user_name");
 
                     b.Property<int?>("Height")
                         .HasColumnType("integer")
@@ -437,9 +453,6 @@ namespace Sillar.Core.Migrations
                     b.HasIndex("Checksum")
                         .HasDatabaseName("idx_media_assets_checksum");
 
-                    b.HasIndex("CreatedBy")
-                        .HasDatabaseName("idx_media_assets_created_by");
-
                     b.HasIndex("OwnerModuleCode")
                         .HasDatabaseName("idx_media_assets_owner_module_code");
 
@@ -447,8 +460,19 @@ namespace Sillar.Core.Migrations
                         .IsUnique()
                         .HasDatabaseName("uq_media_assets_stored_name");
 
+                    b.HasIndex("CreatedByAdminUserHomeNode", "CreatedByAdminUserLocalId")
+                        .HasDatabaseName("idx_media_assets_created_by_admin_user");
+
                     b.ToTable("media_assets", "core", t =>
                         {
+                            t.HasCheckConstraint("ck_media_assets_autor_completo", "(created_by_admin_user_local_id IS NULL AND created_by_admin_user_name IS NULL AND created_by_admin_user_home_node IS NULL) OR (created_by_admin_user_local_id IS NOT NULL AND created_by_admin_user_name IS NOT NULL AND created_by_admin_user_home_node IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_media_assets_autor_home_node_no_vacio", "created_by_admin_user_home_node IS NULL OR btrim(created_by_admin_user_home_node) <> ''");
+
+                            t.HasCheckConstraint("ck_media_assets_autor_local_id_positivo", "created_by_admin_user_local_id IS NULL OR created_by_admin_user_local_id > 0");
+
+                            t.HasCheckConstraint("ck_media_assets_autor_nombre_no_vacio", "created_by_admin_user_name IS NULL OR btrim(created_by_admin_user_name) <> ''");
+
                             t.HasCheckConstraint("ck_media_assets_mime_type_not_empty", "btrim(mime_type) <> ''");
 
                             t.HasCheckConstraint("ck_media_assets_relative_path_not_empty", "btrim(relative_path) <> ''");
@@ -724,17 +748,6 @@ namespace Sillar.Core.Migrations
                         .HasConstraintName("fk_audit_log_admin_user_id");
 
                     b.Navigation("AdminUser");
-                });
-
-            modelBuilder.Entity("Sillar.Core.Domain.MediaAsset", b =>
-                {
-                    b.HasOne("Sillar.Core.Domain.AdminUser", "CreatedByUser")
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_media_assets_created_by");
-
-                    b.Navigation("CreatedByUser");
                 });
 
             modelBuilder.Entity("Sillar.Core.Domain.ModuleActivation", b =>

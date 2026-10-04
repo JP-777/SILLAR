@@ -1686,3 +1686,34 @@ haya que acordarse de lanzar, que es la forma que tiene una barrera de existir s
 Commit: `91793fa9dc4565ba7789d6d2889c46745870431f`. **La puerta canónica completa no se ha ejecutado en este frente**: la decide
 Integración, y este árbol comparte offset con otra worktree viva (`identidad.mjs` lo detectó al
 empezar), así que levantar aquí un stack habría escrito en la base de al lado.
+
+### 2 oct 2026 · M04 Clientes queda cerrado en 1.2.0
+
+El cierre formal está en `docs/modules/crm/CIERRE-M04.md`. Reúne tres hitos sin reescribir
+ninguno de los registros de su momento:
+
+- **Original:** candidato `9f9015b`, 19/19 criterios y doble puerta canónica 6/6 + 6/6. Se
+  registró en `711bfba` como **propuesta** de cierre, y `CIERRE-M04-PROPUESTA.md` se conserva
+  así.
+- **1.1.0:** `ICustomerSnapshotReader.GetForOrderAsync(customerId, ct)`, la instantánea para un
+  pedido de recojo. No vuelve opcional la dirección del contrato con entrega, que sigue siendo
+  otro método. Certificada en local sobre `37c0fbf`, con la evidencia en `aa3852d`: puerta 6/6,
+  E2E 166/166, 0 omitidas y `[M04-CICLO]` en verde.
+- **1.2.0:** `ICustomerIdentityReader` (`GetAsync`, `GetManyAsync`). La candidata `defebaf`
+  lleva contrato, implementación, pruebas, registro y versión en un solo commit; la evidencia
+  integrada es `c1dcc5b`. Resultado: puerta 6/6, backend 479/479, E2E 166/166, **645 PASS,
+  0 FAIL, 0 SKIPPED**, y los tres métodos nuevos ejecutados contra PostgreSQL real en esa
+  misma corrida.
+
+**El hueco que se cerró por el camino (27/09/2026).** El cierre propuesto había aceptado, para el
+criterio 16, evidencia de un ciclo de **esquema** —borrar y recrear las tablas— cuando el
+criterio pedía un ciclo de **módulo**: desactivar, desinstalar, reinstalar y activar mirando lo
+que ve una persona. `PENDIENTES.md` §28 registró la diferencia, D escribió
+`e2e/tests/zz-z-m04-ciclo.spec.ts`, B lo acreditó en local y la suite final volvió a pasar
+completa. **Lo que estaba incompleto era la evidencia, no necesariamente el producto**: cuando
+el ciclo real se ejecutó, el módulo lo superó. Ningún «cerrado» histórico se reescribió para
+contarlo.
+
+**Qué cambia ahora.** M03 deja de estar bloqueado por M04: el contrato que pidió está en `main`
+y certificado. Lo que sigue abierto fuera de M04 —C15 en M01, las costuras de M03 y M07, y la
+corrección de CORE— sigue en su cola y no se toca con este cierre.

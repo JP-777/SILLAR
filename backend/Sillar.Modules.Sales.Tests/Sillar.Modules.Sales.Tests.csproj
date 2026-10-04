@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ==========================================================================
+       Pruebas de M03 Ventas Online.
+
+       Se parten en dos por el criterio de CLAUDE.md: las de lógica NO tocan la
+       base —el formato del código visible se prueba en milisegundos, sin disco
+       ni red— y las de persistencia cruzan la frontera con PostgreSQL real.
+
+       Los nombres van en español: la salida de dotnet test debe leerse como la
+       lista de reglas que el sistema garantiza.
+       ========================================================================== -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Modules.Sales\Sillar.Modules.Sales.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Sales.Contracts\Sillar.Modules.Sales.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>
