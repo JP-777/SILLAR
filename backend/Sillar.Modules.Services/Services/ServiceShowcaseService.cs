@@ -71,7 +71,7 @@ internal sealed class ServiceShowcaseService(ServicesDbContext database, IMediaS
         var entry = await database.Entries.FirstOrDefaultAsync(x => x.Id == id, ct);
         if (entry is null) return new(ServiceOutcome.NotFound);
         if (!ServiceRules.CanTransition(entry.PublicationState, target))
-            return Conflict($"No se puede pasar de {entry.PublicationState} a {target}.");
+            return Conflict($"Un servicio {Estado(entry.PublicationState)} no puede pasar a {Estado(target)}. Recarga la lista para ver su estado actual.");
         entry.PublicationState = target;
         await database.SaveChangesAsync(ct);
         return new(ServiceOutcome.Ok, Value: Admin(entry));
@@ -103,6 +103,14 @@ internal sealed class ServiceShowcaseService(ServicesDbContext database, IMediaS
         ?? (string.IsNullOrWhiteSpace(NormalizeSlug(request)) ? "La dirección pública no es válida." : null);
     private static string NormalizeSlug(SaveServiceRequest request) => ServiceRules.Slugify(
         string.IsNullOrWhiteSpace(request.Slug) ? request.Name ?? string.Empty : request.Slug);
+    /// <summary>El estado como lo lee una persona, no como se llama en el código.</summary>
+    private static string Estado(PublicationState state) => state switch
+    {
+        PublicationState.Draft => "en borrador",
+        PublicationState.Published => "publicado",
+        PublicationState.Archived => "archivado",
+        _ => "en un estado desconocido"
+    };
     private static string? Optional(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     private string? Url(Guid? id) => id is { } value ? media.GetPublicUrl(value) : null;
     private ServicePublicResponse Public(ServiceEntry x) => new(x.Id, x.Name, x.Slug, x.ShortDescription, x.Description,

@@ -1,7 +1,7 @@
 # Escaladas — M05a
 
 - **Creación / última modificación / última verificación:** 28/09/2026 · America/Lima
-- **Base verificada:** `e839989432283c755edf7d4ae47b2c37697215ec`
+- **Base verificada:** `e839989432283c755edf7d4ae47b2c37697215ec`; actualizada sobre `main` = `35647181891a9b78a7399d3b108d9a4415a0d48a` el 04/10/2026
 - **Commit de implementación verificado:** `c30c9666534edd4ddaa570870f3e992fe2552c30`
 
 ## E1 · Supervivencia del binario fotográfico
@@ -19,6 +19,18 @@ Opciones/presentaciones y restauración desde Archivado no se implementan. Requi
 ## E3 · Costuras compartidas para Integración / frente D
 
 Se solicita turno acotado para: referencia del host API al proyecto M05a, inclusión de proyectos en `backend/Sillar.sln`, descubrimiento modular, vocabulario de auditoría y futuras contribuciones de navegación. Este frente no modifica navegación ni UI antes de la parada 3.5.
+
+**Actualización 04/10/2026 (sobre `main` = `3564718`).** Siguen pendientes y sin tocar:
+
+- `backend/Sillar.sln`: los tres proyectos de M05a. Sin ellos la puerta no compila ni prueba M05a.
+- `Sillar.Api.csproj`: el `ProjectReference` a `Sillar.Modules.Services`.
+- `scripts/verificar.mjs` y `e2e/setup/migrate.ts`: las migraciones de M05a; `test:services` en la
+  etapa 1.
+- `platform/auditEntityVocabularies`: el vocabulario de `service_entry`.
+- Navegación, rutas y portada: los cambios de `68a09aa` en `app/routes.tsx`,
+  `layout/navigation.ts` y `platform/homeSections.ts` necesitan el turno de Integración.
+
+Detalle en `BITACORA-M05a.md`, «Actualización sobre `main` = `3564718`».
 
 ## E4 · Control de concurrencia editorial
 

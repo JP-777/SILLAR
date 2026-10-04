@@ -21,6 +21,7 @@ public sealed class ServicesDbContext(DbContextOptions<ServicesDbContext> option
             table.HasCheckConstraint("ck_service_entries_display_order", "display_order >= 0");
             table.HasCheckConstraint("ck_service_entries_description", "short_description IS NOT NULL OR description IS NOT NULL");
             table.HasCheckConstraint("ck_service_entries_image_alt", "image_id IS NULL OR image_alt_text IS NOT NULL");
+            table.HasCheckConstraint("ck_service_entries_publication_state", "publication_state IN ('draft','published','archived')");
         });
         entry.HasKey(x => x.Id).HasName("pk_service_entries");
         entry.Property(x => x.Id).HasColumnName("id").UseIdentityAlwaysColumn();
