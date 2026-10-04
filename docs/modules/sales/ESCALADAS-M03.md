@@ -915,7 +915,19 @@ producto y su variante dentro de la transacción que se deshace.
 > **Una prueba que solo pasa cuando alguien sembró antes no acredita lo que dice acreditar: acredita
 > la semilla.** Y lo peor es que su rojo no lo dice — dice que faltaba un dato.
 
-### La etapa 6 y lo que la tumbó, que no es M03
+### El verde completo · `EXIT=0`, las seis etapas
+
+**TODO EN VERDE** sobre `c1188f9d`, con la lista de la etapa 4 ya incluyendo Sales. Base efímera
+`sillar_verify_1791070672465_933326`. Evidencia en `evidencias/J-PUERTA-B-CON-SALES-20261003.txt`, y
+el emparejamiento de las dos direcciones en `evidencias/J-INDICE-20261003.md`.
+
+> **El log del verde tiene catorce líneas y el del rojo mil ciento treinta y cuatro, y no es un
+> descuido.** La puerta **solo volca la salida de una etapa cuando esa etapa falla**: en verde
+> imprime el rótulo de cada una y el veredicto. La brevedad **es** la forma del verde. Los conteos
+> —96/96 de Sales, 3/3 de `Sillar.Api.Tests`— van verificados aparte en el índice, porque el log
+> verde no los trae.
+
+### La etapa 6 y lo que la tumbó tres veces antes, que no era M03
 
 Tres intentos, tres causas **ajenas al módulo**:
 
