@@ -2097,6 +2097,10 @@ const etapas = [
         'Sillar.Modules.Cms',
         'Sillar.Modules.Crm',
         'Sillar.Modules.Sales',
+        // B2B al final por el mismo motivo que Sales: sus claves foráneas
+        // cruzadas apuntan a catalog y a crm (dependencias duras declaradas en
+        // B2BModule.cs:57), así que esas tablas tienen que existir antes.
+        'Sillar.Modules.B2B',
       ];
       let salida = '';
       for (const modulo of modulos) {
