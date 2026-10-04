@@ -56,3 +56,5 @@ Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration:
 
 SABOTAGE_TEST_RC=1
 SABOTAGE_EXPECTED_RED=1
+
+TRAZABILIDAD: esta corrida se ejecutó sobre el árbol de trabajo que posteriormente quedó commitado como deaff4e07c0fc9c7baa45ce348170f5f89b2383f. En el momento de ejecutar la prueba, HEAD todavía era su padre 32932c692fc383fc80c9ea7a5c6cc7c425970979; por eso el HEAD impreso en este log corresponde al padre y no al commit de cierre.

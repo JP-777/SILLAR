@@ -21,3 +21,5 @@ A total of 1 test files matched the specified pattern.
 Passed!  - Failed:     0, Passed:   182, Skipped:     0, Total:   182, Duration: 45 s - Sillar.Core.Tests.dll (net10.0)
 
 CORE_TESTS_RC=0
+
+TRAZABILIDAD: esta corrida se ejecutó sobre el árbol de trabajo que posteriormente quedó commitado como deaff4e07c0fc9c7baa45ce348170f5f89b2383f. En el momento de ejecutar la prueba, HEAD todavía era su padre 32932c692fc383fc80c9ea7a5c6cc7c425970979; por eso el HEAD impreso en este log corresponde al padre y no al commit de cierre.
