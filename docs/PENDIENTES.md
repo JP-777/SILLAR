@@ -407,23 +407,25 @@ guarda de activación.
 
 ---
 
-## 25 · Pregunta de producto para JP — ¿sigue vigente «M11 no antes que M09»?
+## 25 · ~~¿Sigue vigente «M11 no antes que M09»?~~ — **RESUELTA por JP el 04/10/2026**
 
-**Esto es una pregunta, no una regla.** M09 Inventario fue movido a **SILLAR ERP**
-(`ROADMAP_MODULAR.md:122`), mientras M11 Pagos permanece en SILLAR WEB como la pasarela de pago
-en línea (`ROADMAP_MODULAR.md:119`).
+M09 Inventario fue movido a **SILLAR ERP**, mientras M11 Pagos permanece en **SILLAR WEB** como
+pasarela de pago en línea. La duda era si la condición histórica de orden debía sobrevivir a esa
+separación de productos.
 
-Si se mantiene literalmente «M11 no antes que M09», SILLAR WEB no tendría pagos en línea hasta
-que exista el inventario del ERP. Ese efecto necesita una decisión explícita de producto; no se
-deduce del roadmap.
+**Decisión formal de JP: no. M11 no espera a M09.**
 
-**Pregunta para JP:** ¿M11 debe seguir condicionado a que M09 exista primero, ahora que M09
-pertenece al ERP?
+- M09 **no es dependencia dura** de M11.
+- M09 **no es dependencia blanda** de M11.
+- M09 **no es requisito previo de construcción** de M11 v1.
+- M11 continúa dentro de SILLAR WEB según su roadmap.
+- No se añade `inventory` a `HardDependencies` ni a `SoftDependencies`.
+- Si aparece en el futuro un caso real en el que M11 necesite inventario, se especificará entonces
+  como una integración nueva; esta decisión no la anticipa.
 
-**Disparador.** Antes de redactar o cerrar las decisiones previas de M11.
-
-**No convertir en regla.** Hasta que JP responda, no se modifica el roadmap, no se reordena M11 y
-no se escribe «M11 no antes que M09» como restricción en ningún otro documento.
+**Consecuencia documental.** La frase histórica «M11 no antes que M09» deja de ser una condición
+vigente. No se reinterpreta ninguna decisión distinta: M09 sigue perteneciendo al ERP y M11 sigue
+siendo la pasarela de SILLAR WEB.
 
 ---
 
