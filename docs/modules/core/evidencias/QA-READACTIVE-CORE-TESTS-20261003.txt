@@ -1,0 +1,23 @@
+QA READACTIVE — SILLAR.CORE.TESTS COMPLETA — 03/10/2026
+
+HEAD=32932c692fc383fc80c9ea7a5c6cc7c425970979
+POSTGRES_PORT=55680
+
+=== DOTNET TEST ===
+  Sillar.Shared -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Shared/bin/Debug/net10.0/Sillar.Shared.dll
+  Sillar.Shared.Data -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Shared.Data/bin/Debug/net10.0/Sillar.Shared.Data.dll
+  Sillar.Core.Contracts -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Contracts/bin/Debug/net10.0/Sillar.Core.Contracts.dll
+  Sillar.Modules.Catalog.Contracts -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Catalog.Contracts/bin/Debug/net10.0/Sillar.Modules.Catalog.Contracts.dll
+  Sillar.Core -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core/bin/Debug/net10.0/Sillar.Core.dll
+  Sillar.Modules.Demo -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Demo/bin/Debug/net10.0/Sillar.Modules.Demo.dll
+  Sillar.Modules.Crm.Contracts -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Crm.Contracts/bin/Debug/net10.0/Sillar.Modules.Crm.Contracts.dll
+  Sillar.Modules.Catalog -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Catalog/bin/Debug/net10.0/Sillar.Modules.Catalog.dll
+  Sillar.Modules.Cms -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Cms/bin/Debug/net10.0/Sillar.Modules.Cms.dll
+  Sillar.Modules.Crm -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Crm/bin/Debug/net10.0/Sillar.Modules.Crm.dll
+  Sillar.Core.Tests -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/bin/Debug/net10.0/Sillar.Core.Tests.dll
+Test run for /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/bin/Debug/net10.0/Sillar.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:   182, Skipped:     0, Total:   182, Duration: 45 s - Sillar.Core.Tests.dll (net10.0)
+
+CORE_TESTS_RC=0
