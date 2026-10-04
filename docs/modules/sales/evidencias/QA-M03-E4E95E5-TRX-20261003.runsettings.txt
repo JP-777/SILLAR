@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solo observación: añade un registro TRX por proyecto de pruebas. No filtra, no omite, no cambia el runner. -->
+<RunSettings>
+  <LoggerRunSettings>
+    <Loggers>
+      <Logger friendlyName="trx" enabled="True"><Configuration><LogFilePrefix>puerta</LogFilePrefix></Configuration></Logger>
+    </Loggers>
+  </LoggerRunSettings>
+</RunSettings>
