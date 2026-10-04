@@ -192,9 +192,33 @@ public static class BandejaAdminEndpoints
         => await Escritura(await s.AprobarAsync(id, ct), a, u, AuditAction.Update, "quote", id, n => $"Cotización {n} aprobada por el cliente.", ct);
 
     /// <summary>Registra el pago (solo <c>admin</c>), y lo audita con el método.</summary>
+    /// <remarks>
+    /// <b>Si la sesión no da los tres datos de atribución, no se registra el pago.</b>
+    /// Antes aquí decía <c>u.Email ?? "desconocido"</c>: usaba el correo como nombre
+    /// visible y, si faltaba, escribía un trabajador que no existe. R-14 prohíbe las
+    /// dos cosas, y la segunda es la peor — dentro de un año «desconocido» no se
+    /// distingue de una persona real.
+    ///
+    /// Es un 409 y no un 400: la petición del administrador era correcta; lo que falta
+    /// es un dato de su propia sesión, y eso se arregla volviendo a entrar, no
+    /// cambiando la petición.
+    /// </remarks>
     internal static async Task<IResult> PagarCotizacion(int id, PagoRequest r, CotizacionesService s, IAuditWriter a, ICurrentAdmin u, CancellationToken ct)
-        => await Escritura(await s.RegistrarPagoAsync(id, r, u.Email ?? "desconocido", ct), a, u, AuditAction.Update, "quote", id,
+    {
+        if (AtribucionDelPersonal.De(u) is not { } quienRegistra)
+        {
+            return Results.Problem(
+                title: "No se puede registrar el pago sin saber quién lo registra",
+                detail:
+                    "Tu sesión no trae el nombre y el nodo de tu cuenta, y un pago queda " +
+                    "con quién lo cobró para siempre. Vuelve a entrar e inténtalo de nuevo.",
+                statusCode: StatusCodes.Status409Conflict);
+        }
+
+        return await Escritura(
+            await s.RegistrarPagoAsync(id, r, quienRegistra, ct), a, u, AuditAction.Update, "quote", id,
             n => $"Pago de la cotización {n} registrado ({r.PaymentMethod}).", ct);
+    }
 
     /// <summary>Baja lógica de una cotización (solo <c>admin</c>), y lo audita.</summary>
     internal static async Task<IResult> BajaCotizacion(int id, CotizacionesService s, IAuditWriter a, ICurrentAdmin u, CancellationToken ct)

@@ -59,7 +59,40 @@ public sealed class Quote
     public DateTimeOffset? PaidAt { get; set; }
     public string? PaymentMethod { get; set; }
     public string? PaymentReference { get; set; }
+    /// <summary>
+    /// Nombre visible del trabajador que registró el pago, congelado al actuar.
+    /// </summary>
+    /// <remarks>
+    /// Primero de los <b>tres</b> datos que R-14 exige. Los tres van juntos o ninguno:
+    /// mientras la cotización no esté pagada, los tres son nulos.
+    /// </remarks>
     public string? PaidRegisteredBy { get; set; }
+
+    /// <summary>
+    /// Identificador del trabajador <b>dentro de su nodo de pertenencia</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>Dato de bitácora, no puntero.</b> Sin FK hacia <c>core.admin_users</c> y sin
+    /// <c>JOIN</c>: esa tabla no se replica y el 7 de un nodo no es el 7 de otro
+    /// (ADR-018). Se interpreta contra
+    /// <see cref="PaidRegisteredByAdminUserHomeNode"/>, no contra ningún otro nodo.
+    /// </remarks>
+    public int? PaidRegisteredByAdminUserLocalId { get; set; }
+
+    /// <summary>
+    /// Nodo al que pertenece la <b>cuenta</b> del trabajador.
+    /// </summary>
+    /// <remarks>
+    /// Tercero de los tres datos, y el que faltaba. Es el universo contra el que se
+    /// interpreta el identificador local, y <b>no se deriva de nada</b>: lo da
+    /// <c>ICurrentAdmin.HomeNode</c>.
+    ///
+    /// <b>No es el nodo de la actuación.</b> Son hechos distintos y pueden diferir
+    /// —una cuenta del nodo A puede registrar un pago desde el nodo B—. M07 no replica
+    /// ninguna tabla, así que hoy no guarda el de actuación; si algún día lo guardara,
+    /// sería una columna aparte y no esta.
+    /// </remarks>
+    public string? PaidRegisteredByAdminUserHomeNode { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }

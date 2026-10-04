@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -7,6 +7,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Sillar.Modules.B2B.Migrations
 {
     /// <inheritdoc />
+    /// <remarks>
+    /// <b>Rehecha el 4 de octubre de 2026</b> para incorporar la atribución del
+    /// personal como los <b>tres</b> datos que R-14 exige —nombre congelado,
+    /// identificador local y nodo de la cuenta—, y para describir el schema una sola
+    /// vez. Se rehizo la inicial en vez de añadir una migración correctiva porque
+    /// <b>M07 no ha llegado a <c>main</c> y no existe ninguna instalación</b>; absorbe
+    /// también la tabla de series de <c>B2bQuoteNumberSeries</c>, que era enteramente
+    /// generada. En cuanto M07 se integre, las migraciones vuelven a ser solo-añadir.
+    /// </remarks>
     public partial class B2bInitial : Migration
     {
         /// <inheritdoc />
@@ -41,6 +50,9 @@ namespace Sillar.Modules.B2B.Migrations
             migrationBuilder.EnsureSchema(
                 name: "b2b");
 
+            migrationBuilder.EnsureSchema(
+                name: "b2b");
+
             migrationBuilder.CreateTable(
                 name: "institution_requests",
                 schema: "b2b",
@@ -68,6 +80,23 @@ namespace Sillar.Modules.B2B.Migrations
                     table.CheckConstraint("ck_institution_requests_institution_name", "btrim(institution_name) <> ''");
                     table.CheckConstraint("ck_institution_requests_quantity", "quantity > 0");
                     table.CheckConstraint("ck_institution_requests_status", "status IN ('recibida', 'en_revision', 'cotizada', 'cerrada', 'rechazada')");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "quote_number_series",
+                schema: "b2b",
+                columns: table => new
+                {
+                    series_code = table.Column<string>(type: "text", nullable: false),
+                    year = table.Column<int>(type: "integer", nullable: false),
+                    last_value = table.Column<int>(type: "integer", nullable: false, defaultValue: 0)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_quote_number_series", x => new { x.series_code, x.year });
+                    table.CheckConstraint("ck_quote_number_series_last_value", "last_value >= 0");
+                    table.CheckConstraint("ck_quote_number_series_series_code", "series_code ~ '^[A-Z]$'");
+                    table.CheckConstraint("ck_quote_number_series_year", "year BETWEEN 2000 AND 9999");
                 });
 
             migrationBuilder.CreateTable(
@@ -121,6 +150,8 @@ namespace Sillar.Modules.B2B.Migrations
                     payment_method = table.Column<string>(type: "text", nullable: true),
                     payment_reference = table.Column<string>(type: "text", nullable: true),
                     paid_registered_by = table.Column<string>(type: "text", nullable: true),
+                    paid_registered_by_admin_user_local_id = table.Column<int>(type: "integer", nullable: true),
+                    paid_registered_by_admin_user_home_node = table.Column<string>(type: "text", nullable: true),
                     is_active = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     created_at = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false, defaultValueSql: "now()"),
                     updated_at = table.Column<DateTimeOffset>(type: "timestamptz", nullable: false, defaultValueSql: "now()")
@@ -128,8 +159,13 @@ namespace Sillar.Modules.B2B.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_quotes", x => x.quote_id);
+                    table.CheckConstraint("ck_quotes_atribucion_completa", "(paid_registered_by IS NULL AND paid_registered_by_admin_user_local_id IS NULL   AND paid_registered_by_admin_user_home_node IS NULL) OR (paid_registered_by IS NOT NULL AND paid_registered_by_admin_user_local_id IS NOT NULL   AND paid_registered_by_admin_user_home_node IS NOT NULL)");
+                    table.CheckConstraint("ck_quotes_atribucion_home_node", "paid_registered_by_admin_user_home_node IS NULL OR btrim(paid_registered_by_admin_user_home_node) <> ''");
+                    table.CheckConstraint("ck_quotes_atribucion_local_positiva", "paid_registered_by_admin_user_local_id IS NULL OR paid_registered_by_admin_user_local_id > 0");
+                    table.CheckConstraint("ck_quotes_atribucion_nombre", "paid_registered_by IS NULL OR btrim(paid_registered_by) <> ''");
                     table.CheckConstraint("ck_quotes_number", "btrim(quote_number) <> ''");
                     table.CheckConstraint("ck_quotes_origen", "(special_order_lead_id IS NULL) <> (institution_request_id IS NULL)");
+                    table.CheckConstraint("ck_quotes_pago_tiene_atribucion", "paid_at IS NULL OR paid_registered_by IS NOT NULL");
                     table.CheckConstraint("ck_quotes_payment_method", "payment_method IS NULL OR payment_method IN ('yape', 'efectivo', 'tarjeta')");
                     table.CheckConstraint("ck_quotes_status", "status IN ('borrador', 'enviada', 'aprobada', 'pagada', 'anulada')");
                     table.CheckConstraint("ck_quotes_total_amount", "total_amount >= 0");
@@ -257,11 +293,8 @@ namespace Sillar.Modules.B2B.Migrations
                 schema: "b2b",
                 table: "special_order_leads",
                 column: "status");
+        
 
-            // Claves foráneas cruzadas de dependencia DURA (SPEC §4). Van aquí y no
-            // en database/integrations/: una dependencia dura no se desmonta por
-            // separado. Sin ON DELETE: en SILLAR no hay borrado físico, y si alguien
-            // lo intenta, la FK tiene que impedirlo.
             migrationBuilder.Sql(
                 """
                 ALTER TABLE b2b.special_order_leads
@@ -307,11 +340,21 @@ namespace Sillar.Modules.B2B.Migrations
         }
 
         /// <inheritdoc />
+        /// <remarks>
+        /// La función <c>b2b.set_updated_at()</c> no se va con las tablas —los
+        /// triggers sí, porque pertenecen a ellas— así que se baja explícitamente y
+        /// antes, con <c>CASCADE</c> para que se lleve los triggers que la usan.
+        /// </remarks>
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql("DROP FUNCTION IF EXISTS b2b.set_updated_at() CASCADE;");
+
             migrationBuilder.DropTable(
                 name: "quote_lines",
+                schema: "b2b");
+
+            migrationBuilder.DropTable(
+                name: "quote_number_series",
                 schema: "b2b");
 
             migrationBuilder.DropTable(

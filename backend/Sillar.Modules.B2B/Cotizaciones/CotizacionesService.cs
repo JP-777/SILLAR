@@ -108,9 +108,14 @@ public sealed class CotizacionesService(
 
     /// <summary>
     /// Registra el pago de una aprobada. Se registra, no se cobra (regla 9). Solo
-    /// <c>admin</c>, por la ruta. Queda quién lo registró como texto, nunca como FK.
+    /// <c>admin</c>, por la ruta.
     /// </summary>
-    public Task<OperacionDeBandeja<CotizacionPanel>> RegistrarPagoAsync(int id, PagoRequest pago, string quienRegistra, CancellationToken ct)
+    /// <remarks>
+    /// Queda <b>la atribución de los tres datos</b> de R-14 —nombre congelado,
+    /// identificador local y nodo de la cuenta—, nunca una FK a
+    /// <c>core.admin_users</c>. Antes guardaba un solo texto, y era el correo.
+    /// </remarks>
+    public Task<OperacionDeBandeja<CotizacionPanel>> RegistrarPagoAsync(int id, PagoRequest pago, AtribucionDelPersonal quienRegistra, CancellationToken ct)
         => TransicionAsync(id, QuoteStatus.Aprobada, ct, q =>
         {
             var referencia = pago.PaymentReference?.Trim();
@@ -129,7 +134,9 @@ public sealed class CotizacionesService(
             q.PaidAt = reloj.GetUtcNow();
             q.PaymentMethod = pago.PaymentMethod;
             q.PaymentReference = string.IsNullOrEmpty(referencia) ? null : referencia;
-            q.PaidRegisteredBy = quienRegistra;
+            q.PaidRegisteredBy = quienRegistra.Name;
+            q.PaidRegisteredByAdminUserLocalId = quienRegistra.LocalId;
+            q.PaidRegisteredByAdminUserHomeNode = quienRegistra.HomeNode;
             return null;
         });
 

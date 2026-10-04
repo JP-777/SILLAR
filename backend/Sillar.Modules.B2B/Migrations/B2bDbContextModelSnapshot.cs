@@ -161,6 +161,14 @@ namespace Sillar.Modules.B2B.Migrations
                         .HasColumnType("text")
                         .HasColumnName("paid_registered_by");
 
+                    b.Property<string>("PaidRegisteredByAdminUserHomeNode")
+                        .HasColumnType("text")
+                        .HasColumnName("paid_registered_by_admin_user_home_node");
+
+                    b.Property<int?>("PaidRegisteredByAdminUserLocalId")
+                        .HasColumnType("integer")
+                        .HasColumnName("paid_registered_by_admin_user_local_id");
+
                     b.Property<string>("PaymentMethod")
                         .HasColumnType("text")
                         .HasColumnName("payment_method");
@@ -214,9 +222,19 @@ namespace Sillar.Modules.B2B.Migrations
 
                     b.ToTable("quotes", "b2b", t =>
                         {
+                            t.HasCheckConstraint("ck_quotes_atribucion_completa", "(paid_registered_by IS NULL AND paid_registered_by_admin_user_local_id IS NULL   AND paid_registered_by_admin_user_home_node IS NULL) OR (paid_registered_by IS NOT NULL AND paid_registered_by_admin_user_local_id IS NOT NULL   AND paid_registered_by_admin_user_home_node IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_quotes_atribucion_home_node", "paid_registered_by_admin_user_home_node IS NULL OR btrim(paid_registered_by_admin_user_home_node) <> ''");
+
+                            t.HasCheckConstraint("ck_quotes_atribucion_local_positiva", "paid_registered_by_admin_user_local_id IS NULL OR paid_registered_by_admin_user_local_id > 0");
+
+                            t.HasCheckConstraint("ck_quotes_atribucion_nombre", "paid_registered_by IS NULL OR btrim(paid_registered_by) <> ''");
+
                             t.HasCheckConstraint("ck_quotes_number", "btrim(quote_number) <> ''");
 
                             t.HasCheckConstraint("ck_quotes_origen", "(special_order_lead_id IS NULL) <> (institution_request_id IS NULL)");
+
+                            t.HasCheckConstraint("ck_quotes_pago_tiene_atribucion", "paid_at IS NULL OR paid_registered_by IS NOT NULL");
 
                             t.HasCheckConstraint("ck_quotes_payment_method", "payment_method IS NULL OR payment_method IN ('yape', 'efectivo', 'tarjeta')");
 

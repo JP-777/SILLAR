@@ -90,6 +90,31 @@ internal sealed class QuoteConfiguration : IEntityTypeConfiguration<Quote>
             t.HasCheckConstraint("ck_quotes_number", Reglas.NoVacio("quote_number"));
             t.HasCheckConstraint("ck_quotes_status", "status IN ('borrador', 'enviada', 'aprobada', 'pagada', 'anulada')");
             t.HasCheckConstraint("ck_quotes_payment_method", "payment_method IS NULL OR payment_method IN ('yape', 'efectivo', 'tarjeta')");
+
+            // R-14: la atribución del personal son TRES datos que forman una unidad, y
+            // van los tres o ninguno. Mientras la cotización no esté pagada, los tres
+            // son nulos; en cuanto lo está, los tres tienen que estar. Las seis
+            // combinaciones intermedias las rechaza la base, no una convención: media
+            // atribución es peor que ninguna, porque parece completa.
+            t.HasCheckConstraint(
+                "ck_quotes_atribucion_completa",
+                "(paid_registered_by IS NULL AND paid_registered_by_admin_user_local_id IS NULL " +
+                "  AND paid_registered_by_admin_user_home_node IS NULL) " +
+                "OR (paid_registered_by IS NOT NULL AND paid_registered_by_admin_user_local_id IS NOT NULL " +
+                "  AND paid_registered_by_admin_user_home_node IS NOT NULL)");
+
+            // Nombre en blanco, identificador cero o nodo vacío serían un trabajador
+            // ficticio con apariencia de real.
+            t.HasCheckConstraint("ck_quotes_atribucion_nombre", Reglas.OpcionalNoVacio("paid_registered_by"));
+            t.HasCheckConstraint(
+                "ck_quotes_atribucion_local_positiva",
+                "paid_registered_by_admin_user_local_id IS NULL OR paid_registered_by_admin_user_local_id > 0");
+            t.HasCheckConstraint("ck_quotes_atribucion_home_node", Reglas.OpcionalNoVacio("paid_registered_by_admin_user_home_node"));
+
+            // Y un pago sin atribución no existe: si hay paid_at, hay quién.
+            t.HasCheckConstraint(
+                "ck_quotes_pago_tiene_atribucion",
+                "paid_at IS NULL OR paid_registered_by IS NOT NULL");
         });
         b.HasKey(x => x.Id).HasName("pk_quotes");
         b.Property(x => x.Id).HasColumnName("quote_id").UseIdentityAlwaysColumn();
@@ -105,7 +130,12 @@ internal sealed class QuoteConfiguration : IEntityTypeConfiguration<Quote>
         b.Property(x => x.PaidAt).HasColumnName("paid_at").HasColumnType("timestamptz");
         b.Property(x => x.PaymentMethod).HasColumnName("payment_method");
         b.Property(x => x.PaymentReference).HasColumnName("payment_reference");
+        // La atribución son TRES datos. Jamás una FK a core.admin_users: esa tabla no
+        // se replica (ADR-018), y el dato que hace falta dentro de un año es quién
+        // cobró, que sobrevive a que la cuenta se dé de baja o se renombre.
         b.Property(x => x.PaidRegisteredBy).HasColumnName("paid_registered_by");
+        b.Property(x => x.PaidRegisteredByAdminUserLocalId).HasColumnName("paid_registered_by_admin_user_local_id");
+        b.Property(x => x.PaidRegisteredByAdminUserHomeNode).HasColumnName("paid_registered_by_admin_user_home_node");
         Reglas.Tiempos(b);
         b.HasIndex(x => x.QuoteNumber).IsUnique().HasDatabaseName("uq_quotes_number");
         b.HasIndex(x => x.CustomerId).HasDatabaseName("idx_quotes_customer");

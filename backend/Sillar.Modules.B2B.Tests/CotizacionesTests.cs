@@ -1,5 +1,7 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Sillar.Core.Contracts;
@@ -146,11 +148,101 @@ public sealed class CotizacionesTests
 
             await BaseEfimera.EjecutarAsync(cadena, "UPDATE b2b.quotes SET invalidated_at = NULL, invalidated_reason = NULL");
             Assert.Equal(ResultadoBandeja.Hecho, (await Servicio(cadena).AprobarAsync(id, default)).Resultado);
-            Assert.Equal(ResultadoBandeja.Conflicto, (await Servicio(cadena).RegistrarPagoAsync(id, new("yape", null), "caja@ejemplo.test", default)).Resultado);
-            Assert.Equal(ResultadoBandeja.Conflicto, (await Servicio(cadena).RegistrarPagoAsync(id, new("tarjeta", "x"), "caja@ejemplo.test", default)).Resultado);
-            var pagada = await Servicio(cadena).RegistrarPagoAsync(id, new("yape", "OP-123"), "caja@ejemplo.test", default);
-            Assert.Equal(("pagada", "caja@ejemplo.test"), (pagada.Valor!.Detalle.Cotizacion.Status, pagada.Valor.Detalle.PaidRegisteredBy!));
+            Assert.Equal(ResultadoBandeja.Conflicto, (await Servicio(cadena).RegistrarPagoAsync(id, new("yape", null), Caja, default)).Resultado);
+            Assert.Equal(ResultadoBandeja.Conflicto, (await Servicio(cadena).RegistrarPagoAsync(id, new("tarjeta", "x"), Caja, default)).Resultado);
+            var pagada = await Servicio(cadena).RegistrarPagoAsync(id, new("yape", "OP-123"), Caja, default);
+            Assert.Equal(("pagada", "Ana Quispe"), (pagada.Valor!.Detalle.Cotizacion.Status, pagada.Valor.Detalle.PaidRegisteredBy!));
         });
+
+    // --- R-14 · La atribución del pago -------------------------------------
+
+    /// <summary>
+    /// <b>Los tres datos llegan al disco, y son los tres de la cuenta.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// El panel solo devuelve el nombre —los identificadores no se muestran al
+    /// usuario—, así que mirar el DTO no demuestra que los otros dos se hayan
+    /// guardado. Esta prueba los lee de las columnas.
+    /// </para>
+    /// <para>
+    /// Y los lee <b>concatenados con <c>||</c></b> a propósito: si cualquiera de los
+    /// tres fuera <c>NULL</c>, la concatenación entera sale <c>NULL</c> y el rojo
+    /// aparece aunque los otros dos estén bien. Un <c>Assert</c> por columna pasaría
+    /// con dos de tres.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public Task El_pago_congela_el_nombre_el_identificador_local_y_el_nodo_de_la_cuenta()
+        => ConInstalacionAsync(async cadena =>
+        {
+            var id = await AprobadaAsync(cadena);
+
+            Assert.Equal(ResultadoBandeja.Hecho, (await Servicio(cadena).RegistrarPagoAsync(id, new("efectivo", null), Caja, default)).Resultado);
+
+            Assert.Equal(
+                "Ana Quispe|1|principal",
+                await BaseEfimera.EscalarAsync<string>(cadena, """
+                    SELECT paid_registered_by || '|' || paid_registered_by_admin_user_local_id
+                                             || '|' || paid_registered_by_admin_user_home_node
+                    FROM b2b.quotes
+                    """));
+        });
+
+    /// <summary>
+    /// <b>Una sesión incompleta no cobra: no hay trabajador de mentira.</b>
+    /// </summary>
+    /// <remarks>
+    /// Es el §2 de <c>ANTES-DE-EMPEZAR-UN-MODULO.md</c>: la barrera que nunca ha
+    /// dicho no. Antes de R-14 este camino escribía <c>u.Email ?? "desconocido"</c> y
+    /// el pago quedaba registrado igual. Lo que se comprueba no es el 409 por sí
+    /// mismo, sino que <b>la cotización sigue aprobada y las tres columnas siguen
+    /// vacías</b>: el pago no ocurrió a medias.
+    /// </remarks>
+    [Fact]
+    public Task Una_sesion_sin_los_tres_datos_no_registra_el_pago_ni_inventa_a_nadie()
+        => ConInstalacionAsync(async cadena =>
+        {
+            var id = await AprobadaAsync(cadena);
+            var auditoria = new AuditoriaQueCaptura();
+
+            var respuesta = await BandejaAdminEndpoints.PagarCotizacion(
+                id, new("efectivo", null), Servicio(cadena), auditoria, new AdministradorSinNombre(), default);
+
+            var problema = Assert.IsType<ProblemHttpResult>(respuesta);
+            Assert.Equal(StatusCodes.Status409Conflict, problema.StatusCode);
+            Assert.Contains("sin saber quién lo registra", problema.ProblemDetails.Title);
+
+            Assert.Empty(auditoria.Entradas);
+            Assert.Equal("aprobada", await BaseEfimera.EscalarAsync<string>(cadena, "SELECT status FROM b2b.quotes"));
+            Assert.Equal(0, await BaseEfimera.EscalarAsync<long>(cadena, """
+                SELECT count(*) FROM b2b.quotes
+                WHERE paid_at IS NOT NULL
+                   OR paid_registered_by IS NOT NULL
+                   OR paid_registered_by_admin_user_local_id IS NOT NULL
+                   OR paid_registered_by_admin_user_home_node IS NOT NULL
+                """));
+        });
+
+    /// <summary>Una cotización aprobada, por el camino de verdad.</summary>
+    private static async Task<int> AprobadaAsync(string cadena)
+    {
+        var id = (await Servicio(cadena).CrearAsync(DesdeVolumen(DeCatalogo()), default)).Valor!.Detalle.Cotizacion.Id;
+        Assert.Equal(ResultadoBandeja.Hecho, (await Servicio(cadena).EnviarAsync(id, default)).Resultado);
+        Assert.Equal(ResultadoBandeja.Hecho, (await Servicio(cadena).AprobarAsync(id, default)).Resultado);
+        return id;
+    }
+
+    /// <summary>
+    /// La atribución del doble, <b>leída por el camino de verdad</b>.
+    /// </summary>
+    /// <remarks>
+    /// No se construye a mano con <c>new AtribucionDelPersonal("Ana Quispe", 1, "principal")</c>:
+    /// eso probaría el record y no la lectura del contrato. Pasando por
+    /// <see cref="AtribucionDelPersonal.De"/> queda comprobado además que el nombre
+    /// visible sale de <c>DisplayName</c> y no del correo.
+    /// </remarks>
+    private static AtribucionDelPersonal Caja => AtribucionDelPersonal.De(new Administrador())!;
 
     // --- 12 · Auditoría con el número visible ------------------------------
 
@@ -318,6 +410,22 @@ public sealed class CotizacionesTests
         public string? DisplayName => "Ana Quispe";
         public string? HomeNode => "principal";
 
+        public bool IsInRole(string role) => role is "admin" or "editor";
+    }
+
+    /// <summary>
+    /// Una sesión a la que le faltan dos de los tres datos: tiene identificador y
+    /// correo, y ni nombre visible ni nodo. Es la forma del <c>ICurrentAdmin</c> que
+    /// existía antes de que CORE añadiera los dos campos, y por eso es el caso que
+    /// hay que provocar.
+    /// </summary>
+    private sealed class AdministradorSinNombre : ICurrentAdmin
+    {
+        public int? AdminUserId => 1;
+        public string? Email => "admin@ejemplo.test";
+        public string? Role => "admin";
+        public string? DisplayName => null;
+        public string? HomeNode => null;
         public bool IsInRole(string role) => role is "admin" or "editor";
     }
 
