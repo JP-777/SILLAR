@@ -417,9 +417,10 @@ Esta regla fue materializada al cerrar **H27** en `e60416c`: el flujo normal ya 
 
 ## 9. Alcance de la primera instalación
 
-Módulos: **CORE + M01 + M02 + M04 + M03 + M07**, y **M05a solo si llega a existir**.
+Módulos: **CORE + M01 + M02 + M04 + M03 + M07 + M05a**. La existencia de M05a como módulo propio la
+ratificó JP el 26/09/2026 (`docs/modules/services/DECISIONES-PREVIAS-M05a.md` §3).
 
-> **M05a está condicionado, aquí y en el ROADMAP.** Sus dos ejemplos —anillado e impresión— ya
+> **Antecedente, superado el 26/09/2026.** Hasta la ratificación, la nota decía: **M05a está condicionado, aquí y en el ROADMAP.** Sus dos ejemplos —anillado e impresión— ya
 > funcionan como productos de M01, y M01 fue diseñado para admitirlos. La pregunta abierta es qué
 > hace M05a que M01 no haga ya, y **se contesta en el mostrador, no aquí**:
 > `docs/modules/services/DECISIONES-PREVIAS-M05a.md` §3, con su disparador.

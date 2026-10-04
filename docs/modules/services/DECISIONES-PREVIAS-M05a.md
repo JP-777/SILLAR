@@ -1,11 +1,12 @@
 # Decisiones previas de M05a Servicios — Vitrina
 
-Dos decisiones **cerradas** y una **abierta**, tomadas antes de escribir código.
+Tres decisiones **cerradas**, tomadas antes de escribir código.
 
-La abierta es la incómoda, así que va dicha de frente: **puede que M05a no llegue a existir como
-módulo.** No es una duda de diseño que se resuelva pensando más — es una pregunta que solo se
-contesta mirando el mostrador. Lo que sí está cerrado son las dos decisiones de arquitectura, para
-que el día que se decida construirlo no haya que volver sobre ellas.
+> **Actualización del 04/10/2026.** La tercera —la existencia de M05a como módulo— figuraba aquí como
+> **abierta**. No lo estaba: **JP ratificó el 26/09/2026 que M05a Servicios — Vitrina existe como
+> módulo propio**, y esa ratificación no llegó a este documento. Se registra ahora. **No es una
+> decisión nueva**: es el registro de una ya tomada. Las dos decisiones de arquitectura (§1 y §2)
+> no cambian.
 
 ---
 
@@ -89,7 +90,16 @@ documento concreto** para que la revisión ocurra el día que toca y no cuando a
 
 ---
 
-## 3 · ABIERTA — ¿existe M05a como módulo?
+## 3 · CERRADA — M05a existe como módulo propio (ratificación de JP, 26/09/2026)
+
+**Estado:** cerrada. **JP ratificó el 26/09/2026 que M05a Servicios — Vitrina existe como módulo
+propio.** Se registra el 04/10/2026, cuando se detectó que este documento seguía diciendo «abierta».
+
+Este documento **no añade** una justificación de negocio que JP no haya dado. Lo que sigue en esta
+sección es el análisis que la mantuvo abierta hasta la ratificación; se conserva como antecedente,
+sin editar su argumento, porque explica qué se sopesó.
+
+**Antecedente — por qué estuvo abierta.**
 
 ### Los dos ejemplos que la arquitectura da ya funcionan como productos de M01
 
@@ -143,9 +153,12 @@ está formulada en la guía de observación —`docs/GUIA-OBSERVACION-MOSTRADOR.
 
 ### Una nota sobre el orden, porque afecta al ROADMAP
 
-M05a está en la **posición 6** del ROADMAP, dentro de la Fase 1. Si la respuesta llega tarde, lo que
-pasa no es que se retrase M05a: es que **se construye antes de saber si hace falta**. Por eso la
-anotación quedó en `docs/ROADMAP_MODULAR.md:69` junto a su fila, y no solo aquí.
+M05a está en la **posición 6** del ROADMAP, dentro de la Fase 1. Mientras esta sección estuvo
+abierta, la fila del ROADMAP lo advertía. Desde la ratificación, la fila dice que su existencia está
+ratificada.
+
+Las preguntas de mostrador de `GUIA-OBSERVACION-MOSTRADOR.md` sobre servicios siguen siendo útiles
+para el diseño de M05a. Ya no deciden si existe, y siguen pendientes de la visita.
 
 ---
 
@@ -165,3 +178,6 @@ DESCARTÉ      Darla por buena porque está en el ROADMAP; y descartarla por par
 POR QUÉ       Los dos ejemplos ya funcionan en M01 y M01 fue diseñado para admitirlos, pero eso es indicio, no respuesta. La respuesta está en el mostrador
 REVERSIBLE    Sí — no se ha construido nada
 ```
+
+> **Superado el 26/09/2026:** la tercera entrada del informe la cerró JP al ratificar que M05a existe
+> como módulo propio (§3). Se conserva como registro de su momento.
