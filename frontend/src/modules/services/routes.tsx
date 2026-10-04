@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Link, Route } from 'react-router-dom';
 import type { ModuleNavigation } from '../../layout/navigation';
+import type { AuditEntityVocabulary } from '../../platform/auditEntityVocabulary';
 import { useAporteDePortada } from '../../platform/homeState';
 import type { HomeSection } from '../../platform/homeSections';
 import { useResource } from '../../shared/hooks/useResource';
@@ -13,6 +14,14 @@ import { servicesService } from './services/services';
 
 export const servicesNavigation: ModuleNavigation = { moduleCode: 'services', group: 'Servicios', items: [{ to: '/admin/servicios', label: 'Servicios', minimumRole: 'editor' }] };
 export const servicesHome: HomeSection = { moduleCode: 'services', Component: ServicesHomeSection };
+
+/** Vocabulario de auditoría que pertenece a M05a · Servicios — Vitrina. */
+export const servicesAuditEntityVocabulary: AuditEntityVocabulary = {
+  moduleCode: 'services',
+  entries: [
+    ['service_entry', 'Servicio'],
+  ],
+};
 
 function ServicesHomeSection() {
   const load = useCallback(() => servicesService.listPublic(), []);

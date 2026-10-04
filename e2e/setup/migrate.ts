@@ -6,7 +6,7 @@ import { run } from './shell.js';
 const BACKEND = path.join(ROOT, 'backend');
 
 /**
- * Aplica las migraciones de CORE, Catalog, Cms y CRM contra la base e2e.
+ * Aplica las migraciones de CORE, Catalog, Cms, CRM y Services contra la base e2e.
  *
  * `ConnectionStrings__Default` se pasa como variable de entorno real al
  * proceso `dotnet`, no por `.env`: `DotEnv.Load()` nunca sobreescribe lo que
@@ -33,14 +33,17 @@ export async function migrate(): Promise<void> {
   // Y M04 por lo mismo: sin su schema, activar `crm` falla y con él se caen
   // el acceso de clientes, el perfil y la bandeja de contacto.
   await applyMigrations('Sillar.Modules.Crm');
+  // M05a: el instalador también lo migraría, pero la base e2e sale de aquí
+  // completa, y una lista que omite un módulo es la que un día se olvida.
+  await applyMigrations('Sillar.Modules.Services');
 }
 
 /** Los seeds del producto. Ninguno lleva datos de negocio (SPEC de M01 §6.9, de M02 §6.6). */
 export async function seed(): Promise<void> {
-  // `ON_ERROR_STOP=1` en los cuatro: sin él, `psql` se come el error de un
+  // `ON_ERROR_STOP=1` en todos: sin él, `psql` se come el error de un
   // seed y el arnés sigue con la base a medio preparar, fallando después en
   // una prueba que no tiene la culpa.
-  for (const modulo of ['core', 'catalog', 'cms', 'crm']) {
+  for (const modulo of ['core', 'catalog', 'cms', 'crm', 'services']) {
     // El de `crm` está hoy intencionalmente vacío (`SELECT 1`), y se aplica
     // igual: es el único módulo que el arnés activa, y no aplicar su seed
     // sería una asimetría que solo se nota el día que deje de estar vacío.

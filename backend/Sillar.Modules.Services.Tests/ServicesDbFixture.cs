@@ -13,9 +13,11 @@ namespace Sillar.Modules.Services.Tests;
 /// <c>scripts/verificar.mjs</c>, cuyo nombre llega en <c>SILLAR_VERIFY_DATABASE</c>.
 /// </summary>
 /// <remarks>
-/// Asume CORE ya migrado —M05a depende de él: colaciones y <c>core.media_assets</c>—,
-/// como en una instalación real. El schema <c>services</c> lo crea la propia
-/// migración de M05a.
+/// Asume CORE **y M05a** ya migrados por la etapa 4 de la puerta, como CRM y
+/// Sales. Las pruebas no migran por su cuenta: si lo hicieran, quitar M05a de
+/// la lista de migraciones de la puerta no rompería nada y la costura no se
+/// podría comprobar. La única que migra es la de reinstalación, porque
+/// reinstalar es lo que prueba.
 /// </remarks>
 public sealed class ServicesDbFixture
 {
@@ -42,12 +44,28 @@ public sealed class ServicesDbFixture
         => new(PersistenciaDeModulo.Opciones<ServicesDbContext>(
             ConnectionString, ServicesDbContext.Schema, ServicesDbContext.MigrationsHistoryTable));
 
-    /// <summary>Migra M05a (idempotente) y deja la tabla vacía.</summary>
+    /// <summary>Exige el schema que dejó la puerta y vacía la tabla.</summary>
     public async Task PrepararAsync(CancellationToken ct)
+    {
+        var database = new NpgsqlConnectionStringBuilder(ConnectionString).Database;
+
+        if (await EscalarAsync("SELECT count(*) FROM pg_namespace WHERE nspname = 'services'", ct) != "1")
+        {
+            throw new InvalidOperationException(
+                $"El schema 'services' no está migrado en '{database}', así que las pruebas de persistencia de M05a " +
+                "no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista " +
+                "de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).");
+        }
+
+        await using var db = CreateContext();
+        await db.Database.ExecuteSqlRawAsync("TRUNCATE services.service_entries RESTART IDENTITY;", ct);
+    }
+
+    /// <summary>Aplica la migración de M05a: solo para la prueba de reinstalación.</summary>
+    public async Task ReinstalarAsync(CancellationToken ct)
     {
         await using var db = CreateContext();
         await db.Database.MigrateAsync(ct);
-        await db.Database.ExecuteSqlRawAsync("TRUNCATE services.service_entries RESTART IDENTITY;", ct);
     }
 
     public async Task<string> EscalarAsync(string sql, CancellationToken ct)

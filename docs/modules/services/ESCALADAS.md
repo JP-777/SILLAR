@@ -32,6 +32,11 @@ Se solicita turno acotado para: referencia del host API al proyecto M05a, inclus
 
 Detalle en `BITACORA-M05a.md`, «Actualización sobre `main` = `3564718`».
 
+**Aplicada el 04/10/2026** con el turno de navegación concedido por Chat 2 vía JP. Detalle en
+`BITACORA-M05a.md`, «Turno de navegación y costuras», y las dos direcciones en
+`evidencias/COSTURA-INDICE-20261004.md`. Sigue pendiente, fuera de E3, la guarda de dependientes
+duros de `99_drop.sql`; su disparador es M05b.
+
 ## E4 · Control de concurrencia editorial
 
 - **Discrepancia:** la SPEC prometía 409, recarga y ausencia de sobrescritura ante edición simultánea, pero `UpdateAsync` no recibe ni comprueba versión de edición.

@@ -2001,6 +2001,7 @@ for (const senal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
  *      También milisegundos.
  *   3. `test:frontend-hygiene` — barreras de presentación y nomenclatura
  *      que protegen H12–H15 y H18–H20.
+ *      Después, `test:services`: las focales de la vitrina de M05a.
  *   4. `test:fronteras` — las fronteras entre módulos del frontend: ningún
  *      módulo importa de otro, `shared/` no importa de fuera, y solo los
  *      puntos de composición enumerados llegan a un módulo
@@ -2038,6 +2039,8 @@ function correrPasosDelFrontend() {
     ['seguidor de conexión en modo instalación', 'test:connection-setup'],
     ['descripción de fallos de arranque e instalación', 'test:startup-errors'],
     ['higiene del frontend', 'test:frontend-hygiene'],
+    // M05a: validación editorial y orden de la vitrina de servicios.
+    ['vitrina de servicios', 'test:services'],
     // ADR-005: un módulo nunca importa de otro. Antes de los tipos porque no
     // compila nada, y porque un import cruzado compila perfectamente.
     ['fronteras entre módulos', 'test:fronteras'],
@@ -2097,6 +2100,10 @@ const etapas = [
         'Sillar.Modules.Cms',
         'Sillar.Modules.Crm',
         'Sillar.Modules.Sales',
+        // M05a: sin esta línea el schema `services` no existe en la base
+        // efímera y sus pruebas de persistencia fallan en la etapa 5 diciendo
+        // por qué (ESCALADAS.md E3 de M05a).
+        'Sillar.Modules.Services',
       ];
       let salida = '';
       for (const modulo of modulos) {

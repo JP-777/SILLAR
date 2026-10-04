@@ -143,3 +143,41 @@ Este frente **no las toca**. Están en `ESCALADAS.md` E3:
    - `test:services` en la etapa 1.
 3. **Guarda de dependientes duros en `99_drop.sql`.** Es el patrón C6/C7 de M07, que no está en
    `main`. Hoy M05a no tiene dependientes duros. **Disparador:** cuando exista M05b.
+
+## Turno de navegación y costuras — 04/10/2026 (`NAV_DONE M05A`)
+
+Chat 2 vía JP concedió a M05a el turno exclusivo de navegación y las costuras de backend.
+
+**Ratificación dentro de la candidata.** Cherry-pick limpio de `b74a57f` como `b230ac4`, con el
+mismo parche (`range-diff` idéntico). `DECISIONES-PREVIAS-M05a.md` §3 ya dice CERRADA en esta
+rama.
+
+**Costuras compartidas tocadas:**
+
+| Archivo | Cambio |
+|---|---|
+| `frontend/src/app/routes.tsx`, `frontend/src/layout/navigation.ts`, `frontend/src/platform/homeSections.ts` | Sin cambios en este turno: ya los traía `68a09aa`. Se verificaron con la barrera (34/34) |
+| `frontend/src/platform/auditEntityVocabularies.ts` | Registra `servicesAuditEntityVocabulary` (`service_entry` → «Servicio»), declarado en `modules/services/routes.tsx` |
+| `frontend/tests/auditEntityVocabulary.test.mjs` | 21 etiquetas, 5 contribuciones, la línea base de `AuditPage` y una prueba nueva: sin M05a, `service_entry` degrada a su código técnico |
+| `backend/Sillar.sln` | Los tres proyectos de M05a |
+| `backend/Sillar.Api/Sillar.Api.csproj` | `ProjectReference` a `Sillar.Modules.Services` |
+| `scripts/verificar.mjs` | `Sillar.Modules.Services` en la etapa 4; `test:services` en la etapa 1 |
+| `e2e/setup/migrate.ts`, `e2e/setup/global-setup.ts` | Migración y seed de `services` en el arnés |
+
+**Las dos direcciones:** `evidencias/COSTURA-INDICE-20261004.md`.
+
+- Sin Services en la etapa 4, la etapa 5 sale **roja**, con 10 fallos de M05a que dicen por qué.
+- Con Services, las etapas 1 a 5 pasan.
+- La etapa 6 no se puede ejecutar en la nube (`NU1301`, entorno) y queda para la QA local.
+
+**Cambio en las pruebas para que la dirección negativa exista.** `ServicesDbFixture` ya no migra:
+exige el schema que deja la etapa 4 y falla explicándolo. La prueba de unicidad devuelve el `CHECK`
+en vez de soltar el schema. Solo la prueba de `99_drop` reinstala, porque reinstalar es lo que
+prueba.
+
+**Se conservan** el diagnóstico 17/17, los sabotajes, el hallazgo de `PendingModelChangesWarning`
+y las evidencias anteriores.
+
+**Riesgo declarado para la QA local:** la etapa 6 cubre la instalación por `/api/setup`, que ahora
+migra también `services`. No se ha visto pasar en este contenedor. La prueba H29 de navegación usa
+una lista fija de módulos sin `services`, así que el grupo nuevo no le afecta.

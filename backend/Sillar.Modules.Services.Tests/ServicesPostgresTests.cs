@@ -57,8 +57,10 @@ public sealed class ServicesPostgresTests(ServicesDbFixture fixture)
             "INSERT INTO services.service_entries (name, slug, short_description) VALUES ('Otro', 'ANILLADO', 'Texto')", Ct));
         Assert.Equal(PostgresErrorCodes.UniqueViolation, error.SqlState);
 
-        // Se devuelve el esquema a como lo deja la migración.
-        await fixture.EjecutarAsync("DROP SCHEMA services CASCADE", Ct);
+        // Se devuelve el CHECK a como lo deja la migración.
+        await fixture.EjecutarAsync(
+            "ALTER TABLE services.service_entries ADD CONSTRAINT ck_service_entries_slug_formato "
+            + "CHECK (slug COLLATE \"C\" ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$')", Ct);
     }
 
     // --- Contrato IServiceShowcaseSnapshots ---------------------------------------
@@ -160,7 +162,7 @@ public sealed class ServicesPostgresTests(ServicesDbFixture fixture)
         Assert.Equal(medios, await fixture.EscalarAsync("SELECT count(*) FROM core.media_assets", Ct));
         Assert.Equal(tablasCore, await fixture.EscalarAsync("SELECT count(*) FROM information_schema.tables WHERE table_schema = 'core'", Ct));
 
-        await fixture.PrepararAsync(Ct);
+        await fixture.ReinstalarAsync(Ct);
         Assert.Equal("1", await fixture.EscalarAsync("SELECT count(*) FROM pg_namespace WHERE nspname = 'services'", Ct));
     }
 

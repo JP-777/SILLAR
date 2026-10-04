@@ -1,0 +1,872 @@
+# SHA del árbol: b230ac40d92dd2385f8e50631157d668dea8301d + cambios sin commitear de la costura; Sillar.Modules.Services QUITADO de la lista de la etapa 4
+# Inicio: 2026-10-04 16:58:27 -0500
+Comprobando el entorno...
+  Suspensión bloqueada durante la corrida (1/2 inhibidores).
+  Sin kde-inhibit: la corrida NO está protegida de la suspensión.
+Preflight: coherencia de .env.example...
+Base backend efímera: sillar_verify_1791151107959_3664
+Barrido: sin bases huérfanas antiguas.
+[1/6] tipos del frontend...
+[2/6] tipos del arnés e2e...
+[3/6] compilación del backend...
+[4/6] migraciones backend (BD efímera)...
+[5/6] pruebas del backend...
+
+FALLÓ en la etapa: pruebas del backend
+  Terminó con código 1.
+Test run for /home/user/SILLAR-m05av/backend/Sillar.Shared.Tests/bin/Debug/net10.0/Sillar.Shared.Tests.dll (.NETCoreApp,Version=v10.0)
+Test run for /home/user/SILLAR-m05av/backend/Sillar.Core.Tests/bin/Debug/net10.0/Sillar.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+Test run for /home/user/SILLAR-m05av/backend/Sillar.Modules.Catalog.Tests/bin/Debug/net10.0/Sillar.Modules.Catalog.Tests.dll (.NETCoreApp,Version=v10.0)
+Test run for /home/user/SILLAR-m05av/backend/Sillar.Modules.Cms.Tests/bin/Debug/net10.0/Sillar.Modules.Cms.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+A total of 1 test files matched the specified pattern.
+A total of 1 test files matched the specified pattern.
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:00.47]   Discovering: Sillar.Shared.Tests
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:01.20]   Discovered:  Sillar.Shared.Tests
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:01.49]   Starting:    Sillar.Shared.Tests
+  Passed Sillar.Shared.Tests.PagingTests.No_se_puede_pedir_mas_del_maximo [69 ms]
+  Passed Sillar.Shared.Tests.ModuleActiveButUndeclaredTests.Si_todo_lo_activo_en_la_base_esta_declarado_no_hay_problema [75 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Un_codigo_que_no_sirve_como_schema_aborta(codigo: "") [72 ms]
+  Passed Sillar.Shared.Tests.ModuleActivationTests.Una_dependencia_blanda_apagada_no_es_un_problema [72 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Un_codigo_que_no_sirve_como_schema_aborta(codigo: "1catalog") [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Un_codigo_que_no_sirve_como_schema_aborta(codigo: "Catalog") [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Un_codigo_que_no_sirve_como_schema_aborta(codigo: "catalogo_con_un_nombre_larguisimo_que_pasa_de_cuar"···) [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleActiveButUndeclaredTests.Sin_ningun_codigo_activo_no_hay_nada_que_reportar [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Un_codigo_que_no_sirve_como_schema_aborta(codigo: "cata-logo") [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Un_codigo_que_no_sirve_como_schema_aborta(codigo: "c") [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleActiveButUndeclaredTests.Lo_inactivo_y_ausente_no_es_un_problema [1 ms]
+  Passed Sillar.Shared.Tests.ModuleActivationTests.Lo_que_esta_apagado_no_se_juzga [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleActivationTests.Con_todas_las_dependencias_duras_activas_no_hay_problema [< 1 ms]
+  Passed Sillar.Shared.Tests.PagingTests.Un_tamano_de_cero_o_negativo_se_lleva_al_minimo [< 1 ms]
+  Passed Sillar.Shared.Tests.PagingTests.Una_pagina_por_debajo_de_uno_se_trata_como_la_primera(pedida: 0) [< 1 ms]
+  Passed Sillar.Shared.Tests.PagingTests.Una_pagina_por_debajo_de_uno_se_trata_como_la_primera(pedida: -3) [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Una_dependencia_blanda_inexistente_solo_avisa [15 ms]
+  Passed Sillar.Shared.Tests.ModuleActiveButUndeclaredTests.Un_codigo_activo_que_el_binario_no_trae_se_nombra [3 ms]
+  Passed Sillar.Shared.Tests.PagingTests.Sin_resultados_no_hay_paginas_ni_siguiente [1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Un_modulo_sin_descripcion_aborta(descripcion: "") [1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Un_modulo_sin_descripcion_aborta(descripcion: "   ") [< 1 ms]
+  Passed Sillar.Shared.Tests.PagingTests.La_ultima_pagina_no_tiene_siguiente [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Una_version_mal_formada_aborta(version: "") [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Una_version_mal_formada_aborta(version: "1.0") [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Una_version_mal_formada_aborta(version: "v1.0.0") [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Una_dependencia_dura_hacia_un_modulo_inexistente_aborta [< 1 ms]
+  Passed Sillar.Shared.Tests.PagingTests.El_total_de_paginas_redondea_hacia_arriba [4 ms]
+  Passed Sillar.Shared.Tests.PagingTests.Sin_pedir_nada_se_devuelve_la_primera_pagina_de_cincuenta [< 1 ms]
+  Passed Sillar.Shared.Tests.PagingTests.El_salto_corresponde_a_la_pagina_pedida [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleActiveButUndeclaredTests.Se_nombran_todos_los_que_faltan_no_solo_el_primero [16 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Un_nombre_visible_vacio_aborta [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Declarar_la_misma_dependencia_dura_y_blanda_avisa_y_manda_la_dura [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Sin_CORE_no_se_puede_arrancar [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Sin_ningun_modulo_no_se_puede_arrancar [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Dos_modulos_con_el_mismo_codigo_abortan [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Un_modulo_que_depende_de_si_mismo_aborta [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.El_orden_deja_cada_modulo_detras_de_sus_dependencias [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Una_posicion_negativa_en_el_panel_aborta [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleActivationSafetyTests.Ninguna_secuencia_de_operaciones_permitidas_deja_el_sistema_sin_arrancar [28 ms]
+  Passed Sillar.Shared.Tests.ModuleActivationTests.Un_modulo_activo_con_su_dependencia_dura_apagada_es_un_problema [26 ms]
+  Passed Sillar.Shared.Tests.ModuleActivationTests.Se_reportan_todas_las_dependencias_que_faltan_no_solo_la_primera [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Un_ciclo_aborta_e_indica_el_camino [6 ms]
+  Passed Sillar.Shared.Tests.ModuleActivationSafetyTests.Desactivar_un_modulo_del_que_otro_activo_depende_duro_no_esta_permitido [5 ms]
+  Passed Sillar.Shared.Tests.ModuleActivationSafetyTests.Desactivar_en_orden_inverso_a_las_dependencias_si_esta_permitido [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleActivationSafetyTests.Desactivar_CORE_dejaria_a_todos_los_activos_sin_su_dependencia_dura [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleActivationSafetyTests.Una_dependencia_blanda_no_impide_desactivar_al_otro [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.El_orden_no_depende_de_como_lleguen_los_modulos [5 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Un_grafo_correcto_es_valido [< 1 ms]
+[xUnit.net 00:00:01.82]   Finished:    Sillar.Shared.Tests (ID = 'f0e10265cb7a910a8aa836d18c0344bcb70b206205c268ed6244a3526f1697cf')
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Una_descripcion_que_no_cabe_en_la_columna_aborta [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Un_ciclo_a_traves_de_una_dependencia_blanda_tambien_aborta [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleGraphTests.Un_modulo_que_no_declara_CORE_aborta [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleActivationSafetyTests.Activar_con_las_dependencias_duras_activas_si_esta_permitido [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleActivationSafetyTests.Una_dependencia_blanda_inactiva_no_impide_activar [< 1 ms]
+  Passed Sillar.Shared.Tests.ModuleActivationSafetyTests.Activar_con_una_dependencia_dura_inactiva_no_esta_permitido [< 1 ms]
+
+Test Run Successful.
+Total tests: 54
+     Passed: 54
+ Total time: 3.1985 Seconds
+[xUnit.net 00:00:00.78]   Discovering: Sillar.Modules.Catalog.Tests
+[xUnit.net 00:00:00.82]   Discovering: Sillar.Core.Tests
+[xUnit.net 00:00:01.00]   Discovering: Sillar.Modules.Cms.Tests
+Test run for /home/user/SILLAR-m05av/backend/Sillar.Modules.Crm.Tests/bin/Debug/net10.0/Sillar.Modules.Crm.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:01.13]   Discovered:  Sillar.Modules.Catalog.Tests
+[xUnit.net 00:00:01.28]   Discovered:  Sillar.Core.Tests
+[xUnit.net 00:00:01.51]   Discovered:  Sillar.Modules.Cms.Tests
+[xUnit.net 00:00:01.49]   Starting:    Sillar.Modules.Catalog.Tests
+[xUnit.net 00:00:01.89]   Starting:    Sillar.Modules.Cms.Tests
+  Passed Sillar.Modules.Catalog.Tests.BreadcrumbTests.Si_la_principal_esta_activa_se_usa_ella [60 ms]
+  Passed Sillar.Modules.Catalog.Tests.CatalogSelectionTests.Pedir_cero_o_menos_devuelve_uno [61 ms]
+  Passed Sillar.Modules.Catalog.Tests.CatalogSelectionTests.Un_limite_razonable_se_respeta [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.CatalogSelectionTests.Pedir_mas_del_tope_devuelve_el_tope [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.CategoryTreeTests.Mover_una_hoja_a_otra_rama_no_es_ciclo [5 ms]
+  Passed Sillar.Modules.Catalog.Tests.CategoryTreeTests.Ser_padre_de_si_misma_es_ciclo [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.CategoryTreeTests.Un_ciclo_largo_tambien_se_detecta [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.CategoryTreeTests.Asignar_un_padre_sin_relacion_no_es_ciclo [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.CategoryTreeTests.Asignar_una_raiz_nueva_no_es_ciclo [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.BreadcrumbTests.La_ruta_se_corta_en_el_primer_antecesor_inactivo_sin_incluirlo [68 ms]
+  Passed Sillar.Modules.Catalog.Tests.BreadcrumbTests.Si_la_principal_esta_inactiva_se_usa_otra_activa_del_producto [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.BreadcrumbTests.Si_ninguna_categoria_esta_activa_no_hay_miga [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.ProductItemRulesTests.Si_es_la_ultima_el_mensaje_propone_desactivar_el_producto [21 ms]
+  Passed Sillar.Modules.Catalog.Tests.ProductItemRulesTests.El_mensaje_no_es_un_error_generico [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.ProductItemRulesTests.Si_no_es_la_ultima_no_hay_bloqueo [< 1 ms]
+[xUnit.net 00:00:01.86]   Starting:    Sillar.Core.Tests
+  Passed Sillar.Modules.Catalog.Tests.BreadcrumbTests.La_ruta_sube_de_la_categoria_hasta_la_raiz [17 ms]
+  Passed Sillar.Modules.Catalog.Tests.BreadcrumbTests.Entre_varias_activas_se_elige_por_nombre_no_por_orden_de_llegada [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.BreadcrumbTests.Sin_categoria_principal_se_usa_otra_activa_igual [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.ItemPricingTests.Con_precio_propio_lo_usa_a_el [18 ms]
+  Passed Sillar.Modules.Catalog.Tests.ItemPricingTests.Si_cuestan_distinto_la_tarjeta_ensena_el_minimo_con_desde [22 ms]
+  Passed Sillar.Modules.Catalog.Tests.ItemPricingTests.Un_producto_sin_presentaciones_ensena_su_precio_de_lista [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.ItemPricingTests.Gratis_es_un_precio_y_puede_ser_el_minimo [8 ms]
+  Passed Sillar.Modules.Catalog.Tests.ItemPricingTests.Sin_precio_propio_usa_el_de_lista [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.ItemPricingTests.Si_todas_las_presentaciones_cuestan_igual_la_tarjeta_no_dice_desde [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.ItemPricingTests.Nulo_en_los_dos_es_consultar_precio_no_cero [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.ItemPricingTests.Una_sola_a_consultar_deja_toda_la_tarjeta_a_consultar [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.ItemPricingTests.El_minimo_cuenta_lo_que_se_hereda_no_solo_lo_propio [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.ItemPricingTests.Cero_no_es_lo_mismo_que_nulo [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.SlugGeneratorTests.Formatos_invalidos_no_pasan(slug: "-artesco") [3 ms]
+  Passed Sillar.Modules.Catalog.Tests.SlugGeneratorTests.Formatos_invalidos_no_pasan(slug: "") [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.SlugGeneratorTests.Formatos_invalidos_no_pasan(slug: null) [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.SlugGeneratorTests.Formatos_invalidos_no_pasan(slug: "artesco--verde") [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.SlugGeneratorTests.Formatos_invalidos_no_pasan(slug: "artesco verde") [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.SlugGeneratorTests.Formatos_invalidos_no_pasan(slug: "artesco-") [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.SlugGeneratorTests.Formatos_invalidos_no_pasan(slug: "Artesco") [3 ms]
+  Passed Sillar.Modules.Catalog.Tests.SlugGeneratorTests.Las_tildes_desaparecen_sin_dejar_hueco [13 ms]
+  Passed Sillar.Modules.Catalog.Tests.SlugGeneratorTests.Formatos_validos_pasan(slug: "plumon-de-pizarra-verde") [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.SlugGeneratorTests.Formatos_validos_pasan(slug: "artesco") [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.SlugGeneratorTests.Formatos_validos_pasan(slug: "a4-100-hojas") [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.SlugGeneratorTests.Los_espacios_multiples_no_dejan_guiones_dobles [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.SlugGeneratorTests.Un_nombre_simple_se_pasa_a_minusculas_y_guiones [< 1 ms]
+  Passed Sillar.Modules.Cms.Tests.TrabajoDestacadoTests.Sin_imagen_el_trabajo_esta_incompleto [15 ms]
+  Passed Sillar.Modules.Cms.Tests.ReordenamientoTests.Omitir_un_elemento_invalida_la_lista_completa [63 ms]
+  Passed Sillar.Modules.Cms.Tests.TrabajoDestacadoTests.Con_medio_inactivo_el_trabajo_esta_incompleto [9 ms]
+  Passed Sillar.Modules.Cms.Tests.TrabajoDestacadoTests.Con_imagen_activa_y_texto_alternativo_el_trabajo_esta_completo [< 1 ms]
+  Passed Sillar.Modules.Cms.Tests.ReordenamientoTests.Un_identificador_repetido_no_produce_asignaciones_parciales [20 ms]
+  Passed Sillar.Modules.Cms.Tests.EventosCatalogoTests.Los_tres_manejadores_se_registran_como_singleton_para_el_bus_raiz [126 ms]
+  Passed Sillar.Modules.Cms.Tests.ReordenamientoTests.Un_identificador_inexistente_invalida_el_plan_entero [18 ms]
+  Passed Sillar.Modules.Cms.Tests.ReglasContenidoTests.Ruta_interna_y_https_con_etiqueta_se_aceptan(url: "https://sillar.example/catalogo") [7 ms]
+  Passed Sillar.Modules.Cms.Tests.ReglasContenidoTests.Ruta_interna_y_https_con_etiqueta_se_aceptan(url: "/catalogo") [1 ms]
+  Passed Sillar.Modules.Cms.Tests.ReglasContenidoTests.Fecha_de_fin_igual_al_inicio_tambien_se_rechaza [< 1 ms]
+  Passed Sillar.Modules.Cms.Tests.ReglasContenidoTests.Enlace_sin_texto_visible_se_rechaza [< 1 ms]
+  Passed Sillar.Modules.Cms.Tests.ReglasContenidoTests.Imagen_sin_texto_alternativo_se_rechaza [< 1 ms]
+  Passed Sillar.Modules.Cms.Tests.ReglasContenidoTests.Fecha_de_fin_anterior_nombra_la_fecha_que_hay_que_corregir [< 1 ms]
+  Passed Sillar.Modules.Cms.Tests.ReordenamientoTests.Una_seccion_vacia_acepta_una_lista_vacia [11 ms]
+  Passed Sillar.Modules.Cms.Tests.ReglasContenidoTests.Plataforma_social_se_normaliza(original: " WHATSAPP ", expected: "whatsapp") [14 ms]
+  Passed Sillar.Modules.Cms.Tests.ReglasContenidoTests.Plataforma_social_se_normaliza(original: "Instagram", expected: "instagram") [< 1 ms]
+  Passed Sillar.Modules.Cms.Tests.ReglasContenidoTests.Plataforma_social_fuera_de_la_lista_se_rechaza [< 1 ms]
+  Passed Sillar.Modules.Cms.Tests.ReglasContenidoTests.Sin_imagen_el_texto_alternativo_puede_ser_nulo [< 1 ms]
+  Passed Sillar.Modules.Cms.Tests.ReglasContenidoTests.Texto_alternativo_de_espacios_se_rechaza_aunque_no_haya_imagen [< 1 ms]
+  Passed Sillar.Modules.Cms.Tests.ContratosHttpTests.Administracion_distingue_el_estado_del_producto_del_estado_del_destacado [39 ms]
+  Passed Sillar.Modules.Cms.Tests.ProductoDestacadoTests.Precio_negativo_se_rechaza [< 1 ms]
+  Passed Sillar.Modules.Cms.Tests.ProductoDestacadoTests.Snapshot_con_producto_no_esta_pendiente_de_volver_a_enlazar [< 1 ms]
+  Passed Sillar.Modules.Cms.Tests.ProductoDestacadoTests.Producto_no_publico_no_puede_publicarse [1 ms]
+  Passed Sillar.Modules.Cms.Tests.ProductoDestacadoTests.Producto_dado_de_baja_no_puede_publicarse_aunque_siga_publico [5 ms]
+  Passed Sillar.Modules.Cms.Tests.ContratosHttpTests.Trabajos_y_redes_no_exponen_estado_de_ventana [18 ms]
+  Passed Sillar.Modules.Cms.Tests.ContratosHttpTests.Administracion_de_trabajos_distingue_los_incompletos [< 1 ms]
+  Passed Sillar.Modules.Cms.Tests.ProductoDestacadoTests.Producto_publico_y_enlazado_puede_publicarse [< 1 ms]
+  Passed Sillar.Modules.Cms.Tests.ProductoDestacadoTests.Precio_a_consultar_gratis_y_positivo_son_validos [< 1 ms]
+  Passed Sillar.Modules.Cms.Tests.ProductoDestacadoTests.Snapshot_sin_producto_esta_pendiente_de_volver_a_enlazar [< 1 ms]
+  Passed Sillar.Modules.Cms.Tests.VigenciaPublicacionTests.Estado_administrativo_respeta_la_misma_ventana(isActive: True, startMinutes: -1, endMinutes: 1, expected: Current) [192 ms]
+  Passed Sillar.Modules.Cms.Tests.ProductoDestacadoTests.Releer_el_snapshot_sobrescribe_el_estado_del_producto_y_es_idempotente [5 ms]
+  Passed Sillar.Modules.Cms.Tests.ContratosHttpTests.Ninguna_respuesta_publica_expone_identificadores_de_medios [4 ms]
+  Passed Sillar.Modules.Cms.Tests.ContratosHttpTests.Destacados_exponen_el_snapshot_sin_precio_formateado [1 ms]
+  Passed Sillar.Modules.Cms.Tests.VigenciaPublicacionTests.Estado_administrativo_respeta_la_misma_ventana(isActive: True, startMinutes: -2, endMinutes: -1, expected: Expired) [14 ms]
+  Passed Sillar.Modules.Cms.Tests.VigenciaPublicacionTests.Estado_administrativo_respeta_la_misma_ventana(isActive: False, startMinutes: null, endMinutes: null, expected: Inactive) [1 ms]
+  Passed Sillar.Modules.Cms.Tests.ReordenamientoTests.Cinco_elementos_reciben_exactamente_el_orden_solicitado [85 ms]
+  Passed Sillar.Modules.Cms.Tests.VigenciaPublicacionTests.Estado_administrativo_respeta_la_misma_ventana(isActive: True, startMinutes: -1, endMinutes: 0, expected: Expired) [22 ms]
+  Passed Sillar.Modules.Cms.Tests.VigenciaPublicacionTests.Estado_administrativo_respeta_la_misma_ventana(isActive: True, startMinutes: -1, endMinutes: null, expected: Current) [2 ms]
+  Passed Sillar.Modules.Cms.Tests.VigenciaPublicacionTests.Estado_administrativo_respeta_la_misma_ventana(isActive: True, startMinutes: 0, endMinutes: 1, expected: Current) [2 ms]
+  Passed Sillar.Modules.Cms.Tests.VigenciaPublicacionTests.Estado_administrativo_respeta_la_misma_ventana(isActive: True, startMinutes: 1, endMinutes: null, expected: Scheduled) [22 ms]
+  Passed Sillar.Modules.Cms.Tests.VigenciaPublicacionTests.Activo_sin_fechas_esta_vigente [14 ms]
+  Passed Sillar.Modules.Cms.Tests.VigenciaPublicacionTests.Inactivo_no_esta_vigente_aunque_no_tenga_fechas [7 ms]
+  Passed Sillar.Modules.Cms.Tests.VigenciaPublicacionTests.Programado_para_despues_no_esta_vigente [17 ms]
+  Passed Sillar.Modules.Cms.Tests.VigenciaPublicacionTests.Empieza_exactamente_ahora_y_esta_vigente [1 ms]
+  Passed Sillar.Modules.Cms.Tests.VigenciaPublicacionTests.Banners_promociones_y_destacados_usan_la_misma_expresion [25 ms]
+  Passed Sillar.Modules.Cms.Tests.VigenciaPublicacionTests.Banners_promociones_y_destacados_usan_la_misma_clasificacion [17 ms]
+  Passed Sillar.Modules.Cms.Tests.VigenciaPublicacionTests.Dentro_del_intervalo_esta_vigente [1 ms]
+  Passed Sillar.Core.Tests.EmailTestStatusContractTests.Estado_smtp_representa_nunca_probado_sin_inventar_fecha [22 ms]
+  Passed Sillar.Core.Tests.EmailTestStatusContractTests.Estado_smtp_no_expone_secretos [17 ms]
+  Passed Sillar.Core.Tests.SessionTokenTests.Sin_token_o_sin_hash_no_hay_coincidencia(token: null, hash: "algo") [75 ms]
+  Passed Sillar.Core.Tests.SessionTokenTests.Sin_token_o_sin_hash_no_hay_coincidencia(token: "algo", hash: "") [< 1 ms]
+  Passed Sillar.Core.Tests.SessionTokenTests.Sin_token_o_sin_hash_no_hay_coincidencia(token: "", hash: "algo") [< 1 ms]
+  Passed Sillar.Core.Tests.SessionTokenTests.Sin_token_o_sin_hash_no_hay_coincidencia(token: "algo", hash: null) [< 1 ms]
+  Passed Sillar.Core.Tests.SessionTokenTests.El_token_viaja_en_una_cookie_y_una_cabecera_sin_escapar_nada [69 ms]
+  Passed Sillar.Core.Tests.SessionTokenTests.El_hash_cabe_en_la_columna [< 1 ms]
+  Passed Sillar.Core.Tests.SessionTokenTests.El_token_de_otra_sesion_no_coincide [< 1 ms]
+  Passed Sillar.Core.Tests.SessionTokenTests.Dos_tokens_seguidos_no_se_parecen [74 ms]
+  Passed Sillar.Core.Tests.SessionTokenTests.El_token_de_sesion_lleva_256_bits [3 ms]
+  Passed Sillar.Core.Tests.SessionTokenTests.Un_token_coincide_con_su_propio_hash [< 1 ms]
+  Passed Sillar.Core.Tests.SessionTokenTests.El_hash_no_contiene_el_token [6 ms]
+  Passed Sillar.Core.Tests.SessionPolicyTests.Ocho_horas_sin_actividad_caducan_la_sesion [30 ms]
+  Passed Sillar.Core.Tests.SessionPolicyTests.Pasado_el_minuto_se_reescribe_last_seen_at [< 1 ms]
+  Passed Sillar.Core.Tests.SessionPolicyTests.Una_sesion_revocada_no_sirve_aunque_este_en_plazo [< 1 ms]
+[xUnit.net 00:00:00.01] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+  Passed Sillar.Modules.Catalog.Tests.SlugGeneratorTests.Lo_que_genera_esta_clase_siempre_es_valido_para_ella_misma [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.SlugGeneratorTests.La_ene_con_virgulilla_pliega_a_ene [< 1 ms]
+  Passed Sillar.Modules.Catalog.Tests.SlugGeneratorTests.No_hay_guion_al_principio_ni_al_final [< 1 ms]
+[xUnit.net 00:00:00.92]   Discovering: Sillar.Modules.Crm.Tests
+  Passed Sillar.Modules.Cms.Tests.VigenciaPublicacionTests.Termina_exactamente_ahora_y_ya_no_esta_vigente [13 ms]
+  Passed Sillar.Modules.Cms.Tests.ProductoDestacadoTests.Respuesta_conserva_precio_nulo_cero_y_positivo_como_estados_distintos [199 ms]
+  Passed Sillar.Modules.Cms.Tests.ContratosHttpTests.Las_tres_respuestas_programables_exponen_un_estado_controlado [296 ms]
+  Passed Sillar.Modules.Cms.Tests.ContratosHttpTests.Editar_no_permite_desactivar_ni_reordenar_por_un_campo_suelto [< 1 ms]
+  Passed Sillar.Core.Tests.SessionPolicyTests.Siete_dias_desde_la_emision_caducan_la_sesion_aunque_se_acabe_de_usar [< 1 ms]
+  Passed Sillar.Core.Tests.SessionPolicyTests.Dentro_del_minuto_siguiente_no_se_reescribe_last_seen_at [< 1 ms]
+  Passed Sillar.Core.Tests.SessionPolicyTests.Cerca_del_septimo_dia_manda_el_tope_absoluto [< 1 ms]
+  Passed Sillar.Core.Tests.SessionPolicyTests.Una_sesion_recien_usada_sirve [< 1 ms]
+  Passed Sillar.Core.Tests.SessionPolicyTests.La_caducidad_es_la_inactividad_mientras_no_choque_con_el_tope [< 1 ms]
+  Passed Sillar.Core.Tests.ArranqueContraBaseVaciaTests.El_modo_instalacion_monta_las_dos_rutas_de_setup_y_ninguna_mas [1 s]
+[xUnit.net 00:00:01.84]   Discovered:  Sillar.Modules.Crm.Tests
+[xUnit.net 00:00:02.35]   Starting:    Sillar.Modules.Crm.Tests
+  Passed Sillar.Modules.Crm.Tests.CustomerRegistrationPolicyTests.Password_menor_de_12_se_rechaza [48 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerProfileContractTests.Contratos_publicos_no_exponen_campos_internos(type: typeof(Sillar.Modules.Crm.Contracts.CustomerOrderAddressSnapshot)) [29 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerProfileContractTests.Contratos_publicos_no_exponen_campos_internos(type: typeof(Sillar.Modules.Crm.Contracts.CustomerOrderSnapshot)) [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerProfileContractTests.Contratos_publicos_no_exponen_campos_internos(type: typeof(Sillar.Modules.Crm.Contracts.CustomerOrderContactSnapshot)) [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerTokenPolicyTests.Verificacion_caduca [97 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerRegistrationPolicyTests.Password_larga_sin_identidad_se_acepta [2 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerRegistrationPolicyTests.Password_con_identidad_se_rechaza [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerRegistrationPolicyTests.Password_comun_se_rechaza [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerProfileContractTests.Contratos_publicos_no_exponen_campos_internos(type: typeof(Sillar.Modules.Crm.Contracts.CustomerIdentity)) [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerProfileContractTests.Contratos_publicos_no_exponen_campos_internos(type: typeof(Sillar.Modules.Crm.Dtos.CustomerProfileResponse)) [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerProfileContractTests.Contratos_publicos_no_exponen_campos_internos(type: typeof(Sillar.Modules.Crm.Dtos.CustomerAddressResponse)) [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerTokenPolicyTests.Invitacion_caduca [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerTokenPolicyTests.Recuperacion_es_corta [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerTokenPolicyTests.Propósitos_coinciden_con_el_schema [3 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityTests.Identidad_de_cliente_tiene_namespace_cookie_y_esquema_propios [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.ContactMessageContractTests.Respuestas_de_contacto_no_exponen_secretos(type: typeof(Sillar.Modules.Crm.Dtos.PublicContactAcceptedResponse)) [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.ContactMessageContractTests.Respuestas_de_contacto_no_exponen_secretos(type: typeof(Sillar.Modules.Crm.Dtos.AdminContactMessageDetailResponse)) [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.ContactMessageContractTests.Respuestas_de_contacto_no_exponen_secretos(type: typeof(Sillar.Modules.Crm.Dtos.AdminContactMessageListItemResponse)) [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerLoginPolicyTests.Sesion_cliente_tiene_politica_propia [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerLoginPolicyTests.Cuenta_no_se_bloquea_y_la_espera_crece [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerLoginPolicyTests.Ip_tiene_un_margen_mucho_mas_generoso [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerLoginPolicyTests.BCrypt_cliente_nunca_baja_de_factor_12 [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerAdminContractTests.Respuestas_admin_no_exponen_secretos(type: typeof(Sillar.Modules.Crm.Dtos.AdminCustomerListItemResponse)) [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerAdminContractTests.Respuestas_admin_no_exponen_secretos(type: typeof(Sillar.Modules.Crm.Dtos.AdminCustomerInvitationResponse)) [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerAdminContractTests.Respuestas_admin_no_exponen_secretos(type: typeof(Sillar.Modules.Crm.Dtos.AdminCustomerAccessResponse)) [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerAdminContractTests.Respuestas_admin_no_exponen_secretos(type: typeof(Sillar.Modules.Crm.Dtos.AdminCustomerAddressResponse)) [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerAdminContractTests.Respuestas_admin_no_exponen_secretos(type: typeof(Sillar.Modules.Crm.Dtos.AdminCustomerDetailResponse)) [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerAdminContractTests.Solo_la_ficha_admin_puede_exponer_notas_internas [3 ms]
+  Passed Sillar.Modules.Crm.Tests.ContactSubmissionThrottleTests.Otra_ip_tiene_su_propio_contador [3 ms]
+  Passed Sillar.Modules.Crm.Tests.ContactSubmissionThrottleTests.Al_terminar_la_ventana_la_ip_puede_enviar_de_nuevo [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.ContactSubmissionThrottleTests.Cinco_intentos_entran_y_el_sexto_se_limita [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityTests.Cookie_csrf_de_cliente_es_legible_y_conserva_barreras [27 ms]
+  Passed Sillar.Modules.Catalog.Tests.CatalogContractPostgresTests.Buscar_traduce_con_inner_join_full_text_filtros_orden_y_limite_cero [3 s]
+  Passed Sillar.Core.Tests.AutenticacionSinAlmacenDeSesionesTests.Una_base_inexistente_no_se_convierte_en_ausencia [3 s]
+  Passed Sillar.Modules.Cms.Tests.ReactivacionRedSocialTests.Crear_desactivar_y_reactivar_instagram_recupera_la_misma_fila [3 s]
+  Passed Sillar.Modules.Catalog.Tests.CatalogTranslationTests.La_busqueda_no_distingue_tildes_ni_mayusculas [3 s]
+  Passed Sillar.Modules.Catalog.Tests.CatalogContractPostgresTests.ObtenerItem_traduce_con_inner_join_y_relee_variante_inactiva [217 ms]
+  Passed Sillar.Modules.Catalog.Tests.CatalogTranslationTests.Obtener_para_seleccion_se_traduce_y_devuelve_lo_mismo_que_buscar [291 ms]
+  Passed Sillar.Modules.Catalog.Tests.CatalogContractPostgresTests.ItemExisteYEstaActivo_traduce_en_postgresql_y_distingue_activa_inactiva_e_inexistente [80 ms]
+  Passed Sillar.Modules.Catalog.Tests.CatalogTranslationTests.Un_producto_que_no_existe_se_relee_como_nulo [15 ms]
+  Passed Sillar.Modules.Catalog.Tests.CatalogTranslationTests.Buscar_para_seleccion_se_traduce_y_se_ejecuta [15 ms]
+  Passed Sillar.Modules.Catalog.Tests.ProductEventTests.Dar_de_baja_y_reactivar_avisan_los_dos [3 s]
+[xUnit.net 00:00:06.25]   Finished:    Sillar.Modules.Cms.Tests (ID = '8c96e2018992a3c46f0ba5e8817e7c3768790feb3f75db6cd02116c20a92cb19')
+[xUnit.net 00:00:06.18]   Finished:    Sillar.Modules.Catalog.Tests (ID = '42bd31aa1b99d2f0f72d5efd6021501b3ab5dd4868698716043ee194af90db0a')
+  Passed Sillar.Modules.Cms.Tests.ReactivacionRedSocialTests.Reactivar_una_activa_es_idempotente_y_un_id_inexistente_no_se_inventa [73 ms]
+  Passed Sillar.Modules.Cms.Tests.ReactivacionRedSocialTests.Reactivar_exige_editor_y_admin_para_aplicar_la_jerarquia_existente [516 ms]
+
+Test Run Successful.
+Total tests: 54
+     Passed: 54
+ Total time: 8.8079 Seconds
+  Passed Sillar.Modules.Catalog.Tests.CatalogContractPostgresTests.VariantesDe_traduce_con_inner_join_y_conserva_solo_item_activo_y_orden [125 ms]
+  Passed Sillar.Modules.Catalog.Tests.CatalogTranslationTests.Un_producto_de_baja_no_se_puede_elegir_pero_si_releer [103 ms]
+  Passed Sillar.Modules.Catalog.Tests.CatalogContractPostgresTests.BuscarPorCodigo_traduce_con_inner_join_y_respeta_actividad_y_proyeccion [18 ms]
+  Passed Sillar.Modules.Catalog.Tests.ProductEventTests.La_forma_interna_del_producto_no_cambia_lo_que_se_emite [236 ms]
+  Passed Sillar.Modules.Catalog.Tests.ProductEventTests.Editar_una_presentacion_avisa_de_que_cambio_el_producto [32 ms]
+  Passed Sillar.Modules.Catalog.Tests.ProductEventTests.Cambiar_las_categorias_avisa [118 ms]
+
+Test Run Successful.
+Total tests: 58
+     Passed: 58
+ Total time: 8.8583 Seconds
+Test run for /home/user/SILLAR-m05av/backend/Sillar.Shared.Data.Tests/bin/Debug/net10.0/Sillar.Shared.Data.Tests.dll (.NETCoreApp,Version=v10.0)
+Test run for /home/user/SILLAR-m05av/backend/Sillar.Api.Tests/bin/Debug/net10.0/Sillar.Api.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+  Passed Sillar.Modules.Crm.Tests.CustomerPasswordExposureTests.Criterio13_los_contratos_de_respuesta_no_exponen_password_ni_hash [32 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityTests.Cookie_csrf_no_reemplaza_la_cookie_de_sesion [2 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityTests.CurrentCustomer_lee_solo_claims_de_cliente [24 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityTests.CurrentCustomer_ignora_claims_administrativos [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityTests.Cookie_de_cliente_conserva_las_barreras_del_spec [< 1 ms]
+  Passed Sillar.Core.Tests.ArranqueContraBaseVaciaTests.Sin_migraciones_el_estado_es_faltan_migraciones_y_no_una_excepcion [3 s]
+  Passed Sillar.Core.Tests.AutenticacionSinAlmacenDeSesionesTests.Un_UndefinedColumn_no_se_traga [1 s]
+  Passed Sillar.Core.Tests.AutenticacionSinAlmacenDeSesionesTests.Sin_cookie_no_hay_resultado_como_siempre [202 ms]
+  Passed Sillar.Core.Tests.ArranqueContraBaseVaciaTests.Un_error_de_PostgreSQL_que_NO_es_42P01_no_se_traga [498 ms]
+A total of 1 test files matched the specified pattern.
+  Passed Sillar.Core.Tests.SettingsReaderPostgresTests.GetT_con_cache_fria_lee_PostgreSQL_y_respeta_conversion_defaults_e_inactivos [4 s]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Los_booleanos_reconocibles_se_interpretan(valor: "false", esperado: False) [4 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Los_booleanos_reconocibles_se_interpretan(valor: "true", esperado: True) [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Los_booleanos_reconocibles_se_interpretan(valor: "0", esperado: False) [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Los_booleanos_reconocibles_se_interpretan(valor: "SÍ", esperado: True) [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Los_booleanos_reconocibles_se_interpretan(valor: "1", esperado: True) [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Los_booleanos_reconocibles_se_interpretan(valor: "no", esperado: False) [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_vacio_se_rechaza_sea_cual_sea_el_tipo(valor: null) [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_vacio_se_rechaza_sea_cual_sea_el_tipo(valor: "") [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_vacio_se_rechaza_sea_cual_sea_el_tipo(valor: "   ") [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_que_encaja_con_su_tipo_se_acepta(tipo: "number", valor: "-3.5") [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_que_encaja_con_su_tipo_se_acepta(tipo: "url", valor: "https://ejemplo.pe/local") [1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_que_encaja_con_su_tipo_se_acepta(tipo: "email", valor: "contacto@ejemplo.pe") [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_que_encaja_con_su_tipo_se_acepta(tipo: "boolean", valor: "SI") [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_que_encaja_con_su_tipo_se_acepta(tipo: "boolean", valor: "0") [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_que_encaja_con_su_tipo_se_acepta(tipo: "number", valor: "42") [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_que_encaja_con_su_tipo_se_acepta(tipo: "boolean", valor: "true") [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_que_encaja_con_su_tipo_se_acepta(tipo: "text", valor: "Cualquier cosa") [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_que_encaja_con_su_tipo_se_acepta(tipo: "json", valor: "{\"horario\":\"9-18\"}") [2 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_que_no_encaja_se_rechaza(tipo: "json", valor: "{esto no es json}") [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_que_no_encaja_se_rechaza(tipo: "url", valor: "ejemplo.pe") [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_que_no_encaja_se_rechaza(tipo: "email", valor: "arroba-no-hay") [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_que_no_encaja_se_rechaza(tipo: "boolean", valor: "quizás") [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_que_no_encaja_se_rechaza(tipo: "url", valor: "ftp://ejemplo.pe") [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.Un_valor_que_no_encaja_se_rechaza(tipo: "number", valor: "muchos") [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.El_numero_se_interpreta_con_punto_decimal_no_con_coma [< 1 ms]
+  Passed Sillar.Core.Tests.SettingValueValidatorTests.El_motivo_del_rechazo_dice_que_se_esperaba [10 ms]
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+  Passed Sillar.Modules.Crm.Tests.ContactMessageServiceTests.Visitante_guarda_mensaje_sin_customer_id [3 s]
+[xUnit.net 00:00:00.49]   Discovering: Sillar.Shared.Data.Tests
+[xUnit.net 00:00:00.70]   Discovering: Sillar.Api.Tests
+[xUnit.net 00:00:00.90]   Discovered:  Sillar.Shared.Data.Tests
+  Passed Sillar.Core.Tests.InstalacionDeModulosTests.El_orden_es_el_mismo_llegue_como_llegue_el_catalogo_de_modulos [1 ms]
+  Passed Sillar.Core.Tests.ArranqueContraBaseVaciaTests.GET_setup_status_contra_base_vacia_responde_200_y_no_un_500 [917 ms]
+  Passed Sillar.Core.Tests.InstalacionDeModulosTests.Un_schema_de_SILLAR_cuya_primera_migracion_fallo_sigue_siendo_reanudable [867 ms]
+  Passed Sillar.Core.Tests.InstalacionDeModulosTests.Clasificar_sin_nada_es_pristina [1 ms]
+  Passed Sillar.Core.Tests.InstalacionDeModulosTests.CORE_se_instala_el_primero_y_no_por_casualidad [9 ms]
+  Passed Sillar.Core.Tests.ModuleSynchronizerReadActivePostgresTests.ReadActiveAsync_devuelve_exactamente_el_modulo_activo_de_PostgreSQL [6 s]
+  Passed Sillar.Core.Tests.ArranqueContraBaseVaciaTests.La_misma_base_cambia_de_estado_al_aplicarle_las_migraciones [1 s]
+  Passed Sillar.Core.Tests.LoginEvaluatorTests.Un_correo_que_no_existe_devuelve_401_y_gasta_el_tiempo_del_senuelo [24 ms]
+  Passed Sillar.Core.Tests.LoginEvaluatorTests.Con_la_contrasena_correcta_y_la_cuenta_bloqueada_devuelve_423 [26 ms]
+  Passed Sillar.Core.Tests.LoginEvaluatorTests.Con_la_contrasena_incorrecta_y_la_cuenta_bloqueada_devuelve_401_y_no_423 [< 1 ms]
+  Passed Sillar.Core.Tests.LoginEvaluatorTests.Con_todo_en_orden_concede_el_acceso [< 1 ms]
+  Passed Sillar.Core.Tests.LoginEvaluatorTests.Una_cuenta_desactivada_y_bloqueada_devuelve_423_porque_el_bloqueo_se_mira_antes [< 1 ms]
+  Passed Sillar.Core.Tests.LoginEvaluatorTests.El_senuelo_no_se_calcula_cuando_la_cuenta_existe [< 1 ms]
+  Passed Sillar.Core.Tests.LoginEvaluatorTests.Un_bloqueo_ya_vencido_no_impide_entrar [< 1 ms]
+  Passed Sillar.Core.Tests.LoginEvaluatorTests.Una_cuenta_desactivada_devuelve_401_generico [3 ms]
+[xUnit.net 00:00:01.06]   Discovered:  Sillar.Api.Tests
+  Passed Sillar.Core.Tests.LoginEvaluatorTests.Una_contrasena_incorrecta_devuelve_401 [7 ms]
+  Passed Sillar.Core.Tests.RoleHierarchyTests.Un_rol_satisface_lo_que_se_le_exige_por_debajo(rol: "super_admin", exigido: "editor") [< 1 ms]
+  Passed Sillar.Core.Tests.RoleHierarchyTests.Un_rol_satisface_lo_que_se_le_exige_por_debajo(rol: "admin", exigido: "admin") [< 1 ms]
+  Passed Sillar.Core.Tests.RoleHierarchyTests.Un_rol_satisface_lo_que_se_le_exige_por_debajo(rol: "admin", exigido: "editor") [< 1 ms]
+  Passed Sillar.Core.Tests.RoleHierarchyTests.Un_rol_satisface_lo_que_se_le_exige_por_debajo(rol: "editor", exigido: "editor") [< 1 ms]
+  Passed Sillar.Core.Tests.RoleHierarchyTests.Un_rol_satisface_lo_que_se_le_exige_por_debajo(rol: "super_admin", exigido: "admin") [< 1 ms]
+  Passed Sillar.Core.Tests.RoleHierarchyTests.Un_rol_satisface_lo_que_se_le_exige_por_debajo(rol: "super_admin", exigido: "super_admin") [< 1 ms]
+  Passed Sillar.Core.Tests.RoleHierarchyTests.Un_rol_desconocido_no_satisface_nada(rol: "") [< 1 ms]
+  Passed Sillar.Core.Tests.RoleHierarchyTests.Un_rol_desconocido_no_satisface_nada(rol: "Admin") [< 1 ms]
+  Passed Sillar.Core.Tests.RoleHierarchyTests.Un_rol_desconocido_no_satisface_nada(rol: "jefe") [< 1 ms]
+  Passed Sillar.Core.Tests.RoleHierarchyTests.Un_rol_desconocido_no_satisface_nada(rol: null) [< 1 ms]
+  Passed Sillar.Core.Tests.RoleHierarchyTests.Un_rol_no_alcanza_lo_que_esta_por_encima(rol: "editor", exigido: "admin") [< 1 ms]
+  Passed Sillar.Core.Tests.RoleHierarchyTests.Un_rol_no_alcanza_lo_que_esta_por_encima(rol: "admin", exigido: "super_admin") [< 1 ms]
+  Passed Sillar.Core.Tests.RoleHierarchyTests.Un_rol_no_alcanza_lo_que_esta_por_encima(rol: "editor", exigido: "super_admin") [< 1 ms]
+  Passed Sillar.Core.Tests.ModuleRegistryTests.IsActive_devuelve_true_si_el_modulo_esta_en_la_foto_activa [< 1 ms]
+  Passed Sillar.Core.Tests.ModuleRegistryTests.IsActive_devuelve_false_si_el_modulo_no_esta_en_la_foto_activa [12 ms]
+  Passed Sillar.Core.Tests.AdminClaimIsolationTests.Claims_administrativos_tienen_namespace_propio [< 1 ms]
+  Passed Sillar.Core.Tests.AdminClaimIsolationTests.CurrentAdmin_lee_session_id_administrativo [12 ms]
+  Passed Sillar.Core.Tests.AdminClaimIsolationTests.CurrentAdmin_ignora_session_id_generico_anterior [< 1 ms]
+  Passed Sillar.Core.Tests.AdminClaimIsolationTests.Claim_csrf_generico_anterior_no_es_claim_administrativo [< 1 ms]
+  Passed Sillar.Core.Tests.AdminClaimIsolationTests.Claim_csrf_administrativo_si_se_resuelve [< 1 ms]
+  Passed Sillar.Core.Tests.AdminClaimIsolationTests.CurrentAdmin_ignora_claims_de_cliente [< 1 ms]
+  Passed Sillar.Core.Tests.PasswordPolicyTests.Las_contrasenas_comunes_se_rechazan(contrasena: "123456789012") [< 1 ms]
+  Passed Sillar.Core.Tests.PasswordPolicyTests.Las_contrasenas_comunes_se_rechazan(contrasena: "administrador") [< 1 ms]
+  Passed Sillar.Core.Tests.PasswordPolicyTests.Las_contrasenas_comunes_se_rechazan(contrasena: "contrasena12") [< 1 ms]
+  Passed Sillar.Core.Tests.PasswordPolicyTests.Las_contrasenas_comunes_se_rechazan(contrasena: "CONTRASEÑA12") [< 1 ms]
+  Passed Sillar.Core.Tests.PasswordPolicyTests.El_motivo_del_rechazo_esta_en_espanol [< 1 ms]
+  Passed Sillar.Core.Tests.PasswordPolicyTests.Doce_caracteres_se_aceptan [< 1 ms]
+  Passed Sillar.Core.Tests.PasswordPolicyTests.Una_contrasena_que_contiene_el_correo_se_rechaza [< 1 ms]
+  Passed Sillar.Core.Tests.PasswordPolicyTests.Una_contrasena_que_contiene_el_nombre_se_rechaza [< 1 ms]
+  Passed Sillar.Core.Tests.PasswordPolicyTests.Mas_de_setenta_y_dos_caracteres_se_rechaza [< 1 ms]
+  Passed Sillar.Core.Tests.PasswordPolicyTests.El_apellido_si_se_comprueba_aunque_el_nombre_sea_corto [< 1 ms]
+  Passed Sillar.Core.Tests.PasswordPolicyTests.La_comparacion_con_la_identidad_ignora_mayusculas [< 1 ms]
+  Passed Sillar.Core.Tests.PasswordPolicyTests.No_se_exigen_mayusculas_ni_digitos_ni_simbolos [4 ms]
+  Passed Sillar.Core.Tests.PasswordPolicyTests.Once_caracteres_se_rechazan [< 1 ms]
+  Passed Sillar.Core.Tests.PasswordPolicyTests.Una_contrasena_vacia_se_rechaza [< 1 ms]
+[xUnit.net 00:00:01.47]   Starting:    Sillar.Shared.Data.Tests
+[xUnit.net 00:00:01.61]   Starting:    Sillar.Api.Tests
+  Passed Sillar.Modules.Crm.Tests.ContactMessageServiceTests.Sin_correo_ni_telefono_se_rechaza [429 ms]
+  Passed Sillar.Modules.Crm.Tests.ContactMessageServiceTests.Sesion_valida_puede_vincular_customer_y_conserva_snapshot [229 ms]
+  Passed Sillar.Modules.Crm.Tests.ContactMessageServiceTests.Admin_lee_y_da_de_baja_sin_borrar [295 ms]
+  Passed Sillar.Core.Tests.PasswordPolicyTests.Una_contrasena_que_contiene_la_parte_previa_a_la_arroba_se_rechaza [< 1 ms]
+  Passed Sillar.Core.Tests.PasswordPolicyTests.Las_palabras_cortas_del_nombre_no_invalidan_media_lengua [< 1 ms]
+  Passed Sillar.Core.Tests.LockoutPolicyTests.El_bloqueo_termina_solo_al_pasar_el_plazo [< 1 ms]
+  Passed Sillar.Core.Tests.LockoutPolicyTests.Menos_de_cinco_fallos_no_bloquean(fallos: 1) [< 1 ms]
+  Passed Sillar.Core.Tests.LockoutPolicyTests.Menos_de_cinco_fallos_no_bloquean(fallos: 4) [< 1 ms]
+  Passed Sillar.Core.Tests.LockoutPolicyTests.Una_cuenta_sin_bloqueo_no_esta_bloqueada [< 1 ms]
+  Passed Sillar.Core.Tests.LockoutPolicyTests.El_quinto_fallo_bloquea_quince_minutos [< 1 ms]
+  Passed Sillar.Core.Tests.LockoutPolicyTests.Los_fallos_siguientes_reinician_los_quince_minutos [< 1 ms]
+  Passed Sillar.Core.Tests.NodoYAutoriaTests.Sobre_datos_preexistentes_rellena_el_nodo_de_las_cuentas_y_fotografia_al_autor_valido [1 s]
+  Passed Sillar.Shared.Data.Tests.ReplicationMappingTests.Las_cuatro_columnas_llevan_el_nombre_en_snake_case_del_esquema [1 s]
+  Passed Sillar.Shared.Data.Tests.ReplicationMappingTests.La_version_nace_en_uno_y_no_la_genera_la_base [16 ms]
+  Passed Sillar.Shared.Data.Tests.ReplicationMappingTests.La_fecha_de_cambio_la_pone_el_trigger_al_insertar_y_al_actualizar [1 ms]
+  Passed Sillar.Shared.Data.Tests.ReplicationMappingTests.Sin_MapReplication_EF_las_nombraria_de_otra_forma [1 ms]
+  Passed Sillar.Shared.Data.Tests.ReplicationMappingTests.La_fecha_de_alta_la_pone_la_base_y_solo_al_insertar [< 1 ms]
+  Passed Sillar.Shared.Data.Tests.ReplicationMappingTests.El_nodo_de_origen_es_obligatorio [1 ms]
+  Passed Sillar.Shared.Data.Tests.ReplicationStampingTests.Al_modificar_no_se_reescriben_ni_el_origen_ni_la_fecha_de_alta [1 s]
+  Passed Sillar.Shared.Data.Tests.ReplicationStampingTests.Al_modificar_sube_la_version_y_el_origen_no_se_toca [10 ms]
+  Passed Sillar.Shared.Data.Tests.ReplicationStampingTests.Una_fila_sin_cambios_no_se_sella [6 ms]
+[xUnit.net 00:00:03.34]   Finished:    Sillar.Shared.Data.Tests (ID = '2455de98c2e068813acea97e7ce938d5fc18e42882b821e126bb17a9bc1b8c79')
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test12_eliminar_schema_crm_no_toca_core_ni_catalog [1 s]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test14b_base_rechaza_todos_los_blancos_que_dotnet_trim_recorta [140 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test27_contact_messages_set_updated_at_modifica_updated_at [212 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test11_consumo_concurrente_del_mismo_token_produce_un_ganador [133 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test06_combinaciones_invalidas_lifecycle_fallan(isActive: False, hasDeact: False, hasBlocked: False, label: "inactiva sin deactivated_at ni blocked_at") [104 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test06_combinaciones_invalidas_lifecycle_fallan(isActive: True, hasDeact: False, hasBlocked: True, label: "activa pero con blocked_at") [75 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test06_combinaciones_invalidas_lifecycle_fallan(isActive: False, hasDeact: True, hasBlocked: True, label: "de baja y bloqueada a la vez") [67 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test06_combinaciones_invalidas_lifecycle_fallan(isActive: True, hasDeact: True, hasBlocked: False, label: "activa pero con deactivated_at") [49 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test05_documento_duplicado_falla [61 ms]
+  Passed Sillar.Shared.Data.Tests.ReplicationStampingTests.El_borrado_tampoco_sube_la_version [19 ms]
+  Passed Sillar.Shared.Data.Tests.ReplicationStampingTests.Una_fila_nueva_nace_con_el_nodo_la_version_uno_y_las_dos_fechas [8 ms]
+
+Test Run Successful.
+Total tests: 11
+     Passed: 11
+ Total time: 4.6450 Seconds
+  Passed Sillar.Core.Tests.AutenticacionSinAlmacenDeSesionesTests.Cuando_aparecen_las_tablas_el_handler_vuelve_a_consultar_con_normalidad [3 s]
+  Passed Sillar.Core.Tests.AutenticacionSinAlmacenDeSesionesTests.Una_conexion_caida_no_se_convierte_en_ausencia [59 ms]
+  Passed Sillar.Core.Tests.InstalacionDeModulosTests.POST_setup_sobre_base_pristina_responde_201 [2 s]
+  Passed Sillar.Core.Tests.ActivacionConSchemaTests.Los_modulos_de_demostracion_sin_schema_se_siguen_activando [1 s]
+  Passed Sillar.Core.Tests.AutenticacionSinAlmacenDeSesionesTests.Con_cookie_y_sin_tabla_de_sesiones_no_hay_resultado_y_no_hay_identidad [866 ms]
+Test run for /home/user/SILLAR-m05av/backend/Sillar.Modules.Sales.Tests/bin/Debug/net10.0/Sillar.Modules.Sales.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test25_contact_message_sin_email_ni_phone_falla [93 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test08_reactivation_resolved_anterior_a_requested_falla [61 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test17_sql_directo_nfc_nfd_is_distinct_from [263 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test15_cambiar_email_limpia_email_verified_at [251 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test14c_migracion_falla_y_no_corrige_correos_preexistentes [274 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test10_purpose_invalido_falla(purpose: "login") [117 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test10_purpose_invalido_falla(purpose: "reset") [65 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test10_purpose_invalido_falla(purpose: "") [56 ms]
+  Passed Sillar.Core.Tests.AutenticacionSinAlmacenDeSesionesTests.Un_42P01_de_otra_relacion_no_se_traga [408 ms]
+  Passed Sillar.Core.Tests.NodoYAutoriaTests.ICurrentAdmin_da_lo_de_siempre_y_ademas_el_nombre_visible_y_el_nodo_de_la_cuenta [1 s]
+  Passed Sillar.Core.Tests.ActivacionConSchemaTests.El_error_nombra_el_modulo_el_schema_la_base_y_que_hacer [1 s]
+[xUnit.net 00:00:00.01] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test20_set_updated_at_modifica_updated_at [601 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test14_nfc_y_nfd_chocan_en_uq_customers_email [63 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test07_reactivation_resolved_sin_requested_falla [115 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test01_CrmInitial_aplica_desde_cero [85 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test13_reinstalar_crminitial_sobre_schema_limpio_funciona [518 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test22_busqueda_full_name_tsvector_pena [206 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test23_contact_message_sin_customer_id [136 ms]
+  Passed Sillar.Core.Tests.InstalacionDeModulosTests.Base_pristina_la_instalacion_deja_todos_los_schemas_desplegados_y_termina_operativa [2 s]
+  Passed Sillar.Core.Tests.InstalacionDeModulosTests.Clasificar_con_algo_ajeno_no_es_seguro [5 ms]
+  Passed Sillar.Core.Tests.NodoYAutoriaTests.Un_autor_que_no_existe_es_corrupcion_la_migracion_aborta_dice_cuantas_y_como_localizarlas [1 s]
+  Passed Sillar.Core.Tests.AutenticacionSinAlmacenDeSesionesTests.Con_cookie_vieja_y_sin_core_setup_status_responde_y_una_ruta_protegida_da_401 [1 s]
+[xUnit.net 00:00:01.15]   Discovering: Sillar.Modules.Sales.Tests
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test19_tablas_replicadas_tienen_origin_node_y_row_version_se_incrementa [139 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test21_busqueda_parcial_email_trgm [178 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test03_segunda_account_para_mismo_customer_falla [153 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test02_customer_y_address_generan_uuid_v7 [141 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test09_dos_preferidas_activas_del_mismo_cliente_falla [70 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test26_contact_messages_no_tiene_origin_node_ni_row_version [15 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test24_contact_message_vinculado_y_fk_inexistente [105 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test04_email_duplicado_falla_con_ficha_no_activa(label: "baja") [120 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test04_email_duplicado_falla_con_ficha_no_activa(label: "bloqueada") [139 ms]
+[xUnit.net 00:00:02.23]   Discovered:  Sillar.Modules.Sales.Tests
+  Passed Sillar.Core.Tests.InstalacionDeModulosTests.Un_schema_ajeno_hace_que_se_niegue_antes_de_migrar_nada [1 s]
+  Passed Sillar.Core.Tests.NodoYAutoriaTests.Media_fotografia_del_autor_no_se_admite [1 s]
+  Passed Sillar.Core.Tests.ActivacionConSchemaTests.Tras_una_instalacion_correcta_los_modulos_reales_tienen_su_schema_y_se_activan [3 s]
+  Passed Sillar.Core.Tests.InstalacionDeModulosTests.Una_tabla_ajena_en_public_hace_que_se_niegue [590 ms]
+  Passed Sillar.Core.Tests.InstalacionDeModulosTests.Clasificar_con_solo_lo_nuestro_es_reanudable [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test16_cambiar_solo_mayusculas_no_invalida_email_verified_at [107 ms]
+  Passed Sillar.Modules.Crm.Tests.CrmPersistenceTests.Test18_tablas_no_replicadas_no_tienen_origin_node_ni_row_version [11 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Con_direccion_ajena_devuelve_null [490 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Sin_direccion_no_expone_ninguna_propiedad_de_direccion [1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Las_instantaneas_no_se_pueden_modificar_despues_de_creadas(tipo: typeof(Sillar.Modules.Crm.Contracts.CustomerOrderAddressSnapshot)) [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Las_instantaneas_no_se_pueden_modificar_despues_de_creadas(tipo: typeof(Sillar.Modules.Crm.Contracts.CustomerOrderContactSnapshot)) [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Las_instantaneas_no_se_pueden_modificar_despues_de_creadas(tipo: typeof(Sillar.Modules.Crm.Contracts.CustomerOrderSnapshot)) [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Un_cambio_posterior_del_perfil_no_altera_la_instantanea_ya_tomada [237 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Sin_direccion_devuelve_los_datos_del_cliente_aunque_no_tenga_ninguna_direccion [121 ms]
+[xUnit.net 00:00:02.67]   Starting:    Sillar.Modules.Sales.Tests
+  Passed Sillar.Modules.Sales.Tests.CongelarClienteTests.Un_correo_sin_verificar_no_compra [67 ms]
+  Passed Sillar.Modules.Sales.Tests.CodigoVisibleTests.Un_correlativo_de_cinco_cifras_no_se_recorta [73 ms]
+  Passed Sillar.Modules.Sales.Tests.PeticionDePedidoTests.Los_motivos_de_no_creacion_distinguen_a_consultar_de_no_vendible [84 ms]
+  Passed Sillar.Modules.Sales.Tests.CongelarClienteTests.Si_M04_devuelve_null_no_se_inventa_la_causa [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.CodigoVisibleTests.El_codigo_visible_de_un_pedido_tiene_la_forma_P_2026_0147 [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.CodigoVisibleTests.Dos_anios_distintos_dan_codigos_distintos_con_el_mismo_correlativo [7 ms]
+  Passed Sillar.Modules.Sales.Tests.CongelarClienteTests.Los_motivos_de_rechazo_no_nombran_ninguna_causa_que_M04_no_garantice [11 ms]
+  Passed Sillar.Modules.Sales.Tests.PeticionDePedidoTests.La_peticion_no_lleva_cliente_ni_direccion [16 ms]
+  Passed Sillar.Modules.Sales.Tests.CongelarClienteTests.Se_usa_la_sobrecarga_SIN_direccion [3 ms]
+  Passed Sillar.Modules.Sales.Tests.CongelarClienteTests.El_pedido_no_recibe_ninguna_direccion [2 ms]
+  Passed Sillar.Modules.Sales.Tests.CodigoVisibleTests.El_correlativo_se_rellena_hasta_cuatro_digitos [9 ms]
+  Passed Sillar.Modules.Sales.Tests.CongelarClienteTests.Congelar_copia_los_seis_campos_al_pedido [18 ms]
+  Passed Sillar.Modules.Sales.Tests.CongelarClienteTests.Un_cliente_verificado_se_congela_con_sus_seis_datos [1 ms]
+  Passed Sillar.Modules.Sales.Tests.CodigoVisibleTests.El_mensaje_de_la_etiqueta_ausente_dice_que_no_hay_valor_por_defecto [38 ms]
+  Passed Sillar.Modules.Sales.Tests.CodigoVisibleTests.La_etiqueta_se_recorta_pero_no_se_transforma [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.CodigoVisibleTests.Dos_nodos_distintos_dan_codigos_distintos_con_la_misma_serie [5 ms]
+  Passed Sillar.Modules.Sales.Tests.CodigoVisibleTests.Un_correlativo_menor_que_uno_no_se_acepta [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.CodigoVisibleTests.Sin_etiqueta_de_nodo_no_se_compone_ningun_codigo [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.CodigoVisibleTests.La_etiqueta_del_nodo_va_delante_del_anio [6 ms]
+  Passed Sillar.Modules.Sales.Tests.TransicionesTests.Un_pedido_entregado_no_se_puede_cancelar [10 ms]
+  Passed Sillar.Modules.Sales.Tests.MediosDePagoTests.Yape_es_un_medio_valido [2 ms]
+  Passed Sillar.Modules.Sales.Tests.TransicionesTests.Un_pedido_vencido_si_se_puede_cancelar_con_motivo [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.TransicionesTests.El_vencimiento_automatico_nunca_conduce_a_cancelado [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.TransicionesTests.Un_pago_no_lo_registra_el_sistema [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.PeticionDePedidoTests.Una_linea_pedida_solo_lleva_variante_y_cantidad [109 ms]
+  Passed Sillar.Modules.Sales.Tests.TransicionesTests.Una_cancelacion_sin_motivo_no_se_permite [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.TransicionesTests.Ninguna_transicion_permitida_sale_de_los_siete_estados [1 ms]
+  Passed Sillar.Modules.Sales.Tests.TransicionesTests.Un_pago_tardio_con_mercancia_lleva_el_pedido_de_Vencido_a_Preparando [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.MediosDePagoTests.Cualquier_otro_medio_queda_fuera [66 ms]
+  Passed Sillar.Modules.Sales.Tests.TransicionesTests.El_cliente_no_cancela_directamente [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.TransicionesTests.Un_pago_tardio_no_pasa_por_Pago_por_verificar [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.TransicionesTests.Una_cancelacion_del_personal_con_motivo_si_se_permite [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.TransicionesTests.Un_pago_sin_mercancia_no_inventa_ningun_octavo_estado [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.TransicionesTests.Un_pago_tardio_sin_mercancia_se_registra_y_deja_pendiente_operativo [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.TransicionesTests.Solo_vence_un_pedido_pendiente_de_pago [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.PeticionDePedidoTests.La_peticion_no_tiene_donde_poner_un_precio_ni_un_total [1 ms]
+  Passed Sillar.Modules.Sales.Tests.EstadosYPagoTests.Vencido_y_cancelado_estan_fuera_de_la_secuencia_principal [6 ms]
+  Passed Sillar.Modules.Sales.Tests.EstadosYPagoTests.Los_estados_visibles_son_exactamente_siete [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.Un_pago_sin_nombre_no_se_registra [21 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.El_nodo_de_la_cuenta_no_se_deriva_del_nodo_de_la_actuacion [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.Un_pago_humano_exige_los_tres_datos [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.Ninguna_de_las_seis_atribuciones_parciales_se_acepta [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.MediosDePagoTests.Los_valores_van_en_minusculas_y_sin_espacios [42 ms]
+  Passed Sillar.Modules.Sales.Tests.MediosDePagoTests.V1_admite_yape_y_efectivo [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.MediosDePagoTests.El_efectivo_es_un_medio_valido [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.MediosDePagoTests.La_tarjeta_no_se_admite_en_M03_v1 [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.EstadosYPagoTests.Los_estados_se_guardan_en_ingles_tecnico_y_no_en_espaniol [42 ms]
+  Passed Sillar.Modules.Sales.Tests.EstadosYPagoTests.Vencido_no_es_lo_mismo_que_cancelado [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.NumeracionTests.La_zona_del_negocio_se_resuelve_en_esta_maquina [8 ms]
+  Passed Sillar.Modules.Sales.Tests.NumeracionTests.Un_pedido_de_la_tarde_del_31_de_diciembre_conserva_su_anio [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.La_cabecera_del_pedido_no_atribuye_a_ningun_trabajador [8 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.La_atribucion_de_un_cambio_se_resuelve_sin_leer_el_pedido [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.Un_cambio_automatico_lleva_los_tres_datos_nulos_y_no_atribuye_a_nadie [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.Un_pago_sin_nodo_de_la_cuenta_no_se_registra [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.Un_cambio_automatico_leido_desde_la_entidad_no_atribuye_a_nadie [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.La_migracion_no_declara_ninguna_clave_foranea_hacia_core_admin_users [16 ms]
+  Passed Sillar.Modules.Sales.Tests.EstadosYPagoTests.Los_siete_estados_son_los_ratificados_el_26_de_septiembre [4 ms]
+  Passed Sillar.Modules.Sales.Tests.EstadosYPagoTests.Ningun_estado_esta_repetido [3 ms]
+  Passed Sillar.Modules.Sales.Tests.EstadosYPagoTests.La_secuencia_principal_tiene_cinco_estados_en_orden [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.Ningun_CHECK_exige_que_los_dos_nodos_coincidan [140 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.Un_identificador_local_cero_o_negativo_no_se_acepta [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.Un_cambio_humano_lleva_los_tres_datos_presentes [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.El_pedido_no_interviene_en_la_interpretacion_de_la_atribucion [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Cliente_de_baja_o_bloqueado_devuelve_null_en_las_dos_variantes(estado: "bloqueo") [118 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Cliente_de_baja_o_bloqueado_devuelve_null_en_las_dos_variantes(estado: "baja") [138 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Sin_direccion_no_filtra_notas_internas [140 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Sin_direccion_refleja_correo_sin_verificar [122 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Con_direccion_de_baja_devuelve_null [169 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Cliente_inexistente_devuelve_null_en_las_dos_variantes [109 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Con_direccion_inexistente_devuelve_null_y_no_cae_en_la_variante_sin_direccion [112 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Con_direccion_valida_devuelve_cliente_y_direccion_como_en_1_0_0 [163 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSnapshotReaderTests.Ficha_sin_cuenta_devuelve_null_en_las_dos_variantes [110 ms]
+  Passed Sillar.Core.Tests.AutenticacionSinAlmacenDeSesionesTests.Con_la_tabla_presente_y_una_sesion_valida_autentica_con_normalidad [3 s]
+  Passed Sillar.Core.Tests.NodoYAutoriaTests.En_una_instalacion_limpia_la_migracion_no_necesita_nodo_y_deja_el_esquema_nuevo [1 s]
+  Passed Sillar.Core.Tests.NodoYAutoriaTests.El_nodo_viaja_en_la_conexion_solo_si_esta_configurado [1 ms]
+  Passed Sillar.Core.Tests.ActivacionConSchemaTests.Con_su_schema_presente_el_modulo_se_activa [1 s]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.La_migracion_solo_referencia_dos_schemas_ajenos_y_ninguno_es_core [1 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.El_nodo_de_la_cuenta_puede_ser_distinto_del_nodo_de_la_actuacion [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.Un_pago_sin_identificador_local_no_se_registra [36 ms]
+  Passed Sillar.Modules.Sales.Tests.AtribucionDelPersonalTests.La_tabla_orders_de_la_migracion_no_tiene_columna_de_atribucion [< 1 ms]
+  Passed Sillar.Core.Tests.InstalacionDeModulosTests.Repetir_la_instalacion_no_reaplica_nada_y_sigue_operativa [3 s]
+  Passed Sillar.Modules.Sales.Tests.NumeracionTests.La_guarda_de_transaccion_actua_antes_de_mirar_la_configuracion [1 s]
+  Passed Sillar.Modules.Sales.Tests.NumeracionTests.El_codigo_de_esa_tarde_se_compone_con_el_anio_de_Lima [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.CrearPedidoPersistenciaTests.Un_carrito_vacio_no_entra_en_confirmacion [1 s]
+  Passed Sillar.Modules.Sales.Tests.NumeracionTests.Fuera_de_una_transaccion_el_numerador_se_niega_a_numerar [243 ms]
+  Passed Sillar.Modules.Sales.Tests.NumeracionTests.El_anio_de_la_serie_es_el_de_Lima_y_no_el_de_UTC [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.NumeracionTests.El_mediodia_de_Lima_y_el_de_UTC_dan_el_mismo_anio [< 1 ms]
+  Passed Sillar.Modules.Sales.Tests.CrearPedidoPersistenciaTests.Una_cantidad_no_positiva_no_produce_pedido [154 ms]
+  Passed Sillar.Core.Tests.ActivacionConSchemaTests.Sin_su_schema_el_modulo_no_se_activa [2 s]
+  Passed Sillar.Core.Tests.NodoYAutoriaTests.Al_subir_la_fotografia_lleva_el_nodo_de_la_cuenta_y_no_el_de_la_instalacion [2 s]
+  Passed Sillar.Core.Tests.NodoYAutoriaTests.Sin_sesion_ICurrentAdmin_no_lanza_y_lo_nuevo_tambien_es_nulo [< 1 ms]
+  Passed Sillar.Core.Tests.InstalacionDeModulosTests.Un_schema_con_nuestro_nombre_pero_sin_nuestro_historial_no_se_toca [624 ms]
+  Passed Sillar.Modules.Sales.Tests.CrearPedidoPersistenciaTests.El_rollback_de_la_transaccion_exterior_devuelve_el_numero [1 s]
+  Passed Sillar.Modules.Sales.Tests.CrearPedidoPersistenciaTests.El_snapshot_sigue_congelado_cuando_M01_cambia_despues [495 ms]
+  Passed Sillar.Modules.Sales.Tests.CrearPedidoPersistenciaTests.Un_pedido_que_no_llega_a_crearse_no_consume_numero [26 ms]
+  Passed Sillar.Modules.Sales.Tests.CrearPedidoPersistenciaTests.Se_pregunta_por_la_vendibilidad_antes_de_tomar_el_precio [7 ms]
+  Passed Sillar.Modules.Sales.Tests.CrearPedidoPersistenciaTests.Un_correo_sin_verificar_no_llega_a_preguntar_por_el_catalogo [2 ms]
+  Passed Sillar.Modules.Sales.Tests.CrearPedidoPersistenciaTests.Un_item_inexistente_o_inactivo_no_produce_pedido [61 ms]
+  Passed Sillar.Modules.Sales.Tests.CrearPedidoPersistenciaTests.Un_precio_null_no_entra_al_pedido_y_un_precio_cero_si [70 ms]
+  Passed Sillar.Modules.Sales.Tests.CrearPedidoPersistenciaTests.El_precio_de_la_linea_lo_pone_M01_y_no_quien_llama [97 ms]
+  Passed Sillar.Modules.Sales.Tests.CrearPedidoPersistenciaTests.Un_pedido_se_crea_con_el_precio_de_M01_y_su_snapshot_congelado [76 ms]
+  Passed Sillar.Modules.Sales.Tests.VencimientoPersistenciaTests.Un_plazo_que_no_ha_llegado_no_vence [120 ms]
+  Passed Sillar.Modules.Sales.Tests.VencimientoPersistenciaTests.El_asiento_del_vencimiento_deja_los_TRES_datos_de_atribucion_en_NULL [69 ms]
+  Passed Sillar.Modules.Sales.Tests.VencimientoPersistenciaTests.Un_plazo_cumplido_pasa_el_pedido_a_Vencido [41 ms]
+  Passed Sillar.Modules.Sales.Tests.VencimientoPersistenciaTests.Vencer_no_cancela_y_no_libera_nada [54 ms]
+  Passed Sillar.Modules.Sales.Tests.VencimientoPersistenciaTests.Correr_el_vencimiento_dos_veces_no_duplica_asientos [71 ms]
+  Passed Sillar.Modules.Sales.Tests.VencimientoPersistenciaTests.Solo_vence_lo_que_estaba_pendiente_de_pago [25 ms]
+  Passed Sillar.Modules.Sales.Tests.PedidosPropiosPersistenciaTests.Un_cliente_sin_pedidos_recibe_una_lista_vacia_y_no_un_error [103 ms]
+  Passed Sillar.Modules.Sales.Tests.PedidosPropiosPersistenciaTests.El_historial_no_devuelve_pedidos_dados_de_baja [37 ms]
+  Passed Sillar.Modules.Sales.Tests.PedidosPropiosPersistenciaTests.El_contrato_publico_acota_el_limite_en_vez_de_obedecerlo [14 ms]
+[xUnit.net 00:00:08.19]   Finished:    Sillar.Modules.Sales.Tests (ID = '4d4db81a0f3e6e534434eda52171de1a7fb45338cc8d84267b73d04f7b612dd0')
+  Passed Sillar.Core.Tests.InstalacionDeModulosTests.El_503_nombra_base_servidor_puerto_y_la_evidencia_y_manda_comprobar_la_conexion [1 s]
+  Passed Sillar.Core.Tests.NodoYAutoriaTests.Sin_nodo_configurado_y_con_cuentas_la_migracion_aborta_sin_cambiar_nada [1 s]
+  Passed Sillar.Core.Tests.ActivacionConSchemaTests.Al_negarse_el_estado_previo_queda_intacto [2 s]
+  Passed Sillar.Core.Tests.InstalacionDeModulosTests.Las_extensiones_en_public_no_convierten_la_base_en_ajena [358 ms]
+  Passed Sillar.Modules.Sales.Tests.PedidosPropiosPersistenciaTests.El_historial_va_del_mas_reciente_al_mas_antiguo [49 ms]
+  Passed Sillar.Modules.Sales.Tests.PedidosPropiosPersistenciaTests.Un_cliente_solo_ve_sus_propios_pedidos [19 ms]
+  Passed Sillar.Modules.Sales.Tests.PedidosPropiosPersistenciaTests.El_resumen_cuenta_las_lineas_sin_traerlas [47 ms]
+  Passed Sillar.Modules.Sales.Tests.PedidosPropiosPersistenciaTests.El_pedido_de_otro_cliente_no_existe_para_la_consulta_filtrada [103 ms]
+
+Test Run Successful.
+Total tests: 96
+     Passed: 96
+ Total time: 10.0711 Seconds
+Test run for /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+  Passed Sillar.Core.Tests.InstalacionDeModulosTests.Un_historial_con_migraciones_que_este_binario_no_conoce_no_se_toca [1 s]
+  Passed Sillar.Core.Tests.NodoYAutoriaTests.La_fotografia_del_autor_no_se_modifica_una_vez_escrita [1 s]
+  Passed Sillar.Core.Tests.ImageDimensionsTests.En_jpeg_se_saltan_los_marcadores_previos [19 ms]
+  Passed Sillar.Core.Tests.ImageDimensionsTests.Una_cabecera_truncada_devuelve_nulo_sin_reventar [< 1 ms]
+  Passed Sillar.Core.Tests.ImageDimensionsTests.Las_dimensiones_de_un_webp_se_leen_en_sus_tres_variantes(variante: "VP8X", ancho: 16383, alto: 16383) [< 1 ms]
+  Passed Sillar.Core.Tests.ImageDimensionsTests.Las_dimensiones_de_un_webp_se_leen_en_sus_tres_variantes(variante: "VP8L", ancho: 640, alto: 480) [< 1 ms]
+  Passed Sillar.Core.Tests.ImageDimensionsTests.Las_dimensiones_de_un_webp_se_leen_en_sus_tres_variantes(variante: "VP8L", ancho: 1, alto: 1) [< 1 ms]
+  Passed Sillar.Core.Tests.ImageDimensionsTests.Las_dimensiones_de_un_webp_se_leen_en_sus_tres_variantes(variante: "VP8X", ancho: 640, alto: 480) [< 1 ms]
+  Passed Sillar.Core.Tests.ImageDimensionsTests.Las_dimensiones_de_un_webp_se_leen_en_sus_tres_variantes(variante: "VP8 ", ancho: 640, alto: 480) [< 1 ms]
+  Passed Sillar.Core.Tests.ImageDimensionsTests.Las_dimensiones_de_un_png_se_leen_del_IHDR(ancho: 800, alto: 600) [< 1 ms]
+  Passed Sillar.Core.Tests.ImageDimensionsTests.Las_dimensiones_de_un_png_se_leen_del_IHDR(ancho: 4096, alto: 2160) [< 1 ms]
+  Passed Sillar.Core.Tests.ImageDimensionsTests.Las_dimensiones_de_un_png_se_leen_del_IHDR(ancho: 1, alto: 1) [< 1 ms]
+  Passed Sillar.Core.Tests.ImageDimensionsTests.Un_jpeg_sin_inicio_de_fotograma_devuelve_nulo_y_no_se_queda_dando_vueltas [< 1 ms]
+  Passed Sillar.Core.Tests.ImageDimensionsTests.Un_webp_de_variante_desconocida_devuelve_nulo [< 1 ms]
+  Passed Sillar.Core.Tests.ImageDimensionsTests.Las_dimensiones_de_un_jpeg_se_leen_del_inicio_de_fotograma(ancho: 800, alto: 600) [< 1 ms]
+  Passed Sillar.Core.Tests.ImageDimensionsTests.Las_dimensiones_de_un_jpeg_se_leen_del_inicio_de_fotograma(ancho: 1920, alto: 1080) [< 1 ms]
+  Passed Sillar.Core.Tests.ImageDimensionsTests.En_jpeg_el_alto_va_antes_que_el_ancho [< 1 ms]
+  Passed Sillar.Core.Tests.ContentSnifferTests.Un_webp_se_reconoce_en_sus_tres_variantes(variante: "VP8X") [< 1 ms]
+  Passed Sillar.Core.Tests.ContentSnifferTests.Un_webp_se_reconoce_en_sus_tres_variantes(variante: "VP8 ") [< 1 ms]
+  Passed Sillar.Core.Tests.ContentSnifferTests.Un_webp_se_reconoce_en_sus_tres_variantes(variante: "VP8L") [< 1 ms]
+  Passed Sillar.Core.Tests.ContentSnifferTests.Otros_formatos_conocidos_se_rechazan(firma: "%PDF-1.7") [< 1 ms]
+  Passed Sillar.Core.Tests.ContentSnifferTests.Otros_formatos_conocidos_se_rechazan(firma: "GIF89a") [< 1 ms]
+  Passed Sillar.Core.Tests.ContentSnifferTests.Otros_formatos_conocidos_se_rechazan(firma: "PK\x03\x04") [< 1 ms]
+  Passed Sillar.Core.Tests.ContentSnifferTests.Otros_formatos_conocidos_se_rechazan(firma: "\x1f") [< 1 ms]
+  Passed Sillar.Core.Tests.ContentSnifferTests.Un_svg_valido_se_rechaza [< 1 ms]
+  Passed Sillar.Core.Tests.ContentSnifferTests.Un_riff_que_no_es_webp_se_rechaza [< 1 ms]
+  Passed Sillar.Core.Tests.ContentSnifferTests.Un_jpeg_se_reconoce_por_su_firma [< 1 ms]
+  Passed Sillar.Core.Tests.ContentSnifferTests.Un_png_se_reconoce_por_su_firma [< 1 ms]
+  Passed Sillar.Core.Tests.ContentSnifferTests.Un_archivo_vacio_o_truncado_se_rechaza [< 1 ms]
+  Passed Sillar.Core.Tests.ContentSnifferTests.Un_svg_sin_declaracion_xml_tambien_se_rechaza [< 1 ms]
+  Passed Sillar.Core.Tests.ContentSnifferTests.Un_archivo_con_extension_png_pero_otro_contenido_se_rechaza [< 1 ms]
+  Passed Sillar.Core.Tests.HostRestarterTests.Con_la_bandera_en_false_el_host_no_se_detiene [19 ms]
+  Passed Sillar.Core.Tests.HostRestarterTests.Con_la_bandera_en_true_la_parada_se_programa_para_despues_de_la_respuesta [< 1 ms]
+  Passed Sillar.Core.Tests.HostRestarterTests.Sin_configuracion_el_host_no_se_detiene [< 1 ms]
+  Passed Sillar.Core.Tests.HostRestarterTests.La_parada_incondicional_tampoco_ocurre_antes_de_la_respuesta [< 1 ms]
+  Passed Sillar.Core.Tests.CsrfTokenFactoryTests.El_hash_que_se_guarda_no_contiene_el_token [1 ms]
+  Passed Sillar.Core.Tests.CsrfTokenFactoryTests.La_etiqueta_de_derivacion_esta_versionada [< 1 ms]
+  Passed Sillar.Core.Tests.CsrfTokenFactoryTests.El_token_no_revela_la_sesion_ni_la_clave_de_instalacion [< 1 ms]
+  Passed Sillar.Core.Tests.CsrfTokenFactoryTests.Una_clave_de_instalacion_que_solo_difiere_en_un_bit_da_otro_token [< 1 ms]
+  Passed Sillar.Core.Tests.CsrfTokenFactoryTests.Reiniciar_el_proceso_no_cambia_el_token_de_una_sesion_viva [< 1 ms]
+  Passed Sillar.Core.Tests.CsrfTokenFactoryTests.La_misma_sesion_da_siempre_el_mismo_token [< 1 ms]
+  Passed Sillar.Core.Tests.CsrfTokenFactoryTests.El_token_viaja_en_una_cabecera_sin_escapar_nada [< 1 ms]
+  Passed Sillar.Core.Tests.CsrfTokenFactoryTests.Dos_instalaciones_distintas_dan_tokens_distintos_para_la_misma_sesion [< 1 ms]
+  Passed Sillar.Core.Tests.CsrfTokenFactoryTests.Dos_sesiones_distintas_dan_tokens_distintos [< 1 ms]
+[xUnit.net 00:00:00.01] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)
+  Passed Sillar.Modules.Crm.Tests.CustomerAuthenticationServiceTests.Correo_inexistente_y_password_incorrecto_tienen_mismo_resultado [6 s]
+[xUnit.net 00:00:00.66]   Discovering: Sillar.Modules.Services.Tests
+  Passed Sillar.Core.Tests.CsrfTokenFactoryTests.Una_clave_de_instalacion_vacia_se_rechaza [8 ms]
+  Passed Sillar.Core.Tests.ActivacionConSchemaTests.Un_modulo_real_sin_su_schema_no_se_activa_aunque_otros_si_lo_tengan [2 s]
+  Passed Sillar.Core.Tests.ActivacionConSchemaTests.Una_averia_distinta_no_se_convierte_en_falta_el_schema [31 ms]
+  Passed Sillar.Core.Tests.AutenticacionSinAlmacenDeSesionesTests.Base_pristina_y_cookie_vieja_el_instalador_termina_y_la_cookie_nunca_autentica [7 s]
+[xUnit.net 00:00:01.03]   Discovered:  Sillar.Modules.Services.Tests
+[xUnit.net 00:00:25.11]   Finished:    Sillar.Core.Tests (ID = '2ed9dca55f1c4086c1a8053eb8a998fc95afe56b18033dab477f85f41397de90')
+[xUnit.net 00:00:01.37]   Starting:    Sillar.Modules.Services.Tests
+  Passed Sillar.Core.Tests.InstalacionDeModulosTests.Una_instalacion_a_medias_se_reanuda_y_se_completa [2 s]
+
+Test Run Successful.
+Total tests: 193
+     Passed: 193
+ Total time: 27.7540 Seconds
+[xUnit.net 00:00:01.93]       System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+[xUnit.net 00:00:01.93]       Stack Trace:
+[xUnit.net 00:00:01.94]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs(54,0): at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct)
+[xUnit.net 00:00:01.94]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs(98,0): at Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(String caso)
+[xUnit.net 00:00:01.94]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.94]       System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+[xUnit.net 00:00:01.94]       Stack Trace:
+[xUnit.net 00:00:01.94]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs(54,0): at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct)
+[xUnit.net 00:00:01.94]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs(98,0): at Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(String caso)
+[xUnit.net 00:00:01.94]         --- End of stack trace from previous location ---
+  Passed Sillar.Modules.Services.Tests.ServiceRulesTests.Restaurar_archivado_no_se_inventa [30 ms]
+  Passed Sillar.Modules.Services.Tests.ServiceRulesTests.Publicar_desde_borrador_es_valido [< 1 ms]
+  Passed Sillar.Modules.Services.Tests.ServiceRulesTests.Precio_nulo_es_valido_para_consultar [< 1 ms]
+  Passed Sillar.Modules.Services.Tests.ServiceRulesTests.Slug_quita_tildes_y_normaliza_separadores [4 ms]
+  Passed Sillar.Modules.Services.Tests.ServiceRulesTests.Imagen_exige_texto_alternativo [< 1 ms]
+  Passed Sillar.Modules.Services.Tests.ServiceRulesTests.Precio_cero_es_valido_y_distinto_de_nulo [< 1 ms]
+  Passed Sillar.Modules.Services.Tests.ServiceRulesTests.Precio_negativo_se_rechaza [3 ms]
+  Failed Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(caso: "borrador") [337 ms]
+  Error Message:
+   System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+  Stack Trace:
+     at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct) in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs:line 54
+   at Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(String caso) in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs:line 98
+--- End of stack trace from previous location ---
+  Failed Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(caso: "inexistente") [6 ms]
+  Error Message:
+   System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+  Stack Trace:
+     at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct) in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs:line 54
+   at Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(String caso) in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs:line 98
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:01.95]       System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+[xUnit.net 00:00:01.95]       Stack Trace:
+[xUnit.net 00:00:01.95]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs(54,0): at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct)
+[xUnit.net 00:00:01.95]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs(98,0): at Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(String caso)
+[xUnit.net 00:00:01.95]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.95]       System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+[xUnit.net 00:00:01.95]       Stack Trace:
+[xUnit.net 00:00:01.95]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs(54,0): at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct)
+[xUnit.net 00:00:01.95]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs(71,0): at Sillar.Modules.Services.Tests.ServicesPostgresTests.La_fotografia_de_un_servicio_publicado_trae_sus_datos_y_la_url_de_su_imagen()
+[xUnit.net 00:00:01.95]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.95]       System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+[xUnit.net 00:00:01.95]       Stack Trace:
+[xUnit.net 00:00:01.95]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs(54,0): at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct)
+[xUnit.net 00:00:01.95]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs(49,0): at Sillar.Modules.Services.Tests.ServicesPostgresTests.La_direccion_publica_es_unica_sin_distinguir_mayusculas()
+[xUnit.net 00:00:01.95]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.95]       System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+[xUnit.net 00:00:01.95]       Stack Trace:
+[xUnit.net 00:00:01.95]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs(54,0): at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct)
+[xUnit.net 00:00:01.95]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs(115,0): at Sillar.Modules.Services.Tests.ServicesPostgresTests.La_vitrina_publica_solo_enseña_lo_publicado_en_su_orden()
+[xUnit.net 00:00:01.95]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.95]       System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+[xUnit.net 00:00:01.95]       Stack Trace:
+[xUnit.net 00:00:01.95]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs(54,0): at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct)
+[xUnit.net 00:00:01.95]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs(22,0): at Sillar.Modules.Services.Tests.ServicesPostgresTests.La_migracion_crea_solo_el_schema_services_con_su_historial_dentro()
+[xUnit.net 00:00:01.95]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.95]       System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+[xUnit.net 00:00:01.95]       Stack Trace:
+[xUnit.net 00:00:01.95]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs(54,0): at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct)
+[xUnit.net 00:00:01.95]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs(135,0): at Sillar.Modules.Services.Tests.ServicesPostgresTests.Una_transicion_no_permitida_se_explica_en_castellano()
+[xUnit.net 00:00:01.95]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.95]       System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+[xUnit.net 00:00:01.95]       Stack Trace:
+[xUnit.net 00:00:01.95]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs(54,0): at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct)
+[xUnit.net 00:00:01.95]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs(33,0): at Sillar.Modules.Services.Tests.ServicesPostgresTests.La_unica_referencia_cruzada_va_de_una_tabla_local_a_una_replicada_como_permite_la_ADR_018()
+[xUnit.net 00:00:01.95]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.96]       System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+[xUnit.net 00:00:01.96]       Stack Trace:
+[xUnit.net 00:00:01.96]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs(54,0): at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct)
+[xUnit.net 00:00:01.96]         /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs(152,0): at Sillar.Modules.Services.Tests.ServicesPostgresTests.El_99_drop_quita_services_dos_veces_sin_tocar_core_y_la_migracion_reinstala()
+[xUnit.net 00:00:01.96]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.96]   Finished:    Sillar.Modules.Services.Tests (ID = '202c2889e0b27ef422b4cc30e3b7a2af11962cd855346fe77894d83b6892f141')
+  Failed Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(caso: "archivado") [< 1 ms]
+  Error Message:
+   System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+  Stack Trace:
+     at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct) in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs:line 54
+   at Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(String caso) in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs:line 98
+--- End of stack trace from previous location ---
+  Failed Sillar.Modules.Services.Tests.ServicesPostgresTests.La_fotografia_de_un_servicio_publicado_trae_sus_datos_y_la_url_de_su_imagen [2 ms]
+  Error Message:
+   System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+  Stack Trace:
+     at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct) in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs:line 54
+   at Sillar.Modules.Services.Tests.ServicesPostgresTests.La_fotografia_de_un_servicio_publicado_trae_sus_datos_y_la_url_de_su_imagen() in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs:line 71
+--- End of stack trace from previous location ---
+  Failed Sillar.Modules.Services.Tests.ServicesPostgresTests.La_direccion_publica_es_unica_sin_distinguir_mayusculas [1 ms]
+  Error Message:
+   System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+  Stack Trace:
+     at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct) in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs:line 54
+   at Sillar.Modules.Services.Tests.ServicesPostgresTests.La_direccion_publica_es_unica_sin_distinguir_mayusculas() in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs:line 49
+--- End of stack trace from previous location ---
+  Failed Sillar.Modules.Services.Tests.ServicesPostgresTests.La_vitrina_publica_solo_enseña_lo_publicado_en_su_orden [2 ms]
+  Error Message:
+   System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+  Stack Trace:
+     at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct) in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs:line 54
+   at Sillar.Modules.Services.Tests.ServicesPostgresTests.La_vitrina_publica_solo_enseña_lo_publicado_en_su_orden() in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs:line 115
+--- End of stack trace from previous location ---
+  Failed Sillar.Modules.Services.Tests.ServicesPostgresTests.La_migracion_crea_solo_el_schema_services_con_su_historial_dentro [1 ms]
+  Error Message:
+   System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+  Stack Trace:
+     at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct) in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs:line 54
+   at Sillar.Modules.Services.Tests.ServicesPostgresTests.La_migracion_crea_solo_el_schema_services_con_su_historial_dentro() in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs:line 22
+--- End of stack trace from previous location ---
+  Failed Sillar.Modules.Services.Tests.ServicesPostgresTests.Una_transicion_no_permitida_se_explica_en_castellano [1 ms]
+  Error Message:
+   System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+  Stack Trace:
+     at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct) in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs:line 54
+   at Sillar.Modules.Services.Tests.ServicesPostgresTests.Una_transicion_no_permitida_se_explica_en_castellano() in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs:line 135
+--- End of stack trace from previous location ---
+  Failed Sillar.Modules.Services.Tests.ServicesPostgresTests.La_unica_referencia_cruzada_va_de_una_tabla_local_a_una_replicada_como_permite_la_ADR_018 [1 ms]
+  Error Message:
+   System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+  Stack Trace:
+     at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct) in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs:line 54
+   at Sillar.Modules.Services.Tests.ServicesPostgresTests.La_unica_referencia_cruzada_va_de_una_tabla_local_a_una_replicada_como_permite_la_ADR_018() in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs:line 33
+--- End of stack trace from previous location ---
+  Failed Sillar.Modules.Services.Tests.ServicesPostgresTests.El_99_drop_quita_services_dos_veces_sin_tocar_core_y_la_migracion_reinstala [2 ms]
+  Error Message:
+   System.InvalidOperationException : El schema 'services' no está migrado en 'sillar_verify_1791151107959_3664', así que las pruebas de persistencia de M05a no pueden correr. La puerta lo migra en la etapa 4 solo si Sillar.Modules.Services está en la lista de módulos de scripts/verificar.mjs (costura de M05a, ESCALADAS.md E3).
+  Stack Trace:
+     at Sillar.Modules.Services.Tests.ServicesDbFixture.PrepararAsync(CancellationToken ct) in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs:line 54
+   at Sillar.Modules.Services.Tests.ServicesPostgresTests.El_99_drop_quita_services_dos_veces_sin_tocar_core_y_la_migracion_reinstala() in /home/user/SILLAR-m05av/backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs:line 152
+--- End of stack trace from previous location ---
+
+Total tests: 17
+     Passed: 7
+     Failed: 10
+ Total time: 3.0880 Seconds
+  Passed Sillar.Modules.Crm.Tests.CustomerAuthenticationServiceTests.Login_correcto_crea_customer_session [1 s]
+  Passed Sillar.Modules.Crm.Tests.CustomerAuthenticationServiceTests.Cliente_inactivo_no_puede_abrir_sesion [1 s]
+  Passed Sillar.Api.Tests.ArranqueConModuloActivoAusenteTests.Un_modulo_activo_que_el_binario_no_trae_impide_arrancar_al_host [17 s]
+  Passed Sillar.Modules.Crm.Tests.CustomerAccountTokenServiceTests.Recuperar_password_revoca_todas_las_sesiones [2 s]
+  Passed Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.Criterio13_password_de_registro_no_aparece_en_respuesta_logs_ni_auditoria [20 s]
+  Passed Sillar.Modules.Crm.Tests.CustomerAccountTokenServiceTests.Invitacion_crea_cuenta_y_verifica_correo [1 s]
+  Passed Sillar.Modules.Crm.Tests.CustomerAccountTokenServiceTests.Verificacion_guarda_hash_y_solo_el_ultimo_token_es_valido [1 s]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.Un_cliente_activo_devuelve_nombre_correo_y_telefono [44 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.Un_cliente_de_baja_o_bloqueado_devuelve_null(estado: "bloqueo") [39 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.Un_cliente_de_baja_o_bloqueado_devuelve_null(estado: "baja") [37 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.El_contrato_es_solo_lectura [1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.El_contrato_no_pide_direccion [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.Los_contratos_no_arrastran_la_implementacion_de_CRM_ni_EF [1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.Por_lotes_una_coleccion_vacia_devuelve_un_diccionario_vacio [4 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.No_expone_notas_internas [114 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.Un_cliente_inexistente_devuelve_null [31 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.La_identidad_solo_lleva_id_nombre_correo_y_telefono [< 1 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.Por_lotes_devuelve_solo_los_activos_existentes_una_vez_cada_uno [40 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerIdentityReaderTests.Una_ficha_sin_cuenta_tambien_tiene_identidad [29 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSessionServiceTests.Logout_revoca_la_fila_y_no_se_puede_rotar_csrf [48 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSessionServiceTests.Rotar_csrf_invalida_el_token_anterior [32 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerSessionServiceTests.Abrir_sesion_guarda_solo_hashes_de_los_secretos [31 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerRegistrationServiceTests.Ficha_con_cuenta_no_reemplaza_la_password_existente [1 s]
+  Passed Sillar.Modules.Crm.Tests.CustomerRegistrationServiceTests.Ficha_existente_sin_cuenta_se_enlaza_sin_duplicarla_ni_pisar_notas [980 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerRegistrationServiceTests.Registro_nuevo_crea_ficha_y_cuenta_no_verificada [967 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerAdminServiceTests.Crea_ficha_sin_cuenta_y_la_encuentra_por_busqueda [412 ms]
+[xUnit.net 00:00:35.30]   Finished:    Sillar.Modules.Crm.Tests (ID = 'bb1e62ee206d43afd68ee09401464073a05f0735c104920f4615831731742503')
+  Passed Sillar.Modules.Crm.Tests.CustomerAdminServiceTests.Baja_revoca_sesiones_y_reactivar_no_las_resucita [419 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerAdminServiceTests.Invitacion_marca_estado_y_no_expone_el_token [379 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerAdminServiceTests.Editar_correo_de_cuenta_verificada_la_deja_sin_verificar [372 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerProfileServiceTests.Snapshot_para_M03_usa_solo_datos_publicables_del_cliente [45 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerProfileServiceTests.Perfil_no_expone_notas_internas [32 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerProfileServiceTests.Agrega_dos_direcciones_y_cambia_la_preferida [47 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerProfileServiceTests.Cambiar_correo_invalida_verificacion [38 ms]
+  Passed Sillar.Modules.Crm.Tests.CustomerProfileServiceTests.No_modifica_una_direccion_de_otro_cliente [62 ms]
+
+Test Run Successful.
+Total tests: 125
+     Passed: 125
+ Total time: 37.0254 Seconds
+[xUnit.net 00:00:34.04]   Finished:    Sillar.Api.Tests (ID = '274fd560e45e310c0dff671ce25c8ec2558cc3ebae578a6cf1c1b0ee86d84b79')
+  Passed Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.Criterio17_fallo_de_correo_de_un_registro_concreto_es_visible_para_admin [11 s]
+
+Test Run Successful.
+Total tests: 3
+     Passed: 3
+ Total time: 35.2111 Seconds
+[xUnit.net 00:00:01.93]     Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(caso: "borrador") [FAIL]
+[xUnit.net 00:00:01.94]     Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(caso: "inexistente") [FAIL]
+[xUnit.net 00:00:01.95]     Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(caso: "archivado") [FAIL]
+[xUnit.net 00:00:01.95]     Sillar.Modules.Services.Tests.ServicesPostgresTests.La_fotografia_de_un_servicio_publicado_trae_sus_datos_y_la_url_de_su_imagen [FAIL]
+[xUnit.net 00:00:01.95]     Sillar.Modules.Services.Tests.ServicesPostgresTests.La_direccion_publica_es_unica_sin_distinguir_mayusculas [FAIL]
+[xUnit.net 00:00:01.95]     Sillar.Modules.Services.Tests.ServicesPostgresTests.La_vitrina_publica_solo_enseña_lo_publicado_en_su_orden [FAIL]
+[xUnit.net 00:00:01.95]     Sillar.Modules.Services.Tests.ServicesPostgresTests.La_migracion_crea_solo_el_schema_services_con_su_historial_dentro [FAIL]
+[xUnit.net 00:00:01.95]     Sillar.Modules.Services.Tests.ServicesPostgresTests.Una_transicion_no_permitida_se_explica_en_castellano [FAIL]
+[xUnit.net 00:00:01.95]     Sillar.Modules.Services.Tests.ServicesPostgresTests.La_unica_referencia_cruzada_va_de_una_tabla_local_a_una_replicada_como_permite_la_ADR_018 [FAIL]
+[xUnit.net 00:00:01.96]     Sillar.Modules.Services.Tests.ServicesPostgresTests.El_99_drop_quita_services_dos_veces_sin_tocar_core_y_la_migracion_reinstala [FAIL]
+Test Run Failed.
+
+Esta rama toca 21 fichero(s) del ámbito de la etapa, contra origin/main:
+  - backend/Sillar.Modules.Services.Contracts/ServiceSnapshot.cs
+  - backend/Sillar.Modules.Services.Contracts/Sillar.Modules.Services.Contracts.csproj
+  - backend/Sillar.Modules.Services.Tests/ServiceRulesTests.cs
+  - backend/Sillar.Modules.Services.Tests/ServicesDbFixture.cs
+  - backend/Sillar.Modules.Services.Tests/ServicesPostgresTests.cs
+  - backend/Sillar.Modules.Services.Tests/Sillar.Modules.Services.Tests.csproj
+  - backend/Sillar.Modules.Services/Data/ServicesDbContext.cs
+  - backend/Sillar.Modules.Services/Data/ServicesDbContextFactory.cs
+  ... y 13 más
+
+Lo que NO se pudo comprobar (1):
+  - suspensión: el diario no devolvió nada para la ventana pedida (desde 2026-10-04 21:58:27)
+# EXIT=1
+# Fin: 2026-10-04 16:59:57 -0500

@@ -2,6 +2,7 @@ import { catalogAuditEntityVocabulary } from '../modules/catalog/routes';
 import { cmsAuditEntityVocabulary } from '../modules/cms/cmsHome';
 import { coreAuditEntityVocabulary } from '../modules/core/auditEntityVocabulary';
 import { crmAuditEntityVocabulary } from '../modules/crm/routes';
+import { servicesAuditEntityVocabulary } from '../modules/services/routes';
 import {
   auditEntityLabel,
   reportAuditEntityConflictInDevelopment,
@@ -21,6 +22,7 @@ export const AUDIT_ENTITY_VOCABULARIES: readonly AuditEntityVocabulary[] = [
   coreAuditEntityVocabulary,
   catalogAuditEntityVocabulary,
   cmsAuditEntityVocabulary,
+  servicesAuditEntityVocabulary,
   crmAuditEntityVocabulary,
 ];
 
