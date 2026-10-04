@@ -1,0 +1,40 @@
+QA SETTINGSREADER — SABOTAJE ROJO — 03/10/2026
+HEAD=7ab3aaf65cf6e101f514b1e7bea97dad8db00331
+
+SABOTAJE: se retiró temporalmente .Where(setting => setting.IsActive)
+
+  Sillar.Shared -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Shared/bin/Debug/net10.0/Sillar.Shared.dll
+  Sillar.Shared.Data -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Shared.Data/bin/Debug/net10.0/Sillar.Shared.Data.dll
+  Sillar.Modules.Catalog.Contracts -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Catalog.Contracts/bin/Debug/net10.0/Sillar.Modules.Catalog.Contracts.dll
+  Sillar.Core.Contracts -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Contracts/bin/Debug/net10.0/Sillar.Core.Contracts.dll
+  Sillar.Modules.Crm.Contracts -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Crm.Contracts/bin/Debug/net10.0/Sillar.Modules.Crm.Contracts.dll
+  Sillar.Modules.Demo -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Demo/bin/Debug/net10.0/Sillar.Modules.Demo.dll
+  Sillar.Modules.Cms -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Cms/bin/Debug/net10.0/Sillar.Modules.Cms.dll
+  Sillar.Modules.Catalog -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Catalog/bin/Debug/net10.0/Sillar.Modules.Catalog.dll
+  Sillar.Modules.Crm -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Crm/bin/Debug/net10.0/Sillar.Modules.Crm.dll
+  Sillar.Core -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core/bin/Debug/net10.0/Sillar.Core.dll
+  Sillar.Core.Tests -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/bin/Debug/net10.0/Sillar.Core.Tests.dll
+Test run for /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/bin/Debug/net10.0/Sillar.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:07.85]     Sillar.Core.Tests.SettingsReaderPostgresTests.GetT_con_cache_fria_lee_PostgreSQL_y_respeta_conversion_defaults_e_inactivos [FAIL]
+  Failed Sillar.Core.Tests.SettingsReaderPostgresTests.GetT_con_cache_fria_lee_PostgreSQL_y_respeta_conversion_defaults_e_inactivos [5 s]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 0
+Actual:   99
+  Stack Trace:
+     at Sillar.Core.Tests.SettingsReaderPostgresTests.<>c__DisplayClass0_0.<<GetT_con_cache_fria_lee_PostgreSQL_y_respeta_conversion_defaults_e_inactivos>b__0>d.MoveNext() in /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/SettingsReaderPostgresTests.cs:line 76
+--- End of stack trace from previous location ---
+   at Sillar.Core.Tests.SettingsReaderPostgresTests.<>c__DisplayClass0_0.<<GetT_con_cache_fria_lee_PostgreSQL_y_respeta_conversion_defaults_e_inactivos>b__0>d.MoveNext() in /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/SettingsReaderPostgresTests.cs:line 90
+--- End of stack trace from previous location ---
+   at Sillar.Core.Tests.BaseDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct) in /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/BaseDePrueba.cs:line 137
+   at Sillar.Core.Tests.BaseDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct) in /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/BaseDePrueba.cs:line 149
+   at Sillar.Core.Tests.SettingsReaderPostgresTests.GetT_con_cache_fria_lee_PostgreSQL_y_respeta_conversion_defaults_e_inactivos() in /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/SettingsReaderPostgresTests.cs:line 22
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 5 s - Sillar.Core.Tests.dll (net10.0)
+
+SABOTAGE_TEST_RC=1
+SABOTAGE_EXPECTED_RED=1
+
+TRAZABILIDAD DEL CONTROL NEGATIVO: esta corrida ROJA se ejecutó antes del commit del cierre, con HEAD=7ab3aaf65cf6e101f514b1e7bea97dad8db00331 y con SettingsReaderPostgresTests.cs todavía sin commit. Este log acredita exclusivamente que la prueba detecta la eliminación del filtro IsActive; no constituye la corrida VERDE acreditante final.

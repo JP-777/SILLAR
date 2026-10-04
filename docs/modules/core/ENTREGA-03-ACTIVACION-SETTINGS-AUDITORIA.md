@@ -350,3 +350,88 @@ Evidencias:
 No se modificó código de producción para obtener este cierre.
 
 `ISettingsReader.Get<T>`, M03 y atribución CORE permanecen fuera de alcance.
+
+---
+
+## 9. Corrección de clasificación: `ISettingsReader.Get<T>` y PostgreSQL — 03/10/2026
+
+`ISettingsReader.Get<T>(string key)` no se clasifica como una lectura
+exclusivamente en memoria.
+
+Su camino real es:
+
+`ISettingsReader.Get<T>`
+→ `SettingsCache.Get<T>`
+→ `Get(key)`
+→ `Entries()`
+→ `Load()` cuando la caché está fría
+→ `CoreDbContext.SiteSettings`
+→ PostgreSQL.
+
+Por tanto, a diferencia de `IModuleRegistry.IsActive`, aquí el propio contrato
+público puede atravesar la frontera persistente durante su primera lectura.
+
+Después de que `Load()` completa, la misma instancia singleton de
+`SettingsCache` conserva las entradas en memoria y las lecturas posteriores
+consumen esa caché hasta que se invalida.
+
+### Frontera acreditada
+
+La frontera está en `SettingsCache.Load()`.
+
+La carga crea un ámbito, obtiene `CoreDbContext` y consulta
+`database.SiteSettings` mediante EF. Además filtra:
+
+`setting.IsActive`
+
+por lo que una configuración inactiva no debe formar parte de las entradas
+servidas por `ISettingsReader`.
+
+Se añadió:
+
+`Sillar.Core.Tests/SettingsReaderPostgresTests.cs`
+
+La prueba usa PostgreSQL real mediante `ConBaseVaciaAsync` y parte de una
+instancia nueva de `SettingsCache`, de manera que su caché está inicialmente
+fría.
+
+El escenario comprueba mediante el contrato `ISettingsReader.Get<T>`:
+
+1. una configuración activa con valor `"42"` se convierte correctamente a
+   `int` y devuelve `42`;
+2. una clave inexistente devuelve `default`;
+3. un valor existente pero no convertible a `int` devuelve `default`;
+4. una clave persistida como inactiva no se sirve y devuelve `default`;
+5. después de la primera carga, se cambia en PostgreSQL el valor válido de
+   `"42"` a `"84"` y la misma instancia continúa devolviendo `42`, demostrando
+   que la primera lectura atravesó la frontera persistente y las posteriores
+   consumen la caché ya cargada.
+
+### Control negativo
+
+Se retiró temporalmente de `SettingsCache.Load()`:
+
+`.Where(setting => setting.IsActive)`
+
+Sin ese filtro, la clave inactiva `qa_gett_inactiva` entró en la caché y la
+misma prueba quedó ROJA:
+
+`Expected: 0`
+
+`Actual: 99`
+
+El archivo de producción fue restaurado exactamente a su contenido anterior
+antes de continuar.
+
+Evidencia del control negativo:
+
+`docs/modules/core/evidencias/QA-SETTINGSREADER-SABOTAJE-ROJO-20261003.txt`
+
+Esta evidencia ROJA es precommit y se conserva únicamente como control
+negativo. La corrida VERDE acreditante se ejecutará después de crear el commit
+del entregable, con árbol limpio y con `HEAD` exactamente igual al SHA que se
+certifique.
+
+No se modifica código de producción para este cierre.
+
+M03, atribución CORE, `main` y otros contratos permanecen fuera de alcance.
