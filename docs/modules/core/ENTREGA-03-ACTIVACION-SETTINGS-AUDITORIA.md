@@ -435,3 +435,17 @@ certifique.
 No se modifica código de producción para este cierre.
 
 M03, atribución CORE, `main` y otros contratos permanecen fuera de alcance.
+
+## 10. Observación de QA: timeouts en la limpieza de bases efímeras — 04/10/2026
+
+Registrada por orden del colíder, antes de publicar la candidata
+`integration/core-inventario-final`.
+
+> Se observaron 11 timeouts durante cleanup de bases PostgreSQL efímeras en una corrida paralela de
+> `Sillar.Core.Tests`. Ya se había observado un síntoma comparable en otra corrida anterior. No se
+> atribuye todavía una causa. No bloquea esta integración.
+
+**DISPARADOR:** si vuelve a aparecer en otra suite o certificación, escalar como patrón recurrente
+de infraestructura o aislamiento de QA.
+
+Solo se registra. No se cambia código de producción ni pruebas.
