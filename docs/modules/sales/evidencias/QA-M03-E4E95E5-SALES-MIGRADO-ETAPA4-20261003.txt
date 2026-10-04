@@ -1,0 +1,6 @@
+sillar_verify_1791080887760_1281191
+schemas: catalog,cms,core,crm,sales
+sales.__migrations: 20260930185029_SalesInitial 10.0.11
+tablas sales: 8
+FK cruzadas: fk_orders_customer_id->crm.customers, fk_order_lines_item_id->catalog.product_items
+2026-10-03 21:30:20 -0500

@@ -1,0 +1,243 @@
+# Puerta canónica sobre el contrato 1.1.0 — entorno cloud
+# Rama: integration/m04-contrato-snapshot · HEAD: 31089971a0a9aa334d533adeacb8ec26a5bf30ff
+# Inicio: 2026-09-27 13:21:48 -05 · Fin: 2026-09-27 13:25:10 -05 · rc=1
+# Comando: node scripts/verificar.mjs
+# Resultado: etapas 1–5 PASS; etapa 6 FAIL de entorno (NU1301 UntrustedRoot en el docker build del API). NO es 6/6.
+# Cada línea lleva delante la hora America/Lima en que se emitió.
+
+13:21:48 Comprobando el entorno...
+13:21:48   Suspensión bloqueada durante la corrida (1/2 inhibidores).
+13:21:48   Sin kde-inhibit: la corrida NO está protegida de la suspensión.
+13:21:48 Preflight: coherencia de .env.example...
+13:21:48 Base backend efímera: sillar_verify_1790533308239_16461
+13:21:49 Barrido: sin bases huérfanas antiguas.
+13:21:49 [1/6] tipos del frontend...
+13:22:09 [2/6] tipos del arnés e2e...
+13:22:14 [3/6] compilación del backend...
+13:22:23 [4/6] migraciones backend (BD efímera)...
+13:22:41 [5/6] pruebas del backend...
+13:23:34 [6/6] suite e2e...
+13:25:09 
+13:25:09 FALLÓ en la etapa: suite e2e
+13:25:09   Terminó con código 1.
+13:25:09 [WebServer] 
+13:25:09 [WebServer] > sillar-frontend@1.0.0 dev /home/user/SILLAR-m04/frontend
+13:25:09 [WebServer] > vite --port 56163 --strictPort
+13:25:09 [WebServer] 
+13:25:09 [WebServer] 
+13:25:09 [WebServer]   VITE v7.3.6  ready in 548 ms
+13:25:09 [WebServer] 
+13:25:09 [WebServer]   ➜  Local:   http://localhost:56163/
+13:25:09 [WebServer]   ➜  Network: use --host to expose
+13:25:09 [e2e] destruyendo un stack anterior, si quedó alguno...
+13:25:09 [e2e] levantando la base de datos...
+13:25:09 [e2e] aplicando migraciones (CORE, Catalog, Cms, CRM)...
+13:25:09 Build started...
+13:25:09 Build succeeded.
+13:25:09 Failed executing DbCommand (36ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+13:25:09 SELECT "MigrationId", "ProductVersion"
+13:25:09 FROM core.__migrations
+13:25:09 ORDER BY "MigrationId";
+13:25:09 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:25:09 Applying migration '20260816073536_CoreInitial'.
+13:25:09 Applying migration '20260828200857_CoreEmailSettings'.
+13:25:09 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:25:09 Applying migration '20260829011000_CoreSmtpSettings'.
+13:25:09 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:25:09 Done.
+13:25:09 Build started...
+13:25:09 Build succeeded.
+13:25:09 Failed executing DbCommand (32ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+13:25:09 SELECT "MigrationId", "ProductVersion"
+13:25:09 FROM catalog.__migrations
+13:25:09 ORDER BY "MigrationId";
+13:25:09 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:25:09 Applying migration '20260816073647_CatalogInitial'.
+13:25:09 Done.
+13:25:09 Build started...
+13:25:09 Build succeeded.
+13:25:10 Failed executing DbCommand (41ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+13:25:10 SELECT "MigrationId", "ProductVersion"
+13:25:10 FROM cms.__migrations
+13:25:10 ORDER BY "MigrationId";
+13:25:10 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:25:10 Applying migration '20260820050000_CmsInitial'.
+13:25:10 Done.
+13:25:10 Build started...
+13:25:10 Build succeeded.
+13:25:10 Failed executing DbCommand (29ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+13:25:10 SELECT "MigrationId", "ProductVersion"
+13:25:10 FROM crm.__migrations
+13:25:10 ORDER BY "MigrationId";
+13:25:10 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:25:10 Applying migration '20260824190200_CrmInitial'.
+13:25:10 Applying migration '20260922115958_CrmCustomersEmailTrimAuthority'.
+13:25:10 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:25:10 Done.
+13:25:10 [e2e] aplicando seeds (sin datos de negocio)...
+13:25:10 BEGIN
+13:25:10 INSERT 0 11
+13:25:10 INSERT 0 0
+13:25:10 UPDATE 3
+13:25:10 COMMIT
+13:25:10 BEGIN
+13:25:10 COMMIT
+13:25:10 BEGIN
+13:25:10 COMMIT
+13:25:10  ?column? 
+13:25:10 ----------
+13:25:10         1
+13:25:10 (1 row)
+13:25:10 
+13:25:10 [e2e] construyendo y levantando la API (Debug, con módulos de mentira)...
+13:25:10 #1 [internal] load local bake definitions
+13:25:10 #1 reading from stdin 576B done
+13:25:10 #1 DONE 0.0s
+13:25:10 
+13:25:10 #2 [internal] load build definition from Dockerfile
+13:25:10 #2 transferring dockerfile: 30B
+13:25:10 #2 transferring dockerfile: 2.39kB 0.3s done
+13:25:10 #2 DONE 0.3s
+13:25:10 
+13:25:10 #3 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:10.0
+13:25:10 #3 DONE 0.8s
+13:25:10 
+13:25:10 #4 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:10.0
+13:25:10 #4 DONE 0.8s
+13:25:10 
+13:25:10 #5 [internal] load .dockerignore
+13:25:10 #5 transferring context: 1.40kB done
+13:25:10 #5 DONE 0.0s
+13:25:10 
+13:25:10 #6 [build 1/4] FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:35d40304542c8689331f8cab17c65926cdf48fe711e289321d71924b230a7d29
+13:25:10 #6 resolve mcr.microsoft.com/dotnet/sdk:10.0@sha256:35d40304542c8689331f8cab17c65926cdf48fe711e289321d71924b230a7d29 0.0s done
+13:25:10 #6 DONE 0.0s
+13:25:10 
+13:25:10 #7 [final 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:2d584d8147faddb0d678c5748d47953e5b8e18621ed4fb7049a91381d9d7746f
+13:25:10 #7 resolve mcr.microsoft.com/dotnet/aspnet:10.0@sha256:2d584d8147faddb0d678c5748d47953e5b8e18621ed4fb7049a91381d9d7746f 0.0s done
+13:25:10 #7 DONE 0.0s
+13:25:10 
+13:25:10 #8 [final 2/3] WORKDIR /app
+13:25:10 #8 CACHED
+13:25:10 
+13:25:10 #9 [internal] load build context
+13:25:10 #9 transferring context: 1.39MB 0.2s done
+13:25:10 #9 DONE 0.3s
+13:25:10 
+13:25:10 #10 [build 2/4] WORKDIR /src
+13:25:10 #10 CACHED
+13:25:10 
+13:25:10 #11 [build 3/4] COPY . .
+13:25:10 #11 DONE 0.5s
+13:25:10 
+13:25:10 #12 [build 4/4] RUN dotnet publish Sillar.Api/Sillar.Api.csproj -c Debug -o /app
+13:25:10 #12 15.60   Determining projects to restore...
+13:25:10 #12 18.70   Restored /src/Sillar.Shared/Sillar.Shared.csproj (in 167 ms).
+13:25:10 #12 18.70   Restored /src/Sillar.Modules.Catalog.Contracts/Sillar.Modules.Catalog.Contracts.csproj (in 181 ms).
+13:25:10 #12 18.73   Restored /src/Sillar.Modules.Crm.Contracts/Sillar.Modules.Crm.Contracts.csproj (in 9 ms).
+13:25:10 #12 18.74   Restored /src/Sillar.Modules.Demo/Sillar.Modules.Demo.csproj (in 4 ms).
+13:25:10 #12 18.75   Restored /src/Sillar.Core.Contracts/Sillar.Core.Contracts.csproj (in 4 ms).
+13:25:10 #12 24.22 /src/Sillar.Modules.Crm/Sillar.Modules.Crm.csproj : error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 24.22 /src/Sillar.Modules.Crm/Sillar.Modules.Crm.csproj : error NU1301:   The SSL connection could not be established, see inner exception. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 24.22 /src/Sillar.Modules.Crm/Sillar.Modules.Crm.csproj : error NU1301:   The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 24.22 /src/Sillar.Core/Sillar.Core.csproj : error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 24.22 /src/Sillar.Core/Sillar.Core.csproj : error NU1301:   The SSL connection could not be established, see inner exception. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 24.22 /src/Sillar.Core/Sillar.Core.csproj : error NU1301:   The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 24.22 /src/Sillar.Shared.Data/Sillar.Shared.Data.csproj : error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 24.22 /src/Sillar.Shared.Data/Sillar.Shared.Data.csproj : error NU1301:   The SSL connection could not be established, see inner exception. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 24.22 /src/Sillar.Shared.Data/Sillar.Shared.Data.csproj : error NU1301:   The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 24.28   Failed to restore /src/Sillar.Shared.Data/Sillar.Shared.Data.csproj (in 5.52 sec).
+13:25:10 #12 24.29   Failed to restore /src/Sillar.Core/Sillar.Core.csproj (in 5.74 sec).
+13:25:10 #12 24.29   Failed to restore /src/Sillar.Modules.Crm/Sillar.Modules.Crm.csproj (in 5.74 sec).
+13:25:10 #12 24.29 /src/Sillar.Modules.Cms/Sillar.Modules.Cms.csproj : error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 24.29 /src/Sillar.Modules.Cms/Sillar.Modules.Cms.csproj : error NU1301:   The SSL connection could not be established, see inner exception. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 24.29 /src/Sillar.Modules.Cms/Sillar.Modules.Cms.csproj : error NU1301:   The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 24.30 /src/Sillar.Modules.Catalog/Sillar.Modules.Catalog.csproj : error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 24.30 /src/Sillar.Modules.Catalog/Sillar.Modules.Catalog.csproj : error NU1301:   The SSL connection could not be established, see inner exception. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 24.30 /src/Sillar.Modules.Catalog/Sillar.Modules.Catalog.csproj : error NU1301:   The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 24.30   Failed to restore /src/Sillar.Modules.Cms/Sillar.Modules.Cms.csproj (in 9 ms).
+13:25:10 #12 24.31   Failed to restore /src/Sillar.Modules.Catalog/Sillar.Modules.Catalog.csproj (in 7 ms).
+13:25:10 #12 29.89 /src/Sillar.Core/Sillar.Core.csproj : error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 29.89 /src/Sillar.Core/Sillar.Core.csproj : error NU1301:   The SSL connection could not be established, see inner exception. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 29.89 /src/Sillar.Core/Sillar.Core.csproj : error NU1301:   The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 35.60 /src/Sillar.Core/Sillar.Core.csproj : error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 35.60 /src/Sillar.Core/Sillar.Core.csproj : error NU1301:   The SSL connection could not be established, see inner exception. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 35.60 /src/Sillar.Core/Sillar.Core.csproj : error NU1301:   The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 35.60 /src/Sillar.Modules.Crm/Sillar.Modules.Crm.csproj : error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 35.60 /src/Sillar.Modules.Crm/Sillar.Modules.Crm.csproj : error NU1301:   The SSL connection could not be established, see inner exception. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 35.60 /src/Sillar.Modules.Crm/Sillar.Modules.Crm.csproj : error NU1301:   The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 #12 41.21 /src/Sillar.Api/Sillar.Api.csproj : error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json.
+13:25:10 #12 41.21 /src/Sillar.Api/Sillar.Api.csproj : error NU1301:   The SSL connection could not be established, see inner exception.
+13:25:10 #12 41.21 /src/Sillar.Api/Sillar.Api.csproj : error NU1301:   The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot
+13:25:10 #12 41.23   Failed to restore /src/Sillar.Api/Sillar.Api.csproj (in 22.46 sec).
+13:25:10 #12 ERROR: process "/bin/sh -c dotnet publish Sillar.Api/Sillar.Api.csproj -c $BUILD_CONFIGURATION -o /app" did not complete successfully: exit code: 1
+13:25:10 ------
+13:25:10  > [build 4/4] RUN dotnet publish Sillar.Api/Sillar.Api.csproj -c Debug -o /app:
+13:25:10 35.60 /src/Sillar.Core/Sillar.Core.csproj : error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 35.60 /src/Sillar.Core/Sillar.Core.csproj : error NU1301:   The SSL connection could not be established, see inner exception. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 35.60 /src/Sillar.Core/Sillar.Core.csproj : error NU1301:   The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 35.60 /src/Sillar.Modules.Crm/Sillar.Modules.Crm.csproj : error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 35.60 /src/Sillar.Modules.Crm/Sillar.Modules.Crm.csproj : error NU1301:   The SSL connection could not be established, see inner exception. [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 35.60 /src/Sillar.Modules.Crm/Sillar.Modules.Crm.csproj : error NU1301:   The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot [/src/Sillar.Api/Sillar.Api.csproj]
+13:25:10 41.21 /src/Sillar.Api/Sillar.Api.csproj : error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json.
+13:25:10 41.21 /src/Sillar.Api/Sillar.Api.csproj : error NU1301:   The SSL connection could not be established, see inner exception.
+13:25:10 41.21 /src/Sillar.Api/Sillar.Api.csproj : error NU1301:   The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot
+13:25:10 41.23   Failed to restore /src/Sillar.Api/Sillar.Api.csproj (in 22.46 sec).
+13:25:10 ------
+13:25:10 Error: docker compose -f docker-compose.yml -f docker-compose.mailpit.yml -p sillar_m04_e2e --env-file /home/user/SILLAR-m04/e2e/.env.e2e --profile full up -d --build api salió con código 1
+13:25:10 
+13:25:10    at ../setup/shell.ts:54
+13:25:10 
+13:25:10   52 |         resolve();
+13:25:10   53 |       } else {
+13:25:10 > 54 |         reject(new Error(`${command} ${args.join(' ')} salió con código ${code}`));
+13:25:10      |                ^
+13:25:10   55 |       }
+13:25:10   56 |     });
+13:25:10   57 |   });
+13:25:10     at ChildProcess.<anonymous> (/home/user/SILLAR-m04/e2e/setup/shell.ts:54:16)
+13:25:10 [e2e] generando la galería de capturas...
+13:25:10 [e2e] destruyendo el stack e2e...
+13:25:10 
+13:25:10  Network sillar_m04_e2e_default Creating 
+13:25:10  Network sillar_m04_e2e_default Created 
+13:25:10  Volume sillar_m04_e2e_db_data Creating 
+13:25:10  Volume sillar_m04_e2e_db_data Created 
+13:25:10  Container sillar_m04_e2e_db Creating 
+13:25:10  Container sillar_m04_e2e_db Created 
+13:25:10  Container sillar_m04_e2e_db Starting 
+13:25:10  Container sillar_m04_e2e_db Started 
+13:25:10  Image sillar_m04_e2e-api Building 
+13:25:10 Dockerfile:35
+13:25:10 
+13:25:10 --------------------
+13:25:10 
+13:25:10   33 |     COPY . .
+13:25:10 
+13:25:10   34 |     
+13:25:10 
+13:25:10   35 | >>> RUN dotnet publish Sillar.Api/Sillar.Api.csproj -c $BUILD_CONFIGURATION -o /app
+13:25:10 
+13:25:10   36 |     
+13:25:10 
+13:25:10   37 |     # ----------------------------------------------------------------------------
+13:25:10 
+13:25:10 --------------------
+13:25:10 
+13:25:10 failed to solve: process "/bin/sh -c dotnet publish Sillar.Api/Sillar.Api.csproj -c $BUILD_CONFIGURATION -o /app" did not complete successfully: exit code: 1
+13:25:10 
+13:25:10  Container sillar_m04_e2e_db Stopping 
+13:25:10  Container sillar_m04_e2e_db Stopped 
+13:25:10  Container sillar_m04_e2e_db Removing 
+13:25:10  Container sillar_m04_e2e_db Removed 
+13:25:10  Volume sillar_m04_e2e_db_data Removing 
+13:25:10  Network sillar_m04_e2e_default Removing 
+13:25:10  Network sillar_m04_e2e_default Removed 
+13:25:10  Volume sillar_m04_e2e_db_data Removed
+13:25:10 
+13:25:10 Sin veredicto: a la suite e2e la rompe cualquier capa, así que no se
+13:25:10 afirma de quién es. Abre e2e/test-results/<prueba>/error-context.md,
+13:25:10 que trae el DOM del fallo — docs/ENTORNO.md, hallazgo 9.
+13:25:10 
+13:25:10 Lo que NO se pudo comprobar (1):
+13:25:10   - suspensión: el diario no devolvió nada para la ventana pedida (desde 2026-09-27 18:21:48)

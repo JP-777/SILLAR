@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Puerta canónica de QA M04, v4 = v3 + registro TRX de la etapa 5 por entorno, sin tocar el script.
+# Uso: correr-puerta-v3.sh <número de corrida> <SHA esperado>. Se niega si el preflight no está LISTO.
+# v3 frente a v2: TMPDIR privado en disco (Chromium, lanzado por Playwright con
+# --disable-dev-shm-usage, deja ahí su memoria compartida; en /tmp tmpfs llegó a
+# 5,8 GiB de RAM), y el vigía mide además el disco libre y el tamaño de TMPDIR.
+# Red de seguridad añadida: disco libre < 3 GiB tres muestras seguidas.
+# Cambios frente a v1 (motivo en el índice de evidencias):
+#   - v1 enviaba SIGINT a la puerta por debajo de 1 GiB. No la detenía (Node
+#     no atiende señales mientras espera a Playwright) y contaminaba la corrida.
+#   - v2 registra, cuando lo disponible baja de 2 GiB, los 8 procesos con más
+#     RSS, el uso de /tmp y /dev/shm (tmpfs = RAM) y la memoria de contenedores.
+#   - Solo como red de seguridad, por debajo de 300 MiB tres muestras seguidas
+#     detiene TODO el grupo de procesos, para proteger la máquina.
+V="$(cd "$(dirname "$0")" && pwd)/corrida-$(TZ=America/Lima date +%Y%m%d-%H%M%S)"; mkdir -p "$V"
+W=/home/JP777/sillar-qa-m04
+N="${1:?número de corrida}"; SHA="${2:?SHA esperado}"
+T="$(cd "$(dirname "$0")" && pwd)/tmpdir"
+"$(dirname "$0")/preflight.sh" "$SHA" > "$V/PREFLIGHT-$N.log" 2>&1; grep -q "PREFLIGHT: LISTO" "$V/PREFLIGHT-$N.log" || { echo "preflight NO LISTO: ver $V/PREFLIGHT-$N.log"; exit 91; }
+export TMPDIR="$T"
+# v4: con verde, la etapa 5 no imprime qué pruebas corrió. Se añade SOLO un logger TRX por
+# propiedades MSBuild tomadas del entorno (VSTestSetting / VSTestResultsDirectory). El comando
+# de verificar.mjs, sus filtros y su revisión de omitidas no cambian.
+export VSTestSetting=/var/tmp/sillar-qa-m04-1.2.0/trx.runsettings VSTestResultsDirectory="$V/trx-$N"
+LOG="$V/PUERTA-$N.log"; MEM="$V/MEMORIA-$N.tsv"; DIAG="$V/DIAGNOSTICO-MEMORIA-$N.log"
+cd "$W" || exit 90
+{
+  echo "# SHA: $(git rev-parse HEAD)"
+  echo "# Worktree: $W · cambios sin commitear: $(git status --short | wc -l)"
+  echo "# Inicio: $(TZ=America/Lima date '+%F %T %z')"
+  echo "# Comando: node scripts/verificar.mjs"
+  echo "# Entorno añadido: TMPDIR=$TMPDIR · VSTestSetting=$VSTestSetting · VSTestResultsDirectory=$VSTestResultsDirectory"
+  echo "# Cada línea lleva delante la hora America/Lima en que se emitió."
+} > "$LOG"
+node scripts/verificar.mjs > >(while IFS= read -r l; do printf '%s %s\n' "$(TZ=America/Lima date +%T)" "$l"; done >> "$LOG") 2>&1 &
+PID=$!
+printf 'hora\tdisponible_MiB\tbrave_MiB\tdotnet_MiB\tchrome_MiB\tnode_MiB\tpostgres_MiB\ttmp_MiB\tshm_MiB\ttmpdir_MiB\tdisco_libre_MiB\n' > "$MEM"
+criticos=0
+while kill -0 "$PID" 2>/dev/null; do
+  disp=$(awk '/MemAvailable/{print $2}' /proc/meminfo)
+  fam=$(ps -eo rss,comm --no-headers | awk '
+    {c=$2; if(c~/^brave/)b+=$1; else if(c~/^dotnet/||c~/^Sillar/)d+=$1; else if(c~/chrom/)h+=$1; else if(c~/^node/)n+=$1; else if(c~/^postgres/)p+=$1}
+    END{printf "%d\t%d\t%d\t%d\t%d", b/1024, d/1024, h/1024, n/1024, p/1024}')
+  tmp=$(df -m --output=used /tmp | tail -1 | tr -d ' '); shm=$(df -m --output=used /dev/shm | tail -1 | tr -d ' ')
+  hora=$(TZ=America/Lima date +%T)
+  td=$(du -sm "$T" 2>/dev/null | cut -f1); dl=$(df -BM --output=avail / | tail -1 | tr -dc 0-9)
+  printf '%s\t%d\t%s\t%s\t%s\t%s\t%s\n' "$hora" $((disp/1024)) "$fam" "$tmp" "$shm" "$td" "$dl" >> "$MEM"
+  if [ "$disp" -lt 2097152 ]; then
+    { echo "=== $hora · disponible $((disp/1024)) MiB"; ps -eo rss,pid,comm,args --sort=-rss --no-headers | head -8 | awk '{printf "%7.0f MiB  %s\n",$1/1024,substr($0,index($0,$2),110)}';
+      du -xsm /tmp/* 2>/dev/null | sort -n | tail -3; docker stats --no-stream --format '{{.Name}} {{.MemUsage}}' 2>/dev/null | sort -k2 -h -r | head -4; } >> "$DIAG"
+  fi
+  if [ "$disp" -lt 307200 ] || [ "$dl" -lt 3072 ]; then criticos=$((criticos+1)); else criticos=0; fi
+  if [ "$criticos" -ge 3 ]; then
+    echo "# VIGÍA v3: memoria < 300 MiB o disco libre < 3 GiB, tres muestras seguidas; se detiene el grupo de procesos para proteger la máquina" >> "$LOG"
+    kill -TERM -- -"$(ps -o pgid= -p $$ | tr -d ' ')" 2>/dev/null
+  fi
+  sleep 5
+done
+wait "$PID"; rc=$?
+sleep 1
+{ echo "# rc=$rc"; echo "# Fin: $(TZ=America/Lima date '+%F %T %z')"; } >> "$LOG"
+mkdir -p "$V/artefactos-$N"
+cp -a "$W/e2e/playwright-report" "$W/e2e/test-results" "$V/artefactos-$N/" 2>/dev/null
+echo "$rc" > "$V/RC-$N"
+exit 0

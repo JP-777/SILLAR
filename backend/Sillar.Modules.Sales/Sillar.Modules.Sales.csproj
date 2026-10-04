@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ==========================================================================
+       Sillar.Modules.Sales — M03 Ventas Online.
+
+       Carrito, pedidos y pagos manuales. El contrato público vive en
+       Sillar.Modules.Sales.Contracts; dominio y acceso a datos permanecen
+       internos al módulo.
+
+       Referencia los Contracts de sus dependencias duras —Catalog y Crm— y
+       nunca su Domain ni su Data. Es la regla 3 de módulos, y aquí la vigila
+       el compilador: no hay forma de alcanzar una entidad ajena.
+       ========================================================================== -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
+    <ProjectReference Include="..\Sillar.Shared.Data\Sillar.Shared.Data.csproj" />
+    <ProjectReference Include="..\Sillar.Core.Contracts\Sillar.Core.Contracts.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Sales.Contracts\Sillar.Modules.Sales.Contracts.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Catalog.Contracts\Sillar.Modules.Catalog.Contracts.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Crm.Contracts\Sillar.Modules.Crm.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Sillar.Modules.Sales.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -71,7 +71,9 @@ internal sealed class AdminUserService(
             PasswordHash = hasher.Hash(request.Password!),
             Role = request.Role!,
             Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim(),
-            IsActive = true
+            IsActive = true,
+            // La cuenta nace en este nodo y pertenece a él.
+            HomeNode = database.Node.Code
         };
 
         database.AdminUsers.Add(user);

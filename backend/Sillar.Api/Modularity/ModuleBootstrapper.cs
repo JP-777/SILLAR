@@ -142,8 +142,15 @@ internal static class ModuleBootstrapper
         // replicada, pero el constructor lo exige (ADR-018).
         var node = new NodeIdentity(nodeCode);
 
+        // Este contexto aplica las migraciones de CORE en desarrollo, y la que
+        // rellena admin_users.home_node lee el nodo de la conexión
+        // (NodoParaMigrar). Solo el configurado: sin él no se pone ninguno, y la
+        // migración aborta si encuentra cuentas que rellenar.
+        var conexionDeArranque = NodoParaMigrar.ConNodo(
+            connectionString, NodoParaMigrar.Configurado(builder.Configuration));
+
         await using var database = new CoreDbContext(
-            CoreDataServiceExtensions.BuildOptions(connectionString), node, TimeProvider.System);
+            CoreDataServiceExtensions.BuildOptions(conexionDeArranque), node, TimeProvider.System);
 
         if (!await database.Database.CanConnectAsync(cancellationToken))
         {

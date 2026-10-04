@@ -1,8 +1,11 @@
 import { test as base, expect, type Page } from '@playwright/test';
+import { clasificarArranque, type ObservacionDeArranque } from './diagnosticoArranque.js';
 
 interface Collector {
   errors: string[];
   paused: boolean;
+  /** Chromium avisó de que el renderizador de esta página se cayó. */
+  crashed: boolean;
 }
 
 const collectors = new WeakMap<Page, Collector>();
@@ -21,13 +24,17 @@ const SALTO = String.fromCharCode(10);
 
 export const test = base.extend({
   page: async ({ page }, use, testInfo) => {
-    const collector: Collector = { errors: [], paused: false };
+    const collector: Collector = { errors: [], paused: false, crashed: false };
     collectors.set(page, collector);
 
     page.on('console', (message) => {
       if (message.type() === 'error' && !collector.paused) {
         collector.errors.push(`[consola] ${message.text()}`);
       }
+    });
+
+    page.on('crash', () => {
+      collector.crashed = true;
     });
 
     page.on('pageerror', (error) => {
@@ -64,19 +71,34 @@ export const test = base.extend({
 
         // La pantalla de instalación se renderiza antes que los proveedores y
         // no lleva enlace de salto: es la única del producto que no lo tiene.
-        await page
+        const pinto = await page
           .locator('a.pf-skip, [data-pantalla="instalacion"]')
           .first()
           .waitFor({ state: 'attached', timeout: 15_000 })
-          .catch(() => {
-            throw new Error(
-              [
-                `Se navegó a «${url}» y la aplicación no llegó a pintar en 15 s.`,
-                'El ancla es `a.pf-skip`, que el armazón monta en toda pantalla.',
-                'Si esta ruta no debe tenerlo, es un caso nuevo y hay que declararlo aquí.',
-              ].join(SALTO),
-            );
+          .then(() => true, () => false);
+
+        if (!pinto) {
+          // **Mismo plazo y mismo fallo que antes.** Lo único nuevo es decir
+          // qué había en pantalla: «no pintó» confundía un arranque colgado con
+          // una página de error, la de migraciones o el asistente, que sí
+          // pintan. Ver `diagnosticoArranque.ts`.
+          const diagnostico = await diagnosticarArranque(page, collector.crashed);
+          await testInfo.attach('diagnostico-arranque.json', {
+            body: JSON.stringify(diagnostico, null, 2),
+            contentType: 'application/json',
           });
+          throw new Error(
+            [
+              `Se navegó a «${sinConsulta(url)}» y el armazón no apareció en 15 s: ${diagnostico.estado}.`,
+              diagnostico.explicacion,
+              ...(diagnostico.titulo ? [`Pantalla: «${diagnostico.titulo}».`] : []),
+              ...(diagnostico.aviso ? [`Aviso: «${diagnostico.aviso}».`] : []),
+              ...(diagnostico.errorAlLeer ? [`Al leer el documento: ${diagnostico.errorAlLeer}`] : []),
+              'El ancla es `a.pf-skip`, que el armazón monta en toda pantalla.',
+              'Si esta ruta no debe tenerlo, es un caso nuevo y hay que declararlo aquí.',
+            ].join(SALTO),
+          );
+        }
 
         return respuesta;
       };
@@ -96,6 +118,50 @@ export const test = base.extend({
     ).toEqual([]);
   },
 });
+
+/**
+ * Lee lo mínimo del documento para clasificar un arranque que no llegó al
+ * armazón. Solo después de agotar el plazo, así que no cambia cuánto se espera
+ * a que la aplicación pinte.
+ *
+ * La lectura lleva su propio límite porque un renderizador colgado no responde
+ * a `evaluate`: sin él, el diagnóstico se colgaría con la página.
+ */
+/** La URL sin su consulta: puede llevar un token de un solo uso. */
+function sinConsulta(url: string): string {
+  const corte = url.search(/[?#]/);
+  return corte < 0 ? url : `${url.slice(0, corte)}?…`;
+}
+
+async function diagnosticarArranque(page: Page, caido: boolean) {
+  if (caido) {
+    return clasificarArranque(null, 'Chromium emitió el evento «crash» para esta página.');
+  }
+
+  const LIMITE_DE_LECTURA = 5_000;
+  try {
+    const observacion = await Promise.race([
+      page.evaluate((): ObservacionDeArranque => {
+        const tarjeta = document.querySelector('.pf-centered .ui-card__title');
+        const aviso = document.querySelector('.pf-centered [role="alert"]');
+        return {
+          ruta: location.pathname,
+          indicadorDeCarga: document.querySelector('.pf-boot') !== null,
+          tituloDeTarjeta: tarjeta?.textContent?.trim() || null,
+          aviso: aviso?.textContent ?? null,
+          formularioDeInstalacion: document.querySelector('.pf-centered form') !== null,
+          raizVacia: (document.getElementById('root')?.childElementCount ?? 0) === 0,
+        };
+      }),
+      new Promise<never>((_, rechazar) =>
+        setTimeout(() => rechazar(new Error(`sin respuesta en ${LIMITE_DE_LECTURA} ms`)), LIMITE_DE_LECTURA),
+      ),
+    ]);
+    return clasificarArranque(observacion);
+  } catch (error) {
+    return clasificarArranque(null, error instanceof Error ? error.message : String(error));
+  }
+}
 
 /**
  * Silencia el contador de errores de consola mientras dure `fn`. La única

@@ -1,0 +1,15 @@
+# Preflight QA M04 · 2026-10-04 12:45:01 -0500
+  ok: worktree en 1f0f40114552f9e14b05f4d6ee7d9509a65f0f50
+  ok: árbol limpio
+  ok: sin cerrojo de puerta
+  ok: ninguna puerta en marcha
+  ok: sin stacks e2e
+  identidad:  sufijo «qa_m04», offset 61
+  ok: identidad sin choque
+  ok: puertos e2e libres
+  ok: memoria disponible 8878 MiB (≥ 6000)
+  ok: disco libre 13808 MiB (≥ 10240)
+  ok: TMPDIR /var/tmp/sillar-qa-m04-preparacion/tmpdir en /dev/nvme0n1p2 ext4
+  ok: TMPDIR vacío
+  ok: TMPDIR privado (700)
+# PREFLIGHT: LISTO

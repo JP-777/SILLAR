@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ==========================================================================
+       Sillar.Modules.Sales.Contracts — frontera pública de M03 Ventas Online.
+
+       Solo lo que otros módulos pueden consumir: el historial de pedidos de un
+       cliente (el hueco que M04 declara en su ficha) y los estados visibles.
+       Ningún DbContext, entidad ni implementación de Sales sale por aquí.
+       ========================================================================== -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
+    <ProjectReference Include="..\Sillar.Core.Contracts\Sillar.Core.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

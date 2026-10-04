@@ -1,0 +1,37 @@
+-- ============================================================
+-- M03 Ventas Online — semilla inicial
+--
+-- Paso 2 · DATOS. No hay datos semilla de negocio: los carritos,
+-- pedidos, pagos y series se crean en tiempo de ejecución, no en
+-- instalación. Este script existe por convención y no inserta
+-- ninguna fila.
+--
+-- Lo que SÍ hace falta antes del primer pedido, y NO se hace
+-- aquí a propósito:
+--
+--   sales.order_series_label — la etiqueta visible de la serie de
+--   este nodo, la «P» de P-2026-0147.
+--
+-- Vive en core.site_settings y se fija en la instalación,
+-- derivándola del código del nodo. **No se siembra un valor por
+-- defecto**, y es la decisión, no un olvido: «P» es el ejemplo que
+-- corresponde al nodo cuyo NodeIdentity.Code es «principal», no
+-- una letra universal. Una letra igual sembrada en dos nodos
+-- produce dos pedidos distintos con el mismo código, y un código
+-- ya dictado por teléfono no se reformatea.
+--
+-- Sin esa etiqueta, OrderCodeAllocator se niega a numerar y dice
+-- exactamente qué falta. Es la guarda en la operación, no en el
+-- llamador.
+--
+--   sales.payment_due_hours — el plazo para pagar, 48 horas
+--   naturales por defecto. Es plazo para PAGAR, no reserva de
+--   existencias: SILLAR WEB v1 no aparta mercancía. Si la clave no
+--   está, el módulo usa 48 y no falla.
+--
+-- Idempotente: no inserta nada, así que ejecutarlo dos veces no
+-- cambia nada.
+-- ============================================================
+
+-- No hay datos semilla de negocio para M03.
+SELECT 1;

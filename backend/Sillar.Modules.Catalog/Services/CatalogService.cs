@@ -19,12 +19,15 @@ internal sealed class CatalogService(CatalogDbContext database) : ICatalogServic
     /// Comprobar si sigue vendible es <see cref="ItemExisteYEstaActivoAsync"/>.
     /// </remarks>
     public async Task<ItemSnapshot?> ObtenerItemAsync(Guid itemId, CancellationToken ct)
-        => await Rows().Where(row => row.Item.Id == itemId).Select(ToSnapshot).FirstOrDefaultAsync(ct);
+        => await database.ProductItems.AsNoTracking()
+            .Where(item => item.Id == itemId)
+            .Select(ToSnapshot)
+            .FirstOrDefaultAsync(ct);
 
     /// <inheritdoc />
     public async Task<ItemSnapshot?> BuscarPorCodigoAsync(string codigo, CancellationToken ct)
-        => await Rows()
-            .Where(row => row.Item.IsActive && row.Product.IsActive && (row.Item.Code == codigo || row.Item.Barcode == codigo))
+        => await database.ProductItems.AsNoTracking()
+            .Where(item => item.IsActive && item.Product!.IsActive && (item.Code == codigo || item.Barcode == codigo))
             .Select(ToSnapshot)
             .FirstOrDefaultAsync(ct);
 
@@ -35,19 +38,19 @@ internal sealed class CatalogService(CatalogDbContext database) : ICatalogServic
     /// nombre lleva colación no determinista (DATOS.md §4).
     /// </remarks>
     public async Task<IReadOnlyList<ItemSnapshot>> BuscarAsync(string texto, int limite, CancellationToken ct)
-        => await Rows()
-            .Where(row => row.Item.IsActive && row.Product.IsActive
-                && EF.Functions.ToTsVector("spanish", row.Product.Name).Matches(EF.Functions.PlainToTsQuery("spanish", texto)))
-            .OrderBy(row => row.Product.Name)
+        => await database.ProductItems.AsNoTracking()
+            .Where(item => item.IsActive && item.Product!.IsActive
+                && EF.Functions.ToTsVector("spanish", item.Product.Name).Matches(EF.Functions.PlainToTsQuery("spanish", texto)))
+            .OrderBy(item => item.Product!.Name)
             .Take(Math.Max(limite, 0))
             .Select(ToSnapshot)
             .ToListAsync(ct);
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<ItemSnapshot>> VariantesDeAsync(Guid productId, CancellationToken ct)
-        => await Rows()
-            .Where(row => row.Item.ProductId == productId && row.Item.IsActive)
-            .OrderBy(row => row.Item.SortOrder)
+        => await database.ProductItems.AsNoTracking()
+            .Where(item => item.ProductId == productId && item.IsActive)
+            .OrderBy(item => item.SortOrder)
             .Select(ToSnapshot)
             .ToListAsync(ct);
 
@@ -80,16 +83,6 @@ internal sealed class CatalogService(CatalogDbContext database) : ICatalogServic
     /// <param name="limite">Lo que pidió quien llama.</param>
     /// <returns>Entre 1 y <see cref="TopeSeleccion"/>.</returns>
     internal static int AcotarSeleccion(int limite) => Math.Clamp(limite, 1, TopeSeleccion);
-
-    private sealed record Row(ProductItem Item, Product Product);
-
-    private IQueryable<Row> Rows()
-        => database.ProductItems.AsNoTracking()
-            .Join(
-                database.Products.AsNoTracking(),
-                item => item.ProductId,
-                product => product.Id,
-                (item, product) => new Row(item, product));
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<ProductPickerItem>> BuscarParaSeleccionAsync(
@@ -204,13 +197,13 @@ internal sealed class CatalogService(CatalogDbContext database) : ICatalogServic
         ];
     }
 
-    private static readonly Expression<Func<Row, ItemSnapshot>> ToSnapshot = row => new ItemSnapshot(
-        row.Item.Id,
-        row.Product.Id,
-        row.Product.Name,
-        row.Item.VariantValue,
-        row.Item.Code,
-        row.Item.Barcode,
-        row.Item.PriceOverride ?? row.Product.ListPrice,
-        row.Product.SaleUnit);
+    private static readonly Expression<Func<ProductItem, ItemSnapshot>> ToSnapshot = item => new ItemSnapshot(
+        item.Id,
+        item.Product!.Id,
+        item.Product.Name,
+        item.VariantValue,
+        item.Code,
+        item.Barcode,
+        item.PriceOverride ?? item.Product.ListPrice,
+        item.Product.SaleUnit);
 }

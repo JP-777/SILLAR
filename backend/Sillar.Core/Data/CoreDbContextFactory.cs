@@ -35,13 +35,19 @@ public sealed class CoreDbContextFactory : IDesignTimeDbContextFactory<CoreDbCon
                     : $"Se leyó '{envFile}', pero no define esa clave."));
         }
 
+        // `dotnet ef database update` también aplica las migraciones de CORE, y la
+        // que rellena admin_users.home_node necesita el nodo configurado
+        // (NodoParaMigrar). Solo el configurado: sin él no se pone ninguno.
+        connectionString = NodoParaMigrar.ConNodo(connectionString, NodoParaMigrar.DelEntorno());
+
         var options = new DbContextOptionsBuilder<CoreDbContext>()
             .UseNpgsql(connectionString, npgsql => npgsql.MigrationsHistoryTable(
                 CoreDbContext.MigrationsHistoryTable,
                 CoreDbContext.Schema))
             .Options;
 
-        // En tiempo de diseño el nodo no importa: no se escribe ninguna fila.
+        // En tiempo de diseño el contexto no escribe filas, así que el nodo con
+        // el que se construye no se usa. El de la migración va en la conexión.
         return new CoreDbContext(options, new NodeIdentity(NodeIdentity.DefaultCode), TimeProvider.System);
     }
 }

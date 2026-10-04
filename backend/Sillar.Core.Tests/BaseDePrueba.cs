@@ -73,8 +73,20 @@ internal static class BaseDePrueba
             new DemoTrackingModule(),
         ]);
 
-    public static InstaladorDeModulos Instalador(DeclaredModules? modulos = null)
-        => new(modulos ?? Desplegados());
+    /// <summary>
+    /// El instalador, con el nodo configurado que se le pase (o ninguno, como
+    /// una instalación sin <c>Sillar:Node:Code</c>).
+    /// </summary>
+    public static InstaladorDeModulos Instalador(DeclaredModules? modulos = null, string? nodoConfigurado = null)
+        => new(modulos ?? Desplegados(), Configuracion(nodoConfigurado));
+
+    /// <summary>Una configuración con, como mucho, <c>Sillar:Node:Code</c>.</summary>
+    public static IConfiguration Configuracion(string? nodoConfigurado = null)
+        => new ConfigurationBuilder()
+            .AddInMemoryCollection(nodoConfigurado is null
+                ? []
+                : [new KeyValuePair<string, string?>(NodeIdentity.SettingKey, nodoConfigurado)])
+            .Build();
 
     public static SetupService Servicio(CoreDbContext contexto, IAuditWriter? auditoria = null)
         => new(contexto, new FakePasswordHasher(), auditoria ?? new AuditoriaNula(), TimeProvider.System, Instalador());

@@ -1,0 +1,5 @@
+Oct 04 12:43:50 archlinux kernel: wlan0: associated
+Oct 04 12:43:50 archlinux wpa_supplicant[528]: wlan0: CTRL-EVENT-CONNECTED - Connection to 16:91:eb:16:cb:3d completed [id=0 id_str=]
+Oct 04 12:43:50 archlinux NetworkManager[523]: <info>  [1791135830.7285] dhcp4 (wlan0): state changed new lease, address=192.168.25.66, acd pending
+Oct 04 12:43:50 archlinux NetworkManager[523]: <info>  [1791135830.9039] dhcp4 (wlan0): state changed new lease, address=192.168.25.66
+Oct 04 13:13:49 archlinux NetworkManager[523]: <info>  [1791137629.2399] dhcp4 (wlan0): state changed new lease, address=192.168.25.66

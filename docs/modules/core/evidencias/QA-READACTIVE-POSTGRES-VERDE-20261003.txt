@@ -1,0 +1,33 @@
+QA READACTIVE — POSTGRESQL VERDE FINAL — 03/10/2026
+
+HEAD=32932c692fc383fc80c9ea7a5c6cc7c425970979
+PROJECT=sillar_core_moduleregistry_isactive
+CONTAINER=sillar_core_moduleregistry_isactive_db
+DATABASE=sillar_core_moduleregistry_isactive_dev
+PORT=55680
+POSTGRES_SERVER_VERSION=16.15 (Debian 16.15-1.pgdg13+2)
+
+=== PRODUCCION ===
+ReadActiveAsync conserva el filtro:
+module.Activation != null && module.Activation.IsActive
+
+=== PRUEBA ===
+  Sillar.Shared -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Shared/bin/Debug/net10.0/Sillar.Shared.dll
+  Sillar.Shared.Data -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Shared.Data/bin/Debug/net10.0/Sillar.Shared.Data.dll
+  Sillar.Modules.Catalog.Contracts -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Catalog.Contracts/bin/Debug/net10.0/Sillar.Modules.Catalog.Contracts.dll
+  Sillar.Core.Contracts -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Contracts/bin/Debug/net10.0/Sillar.Core.Contracts.dll
+  Sillar.Modules.Demo -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Demo/bin/Debug/net10.0/Sillar.Modules.Demo.dll
+  Sillar.Modules.Catalog -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Catalog/bin/Debug/net10.0/Sillar.Modules.Catalog.dll
+  Sillar.Modules.Cms -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Cms/bin/Debug/net10.0/Sillar.Modules.Cms.dll
+  Sillar.Modules.Crm.Contracts -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Crm.Contracts/bin/Debug/net10.0/Sillar.Modules.Crm.Contracts.dll
+  Sillar.Modules.Crm -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Modules.Crm/bin/Debug/net10.0/Sillar.Modules.Crm.dll
+  Sillar.Core -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core/bin/Debug/net10.0/Sillar.Core.dll
+  Sillar.Core.Tests -> /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/bin/Debug/net10.0/Sillar.Core.Tests.dll
+Test run for /home/JP777/SILLAR-core-moduleregistry-isactive/backend/Sillar.Core.Tests/bin/Debug/net10.0/Sillar.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 10 s - Sillar.Core.Tests.dll (net10.0)
+
+GREEN_TEST_RC=0
+
+TRAZABILIDAD: esta corrida se ejecutó sobre el árbol de trabajo que posteriormente quedó commitado como deaff4e07c0fc9c7baa45ce348170f5f89b2383f. En el momento de ejecutar la prueba, HEAD todavía era su padre 32932c692fc383fc80c9ea7a5c6cc7c425970979; por eso el HEAD impreso en este log corresponde al padre y no al commit de cierre.

@@ -19,6 +19,14 @@ internal sealed record StoredContent(
     Dimensions? Dimensions);
 
 /// <summary>
+/// Quién sube un archivo, tal como se fotografía en <c>core.media_assets</c>.
+/// </summary>
+/// <param name="LocalId">Identificador de la cuenta en su nodo.</param>
+/// <param name="Name">Nombre visible en el momento de subirlo.</param>
+/// <param name="HomeNode">Nodo de pertenencia de la cuenta, no el de la instalación.</param>
+internal sealed record AutorDelMedio(int LocalId, string Name, string HomeNode);
+
+/// <summary>
 /// Guarda los archivos en disco y sus fichas en <c>core.media_assets</c>.
 /// </summary>
 /// <remarks>
@@ -33,10 +41,24 @@ internal sealed class MediaStorage(
     private readonly MediaOptions _options = options.Value;
 
     /// <inheritdoc />
+    /// <remarks>Sin autor: los demás módulos usan este contrato sin sesión.</remarks>
+    public Task<MediaAsset> SaveAsync(
+        Stream content,
+        string originalName,
+        string ownerModuleCode,
+        CancellationToken ct)
+        => SaveAsync(content, originalName, ownerModuleCode, autor: null, ct);
+
+    /// <summary>Guarda el archivo con la fotografía de su autor ya en la fila.</summary>
+    /// <remarks>
+    /// El autor entra en el mismo <c>INSERT</c> y no en una actualización
+    /// posterior: un trigger impide cambiar la fotografía una vez escrita.
+    /// </remarks>
     public async Task<MediaAsset> SaveAsync(
         Stream content,
         string originalName,
         string ownerModuleCode,
+        AutorDelMedio? autor,
         CancellationToken ct)
     {
         var now = clock.GetUtcNow();
@@ -73,7 +95,10 @@ internal sealed class MediaStorage(
                 Height = stored.Dimensions?.Height,
                 OwnerModuleCode = ownerModuleCode,
                 Checksum = stored.Checksum,
-                IsActive = true
+                IsActive = true,
+                CreatedByAdminUserLocalId = autor?.LocalId,
+                CreatedByAdminUserName = autor?.Name,
+                CreatedByAdminUserHomeNode = autor?.HomeNode
             };
 
             database.MediaAssets.Add(asset);

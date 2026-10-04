@@ -309,6 +309,15 @@ public sealed class CotizacionesTests
         public int? AdminUserId => 1;
         public string? Email => "admin@ejemplo.test";
         public string? Role => "admin";
+
+        // CORE añadió estos dos al contrato para que la atribución del personal
+        // pueda congelar los tres datos que R-14 exige. El doble los da distintos
+        // del correo y del identificador a propósito: si alguna prueba usara el
+        // correo como nombre visible, o derivara el nodo del identificador, se
+        // vería aquí.
+        public string? DisplayName => "Ana Quispe";
+        public string? HomeNode => "principal";
+
         public bool IsInRole(string role) => role is "admin" or "editor";
     }
 
