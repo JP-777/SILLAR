@@ -6,6 +6,7 @@ import { describe, type Failure } from '../../../shared/errors/messages';
 import { useResource } from '../../../shared/hooks/useResource';
 import { Badge, Button, EmptyState, Field, Input } from '../../../shared/ui';
 import { Drawer, FailureAlert, Table, Toasts, useToasts, type Column } from '../../../shared/ui/patterns';
+import { Cliente } from '../components/Cliente';
 import { formatearFecha } from '../logica/formato';
 import { NOMBRE_DE_ESTADO, esFinal, estadosSiguientes } from '../logica/solicitudes';
 import { catalogo, cotizaciones, personalizaciones, volumen } from '../services/b2b';
@@ -21,9 +22,9 @@ const esPersonalizacion = (f: Fila): f is PersonalizacionEnBandeja => 'productNa
  * Bandejas de solicitudes (A1/A4) con su panel lateral (A2/A5) y el bloque A3:
  * estado, notas internas y reenlace.
  *
- * **Estructura, no superficie terminada:** la identidad humana del cliente
- * espera la costura de CRM. Aquí no se pinta ningún `customerId` ni se
- * sustituye por un texto de relleno.
+ * La identidad del cliente llega resuelta por contrato con M04, así que la fila
+ * dice de quién es. Cuando M04 no da la ficha no se rellena el hueco: lo
+ * resuelve `<Cliente>`.
  */
 export function SolicitudesPage({ tipo }: { tipo: Tipo }) {
   const [filtro, setFiltro] = useState<EstadoSolicitud | ''>('');
@@ -48,6 +49,7 @@ export function SolicitudesPage({ tipo }: { tipo: Tipo }) {
         </span>
       ),
     },
+    { key: 'cliente', header: 'Cliente', render: (f) => <Cliente cliente={f.cliente} /> },
     { key: 'descripcion', header: 'Qué pide', render: (f) => f.description },
     { key: 'estado', header: 'Estado', render: (f) => <Badge>{NOMBRE_DE_ESTADO[f.status]}</Badge> },
     { key: 'fecha', header: 'Recibida', render: (f) => formatearFecha(f.createdAt) },
@@ -159,6 +161,7 @@ function DetalleDeSolicitud({ tipo, id, onClose, onCambio }: { tipo: Tipo; id: n
         <div className="b2b-pila">
           <FailureAlert failure={fallo} />
           <section className="b2b-seccion">
+            <p className="b2b-fila"><Cliente cliente={s.cliente} /></p>
             <p>{s.description}</p>
             <p className="b2b-dato">
               {esPersonalizacion(s)

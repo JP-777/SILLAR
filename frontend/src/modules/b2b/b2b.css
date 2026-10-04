@@ -5,6 +5,8 @@
 .b2b-seccion:first-child { border-top: 0; padding-top: 0; }
 .b2b-seccion h2, .b2b-seccion h3 { margin: 0; font-size: 1rem; }
 .b2b-dato { color: var(--text-muted); }
+.b2b-cliente { display: flex; flex-direction: column; gap: var(--s2); }
+.b2b-cliente__contacto { color: var(--text-muted); font-size: 0.875rem; }
 .b2b-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
 .b2b-linea { display: grid; gap: var(--s3); padding: var(--s3); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--bg-raised); }
 .b2b-linea__campos { display: grid; gap: var(--s3); grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }

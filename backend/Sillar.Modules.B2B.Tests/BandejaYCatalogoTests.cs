@@ -1,9 +1,11 @@
+using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Sillar.Modules.B2B.Bandeja;
 using Sillar.Modules.B2B.Catalogo;
 using Sillar.Modules.B2B.Data;
 using Sillar.Modules.B2B.Solicitudes;
 using Sillar.Modules.Catalog.Contracts;
+using Sillar.Modules.Crm.Contracts;
 using Sillar.Shared.Data.Modularity;
 
 namespace Sillar.Modules.B2B.Tests;
@@ -36,7 +38,11 @@ public sealed class BandejaYCatalogoTests
     private static B2bDbContext Db(string cadena)
         => new(PersistenciaDeModulo.Opciones<B2bDbContext>(cadena, B2bDbContext.Schema, B2bDbContext.MigrationsHistoryTable));
 
-    private static BandejaService Bandeja(string cadena, CatalogoFalso? catalogo = null) => new(Db(cadena), catalogo ?? new CatalogoFalso());
+    private static BandejaService Bandeja(string cadena, CatalogoFalso? catalogo = null, ICustomerIdentityReader? clientes = null)
+        => new(Db(cadena), catalogo ?? new CatalogoFalso(), clientes ?? ClienteActivo);
+
+    /// <summary>M04 contestando que el cliente sembrado está activo.</summary>
+    private static ClientesDeM04 ClienteActivo => new(new CustomerIdentity(Cliente, "Rosa Mamani", "rosa@ejemplo.test", "+51 900 000 010"));
 
     // --- Bandeja ------------------------------------------------------------
 
@@ -111,6 +117,103 @@ public sealed class BandejaYCatalogoTests
             Assert.Empty(await cliente.ListarPropiasAsync(Cliente, default));
             Assert.Equal(ResultadoBandeja.NoEncontrada, (await Bandeja(cadena).CambiarEstadoPersonalizacionAsync(1, "en_revision", default)).Resultado);
         });
+
+    // --- Identidad del cliente, por contrato con M04 ------------------------
+
+    /// <summary>
+    /// <b>La bandeja enseña una persona.</b> Antes devolvía el <c>customer_id</c> y el
+    /// frontend lo declaraba sin pintarlo nunca: la fila no decía de quién era.
+    /// </summary>
+    [Fact]
+    public Task La_bandeja_dice_de_quien_es_cada_fila_y_no_devuelve_su_identificador()
+        => ConInstalacionAsync(async cadena =>
+        {
+            var filas = await Bandeja(cadena).ListarPersonalizacionesAsync(null, default);
+
+            var cliente = Assert.Single(filas).Cliente;
+            Assert.NotNull(cliente);
+            Assert.Equal(("Rosa Mamani", "rosa@ejemplo.test", "+51 900 000 010"), (cliente!.FullName, cliente.Email, cliente.Phone));
+
+            // Y el uuid no viaja: no es que no se pinte, es que no sale.
+            Assert.DoesNotContain(
+                $"{Cliente}",
+                JsonSerializer.Serialize(filas),
+                StringComparison.OrdinalIgnoreCase);
+        });
+
+    /// <summary>
+    /// <b>Si M04 no da la ficha, la fila llega sin cliente y nadie la rellena.</b>
+    /// </summary>
+    /// <remarks>
+    /// Es como llega una ficha de baja o bloqueada: el contrato la omite sin decir por
+    /// qué. Lo que se comprueba es que M07 <b>no inventa</b> —ni el correo, ni el uuid,
+    /// ni un «Cliente dado de baja»— y que el listado no se cae por una ficha ausente.
+    /// </remarks>
+    [Fact]
+    public Task Un_cliente_que_M04_no_da_deja_la_fila_sin_cliente_y_no_se_rellena()
+        => ConInstalacionAsync(async cadena =>
+        {
+            var filas = await Bandeja(cadena, clientes: new ClientesDeM04()).ListarPersonalizacionesAsync(null, default);
+
+            Assert.Null(Assert.Single(filas).Cliente);
+            Assert.DoesNotContain($"{Cliente}", JsonSerializer.Serialize(filas), StringComparison.OrdinalIgnoreCase);
+
+            // Y el detalle hace lo mismo: no es que la lista sea más prudente.
+            var detalle = await Bandeja(cadena, clientes: new ClientesDeM04()).ObtenerPersonalizacionAsync(1, default);
+            Assert.Null(detalle!.Solicitud.Cliente);
+        });
+
+    /// <summary>
+    /// <b>Un listado pregunta una vez, con los identificadores distintos.</b>
+    /// </summary>
+    /// <remarks>
+    /// El contrato tiene <c>GetManyAsync</c> precisamente para esto. Sin él —o
+    /// llamando a <c>GetAsync</c> en el bucle— una bandeja de cincuenta filas haría
+    /// cincuenta lecturas, y esta prueba es la que lo nota: tres solicitudes del mismo
+    /// cliente siguen siendo una consulta de un identificador.
+    /// </remarks>
+    [Fact]
+    public Task Un_listado_pregunta_una_sola_vez_y_sin_repetir_identificadores()
+        => ConInstalacionAsync(async cadena =>
+        {
+            await BaseEfimera.EjecutarAsync(cadena, $"""
+                INSERT INTO b2b.special_order_leads (customer_id, product_id, product_name, product_slug, description) VALUES
+                  ('{Cliente}', '{Producto}', 'Nombre viejo', 'slug-viejo', 'Otra más'),
+                  ('{Cliente}', '{Producto}', 'Nombre viejo', 'slug-viejo', 'Y otra');
+                """);
+
+            var m04 = ClienteActivo;
+            var filas = await Bandeja(cadena, clientes: m04).ListarPersonalizacionesAsync(null, default);
+
+            Assert.Equal(3, filas.Count);
+            Assert.Equal([Cliente], Assert.Single(m04.Consultas));
+        });
+
+    /// <summary>
+    /// <b>Ningún DTO de la bandeja vuelve a llevar un identificador de cliente.</b>
+    /// </summary>
+    /// <remarks>
+    /// Se comprueba por reflexión y no leyendo el código: la forma en que esto se
+    /// deshace no es borrando la costura, es añadiendo «solo para enlazar» otra vez.
+    /// Los identificadores no se muestran al usuario (CLAUDE.md), y un campo que viaja
+    /// sin uso es un campo que algún día se pinta.
+    /// </remarks>
+    [Fact]
+    public void Ningun_DTO_de_la_bandeja_lleva_el_identificador_del_cliente()
+    {
+        var dtos = new[] { typeof(PersonalizacionEnBandeja), typeof(VolumenEnBandeja), typeof(CotizacionEnBandeja) };
+
+        foreach (var dto in dtos)
+        {
+            Assert.DoesNotContain(
+                dto.GetProperties(),
+                p => p.Name.Contains("Customer", StringComparison.Ordinal)
+                  || (p.PropertyType == typeof(Guid) && p.Name.Contains("Cliente", StringComparison.Ordinal)));
+        }
+
+        // Y el que sustituye al uuid tampoco lo lleva dentro.
+        Assert.DoesNotContain(typeof(ClienteDeLaBandeja).GetProperties(), p => p.PropertyType == typeof(Guid));
+    }
 
     // --- Reacción al catálogo -----------------------------------------------
 

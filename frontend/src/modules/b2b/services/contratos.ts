@@ -2,9 +2,12 @@
  * Tipos de M07, uno a uno con los DTO del backend (`backend/Sillar.Modules.B2B`).
  * Ningún campo que el backend no devuelva.
  *
- * `customerId` existe en el contrato y se conserva para enlazar, pero **nunca
- * se pinta**: la identidad humana del cliente llega con la costura de CRM
- * (`integration/crm-identidad-cliente`), todavía no integrada.
+ * La identidad del cliente llega resuelta: el backend cambia el `customer_id`
+ * por una persona con `ICustomerIdentityReader` (M04 1.2.0) y **el uuid ya no
+ * viaja**. Antes se declaraba aquí «para enlazar» y no se pintaba nunca.
+ *
+ * `cliente` puede ser `null`: el contrato de M04 solo devuelve fichas activas y
+ * no dice por qué falta una. Nada lo rellena.
  */
 
 export type EstadoSolicitud = 'recibida' | 'en_revision' | 'cotizada' | 'cerrada' | 'rechazada';
@@ -12,9 +15,16 @@ export type EstadoCotizacion = 'borrador' | 'enviada' | 'aprobada' | 'pagada' | 
 export type EstadoMayorista = 'configuracion_pendiente' | 'no_evaluable' | 'alcanza' | 'no_alcanza';
 export type MetodoDePago = 'yape' | 'efectivo';
 
+/** Identidad mínima y legible de un cliente. Sin identificador: no se enseña. */
+export interface ClienteDeLaBandeja {
+  fullName: string;
+  email: string;
+  phone: string | null;
+}
+
 export interface PersonalizacionEnBandeja {
   id: number;
-  customerId: string;
+  cliente: ClienteDeLaBandeja | null;
   productId: string | null;
   productName: string;
   productSlug: string;
@@ -35,7 +45,7 @@ export interface PersonalizacionDetalle {
 
 export interface VolumenEnBandeja {
   id: number;
-  customerId: string;
+  cliente: ClienteDeLaBandeja | null;
   institutionName: string;
   institutionDocument: string | null;
   contactPerson: string | null;
@@ -56,7 +66,7 @@ export interface CotizacionEnBandeja {
   id: number;
   /** El único identificador que se enseña: `C-AAAA-NNNN`. */
   quoteNumber: string;
-  customerId: string;
+  cliente: ClienteDeLaBandeja | null;
   specialOrderLeadId: number | null;
   institutionRequestId: number | null;
   totalAmount: number;

@@ -11,6 +11,7 @@ using Sillar.Modules.B2B.Cotizaciones;
 using Sillar.Modules.B2B.Data;
 using Sillar.Modules.B2B.Endpoints;
 using Sillar.Modules.Catalog.Contracts;
+using Sillar.Modules.Crm.Contracts;
 using Sillar.Shared.Data.Modularity;
 
 namespace Sillar.Modules.B2B.Tests;
@@ -44,12 +45,17 @@ public sealed class CotizacionesTests
     private static B2bDbContext Db(string cadena)
         => new(PersistenciaDeModulo.Opciones<B2bDbContext>(cadena, B2bDbContext.Schema, B2bDbContext.MigrationsHistoryTable));
 
-    private static CotizacionesService Servicio(string cadena, CatalogoFalso? catalogo = null, AjustesFalsos? ajustes = null)
+    private static CotizacionesService Servicio(string cadena, CatalogoFalso? catalogo = null, AjustesFalsos? ajustes = null,
+        ICustomerIdentityReader? clientes = null)
     {
         var db = Db(cadena);
         var cat = catalogo ?? new CatalogoFalso();
-        return new CotizacionesService(db, new BandejaService(db, cat), cat, new UmbralMayorista(ajustes ?? new AjustesFalsos(null)), TimeProvider.System);
+        return new CotizacionesService(db, new BandejaService(db, cat, clientes ?? ClienteActivo), cat,
+            new UmbralMayorista(ajustes ?? new AjustesFalsos(null)), TimeProvider.System);
     }
+
+    /// <summary>M04 contestando que el cliente sembrado está activo.</summary>
+    private static ClientesDeM04 ClienteActivo => new(new CustomerIdentity(Cliente, "Rosa Mamani", "rosa@ejemplo.test", "+51 900 000 010"));
 
     private static CrearCotizacionRequest DesdeVolumen(params LineaRequest[] lineas) => new("volumen", 1, lineas);
 

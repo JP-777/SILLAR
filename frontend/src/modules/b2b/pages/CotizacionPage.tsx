@@ -8,6 +8,7 @@ import { useResource } from '../../../shared/hooks/useResource';
 import { Alert, Badge, Button, Field, Input } from '../../../shared/ui';
 import { ConfirmDialog, Drawer, FailureAlert, Toasts, useToasts } from '../../../shared/ui/patterns';
 import { useSession } from '../../../session';
+import { Cliente } from '../components/Cliente';
 import { METODOS_DE_PAGO, accionesDeCotizacion, errorDePago, presentacionDeEstado, textoMayorista } from '../logica/cotizacion';
 import { formatearFecha, formatearImporte, precioDeCatalogo } from '../logica/formato';
 import { aPeticion, desdeContrato, erroresDeLineas, lineaDeCatalogo, lineaLibre, moverLinea, totalCobrado, type LineaEditable } from '../logica/lineas';
@@ -86,6 +87,7 @@ export function CotizacionPage() {
           <Badge>{estado.etiqueta}</Badge>
           {estado.condicion && <Badge tone="warning">{estado.condicion}</Badge>}
           {!c.isActive && <Badge tone="danger">Dada de baja</Badge>}
+          <Cliente cliente={c.cliente} />
           <span className="b2b-dato">Creada {formatearFecha(c.createdAt)}</span>
         </div>
         {estado.condicion && c.invalidatedReason && (

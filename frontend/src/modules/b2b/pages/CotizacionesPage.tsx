@@ -6,6 +6,7 @@ import { fetchPublicSettings } from '../../../platform/usePublicSettings';
 import { useResource } from '../../../shared/hooks/useResource';
 import { Badge, EmptyState, Field } from '../../../shared/ui';
 import { FailureAlert, Table, type Column } from '../../../shared/ui/patterns';
+import { Cliente } from '../components/Cliente';
 import { presentacionDeEstado } from '../logica/cotizacion';
 import { formatearFecha, formatearImporte } from '../logica/formato';
 import { cotizaciones } from '../services/b2b';
@@ -18,7 +19,8 @@ const ESTADOS: Record<EstadoCotizacion, string> = {
 
 /**
  * Bandeja de cotizaciones (A6), como estructura para llegar a A8/A9. La
- * identidad del cliente espera la costura de CRM: no se pinta `customerId`.
+ * identidad del cliente llega resuelta por contrato con M04; el único
+ * identificador que se enseña sigue siendo el número visible `C-AAAA-NNNN`.
  */
 export function CotizacionesPage() {
   const [filtro, setFiltro] = useState<EstadoCotizacion | ''>('');
@@ -31,6 +33,7 @@ export function CotizacionesPage() {
 
   const columnas: Column<CotizacionEnBandeja>[] = [
     { key: 'numero', header: 'Número', render: (c) => <Link to={`/admin/solicitudes/cotizaciones/${c.id}`}>{c.quoteNumber}</Link> },
+    { key: 'cliente', header: 'Cliente', render: (c) => <Cliente cliente={c.cliente} /> },
     {
       key: 'estado',
       header: 'Estado',
