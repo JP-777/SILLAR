@@ -49,7 +49,13 @@ diga quién encarga las superficies de plataforma.
 
 ---
 
-## 4 · M05a Servicios — puede no llegar a existir
+## 4 · M05a Servicios — existencia **CERRADA**: ratificada por JP el 26/09/2026
+
+> **Registrado el 04/10/2026.** JP ratificó el 26/09/2026 que M05a existe como módulo propio
+> (`docs/modules/services/DECISIONES-PREVIAS-M05a.md` §3). La pregunta de si existe queda cerrada.
+> Lo que sigue se conserva como antecedente. **Siguen vivas** las preguntas de la visita al
+> mostrador —ya no deciden si M05a existe, pero informan su diseño— y los datos administrativos de
+> Bsale, que no dependen de M05a.
 
 **Qué pasa.** Los dos ejemplos que la arquitectura da de M05a —anillado e impresión— **ya
 funcionan como productos de M01** (`scripts/demo/datos.mjs:238` y `:248`), con precio nulo → «A
@@ -69,11 +75,12 @@ complementaria: aquélla pregunta por el mostrador, ésta por el precio.
 
 **En esa misma visita se completan los datos administrativos de Bsale:** certificado, costo, volumen, series y correlativos —preguntas 7 a 10 de `GUIA-OBSERVACION-MOSTRADOR.md`. No necesita una salida separada: la evidencia es la misma visita.
 
-**Disparador.** La visita al mostrador. Con esas respuestas se decide si M05a se construye, si
-basta una extensión de M01, o si el requisito del PRD se resuelve en presentación.
+**Disparador (superado en cuanto a la existencia).** La visita al mostrador. Antes de la
+ratificación, con esas respuestas se iba a decidir si M05a se construía, si bastaba una extensión de
+M01 o si el requisito se resolvía en presentación. Esa elección ya no está abierta.
 
 **Detalle.** `docs/modules/services/DECISIONES-PREVIAS-M05a.md` — las dos decisiones de
-arquitectura ya están cerradas ahí; solo falta ésta.
+arquitectura y la de existencia están cerradas ahí.
 
 ---
 
