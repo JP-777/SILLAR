@@ -31,6 +31,7 @@ const expected = {
   product_image: 'Imagen de producto',
   product_item: 'Presentación',
   promotion: 'Promoción',
+  service_entry: 'Servicio',
   setting: 'Ajuste',
   social_link: 'Red social',
 };
@@ -53,6 +54,12 @@ const surfaces = [
     exportName: 'cmsAuditEntityVocabulary',
     moduleCode: 'cms',
     count: 5,
+  },
+  {
+    file: 'src/modules/services/routes.tsx',
+    exportName: 'servicesAuditEntityVocabulary',
+    moduleCode: 'services',
+    count: 1,
   },
   {
     file: 'src/modules/crm/routes.tsx',
@@ -102,13 +109,13 @@ function contributions() {
   return surfaces.map(contribution);
 }
 
-test('CORE + M01 + M02 + M04 activos componen exactamente las veinte etiquetas', () => {
+test('CORE + M01 + M02 + M05a + M04 activos componen exactamente las veintiuna etiquetas', () => {
   const actual = visibleAuditEntityLabelsFrom(
     contributions(),
     () => true,
   );
 
-  assert.equal(Object.keys(actual).length, 20);
+  assert.equal(Object.keys(actual).length, 21);
   assert.deepEqual(actual, expected);
 });
 
@@ -122,6 +129,19 @@ test('sin M02 social_link no queda registrado y degrada al código técnico', ()
   assert.equal(
     auditEntityLabel('social_link', actual),
     'social_link',
+  );
+});
+
+test('sin M05a service_entry no queda registrado y degrada al código técnico', () => {
+  const actual = visibleAuditEntityLabelsFrom(
+    contributions(),
+    (moduleCode) => moduleCode !== 'services',
+  );
+
+  assert.equal('service_entry' in actual, false);
+  assert.equal(
+    auditEntityLabel('service_entry', actual),
+    'service_entry',
   );
 });
 
@@ -165,7 +185,7 @@ test('el registro pasa el predicado de actividad al compositor', () => {
   );
 });
 
-test('el registro contiene las cuatro contribuciones y ninguna etiqueta concreta', () => {
+test('el registro contiene las cinco contribuciones y ninguna etiqueta concreta', () => {
   const registry = source('src/platform/auditEntityVocabularies.ts');
 
   const body =
@@ -185,6 +205,7 @@ test('el registro contiene las cuatro contribuciones y ninguna etiqueta concreta
     'coreAuditEntityVocabulary',
     'catalogAuditEntityVocabulary',
     'cmsAuditEntityVocabulary',
+    'servicesAuditEntityVocabulary',
     'crmAuditEntityVocabulary',
   ]);
 
@@ -342,7 +363,8 @@ const auditPageVocabularyBaseline = {
   "social_link": 0,
   "contact_message": 0,
   "customer": 0,
-  "customer_invitation": 0
+  "customer_invitation": 0,
+  "service_entry": 0
 },
   labelLiteralCounts: {
   "Sesión": 0,
@@ -364,7 +386,8 @@ const auditPageVocabularyBaseline = {
   "Red social": 0,
   "Mensaje de contacto": 0,
   "Cliente": 0,
-  "Invitación de cliente": 0
+  "Invitación de cliente": 0,
+  "Servicio": 0
 },
 };
 

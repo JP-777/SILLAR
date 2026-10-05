@@ -95,7 +95,7 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   await composeUpDb();
   await waitDbHealthy();
 
-  console.log('[e2e] aplicando migraciones (CORE, Catalog, Cms, CRM)...');
+  console.log('[e2e] aplicando migraciones (CORE, Catalog, Cms, CRM, Services)...');
   await migrate();
 
   console.log('[e2e] aplicando seeds (sin datos de negocio)...');

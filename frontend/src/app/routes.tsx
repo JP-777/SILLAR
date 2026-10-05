@@ -10,6 +10,7 @@ import { catalogPublicRoutes, catalogRoutes } from '../modules/catalog/routes';
 import { cmsRoutes } from '../modules/cms/routes';
 import { coreRoutes } from '../modules/core/routes';
 import { crmAdminRoutes, crmPublicRoutes } from '../modules/crm/routes';
+import { servicesAdminRoutes, servicesPublicRoutes } from '../modules/services/routes';
 
 /**
  * Rutas de la aplicación.
@@ -38,6 +39,7 @@ export function AppRoutes() {
 
         {/* La tienda. Pública y fuera del panel: sin RequireAuth. */}
         {has('catalog') && catalogPublicRoutes}
+        {has('services') && servicesPublicRoutes}
 
         {/* M04 también pertenece a esta superficie pública. */}
         {has('crm') && crmPublicRoutes}
@@ -51,6 +53,7 @@ export function AppRoutes() {
           {coreRoutes}
           {has('catalog') && catalogRoutes}
           {has('cms') && cmsRoutes}
+          {has('services') && servicesAdminRoutes}
           {has('crm') && crmAdminRoutes}
         </Route>
       </Route>

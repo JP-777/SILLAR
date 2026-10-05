@@ -1,6 +1,6 @@
 # SILLAR — Roadmap Modular
 
-**Última modificación:** 2026-10-02 14:40:40 -0500 — America/Lima
+**Última modificación:** 2026-10-04 14:28:15 -0500 — America/Lima (fila de M05a: existencia ratificada)
 **Última verificación parcial:** 2026-10-02 14:40:40 -0500 — America/Lima (fila de M04 y convención de estado)
 **Commit de código verificado:** `c1dcc5bd42a069eaf0e1259e71f54d605264759e`
 
@@ -72,7 +72,7 @@ Módulos que entran en la primera entrega, en orden de construcción. El orden r
 | 3 | **M02 Contenido Web** ✅ | **CERRADO** — dictamen favorable del colíder y autorización de JP, 27/09/2026 (America/Lima); 33/33 criterios y QA local sobre `2e6c721`: barrera 34/34, puerta 6/6, E2E 159/159, C21 y ciclo de desinstalación/reinstalación PASS. Evidencias originales y puerta roja previa declarada en `docs/modules/cms/evidencias/QA-B-INDICE-20260927.md`. Integrado con fast-forward desde `2191150`; el riesgo intermitente queda abierto en `PENDIENTES.md` §27. |
 | 4 | **M04 Clientes** ✅ | **CERRADO** en 1.2.0, 02/10/2026 — ver `docs/modules/crm/CIERRE-M04.md`. Original `9f9015b` (19/19 criterios, doble puerta 6/6, registro `711bfba`); 1.1.0, instantánea sin dirección, certificada sobre `37c0fbf`; 1.2.0, identidad mínima, candidata `defebaf` con puerta 6/6, 645 PASS y 0 omitidas (evidencia `c1dcc5b`). Necesario para que Ventas tenga a quién asociar el pedido. **Y la identidad del cliente vive aquí, no en CORE**: `core.admin_users` es del personal —rol obligatorio y restringido a los tres de administración—, así que la cuenta de quien compra es de M04. Verificación de correo E2E mediante Mailpit v1.31.1 solo para desarrollo/pruebas. |
 | 5 | **M03 Ventas Online** | Carrito y pedidos: prioridad número tres. **Requiere M01 y requiere M04**: la dependencia sobre Clientes era blanda y **la cuenta obligatoria para comprar la vuelve dura** (21 ago 2026). Este orden ya era el correcto; lo que estaba mal escrito era «aprovecha». |
-| 6 | **M05a Servicios (vitrina)** | El PRD insiste en que los servicios permanentes no queden escondidos. **Su construcción está pendiente de una decisión de producto: puede no llegar a existir como módulo.** Ver `docs/modules/services/DECISIONES-PREVIAS-M05a.md` |
+| 6 | **M05a Servicios (vitrina)** | El PRD insiste en que los servicios permanentes no queden escondidos. **Su existencia como módulo propio fue ratificada por JP el 26/09/2026** (registrada el 04/10/2026). Ver `docs/modules/services/DECISIONES-PREVIAS-M05a.md` §3 |
 | 7 | **M07 Solicitudes B2B** | Colegios, empresas y pedidos especiales: parte del valor diferencial del negocio. **Depende duro de M04, así que no puede empezar hasta que M04 cierre** (24 ago 2026). Ver `docs/modules/b2b/DECISIONES-PREVIAS-M07.md` |
 
 Al cerrar la Fase 1, la primera instalación tiene su web completa y el producto cuenta con siete módulos vendibles.

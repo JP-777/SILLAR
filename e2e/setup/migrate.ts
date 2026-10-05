@@ -6,7 +6,8 @@ import { run } from './shell.js';
 const BACKEND = path.join(ROOT, 'backend');
 
 /**
- * Aplica las migraciones de CORE, Catalog, Cms, CRM y Sales contra la base e2e.
+ * Aplica las migraciones de CORE, Catalog, Cms, CRM, Services y Sales contra la
+ * base e2e.
  *
  * `ConnectionStrings__Default` se pasa como variable de entorno real al
  * proceso `dotnet`, no por `.env`: `DotEnv.Load()` nunca sobreescribe lo que
@@ -33,8 +34,14 @@ export async function migrate(): Promise<void> {
   // Y M04 por lo mismo: sin su schema, activar `crm` falla y con él se caen
   // el acceso de clientes, el perfil y la bandeja de contacto.
   await applyMigrations('Sillar.Modules.Crm');
-  // **M03, y va el último porque sus dos claves foráneas cruzadas apuntan a
-  // `catalog` y a `crm`**: esas tablas tienen que existir antes.
+  // M05a: el instalador también lo migraría, pero la base e2e sale de aquí
+  // completa, y una lista que omite un módulo es la que un día se olvida.
+  await applyMigrations('Sillar.Modules.Services');
+  // **M03, y va el último porque es el único con claves foráneas cruzadas**:
+  // sus dos apuntan a `catalog` y a `crm` (dependencias duras declaradas en
+  // `SalesModule.cs:74`), así que esas tablas tienen que existir antes. M05a
+  // solo depende de `core` (`ServicesModule.cs:24`), así que su sitio es
+  // indiferente y se conserva donde `main` lo puso.
   //
   // **Por qué estaba ausente y por qué eso era un defecto.** La instalación del
   // arnés va por `POST /api/setup`, que migra **todos los módulos del binario**,
@@ -53,10 +60,10 @@ export async function migrate(): Promise<void> {
 
 /** Los seeds del producto. Ninguno lleva datos de negocio (SPEC de M01 §6.9, de M02 §6.6). */
 export async function seed(): Promise<void> {
-  // `ON_ERROR_STOP=1` en los cinco: sin él, `psql` se come el error de un
+  // `ON_ERROR_STOP=1` en todos: sin él, `psql` se come el error de un
   // seed y el arnés sigue con la base a medio preparar, fallando después en
   // una prueba que no tiene la culpa.
-  for (const modulo of ['core', 'catalog', 'cms', 'crm', 'sales']) {
+  for (const modulo of ['core', 'catalog', 'cms', 'crm', 'services', 'sales']) {
     // Los de `crm` y `sales` están hoy intencionalmente vacíos, y se aplican
     // igual: no aplicarlos sería una asimetría que solo se nota el día que
     // dejen de estar vacíos.
