@@ -6,9 +6,14 @@
 - **Estado:** Borrador · Paso 1
 - **Fase:** 4
 - **Producto:** SILLAR WEB
+- **Creación:** 04/10/2026, 17:24:29 -05:00 — America/Lima
+- **Última modificación:** 04/10/2026 — America/Lima
+- **Última verificación:** 04/10/2026 — America/Lima
+- **Commit de código verificado:** `35647181891a9b78a7399d3b108d9a4415a0d48a`
 
-> Este borrador cubre únicamente decisiones, contratos y dependencias. No autoriza producción,
-> migraciones, frontend, navegación ni integración real con proveedor.
+> Este documento cubre decisiones, contratos, dependencias y criterios previos.
+> No autoriza producción, migraciones, frontend, navegación, SDK ni integración real con proveedor.
+> **La primera migración no está autorizada.**
 
 ---
 
@@ -17,7 +22,7 @@
 M11 añade pago en línea a pedidos que ya pertenecen a M03 Ventas.
 
 M11 encapsula la interacción técnica con una futura pasarela, sus intentos, confirmaciones externas,
-autenticidad, idempotencia y recuperación ante reintentos o fallos.
+autenticidad, inbox, idempotencia y recuperación ante reintentos o fallos.
 
 No se convierte en dueño del pedido, catálogo, cliente, inventario, comprobante fiscal ni de los
 medios manuales resueltos por M03.
@@ -31,13 +36,16 @@ medios manuales resueltos por M03.
 | Pedido, líneas y total comercial | M03 |
 | Yape manual | M03 |
 | Efectivo manual | M03 |
-| Hecho comercial de pago confirmado | M03 |
+| Ledger y hecho comercial de pago confirmado | **M03** |
 | Intento e interacción de pago online | M11 |
-| Integración con proveedor | M11 |
-| Estado técnico del intento externo | M11 |
+| Inbox y reintentos del proveedor | M11 |
+| Verificación de firma del webhook | M11 |
+| Estado técnico del proveedor | M11 |
 | Estado del pedido | M03 |
-| Inventario y reservas | **No M11; M09 no condiciona M11 v1** |
+| Inventario y reservas | No M11; M09 no condiciona M11 v1 |
 | Comprobantes electrónicos | M14 |
+
+M11 **nunca escribe `sales.*`**.
 
 ---
 
@@ -47,21 +55,18 @@ medios manuales resueltos por M03.
 |---|---|---|
 | CORE | Dura / plataforma | Cerrada |
 | M03 Ventas | Dura | Cerrada |
-| M04 Clientes | Pendiente | A-M11-01 |
-| M09 Inventario | **Ninguna** | Resuelta por JP el 04/10/2026 |
+| M04 Clientes | **Dura cuando M11 use autenticación de cliente** | A-M11-01 ratificada |
+| M09 Inventario | **Ninguna** | JP-01 resuelta |
 | M01 Catálogo | Ninguna directa definida | — |
 | M10 Reportes | Ninguna hacia M10 | Consumidor futuro |
 | M13 POS | Ninguna | ERP |
 | M14 Comprobantes | Ninguna | ERP |
 
+No se admite dependencia transitiva oculta.
+
 ### Resolución JP-01
 
-M11 **no espera a M09**.
-
-M09 no es dependencia dura, no es dependencia blanda y no es requisito previo de construcción de
-M11 v1. No se añade `inventory` a las dependencias de M11.
-
-Un caso futuro que realmente necesite inventario se especificará como integración nueva.
+M11 **no espera a M09**. M09 no es dependencia dura, blanda ni requisito previo de construcción.
 
 ---
 
@@ -77,64 +82,143 @@ Un caso futuro que realmente necesite inventario se especificará como integraci
 8. PAN y CVV no forman parte del modelo persistente de SILLAR.
 9. Con M11 desactivado, M03 conserva Yape y efectivo.
 10. El proveedor concreto y su SDK quedan fuera del Paso 1.
+11. Los secretos de proveedor/webhook no viven en PostgreSQL.
+12. El cuerpo crudo del webhook no se conserva.
 
 ---
 
-## 5. Contratos requeridos
+## 5. Contrato M03 ↔ M11
+
+M03 conserva el **ledger canónico**.
 
 Conceptualmente M11 necesita una frontera pública con M03 para:
 
 - obtener una representación pagable del pedido con importe autoritativo;
-- registrar idempotentemente una liquidación externa ya confirmada.
+- aplicar idempotentemente una liquidación externa ya confirmada.
 
-Los nombres de interfaces, DTO y campos definitivos siguen pendientes del Líder Técnico,
-especialmente A-M11-02, A-M11-03 y A-M11-04.
+`OrderPayment` debe distinguir:
 
-M11 no accede al `DbContext` ni al dominio interno de M03.
+- **origen humano:** trío completo de atribución;
+- **origen externo:** cero atribución humana + identidad externa/idempotente.
 
----
-
-## 6. Eventos
-
-Debe existir un único concepto canónico de pago comercial confirmado.
-
-La forma concreta de evolucionar el actual `PagoConfirmado` queda pendiente en A-M11-03. No se
-cierra por inferencia.
-
-El bus interno actual tampoco se declara mecanismo durable de entrega financiera; esa decisión
-permanece en A-M11-04.
+M11 nunca accede al `DbContext` o dominio interno de M03 y nunca escribe `sales.*`.
 
 ---
 
-## 7. Datos
+## 6. Pago confirmado canónico
 
-**No diseñados todavía.**
+Existe **un solo concepto canónico de pago confirmado**.
 
-Antes de la primera migración deben resolverse como mínimo:
+Si `PagoConfirmado` necesita enriquecerse para representar correctamente pagos automáticos, se
+prefiere **evolución/versionado explícito** antes que cambiar silenciosamente su semántica.
 
-- A-M11-02;
-- A-M11-04;
-- A-M11-05;
-- la parte persistente de A-M11-06.
+No se crean dos universos permanentes de pago manual y pago online.
 
-No se fijan tablas, PK, índices ni clasificación de replicación antes de ese dictamen.
-
----
-
-## 8. Arquitectura pendiente
-
-- A-M11-01 autenticación / dependencia M04;
-- A-M11-02 liquidación externa sin atribución humana falsa;
-- A-M11-03 evolución de `PagoConfirmado`;
-- A-M11-04 atomicidad, inbox, idempotencia y reintentos;
-- A-M11-05 replicación;
-- A-M11-06 secretos, webhook y retención.
-
-Ninguna queda cerrada por este documento.
+El bus interno puede notificar consecuencias, pero no constituye la memoria durable ni la garantía
+de aplicación de un cobro externo.
 
 ---
 
-## 9. Preguntas de producto abiertas
+## 7. Inbox, atomicidad e idempotencia
+
+M11 usa **inbox durable** para recepciones externas.
+
+La aplicación hacia M03 es **reintentable e idempotente**.
+
+Las dos unicidades son partes de **UN MISMO mecanismo**:
+
+| Barrera | Unicidad |
+|---|---|
+| M11 | `(provider, provider_event_id)` |
+| M03 | `external_settlement_id` |
+
+### Pruebas obligatorias antes de primera migración
+
+1. repetir el mismo `(provider, provider_event_id)` → una sola recepción/aplicación;
+2. dos eventos distintos que resuelvan al mismo `external_settlement_id` → un solo pago M03.
+
+Además:
+
+1. webhook válido;
+2. persistir recepción;
+3. aplicar a M03;
+4. **simular caída antes de marcar inbox como aplicado**;
+5. reentregar/reintentar;
+6. M03 deduplica;
+7. comprobar que el pago/saldo del pedido **NO se mueve dos veces**;
+8. finalmente marcar inbox como aplicado.
+
+**Sin esta prueba la idempotencia no queda acreditada.**
+
+---
+
+## 8. Replicación
+
+La operación técnica de M11 es **local / no replicada**:
+
+- intentos;
+- inbox;
+- reintentos;
+- estado del proveedor.
+
+El pago comercial canónico de M03 es **replicado**.
+
+La clasificación está cerrada, pero no se fijan todavía tablas, PK, columnas ni índices.
+
+---
+
+## 9. Secretos, webhook y evidencia
+
+Los secretos de proveedor y webhook viven **fuera de PostgreSQL**.
+
+Al recibir un webhook:
+
+1. se verifica la firma;
+2. se registra el resultado de verificación;
+3. se conserva el **SHA-256 del cuerpo recibido**;
+4. se conservan metadatos normalizados suficientes;
+5. el **cuerpo crudo NO se conserva**.
+
+### Consecuencia explícita
+
+SILLAR **no podrá reverificar posteriormente la firma exacta del webhook**, porque el body original
+ya no estará disponible.
+
+En una disputa, la evidencia disponible será:
+
+- SHA-256 del cuerpo;
+- identificadores y metadatos normalizados;
+- resultado de verificación registrado al recibir;
+- resultado de procesamiento/aplicación registrado.
+
+La pérdida de capacidad de reverificación posterior es una decisión conocida y aceptada, no una
+omisión accidental.
+
+---
+
+## 10. Criterios previos a primera migración
+
+Antes de pedir autorización para la primera migración deben poder acreditarse:
+
+- dependencia M04 explícita cuando se use autenticación de cliente;
+- ninguna escritura M11 sobre `sales.*`;
+- origen humano y externo sin atribución falsa;
+- evolución/versionado explícito de `PagoConfirmado` si requiere enriquecimiento;
+- inbox durable;
+- ambas unicidades;
+- prueba de caída entre aplicar a M03 y marcar inbox;
+- operación M11 local/no replicada;
+- pago comercial M03 replicado;
+- secretos fuera de PostgreSQL;
+- firma verificada al recibir;
+- SHA-256 y metadatos normalizados persistidos;
+- body crudo ausente.
+
+Esto **no autoriza la migración**.
+
+---
+
+## 11. Preguntas de producto abiertas
 
 - medios online de v1 además de tarjeta, si alguno;
 - pago después del vencimiento;
@@ -147,9 +231,17 @@ No se asume un valor por defecto.
 
 ---
 
-## 10. Fuera de alcance de Paso 1
+## 12. Fuera de alcance
 
 Código, migraciones, frontend, navegación, SDK, proveedor concreto, credenciales reales, webhook
 real, POS, inventario, reservas y comprobantes electrónicos.
 
-`NAV_READY M11` **no se emite todavía**.
+`NAV_READY M11` **no se emite**.
+
+---
+
+## 13. Estado
+
+JP-01 y A-M11-01 a A-M11-06 están cerradas y registradas.
+
+**HOLD:** no continuar a implementación o migración hasta nueva autorización.

@@ -1,6 +1,6 @@
 # Pendientes
 
-**Última modificación parcial:** 2026-09-27 15:45:30 -0500 — America/Lima (entrada 28). **Base verificada de esta entrada:** `3758b6e3a9367bde8a262b4efd9f6927343aa1cd`.
+**Última modificación parcial:** 2026-10-04 — America/Lima (entrada 29). **Base verificada de esta entrada:** `35647181891a9b78a7399d3b108d9a4415a0d48a`.
 
 **Creación:** 25 de agosto de 2026, 21:04:02 -05:00 — America/Lima (`1d3f78874cae9a57659166495bb84151b0797db4`)
 **Última verificación:** 22 de septiembre de 2026, 06:55:03 -05:00 — America/Lima
@@ -511,6 +511,39 @@ observación.
 
 **Responsable de seguimiento:** Integración. **Estado:** ABIERTO hasta el próximo repaso de
 criterios de cierre de un módulo cerrado.
+
+---
+
+
+## 29 · `InProcessEventBus` no garantiza entrega (RIESGO TRANSVERSAL)
+
+**Creación:** 04/10/2026 — America/Lima.
+**Última verificación:** 04/10/2026 — America/Lima.
+**Commit de código verificado:** `35647181891a9b78a7399d3b108d9a4415a0d48a`.
+
+**Hallazgo ratificado por el Líder Técnico.**
+
+`InProcessEventBus` recorre los manejadores en proceso, captura la excepción de cada uno y sigue.
+**Sin cola, sin reintento, sin persistencia. Cualquier módulo que necesite que una reacción sea
+cierta no puede apoyarse en él tal como está.**
+
+El alcance concreto hoy es pequeño: CMS es el consumidor implementado conocido de eventos de
+catálogo. El riesgo crece cuando entren consumidores que necesiten garantía de entrega.
+
+**Disparadores obligatorios:**
+
+1. antes de las decisiones previas de **M10 Reportes**;
+2. antes de que cualquier SPEC escriba un criterio de aceptación que dependa de que un evento
+   llegue.
+
+**Referencia verificada:** `docs/ARQUITECTURA_MODULAR.md:66` es la fila vigente de
+**M10 Reportes y Analítica**. No usar la línea 68, que corresponde a otro módulo.
+
+**Consecuencia:** cuando un caso requiera entrega garantizada, su SPEC debe definir un mecanismo
+durable/idempotente explícito; no se elevan por inferencia las garantías del bus actual.
+
+**Estado:** ABIERTO hasta que exista una decisión transversal que cambie las garantías del bus o
+cada consumidor que las necesite adopte un mecanismo durable propio.
 
 ---
 
