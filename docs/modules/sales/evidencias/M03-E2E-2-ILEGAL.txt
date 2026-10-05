@@ -1,0 +1,35 @@
+================================================================================
+M03 · DIRECCIÓN 2 de 3 — ILEGAL · el defecto histórico, provocado
+================================================================================
+Fecha   5 de octubre de 2026, America/Lima
+Qué se hace  Se retira TEMPORALMENTE Sales del arnés:
+               · fuera de migrate()  → applyMigrations('Sillar.Modules.Sales')
+               · fuera del seed      → el bucle vuelve a ser los cuatro
+             y se corre el mismo escenario destructivo.
+Esperado     ROJO, porque migrate()+seed() ya no reconstruye M03.
+             ES LA DIRECCIÓN QUE ACREDITA QUE EL ARREGLO HACE ALGO.
+Restaurado   Sí — el sabotaje no queda en HEAD.
+================================================================================
+
+  for (const modulo of ['core', 'catalog', 'cms', 'crm'])
+  // SABOTAJE TEMPORAL: Sales fuera del arnes (estado historico).
+
+$ npx playwright test tests/zz-instalacion.spec.ts
+
+  ✓  1 [chromium] › tests/zz-instalacion.spec.ts:104:1 › Swagger lleva las rutas de M01, y ningún cuerpo de ningún módulo se queda sin ejemplo (2.7s)
+  ✓  2 [chromium] › tests/zz-instalacion.spec.ts:157:1 › Los scripts del catálogo son idempotentes (499ms)
+  ✘  3 [chromium] › tests/zz-instalacion.spec.ts:174:1 › El schema catalog se elimina sin llevarse nada de core, y M03 vuelve igual que lo dejó la instalación (48.5s)
+  1 failed
+  2 passed (3.0m)
+EXIT=1
+
+  Error: M03 no volvió: migrate() no lo reconstruye
+
+  expect(received).toBe(expected)
+  Expected: "1"
+  Received: "0"
+
+RESULTADO  ROJO, y por el motivo exacto: el schema sales no vuelve. Nótese que
+           el escenario llegó a ejecutarse entero (48,5 s) y solo falló en la
+           comparación final: la cirugía ocurrió, y lo que faltó fue la
+           reconstrucción. Es el defecto histórico tal cual.

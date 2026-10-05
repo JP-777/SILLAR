@@ -1,0 +1,46 @@
+================================================================================
+M03 · DIRECCIÓN 3 de 3 — SABOTAJE DEL DETECTOR
+================================================================================
+Fecha   5 de octubre de 2026, America/Lima
+Qué se hace  Se rompe TEMPORALMENTE el detector: estadoDeSales() deja de ver a
+             Sales (mira el schema 'sales_inexistente').
+Esperado     ROJO EN LA PREPARACIÓN, antes de destruir nada. Una detección vacía
+             no puede producir verde: sin la guarda, esta prueba destruiría el
+             catálogo y después confirmaría que «las cero claves foráneas
+             volvieron».
+Restaurado   Sí — el sabotaje no queda en HEAD.
+================================================================================
+
+$ npx playwright test tests/zz-instalacion.spec.ts
+
+  ✓  1 [chromium] › tests/zz-instalacion.spec.ts:105:1 › Swagger lleva las rutas de M01, y ningún cuerpo de ningún módulo se queda sin ejemplo (2.9s)
+  ✓  2 [chromium] › tests/zz-instalacion.spec.ts:158:1 › Los scripts del catálogo son idempotentes (664ms)
+  ✘  3 [chromium] › tests/zz-instalacion.spec.ts:175:1 › El schema catalog se elimina sin llevarse nada de core, y M03 vuelve igual que lo dejó la instalación (2.1s)
+  1 failed
+  2 passed (2.7m)
+EXIT=1
+
+  Error: la instalación del arnés debería haber creado el schema sales:
+         M03 está en el binario
+
+  expect(received).toBe(expected)
+  Expected: "1"
+  Received: "0"
+
+RESULTADO  ROJO, y a los 2,1 s: murió en la preparación, sin haber soltado ni un
+           schema. Compárese con la dirección 2, que tardó 48,5 s porque llegó a
+           hacer la cirugía. La diferencia de tiempo es la prueba de que la
+           guarda paró ANTES de destruir.
+
+--------------------------------------------------------------------------------
+VUELTA AL VERDE, sobre el árbol restaurado
+--------------------------------------------------------------------------------
+$ grep -rn "SABOTAJE\|sales_inexistente" e2e/ --include=*.ts
+  (sin salida)
+
+$ grep -n "Sillar.Modules.Sales\|'sales'" e2e/setup/migrate.ts
+  51:  await applyMigrations('Sillar.Modules.Sales');
+  59:  for (const modulo of ['core', 'catalog', 'cms', 'crm', 'sales']) {
+
+El verde del árbol restaurado es el de M03-E2E-1-LEGAL.txt: 3 passed, 0 failed,
+0 skipped.

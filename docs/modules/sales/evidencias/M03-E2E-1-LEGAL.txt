@@ -1,0 +1,33 @@
+================================================================================
+M03 · DIRECCIÓN 1 de 3 — LEGAL · el flujo nuevo
+================================================================================
+Fecha   5 de octubre de 2026, America/Lima
+Base    sillar_m03_e2e_e2e · stack e2e efímero de la worktree sillar-m03-e2e
+Qué se hace  Nada. El árbol tal como queda en HEAD.
+Flujo        Sales se retira → Catalog se retira → migrate()+seed() → los dos
+             vuelven → las claves foráneas de Sales vuelven
+Esperado     VERDE
+================================================================================
+
+$ npx playwright test tests/zz-instalacion.spec.ts
+
+  ✓  1 [chromium] › tests/zz-instalacion.spec.ts:104:1 › Swagger lleva las rutas de M01, y ningún cuerpo de ningún módulo se queda sin ejemplo (2.6s)
+  ✓  2 [chromium] › tests/zz-instalacion.spec.ts:157:1 › Los scripts del catálogo son idempotentes (644ms)
+  ✓  3 [chromium] › tests/zz-instalacion.spec.ts:174:1 › El schema catalog se elimina sin llevarse nada de core, y M03 vuelve igual que lo dejó la instalación (57.1s)
+  3 passed (3.3m)
+EXIT=0
+
+passed 3 · failed 0 · skipped 0
+
+La prueba destructiva tarda 57,1 s: dentro caben soltar dos schemas, dos
+migraciones completas y los seeds.
+
+FK Sales -> Catalog, antes y después (comparadas por identidad y destino):
+
+  antes    fk_order_lines_item_id -> catalog.product_items
+           fk_orders_customer_id  -> crm.customers
+  después  fk_order_lines_item_id -> catalog.product_items
+           fk_orders_customer_id  -> crm.customers
+
+Y con ellas: schema, conjunto exacto de tablas, historial de migraciones y
+dependencias duras registradas. Los cinco aspectos, iguales.
