@@ -34,7 +34,7 @@ public sealed class ModulosEnElDespliegueTests
     /// </summary>
     /// <remarks>
     /// Su <c>ProjectReference</c> está condicionado a Debug a propósito
-    /// (<c>Sillar.Api.csproj:28</c>, primera barrera de la entrega 4a §0), así que
+    /// (<c>Sillar.Api.csproj:29</c>, primera barrera de la entrega 4a §0), así que
     /// exigirlo haría fallar esta prueba en Release por cumplir la regla. Que en
     /// Release no llegue es asunto de esa barrera, no de ésta.
     /// </remarks>
