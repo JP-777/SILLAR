@@ -1,106 +1,90 @@
 ================================================================================
-M03 · DIAGNÓSTICO Y PARIDAD — los dos caminos de instalación del arnés
+M03 · DIAGNÓSTICO Y PARIDAD — ÁRBOL COMBINADO con M05a Services
 ================================================================================
 Fecha   5 de octubre de 2026, America/Lima
-Rama    fix/m03-e2e-restauracion, partida de main 3564718 (merge-base verificado)
-Base    sillar_m03_paridad · PostgreSQL 16 · puerto 55690 · ICU es-PE
+Rama    fix/m03-e2e-restauracion, recompuesta por merge normal sobre
+        main = 6bde7c9cfcad0f8932da006e7f22555c35cfc8cb
+Base    sillar_m03b_paridad · PostgreSQL 16 · puerto 55690 · ICU es-PE
 ================================================================================
 
-EL HALLAZGO CAUSAL
+QUÉ CAMBIÓ RESPECTO A LA MEDICIÓN ANTERIOR
 
-  POST /api/setup instala Sales desde el binario y migrate()+seed() no sabía
-  restaurarlo.
-
-  Los dos caminos del arnés tenían que converger al mismo estado de base:
-
-    POST /api/setup                      → todos los módulos del binario
-    migrate()+seed() de migrate.ts       → una lista escrita a mano, sin M03
-
-  Confirmado en el log del contenedor de la API del arnés:
-
-    info: Sillar.Arranque[0] Módulos descubiertos: 11 (catalog, cms, core, crm,
-          demo_catalog, demo_crm, demo_sales, demo_service_orders, demo_services,
-          demo_tracking, sales).
-
-  Y confirmado en la imagen publicada: Sillar.Modules.Sales.dll está en /app.
-  El Dockerfile copia el contexto entero y publica Sillar.Api.csproj, así que un
-  módulo referenciado por el host entra solo.
+  main avanzó: M05a ya trae Services DENTRO del arnés. Así que la paridad se
+  volvió a medir sobre el árbol combinado en vez de heredarla. Services NO se
+  añadió otra vez y NO se reescribió: se conserva tal como main lo puso.
 
 --------------------------------------------------------------------------------
 A · lo que deja POST /api/setup                                      setup=201
 --------------------------------------------------------------------------------
-schema_sales        1
-tablas              __migrations,cart_items,carts,order_lines,order_payments,
-                    order_series,order_status_changes,orders
-migraciones         20260930185029_SalesInitial
-fk_cruzadas         fk_order_lines_item_id->catalog.product_items,
-                    fk_orders_customer_id->crm.customers
-dep_duras_de_sales  catalog,core,crm
+schema_sales     1
+tablas_sales     __migrations,cart_items,carts,order_lines,order_payments,
+                 order_series,order_status_changes,orders
+migraciones      20260930185029_SalesInitial
+fk_cruzadas      fk_order_lines_item_id->catalog.product_items,
+                 fk_orders_customer_id->crm.customers
+dep_duras_sales  catalog,core,crm
+schema_services  1
+migrac_services  20260928090000_ServicesInitial
 
 --------------------------------------------------------------------------------
-B · soltar Sales + migrate()+seed() TAL COMO ESTABA — el defecto
+B · soltar Sales + migrate()+seed() SIN Sales pero CON Services — el defecto
 --------------------------------------------------------------------------------
-sales/99_drop.sql   OK · NOTICE: drop cascades to 9 other objects
-migrate()           Core OK · Catalog OK · Cms OK · Crm OK      ← cuatro
-seed()              core, catalog, cms, crm                     ← cuatro
-
-schema_sales        0          <-- DESAPARECIDO Y SIN FORMA DE VOLVER
-tablas              (vacío)
-migraciones         (vacío)
-fk_cruzadas         (vacío)
-dep_duras_de_sales  catalog,core,crm   <-- la fila de core.modules sobrevive, y
-                                           está bien: ese catálogo no se va con
-                                           el schema. Es además lo que hace que
-                                           la guarda C6 de M01 se niegue.
+schema_sales     0          <-- DESAPARECIDO Y SIN FORMA DE VOLVER
+tablas_sales     (vacío)
+migraciones      (vacío)
+fk_cruzadas      (vacío)
+dep_duras_sales  catalog,core,crm   <-- la fila de core.modules sobrevive
+schema_services  1                  <-- Services intacto: el defecto es de M03
+migrac_services  20260928090000_ServicesInitial
 
 --------------------------------------------------------------------------------
-C · soltar Sales + migrate()+seed() CON EL ARREGLO — reconstruido
+C · soltar Sales + migrate()+seed() CON LOS SEIS — reconstruido
 --------------------------------------------------------------------------------
-migrate()           Core OK · Catalog OK · Cms OK · Crm OK · Sales OK
-seed()              core, catalog, cms, crm, sales
+schema_sales     1
+tablas_sales     __migrations,cart_items,carts,order_lines,order_payments,
+                 order_series,order_status_changes,orders
+migraciones      20260930185029_SalesInitial
+fk_cruzadas      fk_order_lines_item_id->catalog.product_items,
+                 fk_orders_customer_id->crm.customers
+dep_duras_sales  catalog,core,crm
+schema_services  1
+migrac_services  20260928090000_ServicesInitial
 
-schema_sales        1
-tablas              __migrations,cart_items,carts,order_lines,order_payments,
-                    order_series,order_status_changes,orders
-migraciones         20260930185029_SalesInitial
-fk_cruzadas         fk_order_lines_item_id->catalog.product_items,
-                    fk_orders_customer_id->crm.customers
-dep_duras_de_sales  catalog,core,crm
-
-C ES IDÉNTICO A A EN LOS CINCO ASPECTOS. Los dos caminos convergen.
-
-NO SE ENCONTRÓ NINGUNA OTRA DIFERENCIA entre los dos caminos. En particular, el
-historial se llama `__migrations` por los dos caminos: los cinco módulos lo
-declaran así (CoreDbContext.cs:37, CatalogDbContext.cs:26, CmsDbContext.cs:10,
-CrmDbContext.cs:28, SalesDbContext.cs:38) y la fábrica de diseño de Sales usa esa
-misma constante, así que `dotnet ef` y el instalador coinciden. Nada que escalar.
+C ES IDÉNTICO A A EN LOS CINCO ASPECTOS DE SALES, y Services queda igual en los
+tres estados: no se tocó en ningún momento.
 
 ================================================================================
-AUDITORÍA DE PARIDAD DEL ARNÉS COMPLETO
+AUDITORÍA DE PARIDAD · VUELTA A MEDIR SOBRE EL ÁRBOL COMBINADO
 ================================================================================
-No se dio por supuesto que M03 fuera el único atrasado.
-
-  módulo                     binario/setup   migrate.ts   seed()   diferencia
-  -------------------------  -------------   ----------   ------   ----------
-  Sillar.Core                     sí             sí         sí        —
-  Sillar.Modules.Catalog          sí             sí         sí        —
-  Sillar.Modules.Cms              sí             sí         sí        —
-  Sillar.Modules.Crm              sí             sí         sí        —
-  Sillar.Modules.Sales            sí           NO→sí      NO→sí     HUECO REAL
+  módulo                      binario/setup   migrate()   seed()   diferencia
+  --------------------------  -------------   ---------   ------   ----------
+  Sillar.Core                      sí            sí         sí      ninguna
+  Sillar.Modules.Catalog           sí            sí         sí      ninguna
+  Sillar.Modules.Cms               sí            sí         sí      ninguna
+  Sillar.Modules.Crm               sí            sí         sí      ninguna
+  Sillar.Modules.Services          sí            sí         sí      ninguna
+                                   (ya venía de main con M05a; no reescrito)
+  Sillar.Modules.Sales             sí          NO->sí     NO->sí   era el hueco
   Sillar.Modules.Demo         sí (solo Debug)    no         no      sin nada
                                                                     aplicable
 
-  Sillar.Modules.Demo: 0 archivos de migración en su carpeta y no existe
-  database/modules/demo/. No hay nada que migrar ni sembrar. Clasificado como
-  «módulo sin migraciones/seed aplicables», no como hueco.
+  Medido así:
+    binario (Sillar.Api.csproj)  Core Catalog Cms Crm Demo Sales Services
+    migrate()                    Core Catalog Cms Crm Services Sales
+    seed()                       core catalog cms crm services sales
+    migraciones por proyecto     Core 5 · Catalog 2 · Cms 2 · Crm 3 ·
+                                 Sales 2 · Services 2 · Demo 0
 
-  Dos carpetas de seed que NO son huecos:
-    database/modules/services/02_seed.sql  — no existe proyecto Sillar.Modules.
-                                             Services: módulo futuro, no está en
-                                             el binario, /api/setup no lo instala
-    database/modules/b2b/                  — M07 no está en main, y esta rama
-                                             parte de main. Su reparación
-                                             equivalente la hizo la candidata de
-                                             M07 en su propia rama
+  Demo: 0 archivos de migración y no existe database/modules/demo/.
+  Clasificado como «sin migraciones/seed aplicables», no como hueco.
 
-CONCLUSIÓN: M03 era el único módulo atrasado. Nada que escalar por paridad.
+  b2b: M07 no está en main, así que no hay asimetría que reparar aquí. Es el
+  próximo caso de la regla de paridad (ver E2E-RESTAURABILIDAD-M03.md §3).
+
+CONCLUSIÓN: sobre el árbol combinado no queda ningún módulo atrasado.
+
+EL ORDEN, Y DÓNDE IMPORTA
+  Sales va el último porque es el único con claves foráneas cruzadas
+  (SalesModule.cs:74 → core, catalog, crm). M05a solo depende de core
+  (ServicesModule.cs:24), así que su sitio es indiferente y se conserva donde
+  main lo puso.

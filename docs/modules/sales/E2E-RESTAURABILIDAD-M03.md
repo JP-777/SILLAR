@@ -1,9 +1,10 @@
 # M03 — Restaurabilidad en el arnés e2e
 
 Creado: 05/10/2026, America/Lima · Última verificación: 05/10/2026, America/Lima
-Commit base comprobado: `35647181891a9b78a7399d3b108d9a4415a0d48a` (rama
-`fix/m03-e2e-restauracion`, partida de ese `main` exacto; `merge-base` verificado
-igual al propio `main`).
+Commit base comprobado: `6bde7c9cfcad0f8932da006e7f22555c35cfc8cb` — recompuesto
+sobre ese `main`, que ya trae M05a Services dentro del arnés. La rama
+`fix/m03-e2e-restauracion` nació de `3564718` y se recompuso por **merge normal**,
+no rebase: conserva sus commits de evidencia.
 Base PostgreSQL usada: `sillar_m03_paridad`, en el stack de desarrollo de la
 worktree `sillar-m03-e2e` (PostgreSQL 16, puerto 55690, colación ICU `es-PE`).
 
@@ -95,32 +96,85 @@ dep_duras_de_sales  catalog, core, crm
 
 ---
 
-## 3 · Auditoría de paridad del arnés completo
+## 3 · La regla que este incidente deja escrita
+
+> **La auditoría de paridad entre los módulos del binario / `/api/setup` y los
+> que enumeran `migrate()` + `seed()` debe repetirse cada vez que entre a `main`
+> un módulo real nuevo.**
+
+**Por qué es una regla y no una anécdota.** El arnés tiene dos caminos para
+dejar la base lista y uno de ellos —`/api/setup`— se actualiza **solo**, porque
+migra lo que haya en el binario. El otro es una lista escrita a mano. Cada
+módulo que entra al binario sin entrar a esa lista abre el mismo hueco que abrió
+M03, y **el hueco no produce ningún rojo**: la base sale bien de la instalación,
+así que todo parece funcionar hasta que una prueba destructiva necesita
+reconstruir.
+
+Es la asimetría la que hace falta vigilar, no el módulo. Por eso la regla se
+dispara con la **entrada de un módulo a `main`**, que es el momento en que la
+lista puede quedarse atrás.
+
+**Lo que ya se vio dos veces.** M03 abrió el hueco al entrar en `main` el 3 de
+octubre de 2026 y se cerró aquí. **M05a Services lo abrió y se cerró en el mismo
+cambio**, dentro de `main`: la lista de `migrate()` y el bucle de `seed()`
+llegaron con el módulo. Esa es la forma correcta — el arreglo entra con el
+módulo, no después.
+
+**El próximo caso conocido es M07 B2B.** Su candidata
+(`m07-b2b-sobre-main`, `343ff7c`) ya lleva su mitad hecha: añade
+`Sillar.Modules.B2B` a `migrate()` y `b2b` al bucle de seeds. **Cuando M07 entre
+a `main`, esta auditoría se repite** y la tabla de abajo tiene que crecer con su
+fila. Si entrara sin ella, el hueco sería el mismo y volvería a no haber ningún
+rojo que lo dijera.
+
+---
+
+## 4 · Auditoría de paridad del arnés completo
 
 No se dio por supuesto que M03 fuera el único atrasado. Se comparó, para **todos**
 los módulos reales presentes, qué hay en el binario contra qué enumeran
 `migrate()` y `seed()`.
 
+**Vuelta a medir sobre el árbol combinado**, no heredada de la medición
+anterior: `main` cambió entre las dos.
+
 | Módulo | En binario / `/api/setup` | `migrate.ts` | `seed()` | Diferencia |
 |---|:--:|:--:|:--:|---|
-| `Sillar.Core` | sí | **sí** | sí (`core`) | — |
-| `Sillar.Modules.Catalog` | sí | **sí** | sí | — |
-| `Sillar.Modules.Cms` | sí | **sí** | sí | — |
-| `Sillar.Modules.Crm` | sí | **sí** | sí | — |
-| `Sillar.Modules.Sales` | sí | **NO** → **sí** | **NO** → **sí** | **Hueco real. Es lo que esta rama repara** |
-| `Sillar.Modules.Demo` | sí, **solo en Debug** | no | no | **Módulo sin migraciones ni seed aplicables:** 0 migraciones en su carpeta y no existe `database/modules/demo/`. No hay nada que migrar ni sembrar |
+| `Sillar.Core` | sí | sí | sí (`core`) | **ninguna** |
+| `Sillar.Modules.Catalog` | sí | sí | sí | **ninguna** |
+| `Sillar.Modules.Cms` | sí | sí | sí | **ninguna** |
+| `Sillar.Modules.Crm` | sí | sí | sí | **ninguna** |
+| `Sillar.Modules.Services` | sí | sí | sí | **ninguna** — ya venía de `main` con M05a, y **no se reescribió** |
+| `Sillar.Modules.Sales` | sí | **NO** → **sí** | **NO** → **sí** | era el **hueco real**; cerrado por esta rama |
+| `Sillar.Modules.Demo` | sí, **solo en Debug** | no | no | **Módulo sin migraciones ni seed aplicables:** 0 archivos de migración y no existe `database/modules/demo/`. No hay nada que migrar ni sembrar |
+
+Medido así, sobre el árbol ya recompuesto:
+
+```
+binario (Sillar.Api.csproj)   Core · Catalog · Cms · Crm · Demo · Sales · Services
+migrate()                     Core · Catalog · Cms · Crm · Services · Sales
+seed()                        core · catalog · cms · crm · services · sales
+migraciones por proyecto      Core 5 · Catalog 2 · Cms 2 · Crm 3 · Sales 2 ·
+                              Services 2 · Demo 0
+```
+
+**El orden importa en un solo sitio.** Sales va el último porque es el único con
+claves foráneas cruzadas —a `catalog` y a `crm`, `SalesModule.cs:74`—. M05a solo
+depende de `core` (`ServicesModule.cs:24`), así que su sitio es indiferente y se
+conserva **donde `main` lo puso**.
 
 Dos filas que conviene no confundir con huecos:
 
 - **`database/modules/services/02_seed.sql` existe y no hay proyecto `Sillar.Modules.Services`.** Es un módulo futuro: no está en el binario, así que `/api/setup` no lo instala y no hay asimetría que reparar.
-- **`database/modules/b2b/`** está igual, en este árbol: M07 **no está en `main`**, y esta rama parte de `main`. Su reparación equivalente ya la hizo la candidata de M07 en su propia rama.
+- **`database/modules/b2b/`** está igual: M07 **no está en `main`**, así que no hay asimetría que reparar aquí. Su mitad ya la lleva hecha su candidata, y es el próximo caso de la regla del §3.
 
-**Conclusión de la auditoría: M03 era el único módulo atrasado.** Nada más que
-agregar, y nada que escalar por paridad.
+**Conclusión de la auditoría sobre el árbol combinado: no queda ningún módulo
+atrasado.** Services ya estaba al día —lo trajo M05a— y Sales es el que esta rama
+pone al día. Nada más que agregar y nada que escalar por paridad.
 
 ---
 
-## 4 · Qué cambió
+## 5 · Qué cambió
 
 | Archivo | Cambio |
 |---|---|
@@ -136,22 +190,30 @@ E2E funcional de M03, que es otro trabajo.
 
 ---
 
-## 5 · Las tres direcciones
+## 6 · Las tres direcciones
 
 Los rojos van en archivos aparte del verde: una barrera que solo se ha visto en
 verde no se ha visto.
 
 | | Qué se hace | Esperado | Evidencia |
 |---|---|---|---|
-| **1 · legal** | El flujo nuevo: Sales se retira → Catalog se retira → `migrate()+seed()` → los dos vuelven → las claves de Sales vuelven | **VERDE · 3 passed, 0 failed, 0 skipped** (la destructiva, 57,1 s) | `evidencias/M03-E2E-1-LEGAL.txt` |
-| **2 · ilegal** | Se retira **temporalmente Sales del arnés** —fuera de `migrate()` y fuera del seed— y se corre el mismo escenario | **ROJO · 1 failed, 2 passed**: «M03 no volvió: migrate() no lo reconstruye», esperaba `1` y recibió `0` | `evidencias/M03-E2E-2-ILEGAL.txt` |
-| **3 · sabotaje** | Se sabotea el **detector**: `estadoDeSales()` deja de ver a Sales | **ROJO · 1 failed, 2 passed**, y **en la preparación**: 2,1 s frente a los 48,5 s de la dirección 2. Murió sin soltar ni un schema | `evidencias/M03-E2E-3-SABOTAJE.txt` |
+Las tres se repitieron **sobre el árbol combinado**, no se heredaron.
+
+| | Resultado | Evidencia |
+|---|---|---|
+| **1 · legal** · el flujo nuevo, con Services de `main` y Sales de esta rama conviviendo | **VERDE · 3 passed, 0 failed, 0 skipped**. La destructiva, 1,1 min | `evidencias/M03-E2E-1-LEGAL.txt` |
+| **2 · ilegal** · se retira **solo Sales** del arnés y **Services se conserva** | **ROJO · 1 failed, 2 passed**: «M03 no volvió: migrate() no lo reconstruye», esperaba `1` y recibió `0`. **57,8 s** | `evidencias/M03-E2E-2-ILEGAL.txt` |
+| **3 · sabotaje** · el detector deja de ver a Sales | **ROJO · 1 failed, 2 passed**, y **en la preparación**. **1,6 s** | `evidencias/M03-E2E-3-SABOTAJE.txt` |
 
 **La diferencia de tiempos entre la 2 y la 3 es parte de la evidencia.** La
-dirección 2 tarda 48,5 s porque llega a hacer la cirugía entera y solo falla al
-comparar; la 3 muere a los 2,1 s, en la guarda, antes de destruir nada. Si la
+dirección 2 tarda 57,8 s porque llega a hacer la cirugía entera y solo falla al
+comparar; la 3 muere a los 1,6 s, en la guarda, **antes de destruir nada**. Si la
 guarda no estuviera, la 3 habría destruido el catálogo y después habría
 confirmado en verde que «las cero claves foráneas volvieron».
+
+**Que la 2 conserve Services importa.** Con los dos fuera, el rojo no diría de
+quién es; con Services dentro, el único que no vuelve es M03, y eso es
+exactamente lo que el arreglo arregla.
 
 La dirección 2 es la que acredita que el arreglo hace algo: es exactamente el
 defecto histórico, provocado a propósito. La 3 es la que impide que la prueba
