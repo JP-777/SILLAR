@@ -181,3 +181,69 @@ y las evidencias anteriores.
 **Riesgo declarado para la QA local:** la etapa 6 cubre la instalación por `/api/setup`, que ahora
 migra también `services`. No se ha visto pasar en este contenedor. La prueba H29 de navegación usa
 una lista fija de módulos sin `services`, así que el grupo nuevo no le afecta.
+
+## Hueco E2E del ciclo de módulo cubierto — 05/10/2026
+
+- **Creación:** 2026-10-05 00:59:09 -0500 — America/Lima
+- **Última verificación:** 2026-10-05 00:59:09 -0500 — America/Lima
+- **Commit verificado:** el de esta sección, hijo directo de `ab31744dece9533ad0896212af0f09b1e8bf03b3`
+  en `m05a-vitrina-dev`
+- **Escrito por:** Claude Code D, por encargo de Chat 2 vía JP
+
+**Qué faltaba.** La QA de B sobre `588c7c2` dio la puerta 6/6 verde (777 PASS, 0 FAIL,
+0 SKIPPED), pero **no certificó**: faltaba un E2E real del ciclo activo → desactivado →
+reactivado. Se clasificó como **falta de cobertura, no como defecto observado**.
+
+**La prueba.** `e2e/tests/zz-z-m05a-ciclo.spec.ts`, escrita por D en `ab31744`
+(`m05a-e2e-ciclo-wip`). Recorre el ciclo desde el panel, con reinicios del host, y comprueba:
+
+- con M05a activo: rutas públicas y del panel, menú y portada;
+- con M05a desactivado: que no quede navegación, sección de portada, rutas montadas, enlaces
+  muertos ni huecos, y que el resto del producto siga operativo;
+- con M05a reactivado: que vuelve todo, con los mismos datos.
+
+Lleva controles negativos dentro de la misma corrida.
+
+**Por qué D no la ejecutó.** En el contenedor de nube de D la etapa 6 no puede construir la imagen
+de la API (`NU1301 … UntrustedRoot`, el certificado del proxy). No se alteró TLS, no se instaló
+ninguna CA y no se tocó el Dockerfile. Un intento de reetiquetar la imagen base con la CA del
+proxy fue bloqueado y se deshizo antes de usarse.
+
+**Preverificación independiente de B sobre `ab31744`**, aceptada por Chat 2 vía JP. La evidencia
+está en la rama `qa/m05a-e2e-ab31744-evidencias` = `f7716f3de775abd9473260090f2738d640177f4e`,
+hijo directo de `ab31744` que solo añade evidencia. Índice:
+`docs/modules/services/evidencias/QA-M05A-E2E-AB31744-INDICE-20261005.md` en esa rama.
+
+| Dirección | Resultado |
+|---|---|
+| **Legal** | `1 passed / 0 failed / 0 skipped` |
+| **Ilegal** | **Rojo**: una ruta de M05a montada indebidamente |
+| **Sabotaje** | **Rojo**: con el detector cegado |
+
+Se usó una base E2E explícita y efímera. No se persistió ningún sabotaje y no se observó ningún
+defecto de producto.
+
+**Integración en la candidata.**
+
+- `m05a-vitrina-dev` avanzó en **fast-forward** hasta `ab31744`, así que el commit
+  preverificado está tal cual en la historia.
+- Encima, el commit de esta sección añade **solo** la cabecera que explica el prefijo `zz-z-` y
+  esta documentación.
+- **La rama de evidencia de B no se integra:** queda en su propia rama.
+- La lógica de la prueba **coincide byte a byte** con `ab31744`. Quitando las 18 líneas de
+  comentario añadidas (26–43), el SHA-256 del archivo es el mismo:
+  `e50bb551d9e2d462147b15bd4e49f3f829cbcb9f416d4ef8db63755647752eb5`.
+
+**Verificado por D en este entorno**, sin degradarlo:
+
+| Comprobación | Resultado |
+|---|---|
+| `pnpm typecheck` del arnés e2e | verde |
+| `playwright test --list` | descubre `[M05A-CICLO]`; 167 pruebas en 42 archivos |
+| `git diff` contra `ab31744` | solo el bloque de comentario |
+| Árbol | limpio |
+
+**Ninguna corrida E2E se declara como hecha por D.**
+
+**Esto todavía no es certificación canónica.** La certificación la hará B sobre el **nuevo SHA
+definitivo** de `m05a-vitrina-dev`, el que contiene este commit.

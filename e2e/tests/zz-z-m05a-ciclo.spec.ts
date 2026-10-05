@@ -23,6 +23,24 @@
  *
  * Un detector que nunca encuentra nada es indistinguible de uno que funciona
  * (`ANTES-DE-EMPEZAR-UN-MODULO.md` §2).
+ *
+ * **Por qué el nombre empieza por `zz-z-`, y no es un accidente.**
+ *
+ *   - El prefijo es deliberado: coloca esta prueba al final del orden
+ *     alfabético en que Playwright recorre los archivos.
+ *   - La prueba cambia el estado real de un módulo (activa y desactiva M05a
+ *     desde el panel) y reinicia el host varias veces.
+ *   - El arnés ejecuta con `workers: 1` y `fullyParallel: false`
+ *     (`playwright.config.ts`): los archivos corren de uno en uno y en orden,
+ *     así que lo que esta prueba hace lo ven las que vienen detrás.
+ *   - Por eso tiene que correr después de todas las pruebas que puedan depender
+ *     del estado inicial del arnés —M05a inactivo y un host recién arrancado—.
+ *   - Renombrarla o reordenarla sin revisar esa dependencia puede contaminar
+ *     las pruebas posteriores.
+ *   - El `finally` que devuelve M05a a inactivo no hace irrelevante el orden:
+ *     sigue siendo una prueba de ciclo destructiva respecto del estado en
+ *     ejecución —reinicios del host y datos sembrados—, y el `finally` solo
+ *     limita el daño si algo falla a mitad.
  */
 import type { APIRequestContext, Browser, Page, TestInfo } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
