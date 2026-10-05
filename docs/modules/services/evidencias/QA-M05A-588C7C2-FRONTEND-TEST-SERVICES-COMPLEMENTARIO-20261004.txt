@@ -1,0 +1,17 @@
+# Complementario, NO sustituye a la puerta: pnpm --dir frontend test:services sobre 588c7c2a5770f3c17a215d88690be97d6816e0a1, 2026-10-04 19:17:20 -0500
+$ node --test tests/services.test.mjs
+✔ S3 cubre carga, vacío, datos, error y reordenamiento accesible (3.876624ms)
+✔ S4 conserva datos y muestra validación y conflictos reales sin concurrencia ficticia (1.748544ms)
+✔ S4 asocia las reglas editoriales con sus campos (1.557394ms)
+✔ S4 valida la dirección resultante y conserva el mapeo del slug duplicado (0.635881ms)
+✔ la navegación y las rutas dependen de la capacidad services (0.660438ms)
+✔ la portada sitúa Servicios entre Catálogo y CRM y solo aporta con publicados (0.847591ms)
+✔ la superficie pública cubre vacío, error recuperable, 404 y fallo de imagen (0.461643ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 276.019338
