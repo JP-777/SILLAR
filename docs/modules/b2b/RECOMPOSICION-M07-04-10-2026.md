@@ -28,9 +28,16 @@ la puerta 6/6 corrida sobre `0fd8dad`.
 `git merge-base --is-ancestor <commit> HEAD`: ninguno reescrito, descartado ni
 reordenado.
 
-**El conflicto de `Sillar.sln`** se resolvió conservando los **seis** proyectos
-—los tres de M07 y los tres de Sales que `main` había añadido—. Verificado:
-`Project: 24 · EndProject: 24`.
+**El conflicto de `Sillar.sln`** se resolvió conservando los proyectos de los dos
+lados: los **dos** de M07 —`Sillar.Modules.B2B` y `Sillar.Modules.B2B.Tests`
+(`47b924c`)— y los **tres** de Sales que `main` había añadido —`Sillar.Modules.Sales`,
+`.Contracts` y `.Tests` (`3564718:backend/Sillar.sln`)—. **Cinco**, no seis.
+
+> **El inventario decía «seis» y el commit del merge lo repitió.** Era un recuento
+> de memoria: M07 no tiene `Sillar.Modules.B2B.Contracts` —no lo necesita, nadie
+> depende de M07— y se le contó uno de más por simetría con Sales. Se corrige aquí
+> porque los mensajes de commit ya son historia. Comprobado:
+> `grep -c '^Project(' backend/Sillar.sln` → **24**, igual que `EndProject`.
 
 ---
 
