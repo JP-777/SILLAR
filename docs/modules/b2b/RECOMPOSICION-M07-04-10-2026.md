@@ -116,9 +116,37 @@ M07: **§p** —`ICurrentAdmin` expone ahora `DisplayName` y `HomeNode`, que era
 justo los dos datos que R-14 no tenía de dónde sacar— y **§i**, la fotografía del
 autor de los medios sin FK (`7b59054`).
 
-Sigue abierta **§g**: `b2b.quote_number_series (series_code, year)` no lleva
-columna de nodo, mientras la definición ratificada es nodo × año × tipo. Hoy
-coinciden porque hay un nodo. Es deuda de M16 y la decisión `P`/`C` no se reabre.
+---
+
+## 6 · Hallazgo abierto · M03 y M07 leen la misma convención al revés
+
+No se corrige aquí: es una decisión de esquema sobre una convención ratificada y
+afecta a los dos módulos. Se plantea.
+
+La excepción de la ADR-016 del 27/09 fija el código visible como **serie de nodo,
+año y correlativo**. Los dos módulos lo implementaron, y la letra significa cosas
+distintas en cada uno:
+
+| | M03 | M07 |
+|---|---|---|
+| Tabla de serie | `sales.order_series (node_code, year)` | `b2b.quote_number_series (series_code, year)` |
+| Qué es la letra | **el nodo**, leída del ajuste de la instalación (`OrderCodeAllocator.cs:103`) | **el tipo de documento**, constante `"C"` (`NumeradorDeCotizaciones.cs:32`) |
+| Nodo en la clave | sí (`OrderCodeAllocator.cs:136`) | **no lo hay en ninguna columna** |
+
+M07 restringe además `series_code` a una sola letra mayúscula
+(`B2bConfiguration.cs:190`), así que el hueco no es «falta rellenar una columna»:
+es que la única columna disponible ya está ocupada por el tipo.
+
+**Por qué importa y por qué no corre prisa hoy.** Con un solo nodo los dos
+esquemas funcionan. Con dos, M03 da `A-2026-0147` y `B-2026-0147` sin colisión, y
+M07 da `C-2026-0147` en los dos nodos: el mismo número visible para dos
+cotizaciones distintas. Y es de las caras de deshacer —toca clave primaria,
+números ya emitidos y la lectura de la ADR— así que es exactamente lo que no se
+decide solo.
+
+La letra `C` **no se reabre**: la ratificó JP el 30/09. Lo que está sin decidir es
+si el nodo entra como columna propia en la serie de M07, o si la letra pasa a ser
+del nodo y el tipo se va a otra parte. Queda para la decisión de multinodo (M16).
 
 ---
 
