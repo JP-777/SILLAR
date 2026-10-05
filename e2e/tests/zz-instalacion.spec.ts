@@ -127,9 +127,20 @@ test('El schema catalog se elimina sin llevarse nada de core', async () => {
   // otro módulo instalado dependa de él de forma dura, y M07 declara cinco
   // claves foráneas hacia `catalog` y `crm`. Desde que el arnés migra M07
   // (`e2e/setup/migrate.ts`), este drop se rechazaría — y **el rechazo es el
-  // comportamiento correcto, no un fallo** (C9, `ESCALADAS-M07.md:200-205`).
+  // comportamiento correcto, no un fallo** (C9, `ESCALADAS-M07.md:202`).
   //
   // Los dos vuelven abajo con el mismo `migrate()` + `seed()` que ya había.
+  //
+  // **ATENCIÓN · esta prueba sigue en rojo, y no por M07.** Medido el
+  // 05/10/2026: la instalación del arnés va por `POST /api/setup`, que migra
+  // **todos los módulos del binario**, y el binario trae M03 desde que entró en
+  // `main`. Así que aquí existe también el schema `sales`, con claves foráneas
+  // hacia `catalog`, y la guarda sigue negándose — ahora por `sales`.
+  //
+  // Soltar `sales` aquí no vale: `e2e/setup/migrate.ts` no lo migra, así que
+  // quedaría sin restaurar. El arreglo es añadir M03 al arnés, que es trabajo de
+  // M03; Chat 2 lo separó de la candidata de M07.
+  // Ver `docs/modules/b2b/CIERRE-E2E-M07.md` §6.
   await psqlArchivo('/scripts/modules/b2b/99_drop.sql');
   await psqlArchivo('/scripts/modules/catalog/99_drop.sql');
 

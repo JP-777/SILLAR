@@ -267,23 +267,72 @@ test('M07 se instala, se suelta y se reinstala sin tocar a nadie, y sus claves c
   expect(await existeSchema('b2b'), 'el segundo drop de M07 recreó algo').toBe('0');
 
   // =======================================================================
-  // Y AHORA las guardas ya no están bloqueadas POR M07 — ejecutado, no deducido
+  // Y AHORA las guardas ya no están bloqueadas POR M07
   //
-  // Se hace sobre `catalog` y no sobre los dos: soltar `crm` de verdad se
-  // llevaría los clientes que las specs posteriores necesitan, y la mitad que
-  // podía fallar en silencio es la de arriba —la guarda diciendo no—. Aquí lo
-  // que se demuestra es que el no era **por M07** y no por cualquier otra cosa.
+  // **Lo que se afirma aquí es acotado a propósito, y el motivo es un hallazgo
+  // ajeno medido el 05/10/2026.** La intención era ejecutar
+  // `catalog/99_drop.sql` y verlo prosperar, demostrando que el «no» de arriba
+  // era por M07. No se puede, y no por culpa de M07:
+  //
+  //   El arnés migra cinco módulos a mano (`e2e/setup/migrate.ts`), pero la
+  //   instalación del producto va por `POST /api/setup`, que migra **todos los
+  //   módulos del binario** — y el binario trae M03 desde que entró en `main`.
+  //   Así que en el escenario e2e existe también el schema `sales`, con sus
+  //   claves foráneas hacia `catalog` y `crm`, y **es `sales` quien sigue
+  //   bloqueando** el drop. Medido: `core.module_dependencies` da `b2b` (hard),
+  //   `sales` (hard) y `cms` (soft) como dependientes de `catalog`, y los dos
+  //   primeros con schema existente.
+  //
+  //   Soltar `sales` aquí tampoco vale: `migrate()` no lo migra, así que
+  //   quedaría sin restaurar y el estado no se podría reconstruir —que es parte
+  //   del criterio, no limpieza—. Y añadir Sales al arnés es trabajo de M03,
+  //   que Chat 2 separó expresamente de esta candidata.
+  //
+  // Así que se comprueba lo que sí es de M07 y se comprueba entero: **que
+  // ninguna de sus dos señales sigue en pie**. Son exactamente las dos que lee
+  // la guarda (`catalog/99_drop.sql`, bloque `$guarda$`): claves foráneas desde
+  // otro schema, y registro de dependencia dura cuyo schema todavía existe.
   // =======================================================================
   expect(
     await fkCruzadas(),
     'con el schema de M07 soltado siguen existiendo claves foráneas suyas',
   ).toEqual([]);
 
-  await psqlArchivo('/scripts/modules/catalog/99_drop.sql');
+  // La segunda señal: M07 sigue registrado como dependiente duro —su fila de
+  // catálogo no se va con el schema, y está bien que no se vaya— pero su schema
+  // ya no existe, que es la condición que la guarda mira.
   expect(
-    await existeSchema('catalog'),
-    'sin M07, la guarda de M01 siguió bloqueando: el schema no se soltó',
-  ).toBe('0');
+    await psql(`
+      SELECT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'b2b')
+      FROM core.module_dependencies md
+      JOIN core.modules m ON m.module_id = md.module_id
+      JOIN core.modules t ON t.module_id = md.depends_on_module_id
+     WHERE md.kind = 'hard' AND t.code = 'catalog' AND m.code = 'b2b'
+    `),
+    'M07 sigue contando como dependiente duro con schema presente',
+  ).toBe('f');
+
+  // Y para que esto no se lea como una excusa: se comprueba que **quien bloquea
+  // ahora es otro y se puede nombrar**. Si algún día esta lista saliera vacía,
+  // el drop prosperaría y habría que volver a la versión ejecutada de esta
+  // comprobación.
+  const bloqueanAhora = await psql(`
+    SELECT coalesce(string_agg(m.code, ',' ORDER BY m.code), '')
+      FROM core.module_dependencies md
+      JOIN core.modules m ON m.module_id = md.module_id
+      JOIN core.modules t ON t.module_id = md.depends_on_module_id
+     WHERE md.kind = 'hard' AND t.code = 'catalog'
+       AND EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = m.code)
+  `);
+
+  expect(
+    bloqueanAhora,
+    'ya nadie bloquea el drop de M01: ejecútalo aquí y comprueba que prospera',
+  ).not.toBe('');
+  expect(
+    bloqueanAhora.split(',').filter((c) => c !== ''),
+    'M07 sigue entre quienes bloquean el drop de M01 con su schema soltado',
+  ).not.toContain('b2b');
 
   // =======================================================================
   // 5 · MIGRAR + SEMBRAR · 5.6 — y reinstalar es parte de la prueba
@@ -291,7 +340,7 @@ test('M07 se instala, se suelta y se reinstala sin tocar a nadie, y sus claves c
   await migrate();
   await seed();
 
-  expect(await existeSchema('catalog'), 'M01 no se pudo volver a crear').toBe('1');
+  expect(await existeSchema('catalog'), 'M01 dejó de estar: esta prueba no lo suelta').toBe('1');
   expect(await existeSchema('b2b'), 'M07 no se pudo volver a crear').toBe('1');
   expect(
     await tablasDeB2b(),

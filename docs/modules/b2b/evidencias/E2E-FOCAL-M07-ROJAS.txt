@@ -1,0 +1,47 @@
+================================================================================
+M07 · CORRIDAS FOCALES ROJAS — las dos que hubo antes del verde
+================================================================================
+Se guardan aparte a propósito: una barrera que solo se ha visto en verde no se
+ha visto. Aquí están los dos rojos, con su causa, y en los dos la causa estaba
+en la prueba — salvo el hallazgo ajeno, que es del escenario.
+
+--------------------------------------------------------------------------------
+ROJA 1 · 4 pasaron · 11 fallaron
+--------------------------------------------------------------------------------
+Causa A (9 fallos) · M04 exige mismo origen en las escrituras públicas previas a
+  la sesión (AnonymousCsrfEndpointFilter.cs:24): «Sec-Fetch-Site: same-origin», o
+  un Origin que coincida con el Host que ve la API — que tras el proxy de Vite no
+  coincide. APIRequestContext no manda Fetch Metadata, así que registrar un
+  cliente daba 403 y se llevaba todo lo que necesitaba uno:
+
+    Error: registrar cliente: 403 {"title":"Origen de la petición no permitido.",
+    "detail":"Las operaciones públicas que modifican datos requieren una
+    petición del mismo origen."}
+
+  El precedente crm-auth-isolation.spec.ts:6 lo hace con page.evaluate por esta
+  razón exacta. Arreglado poniendo la cabecera a mano en registro y login.
+
+Causa B (2 fallos) · catalog/99_drop.sql salía con código 3 incluso después de
+  retirar M07. NO era M07: ver E2E-HALLAZGO-SALES.txt.
+
+--------------------------------------------------------------------------------
+ROJA 2 · 10 pasaron · 2 fallaron
+--------------------------------------------------------------------------------
+Los dos fallos eran defectos de MIS aserciones, no del producto:
+
+  1 · «la respuesta de una cotización ajena se distingue de la de una inexistente»
+      Expected: {... "traceId":"00-92b8df2c..."}
+      Received: {... "traceId":"00-aa72151b..."}
+      El traceId es distinto en cada petición por diseño. La prueba comparaba el
+      cuerpo crudo, traceId incluido. Se compara sin él: lo que no puede diferir
+      es el título, el estado y el detalle.
+
+  2 · «una escritura sin CSRF cambió la cotización»
+      Expected: "borrador/t"   Received: "borrador/true"
+      psql -tA imprime `f`/`t` cuando el booleano va solo y `true`/`false` al
+      concatenarlo con `||`. Se usa `is_active::int` y se compara con `1`.
+
+--------------------------------------------------------------------------------
+VERDE · 12 pasaron · 0 omitidas
+--------------------------------------------------------------------------------
+Ver E2E-FOCAL-M07-VERDE.txt.

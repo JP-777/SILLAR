@@ -18,7 +18,7 @@ import { FRONTEND_URL } from '../setup/env.js';
  * no migraba `Sillar.Modules.B2B` ni activaba `b2b`, así que la etapa e2e podía
  * estar entera en verde **sin que M07 existiera en el escenario**: ninguna de
  * estas rutas estaba montada y nadie lo notaba. Es la C9 de
- * `ESCALADAS-M07.md:200`.
+ * `ESCALADAS-M07.md:202`.
  *
  * **Regla 1 del plan, aplicada en cada rechazo:** «toda afirmación de "no se
  * creó nada" se comprueba contra la base, contando filas antes y después». Un
@@ -300,10 +300,19 @@ test('La cotización de otro cliente responde igual que una inexistente, y sin n
 
   expect(ajena.status(), 'la cotización de otro cliente no dio 404').toBe(404);
   expect(inexistente.status(), 'una cotización inexistente no dio 404').toBe(404);
+
+  // **Se compara el cuerpo sin el `traceId`.** Ese campo es distinto en cada
+  // petición por diseño —es el identificador de la traza—, así que incluirlo
+  // hacía que la prueba fallara por algo que no tiene nada que ver con lo que
+  // afirma. Lo que no puede diferir es todo lo demás: si una ruta revelara que
+  // el número existe, la diferencia estaría en el título, el estado o el
+  // detalle.
+  const sinTraza = (cuerpo: string) => cuerpo.replace(/"traceId":"[^"]*"/, '"traceId":"—"');
+
   expect(
-    await ajena.text(),
+    sinTraza(await ajena.text()),
     'la respuesta de una cotización ajena se distingue de la de una inexistente',
-  ).toBe(await inexistente.text());
+  ).toBe(sinTraza(await inexistente.text()));
 
   // 1.9 · El marcador no aparece en ninguna de las respuestas públicas.
   const publicas = [

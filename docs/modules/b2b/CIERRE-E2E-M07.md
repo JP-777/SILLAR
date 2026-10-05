@@ -3,7 +3,7 @@
 Creado: 05/10/2026, America/Lima · Última verificación: 05/10/2026, America/Lima
 Commit base comprobado: `1a7417a919beaa65e0d79ed2c56236b36ba19fcd`
 
-**Qué cierra.** La C9 de `ESCALADAS-M07.md:200` pedía dos cosas: que
+**Qué cierra.** La C9 de `ESCALADAS-M07.md:202` pedía dos cosas: que
 `Sillar.Api` referenciara `Sillar.Modules.B2B` y que **la etapa 4 de la puerta y
 el arnés e2e** aplicaran sus migraciones. La primera mitad entró en `aecf4aa`.
 Esta es la segunda, con la cobertura E2E que el `PLAN-DE-PRUEBAS-M07.md` ya
@@ -78,6 +78,53 @@ arranque.
 
 ---
 
+## 2a · Resultado focal medido
+
+```
+npx playwright test tests/b2b-cliente.spec.ts tests/b2b-panel.spec.ts \
+                    tests/zz-b2b-ciclo.spec.ts tests/zz-b2b-instalacion.spec.ts
+
+  12 passed (5.6m)        0 omitidas
+```
+
+El ciclo completo tarda 52 s y la instalación 1,7 min: son las dos que reinician
+el proceso y sueltan schemas, y por eso llevan `zz-`.
+
+**Hubo dos rojas antes, y se guardan aparte** —una barrera que solo se ha visto
+en verde no se ha visto— en `evidencias/E2E-FOCAL-M07-ROJAS.txt`:
+
+| | Qué pasó | De quién era el fallo |
+|---|---|---|
+| Roja 1 · 4/11 | Registrar un cliente daba 403: M04 exige `Sec-Fetch-Site: same-origin` en las escrituras públicas previas a la sesión y `APIRequestContext` no manda Fetch Metadata. El precedente usa `page.evaluate` por esto exacto | **de la prueba** |
+| Roja 1 · 2 de esos 11 | `catalog/99_drop.sql` salía con código 3 tras retirar M07 | **del escenario** — es `sales`, ver §6 |
+| Roja 2 · 10/2 | Comparaba cuerpos de 404 con el `traceId` dentro, y un booleano de `psql` que imprime `t` solo y `true` concatenado | **de la prueba** |
+
+Las dos veces el rojo fue útil: la primera destapó el hallazgo de Sales, y la
+segunda dos aserciones que habrían dado rojos ciertos y mudos más adelante.
+
+---
+
+## 2b · Matriz criterio → prueba que lo acredita
+
+| Criterio | Qué afirma | Spec · prueba |
+|---|---|---|
+| 1.1–1.4 | Sin sesión de cliente, las cuatro rutas dan 401 y **no dejan fila** | `b2b-cliente` · «Sin sesión de cliente, las cuatro rutas dan 401 y no dejan ninguna fila» |
+| 1.5 · 1.6 | Las dos poblaciones no se mezclan, en los dos sentidos | `b2b-cliente` · «La cookie del panel no sirve como cliente, y la de cliente no abre el panel» |
+| 1.7 | Sin CSRF, 403 y sin fila; **con** CSRF, 201 | `b2b-cliente` · «Con sesión y sin token CSRF, crear da 403 y no deja fila» |
+| 1.8 · 1.9 · 1.10 | Cotización ajena ≡ inexistente; `staff_notes` nunca sale; el `customer_id` es el de la sesión | `b2b-cliente` · «La cotización de otro cliente responde igual que una inexistente, y sin notas internas» |
+| 2.6 · 2.7 | Cupo agotado → 429 con `Retry-After`, frase de persona, sin fila | `b2b-cliente` · «Pasado el cupo, la cuenta recibe 429 con Retry-After…» |
+| 3.1 · 3.2 | Tabla de permisos aplicada; tras cada 403, la base **sin cambiar**; y el `admin` sí pasa | `b2b-panel` · «Un editor lee y escribe lo suyo, y las cuatro rutas de admin le dan 403 sin cambiar nada» |
+| 3.3 | Toda escritura del panel sin CSRF: 403 y nada cambia | `b2b-panel` · «Toda escritura del panel sin token CSRF da 403 y no cambia nada» |
+| 3.4 | Auditoría `b2b` cuyo resumen **nombra la cotización** por su número visible | `b2b-panel` · «Toda escritura del panel deja auditoría b2b…» |
+| 3.5 | Los 20 paths de M07 en Swagger, con resumen | `b2b-panel` · «Las rutas de M07 que esta suite ejerce y las de Swagger son el mismo conjunto» |
+| 3.6 | Una `enviada` no admite edición; el total no cambia | `b2b-panel` · «Una cotización enviada no admite edición de líneas…» |
+| 4.1 · 4.2 · 4.3 · 4.5 · 4.6 · 4.7 | El ciclo entero: 3 enlaces / 4 rutas activos, 409 nombrando a M07 al tocar M01 y M04, apagado sin enlace ni ruta ni pantalla, Swagger sin sus paths, datos intactos, y todo de vuelta | `zz-b2b-ciclo` · «M07 se usa, se apaga y vuelve…» |
+| 5.1–5.7 | Schema con su historial dentro, idempotencia, guardas de C6, soltar sin tocar a nadie, host operativo, reinstalar, y **las 5 FK cruzadas de vuelta** | `zz-b2b-instalacion` · «M07 se instala, se suelta y se reinstala…» |
+| **4.4** | Acción de M07 en la ficha de producto | **HOLD POR CAPACIDAD AÚN INEXISTENTE** — depende de C1, que no existe. No es `skipped` |
+| 2.1–2.5 | Cupo por cuenta, nivel puro | `Sillar.Modules.B2B.Tests` — el plan los marca «Pura», no e2e |
+
+---
+
 ## 3 · Las guardas de C6, que nunca habían dicho no
 
 `database/modules/catalog/99_drop.sql` y `database/modules/crm/99_drop.sql`
@@ -139,7 +186,7 @@ de malo y no se vería.
 
 | | Estado |
 |---|---|
-| **4.4** · acción de M07 en la ficha de producto | **HOLD POR CAPACIDAD AÚN INEXISTENTE.** Depende de C1, y hoy no hay superficie en la ficha (`ESCALADAS-M07.md:121-125`). **No es `skipped`**: la prueba no existe porque el mecanismo no existe. No se inventa la costura |
+| **4.4** · acción de M07 en la ficha de producto | **HOLD POR CAPACIDAD AÚN INEXISTENTE.** Depende de C1, y hoy no hay superficie en la ficha (`ESCALADAS-M07.md:123-127`). **No es `skipped`**: la prueba no existe porque el mecanismo no existe. No se inventa la costura |
 | **2.1–2.5** · cupo por cuenta, nivel puro | Ya cubiertos en `Sillar.Modules.B2B.Tests`; el plan los marca «Pura», no e2e |
 | **Numeración multinodo** | Fuera de este trabajo por decisión del colíder. El hallazgo sigue en `RECOMPOSICION-M07-04-10-2026.md` §6 |
 
@@ -162,8 +209,47 @@ la **etapa 4 de `scripts/verificar.mjs`** (`c1188f9`), no el arnés e2e.
 
 **Quién lo separó:** **Chat 2 lo separó de M07** de forma expresa, para no
 mezclar un arreglo de M03 con la candidata de M07. No se ha añadido `sales` a
-`migrate.ts` en esta rama y no es bloqueo de esta entrega. Chat 2 abrirá la
-verificación focal correspondiente.
+`migrate.ts` en esta rama.
+
+### Y resultó no ser teórico: bloquea una spec de plataforma
+
+Al medirlo el 05/10/2026 el hallazgo creció, así que queda aquí con su medida.
+
+**Lo que no se había tenido en cuenta:** el arnés migra cinco módulos a mano,
+pero **la instalación va por `POST /api/setup`, que migra todos los módulos del
+binario**. Desde `aecf4aa` el binario trae M07, y desde que M03 entró en `main`
+trae también M03. Así que en el escenario e2e existen **también** los schemas
+`b2b` y `sales` creados por la instalación, no por `migrate.ts`.
+
+Medido sobre una base limpia con los cinco módulos migrados a mano más
+`POST /api/setup` (201):
+
+```
+schemas tras migrar a mano          b2b catalog cms core crm
+dependientes duros de catalog       b2b   hard   schema existe: t
+                                    sales hard   schema existe: t
+                                    cms   soft   schema existe: t
+FK de otros schemas hacia catalog   b2b, sales
+```
+
+**Consecuencia:** `e2e/tests/zz-instalacion.spec.ts:114` —«El schema catalog se
+elimina sin llevarse nada de core»— **estaba ya en rojo en esta rama antes de
+escribir una sola spec de M07**, porque la guarda C6 se niega con `b2b` y con
+`sales` presentes. Soltar `b2b` antes (lo que esta entrega añadió) es necesario
+pero **no suficiente**: `sales` sigue bloqueando.
+
+**Por qué no se arregla aquí.** Soltar `sales` en la spec no vale: `migrate.ts`
+no lo migra, así que quedaría sin restaurar y el estado no se podría
+reconstruir — y reconstruirlo es parte del criterio, no limpieza. El arreglo es
+**añadir M03 al arnés**, que es trabajo de M03 y que Chat 2 separó de esta
+candidata. Queda escrito, no corregido.
+
+**Lo que sí se acotó:** `zz-b2b-instalacion.spec.ts` ya no intenta ejecutar el
+drop de `catalog`. Comprueba, en su lugar, que **las dos señales que la guarda
+lee y que son de M07** han desaparecido —sus claves foráneas, y su registro de
+dependencia dura con schema presente— y que quien bloquea ahora **es otro y se
+puede nombrar**. Si algún día esa lista saliera vacía, la prueba lo dice: el
+drop prosperaría y habría que volver a la versión ejecutada.
 
 ---
 

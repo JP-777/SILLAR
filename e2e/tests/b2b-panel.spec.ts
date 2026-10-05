@@ -387,10 +387,15 @@ test('Toda escritura del panel sin token CSRF da 403 y no cambia nada', async ({
     'una escritura sin CSRF llegó a la fila',
   ).toBe(antes);
 
+  // `is_active::int` y no el booleano a secas: `psql -tA` imprime `f` cuando la
+  // columna va sola y `true` cuando se concatena con `||`, y depender de esa
+  // diferencia es pedir un rojo que no significa nada.
   expect(
-    await psql(`SELECT status || '/' || is_active FROM b2b.quotes WHERE quote_id = ${ids.cotizacion}`),
+    await psql(
+      `SELECT status || '/' || is_active::int FROM b2b.quotes WHERE quote_id = ${ids.cotizacion}`,
+    ),
     'una escritura sin CSRF cambió la cotización',
-  ).toBe('borrador/t');
+  ).toBe('borrador/1');
 });
 
 // ---------------------------------------------------------------------------

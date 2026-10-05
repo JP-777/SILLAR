@@ -168,8 +168,13 @@ Registrado aquí el 05/10/2026, al cerrar la C9 en el arnés e2e.
 | **Posible efecto** | El mismo agujero que M07 tenía: la etapa e2e puede ejecutar el producto completo **sin que M03 exista en el escenario**. Sin su schema, activar `sales` fallaría, y ninguno de sus endpoints se cargaría nunca en una corrida verde. El §j que M03 cerró el 03/10 cubrió la **etapa 4 de `scripts/verificar.mjs`** (`c1188f9`), **no el arnés e2e** |
 | **Quién lo separó** | **Chat 2 lo separó de M07** de forma expresa, para no mezclar un arreglo de M03 con esta candidata. No se ha añadido `sales` a `migrate.ts` en esta rama. **No es bloqueo de esta entrega**; Chat 2 abrirá la verificación focal correspondiente |
 
-Queda escrito aquí y en `CIERRE-E2E-M07.md` §6 para que el hallazgo no viva solo
-en una conversación.
+**Ampliado el 05/10/2026, y creció al medirlo.** La instalación del arnés va por
+`POST /api/setup`, que migra **todos los módulos del binario**, así que en e2e
+existen también los schemas `b2b` y `sales` que `migrate.ts` no crea. Resultado:
+`e2e/tests/zz-instalacion.spec.ts:114` **ya estaba en rojo en esta rama** antes de
+escribir una sola spec de M07, porque la guarda C6 se niega con `sales` presente.
+No es teórico y no es de M07. La medición completa está en
+`CIERRE-E2E-M07.md` §6.
 
 ---
 

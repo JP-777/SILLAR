@@ -1,0 +1,23 @@
+================================================================================
+M07 · CORRIDA FOCAL E2E — VERDE
+================================================================================
+Fecha     5 de octubre de 2026, America/Lima
+Rama      m07-b2b-sobre-main
+Comando   npx playwright test tests/b2b-cliente.spec.ts tests/b2b-panel.spec.ts \
+                              tests/zz-b2b-ciclo.spec.ts tests/zz-b2b-instalacion.spec.ts
+Arnés     migra CORE, Catalog, Cms, CRM y B2B; activa b2b tras catalog y crm
+================================================================================
+  ✓   1 [chromium] › tests/b2b-cliente.spec.ts:116:1 › Sin sesión de cliente, las cuatro rutas dan 401 y no dejan ninguna fila (547ms)
+  ✓   2 [chromium] › tests/b2b-cliente.spec.ts:164:1 › La cookie del panel no sirve como cliente, y la de cliente no abre el panel (4.7s)
+  ✓   3 [chromium] › tests/b2b-cliente.spec.ts:209:1 › Con sesión y sin token CSRF, crear da 403 y no deja fila (1.7s)
+  ✓   4 [chromium] › tests/b2b-cliente.spec.ts:242:1 › La cotización de otro cliente responde igual que una inexistente, y sin notas internas (3.6s)
+  ✓   5 [chromium] › tests/b2b-cliente.spec.ts:338:1 › Pasado el cupo, la cuenta recibe 429 con Retry-After, una frase sin «error», y no deja fila (1.2s)
+  ✓   6 [chromium] › tests/b2b-panel.spec.ts:257:1 › Un editor lee y escribe lo suyo, y las cuatro rutas de admin le dan 403 sin cambiar nada (4.3s)
+  ✓   7 [chromium] › tests/b2b-panel.spec.ts:338:1 › Toda escritura del panel sin token CSRF da 403 y no cambia nada (2.7s)
+  ✓   8 [chromium] › tests/b2b-panel.spec.ts:405:1 › Toda escritura del panel deja auditoría b2b, y el resumen nombra la cotización (2.0s)
+  ✓   9 [chromium] › tests/b2b-panel.spec.ts:447:1 › Las rutas de M07 que esta suite ejerce y las de Swagger son el mismo conjunto (1.2s)
+  ✓  10 [chromium] › tests/b2b-panel.spec.ts:517:1 › Una cotización enviada no admite edición de líneas, y su total no cambia (2.1s)
+  ✓  11 [chromium] › tests/zz-b2b-ciclo.spec.ts:273:1 › M07 se usa, se apaga y vuelve: sin enlace roto, sin ruta muerta y sin perder nada (52.4s)
+  ✓  12 [chromium] › tests/zz-b2b-instalacion.spec.ts:135:1 › M07 se instala, se suelta y se reinstala sin tocar a nadie, y sus claves cruzadas vuelven (1.7m)
+  12 passed (5.6m)
+EXIT=0
