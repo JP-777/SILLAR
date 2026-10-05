@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Preflight de la QA M04. Solo lee: no arranca nada. Uso: preflight.sh <SHA esperado>
+W=/home/JP777/sillar-qa-m04; P="$(cd "$(dirname "$0")" && pwd)"; SHA="${1:?SHA esperado}"; ok=1
+fallo(){ echo "  FALLO: $*"; ok=0; }; bien(){ echo "  ok: $*"; }
+echo "# Preflight QA M04 · $(TZ=America/Lima date '+%F %T %z')"
+git -C /home/JP777/SILLAR fetch -q origin
+[ "$(git -C $W rev-parse HEAD)" = "$SHA" ] && bien "worktree en $SHA" || fallo "worktree en $(git -C $W rev-parse HEAD), se esperaba $SHA"
+[ "$(git -C $W status --short | wc -l)" -eq 0 ] && bien "árbol limpio" || fallo "árbol con cambios"
+ls /tmp/sillar-puerta-*.lock >/dev/null 2>&1 && fallo "hay un cerrojo de puerta: $(ls /tmp/sillar-puerta-*.lock)" || bien "sin cerrojo de puerta"
+# v2: solo cuenta procesos cuyo argv[0] es node (comm aquí es «node-MainThread»). pgrep -f contaba también bucles de espera de
+# otras sesiones cuya línea de comandos contiene el texto «node scripts/verificar.mjs».
+ps -eo args= | awk '$1 ~ /(^|\/)node$/ && $0 ~ /scripts\/verificar[.]mjs/' | grep -q . && fallo "hay una puerta en marcha" || bien "ninguna puerta en marcha"
+e2e=$(docker ps --format '{{.Names}}' | grep -c '_e2e_'); [ "$e2e" -eq 0 ] && bien "sin stacks e2e" || fallo "$e2e contenedores e2e vivos"
+id=$(cd $W && node scripts/identidad.mjs 2>&1 | grep -A1 'Este árbol' | tail -1); echo "  identidad:$id"
+cd $W && node scripts/identidad.mjs 2>&1 | grep -q 'qa_m04' && ! node scripts/identidad.mjs 2>&1 | sed -n '/CHOQUE/,/Este árbol/p' | grep -q sillar-qa-m04 && bien "identidad sin choque" || fallo "choque de identidad"
+puertos=$(ss -ltn | grep -cE ':(55961|56061|56161|56361)\b'); [ "$puertos" -eq 0 ] && bien "puertos e2e libres" || fallo "$puertos puertos e2e ocupados"
+mem=$(( $(awk '/MemAvailable/{print $2}' /proc/meminfo)/1024 )); [ "$mem" -ge 6000 ] && bien "memoria disponible ${mem} MiB (≥ 6000)" || fallo "memoria disponible ${mem} MiB (< 6000)"
+disco=$(df -BM --output=avail / | tail -1 | tr -dc 0-9); [ "$disco" -ge 10240 ] && bien "disco libre ${disco} MiB (≥ 10240)" || fallo "disco libre ${disco} MiB (< 10240)"
+[ "$(findmnt -no FSTYPE -T $P/tmpdir)" != tmpfs ] && bien "TMPDIR $P/tmpdir en $(findmnt -no SOURCE,FSTYPE -T $P/tmpdir | tr -s ' ')" || fallo "TMPDIR en tmpfs"
+[ -z "$(ls -A $P/tmpdir)" ] && bien "TMPDIR vacío" || fallo "TMPDIR no está vacío"
+[ "$(stat -c %a $P/tmpdir)" = 700 ] && bien "TMPDIR privado (700)" || fallo "TMPDIR sin permisos 700"
+[ "$ok" = 1 ] && echo "# PREFLIGHT: LISTO" || echo "# PREFLIGHT: NO LISTO"
