@@ -1,0 +1,32 @@
+================================================================================
+ModulosEnElDespliegueTests · DIRECCIÓN 2 de 3 — MÓDULO SIN ENSAMBLADO
+================================================================================
+Fecha        5 de octubre de 2026, America/Lima
+Rama         m07-b2b-sobre-main
+Qué se hace  Se retira TEMPORALMENTE el ProjectReference de Sillar.Modules.B2B
+             de backend/Sillar.Api/Sillar.Api.csproj y se borra su DLL de la
+             carpeta de salida del host.
+Esperado     ROJO, y el rojo tiene que NOMBRAR al módulo ausente.
+Restaurado   Sí — ningún sabotaje queda en HEAD.
+================================================================================
+
+$ sed -i '/Sillar.Modules.B2B\\Sillar.Modules.B2B.csproj/d' backend/Sillar.Api/Sillar.Api.csproj
+$ rm backend/Sillar.Api/bin/Debug/net10.0/Sillar.Modules.B2B.dll
+$ dotnet build Sillar.sln -v q --nologo
+    0 Error(s)          <-- compila igual: es justo el problema
+
+$ dotnet test Sillar.Api.Tests --no-build --filter FullyQualifiedName~ModulosEnElDespliegue
+
+  Failed Sillar.Api.Tests.ModulosEnElDespliegueTests.Cada_modulo_del_repositorio_tiene_su_ensamblado_junto_al_host [102 ms]
+  Error Message:
+   Estos módulos no llegan al despliegue del host: Sillar.Modules.B2B.
+   El host descubre módulos mirando los Sillar.*.dll de
+   '/home/JP777/sillar-b2b/backend/Sillar.Api/bin/Debug/net10.0', así que un
+   módulo sin ProjectReference en backend/Sillar.Api/Sillar.Api.csproj compila,
+   pasa sus pruebas y no existe para el producto. Añade ahí su ProjectReference,
+   y en ningún otro sitio.
+     Failed: 1
+
+RESULTADO  ROJO, y nombra «Sillar.Modules.B2B» y qué hacer.
+           Nótese el «0 Error(s)» del build: sin esta barrera, el árbol entero
+           pasaba con M07 fuera del producto.

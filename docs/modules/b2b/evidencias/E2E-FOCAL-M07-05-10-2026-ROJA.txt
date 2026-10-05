@@ -1,0 +1,622 @@
+[WebServer] $ vite --port 56162 --strictPort
+[WebServer] 
+[WebServer]   VITE v7.3.6  ready in 220 ms
+[WebServer] 
+[WebServer]   ➜  Local:   http://localhost:56162/
+[WebServer]   ➜  Network: use --host to expose
+[e2e] destruyendo un stack anterior, si quedó alguno...
+[e2e] levantando la base de datos...
+ Network sillar_b2b_e2e_default Creating 
+ Network sillar_b2b_e2e_default Created 
+ Volume sillar_b2b_e2e_db_data Creating 
+ Volume sillar_b2b_e2e_db_data Created 
+ Container sillar_b2b_e2e_db Creating 
+ Container sillar_b2b_e2e_db Created 
+ Container sillar_b2b_e2e_db Starting 
+ Container sillar_b2b_e2e_db Started 
+[e2e] aplicando migraciones (CORE, Catalog, Cms, CRM, B2B)...
+Build started...
+Build succeeded.
+Failed executing DbCommand (93ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM core.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260816073536_CoreInitial'.
+Applying migration '20260828200857_CoreEmailSettings'.
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260829011000_CoreSmtpSettings'.
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20261003203701_CoreHomeNodeYAutorDeMedios'.
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Done.
+Build started...
+Build succeeded.
+Failed executing DbCommand (77ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM catalog.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260816073647_CatalogInitial'.
+Done.
+Build started...
+Build succeeded.
+Failed executing DbCommand (58ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM cms.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260820050000_CmsInitial'.
+Done.
+Build started...
+Build succeeded.
+Failed executing DbCommand (78ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM crm.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20260824190200_CrmInitial'.
+Applying migration '20260922115958_CrmCustomersEmailTrimAuthority'.
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Done.
+Build started...
+Build succeeded.
+Failed executing DbCommand (56ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM b2b.__migrations
+ORDER BY "MigrationId";
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Applying migration '20261004225318_B2bInitial'.
+Done.
+[e2e] aplicando seeds (sin datos de negocio)...
+BEGIN
+INSERT 0 11
+INSERT 0 0
+UPDATE 3
+COMMIT
+BEGIN
+COMMIT
+BEGIN
+COMMIT
+ ?column? 
+----------
+        1
+(1 row)
+
+BEGIN
+COMMIT
+[e2e] construyendo y levantando la API (Debug, con módulos de mentira)...
+ Image sillar_b2b_e2e-api Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 578B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 2.39kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:10.0
+#3 DONE 0.0s
+
+#4 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:10.0
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 1.40kB done
+#5 DONE 0.0s
+
+#6 [final 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0
+#6 DONE 0.0s
+
+#7 [build 1/4] FROM mcr.microsoft.com/dotnet/sdk:10.0
+#7 DONE 0.0s
+
+#8 [internal] load build context
+#8 transferring context: 28.41kB 0.0s done
+#8 DONE 0.1s
+
+#9 [build 4/4] RUN dotnet publish Sillar.Api/Sillar.Api.csproj -c Debug -o /app
+#9 CACHED
+
+#10 [final 2/3] WORKDIR /app
+#10 CACHED
+
+#11 [build 2/4] WORKDIR /src
+#11 CACHED
+
+#12 [build 3/4] COPY . .
+#12 CACHED
+
+#13 [final 3/3] COPY --from=build /app .
+#13 CACHED
+
+#14 exporting to image
+#14 exporting layers done
+#14 writing image sha256:5de013667e97d8d930dbda366fae0ca74a26037afb4ca6dddf09c2cb0804ba8b done
+#14 naming to docker.io/library/sillar_b2b_e2e-api done
+#14 DONE 0.0s
+
+#15 resolving provenance for metadata file
+#15 DONE 0.0s
+ Image sillar_b2b_e2e-api Built 
+ Container sillar_b2b_e2e_db Running 
+ Container sillar_b2b_e2e_api Creating 
+ Container sillar_b2b_e2e_api Created 
+ Container sillar_b2b_e2e_db Waiting 
+ Container sillar_b2b_e2e_db Healthy 
+ Container sillar_b2b_e2e_api Starting 
+ Container sillar_b2b_e2e_api Started 
+[e2e] completando la instalación...
+[e2e] iniciando sesión (reintenta hasta que el proceso nuevo esté arriba)...
+[e2e] creando el segundo usuario, de rol admin...
+[e2e] montando el grafo de módulos de mentira (las cuatro variantes de tarjeta)...
+[e2e] activando M01 catálogo...
+[e2e] activando M02 contenido...
+[e2e] activando M04 clientes y contacto...
+[e2e] activando M07 solicitudes B2B...
+[e2e] entorno listo.
+
+Running 15 tests using 1 worker
+
+  ✓   1 [chromium] › tests/b2b-cliente.spec.ts:101:1 › Sin sesión de cliente, las cuatro rutas dan 401 y no dejan ninguna fila (715ms)
+  ✘   2 [chromium] › tests/b2b-cliente.spec.ts:149:1 › La cookie del panel no sirve como cliente, y la de cliente no abre el panel (4.1s)
+  ✘   3 [chromium] › tests/b2b-cliente.spec.ts:194:1 › Con sesión y sin token CSRF, crear da 403 y no deja fila (144ms)
+  ✘   4 [chromium] › tests/b2b-cliente.spec.ts:227:1 › La cotización de otro cliente responde igual que una inexistente, y sin notas internas (636ms)
+  ✘   5 [chromium] › tests/b2b-cliente.spec.ts:314:1 › Pasado el cupo, la cuenta recibe 429 con Retry-After, una frase sin «error», y no deja fila (98ms)
+  ✘   6 [chromium] › tests/b2b-panel.spec.ts:242:1 › Un editor lee y escribe lo suyo, y las cuatro rutas de admin le dan 403 sin cambiar nada (1.4s)
+  ✘   7 [chromium] › tests/b2b-panel.spec.ts:323:1 › Toda escritura del panel sin token CSRF da 403 y no cambia nada (1.5s)
+  ✘   8 [chromium] › tests/b2b-panel.spec.ts:385:1 › Toda escritura del panel deja auditoría b2b, y el resumen nombra la cotización (1.5s)
+  ✓   9 [chromium] › tests/b2b-panel.spec.ts:427:1 › Las rutas de M07 que esta suite ejerce y las de Swagger son el mismo conjunto (2.2s)
+  ✘  10 [chromium] › tests/b2b-panel.spec.ts:497:1 › Una cotización enviada no admite edición de líneas, y su total no cambia (1.2s)
+  ✘  11 [chromium] › tests/zz-b2b-ciclo.spec.ts:258:1 › M07 se usa, se apaga y vuelve: sin enlace roto, sin ruta muerta y sin perder nada (1.4s)
+BEGIN
+COMMIT
+BEGIN
+COMMIT
+psql:/scripts/modules/catalog/99_drop.sql:97: ERROR:  No se desinstala M01 Catálogo: hay módulos instalados que dependen de él de forma dura (con claves foráneas hacia catalog: b2b, sales; registrados como dependencia dura: b2b, sales). Desinstala antes esos módulos con su 99_drop.sql y repite. No se ha borrado nada.
+CONTEXT:  PL/pgSQL function inline_code_block line 30 at RAISE
+psql:/scripts/modules/crm/99_drop.sql:84: ERROR:  No se desinstala M04 Clientes: hay módulos instalados que dependen de él de forma dura (con claves foráneas hacia crm: b2b, sales; registrados como dependencia dura: b2b, sales). Desinstala antes esos módulos con su 99_drop.sql y repite. No se ha borrado nada.
+CONTEXT:  PL/pgSQL function inline_code_block line 30 at RAISE
+[WebServer] 1:26:19 AM [vite] http proxy error: /api/setup/status
+[WebServer] AggregateError [ECONNREFUSED]: 
+[WebServer]     at internalConnectMultiple (node:net:1193:18)
+[WebServer]     at afterConnectMultiple (node:net:1783:7)
+[WebServer] 1:26:21 AM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[WebServer] 1:26:24 AM [vite] http proxy error: /api/setup/status
+[WebServer] Error: read ECONNRESET
+[WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+psql:/scripts/modules/b2b/99_drop.sql:71: NOTICE:  drop cascades to 7 other objects
+DETAIL:  drop cascades to table b2b.__migrations
+drop cascades to table b2b.institution_requests
+drop cascades to table b2b.quote_number_series
+drop cascades to table b2b.special_order_leads
+drop cascades to table b2b.quotes
+drop cascades to table b2b.quote_lines
+drop cascades to function b2b.set_updated_at()
+DO
+DO
+psql:/scripts/modules/b2b/99_drop.sql:71: NOTICE:  schema "b2b" does not exist, skipping
+psql:/scripts/modules/catalog/99_drop.sql:97: ERROR:  No se desinstala M01 Catálogo: hay módulos instalados que dependen de él de forma dura (con claves foráneas hacia catalog: sales; registrados como dependencia dura: sales). Desinstala antes esos módulos con su 99_drop.sql y repite. No se ha borrado nada.
+CONTEXT:  PL/pgSQL function inline_code_block line 30 at RAISE
+  ✘  12 [chromium] › tests/zz-b2b-instalacion.spec.ts:135:1 › M07 se instala, se suelta y se reinstala sin tocar a nadie, y sus claves cruzadas vuelven (32.5s)
+  ✓  13 [chromium] › tests/zz-instalacion.spec.ts:44:1 › Swagger lleva las rutas de M01, y ningún cuerpo de ningún módulo se queda sin ejemplo (1.9s)
+BEGIN
+COMMIT
+  ✓  14 [chromium] › tests/zz-instalacion.spec.ts:97:1 › Los scripts del catálogo son idempotentes (841ms)
+psql:/scripts/modules/b2b/99_drop.sql:71: NOTICE:  schema "b2b" does not exist, skipping
+DO
+psql:/scripts/modules/catalog/99_drop.sql:97: ERROR:  No se desinstala M01 Catálogo: hay módulos instalados que dependen de él de forma dura (con claves foráneas hacia catalog: sales; registrados como dependencia dura: sales). Desinstala antes esos módulos con su 99_drop.sql y repite. No se ha borrado nada.
+CONTEXT:  PL/pgSQL function inline_code_block line 30 at RAISE
+  ✘  15 [chromium] › tests/zz-instalacion.spec.ts:114:1 › El schema catalog se elimina sin llevarse nada de core (1.3s)
+[e2e] generando la galería de capturas...
+[e2e] destruyendo el stack e2e...
+ Container sillar_b2b_e2e_api Stopping 
+ Container sillar_b2b_e2e_api Stopped 
+ Container sillar_b2b_e2e_api Removing 
+ Container sillar_b2b_e2e_api Removed 
+ Container sillar_b2b_e2e_db Stopping 
+ Container sillar_b2b_e2e_db Stopped 
+ Container sillar_b2b_e2e_db Removing 
+ Container sillar_b2b_e2e_db Removed 
+ Volume sillar_b2b_e2e_db_data Removing 
+ Network sillar_b2b_e2e_default Removing 
+ Volume sillar_b2b_e2e_db_data Removed 
+ Network sillar_b2b_e2e_default Removed 
+
+
+  1) [chromium] › tests/b2b-cliente.spec.ts:149:1 › La cookie del panel no sirve como cliente, y la de cliente no abre el panel 
+
+    Error: registrar cliente: 403 {"type":"https://tools.ietf.org/html/rfc9110#section-15.5.4","title":"Origen de la petición no permitido.","status":403,"detail":"Las operaciones públicas que modifican datos requieren una petición del mismo origen.","traceId":"00-fee5840559352868de125a1c3a028b3f-864c1a38beb29865-00"}
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      63 |     data: { fullName: 'Cliente De Solicitudes', email, password: CLAVE_CLIENTE, phone: null },
+      64 |   });
+    > 65 |   expect(registro.ok(), `registrar cliente: ${registro.status()} ${await registro.text()}`).toBe(true);
+         |                                                                                             ^
+      66 |
+      67 |   const entrada = await api.post('/api/customer/auth/login', {
+      68 |     data: { email, password: CLAVE_CLIENTE },
+        at nuevoCliente (/home/JP777/sillar-b2b/e2e/tests/b2b-cliente.spec.ts:65:93)
+        at /home/JP777/sillar-b2b/e2e/tests/b2b-cliente.spec.ts:171:19
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/b2b-cliente-La-cookie-del--a8545-de-cliente-no-abre-el-panel-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/b2b-cliente-La-cookie-del--a8545-de-cliente-no-abre-el-panel-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/b2b-cliente-La-cookie-del--a8545-de-cliente-no-abre-el-panel-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/b2b-cliente-La-cookie-del--a8545-de-cliente-no-abre-el-panel-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/b2b-cliente-La-cookie-del--a8545-de-cliente-no-abre-el-panel-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › tests/b2b-cliente.spec.ts:194:1 › Con sesión y sin token CSRF, crear da 403 y no deja fila 
+
+    Error: registrar cliente: 403 {"type":"https://tools.ietf.org/html/rfc9110#section-15.5.4","title":"Origen de la petición no permitido.","status":403,"detail":"Las operaciones públicas que modifican datos requieren una petición del mismo origen.","traceId":"00-d923e50a073b921af5b668c98670dfea-7b888068fa5fb6fe-00"}
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      63 |     data: { fullName: 'Cliente De Solicitudes', email, password: CLAVE_CLIENTE, phone: null },
+      64 |   });
+    > 65 |   expect(registro.ok(), `registrar cliente: ${registro.status()} ${await registro.text()}`).toBe(true);
+         |                                                                                             ^
+      66 |
+      67 |   const entrada = await api.post('/api/customer/auth/login', {
+      68 |     data: { email, password: CLAVE_CLIENTE },
+        at nuevoCliente (/home/JP777/sillar-b2b/e2e/tests/b2b-cliente.spec.ts:65:93)
+        at /home/JP777/sillar-b2b/e2e/tests/b2b-cliente.spec.ts:195:19
+
+    Error Context: test-results/b2b-cliente-Con-sesión-y-s-09e8f-crear-da-403-y-no-deja-fila-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/b2b-cliente-Con-sesión-y-s-09e8f-crear-da-403-y-no-deja-fila-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/b2b-cliente-Con-sesión-y-s-09e8f-crear-da-403-y-no-deja-fila-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chromium] › tests/b2b-cliente.spec.ts:227:1 › La cotización de otro cliente responde igual que una inexistente, y sin notas internas 
+
+    Error: registrar cliente: 403 {"type":"https://tools.ietf.org/html/rfc9110#section-15.5.4","title":"Origen de la petición no permitido.","status":403,"detail":"Las operaciones públicas que modifican datos requieren una petición del mismo origen.","traceId":"00-c2737e3def40f9fb0fa08cc23e7e2f78-b0d5d29e0b3a124f-00"}
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      63 |     data: { fullName: 'Cliente De Solicitudes', email, password: CLAVE_CLIENTE, phone: null },
+      64 |   });
+    > 65 |   expect(registro.ok(), `registrar cliente: ${registro.status()} ${await registro.text()}`).toBe(true);
+         |                                                                                             ^
+      66 |
+      67 |   const entrada = await api.post('/api/customer/auth/login', {
+      68 |     data: { email, password: CLAVE_CLIENTE },
+        at nuevoCliente (/home/JP777/sillar-b2b/e2e/tests/b2b-cliente.spec.ts:65:93)
+        at /home/JP777/sillar-b2b/e2e/tests/b2b-cliente.spec.ts:233:17
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/b2b-cliente-La-cotización--8150b-stente-y-sin-notas-internas-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/b2b-cliente-La-cotización--8150b-stente-y-sin-notas-internas-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/b2b-cliente-La-cotización--8150b-stente-y-sin-notas-internas-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/b2b-cliente-La-cotización--8150b-stente-y-sin-notas-internas-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/b2b-cliente-La-cotización--8150b-stente-y-sin-notas-internas-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [chromium] › tests/b2b-cliente.spec.ts:314:1 › Pasado el cupo, la cuenta recibe 429 con Retry-After, una frase sin «error», y no deja fila 
+
+    Error: registrar cliente: 403 {"type":"https://tools.ietf.org/html/rfc9110#section-15.5.4","title":"Origen de la petición no permitido.","status":403,"detail":"Las operaciones públicas que modifican datos requieren una petición del mismo origen.","traceId":"00-53581a7b127ef87f1ece3ede318ba334-8ef53a7da239df6f-00"}
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      63 |     data: { fullName: 'Cliente De Solicitudes', email, password: CLAVE_CLIENTE, phone: null },
+      64 |   });
+    > 65 |   expect(registro.ok(), `registrar cliente: ${registro.status()} ${await registro.text()}`).toBe(true);
+         |                                                                                             ^
+      66 |
+      67 |   const entrada = await api.post('/api/customer/auth/login', {
+      68 |     data: { email, password: CLAVE_CLIENTE },
+        at nuevoCliente (/home/JP777/sillar-b2b/e2e/tests/b2b-cliente.spec.ts:65:93)
+        at /home/JP777/sillar-b2b/e2e/tests/b2b-cliente.spec.ts:319:19
+
+    Error Context: test-results/b2b-cliente-Pasado-el-cupo-353d0--sin-«error»-y-no-deja-fila-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/b2b-cliente-Pasado-el-cupo-353d0--sin-«error»-y-no-deja-fila-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/b2b-cliente-Pasado-el-cupo-353d0--sin-«error»-y-no-deja-fila-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [chromium] › tests/b2b-panel.spec.ts:242:1 › Un editor lee y escribe lo suyo, y las cuatro rutas de admin le dan 403 sin cambiar nada 
+
+    Error: registrar cliente: {"type":"https://tools.ietf.org/html/rfc9110#section-15.5.4","title":"Origen de la petición no permitido.","status":403,"detail":"Las operaciones públicas que modifican datos requieren una petición del mismo origen.","traceId":"00-faf4b407c0de5c6d08d0599f48e074a8-7a84fb2fb2e46986-00"}
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      129 |     data: { fullName: 'Rosa Mamani Panel', email, password: CLAVE_CLIENTE, phone: null },
+      130 |   });
+    > 131 |   expect(registro.ok(), `registrar cliente: ${await registro.text()}`).toBe(true);
+          |                                                                        ^
+      132 |
+      133 |   const entrada = await cliente.post('/api/customer/auth/login', {
+      134 |     data: { email, password: CLAVE_CLIENTE },
+        at sembrar (/home/JP777/sillar-b2b/e2e/tests/b2b-panel.spec.ts:131:72)
+        at /home/JP777/sillar-b2b/e2e/tests/b2b-panel.spec.ts:248:15
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/b2b-panel-Un-editor-lee-y--a602b-le-dan-403-sin-cambiar-nada-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/b2b-panel-Un-editor-lee-y--a602b-le-dan-403-sin-cambiar-nada-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/b2b-panel-Un-editor-lee-y--a602b-le-dan-403-sin-cambiar-nada-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/b2b-panel-Un-editor-lee-y--a602b-le-dan-403-sin-cambiar-nada-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/b2b-panel-Un-editor-lee-y--a602b-le-dan-403-sin-cambiar-nada-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [chromium] › tests/b2b-panel.spec.ts:323:1 › Toda escritura del panel sin token CSRF da 403 y no cambia nada 
+
+    Error: registrar cliente: {"type":"https://tools.ietf.org/html/rfc9110#section-15.5.4","title":"Origen de la petición no permitido.","status":403,"detail":"Las operaciones públicas que modifican datos requieren una petición del mismo origen.","traceId":"00-de56190a80476500e7176f2d5785c10f-aa00fe7a7b1f2897-00"}
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      129 |     data: { fullName: 'Rosa Mamani Panel', email, password: CLAVE_CLIENTE, phone: null },
+      130 |   });
+    > 131 |   expect(registro.ok(), `registrar cliente: ${await registro.text()}`).toBe(true);
+          |                                                                        ^
+      132 |
+      133 |   const entrada = await cliente.post('/api/customer/auth/login', {
+      134 |     data: { email, password: CLAVE_CLIENTE },
+        at sembrar (/home/JP777/sillar-b2b/e2e/tests/b2b-panel.spec.ts:131:72)
+        at /home/JP777/sillar-b2b/e2e/tests/b2b-panel.spec.ts:329:15
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/b2b-panel-Toda-escritura-d-e9e85-SRF-da-403-y-no-cambia-nada-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/b2b-panel-Toda-escritura-d-e9e85-SRF-da-403-y-no-cambia-nada-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/b2b-panel-Toda-escritura-d-e9e85-SRF-da-403-y-no-cambia-nada-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/b2b-panel-Toda-escritura-d-e9e85-SRF-da-403-y-no-cambia-nada-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/b2b-panel-Toda-escritura-d-e9e85-SRF-da-403-y-no-cambia-nada-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) [chromium] › tests/b2b-panel.spec.ts:385:1 › Toda escritura del panel deja auditoría b2b, y el resumen nombra la cotización 
+
+    Error: registrar cliente: {"type":"https://tools.ietf.org/html/rfc9110#section-15.5.4","title":"Origen de la petición no permitido.","status":403,"detail":"Las operaciones públicas que modifican datos requieren una petición del mismo origen.","traceId":"00-cf7732f5615ad1befe3fedc5e4a320e4-1bfddbcb8384a533-00"}
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      129 |     data: { fullName: 'Rosa Mamani Panel', email, password: CLAVE_CLIENTE, phone: null },
+      130 |   });
+    > 131 |   expect(registro.ok(), `registrar cliente: ${await registro.text()}`).toBe(true);
+          |                                                                        ^
+      132 |
+      133 |   const entrada = await cliente.post('/api/customer/auth/login', {
+      134 |     data: { email, password: CLAVE_CLIENTE },
+        at sembrar (/home/JP777/sillar-b2b/e2e/tests/b2b-panel.spec.ts:131:72)
+        at /home/JP777/sillar-b2b/e2e/tests/b2b-panel.spec.ts:391:15
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/b2b-panel-Toda-escritura-d-c329d-esumen-nombra-la-cotización-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/b2b-panel-Toda-escritura-d-c329d-esumen-nombra-la-cotización-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/b2b-panel-Toda-escritura-d-c329d-esumen-nombra-la-cotización-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/b2b-panel-Toda-escritura-d-c329d-esumen-nombra-la-cotización-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/b2b-panel-Toda-escritura-d-c329d-esumen-nombra-la-cotización-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) [chromium] › tests/b2b-panel.spec.ts:497:1 › Una cotización enviada no admite edición de líneas, y su total no cambia 
+
+    Error: registrar cliente: {"type":"https://tools.ietf.org/html/rfc9110#section-15.5.4","title":"Origen de la petición no permitido.","status":403,"detail":"Las operaciones públicas que modifican datos requieren una petición del mismo origen.","traceId":"00-cf66069f6c8c6034d31d8a344cc0e2e4-f2db1297209e40c6-00"}
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      129 |     data: { fullName: 'Rosa Mamani Panel', email, password: CLAVE_CLIENTE, phone: null },
+      130 |   });
+    > 131 |   expect(registro.ok(), `registrar cliente: ${await registro.text()}`).toBe(true);
+          |                                                                        ^
+      132 |
+      133 |   const entrada = await cliente.post('/api/customer/auth/login', {
+      134 |     data: { email, password: CLAVE_CLIENTE },
+        at sembrar (/home/JP777/sillar-b2b/e2e/tests/b2b-panel.spec.ts:131:72)
+        at /home/JP777/sillar-b2b/e2e/tests/b2b-panel.spec.ts:503:15
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/b2b-panel-Una-cotización-e-681a0-líneas-y-su-total-no-cambia-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/b2b-panel-Una-cotización-e-681a0-líneas-y-su-total-no-cambia-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/b2b-panel-Una-cotización-e-681a0-líneas-y-su-total-no-cambia-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/b2b-panel-Una-cotización-e-681a0-líneas-y-su-total-no-cambia-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/b2b-panel-Una-cotización-e-681a0-líneas-y-su-total-no-cambia-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  9) [chromium] › tests/zz-b2b-ciclo.spec.ts:258:1 › M07 se usa, se apaga y vuelve: sin enlace roto, sin ruta muerta y sin perder nada 
+
+    Error: registrar cliente: {"type":"https://tools.ietf.org/html/rfc9110#section-15.5.4","title":"Origen de la petición no permitido.","status":403,"detail":"Las operaciones públicas que modifican datos requieren una petición del mismo origen.","traceId":"00-54f62c081c46d19430ddb4fb1e6fa2df-ea44c132c1d7d215-00"}
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      169 |     data: { fullName: 'Rosa Mamani Ciclo', email, password: CLAVE_CLIENTE, phone: null },
+      170 |   });
+    > 171 |   expect(registro.ok(), `registrar cliente: ${await registro.text()}`).toBe(true);
+          |                                                                        ^
+      172 |
+      173 |   const entrada = await cliente.post('/api/customer/auth/login', {
+      174 |     data: { email, password: CLAVE_CLIENTE },
+        at usar (/home/JP777/sillar-b2b/e2e/tests/zz-b2b-ciclo.spec.ts:171:72)
+        at /home/JP777/sillar-b2b/e2e/tests/zz-b2b-ciclo.spec.ts:269:17
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/zz-b2b-ciclo-M07-se-usa-se-4f14d-ta-muerta-y-sin-perder-nada-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/zz-b2b-ciclo-M07-se-usa-se-4f14d-ta-muerta-y-sin-perder-nada-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/zz-b2b-ciclo-M07-se-usa-se-4f14d-ta-muerta-y-sin-perder-nada-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/zz-b2b-ciclo-M07-se-usa-se-4f14d-ta-muerta-y-sin-perder-nada-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/zz-b2b-ciclo-M07-se-usa-se-4f14d-ta-muerta-y-sin-perder-nada-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10) [chromium] › tests/zz-b2b-instalacion.spec.ts:135:1 › M07 se instala, se suelta y se reinstala sin tocar a nadie, y sus claves cruzadas vuelven 
+
+    Error: docker compose -f docker-compose.yml -f docker-compose.mailpit.yml -p sillar_b2b_e2e --env-file /home/JP777/sillar-b2b/e2e/.env.e2e exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d sillar_b2b_e2e -f /scripts/modules/catalog/99_drop.sql salió con código 3
+
+       at ../setup/shell.ts:54
+
+      52 |         resolve();
+      53 |       } else {
+    > 54 |         reject(new Error(`${command} ${args.join(' ')} salió con código ${code}`));
+         |                ^
+      55 |       }
+      56 |     });
+      57 |   });
+        at ChildProcess.<anonymous> (/home/JP777/sillar-b2b/e2e/setup/shell.ts:54:16)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/zz-b2b-instalacion-M07-se--2889b-sus-claves-cruzadas-vuelven-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/zz-b2b-instalacion-M07-se--2889b-sus-claves-cruzadas-vuelven-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/zz-b2b-instalacion-M07-se--2889b-sus-claves-cruzadas-vuelven-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/zz-b2b-instalacion-M07-se--2889b-sus-claves-cruzadas-vuelven-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/zz-b2b-instalacion-M07-se--2889b-sus-claves-cruzadas-vuelven-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  11) [chromium] › tests/zz-instalacion.spec.ts:114:1 › El schema catalog se elimina sin llevarse nada de core 
+
+    Error: docker compose -f docker-compose.yml -f docker-compose.mailpit.yml -p sillar_b2b_e2e --env-file /home/JP777/sillar-b2b/e2e/.env.e2e exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d sillar_b2b_e2e -f /scripts/modules/catalog/99_drop.sql salió con código 3
+
+       at ../setup/shell.ts:54
+
+      52 |         resolve();
+      53 |       } else {
+    > 54 |         reject(new Error(`${command} ${args.join(' ')} salió con código ${code}`));
+         |                ^
+      55 |       }
+      56 |     });
+      57 |   });
+        at ChildProcess.<anonymous> (/home/JP777/sillar-b2b/e2e/setup/shell.ts:54:16)
+
+    Error Context: test-results/zz-instalacion-El-schema-c-44c97-a-sin-llevarse-nada-de-core-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/zz-instalacion-El-schema-c-44c97-a-sin-llevarse-nada-de-core-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/zz-instalacion-El-schema-c-44c97-a-sin-llevarse-nada-de-core-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  11 failed
+    [chromium] › tests/b2b-cliente.spec.ts:149:1 › La cookie del panel no sirve como cliente, y la de cliente no abre el panel 
+    [chromium] › tests/b2b-cliente.spec.ts:194:1 › Con sesión y sin token CSRF, crear da 403 y no deja fila 
+    [chromium] › tests/b2b-cliente.spec.ts:227:1 › La cotización de otro cliente responde igual que una inexistente, y sin notas internas 
+    [chromium] › tests/b2b-cliente.spec.ts:314:1 › Pasado el cupo, la cuenta recibe 429 con Retry-After, una frase sin «error», y no deja fila 
+    [chromium] › tests/b2b-panel.spec.ts:242:1 › Un editor lee y escribe lo suyo, y las cuatro rutas de admin le dan 403 sin cambiar nada 
+    [chromium] › tests/b2b-panel.spec.ts:323:1 › Toda escritura del panel sin token CSRF da 403 y no cambia nada 
+    [chromium] › tests/b2b-panel.spec.ts:385:1 › Toda escritura del panel deja auditoría b2b, y el resumen nombra la cotización 
+    [chromium] › tests/b2b-panel.spec.ts:497:1 › Una cotización enviada no admite edición de líneas, y su total no cambia 
+    [chromium] › tests/zz-b2b-ciclo.spec.ts:258:1 › M07 se usa, se apaga y vuelve: sin enlace roto, sin ruta muerta y sin perder nada 
+    [chromium] › tests/zz-b2b-instalacion.spec.ts:135:1 › M07 se instala, se suelta y se reinstala sin tocar a nadie, y sus claves cruzadas vuelven 
+    [chromium] › tests/zz-instalacion.spec.ts:114:1 › El schema catalog se elimina sin llevarse nada de core 
+  4 passed (4.2m)
+npm notice
+npm notice New major version of npm available! 11.16.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+EXIT=1

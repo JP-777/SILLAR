@@ -1,7 +1,24 @@
 # M07 — Plan de pruebas de lo ya decidido
 
-Creado: 26/09/2026, America/Lima · Última verificación: 26/09/2026 ·
-Commit base comprobado: `711bfba7cf3be80baa146b44e79ddf7a633d695d` (rama `m07-b2b` sobre él).
+Creado: 26/09/2026, America/Lima · Última verificación: 05/10/2026, America/Lima ·
+Commit base comprobado: `1a7417a919beaa65e0d79ed2c56236b36ba19fcd`
+(creado sobre `711bfba7cf3be80baa146b44e79ddf7a633d695d`, rama `m07-b2b`).
+
+> **Estado al 05/10/2026 — dónde vive cada criterio.** El nivel e2e de este plan
+> ya está implementado; el mapa criterio → spec está en `CIERRE-E2E-M07.md` §2.
+> Dos notas que cambian lo que dice el plan:
+>
+> - **El nivel e2e vive en cuatro archivos y dos llevan prefijo `zz-`**
+>   (`b2b-cliente`, `b2b-panel`, `zz-b2b-ciclo`, `zz-b2b-instalacion`). Donde este
+>   plan dice `e2e/tests/b2b-*.spec.ts`, manda el comportamiento real del arnés:
+>   las dos que reinician el proceso o sueltan schemas tienen que correr al final.
+> - **4.4 queda en HOLD POR CAPACIDAD AÚN INEXISTENTE**, no omitida: depende de
+>   C1 y hoy no hay superficie en la ficha de producto.
+>
+> Y una corrección de este plan: decía «sin modificar los ayudantes de
+> `e2e/setup/`». Hubo que modificar dos —`migrate.ts` y `global-setup.ts`— porque
+> **sin ellos M07 no existía en el escenario**: era la C9, y Chat 2 lo autorizó
+> como parte del mismo cierre.
 
 **Qué es.** Las pruebas que M07 tiene que tener para cinco requisitos que **ya están decididos**:
 autenticación, límite por cuenta, permisos, ausencia de rutas muertas, e instalación y

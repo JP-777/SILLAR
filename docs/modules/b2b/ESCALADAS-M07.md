@@ -1,7 +1,9 @@
 # Escaladas de M07 — cola abierta
 
-Creado: 26/09/2026, America/Lima · Última modificación: 30/09/2026 · Última verificación: 30/09/2026 ·
-Commit base comprobado: `e839989432283c755edf7d4ae47b2c37697215ec` (hasta el 26/09, `711bfba`).
+Creado: 26/09/2026, America/Lima · Última modificación: 05/10/2026, America/Lima ·
+Última verificación: 05/10/2026, America/Lima ·
+Commit base comprobado: `1a7417a919beaa65e0d79ed2c56236b36ba19fcd`
+(antes `e839989432283c755edf7d4ae47b2c37697215ec`; hasta el 26/09, `711bfba`).
 
 > ### Estado al 27/09/2026 — encargo `B_M07_B2B.md`
 >
@@ -197,12 +199,20 @@ Numeración estable: una entrada resuelta se tacha y conserva su número.
   instalado se rechaza sin borrar nada.
 - **C8 — Proyectos de M07 en `backend/Sillar.sln`.** Añadidos en esta rama para que la puerta
   compile y pruebe M07 (etapas 3 y 5). Se pide el turno de la `.sln`.
-- **C9 — Desplegar M07.** Que `Sillar.Api` referencie `Sillar.Modules.B2B` y que la etapa 4 de
-  `scripts/verificar.mjs` y `e2e/setup/migrate.ts` apliquen sus migraciones. **No está en esta
-  rama.** Efecto que hay que acompañar en el mismo cambio: el e2e instala por `/api/setup`, que
-  migra todos los módulos declarados, así que `e2e/tests/zz-instalacion.spec.ts:114` —que
-  desinstala el catálogo— **chocará con la guarda C7** y tendrá que desinstalar M07 antes y
-  reinstalarlo después. Es el comportamiento correcto, no un fallo.
+- ~~**C9 — Desplegar M07.**~~ **Cerrada el 05/10/2026.** Las tres partes, y cada una con su
+  evidencia en las dos direcciones:
+  1. `Sillar.Api` referencia `Sillar.Modules.B2B` (`aecf4aa`). Medido instalando por
+     `POST /api/setup`: sin la referencia, los schemas son `catalog cms core crm sales`; con ella,
+     `b2b` también. La instalación **no se quejaba**: daba 201 y dejaba el producto sin M07.
+  2. Etapa 4 de `scripts/verificar.mjs` migra `Sillar.Modules.B2B`, detrás de Sales (`aecf4aa`).
+  3. `e2e/setup/migrate.ts` lo migra y lo siembra, y `global-setup.ts` lo activa detrás de
+     `catalog` y `crm`. Detalle en `CIERRE-E2E-M07.md`.
+
+  Y **el efecto previsto ocurrió tal cual**: `zz-instalacion.spec.ts` chocaba con la guarda, así
+  que ahora suelta `b2b` antes de `catalog` y los dos vuelven con el `migrate()` + `seed()` que ya
+  llamaba. Era el comportamiento correcto, no un fallo. Además se añadió
+  `ModulosEnElDespliegueTests`, que afirma lo mismo de **todos** los módulos para que el olvido no
+  vuelva con el siguiente.
 - **C10 — Residuo de una instalación rechazada.** Si Integración quiere que un módulo rechazado no
   deje su schema vacío, el cambio es en `Sillar.Shared.Data` (crear el historial dentro de la
   transacción, o limpiarlo al fallar). Hoy es un límite documentado, no un fallo.

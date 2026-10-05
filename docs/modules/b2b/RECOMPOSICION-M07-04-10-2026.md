@@ -157,6 +157,22 @@ del nodo y el tipo se va a otra parte. Queda para la decisión de multinodo (M16
 
 ---
 
+## 5b · HALLAZGO AJENO DETECTADO DURANTE M07 — NO CORREGIDO
+
+Registrado aquí el 05/10/2026, al cerrar la C9 en el arnés e2e.
+
+| | |
+|---|---|
+| **Archivo afectado** | `e2e/setup/migrate.ts` |
+| **Hecho observado** | El arnés e2e **no migra `Sillar.Modules.Sales`**. Tras añadir M07, la lista es CORE, Catalog, Cms, CRM y B2B. `global-setup.ts` tampoco activa `sales` |
+| **Posible efecto** | El mismo agujero que M07 tenía: la etapa e2e puede ejecutar el producto completo **sin que M03 exista en el escenario**. Sin su schema, activar `sales` fallaría, y ninguno de sus endpoints se cargaría nunca en una corrida verde. El §j que M03 cerró el 03/10 cubrió la **etapa 4 de `scripts/verificar.mjs`** (`c1188f9`), **no el arnés e2e** |
+| **Quién lo separó** | **Chat 2 lo separó de M07** de forma expresa, para no mezclar un arreglo de M03 con esta candidata. No se ha añadido `sales` a `migrate.ts` en esta rama. **No es bloqueo de esta entrega**; Chat 2 abrirá la verificación focal correspondiente |
+
+Queda escrito aquí y en `CIERRE-E2E-M07.md` §6 para que el hallazgo no viva solo
+en una conversación.
+
+---
+
 ## 5 · Navegación
 
 `frontend/src/app/routes.tsx:9,56` y `frontend/src/layout/navigation.ts:1,54`

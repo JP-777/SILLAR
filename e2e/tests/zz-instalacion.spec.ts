@@ -122,6 +122,15 @@ test('El schema catalog se elimina sin llevarse nada de core', async () => {
 
   expect(Number(usuariosAntes), 'la base de prueba debería tener usuarios').toBeGreaterThan(0);
 
+  // **M07 primero, y no es orden arbitrario: es la guarda C6 funcionando.**
+  // Desde `51d0275`, `catalog/99_drop.sql` se niega a soltar el schema mientras
+  // otro módulo instalado dependa de él de forma dura, y M07 declara cinco
+  // claves foráneas hacia `catalog` y `crm`. Desde que el arnés migra M07
+  // (`e2e/setup/migrate.ts`), este drop se rechazaría — y **el rechazo es el
+  // comportamiento correcto, no un fallo** (C9, `ESCALADAS-M07.md:200-205`).
+  //
+  // Los dos vuelven abajo con el mismo `migrate()` + `seed()` que ya había.
+  await psqlArchivo('/scripts/modules/b2b/99_drop.sql');
   await psqlArchivo('/scripts/modules/catalog/99_drop.sql');
 
   // 1 · El schema ya no está.
@@ -150,7 +159,10 @@ test('El schema catalog se elimina sin llevarse nada de core', async () => {
   await seed();
 
   const vuelta = await psql(
-    "SELECT count(*) FROM information_schema.schemata WHERE schema_name = 'catalog'",
+    "SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('catalog', 'b2b')",
   );
-  expect(vuelta.trim(), 'el schema catalog no se pudo volver a crear').toBe('1');
+  expect(
+    vuelta.trim(),
+    'no se pudieron volver a crear los dos schemas que esta prueba soltó',
+  ).toBe('2');
 });

@@ -1,0 +1,17 @@
+================================================================================
+ModulosEnElDespliegueTests · DIRECCIÓN 1 de 3 — ÁRBOL LEGAL
+================================================================================
+Fecha        5 de octubre de 2026, America/Lima
+Rama         m07-b2b-sobre-main
+Qué se hace  Nada. El árbol tal como queda en HEAD.
+Esperado     VERDE
+================================================================================
+
+$ dotnet build Sillar.sln -v q --nologo
+    0 Error(s)
+
+$ dotnet test Sillar.Api.Tests --no-build --filter FullyQualifiedName~ModulosEnElDespliegue
+  Passed Sillar.Api.Tests.ModulosEnElDespliegueTests.Cada_modulo_del_repositorio_tiene_su_ensamblado_junto_al_host [83 ms]
+     Passed: 1
+
+RESULTADO  VERDE, como se esperaba.

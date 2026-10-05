@@ -1,0 +1,44 @@
+================================================================================
+ModulosEnElDespliegueTests · DIRECCIÓN 3 de 3 — SABOTAJE DE LA PROPIA BARRERA
+================================================================================
+Fecha        5 de octubre de 2026, America/Lima
+Rama         m07-b2b-sobre-main
+Qué se hace  Se rompe TEMPORALMENTE la detección de la propia prueba:
+             ProyectosDeModulo(...) devuelve colección vacía.
+Esperado     ROJO por la guarda de preparación, NO verde silencioso.
+             Es la pregunta del §4 de ANTES-DE-EMPEZAR-UN-MODULO.md: ¿está
+             verificado, o lo dice algo que contesta sin poder fallar?
+Restaurado   Sí — ningún sabotaje queda en HEAD.
+================================================================================
+
+  private static string[] ProyectosDeModulo(DirectoryInfo backend)
+      // SABOTAJE TEMPORAL: la deteccion no encuentra nada.
+      => [];
+
+$ dotnet build Sillar.Api.Tests -v q --nologo
+    0 Error(s)
+
+$ dotnet test Sillar.Api.Tests --no-build --filter FullyQualifiedName~ModulosEnElDespliegue
+
+  Failed Sillar.Api.Tests.ModulosEnElDespliegueTests.Cada_modulo_del_repositorio_tiene_su_ensamblado_junto_al_host [37 ms]
+  Error Message:
+   Solo 0 proyectos de módulo en '/home/JP777/sillar-b2b/backend': el barrido
+   está mirando donde no debe.
+     Failed: 1
+
+RESULTADO  ROJO. Sin la guarda `proyectos.Length >= 4` esta prueba habría
+           pasado en verde sin haber mirado ni un solo módulo: la lista vacía
+           hace que «ninguno falta» sea trivialmente cierto.
+
+--------------------------------------------------------------------------------
+VUELTA AL VERDE, sobre el árbol restaurado
+--------------------------------------------------------------------------------
+$ git diff --stat backend/Sillar.Api.Tests/ModulosEnElDespliegueTests.cs \
+                  backend/Sillar.Api/Sillar.Api.csproj
+  (sin salida: los dos archivos idénticos a HEAD)
+
+$ grep -rn "SABOTAJE" backend/ --include=*.cs
+  (sin salida)
+
+$ dotnet test Sillar.Api.Tests --no-build --filter FullyQualifiedName~ModulosEnElDespliegue
+  Passed!  - Failed: 0, Passed: 1, Skipped: 0, Total: 1
