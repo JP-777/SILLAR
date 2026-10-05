@@ -185,9 +185,9 @@ una lista fija de módulos sin `services`, así que el grupo nuevo no le afecta.
 ## Hueco E2E del ciclo de módulo cubierto — 05/10/2026
 
 - **Creación:** 2026-10-05 00:59:09 -0500 — America/Lima
-- **Última verificación:** 2026-10-05 00:59:09 -0500 — America/Lima
-- **Commit verificado:** el de esta sección, hijo directo de `ab31744dece9533ad0896212af0f09b1e8bf03b3`
-  en `m05a-vitrina-dev`
+- **Última verificación:** 2026-10-05 01:03:53 -0500 — America/Lima (rama de evidencia de B leída en `3869cfcd`)
+- **Commit verificado:** el que añadió esta sección, `db89cf2b6d8af0858bae02c67479f65ac00b48d2`
+  (hijo directo de `ab31744`), y el que la corrige, hijo directo de `db89cf2`, en `m05a-vitrina-dev`
 - **Escrito por:** Claude Code D, por encargo de Chat 2 vía JP
 
 **Qué faltaba.** La QA de B sobre `588c7c2` dio la puerta 6/6 verde (777 PASS, 0 FAIL,
@@ -210,9 +210,18 @@ ninguna CA y no se tocó el Dockerfile. Un intento de reetiquetar la imagen base
 proxy fue bloqueado y se deshizo antes de usarse.
 
 **Preverificación independiente de B sobre `ab31744`**, aceptada por Chat 2 vía JP. La evidencia
-está en la rama `qa/m05a-e2e-ab31744-evidencias` = `f7716f3de775abd9473260090f2738d640177f4e`,
-hijo directo de `ab31744` que solo añade evidencia. Índice:
-`docs/modules/services/evidencias/QA-M05A-E2E-AB31744-INDICE-20261005.md` en esa rama.
+está en la rama `qa/m05a-e2e-ab31744-evidencias`:
+
+| | SHA |
+|---|---|
+| **Evidencia original de las tres corridas** | `f7716f3de775abd9473260090f2738d640177f4e`, hijo directo de `ab31744`, que solo añade evidencia |
+| **HEAD documental actual de la rama** | `3869cfcd15c915b6fbd8248652bfbb99e4754e5f`, hijo directo de `f7716f3` |
+
+`3869cfcd` solo modifica el índice: añade por qué la base se llama `sillar_qa_m04_e2e`, un nombre
+heredado. **No cambia la acreditación**: ni las pruebas, ni los registros originales, ni los
+hashes, ni el producto.
+
+Índice: `docs/modules/services/evidencias/QA-M05A-E2E-AB31744-INDICE-20261005.md` en esa rama.
 
 | Dirección | Resultado |
 |---|---|
