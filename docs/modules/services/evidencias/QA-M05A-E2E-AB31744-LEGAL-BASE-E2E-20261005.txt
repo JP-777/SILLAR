@@ -1,0 +1,18 @@
+# Base PostgreSQL de la pila e2e durante la corrida focal legal · 2026-10-05 00:40:57 -0500
+# SHA: ab31744dece9533ad0896212af0f09b1e8bf03b3
+## Contenedores de la pila (proyecto compose)
+sillar_qa_m04_e2e_api · sillar_qa_m04_e2e-api · Up 39 seconds · 0.0.0.0:56061->8080/tcp, [::]:56061->8080/tcp
+sillar_qa_m04_e2e_db · postgres:16 · Up 5 minutes (healthy) · 0.0.0.0:55961->5432/tcp, [::]:55961->5432/tcp
+## Variables no secretas de .env.e2e (claves de base y puertos)
+POSTGRES_USER=postgres
+## Cadena del contenedor API, sin contraseña
+Host=db;Port=5432;Database=sillar_qa_m04_e2e;Username=postgres;Password=<oculta>
+## Bases que existen en el servidor de la pila e2e
+postgres
+sillar_qa_m04_e2e
+## Volumen de datos del contenedor de base
+volume sillar_qa_m04_e2e_db_data -> /var/lib/postgresql/data
+bind  -> /scripts
+
+## Base de desarrollo de la worktree (distinta)
+/sillar_qa_m04_db sillar_qa_m04_db_data

@@ -1,0 +1,252 @@
+# Etiqueta: sabotaje
+# SHA (HEAD): ab31744dece9533ad0896212af0f09b1e8bf03b3
+# Cambios sin commitear: 1
+#    M e2e/tests/zz-z-m05a-ciclo.spec.ts
+#    e2e/tests/zz-z-m05a-ciclo.spec.ts | 2 +-
+#    1 file changed, 1 insertion(+), 1 deletion(-)
+# Inicio: 2026-10-05 00:47:14 -0500
+# Comando: (cd e2e && pnpm exec playwright test tests/zz-z-m05a-ciclo.spec.ts)   TMPDIR=/var/tmp/sillar-qa-m04-preparacion/tmpdir
+00:47:18 [WebServer] $ vite --port 56161 --strictPort
+00:47:19 [WebServer]
+00:47:19 [WebServer]   VITE v7.3.6  ready in 322 ms
+00:47:19 [WebServer]
+00:47:19 [WebServer]   ➜  Local:   http://localhost:56161/
+00:47:19 [WebServer]   ➜  Network: use --host to expose
+00:47:19 [e2e] destruyendo un stack anterior, si quedó alguno...
+00:47:19 [e2e] levantando la base de datos...
+00:47:20  Network sillar_qa_m04_e2e_default Creating
+00:47:20  Network sillar_qa_m04_e2e_default Created
+00:47:20  Volume sillar_qa_m04_e2e_db_data Creating
+00:47:20  Volume sillar_qa_m04_e2e_db_data Created
+00:47:20  Container sillar_qa_m04_e2e_db Creating
+00:47:20  Container sillar_qa_m04_e2e_db Created
+00:47:20  Container sillar_qa_m04_e2e_db Starting
+00:47:20  Container sillar_qa_m04_e2e_db Started
+00:47:27 [e2e] aplicando migraciones (CORE, Catalog, Cms, CRM, Services)...
+00:47:31 Build started...
+00:47:50 Build succeeded.
+00:47:55 Failed executing DbCommand (117ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+00:47:55 SELECT "MigrationId", "ProductVersion"
+00:47:55 FROM core.__migrations
+00:47:55 ORDER BY "MigrationId";
+00:47:56 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:47:56 Applying migration '20260816073536_CoreInitial'.
+00:47:57 Applying migration '20260828200857_CoreEmailSettings'.
+00:47:57 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:47:57 Applying migration '20260829011000_CoreSmtpSettings'.
+00:47:57 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:47:57 Applying migration '20261003203701_CoreHomeNodeYAutorDeMedios'.
+00:47:57 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:47:58 Done.
+00:48:03 Build started...
+00:48:18 Build succeeded.
+00:48:25 Failed executing DbCommand (73ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+00:48:25 SELECT "MigrationId", "ProductVersion"
+00:48:25 FROM catalog.__migrations
+00:48:25 ORDER BY "MigrationId";
+00:48:26 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:48:26 Applying migration '20260816073647_CatalogInitial'.
+00:48:27 Done.
+00:48:32 Build started...
+00:48:46 Build succeeded.
+00:48:49 Failed executing DbCommand (122ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+00:48:49 SELECT "MigrationId", "ProductVersion"
+00:48:49 FROM cms.__migrations
+00:48:49 ORDER BY "MigrationId";
+00:48:49 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:48:49 Applying migration '20260820050000_CmsInitial'.
+00:48:50 Done.
+00:48:54 Build started...
+00:49:06 Build succeeded.
+00:49:09 Failed executing DbCommand (75ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+00:49:09 SELECT "MigrationId", "ProductVersion"
+00:49:09 FROM crm.__migrations
+00:49:09 ORDER BY "MigrationId";
+00:49:09 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:49:09 Applying migration '20260824190200_CrmInitial'.
+00:49:10 Applying migration '20260922115958_CrmCustomersEmailTrimAuthority'.
+00:49:10 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:49:10 Done.
+00:49:14 Build started...
+00:49:24 Build succeeded.
+00:49:27 Failed executing DbCommand (79ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+00:49:27 SELECT "MigrationId", "ProductVersion"
+00:49:27 FROM services.__migrations
+00:49:27 ORDER BY "MigrationId";
+00:49:27 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:49:27 Applying migration '20260928090000_ServicesInitial'.
+00:49:27 Done.
+00:49:27 [e2e] aplicando seeds (sin datos de negocio)...
+00:49:28 BEGIN
+00:49:28 INSERT 0 11
+00:49:28 INSERT 0 0
+00:49:28 UPDATE 3
+00:49:28 COMMIT
+00:49:28 BEGIN
+00:49:28 COMMIT
+00:49:28 BEGIN
+00:49:28 COMMIT
+00:49:28  ?column?
+00:49:28 ----------
+00:49:28         1
+00:49:28 (1 row)
+00:49:28
+00:49:29  ?column?
+00:49:29 ----------
+00:49:29         1
+00:49:29 (1 row)
+00:49:29
+00:49:29 [e2e] construyendo y levantando la API (Debug, con módulos de mentira)...
+00:49:29  Image sillar_qa_m04_e2e-api Building
+00:49:29 #1 [internal] load local bake definitions
+00:49:29 #1 reading from stdin 590B done
+00:49:29 #1 DONE 0.0s
+00:49:29
+00:49:29 #2 [internal] load build definition from Dockerfile
+00:49:29 #2 transferring dockerfile:
+00:49:29 #2 transferring dockerfile: 2.39kB done
+00:49:29 #2 DONE 0.0s
+00:49:29
+00:49:29 #3 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:10.0
+00:49:29 #3 DONE 0.0s
+00:49:29
+00:49:29 #4 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:10.0
+00:49:29 #4 DONE 0.0s
+00:49:29
+00:49:29 #5 [internal] load .dockerignore
+00:49:29 #5 transferring context: 1.40kB done
+00:49:29 #5 DONE 0.0s
+00:49:29
+00:49:29 #6 [final 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0
+00:49:29 #6 DONE 0.0s
+00:49:29
+00:49:29 #7 [build 1/4] FROM mcr.microsoft.com/dotnet/sdk:10.0
+00:49:29 #7 DONE 0.0s
+00:49:29
+00:49:29 #8 [internal] load build context
+00:49:29 #8 transferring context: 27.83kB 0.0s done
+00:49:29 #8 DONE 0.1s
+00:49:29
+00:49:29 #9 [final 2/3] WORKDIR /app
+00:49:29 #9 CACHED
+00:49:29
+00:49:29 #10 [build 2/4] WORKDIR /src
+00:49:29 #10 CACHED
+00:49:29
+00:49:29 #11 [build 3/4] COPY . .
+00:49:29 #11 CACHED
+00:49:29
+00:49:29 #12 [build 4/4] RUN dotnet publish Sillar.Api/Sillar.Api.csproj -c Debug -o /app
+00:49:29 #12 CACHED
+00:49:29
+00:49:29 #13 [final 3/3] COPY --from=build /app .
+00:49:29 #13 CACHED
+00:49:29
+00:49:29 #14 exporting to image
+00:49:29 #14 exporting layers done
+00:49:29 #14 writing image sha256:c12d34c93a5e33c5736de10143a71a3b0c54f10fb3b32aaaa318093e775315b1 done
+00:49:29 #14 naming to docker.io/library/sillar_qa_m04_e2e-api done
+00:49:29 #14 DONE 0.0s
+00:49:29
+00:49:29 #15 resolving provenance for metadata file
+00:49:29 #15 DONE 0.0s
+00:49:29  Image sillar_qa_m04_e2e-api Built
+00:49:29  Container sillar_qa_m04_e2e_db Running
+00:49:29  Container sillar_qa_m04_e2e_api Creating
+00:49:30  Container sillar_qa_m04_e2e_api Created
+00:49:30  Container sillar_qa_m04_e2e_db Waiting
+00:49:30  Container sillar_qa_m04_e2e_db Healthy
+00:49:30  Container sillar_qa_m04_e2e_api Starting
+00:49:30  Container sillar_qa_m04_e2e_api Started
+00:49:35 [e2e] completando la instalación...
+00:49:38 [e2e] iniciando sesión (reintenta hasta que el proceso nuevo esté arriba)...
+00:49:46 [e2e] creando el segundo usuario, de rol admin...
+00:49:46 [e2e] montando el grafo de módulos de mentira (las cuatro variantes de tarjeta)...
+00:49:59 [e2e] activando M01 catálogo...
+00:50:07 [e2e] activando M02 contenido...
+00:50:15 [e2e] activando M04 clientes y contacto...
+00:50:27 [e2e] entorno listo.
+00:50:27
+00:50:27 Running 1 test using 1 worker
+00:50:27
+00:50:38 [WebServer] 12:50:38 AM [vite] http proxy error: /api/setup/status
+00:50:38 [WebServer] AggregateError [ECONNREFUSED]:
+00:50:38 [WebServer]     at internalConnectMultiple (node:net:1193:18)
+00:50:38 [WebServer]     at afterConnectMultiple (node:net:1783:7)
+00:50:40 [WebServer] 12:50:40 AM [vite] http proxy error: /api/setup/status
+00:50:40 [WebServer] Error: read ECONNRESET
+00:50:40 [WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+00:50:43 [WebServer] 12:50:43 AM [vite] http proxy error: /api/setup/status
+00:50:43 [WebServer] Error: read ECONNRESET
+00:50:43 [WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+00:51:40 [WebServer] 12:51:40 AM [vite] http proxy error: /api/setup/status
+00:51:40 [WebServer] AggregateError [ECONNREFUSED]:
+00:51:40 [WebServer]     at internalConnectMultiple (node:net:1193:18)
+00:51:40 [WebServer]     at afterConnectMultiple (node:net:1783:7)
+00:51:42 [WebServer] 12:51:42 AM [vite] http proxy error: /api/setup/status
+00:51:42 [WebServer] Error: read ECONNRESET
+00:51:42 [WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+00:51:45 [WebServer] 12:51:45 AM [vite] http proxy error: /api/setup/status
+00:51:45 [WebServer] Error: read ECONNRESET
+00:51:45 [WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+00:51:56   ✘  1 [chromium] › tests/zz-z-m05a-ciclo.spec.ts:309:1 › [M05A-CICLO] activar, desactivar y reactivar M05a sin romper CORE, M01, M02 ni M04 (1.4m)
+00:51:56 [e2e] generando la galería de capturas...
+00:51:56 [e2e] destruyendo el stack e2e...
+00:51:57  Container sillar_qa_m04_e2e_api Stopping
+00:51:58  Container sillar_qa_m04_e2e_api Stopped
+00:51:58  Container sillar_qa_m04_e2e_api Removing
+00:51:58  Container sillar_qa_m04_e2e_api Removed
+00:51:58  Container sillar_qa_m04_e2e_db Stopping
+00:51:58  Container sillar_qa_m04_e2e_db Stopped
+00:51:58  Container sillar_qa_m04_e2e_db Removing
+00:51:59  Container sillar_qa_m04_e2e_db Removed
+00:51:59  Network sillar_qa_m04_e2e_default Removing
+00:51:59  Volume sillar_qa_m04_e2e_db_data Removing
+00:51:59  Volume sillar_qa_m04_e2e_db_data Removed
+00:51:59  Network sillar_qa_m04_e2e_default Removed
+00:51:59
+00:51:59
+00:51:59   1) [chromium] › tests/zz-z-m05a-ciclo.spec.ts:309:1 › [M05A-CICLO] activar, desactivar y reactivar M05a sin romper CORE, M01, M02 ni M04
+00:51:59
+00:51:59     Error: el detector de restos no ve M05a aunque está activo: es mudo
+00:51:59
+00:51:59     expect(received).toEqual(expected) // deep equality
+00:51:59
+00:51:59     Expected: ArrayContaining ["capacidades: services activo", "menú del panel enlaza /admin/servicios", "portada pinta la sección de servicios", "portada enlaza /servicios", "ruta /servicios sigue montada", "ruta /servicios/anillado-espiral-ciclo-m05a-1791179428804 sigue montada", "ruta /admin/servicios sigue montada"]
+00:51:59     Received: ["capacidades: services activo", "API pública responde 200 en /api/services", "menú del panel enlaza /admin/servicios", "portada pinta la sección de servicios", "portada enlaza /servicios"]
+00:51:59
+00:51:59       333 |
+00:51:59       334 |     // Control negativo: con M05a activo, el detector de restos TIENE que verlos.
+00:51:59     > 335 |     expect(await restosDeServicios(page), 'el detector de restos no ve M05a aunque está activo: es mudo').toEqual(
+00:51:59           |                                                                                                           ^
+00:51:59       336 |       expect.arrayContaining([
+00:51:59       337 |         'capacidades: services activo',
+00:51:59       338 |         `menú del panel enlaza ${RUTA_PANEL}`,
+00:51:59         at /home/JP777/sillar-qa-m04/e2e/tests/zz-z-m05a-ciclo.spec.ts:335:107
+00:51:59
+00:51:59     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+00:51:59     test-results/zz-z-m05a-ciclo--M05A-CICL-eab3f--romper-CORE-M01-M02-ni-M04-chromium/test-failed-1.png
+00:51:59     ────────────────────────────────────────────────────────────────────────────────────────────────
+00:51:59
+00:51:59     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+00:51:59     test-results/zz-z-m05a-ciclo--M05A-CICL-eab3f--romper-CORE-M01-M02-ni-M04-chromium/video.webm
+00:51:59     ────────────────────────────────────────────────────────────────────────────────────────────────
+00:51:59
+00:51:59     attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+00:51:59     test-results/zz-z-m05a-ciclo--M05A-CICL-eab3f--romper-CORE-M01-M02-ni-M04-chromium/test-failed-2.png
+00:51:59     ────────────────────────────────────────────────────────────────────────────────────────────────
+00:51:59
+00:51:59     Error Context: test-results/zz-z-m05a-ciclo--M05A-CICL-eab3f--romper-CORE-M01-M02-ni-M04-chromium/error-context.md
+00:51:59
+00:51:59     attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+00:51:59     test-results/zz-z-m05a-ciclo--M05A-CICL-eab3f--romper-CORE-M01-M02-ni-M04-chromium/trace.zip
+00:51:59     Usage:
+00:51:59
+00:51:59         pnpm exec playwright show-trace test-results/zz-z-m05a-ciclo--M05A-CICL-eab3f--romper-CORE-M01-M02-ni-M04-chromium/trace.zip
+00:51:59
+00:51:59     ────────────────────────────────────────────────────────────────────────────────────────────────
+00:51:59
+00:51:59   1 failed
+00:51:59     [chromium] › tests/zz-z-m05a-ciclo.spec.ts:309:1 › [M05A-CICLO] activar, desactivar y reactivar M05a sin romper CORE, M01, M02 ni M04
+# rc=1
+# Fin: 2026-10-05 00:51:59 -0500

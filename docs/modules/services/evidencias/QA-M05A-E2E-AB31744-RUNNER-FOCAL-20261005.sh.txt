@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Corrida focal de e2e/tests/zz-z-m05a-ciclo.spec.ts en la worktree de QA.
+# Uso: correr-focal.sh <etiqueta>   (legal | ilegal | sabotaje)
+# Mismo comando que la etapa 6 de scripts/verificar.mjs (pnpm exec playwright test, cwd e2e),
+# limitado al archivo. TMPDIR en disco. No toca el código: los cambios temporales los hace quien llama.
+P="$(cd "$(dirname "$0")" && pwd)"; W=/home/JP777/sillar-qa-m04; E="${1:?etiqueta}"
+V="$P/$E-$(TZ=America/Lima date +%Y%m%d-%H%M%S)"; mkdir -p "$V"
+export TMPDIR=/var/tmp/sillar-qa-m04-preparacion/tmpdir
+cd "$W/e2e" || exit 90
+{
+  echo "# Etiqueta: $E"
+  echo "# SHA (HEAD): $(git -C "$W" rev-parse HEAD)"
+  echo "# Cambios sin commitear: $(git -C "$W" status --short | wc -l)"
+  git -C "$W" status --short | sed 's/^/#   /'
+  git -C "$W" diff --stat | sed 's/^/#   /'
+  echo "# Inicio: $(TZ=America/Lima date '+%F %T %z')"
+  echo "# Comando: (cd e2e && pnpm exec playwright test tests/zz-z-m05a-ciclo.spec.ts)   TMPDIR=$TMPDIR"
+} > "$V/FOCAL.log"
+git -C "$W" diff > "$V/CAMBIO-TEMPORAL.diff"
+pnpm exec playwright test tests/zz-z-m05a-ciclo.spec.ts 2>&1 | while IFS= read -r l; do printf '%s %s\n' "$(TZ=America/Lima date +%T)" "$l"; done >> "$V/FOCAL.log"
+rc=${PIPESTATUS[0]}
+{ echo "# rc=$rc"; echo "# Fin: $(TZ=America/Lima date '+%F %T %z')"; } >> "$V/FOCAL.log"
+cp -a "$W/e2e/playwright-report" "$W/e2e/test-results" "$V/" 2>/dev/null
+echo "$rc" > "$V/RC"; echo "$V"

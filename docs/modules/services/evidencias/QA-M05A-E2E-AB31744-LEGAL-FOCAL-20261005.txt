@@ -1,0 +1,229 @@
+# Etiqueta: legal
+# SHA (HEAD): ab31744dece9533ad0896212af0f09b1e8bf03b3
+# Cambios sin commitear: 0
+# Inicio: 2026-10-05 00:34:54 -0500
+# Comando: (cd e2e && pnpm exec playwright test tests/zz-z-m05a-ciclo.spec.ts)   TMPDIR=/var/tmp/sillar-qa-m04-preparacion/tmpdir
+00:34:59 [WebServer] $ vite --port 56161 --strictPort
+00:35:00 [WebServer]
+00:35:00 [WebServer]   VITE v7.3.6  ready in 470 ms
+00:35:00 [WebServer]
+00:35:00 [WebServer]   ➜  Local:   http://localhost:56161/
+00:35:00 [WebServer]   ➜  Network: use --host to expose
+00:35:01 [e2e] destruyendo un stack anterior, si quedó alguno...
+00:35:02 [e2e] levantando la base de datos...
+00:35:02  Network sillar_qa_m04_e2e_default Creating
+00:35:02  Network sillar_qa_m04_e2e_default Created
+00:35:02  Volume sillar_qa_m04_e2e_db_data Creating
+00:35:02  Volume sillar_qa_m04_e2e_db_data Created
+00:35:02  Container sillar_qa_m04_e2e_db Creating
+00:35:02  Container sillar_qa_m04_e2e_db Created
+00:35:02  Container sillar_qa_m04_e2e_db Starting
+00:35:03  Container sillar_qa_m04_e2e_db Started
+00:35:10 [e2e] aplicando migraciones (CORE, Catalog, Cms, CRM, Services)...
+00:35:14 Build started...
+00:36:04 Build succeeded.
+00:36:07 Failed executing DbCommand (71ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+00:36:07 SELECT "MigrationId", "ProductVersion"
+00:36:07 FROM core.__migrations
+00:36:07 ORDER BY "MigrationId";
+00:36:08 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:36:08 Applying migration '20260816073536_CoreInitial'.
+00:36:09 Applying migration '20260828200857_CoreEmailSettings'.
+00:36:09 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:36:09 Applying migration '20260829011000_CoreSmtpSettings'.
+00:36:09 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:36:09 Applying migration '20261003203701_CoreHomeNodeYAutorDeMedios'.
+00:36:09 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:36:09 Done.
+00:36:13 Build started...
+00:36:26 Build succeeded.
+00:36:30 Failed executing DbCommand (54ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+00:36:30 SELECT "MigrationId", "ProductVersion"
+00:36:30 FROM catalog.__migrations
+00:36:30 ORDER BY "MigrationId";
+00:36:30 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:36:30 Applying migration '20260816073647_CatalogInitial'.
+00:36:31 Done.
+00:36:35 Build started...
+00:36:44 Build succeeded.
+00:36:46 Failed executing DbCommand (58ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+00:36:46 SELECT "MigrationId", "ProductVersion"
+00:36:46 FROM cms.__migrations
+00:36:46 ORDER BY "MigrationId";
+00:36:47 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:36:47 Applying migration '20260820050000_CmsInitial'.
+00:36:47 Done.
+00:36:51 Build started...
+00:37:00 Build succeeded.
+00:37:03 Failed executing DbCommand (79ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+00:37:03 SELECT "MigrationId", "ProductVersion"
+00:37:03 FROM crm.__migrations
+00:37:03 ORDER BY "MigrationId";
+00:37:03 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:37:03 Applying migration '20260824190200_CrmInitial'.
+00:37:04 Applying migration '20260922115958_CrmCustomersEmailTrimAuthority'.
+00:37:04 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:37:04 Done.
+00:37:08 Build started...
+00:37:16 Build succeeded.
+00:37:19 Failed executing DbCommand (60ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+00:37:19 SELECT "MigrationId", "ProductVersion"
+00:37:19 FROM services.__migrations
+00:37:19 ORDER BY "MigrationId";
+00:37:19 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+00:37:19 Applying migration '20260928090000_ServicesInitial'.
+00:37:19 Done.
+00:37:19 [e2e] aplicando seeds (sin datos de negocio)...
+00:37:19 BEGIN
+00:37:19 INSERT 0 11
+00:37:19 INSERT 0 0
+00:37:19 UPDATE 3
+00:37:19 COMMIT
+00:37:20 BEGIN
+00:37:20 COMMIT
+00:37:20 BEGIN
+00:37:20 COMMIT
+00:37:20  ?column?
+00:37:20 ----------
+00:37:20         1
+00:37:20 (1 row)
+00:37:20
+00:37:20  ?column?
+00:37:20 ----------
+00:37:20         1
+00:37:20 (1 row)
+00:37:20
+00:37:20 [e2e] construyendo y levantando la API (Debug, con módulos de mentira)...
+00:37:21  Image sillar_qa_m04_e2e-api Building
+00:37:21 #1 [internal] load local bake definitions
+00:37:21 #1 reading from stdin 590B done
+00:37:21 #1 DONE 0.0s
+00:37:21
+00:37:21 #2 [internal] load build definition from Dockerfile
+00:37:21 #2 transferring dockerfile: 2.39kB done
+00:37:21 #2 DONE 0.0s
+00:37:21
+00:37:21 #3 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:10.0
+00:37:21 #3 DONE 0.0s
+00:37:21
+00:37:21 #4 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:10.0
+00:37:21 #4 DONE 0.0s
+00:37:21
+00:37:21 #5 [internal] load .dockerignore
+00:37:21 #5 transferring context: 1.40kB done
+00:37:21 #5 DONE 0.0s
+00:37:21
+00:37:21 #6 [final 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0
+00:37:21 #6 DONE 0.0s
+00:37:21
+00:37:21 #7 [build 1/4] FROM mcr.microsoft.com/dotnet/sdk:10.0
+00:37:21 #7 DONE 0.0s
+00:37:21
+00:37:21 #8 [internal] load build context
+00:37:21 #8 transferring context: 27.83kB 0.0s done
+00:37:21 #8 DONE 0.1s
+00:37:21
+00:37:21 #9 [build 4/4] RUN dotnet publish Sillar.Api/Sillar.Api.csproj -c Debug -o /app
+00:37:21 #9 CACHED
+00:37:21
+00:37:21 #10 [build 2/4] WORKDIR /src
+00:37:21 #10 CACHED
+00:37:21
+00:37:21 #11 [build 3/4] COPY . .
+00:37:21 #11 CACHED
+00:37:21
+00:37:21 #12 [final 2/3] WORKDIR /app
+00:37:21 #12 CACHED
+00:37:21
+00:37:21 #13 [final 3/3] COPY --from=build /app .
+00:37:21 #13 CACHED
+00:37:21
+00:37:21 #14 exporting to image
+00:37:21 #14 exporting layers done
+00:37:21 #14 writing image sha256:c12d34c93a5e33c5736de10143a71a3b0c54f10fb3b32aaaa318093e775315b1 0.0s done
+00:37:21 #14 naming to docker.io/library/sillar_qa_m04_e2e-api done
+00:37:21 #14 DONE 0.0s
+00:37:21
+00:37:21 #15 resolving provenance for metadata file
+00:37:21 #15 DONE 0.0s
+00:37:21  Image sillar_qa_m04_e2e-api Built
+00:37:21  Container sillar_qa_m04_e2e_db Running
+00:37:21  Container sillar_qa_m04_e2e_api Creating
+00:37:21  Container sillar_qa_m04_e2e_api Created
+00:37:22  Container sillar_qa_m04_e2e_db Waiting
+00:37:22  Container sillar_qa_m04_e2e_db Healthy
+00:37:22  Container sillar_qa_m04_e2e_api Starting
+00:37:22  Container sillar_qa_m04_e2e_api Started
+00:37:28 [e2e] completando la instalación...
+00:37:32 [e2e] iniciando sesión (reintenta hasta que el proceso nuevo esté arriba)...
+00:37:41 [e2e] creando el segundo usuario, de rol admin...
+00:37:42 [e2e] montando el grafo de módulos de mentira (las cuatro variantes de tarjeta)...
+00:37:57 [e2e] activando M01 catálogo...
+00:38:07 [e2e] activando M02 contenido...
+00:38:18 [e2e] activando M04 clientes y contacto...
+00:38:30 [e2e] entorno listo.
+00:38:30
+00:38:30 Running 1 test using 1 worker
+00:38:30
+00:38:47 [WebServer] 12:38:47 AM [vite] http proxy error: /api/setup/status
+00:38:47 [WebServer] AggregateError [ECONNREFUSED]:
+00:38:47 [WebServer]     at internalConnectMultiple (node:net:1193:18)
+00:38:47 [WebServer]     at afterConnectMultiple (node:net:1783:7)
+00:38:49 [WebServer] 12:38:49 AM [vite] http proxy error: /api/setup/status
+00:38:49 [WebServer] Error: read ECONNRESET
+00:38:49 [WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+00:38:52 [WebServer] 12:38:52 AM [vite] http proxy error: /api/setup/status
+00:38:52 [WebServer] Error: socket hang up
+00:38:52 [WebServer]     at Socket.socketOnEnd (node:_http_client:617:25)
+00:38:52 [WebServer]     at Socket.emit (node:events:521:24)
+00:38:52 [WebServer]     at endReadableNT (node:internal/streams/readable:1744:12)
+00:38:52 [WebServer]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+00:40:17 [WebServer] 12:40:17 AM [vite] http proxy error: /api/setup/status
+00:40:17 [WebServer] AggregateError [ECONNREFUSED]:
+00:40:17 [WebServer]     at internalConnectMultiple (node:net:1193:18)
+00:40:17 [WebServer]     at afterConnectMultiple (node:net:1783:7)
+00:40:19 [WebServer] 12:40:19 AM [vite] http proxy error: /api/setup/status
+00:40:19 [WebServer] Error: read ECONNRESET
+00:40:19 [WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+00:40:22 [WebServer] 12:40:22 AM [vite] http proxy error: /api/setup/status
+00:40:22 [WebServer] Error: read ECONNRESET
+00:40:22 [WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+00:41:29 [WebServer] 12:41:29 AM [vite] http proxy error: /api/setup/status
+00:41:29 [WebServer] AggregateError [ECONNREFUSED]:
+00:41:29 [WebServer]     at internalConnectMultiple (node:net:1193:18)
+00:41:29 [WebServer]     at afterConnectMultiple (node:net:1783:7)
+00:41:31 [WebServer] 12:41:31 AM [vite] http proxy error: /api/setup/status
+00:41:31 [WebServer] Error: read ECONNRESET
+00:41:31 [WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+00:41:34 [WebServer] 12:41:34 AM [vite] http proxy error: /api/setup/status
+00:41:34 [WebServer] Error: read ECONNRESET
+00:41:34 [WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+00:42:34 [WebServer] 12:42:34 AM [vite] http proxy error: /api/setup/status
+00:42:34 [WebServer] AggregateError [ECONNREFUSED]:
+00:42:34 [WebServer]     at internalConnectMultiple (node:net:1193:18)
+00:42:34 [WebServer]     at afterConnectMultiple (node:net:1783:7)
+00:42:36 [WebServer] 12:42:36 AM [vite] http proxy error: /api/setup/status
+00:42:36 [WebServer] Error: read ECONNRESET
+00:42:36 [WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+00:42:39 [WebServer] 12:42:39 AM [vite] http proxy error: /api/setup/status
+00:42:39 [WebServer] Error: read ECONNRESET
+00:42:39 [WebServer]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+00:42:48   ✓  1 [chromium] › tests/zz-z-m05a-ciclo.spec.ts:309:1 › [M05A-CICLO] activar, desactivar y reactivar M05a sin romper CORE, M01, M02 ni M04 (4.3m)
+00:42:48 [e2e] generando la galería de capturas...
+00:42:48 [e2e] destruyendo el stack e2e...
+00:42:49  Container sillar_qa_m04_e2e_api Stopping
+00:42:50  Container sillar_qa_m04_e2e_api Stopped
+00:42:50  Container sillar_qa_m04_e2e_api Removing
+00:42:50  Container sillar_qa_m04_e2e_api Removed
+00:42:50  Container sillar_qa_m04_e2e_db Stopping
+00:42:50  Container sillar_qa_m04_e2e_db Stopped
+00:42:50  Container sillar_qa_m04_e2e_db Removing
+00:42:50  Container sillar_qa_m04_e2e_db Removed
+00:42:50  Volume sillar_qa_m04_e2e_db_data Removing
+00:42:50  Network sillar_qa_m04_e2e_default Removing
+00:42:50  Volume sillar_qa_m04_e2e_db_data Removed
+00:42:50  Network sillar_qa_m04_e2e_default Removed
+00:42:50
+00:42:50   1 passed (7.9m)
+# rc=0
+# Fin: 2026-10-05 00:42:50 -0500
