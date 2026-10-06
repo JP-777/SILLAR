@@ -5,8 +5,11 @@ Commit base comprobado: `6bde7c9cfcad0f8932da006e7f22555c35cfc8cb` — recompues
 sobre ese `main`, que ya trae M05a Services dentro del arnés. La rama
 `fix/m03-e2e-restauracion` nació de `3564718` y se recompuso por **merge normal**,
 no rebase: conserva sus commits de evidencia.
-Base PostgreSQL usada: `sillar_m03_paridad`, en el stack de desarrollo de la
-worktree `sillar-m03-e2e` (PostgreSQL 16, puerto 55690, colación ICU `es-PE`).
+Base PostgreSQL usada: **`sillar_m03b_paridad`**, en el stack de desarrollo de la
+worktree `sillar-m03-e2e` (PostgreSQL 16, puerto 55690, colación ICU `es-PE`). Es
+la de la recomposición, y la misma que declaran las evidencias publicadas. La
+medición anterior, sobre `main 3564718` y sin Services, usó
+`sillar_m03_paridad`; se conserva en el §2 como estado anterior.
 
 ---
 
@@ -37,62 +40,94 @@ migraciones sigue ahí**, así que EF Core no reaplica nada: la base queda con
 
 ## 2 · Diagnóstico medido · los dos caminos, lado a lado
 
-Tres estados sobre la **misma** base `sillar_m03_paridad`. Las listas van
-ordenadas en JavaScript, no en SQL: la colación ICU coloca un `__migrations`
-inicial donde `Array.sort()` no lo coloca, y depender de eso daría un rojo
-cierto y mudo.
+Tres estados sobre la **misma** base `sillar_m03b_paridad`, **en el árbol
+combinado** —el que ya trae M05a Services de `main`—. Las listas van ordenadas
+en JavaScript, no en SQL: la colación ICU coloca un `__migrations` inicial donde
+`Array.sort()` no lo coloca, y depender de eso daría un rojo cierto y mudo.
+
+**Services aparece en los tres estados a propósito.** Es lo que permite leer el
+defecto sin ambigüedad: el que no vuelve es M03, y Services queda igual todo el
+tiempo porque nadie lo toca.
 
 ### A · lo que deja `POST /api/setup` (201)
 
 ```
 schema_sales        1
-tablas              __migrations, cart_items, carts, order_lines,
+tablas_sales        __migrations, cart_items, carts, order_lines,
                     order_payments, order_series, order_status_changes, orders
 migraciones         20260930185029_SalesInitial
 fk_cruzadas         fk_order_lines_item_id -> catalog.product_items
                     fk_orders_customer_id  -> crm.customers
-dep_duras_de_sales  catalog, core, crm
+dep_duras_sales     catalog, core, crm
+schema_services     1
+migrac_services     20260928090000_ServicesInitial
 ```
 
-### B · tras soltar Sales y correr `migrate()+seed()` **tal como estaba** — el defecto
+### B · tras soltar Sales y correr `migrate()+seed()` **sin Sales y con Services** — el defecto
 
 ```
-sales/99_drop.sql   OK (cascada a 9 objetos)
-migrate()           Core OK · Catalog OK · Cms OK · Crm OK      ← cuatro, sin M03
-seed()              core, catalog, cms, crm                     ← cuatro
+sales/99_drop.sql   OK
+migrate()           Core · Catalog · Cms · Crm · Services       ← cinco, sin M03
+seed()              core, catalog, cms, crm, services           ← cinco
 
 schema_sales        0        ← DESAPARECIDO
-tablas              (vacío)
+tablas_sales        (vacío)
 migraciones         (vacío)
 fk_cruzadas         (vacío)
-dep_duras_de_sales  catalog, core, crm   ← la fila de catálogo sobrevive, y está bien
+dep_duras_sales     catalog, core, crm   ← la fila de catálogo sobrevive, y está bien
+schema_services     1                    ← INTACTO: el defecto es de M03, de nadie más
+migrac_services     20260928090000_ServicesInitial
 ```
 
-**El arnés no sabía volver.** Y nótese el último campo: `core.modules` sigue
-diciendo que `sales` existe y de qué depende, porque ese catálogo no se va con
-el schema. Es correcto, y es además lo que hace que la guarda C6 de M01 se niegue
-mientras el schema esté.
+**El arnés no sabía volver.** Dos cosas que conviene leer juntas:
 
-### C · tras `migrate()+seed()` **con el arreglo** — reconstruido
+- `core.modules` sigue diciendo que `sales` existe y de qué depende, porque ese
+  catálogo no se va con el schema. Es correcto, y es además lo que hace que la
+  guarda C6 de M01 se niegue mientras el schema esté.
+- **Services no se mueve.** Con los dos módulos fuera del arnés el rojo no diría
+  de quién es; con Services dentro, queda atribuido.
+
+### C · tras `migrate()+seed()` **con los seis** — reconstruido
 
 ```
-migrate()           Core OK · Catalog OK · Cms OK · Crm OK · Sales OK
-seed()              core, catalog, cms, crm, sales
+migrate()           Core · Catalog · Cms · Crm · Services · Sales
+seed()              core, catalog, cms, crm, services, sales
 
 schema_sales        1
-tablas              __migrations, cart_items, carts, order_lines,
+tablas_sales        __migrations, cart_items, carts, order_lines,
                     order_payments, order_series, order_status_changes, orders
 migraciones         20260930185029_SalesInitial
 fk_cruzadas         fk_order_lines_item_id -> catalog.product_items
                     fk_orders_customer_id  -> crm.customers
-dep_duras_de_sales  catalog, core, crm
+dep_duras_sales     catalog, core, crm
+schema_services     1
+migrac_services     20260928090000_ServicesInitial
 ```
 
-**C es idéntico a A en los cinco aspectos.** Los dos caminos convergen.
+**C es idéntico a A en los cinco aspectos de Sales**, y Services queda igual en
+los tres estados. Los dos caminos convergen.
 
 > **No se encontró ninguna diferencia real entre los dos caminos** más allá de la
 > ausencia de M03, que es lo que esta rama repara. No hay nada que escalar por
 > este punto.
+
+### Estado anterior · la primera medición, sobre `main 3564718` y sin Services
+
+Se conserva porque es donde se vio el defecto por primera vez, y **describe un
+árbol que ya no existe**: entonces `main` no traía M05a, así que `migrate()`
+enumeraba cuatro módulos y el seed cuatro. Base `sillar_m03_paridad`.
+
+```
+A  /api/setup (201)              sales 1 · 8 tablas · SalesInitial · 2 FK
+B  soltar + migrate()+seed()     Core · Catalog · Cms · Crm      ← cuatro
+   de entonces                   sales 0 · sin tablas · sin historial · sin FK
+C  soltar + migrate()+seed()     Core · Catalog · Cms · Crm · Sales
+   con el arreglo de entonces    idéntico a A
+```
+
+La conclusión fue la misma y no cambia: los dos caminos convergen en cuanto
+Sales entra al arnés. Lo que cambió entre las dos mediciones es **el árbol**, no
+el hallazgo.
 
 ---
 
@@ -163,10 +198,16 @@ claves foráneas cruzadas —a `catalog` y a `crm`, `SalesModule.cs:74`—. M05a
 depende de `core` (`ServicesModule.cs:24`), así que su sitio es indiferente y se
 conserva **donde `main` lo puso**.
 
-Dos filas que conviene no confundir con huecos:
+**Una carpeta de seed que no es un hueco:** `database/modules/b2b/`. M07 **no
+está en `main`**, así que no hay asimetría que reparar aquí; su mitad ya la lleva
+hecha su candidata, y es el próximo caso de la regla del §3.
 
-- **`database/modules/services/02_seed.sql` existe y no hay proyecto `Sillar.Modules.Services`.** Es un módulo futuro: no está en el binario, así que `/api/setup` no lo instala y no hay asimetría que reparar.
-- **`database/modules/b2b/`** está igual: M07 **no está en `main`**, así que no hay asimetría que reparar aquí. Su mitad ya la lleva hecha su candidata, y es el próximo caso de la regla del §3.
+**Y una que dejó de serlo.** Hasta la medición anterior, `database/modules/services/`
+estaba en esta misma lista como «módulo futuro, sin proyecto». **Ya no:** M05a
+trajo `Sillar.Modules.Services` al binario, a `migrate()` y a `seed()`, así que
+su fila de la tabla de arriba dice «ninguna» como las demás. Se anota porque es
+la regla del §3 funcionando: un módulo entró a `main` y entró con su mitad del
+arnés.
 
 **Conclusión de la auditoría sobre el árbol combinado: no queda ningún módulo
 atrasado.** Services ya estaba al día —lo trajo M05a— y Sales es el que esta rama
