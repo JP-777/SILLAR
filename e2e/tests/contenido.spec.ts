@@ -1,6 +1,7 @@
 import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
-import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
+import { expect, test } from '../fixtures/base.js';
+import { cambiarModulo, sinB2B } from '../fixtures/grafoDeModulos.js';
 import { themeRecorder } from '../fixtures/themes.js';
 
 /**
@@ -836,10 +837,16 @@ async function desactivarTodo(api: APIRequestContext, coleccion: string): Promis
 test('Con M02 activo y sin nada publicado, la portada lo dice en vez de quedarse muda', async ({
   page,
 }) => {
-  // Cuatro reinicios del proceso, no dos: se apagan M01 y M04 y se devuelven
-  // los dos. El presupuesto sube en la misma proporción.
-  test.setTimeout(300_000);
+  // Seis reinicios del proceso, no cuatro: a M01 y M04 se suma M07, que hay que
+  // suspender antes y devolver después. El presupuesto sube en la misma
+  // proporción.
+  test.setTimeout(420_000);
   await loginAsE2eAdmin(page);
+
+  // **M07 se suspende primero, y aquí hace falta por los dos lados:** depende
+  // duro de `catalog` **y** de `crm` (`B2BModule.cs:57`), así que con él activo
+  // la plataforma impide desactivar cualquiera de los dos — y hace bien.
+  await sinB2B(page, async () => {
 
   // Llega aquí con la portada ya limpia: la prueba anterior retiró todo el
   // contenido de M02. Lo que falta para el caso es que nadie más aporte, y los
@@ -884,22 +891,5 @@ test('Con M02 activo y sin nada publicado, la portada lo dice en vez de quedarse
 
   await expect(page.locator('#modulo-catalog')).toContainText('Activo');
   await expect(page.locator('#modulo-crm')).toContainText('Activo');
-});
-
-/** Mueve el interruptor de un módulo y espera a que el proceso vuelva. */
-async function cambiarModulo(
-  page: Page,
-  codigo: string,
-  accion: 'Activar' | 'Desactivar',
-): Promise<void> {
-  await page.goto('/admin/modulos');
-
-  await duringExpectedOutage(page, async () => {
-    await page.locator(`#modulo-${codigo}`).getByRole('switch').click();
-    await page.getByRole('alertdialog').getByRole('button', { name: new RegExp(`^${accion}`) }).click();
-
-    const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
-    await expect(overlay).toBeVisible();
-    await expect(overlay).toBeHidden({ timeout: 90_000 });
   });
-}
+});

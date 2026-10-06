@@ -301,6 +301,29 @@ el arreglo de M03: se preservó.
 
 ---
 
+## 6a · Puerta canónica roja sobre `60da5dc` · el grafo funcionando
+
+**No certifica nada**, y se registra porque el rojo tenía razón.
+
+```
+etapas 1–5   PASS          backend   704/704
+etapa 6      172 passed · 7 failed · 0 skipped        rc=1
+evidencia    qa/m07-60da5dc-rojo @ 9d01def038f27b36f2c74d2b7dbdeff9393f7a06
+```
+
+Con M07 activo —como lo deja la C9— la plataforma **impide correctamente**
+desactivar M01 y M04, porque M07 depende duro de los dos. Siete pruebas
+anteriores a M07 los apagaban sin contemplarlo.
+
+**Se adaptaron las pruebas, no el grafo.** B2B sigue activo en el escenario e2e
+normal; no se aflojó ninguna dependencia dura ni se forzó ningún interruptor que
+el producto deba bloquear. El detalle de la decisión, el ayudante `sinB2B` y la
+secuencia especial de `[M04-CICLO]` —que además retira físicamente `sales` y
+`b2b` antes de poder soltar `crm`— están en
+`RECOMPOSICION-M07-05-10-2026-9f098a4.md` §4d.
+
+---
+
 ## 6b · Precondición de disco antes de la puerta canónica de M07
 
 **Se registra; no se cambia el umbral ni el runner.**

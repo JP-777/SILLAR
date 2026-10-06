@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import type { APIRequestContext, Locator, Page, Request } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
 import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
+import { sinB2B } from '../fixtures/grafoDeModulos.js';
 
 const SELLO = Date.now();
 const DESTACADOS = '/admin/contenido/productos-destacados';
@@ -514,6 +515,10 @@ test('[M02-C24] Catálogo inactivo: ninguna solicitud al selector', async ({ pag
   await drawer.getByRole('button', { name: 'Buscar' }).click();
   await expect.poll(() => requests).toBeGreaterThan(0);
   await drawer.getByRole('button', { name: 'Cancelar' }).click();
+
+  // **M07 se suspende primero.** Depende duro de `catalog` (`B2BModule.cs:57`),
+  // así que con M07 activo la plataforma impide desactivar M01 y hace bien.
+  await sinB2B(page, async () => {
   await modulo(page, 'catalog', 'Desactivar');
   requests = 0;
   try {
@@ -528,9 +533,11 @@ test('[M02-C24] Catálogo inactivo: ninguna solicitud al selector', async ({ pag
     await expect(page.getByLabel(/^Buscar producto/)).toHaveCount(0);
   } finally {
     page.off('request', observe);
+    // La dependencia dura primero; `sinB2B` reactiva M07 después.
     await modulo(page, 'catalog', 'Activar');
   }
   await expect(page.locator('#modulo-catalog')).toContainText('Activo');
+  });
 });
 
 test('[M02-C25] prefijos explican que hace falta una palabra completa', async ({ page }) => {

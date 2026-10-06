@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
 import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
+import { sinB2B } from '../fixtures/grafoDeModulos.js';
 import { themeRecorder } from '../fixtures/themes.js';
 
 /**
@@ -213,6 +214,12 @@ test('Con M01 desactivado no queda entrada de menú, ni ruta viva, ni hueco en e
 
   await loginAsE2eAdmin(page);
 
+  // **M07 se suspende primero.** Depende duro de `catalog` (`B2BModule.cs:57`) y
+  // el arnés lo deja activo, así que con él encendido la plataforma impide
+  // desactivar M01 y hace bien. Esta prueba necesita M01 apagado, no un grafo
+  // más flojo. `sinB2B` lo devuelve al final, después de que M01 vuelva.
+  await sinB2B(page, async () => {
+
   // Con M01 activo, la entrada está.
   await page.goto('/admin');
   await expect(page.getByRole('navigation')).toContainText('Marcas');
@@ -265,4 +272,5 @@ test('Con M01 desactivado no queda entrada de menú, ni ruta viva, ni hueco en e
   });
 
   await expect(page.locator('#modulo-catalog')).toContainText('Activo');
+  });
 });

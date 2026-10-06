@@ -1,6 +1,7 @@
 import type { APIRequestContext } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
 import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
+import { sinB2B } from '../fixtures/grafoDeModulos.js';
 import { themeRecorder } from '../fixtures/themes.js';
 
 /**
@@ -364,9 +365,14 @@ test('Cambiar de filtro vuelve a la página 1, y la paginación se usa a 390 px'
 test('Con M01 desactivado, las rutas públicas desaparecen y el inicio no deja hueco', async ({
   page,
 }) => {
-  test.setTimeout(180_000);
+  test.setTimeout(240_000);
 
   await loginAsE2eAdmin(page);
+
+  // **M07 se suspende primero.** Depende duro de `catalog` (`B2BModule.cs:57`),
+  // así que con M07 activo la plataforma impide desactivar M01 y hace bien.
+  // `sinB2B` lo devuelve al final, cuando M01 ya ha vuelto.
+  await sinB2B(page, async () => {
 
   // **Con productos publicados, la invitación está y es verdad.** Es la mitad
   // positiva del criterio: `catalogHome` ya no pinta siempre, pregunta si hay
@@ -444,4 +450,5 @@ test('Con M01 desactivado, las rutas públicas desaparecen y el inicio no deja h
   });
 
   await expect(page.locator('#modulo-catalog')).toContainText('Activo');
+  });
 });

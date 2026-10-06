@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
 import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
 import { psql, psqlArchivo } from '../setup/docker.js';
+import { FK_CRUZADAS_DE_B2B, fkCruzadasDeB2b } from '../fixtures/grafoDeModulos.js';
 import { migrate, seed } from '../setup/migrate.js';
 
 /**
@@ -95,21 +96,6 @@ async function tablasDeB2b(): Promise<string[]> {
   const salida = await psql(`
     SELECT coalesce(string_agg(table_name, ','), '')
     FROM information_schema.tables WHERE table_schema = 'b2b'
-  `);
-
-  return salida === '' ? [] : salida.split(',').sort();
-}
-
-/** Las claves foráneas que salen de `b2b` hacia otro schema, con su destino. */
-async function fkCruzadas(): Promise<string[]> {
-  const salida = await psql(`
-    SELECT coalesce(string_agg(rn.nspname || '.' || r.relname, ','), '')
-      FROM pg_constraint c
-      JOIN pg_class     d  ON d.oid  = c.conrelid
-      JOIN pg_namespace dn ON dn.oid = d.relnamespace
-      JOIN pg_class     r  ON r.oid  = c.confrelid
-      JOIN pg_namespace rn ON rn.oid = r.relnamespace
-     WHERE c.contype = 'f' AND dn.nspname = 'b2b' AND rn.nspname <> 'b2b'
   `);
 
   return salida === '' ? [] : salida.split(',').sort();
@@ -294,7 +280,7 @@ test('M07 se instala, se suelta y se reinstala sin tocar a nadie, y sus claves c
   // otro schema, y registro de dependencia dura cuyo schema todavía existe.
   // =======================================================================
   expect(
-    await fkCruzadas(),
+    await fkCruzadasDeB2b(),
     'con el schema de M07 soltado siguen existiendo claves foráneas suyas',
   ).toEqual([]);
 
@@ -384,19 +370,11 @@ test('M07 se instala, se suelta y se reinstala sin tocar a nadie, y sus claves c
   // es el dueño de las cinco, así que tienen que volver todas.
   // =======================================================================
   expect(
-    await fkCruzadas(),
+    await fkCruzadasDeB2b(),
     'tras reinstalar M07 faltan claves foráneas hacia crm o catalog',
-  ).toEqual(
-    // Las cinco, ordenadas en JavaScript igual que las ordena el ayudante: dos
-    // hacia `catalog` —`products` desde las personalizaciones y
-    // `product_items` desde las líneas— y tres hacia `crm.customers`, una por
-    // cada tabla que guarda un cliente.
-    [
-      'catalog.product_items',
-      'catalog.products',
-      'crm.customers',
-      'crm.customers',
-      'crm.customers',
-    ],
-  );
+    // La lista esperada vive en el ayudante, al lado de la consulta que la
+    // produce: `zz-z-m04-ciclo.spec.ts` comprueba exactamente las mismas cinco
+    // al reconstruir M04, y dos listas que divergieran un día serían peor que
+    // ninguna.
+  ).toEqual([...FK_CRUZADAS_DE_B2B]);
 });

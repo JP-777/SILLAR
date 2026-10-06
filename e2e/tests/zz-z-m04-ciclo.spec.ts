@@ -30,6 +30,12 @@ import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
 import { psql, psqlArchivo } from '../setup/docker.js';
 import { CONNECTION_STRING, ROOT } from '../setup/env.js';
 import { run } from '../setup/shell.js';
+import { migrate, seed } from '../setup/migrate.js';
+import {
+  FK_CRUZADAS_DE_B2B,
+  cambiarModulo as cambiarModuloPorCodigo,
+  fkCruzadasDeB2b,
+} from '../fixtures/grafoDeModulos.js';
 
 const sello = Date.now();
 const producto = `Producto ciclo M04 ${sello}`;
@@ -70,20 +76,18 @@ async function capacidades(api: APIRequestContext) {
   return data.modules.map((item) => item.code).sort();
 }
 
+/**
+ * Mueve el interruptor de M04. Delega en el ayudante compartido.
+ *
+ * **Antes era una copia local y le faltaba la espera que importa.** Cerrar el
+ * diálogo de «Aplicando el cambio» dice que el panel dejó de esperar, no que el
+ * sistema vuelva a servir; esta prueba navegaba inmediatamente después y la
+ * aplicación no montaba nada. Con dos cambios encadenados —los que hacen falta
+ * desde que M07 depende duro de M04— dejó de caber en la suerte. El ayudante
+ * espera a la API y al servidor web antes de devolver el control.
+ */
 async function cambiarModulo(page: Page, accion: 'Activar' | 'Desactivar') {
-  await page.goto('/admin/modulos');
-
-  await duringExpectedOutage(page, async () => {
-    await page.locator('#modulo-crm').getByRole('switch').click();
-    await page
-      .getByRole('alertdialog')
-      .getByRole('button', { name: new RegExp(`^${accion}`) })
-      .click();
-
-    const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
-    await expect(overlay).toBeVisible();
-    await expect(overlay).toBeHidden({ timeout: 90_000 });
-  });
+  await cambiarModuloPorCodigo(page, 'crm', accion);
 }
 
 async function crearProducto(api: APIRequestContext) {
@@ -302,14 +306,33 @@ async function foto(page: Page, testInfo: TestInfo, nombre: string) {
 test('[M04-CICLO] desactivar, desinstalar, reinstalar y activar M04 sin romper CORE, M01 ni M02', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(480_000);
+  test.setTimeout(900_000);
   await loginAsE2eAdmin(page);
   await crearProducto(page.request);
 
   // 1 · Punto de partida: M04 activo y completo.
+  //
+  // **Y además el estado de M07 y M03, que esta prueba va a mover.** Se
+  // acredita antes de tocar nada: si M07 no estuviera activo o el schema de M03
+  // no existiera, la cirugía de abajo sería un no-op y esta prueba seguiría en
+  // verde sin haber comprobado lo que dice comprobar.
   const iniciales = await capacidades(page.request);
   expect(iniciales, 'la prueba necesita M04 activo al empezar').toContain('crm');
-  const otras = iniciales.filter((c) => c !== 'crm');
+  expect(iniciales, 'la prueba necesita M07 activo al empezar: lo activa global-setup.ts').toContain('b2b');
+  expect(
+    iniciales,
+    'M03 no debe estar activado globalmente: el arnés solo lo migra, y eso es la decisión de M03',
+  ).not.toContain('sales');
+  expect(
+    await psql("SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('sales', 'b2b')"),
+    'faltan los schemas de M03 y M07: la instalación del arnés los crea porque están en el binario',
+  ).toBe('2');
+
+  // M04 se apaga aquí, pero M07 **también**: depende duro de `crm`
+  // (`B2BModule.cs:57`), así que con él activo la plataforma impide desactivar
+  // M04 — y hace bien. Las capacidades sin M04 que esta prueba espera son, por
+  // tanto, sin M04 **y sin M07**.
+  const otras = iniciales.filter((c) => c !== 'crm' && c !== 'b2b');
   expect(await faltasDeCrm(page), 'M04 activo debería estar completo').toEqual([]);
   expect(await problemasAjenos(page)).toEqual([]);
 
@@ -331,7 +354,9 @@ test('[M04-CICLO] desactivar, desinstalar, reinstalar y activar M04 sin romper C
   expect(Number(crmInicial)).toBeGreaterThan(0);
   await foto(page, testInfo, 'activo');
 
-  // 2 · Desactivar desde el panel.
+  // 2 · Desactivar desde el panel. **M07 primero, M04 después**: es el orden que
+  //     el grafo impone, y el inverso del de la reconstrucción.
+  await cambiarModuloPorCodigo(page, 'b2b', 'Desactivar');
   await cambiarModulo(page, 'Desactivar');
   expect(await capacidades(page.request)).toEqual(otras);
   expect(await restosDeCrm(page), 'M04 desactivado deja restos').toEqual([]);
@@ -354,7 +379,24 @@ test('[M04-CICLO] desactivar, desinstalar, reinstalar y activar M04 sin romper C
   expect(await enlacesACrm(page), 'el detector de enlaces no ve un enlace roto inyectado').toEqual(['/mi-cuenta']);
   await foto(page, testInfo, 'desactivado');
 
-  // 3 · Desinstalar: el esquema, dos veces (idempotente), con el módulo ya apagado.
+  // 3 · Desinstalar.
+  //
+  // **Antes hay que retirar FÍSICAMENTE a los dependientes duros de M04, y
+  // desactivarlos no basta.** La guarda C6 de `crm/99_drop.sql` mira módulos
+  // **instalados**, no activos: mientras exista el schema `sales` o el schema
+  // `b2b` con sus claves foráneas hacia `crm`, se niega — y hace bien, porque
+  // un `DROP SCHEMA ... CASCADE` se llevaría esas claves en silencio y
+  // reinstalar M04 no las devolvería.
+  await psqlArchivo('/scripts/modules/sales/99_drop.sql');
+  await psqlArchivo('/scripts/modules/b2b/99_drop.sql');
+
+  expect(
+    await psql("SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('sales', 'b2b')"),
+    'sales o b2b siguen ahí: la guarda de crm se va a negar',
+  ).toBe('0');
+
+  // Y ahora sí: el esquema de M04, dos veces (idempotente), con el módulo ya
+  // apagado.
   await psqlArchivo('/scripts/modules/crm/99_drop.sql');
   await psqlArchivo('/scripts/modules/crm/99_drop.sql');
   expect(await tablasCrm()).toBe('0');
@@ -376,9 +418,29 @@ test('[M04-CICLO] desactivar, desinstalar, reinstalar y activar M04 sin romper C
   expect(await tablasCrm()).toBe(crmInicial);
   expect(await estadoAjeno()).toEqual(inicio);
 
+  // 4b · Y los dependientes vuelven **con la infraestructura canónica**, no con
+  //      otra lista de migraciones escrita aquí: `migrate()` ya enumera los
+  //      siete módulos y `seed()` sus semillas. Para los cinco que no se
+  //      tocaron es un no-op; para `sales` y `b2b` es la reconstrucción.
+  //
+  //      Reconstruir no es activar: `migrate()` crea el schema de M03 y no
+  //      toca su activación, así que M03 sigue sin estar en capacidades.
+  await migrate();
+  await seed();
+
+  expect(
+    await psql("SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('sales', 'b2b')"),
+    'migrate()+seed() no devolvió los schemas de M03 y M07',
+  ).toBe('2');
+
   // 5 · Activar: el proceso se reinicia y tiene que arrancar limpio.
+  //     **M04 primero, M07 después**: dependencias antes que dependiente, que es
+  //     el inverso exacto del orden de apagado.
   await cambiarModulo(page, 'Activar');
   await expect(page.locator('#modulo-crm')).toContainText('Activo');
+  await cambiarModuloPorCodigo(page, 'b2b', 'Activar');
+  // El estado se comprueba contra `/api/capabilities`, que es quien lo sabe, y
+  // no contra la tarjeta del panel recién repintada tras el reinicio.
   expect(await capacidades(page.request)).toEqual(iniciales);
   expect(await faltasDeCrm(page), 'M04 reactivado no recupera sus superficies').toEqual([]);
   expect(await problemasAjenos(page), 'reactivar M04 rompió otro módulo').toEqual([]);
@@ -394,5 +456,24 @@ test('[M04-CICLO] desactivar, desinstalar, reinstalar y activar M04 sin romper C
   await expect(page.getByText(correo)).toBeVisible();
 
   expect(await estadoAjeno()).toEqual(inicio);
+
+  // 6 · **El estado final tiene que coincidir con el inicial**, y no solo en
+  //     capacidades: los schemas de los dependientes están, M03 sigue sin
+  //     activar, y las cinco claves foráneas de M07 hacia `catalog` y `crm`
+  //     volvieron. Esa última es la que importa de verdad: un CASCADE se las
+  //     lleva en silencio y nada avisa.
+  expect(
+    await psql("SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('sales', 'b2b')"),
+    'al cerrar el ciclo faltan los schemas de M03 o M07',
+  ).toBe('2');
+  expect(
+    await capacidades(page.request),
+    'M03 acabó activado globalmente: reconstruir no es activar',
+  ).not.toContain('sales');
+  expect(
+    await fkCruzadasDeB2b(),
+    'tras el ciclo de M04 faltan claves foráneas de M07 hacia catalog o crm',
+  ).toEqual([...FK_CRUZADAS_DE_B2B]);
+
   await foto(page, testInfo, 'reinstalado');
 });

@@ -1,5 +1,6 @@
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
 import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
+import { sinB2B } from '../fixtures/grafoDeModulos.js';
 
 /**
  * **El criterio de terminado, con datos dentro.**
@@ -104,8 +105,14 @@ async function cambiarModulo(page: import('@playwright/test').Page, accion: 'Act
 test('Desactivar M01 no borra nada, y al volver el catálogo está donde lo dejaron', async ({
   page,
 }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(360_000);
   await loginAsE2eAdmin(page);
+
+  // **M07 se suspende primero.** Depende duro de `catalog` (`B2BModule.cs:57`) y
+  // el arnés lo deja activo, así que con él encendido la plataforma impide
+  // desactivar M01 — y hace bien. `sinB2B` lo devuelve al final, cuando M01 ya
+  // ha vuelto: dependencias primero, M07 después.
+  await sinB2B(page, async () => {
 
   // **Siembra lo suyo.** Corriendo con la suite entera encontraría de sobra,
   // pero una prueba que solo funciona acompañada no dice qué falla cuando
@@ -215,4 +222,5 @@ test('Desactivar M01 no borra nada, y al volver el catálogo está donde lo deja
       message: 'al reactivar M01 la tienda pública no vuelve',
     })
     .toBe(200);
+  });
 });

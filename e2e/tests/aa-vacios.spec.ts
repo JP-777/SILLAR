@@ -1,5 +1,6 @@
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
-import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
+import { expect, test } from '../fixtures/base.js';
+import { cambiarModulo, sinB2B } from '../fixtures/grafoDeModulos.js';
 import { themeRecorder } from '../fixtures/themes.js';
 
 /**
@@ -247,6 +248,12 @@ test('Con el catálogo vacío y nadie más aportando, la portada lo dice', async
   test.setTimeout(180_000);
 
   await loginAsE2eAdmin(page);
+
+  // **M07 se suspende primero, y no es un rodeo.** M07 depende duro de `crm`
+  // (`B2BModule.cs:57`) y el arnés lo deja activo, así que con él encendido la
+  // plataforma **impide** desactivar M04 —el interruptor llega `disabled`— y
+  // hace bien. Lo que esta prueba necesita es M04 apagado, no aflojar el grafo.
+  await sinB2B(page, async () => {
   await cambiarModulo(page, 'crm', 'Desactivar');
 
   try {
@@ -267,28 +274,13 @@ test('Con el catálogo vacío y nadie más aportando, la portada lo dice', async
       'M01 no está activo: el aviso saldría por eso y no por el catálogo vacío',
     ).toContain('catalog');
   } finally {
+    // La dependencia dura primero; `sinB2B` reactiva M07 después.
     await cambiarModulo(page, 'crm', 'Activar');
   }
 
   await expect(page.locator('#modulo-crm')).toContainText('Activo');
-});
-
-async function cambiarModulo(
-  page: import('@playwright/test').Page,
-  codigo: string,
-  accion: 'Activar' | 'Desactivar',
-): Promise<void> {
-  await page.goto('/admin/modulos');
-
-  await duringExpectedOutage(page, async () => {
-    await page.locator(`#modulo-${codigo}`).getByRole('switch').click();
-    await page.getByRole('alertdialog').getByRole('button', { name: new RegExp(`^${accion}`) }).click();
-
-    const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
-    await expect(overlay).toBeVisible();
-    await expect(overlay).toBeHidden({ timeout: 90_000 });
   });
-}
+});
 
 /**
  * **El pie, que tampoco existe cuando no hay nada que poner dentro.**

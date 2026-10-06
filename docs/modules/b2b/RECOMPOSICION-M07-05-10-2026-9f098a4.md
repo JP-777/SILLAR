@@ -182,6 +182,167 @@ tsc --noEmit (arnés e2e)    limpio
 
 ---
 
+## 4d · Puerta canónica ROJA sobre `60da5dc`, y qué se hizo con ella
+
+**No certifica nada. Se registra porque el rojo tenía razón.**
+
+```
+candidata      60da5dc39d83ea7653ff93789aa86e9b2e1275c0
+etapas 1–5     PASS
+backend        704/704
+etapa 6        172 passed · 7 failed · 0 skipped
+rc             1
+OMITIDAS_ESPERADAS = []
+evidencia      rama qa/m07-60da5dc-rojo @ 9d01def038f27b36f2c74d2b7dbdeff9393f7a06
+```
+
+### La causa, y por qué no es ambiental
+
+M07 declara `HardDependencies => ["core", "catalog", "crm"]`
+(`B2BModule.cs:57`) y el arnés lo deja **activo** en el escenario normal. Desde
+ese momento la plataforma **impide correctamente** desactivar M01 o M04: su
+interruptor llega `disabled`.
+
+Siete pruebas anteriores a M07 apagaban `catalog` o `crm` sin contemplar al
+nuevo dependiente, y esperaban un interruptor que ahora está bloqueado.
+
+| Spec | Qué apagaba |
+|---|---|
+| `aa-vacios.spec.ts` | `crm` |
+| `catalogo.spec.ts` | `catalog` |
+| `contenido.spec.ts` | `catalog` **y** `crm` |
+| `m02-cierre-evidencia.spec.ts` · `[M02-C24]` | `catalog` |
+| `tienda.spec.ts` | `catalog` |
+| `zz-desmontaje.spec.ts` | `catalog` |
+| `zz-z-m04-ciclo.spec.ts` · `[M04-CICLO]` | `crm`, y además lo **desinstala** |
+
+**El rojo demuestra que el producto aplica bien el grafo.** Lo que hay que
+adaptar son las pruebas, no el grafo.
+
+### Lo que NO se hizo, y es la mitad de la decisión
+
+No se quitó B2B de `global-setup.ts`; no se activó solo dentro de sus propias
+specs; no se reordenó la suite para esconder el choque; no se aflojó ninguna
+dependencia dura; no se forzó ningún interruptor que el producto deba bloquear.
+**La C9 se preserva: B2B sigue activo en el escenario e2e normal.**
+
+### Lo que sí se hizo
+
+Un ayudante único, `e2e/fixtures/grafoDeModulos.ts`, con tres cosas y nada más:
+consultar capacidades, mover el interruptor de un módulo por el panel, y
+**suspender y restaurar M07** alrededor de un cuerpo.
+
+```ts
+await sinB2B(page, async () => {
+  … el escenario original de M01/M04, que restaura lo suyo en su finally …
+});                       // ← y aquí se reactiva M07
+```
+
+**El orden de restauración es el punto:** dependencias primero, M07 después, en
+un `finally`, para que una prueba que falle a mitad no deje el grafo contaminado
+para las siguientes. Y `sinB2B` **comprueba que M07 estaba activo antes de
+suspenderlo**: si no lo estuviera, suspenderlo sería un no-op y el ayudante
+pasaría a ser el sitio donde un fallo se esconde.
+
+### El caso especial · `[M04-CICLO]`
+
+Aquí **desactivar M07 no basta**, porque la prueba ejecuta `crm/99_drop.sql` y
+la guarda C6 mira módulos **instalados**, no activos. En el árbol combinado hay
+**dos** schemas dependientes duros de M04: `sales` y `b2b`.
+
+```
+estado inicial   CRM activo · B2B activo · Sales instalado y NO activado
+                 (los tres se acreditan antes de tocar nada)
+
+suspensión       desactivar B2B  →  desactivar CRM
+retirada física  sales/99_drop.sql · b2b/99_drop.sql · comprobar que no están
+                 →  crm/99_drop.sql  ×2 (se conserva la idempotencia)
+reconstrucción   el reinstalado propio de M04, intacto
+                 →  migrate() + seed()  ← infraestructura canónica, sin otra
+                                           lista de migraciones escrita a mano
+activación       CRM  →  B2B
+
+estado final     capacidades iguales · CRM activo · B2B activo
+                 Sales NO activado · schemas sales y b2b presentes
+                 las CINCO claves foráneas de B2B restauradas
+                 CORE, M01 y M02 intactos
+```
+
+**Reconstruir no es activar:** `migrate()` crea el schema de M03 y no toca su
+activación, así que M03 sigue fuera de capacidades al cerrar el ciclo — y la
+prueba lo afirma.
+
+**La sonda de las cinco claves foráneas no se reinventó.** La que ya tenía
+`zz-b2b-instalacion.spec.ts` se movió al ayudante —SQL idéntico— y ahora la usan
+los dos sitios, con la lista esperada al lado de la consulta que la produce. Dos
+mediciones parecidas que divergieran un día serían peor que ninguna.
+
+### Lo que no se tocó
+
+`HardDependencies` de M07 · la guarda C6 · los módulos del panel · las reglas de
+activación · producto de M01, M04, Sales, Services, M08 ni M11. **Es una
+adaptación del arnés al grafo combinado, no una corrección funcional.**
+
+### Y una observación de B que no deja deuda
+
+B contó 49 esquemas `*Request` en Swagger, **0 sin ejemplo**, y 9 de los 10 tipos
+del ensamblado de M07 cuyo nombre acaba en `Request`. El décimo es
+`InstitutionRequest` (`Domain/Entidades.cs`): es una **entidad persistente de
+dominio**, no un cuerpo de petición HTTP. Los nueve DTO reales están en
+`B2bExamples.cs`. **No hay deuda nueva y no se tocó Swagger.**
+
+---
+
+## 4e · Regresión focal tras adaptar las siete · 21 de 23 acreditadas
+
+**Lo verificado, medido:**
+
+| Paquete | Resultado |
+|---|---|
+| **6 de las 7 adaptadas** | **VERDES** — `aa-vacios`, `catalogo`, `contenido`, `[M02-C24]`, `tienda`, `zz-desmontaje` |
+| **M07 · las cuatro specs** | **12/12 PASS** |
+| **`zz-instalacion.spec.ts`** · costura compartida | **3/3 PASS**, con Sales + B2B + Catalog retirados y reconstruidos, y la equivalencia de Sales intacta |
+| | **21 de las 23 esperadas** |
+
+**Lo que no se pudo acreditar en esta máquina, y por qué:**
+
+| | |
+|---|---|
+| `[M04-CICLO]` | **5 intentos, siempre rojo**, y nunca en la aserción: muere al navegar a `/admin/contenido/banners` con «React no montó nada». La consola de la traza dice `net::ERR_INSUFFICIENT_RESOURCES` y 500 del proxy de Vite. Las navegaciones **inmediatamente anteriores sí montan** —`/admin`, `/producto/…`—, así que no es la aplicación: es el fetch del *chunk* diferido de esa ruta fallando por recursos |
+| `[M05A-CICLO]` | Rojo también, y **es un archivo que esta rama no toca**. En una corrida su fallo fue de arrastre —`[M04-CICLO]` corrió antes y dejó `crm` apagado—; en otra fue el mismo `nada-montado`; el intento aislado murió sin producir resultado |
+
+**Por qué esto apunta a la máquina y no al cambio.** `[M05A-CICLO]` lo certificó
+el frente B **dentro de la etapa 6 de la puerta canónica** sobre `a0ef786`, y
+aquí falla sin que esta rama lo haya tocado. Y `[M04-CICLO]` falla con
+`ERR_INSUFFICIENT_RESOURCES`, que es Chromium sin recursos, no una aserción del
+producto.
+
+**Lo que sí cambió en el peso de `[M04-CICLO]`, y hay que decirlo:** pasó de dos
+reinicios del proceso a **cuatro** —suspender y devolver M07 se suma a apagar y
+encender M04— y además ejecuta `migrate()` de los siete módulos dentro del test.
+Es, con diferencia, la prueba más cara de la suite. **Que sea más caro no la hace
+incorrecta**, pero sí la convierte en la primera que cae cuando la máquina va
+justa.
+
+**Dos arreglos reales que salieron de estas corridas**, los dos porque el
+ayudante comprobaba lo que no debía:
+
+1. Afirmaba el estado del módulo contra la **tarjeta del panel** recién
+   repintada tras el reinicio, y fallaba con «element(s) not found». Ahora
+   pregunta a `/api/capabilities`, que es quien lo sabe.
+2. Daba por vuelto el sistema cuando respondía **la API**, sin esperar al
+   **servidor web** contra el que navegan las pruebas. El `cambiarModulo` local
+   de `zz-z-m04-ciclo.spec.ts` no esperaba nada en absoluto; ahora delega en el
+   ayudante.
+
+> **Esto refuerza la precondición del §5, no la sustituye:** antes de la puerta
+> canónica de M07 hay que liberar recursos. Dos pruebas de ciclo cayendo por
+> `ERR_INSUFFICIENT_RESOURCES` en una máquina con 7 GiB disponibles dice que el
+> margen no está en la RAM total, sino en lo que queda cuando Chromium, Vite,
+> siete `dotnet ef` y PostgreSQL coinciden.
+
+---
+
 ## 5 · Condición operativa de disco para la próxima puerta canónica
 
 **Se registra, no se cambia nada.** Ni el umbral ni el runner se tocan en M07.
