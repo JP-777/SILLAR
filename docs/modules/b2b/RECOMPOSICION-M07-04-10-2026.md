@@ -157,24 +157,21 @@ del nodo y el tipo se va a otra parte. Queda para la decisión de multinodo (M16
 
 ---
 
-## 5b · HALLAZGO AJENO DETECTADO DURANTE M07 — NO CORREGIDO
+## 5b · El hallazgo de Sales — RESUELTO PREVIAMENTE EN MAIN POR M03
 
-Registrado aquí el 05/10/2026, al cerrar la C9 en el arnés e2e.
+Nació aquí el 05/10/2026, al añadir B2B al arnés: `e2e/setup/migrate.ts` no
+migraba `Sillar.Modules.Sales` mientras `POST /api/setup` sí lo instalaba, y eso
+dejaba `e2e/tests/zz-instalacion.spec.ts` en rojo.
 
-| | |
-|---|---|
-| **Archivo afectado** | `e2e/setup/migrate.ts` |
-| **Hecho observado** | El arnés e2e **no migra `Sillar.Modules.Sales`**. Tras añadir M07, la lista es CORE, Catalog, Cms, CRM y B2B. `global-setup.ts` tampoco activa `sales` |
-| **Posible efecto** | El mismo agujero que M07 tenía: la etapa e2e puede ejecutar el producto completo **sin que M03 exista en el escenario**. Sin su schema, activar `sales` fallaría, y ninguno de sus endpoints se cargaría nunca en una corrida verde. El §j que M03 cerró el 03/10 cubrió la **etapa 4 de `scripts/verificar.mjs`** (`c1188f9`), **no el arnés e2e** |
-| **Quién lo separó** | **Chat 2 lo separó de M07** de forma expresa, para no mezclar un arreglo de M03 con esta candidata. No se ha añadido `sales` a `migrate.ts` en esta rama. **No es bloqueo de esta entrega**; Chat 2 abrirá la verificación focal correspondiente |
-
-**Ampliado el 05/10/2026, y creció al medirlo.** La instalación del arnés va por
-`POST /api/setup`, que migra **todos los módulos del binario**, así que en e2e
-existen también los schemas `b2b` y `sales` que `migrate.ts` no crea. Resultado:
-`e2e/tests/zz-instalacion.spec.ts:114` **ya estaba en rojo en esta rama** antes de
-escribir una sola spec de M07, porque la guarda C6 se niega con `sales` presente.
-No es teórico y no es de M07. La medición completa está en
+**Ya no es deuda vigente.** Chat 2 lo separó de M07, se reparó en
+`fix/m03-e2e-restauracion` y está **certificado e integrado en `main`**. El
+detalle, la medición de equivalencia y la **regla de paridad** que dejó escrita
+están en `docs/modules/sales/E2E-RESTAURABILIDAD-M03.md`; el estado en
 `CIERRE-E2E-M07.md` §6.
+
+Esta recomposición **preserva** ese arreglo: no lo reconstruye, y la cirugía de
+`zz-instalacion.spec.ts` retira ahora los dos dependientes duros de M01 —`sales`
+y `b2b`— conservando íntegras las comprobaciones de equivalencia de Sales.
 
 ---
 

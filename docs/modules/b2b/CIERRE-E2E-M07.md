@@ -80,7 +80,25 @@ arranque.
 
 ## 2a · Resultado focal medido
 
+**Sobre el árbol recompuesto (`main 9f098a4` + M07), que es el que cuenta:**
+
 ```
+npx playwright test tests/b2b-cliente tests/b2b-panel tests/zz-b2b-ciclo \
+                    tests/zz-b2b-instalacion tests/zz-instalacion
+
+  15 passed (14.7m)       0 failed · 0 skipped
+```
+
+Son las **cuatro specs de M07** (11 pruebas) más las **tres de
+`zz-instalacion.spec.ts`**, la costura compartida: con M03 y M07 conviviendo,
+M01 tiene dos dependientes duros instalados y la restaurabilidad tiene que
+seguir en pie. Detalle en `evidencias/E2E-FOCAL-M07-9F098A4.txt`.
+
+**Antecedente, que no certifica este árbol:** 12 passed · 0 omitidas sobre
+`343ff7c`, solo con las cuatro specs de M07.
+
+```
+(histórico, sobre 343ff7c)
 npx playwright test tests/b2b-cliente.spec.ts tests/b2b-panel.spec.ts \
                     tests/zz-b2b-ciclo.spec.ts tests/zz-b2b-instalacion.spec.ts
 
@@ -122,6 +140,46 @@ segunda dos aserciones que habrían dado rojos ciertos y mudos más adelante.
 | 5.1–5.7 | Schema con su historial dentro, idempotencia, guardas de C6, soltar sin tocar a nadie, host operativo, reinstalar, y **las 5 FK cruzadas de vuelta** | `zz-b2b-instalacion` · «M07 se instala, se suelta y se reinstala…» |
 | **4.4** | Acción de M07 en la ficha de producto | **HOLD POR CAPACIDAD AÚN INEXISTENTE** — depende de C1, que no existe. No es `skipped` |
 | 2.1–2.5 | Cupo por cuenta, nivel puro | `Sillar.Modules.B2B.Tests` — el plan los marca «Pura», no e2e |
+
+---
+
+## 2c · Auditoría de paridad · medida sobre el árbol recompuesto
+
+**Vuelta a medir, no heredada.** `main` cambió dos veces desde el cierre focal
+anterior —entró M05a y entró la reparación de M03—, así que la lista se mide
+contra el árbol que hay.
+
+**Medido arrancando el host y pidiéndole la instalación**, no leyendo las listas:
+
+```
+$ POST /api/setup                                              setup=201
+  schemas creados    b2b catalog cms core crm sales services
+  el host dice       Módulos descubiertos: 7
+                     (b2b, catalog, cms, core, crm, sales, services)
+```
+
+| Módulo | Binario / `/api/setup` | `migrate()` | `seed()` | Diferencia |
+|---|:--:|:--:|:--:|---|
+| `Sillar.Core` | sí | sí | sí (`core`) | **ninguna** |
+| `Sillar.Modules.Catalog` | sí | sí | sí | **ninguna** |
+| `Sillar.Modules.Cms` | sí | sí | sí | **ninguna** |
+| `Sillar.Modules.Crm` | sí | sí | sí | **ninguna** |
+| `Sillar.Modules.Services` | sí | sí | sí | **ninguna** — de `main` con M05a, **no reescrito** |
+| `Sillar.Modules.Sales` | sí | sí | sí | **ninguna** — de `main` con la reparación de M03, **no reconstruido** |
+| `Sillar.Modules.B2B` | sí | sí | sí | **ninguna** — es lo que aporta esta recomposición |
+| `Sillar.Modules.Demo` | sí, **solo en Debug** | no | no | **sin migraciones ni seed aplicables**: 0 archivos de migración y no existe `database/modules/demo/` |
+
+Migraciones reales por proyecto, contadas excluyendo los `*.Designer.cs` y el
+`*DbContextModelSnapshot.cs` —que no es una migración—:
+
+```
+Core 4 · Catalog 1 · Cms 1 · Crm 2 · Sales 1 · Services 1 · B2B 1 · Demo 0
+```
+
+**No queda ningún módulo atrasado.** Y es la **regla de paridad** de
+`docs/modules/sales/E2E-RESTAURABILIDAD-M03.md` §3 cumpliéndose en el caso que
+ella misma nombraba: M07 entra a la candidata con su mitad del arnés puesta, no
+después.
 
 ---
 
@@ -192,64 +250,71 @@ de malo y no se vería.
 
 ---
 
-## 6 · HALLAZGO AJENO DETECTADO DURANTE M07 — NO CORREGIDO
+## 6 · El hallazgo de Sales — RESUELTO PREVIAMENTE EN MAIN POR M03
 
-**Archivo afectado:** `e2e/setup/migrate.ts`.
+**Ya no es deuda vigente.** Se conserva el apartado porque el hallazgo nació
+aquí y la trazabilidad importa, pero su estado cambió: **lo cerró `main`**, no
+esta candidata.
 
-**Hecho observado:** el arnés e2e **no migra `Sillar.Modules.Sales`**. Tras este
-cambio la lista es CORE, Catalog, Cms, CRM y B2B; M03 no está. `global-setup.ts`
-tampoco activa `sales`, y `frontend/src/app/routes.tsx` no monta rutas de
-`sales` —M03 no tiene frontend todavía—.
+### Qué se encontró, y cuándo
 
-**Posible efecto:** es el mismo agujero que M07 tenía. La etapa e2e puede
-ejecutar el producto completo sin que M03 exista en el escenario: sin su schema,
-activar `sales` fallaría, y ninguna de sus superficies ni de sus endpoints se
-cargaría nunca en una corrida verde. El §j que M03 cerró el 3 de octubre cubrió
-la **etapa 4 de `scripts/verificar.mjs`** (`c1188f9`), no el arnés e2e.
+Durante el cierre focal de M07 del 04–05/10/2026, al añadir B2B al arnés, se
+midió que **`e2e/setup/migrate.ts` no migraba `Sillar.Modules.Sales`** mientras
+`POST /api/setup` sí lo instalaba, porque M03 está en el binario. Los dos caminos
+de instalación no convergían, y la consecuencia era concreta:
+`e2e/tests/zz-instalacion.spec.ts` quedaba en rojo porque la guarda C6 de M01 se
+negaba con `sales` presente, y soltar `sales` no valía porque el arnés no sabía
+devolverlo.
 
-**Quién lo separó:** **Chat 2 lo separó de M07** de forma expresa, para no
-mezclar un arreglo de M03 con la candidata de M07. No se ha añadido `sales` a
-`migrate.ts` en esta rama.
+**Chat 2 lo separó de M07** de forma expresa para no mezclar un arreglo de M03
+con esta candidata, y abrió el encargo aparte.
 
-### Y resultó no ser teórico: bloquea una spec de plataforma
+### Cómo quedó resuelto
 
-Al medirlo el 05/10/2026 el hallazgo creció, así que queda aquí con su medida.
+En la rama `fix/m03-e2e-restauracion`, **certificada e integrada en `main`**:
 
-**Lo que no se había tenido en cuenta:** el arnés migra cinco módulos a mano,
-pero **la instalación va por `POST /api/setup`, que migra todos los módulos del
-binario**. Desde `aecf4aa` el binario trae M07, y desde que M03 entró en `main`
-trae también M03. Así que en el escenario e2e existen **también** los schemas
-`b2b` y `sales` creados por la instalación, no por `migrate.ts`.
+| | |
+|---|---|
+| Arreglo | `Sillar.Modules.Sales` en `migrate()` y `sales` en el bucle de `seed()` |
+| Equivalencia | medida en tres estados: lo que deja `/api/setup`, lo que dejaba `migrate()+seed()` sin Sales, y lo que deja con él. Los dos caminos convergen en schema, tablas, historial, claves cruzadas por identidad y destino, y dependencias duras registradas |
+| Tres direcciones | legal verde · ilegal (Sales fuera del arnés) rojo · sabotaje del detector rojo en la preparación |
+| Documentación | `docs/modules/sales/E2E-RESTAURABILIDAD-M03.md`, con la **regla de paridad** que esto dejó escrita |
 
-Medido sobre una base limpia con los cinco módulos migrados a mano más
-`POST /api/setup` (201):
+**Y la regla que salió de ahí es la que ahora obliga a M07:**
 
-```
-schemas tras migrar a mano          b2b catalog cms core crm
-dependientes duros de catalog       b2b   hard   schema existe: t
-                                    sales hard   schema existe: t
-                                    cms   soft   schema existe: t
-FK de otros schemas hacia catalog   b2b, sales
-```
+> La auditoría de paridad entre los módulos del binario / `/api/setup` y los que
+> enumeran `migrate()` + `seed()` debe repetirse cada vez que entre a `main` un
+> módulo real nuevo.
 
-**Consecuencia:** `e2e/tests/zz-instalacion.spec.ts:114` —«El schema catalog se
-elimina sin llevarse nada de core»— **estaba ya en rojo en esta rama antes de
-escribir una sola spec de M07**, porque la guarda C6 se niega con `b2b` y con
-`sales` presentes. Soltar `b2b` antes (lo que esta entrega añadió) es necesario
-pero **no suficiente**: `sales` sigue bloqueando.
+M07 es el caso siguiente que esa regla nombraba por su nombre, y esta
+recomposición es su cumplimiento: ver §2c, la auditoría medida sobre el árbol
+recompuesto.
 
-**Por qué no se arregla aquí.** Soltar `sales` en la spec no vale: `migrate.ts`
-no lo migra, así que quedaría sin restaurar y el estado no se podría
-reconstruir — y reconstruirlo es parte del criterio, no limpieza. El arreglo es
-**añadir M03 al arnés**, que es trabajo de M03 y que Chat 2 separó de esta
-candidata. Queda escrito, no corregido.
+### Lo que esta recomposición hizo con ello
 
-**Lo que sí se acotó:** `zz-b2b-instalacion.spec.ts` ya no intenta ejecutar el
-drop de `catalog`. Comprueba, en su lugar, que **las dos señales que la guarda
-lee y que son de M07** han desaparecido —sus claves foráneas, y su registro de
-dependencia dura con schema presente— y que quien bloquea ahora **es otro y se
-puede nombrar**. Si algún día esa lista saliera vacía, la prueba lo dice: el
-drop prosperaría y habría que volver a la versión ejecutada.
+`zz-instalacion.spec.ts` ya no retira solo B2B: **retira los dos dependientes
+duros de M01** —`sales` de M03 y `b2b` de M07— antes de soltar `catalog`, y
+**conserva íntegras las comprobaciones de equivalencia de Sales** que `main`
+trajo. No se sustituyeron por comprobaciones de existencia, y no se reconstruyó
+el arreglo de M03: se preservó.
+
+---
+
+## 6b · Precondición de disco antes de la puerta canónica de M07
+
+**Se registra; no se cambia el umbral ni el runner.**
+
+La puerta canónica de M03 midió durante la etapa 6 dos muestras consecutivas de
+disco libre: **2861 MiB** y **2865 MiB**. La red de seguridad del vigía actúa con
+**tres** muestras consecutivas por debajo de **3072 MiB**, así que aquella
+corrida no fue interrumpida y **siguió siendo válida**. Se quedó a una muestra.
+
+> **Disparador para M07:** antes de lanzar la puerta canónica de esta candidata
+> hay que **liberar espacio en disco y superar normalmente el preflight
+> existente**.
+
+El detalle y la medición del día están en
+`RECOMPOSICION-M07-05-10-2026-9f098a4.md` §5.
 
 ---
 

@@ -1,0 +1,72 @@
+================================================================================
+ModulosEnElDespliegueTests · TRES DIRECCIONES sobre el árbol recompuesto
+Base: main 9f098a4 + M07 · rama m07-b2b-sobre-main-9f098a4
+Fecha: 5 de octubre de 2026, America/Lima
+================================================================================
+Las evidencias de 343ff7c quedan como antecedente y NO certifican este árbol.
+Esta es la medición nueva, sobre el SHA recompuesto.
+
+--------------------------------------------------------------------------------
+DIRECCIÓN 1 · LEGAL — árbol correcto
+--------------------------------------------------------------------------------
+Qué se hace  Nada. El árbol recompuesto tal como queda en HEAD, con Services,
+             Sales y B2B en el host.
+Esperado     VERDE
+
+  Passed Sillar.Api.Tests.ModulosEnElDespliegueTests
+         .Cada_modulo_del_repositorio_tiene_su_ensamblado_junto_al_host [40 ms]
+     Passed: 1
+
+RESULTADO  VERDE.
+
+--------------------------------------------------------------------------------
+DIRECCIÓN 2 · ILEGAL — se retira SOLO B2B del host
+--------------------------------------------------------------------------------
+Qué se hace  Se retira TEMPORALMENTE el ProjectReference de Sillar.Modules.B2B
+             de backend/Sillar.Api/Sillar.Api.csproj y se borra su DLL de la
+             carpeta de salida. **Services y Sales se conservan** — comprobado
+             antes de medir: quedan sus 2 referencias en el csproj.
+Esperado     ROJO, y nombrando B2B.
+Restaurado   Sí.
+
+  $ dotnet build Sillar.sln -v q --nologo
+      0 Error(s)          <-- compila igual: es justo el problema
+
+  Failed Sillar.Api.Tests.ModulosEnElDespliegueTests
+         .Cada_modulo_del_repositorio_tiene_su_ensamblado_junto_al_host [57 ms]
+   Estos módulos no llegan al despliegue del host: Sillar.Modules.B2B.
+     Failed: 1
+
+RESULTADO  ROJO, y nombra «Sillar.Modules.B2B» y solo a él. Con Services y Sales
+           dentro, el rojo queda atribuido sin ambigüedad.
+
+--------------------------------------------------------------------------------
+DIRECCIÓN 3 · SABOTAJE DEL DETECTOR
+--------------------------------------------------------------------------------
+Qué se hace  ProyectosDeModulo(...) devuelve colección vacía.
+Esperado     ROJO por la guarda de preparación `proyectos.Length >= 4`, no verde
+             trivial: con la lista vacía, «ninguno falta» es cierto por vacío.
+Restaurado   Sí.
+
+  Failed Sillar.Api.Tests.ModulosEnElDespliegueTests
+         .Cada_modulo_del_repositorio_tiene_su_ensamblado_junto_al_host [41 ms]
+   Solo 0 proyectos de módulo en '/home/JP777/sillar-m07-9f/backend':
+   el barrido está mirando donde no debe.
+     Failed: 1
+
+RESULTADO  ROJO.
+
+--------------------------------------------------------------------------------
+VUELTA AL VERDE, sobre el árbol restaurado
+--------------------------------------------------------------------------------
+$ git diff --stat backend/Sillar.Api.Tests/ModulosEnElDespliegueTests.cs \
+                  backend/Sillar.Api/Sillar.Api.csproj
+  (sin salida)
+
+$ grep -rn "SABOTAJE" backend/ --include=*.cs
+  (sin salida)
+
+$ dotnet test Sillar.Api.Tests --no-build --filter ...ModulosEnElDespliegue
+  Passed!  - Failed: 0, Passed: 1, Skipped: 0, Total: 1
+
+NINGÚN SABOTAJE QUEDA EN HEAD.

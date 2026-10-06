@@ -1,0 +1,53 @@
+================================================================================
+M07 · CIERRE FOCAL sobre el árbol recompuesto · main 9f098a4 + M07
+================================================================================
+Fecha   5 de octubre de 2026, America/Lima
+Rama    m07-b2b-sobre-main-9f098a4
+Arnés   migra y siembra los SIETE: Core, Catalog, Cms, Crm, Services, Sales, B2B
+        activa b2b tras catalog y crm; Sales NO se activa (decisión de M03)
+================================================================================
+El cierre focal sobre 343ff7c NO certifica este árbol. Esta es la medición nueva.
+
+$ npx playwright test tests/b2b-cliente.spec.ts tests/b2b-panel.spec.ts \
+      tests/zz-b2b-ciclo.spec.ts tests/zz-b2b-instalacion.spec.ts \
+      tests/zz-instalacion.spec.ts
+
+  ✓   1 [chromium] › tests/b2b-cliente.spec.ts:116:1 › Sin sesión de cliente, las cuatro rutas dan 401 y no dejan ninguna fila (1.2s)
+  ✓   2 [chromium] › tests/b2b-cliente.spec.ts:164:1 › La cookie del panel no sirve como cliente, y la de cliente no abre el panel (5.9s)
+  ✓   3 [chromium] › tests/b2b-cliente.spec.ts:209:1 › Con sesión y sin token CSRF, crear da 403 y no deja fila (1.6s)
+  ✓   4 [chromium] › tests/b2b-cliente.spec.ts:242:1 › La cotización de otro cliente responde igual que una inexistente, y sin notas internas (4.9s)
+  ✓   5 [chromium] › tests/b2b-cliente.spec.ts:338:1 › Pasado el cupo, la cuenta recibe 429 con Retry-After, una frase sin «error», y no deja fila (1.7s)
+  ✓   6 [chromium] › tests/b2b-panel.spec.ts:257:1 › Un editor lee y escribe lo suyo, y las cuatro rutas de admin le dan 403 sin cambiar nada (7.7s)
+  ✓   7 [chromium] › tests/b2b-panel.spec.ts:338:1 › Toda escritura del panel sin token CSRF da 403 y no cambia nada (3.0s)
+  ✓   8 [chromium] › tests/b2b-panel.spec.ts:405:1 › Toda escritura del panel deja auditoría b2b, y el resumen nombra la cotización (2.0s)
+  ✓   9 [chromium] › tests/b2b-panel.spec.ts:447:1 › Las rutas de M07 que esta suite ejerce y las de Swagger son el mismo conjunto (1.5s)
+  ✓  10 [chromium] › tests/b2b-panel.spec.ts:517:1 › Una cotización enviada no admite edición de líneas, y su total no cambia (2.4s)
+  ✓  11 [chromium] › tests/zz-b2b-ciclo.spec.ts:273:1 › M07 se usa, se apaga y vuelve: sin enlace roto, sin ruta muerta y sin perder nada (1.1m)
+  ✓  12 [chromium] › tests/zz-b2b-instalacion.spec.ts:135:1 › M07 se instala, se suelta y se reinstala sin tocar a nadie, y sus claves cruzadas vuelven (4.1m)
+  ✓  13 [chromium] › tests/zz-instalacion.spec.ts:104:1 › Swagger lleva las rutas de M01, y ningún cuerpo de ningún módulo se queda sin ejemplo (2.1s)
+  ✓  14 [chromium] › tests/zz-instalacion.spec.ts:157:1 › Los scripts del catálogo son idempotentes (606ms)
+  ✓  15 [chromium] › tests/zz-instalacion.spec.ts:174:1 › El schema catalog se elimina sin llevarse nada de core, y M03 vuelve igual que lo dejó la instalación (2.9m)
+
+  15 passed (14.7m)       0 failed · 0 skipped       EXIT=0
+
+ANTECEDENTE: 12 passed · 0 skipped sobre 343ff7c, con las cuatro specs de M07.
+AQUÍ: las mismas cuatro (11 pruebas) MÁS las tres de zz-instalacion.spec.ts, que
+es la costura compartida: comprueba que B2B + Sales conviviendo no rompen la
+restaurabilidad.
+
+LO QUE ACREDITA zz-instalacion EN ESTE ÁRBOL
+  · M01 tiene DOS dependientes duros instalados: sales (M03) y b2b (M07)
+  · la cirugía los retira a los dos antes de catalog
+  · migrate()+seed() devuelve los TRES schemas
+  · Sales vuelve EQUIVALENTE —schema, tablas, historial, claves cruzadas por
+    identidad y destino, dependencias duras—, no solo «existe»
+  · nada ajeno dañado: core, cms y crm intactos
+
+UNA CORRIDA ROJA PREVIA, Y POR QUÉ IMPORTA
+  La primera corrida sobre este árbol dio 14 passed · 1 failed. El fallo fue
+  «cuerpos de petición sin ejemplo» con los NUEVE DTO de M07, en
+  zz-instalacion.spec.ts. No era del arnés ni de la recomposición: M07 nunca
+  había aportado su ISchemaExamples, y en el cierre focal anterior esa prueba
+  pasó por accidente porque una spec previa había dejado b2b desactivado — y un
+  módulo inactivo no mapea sus endpoints, así que sus esquemas no llegaban al
+  documento. Corregido con B2bExamples.cs; ver RECOMPOSICION-M07-05-10-2026-9f098a4.md §4b.
