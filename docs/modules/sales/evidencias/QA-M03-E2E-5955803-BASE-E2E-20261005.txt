@@ -1,0 +1,18 @@
+# Base PostgreSQL de la pila e2e durante la etapa 6 de la puerta · 2026-10-05 23:01:34 -0500
+# SHA: 59558038d13b503ab941018be63e02cb9adb1bc8
+## Contenedores de la pila
+sillar_qa_m04_e2e_api · sillar_qa_m04_e2e-api · Up Less than a second · 0.0.0.0:56061->8080/tcp, [::]:56061->8080/tcp
+sillar_qa_m04_e2e_db · postgres:16 · Up About a minute (healthy) · 0.0.0.0:55961->5432/tcp, [::]:55961->5432/tcp
+## Cadena del contenedor API, sin contraseña
+Host=db;Port=5432;Database=sillar_qa_m04_e2e;Username=postgres;Password=<oculta>
+## Bases del servidor e2e
+postgres
+sillar_qa_m04_e2e
+## Schemas y migraciones de la base e2e
+catalog,cms,core,crm,sales,services
+sales: 20260930185029_SalesInitial
+services: 20260928090000_ServicesInitial
+## Volumen
+volume sillar_qa_m04_e2e_db_data -> /var/lib/postgresql/data
+bind  -> /scripts
+
