@@ -15,4 +15,3 @@ services: 20260928090000_ServicesInitial
 ## Volumen
 volume sillar_qa_m04_e2e_db_data -> /var/lib/postgresql/data
 bind  -> /scripts
-
