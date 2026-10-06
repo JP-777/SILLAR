@@ -95,7 +95,7 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   await composeUpDb();
   await waitDbHealthy();
 
-  console.log('[e2e] aplicando migraciones (CORE, Catalog, Cms, CRM, Services, Sales)...');
+  console.log('[e2e] aplicando migraciones (CORE, Catalog, Cms, CRM, Services, Sales, B2B)...');
   await migrate();
 
   console.log('[e2e] aplicando seeds (sin datos de negocio)...');
@@ -152,6 +152,19 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   // había un candidato.
   console.log('[e2e] activando M04 clientes y contacto...');
   await activateModule(session, 'crm');
+
+  // M07 real, y **después de M01 y M04**: son sus dependencias duras
+  // (`B2BModule.cs:57`), así que activarlo antes lo rechaza la propia
+  // plataforma. Se activa por el mismo motivo que M02 y M04: tiene tres
+  // pantallas de panel propias y dos grupos de endpoints, y **sin activarlo la
+  // etapa e2e podía estar entera en verde sin haber cargado una sola de ellas**
+  // — que es exactamente lo que la C9 pedía cerrar.
+  //
+  // Arranca sin una sola solicitud: su seed no trae contenido de negocio
+  // (`database/modules/b2b/02_seed.sql`), y eso es lo que hace observable su
+  // estado vacío.
+  console.log('[e2e] activando M07 solicitudes B2B...');
+  await activateModule(session, 'b2b');
 
   console.log('[e2e] entorno listo.');
 }

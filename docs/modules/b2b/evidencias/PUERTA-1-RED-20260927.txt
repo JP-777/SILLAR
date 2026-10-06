@@ -1,0 +1,508 @@
+# SHA: 0fd8dad6fa0a13598978435cca2bb06b24a5bdc5
+# Worktree: /home/JP777/sillar-b2b · cambios sin commitear: 0
+# Inicio: 2026-09-27 13:57:12 -0500
+# Comando: node scripts/verificar.mjs
+# Cada línea lleva delante la hora America/Lima en que se emitió.
+13:57:12 Comprobando el entorno...
+13:57:12   Suspensión bloqueada durante la corrida (2/2 inhibidores).
+13:57:12 Preflight: coherencia de .env.example...
+13:57:12 Base backend efímera: sillar_verify_1790535432157_645322
+13:57:12 Barrido: sin bases huérfanas antiguas.
+13:57:13 [1/6] tipos del frontend...
+13:57:38 [2/6] tipos del arnés e2e...
+13:57:43 [3/6] compilación del backend...
+13:58:59 [4/6] migraciones backend (BD efímera)...
+13:59:28 [5/6] pruebas del backend...
+14:01:44 [6/6] suite e2e...
+14:29:44 
+14:29:44 FALLÓ en la etapa: suite e2e
+14:29:44   Terminó con código 1.
+14:29:44 [WebServer] 
+14:29:44 [WebServer]   VITE v7.3.6  ready in 657 ms
+14:29:44 [WebServer] 
+14:29:44 [WebServer]   ➜  Local:   http://localhost:56162/
+14:29:44 [WebServer]   ➜  Network: use --host to expose
+14:29:44 [e2e] destruyendo un stack anterior, si quedó alguno...
+14:29:44 [e2e] levantando la base de datos...
+14:29:44 [e2e] aplicando migraciones (CORE, Catalog, Cms, CRM)...
+14:29:44 Build started...
+14:29:44 Build succeeded.
+14:29:44 Failed executing DbCommand (70ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+14:29:44 SELECT "MigrationId", "ProductVersion"
+14:29:44 FROM core.__migrations
+14:29:44 ORDER BY "MigrationId";
+14:29:44 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+14:29:44 Applying migration '20260816073536_CoreInitial'.
+14:29:44 Applying migration '20260828200857_CoreEmailSettings'.
+14:29:44 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+14:29:44 Applying migration '20260829011000_CoreSmtpSettings'.
+14:29:44 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+14:29:44 Done.
+14:29:44 Build started...
+14:29:44 Build succeeded.
+14:29:44 Failed executing DbCommand (49ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+14:29:44 SELECT "MigrationId", "ProductVersion"
+14:29:44 FROM catalog.__migrations
+14:29:44 ORDER BY "MigrationId";
+14:29:44 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+14:29:44 Applying migration '20260816073647_CatalogInitial'.
+14:29:44 Done.
+14:29:44 Build started...
+14:29:44 Build succeeded.
+14:29:44 Failed executing DbCommand (45ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+14:29:44 SELECT "MigrationId", "ProductVersion"
+14:29:44 FROM cms.__migrations
+14:29:44 ORDER BY "MigrationId";
+14:29:44 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+14:29:44 Applying migration '20260820050000_CmsInitial'.
+14:29:44 Done.
+14:29:44 Build started...
+14:29:44 Build succeeded.
+14:29:44 Failed executing DbCommand (64ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+14:29:44 SELECT "MigrationId", "ProductVersion"
+14:29:44 FROM crm.__migrations
+14:29:44 ORDER BY "MigrationId";
+14:29:44 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+14:29:44 Applying migration '20260824190200_CrmInitial'.
+14:29:44 Applying migration '20260922115958_CrmCustomersEmailTrimAuthority'.
+14:29:44 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+14:29:44 Done.
+14:29:44 [e2e] aplicando seeds (sin datos de negocio)...
+14:29:44 BEGIN
+14:29:44 INSERT 0 11
+14:29:44 INSERT 0 0
+14:29:44 UPDATE 3
+14:29:44 COMMIT
+14:29:44 BEGIN
+14:29:44 COMMIT
+14:29:44 BEGIN
+14:29:44 COMMIT
+14:29:44  ?column? 
+14:29:44 ----------
+14:29:44         1
+14:29:44 (1 row)
+14:29:44 
+14:29:44 [e2e] construyendo y levantando la API (Debug, con módulos de mentira)...
+14:29:44 #1 [internal] load local bake definitions
+14:29:44 #1 reading from stdin 578B done
+14:29:44 #1 DONE 0.0s
+14:29:44 
+14:29:44 #2 [internal] load build definition from Dockerfile
+14:29:44 #2 transferring dockerfile: 2.39kB done
+14:29:44 #2 DONE 0.0s
+14:29:44 
+14:29:44 #3 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:10.0
+14:29:44 #3 DONE 0.0s
+14:29:44 
+14:29:44 #4 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:10.0
+14:29:44 #4 DONE 0.0s
+14:29:44 
+14:29:44 #5 [internal] load .dockerignore
+14:29:44 #5 transferring context: 1.40kB done
+14:29:44 #5 DONE 0.0s
+14:29:44 
+14:29:44 #6 [build 1/4] FROM mcr.microsoft.com/dotnet/sdk:10.0
+14:29:44 #6 DONE 0.0s
+14:29:44 
+14:29:44 #7 [final 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0
+14:29:44 #7 DONE 0.0s
+14:29:44 
+14:29:44 #8 [internal] load build context
+14:29:44 #8 transferring context: 1.47MB 0.1s done
+14:29:44 #8 DONE 0.1s
+14:29:44 
+14:29:44 #9 [build 2/4] WORKDIR /src
+14:29:44 #9 CACHED
+14:29:44 
+14:29:44 #10 [build 3/4] COPY . .
+14:29:44 #10 DONE 0.7s
+14:29:44 
+14:29:44 #11 [build 4/4] RUN dotnet publish Sillar.Api/Sillar.Api.csproj -c Debug -o /app
+14:29:44 #11 2.180   Determining projects to restore...
+14:29:44 #11 8.573   Restored /src/Sillar.Modules.Catalog.Contracts/Sillar.Modules.Catalog.Contracts.csproj (in 922 ms).
+14:29:44 #11 8.577   Restored /src/Sillar.Modules.Demo/Sillar.Modules.Demo.csproj (in 922 ms).
+14:29:44 #11 8.581   Restored /src/Sillar.Shared/Sillar.Shared.csproj (in 882 ms).
+14:29:44 #11 8.584   Restored /src/Sillar.Core.Contracts/Sillar.Core.Contracts.csproj (in 923 ms).
+14:29:44 #11 8.586   Restored /src/Sillar.Modules.Crm.Contracts/Sillar.Modules.Crm.Contracts.csproj (in 925 ms).
+14:29:44 #11 207.0   Failed to download package 'MailKit.4.17.0' from 'https://api.nuget.org/v3-flatcontainer/mailkit/4.17.0/mailkit.4.17.0.nupkg'.
+14:29:44 #11 207.0   The download of 'https://api.nuget.org/v3-flatcontainer/mailkit/4.17.0/mailkit.4.17.0.nupkg' timed out because no data was received for 60000ms.
+14:29:44 #11 207.0     The operation has timed out.
+14:29:44 #11 248.6   Failed to download package 'Npgsql.EntityFrameworkCore.PostgreSQL.10.0.3' from 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/10.0.3/npgsql.entityframeworkcore.postgresql.10.0.3.nupkg'.
+14:29:44 #11 248.6   The download of 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/10.0.3/npgsql.entityframeworkcore.postgresql.10.0.3.nupkg' timed out because no data was received for 60000ms.
+14:29:44 #11 248.6     The operation has timed out.
+14:29:44 #11 256.2   Failed to download package 'BCrypt.Net-Next.4.2.0' from 'https://api.nuget.org/v3-flatcontainer/bcrypt.net-next/4.2.0/bcrypt.net-next.4.2.0.nupkg'.
+14:29:44 #11 256.2   The download of 'https://api.nuget.org/v3-flatcontainer/bcrypt.net-next/4.2.0/bcrypt.net-next.4.2.0.nupkg' timed out because no data was received for 60000ms.
+14:29:44 #11 256.2     The operation has timed out.
+14:29:44 #11 263.8   Failed to download package 'Swashbuckle.AspNetCore.SwaggerGen.10.2.3' from 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/10.2.3/swashbuckle.aspnetcore.swaggergen.10.2.3.nupkg'.
+14:29:44 #11 263.8   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/10.2.3/swashbuckle.aspnetcore.swaggergen.10.2.3.nupkg' has timed out after 100000ms.
+14:29:44 #11 273.4   Failed to download package 'MailKit.4.17.0' from 'https://api.nuget.org/v3-flatcontainer/mailkit/4.17.0/mailkit.4.17.0.nupkg'.
+14:29:44 #11 273.4   The download of 'https://api.nuget.org/v3-flatcontainer/mailkit/4.17.0/mailkit.4.17.0.nupkg' timed out because no data was received for 60000ms.
+14:29:44 #11 273.4     The operation has timed out.
+14:29:44 #11 287.2   Failed to download package 'Microsoft.Extensions.ApiDescription.Server.10.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/10.0.0/microsoft.extensions.apidescription.server.10.0.0.nupkg'.
+14:29:44 #11 287.2   The download of 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/10.0.0/microsoft.extensions.apidescription.server.10.0.0.nupkg' timed out because no data was received for 60000ms.
+14:29:44 #11 287.2     The operation has timed out.
+14:29:44 #11 323.0   Failed to download package 'Microsoft.EntityFrameworkCore.Design.10.0.11' from 'https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.design/10.0.11/microsoft.entityframeworkcore.design.10.0.11.nupkg'.
+14:29:45 #11 323.0   The download of 'https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.design/10.0.11/microsoft.entityframeworkcore.design.10.0.11.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 323.0     The operation has timed out.
+14:29:45 #11 349.7   Failed to download package 'Npgsql.EntityFrameworkCore.PostgreSQL.10.0.3' from 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/10.0.3/npgsql.entityframeworkcore.postgresql.10.0.3.nupkg'.
+14:29:45 #11 349.7   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/10.0.3/npgsql.entityframeworkcore.postgresql.10.0.3.nupkg' has timed out after 100000ms.
+14:29:45 #11 369.2   Failed to download package 'Microsoft.Extensions.ApiDescription.Server.10.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/10.0.0/microsoft.extensions.apidescription.server.10.0.0.nupkg'.
+14:29:45 #11 369.2   The download of 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/10.0.0/microsoft.extensions.apidescription.server.10.0.0.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 369.2     The operation has timed out.
+14:29:45 #11 378.8   Failed to download package 'BCrypt.Net-Next.4.2.0' from 'https://api.nuget.org/v3-flatcontainer/bcrypt.net-next/4.2.0/bcrypt.net-next.4.2.0.nupkg'.
+14:29:45 #11 378.8   The download of 'https://api.nuget.org/v3-flatcontainer/bcrypt.net-next/4.2.0/bcrypt.net-next.4.2.0.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 378.8     The operation has timed out.
+14:29:45 #11 387.9   Failed to download package 'Swashbuckle.AspNetCore.SwaggerGen.10.2.3' from 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/10.2.3/swashbuckle.aspnetcore.swaggergen.10.2.3.nupkg'.
+14:29:45 #11 387.9   The download of 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/10.2.3/swashbuckle.aspnetcore.swaggergen.10.2.3.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 387.9     The operation has timed out.
+14:29:45 #11 448.0   Failed to download package 'MailKit.4.17.0' from 'https://api.nuget.org/v3-flatcontainer/mailkit/4.17.0/mailkit.4.17.0.nupkg'.
+14:29:45 #11 448.0   The download of 'https://api.nuget.org/v3-flatcontainer/mailkit/4.17.0/mailkit.4.17.0.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 448.0     The operation has timed out.
+14:29:45 #11 463.8   Failed to download package 'Swashbuckle.AspNetCore.SwaggerGen.10.2.3' from 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/10.2.3/swashbuckle.aspnetcore.swaggergen.10.2.3.nupkg'.
+14:29:45 #11 463.8   The download of 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/10.2.3/swashbuckle.aspnetcore.swaggergen.10.2.3.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 463.8     The operation has timed out.
+14:29:45 #11 470.3   Failed to download package 'Microsoft.Extensions.ApiDescription.Server.10.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/10.0.0/microsoft.extensions.apidescription.server.10.0.0.nupkg'.
+14:29:45 #11 470.3   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/10.0.0/microsoft.extensions.apidescription.server.10.0.0.nupkg' has timed out after 100000ms.
+14:29:45 #11 509.2   Failed to download package 'Npgsql.EntityFrameworkCore.PostgreSQL.10.0.3' from 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/10.0.3/npgsql.entityframeworkcore.postgresql.10.0.3.nupkg'.
+14:29:45 #11 509.2   The download of 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/10.0.3/npgsql.entityframeworkcore.postgresql.10.0.3.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 509.2     The operation has timed out.
+14:29:45 #11 540.1   Failed to download package 'Microsoft.Extensions.ApiDescription.Server.10.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/10.0.0/microsoft.extensions.apidescription.server.10.0.0.nupkg'.
+14:29:45 #11 540.1   The download of 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/10.0.0/microsoft.extensions.apidescription.server.10.0.0.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 540.1     The operation has timed out.
+14:29:45 #11 540.8   Failed to download package 'Humanizer.Core.2.14.1' from 'https://api.nuget.org/v3-flatcontainer/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg'.
+14:29:45 #11 540.8   The download of 'https://api.nuget.org/v3-flatcontainer/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 540.8     The operation has timed out.
+14:29:45 #11 549.2   Failed to download package 'Microsoft.Build.Framework.18.0.2' from 'https://api.nuget.org/v3-flatcontainer/microsoft.build.framework/18.0.2/microsoft.build.framework.18.0.2.nupkg'.
+14:29:45 #11 549.2   The download of 'https://api.nuget.org/v3-flatcontainer/microsoft.build.framework/18.0.2/microsoft.build.framework.18.0.2.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 549.2     The operation has timed out.
+14:29:45 #11 549.2   Failed to download package 'MailKit.4.17.0' from 'https://api.nuget.org/v3-flatcontainer/mailkit/4.17.0/mailkit.4.17.0.nupkg'.
+14:29:45 #11 549.2   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/mailkit/4.17.0/mailkit.4.17.0.nupkg' has timed out after 100000ms.
+14:29:45 #11 550.6   Failed to download package 'Microsoft.EntityFrameworkCore.Relational.10.0.11' from 'https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/10.0.11/microsoft.entityframeworkcore.relational.10.0.11.nupkg'.
+14:29:45 #11 550.6   The download of 'https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/10.0.11/microsoft.entityframeworkcore.relational.10.0.11.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 550.6     The operation has timed out.
+14:29:45 #11 561.3   Failed to download package 'Mono.TextTemplating.3.0.0' from 'https://api.nuget.org/v3-flatcontainer/mono.texttemplating/3.0.0/mono.texttemplating.3.0.0.nupkg'.
+14:29:45 #11 561.3   The download of 'https://api.nuget.org/v3-flatcontainer/mono.texttemplating/3.0.0/mono.texttemplating.3.0.0.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 561.3     The operation has timed out.
+14:29:45 #11 564.9   Failed to download package 'Swashbuckle.AspNetCore.SwaggerGen.10.2.3' from 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/10.2.3/swashbuckle.aspnetcore.swaggergen.10.2.3.nupkg'.
+14:29:45 #11 564.9   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/10.2.3/swashbuckle.aspnetcore.swaggergen.10.2.3.nupkg' has timed out after 100000ms.
+14:29:45 #11 571.9   Failed to download package 'Newtonsoft.Json.13.0.4' from 'https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.4/newtonsoft.json.13.0.4.nupkg'.
+14:29:45 #11 571.9   The download of 'https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.4/newtonsoft.json.13.0.4.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 571.9     The operation has timed out.
+14:29:45 #11 575.0   Failed to download package 'Swashbuckle.AspNetCore.SwaggerUI.10.2.3' from 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggerui/10.2.3/swashbuckle.aspnetcore.swaggerui.10.2.3.nupkg'.
+14:29:45 #11 575.0   The download of 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggerui/10.2.3/swashbuckle.aspnetcore.swaggerui.10.2.3.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 575.0     The operation has timed out.
+14:29:45 #11 583.0   Failed to download package 'Newtonsoft.Json.13.0.4' from 'https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.4/newtonsoft.json.13.0.4.nupkg'.
+14:29:45 #11 583.0   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 583.0     Resource temporarily unavailable
+14:29:45 #11 584.2   Failed to download package 'Microsoft.CodeAnalysis.CSharp.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/5.0.0/microsoft.codeanalysis.csharp.5.0.0.nupkg'.
+14:29:45 #11 584.2   The download of 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/5.0.0/microsoft.codeanalysis.csharp.5.0.0.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 584.2     The operation has timed out.
+14:29:45 #11 587.9   Failed to download package 'Microsoft.CodeAnalysis.CSharp.Workspaces.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp.workspaces/5.0.0/microsoft.codeanalysis.csharp.workspaces.5.0.0.nupkg'.
+14:29:45 #11 587.9   The download of 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp.workspaces/5.0.0/microsoft.codeanalysis.csharp.workspaces.5.0.0.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 587.9     The operation has timed out.
+14:29:45 #11 595.3   Failed to download package 'Microsoft.CodeAnalysis.CSharp.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/5.0.0/microsoft.codeanalysis.csharp.5.0.0.nupkg'.
+14:29:45 #11 595.3   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 595.3     Resource temporarily unavailable
+14:29:45 #11 596.8   Failed to download package 'Npgsql.EntityFrameworkCore.PostgreSQL.10.0.3' from 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/10.0.3/npgsql.entityframeworkcore.postgresql.10.0.3.nupkg'.
+14:29:45 #11 596.8   The download of 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/10.0.3/npgsql.entityframeworkcore.postgresql.10.0.3.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 596.8     The operation has timed out.
+14:29:45 #11 598.0   Failed to download package 'Microsoft.Extensions.DependencyModel.10.0.11' from 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencymodel/10.0.11/microsoft.extensions.dependencymodel.10.0.11.nupkg'.
+14:29:45 #11 598.0   The download of 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencymodel/10.0.11/microsoft.extensions.dependencymodel.10.0.11.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 598.0     The operation has timed out.
+14:29:45 #11 605.3   Failed to download package 'Microsoft.CodeAnalysis.CSharp.Workspaces.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp.workspaces/5.0.0/microsoft.codeanalysis.csharp.workspaces.5.0.0.nupkg'.
+14:29:45 #11 605.3   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 605.3     Resource temporarily unavailable
+14:29:45 #11 608.0   Failed to download package 'Microsoft.CodeAnalysis.Workspaces.MSBuild.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.workspaces.msbuild/5.0.0/microsoft.codeanalysis.workspaces.msbuild.5.0.0.nupkg'.
+14:29:45 #11 608.0   The download of 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.workspaces.msbuild/5.0.0/microsoft.codeanalysis.workspaces.msbuild.5.0.0.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 608.0     The operation has timed out.
+14:29:45 #11 617.0   Failed to download package 'Microsoft.Extensions.ApiDescription.Server.10.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/10.0.0/microsoft.extensions.apidescription.server.10.0.0.nupkg'.
+14:29:45 #11 617.0   The download of 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/10.0.0/microsoft.extensions.apidescription.server.10.0.0.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 617.0     The operation has timed out.
+14:29:45 #11 618.5   Failed to download package 'Microsoft.Build.Framework.18.0.2' from 'https://api.nuget.org/v3-flatcontainer/microsoft.build.framework/18.0.2/microsoft.build.framework.18.0.2.nupkg'.
+14:29:45 #11 618.5   The download of 'https://api.nuget.org/v3-flatcontainer/microsoft.build.framework/18.0.2/microsoft.build.framework.18.0.2.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 618.5     The operation has timed out.
+14:29:45 #11 619.0   Failed to download package 'Microsoft.CodeAnalysis.Workspaces.MSBuild.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.workspaces.msbuild/5.0.0/microsoft.codeanalysis.workspaces.msbuild.5.0.0.nupkg'.
+14:29:45 #11 619.0   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 619.0     Resource temporarily unavailable
+14:29:45 #11 621.2   Failed to download package 'MailKit.4.17.0' from 'https://api.nuget.org/v3-flatcontainer/mailkit/4.17.0/mailkit.4.17.0.nupkg'.
+14:29:45 #11 621.2   The download of 'https://api.nuget.org/v3-flatcontainer/mailkit/4.17.0/mailkit.4.17.0.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 621.2     The operation has timed out.
+14:29:45 #11 627.1   Failed to download package 'Mono.TextTemplating.3.0.0' from 'https://api.nuget.org/v3-flatcontainer/mono.texttemplating/3.0.0/mono.texttemplating.3.0.0.nupkg'.
+14:29:45 #11 627.1   The download of 'https://api.nuget.org/v3-flatcontainer/mono.texttemplating/3.0.0/mono.texttemplating.3.0.0.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 627.1     The operation has timed out.
+14:29:45 #11 628.5   Failed to download package 'Microsoft.OpenApi.2.7.5' from 'https://api.nuget.org/v3-flatcontainer/microsoft.openapi/2.7.5/microsoft.openapi.2.7.5.nupkg'.
+14:29:45 #11 628.5   The download of 'https://api.nuget.org/v3-flatcontainer/microsoft.openapi/2.7.5/microsoft.openapi.2.7.5.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 628.5     The operation has timed out.
+14:29:45 #11 629.0 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Failed to download package 'Microsoft.Extensions.ApiDescription.Server.10.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/10.0.0/microsoft.extensions.apidescription.server.10.0.0.nupkg'. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 629.0 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Resource temporarily unavailable (api.nuget.org:443) [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 629.0 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error :   Resource temporarily unavailable [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 639.0   Failed to download package 'Microsoft.Build.Framework.18.0.2' from 'https://api.nuget.org/v3-flatcontainer/microsoft.build.framework/18.0.2/microsoft.build.framework.18.0.2.nupkg'.
+14:29:45 #11 639.0   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 639.0     Resource temporarily unavailable
+14:29:45 #11 641.9   Failed to download package 'Humanizer.Core.2.14.1' from 'https://api.nuget.org/v3-flatcontainer/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg'.
+14:29:45 #11 641.9   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg' has timed out after 100000ms.
+14:29:45 #11 649.0   Failed to download package 'Microsoft.CodeAnalysis.Workspaces.MSBuild.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.workspaces.msbuild/5.0.0/microsoft.codeanalysis.workspaces.msbuild.5.0.0.nupkg'.
+14:29:45 #11 649.0   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 649.0     Resource temporarily unavailable
+14:29:45 #11 651.6   Failed to download package 'Microsoft.EntityFrameworkCore.Relational.10.0.11' from 'https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/10.0.11/microsoft.entityframeworkcore.relational.10.0.11.nupkg'.
+14:29:45 #11 651.6   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/10.0.11/microsoft.entityframeworkcore.relational.10.0.11.nupkg' has timed out after 100000ms.
+14:29:45 #11 659.1 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Failed to download package 'MailKit.4.17.0' from 'https://api.nuget.org/v3-flatcontainer/mailkit/4.17.0/mailkit.4.17.0.nupkg'. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 659.1 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Resource temporarily unavailable (api.nuget.org:443) [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 659.1 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error :   Resource temporarily unavailable [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 665.9   Failed to download package 'Swashbuckle.AspNetCore.SwaggerGen.10.2.3' from 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/10.2.3/swashbuckle.aspnetcore.swaggergen.10.2.3.nupkg'.
+14:29:45 #11 665.9   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/10.2.3/swashbuckle.aspnetcore.swaggergen.10.2.3.nupkg' has timed out after 100000ms.
+14:29:45 #11 666.8   Failed to download package 'Microsoft.CodeAnalysis.CSharp.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/5.0.0/microsoft.codeanalysis.csharp.5.0.0.nupkg'.
+14:29:45 #11 666.8   The download of 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/5.0.0/microsoft.codeanalysis.csharp.5.0.0.nupkg' timed out because no data was received for 60000ms.
+14:29:45 #11 666.8     The operation has timed out.
+14:29:45 #11 669.1   Failed to download package 'Mono.TextTemplating.3.0.0' from 'https://api.nuget.org/v3-flatcontainer/mono.texttemplating/3.0.0/mono.texttemplating.3.0.0.nupkg'.
+14:29:45 #11 669.1   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 669.1     Resource temporarily unavailable
+14:29:45 #11 676.2   Failed to download package 'Swashbuckle.AspNetCore.SwaggerUI.10.2.3' from 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggerui/10.2.3/swashbuckle.aspnetcore.swaggerui.10.2.3.nupkg'.
+14:29:45 #11 676.2   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggerui/10.2.3/swashbuckle.aspnetcore.swaggerui.10.2.3.nupkg' has timed out after 100000ms.
+14:29:45 #11 679.1   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/index.json'.
+14:29:45 #11 679.1   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 679.1     Resource temporarily unavailable
+14:29:45 #11 684.1   Failed to download package 'Newtonsoft.Json.13.0.4' from 'https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.4/newtonsoft.json.13.0.4.nupkg'.
+14:29:45 #11 684.1   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.4/newtonsoft.json.13.0.4.nupkg' has timed out after 100000ms.
+14:29:45 #11 689.1   Failed to download package 'Microsoft.OpenApi.2.7.5' from 'https://api.nuget.org/v3-flatcontainer/microsoft.openapi/2.7.5/microsoft.openapi.2.7.5.nupkg'.
+14:29:45 #11 689.1   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 689.1     Resource temporarily unavailable
+14:29:45 #11 697.9   Failed to download package 'Npgsql.EntityFrameworkCore.PostgreSQL.10.0.3' from 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/10.0.3/npgsql.entityframeworkcore.postgresql.10.0.3.nupkg'.
+14:29:45 #11 697.9   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/10.0.3/npgsql.entityframeworkcore.postgresql.10.0.3.nupkg' has timed out after 100000ms.
+14:29:45 #11 699.0   Failed to download package 'Microsoft.Extensions.DependencyModel.10.0.11' from 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencymodel/10.0.11/microsoft.extensions.dependencymodel.10.0.11.nupkg'.
+14:29:45 #11 699.0   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencymodel/10.0.11/microsoft.extensions.dependencymodel.10.0.11.nupkg' has timed out after 100000ms.
+14:29:45 #11 699.1   Failed to download package 'Microsoft.Build.Framework.18.0.2' from 'https://api.nuget.org/v3-flatcontainer/microsoft.build.framework/18.0.2/microsoft.build.framework.18.0.2.nupkg'.
+14:29:45 #11 699.1   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 699.1     Resource temporarily unavailable
+14:29:45 #11 706.5   Failed to download package 'Microsoft.CodeAnalysis.CSharp.Workspaces.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp.workspaces/5.0.0/microsoft.codeanalysis.csharp.workspaces.5.0.0.nupkg'.
+14:29:45 #11 706.5   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp.workspaces/5.0.0/microsoft.codeanalysis.csharp.workspaces.5.0.0.nupkg' has timed out after 100000ms.
+14:29:45 #11 709.1   Failed to download package 'Humanizer.Core.2.14.1' from 'https://api.nuget.org/v3-flatcontainer/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg'.
+14:29:45 #11 709.1   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 709.1     Resource temporarily unavailable
+14:29:45 #11 719.1   Failed to download package 'Microsoft.CodeAnalysis.Workspaces.MSBuild.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.workspaces.msbuild/5.0.0/microsoft.codeanalysis.workspaces.msbuild.5.0.0.nupkg'.
+14:29:45 #11 719.1   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 719.1     Resource temporarily unavailable
+14:29:45 #11 729.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/mailkit/index.json'.
+14:29:45 #11 729.4   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 729.4     Resource temporarily unavailable
+14:29:45 #11 739.4 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Failed to download package 'Swashbuckle.AspNetCore.SwaggerGen.10.2.3' from 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/10.2.3/swashbuckle.aspnetcore.swaggergen.10.2.3.nupkg'. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 739.4 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Resource temporarily unavailable (api.nuget.org:443) [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 739.4 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error :   Resource temporarily unavailable [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 749.4   Failed to download package 'Microsoft.CodeAnalysis.CSharp.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/5.0.0/microsoft.codeanalysis.csharp.5.0.0.nupkg'.
+14:29:45 #11 749.4   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 749.4     Resource temporarily unavailable
+14:29:45 #11 752.7   Failed to download package 'Microsoft.EntityFrameworkCore.Relational.10.0.11' from 'https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/10.0.11/microsoft.entityframeworkcore.relational.10.0.11.nupkg'.
+14:29:45 #11 752.7   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/10.0.11/microsoft.entityframeworkcore.relational.10.0.11.nupkg' has timed out after 100000ms.
+14:29:45 #11 760.7 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Failed to download package 'Npgsql.EntityFrameworkCore.PostgreSQL.10.0.3' from 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/10.0.3/npgsql.entityframeworkcore.postgresql.10.0.3.nupkg'. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 760.7 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Resource temporarily unavailable (api.nuget.org:443) [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 760.7 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error :   Resource temporarily unavailable [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 770.1   Failed to download package 'Mono.TextTemplating.3.0.0' from 'https://api.nuget.org/v3-flatcontainer/mono.texttemplating/3.0.0/mono.texttemplating.3.0.0.nupkg'.
+14:29:45 #11 770.1   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/mono.texttemplating/3.0.0/mono.texttemplating.3.0.0.nupkg' has timed out after 100000ms.
+14:29:45 #11 770.7   Failed to download package 'Microsoft.Extensions.DependencyModel.10.0.11' from 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencymodel/10.0.11/microsoft.extensions.dependencymodel.10.0.11.nupkg'.
+14:29:45 #11 770.7   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 770.7     Resource temporarily unavailable
+14:29:45 #11 777.4   Failed to download package 'Swashbuckle.AspNetCore.SwaggerUI.10.2.3' from 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggerui/10.2.3/swashbuckle.aspnetcore.swaggerui.10.2.3.nupkg'.
+14:29:45 #11 777.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggerui/10.2.3/swashbuckle.aspnetcore.swaggerui.10.2.3.nupkg' has timed out after 100000ms.
+14:29:45 #11 780.1   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/index.json'.
+14:29:45 #11 780.1   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/index.json' has timed out after 100000ms.
+14:29:45 #11 780.8   Failed to download package 'Microsoft.Build.Framework.18.0.2' from 'https://api.nuget.org/v3-flatcontainer/microsoft.build.framework/18.0.2/microsoft.build.framework.18.0.2.nupkg'.
+14:29:45 #11 780.8   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 780.8     Resource temporarily unavailable
+14:29:45 #11 785.2   Failed to download package 'Newtonsoft.Json.13.0.4' from 'https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.4/newtonsoft.json.13.0.4.nupkg'.
+14:29:45 #11 785.2   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.4/newtonsoft.json.13.0.4.nupkg' has timed out after 100000ms.
+14:29:45 #11 790.2   Failed to download package 'Microsoft.OpenApi.2.7.5' from 'https://api.nuget.org/v3-flatcontainer/microsoft.openapi/2.7.5/microsoft.openapi.2.7.5.nupkg'.
+14:29:45 #11 790.2   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.openapi/2.7.5/microsoft.openapi.2.7.5.nupkg' has timed out after 100000ms.
+14:29:45 #11 796.2   Failed to download package 'Humanizer.Core.2.14.1' from 'https://api.nuget.org/v3-flatcontainer/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg'.
+14:29:45 #11 796.2   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 796.2     Resource temporarily unavailable
+14:29:45 #11 806.2   Failed to download package 'Microsoft.CodeAnalysis.Workspaces.MSBuild.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.workspaces.msbuild/5.0.0/microsoft.codeanalysis.workspaces.msbuild.5.0.0.nupkg'.
+14:29:45 #11 806.2   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 806.2     Resource temporarily unavailable
+14:29:45 #11 807.7   Failed to download package 'Microsoft.CodeAnalysis.CSharp.Workspaces.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp.workspaces/5.0.0/microsoft.codeanalysis.csharp.workspaces.5.0.0.nupkg'.
+14:29:45 #11 807.7   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp.workspaces/5.0.0/microsoft.codeanalysis.csharp.workspaces.5.0.0.nupkg' has timed out after 100000ms.
+14:29:45 #11 816.2   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/mailkit/index.json'.
+14:29:45 #11 816.2   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 816.2     Resource temporarily unavailable
+14:29:45 #11 827.1   Failed to download package 'Microsoft.EntityFrameworkCore.Relational.10.0.11' from 'https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/10.0.11/microsoft.entityframeworkcore.relational.10.0.11.nupkg'.
+14:29:45 #11 827.1   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 827.1     Resource temporarily unavailable
+14:29:45 #11 830.6   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/mailkit/index.json'.
+14:29:45 #11 830.6   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/mailkit/index.json' has timed out after 100000ms.
+14:29:45 #11 837.1   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json'.
+14:29:45 #11 837.1   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 837.1     Resource temporarily unavailable
+14:29:45 #11 839.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/index.json'.
+14:29:45 #11 839.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/index.json' has timed out after 100000ms.
+14:29:45 #11 847.1   Failed to download package 'Mono.TextTemplating.3.0.0' from 'https://api.nuget.org/v3-flatcontainer/mono.texttemplating/3.0.0/mono.texttemplating.3.0.0.nupkg'.
+14:29:45 #11 847.1   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 847.1     Resource temporarily unavailable
+14:29:45 #11 850.5   Failed to download package 'Microsoft.CodeAnalysis.CSharp.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/5.0.0/microsoft.codeanalysis.csharp.5.0.0.nupkg'.
+14:29:45 #11 850.5   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/5.0.0/microsoft.codeanalysis.csharp.5.0.0.nupkg' has timed out after 100000ms.
+14:29:45 #11 857.1   Failed to download package 'Microsoft.Extensions.DependencyModel.10.0.11' from 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencymodel/10.0.11/microsoft.extensions.dependencymodel.10.0.11.nupkg'.
+14:29:45 #11 857.1   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 857.1     Resource temporarily unavailable
+14:29:45 #11 867.2   Failed to download package 'Swashbuckle.AspNetCore.SwaggerUI.10.2.3' from 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggerui/10.2.3/swashbuckle.aspnetcore.swaggerui.10.2.3.nupkg'.
+14:29:45 #11 867.2   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 867.2     Resource temporarily unavailable
+14:29:45 #11 877.2   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/index.json'.
+14:29:45 #11 877.2   Resource temporarily unavailable (api.nuget.org:443)
+14:29:45 #11 877.2     Resource temporarily unavailable
+14:29:45 #11 881.8 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Failed to download package 'Microsoft.Build.Framework.18.0.2' from 'https://api.nuget.org/v3-flatcontainer/microsoft.build.framework/18.0.2/microsoft.build.framework.18.0.2.nupkg'. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 881.8 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.build.framework/18.0.2/microsoft.build.framework.18.0.2.nupkg' has timed out after 100000ms. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 886.3   Failed to download package 'Newtonsoft.Json.13.0.4' from 'https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.4/newtonsoft.json.13.0.4.nupkg'.
+14:29:45 #11 886.3   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.4/newtonsoft.json.13.0.4.nupkg' has timed out after 100000ms.
+14:29:45 #11 891.2   Failed to download package 'Microsoft.OpenApi.2.7.5' from 'https://api.nuget.org/v3-flatcontainer/microsoft.openapi/2.7.5/microsoft.openapi.2.7.5.nupkg'.
+14:29:45 #11 891.2   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.openapi/2.7.5/microsoft.openapi.2.7.5.nupkg' has timed out after 100000ms.
+14:29:45 #11 897.3   Failed to download package 'Humanizer.Core.2.14.1' from 'https://api.nuget.org/v3-flatcontainer/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg'.
+14:29:45 #11 897.3   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg' has timed out after 100000ms.
+14:29:45 #11 907.4 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Failed to download package 'Microsoft.CodeAnalysis.Workspaces.MSBuild.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.workspaces.msbuild/5.0.0/microsoft.codeanalysis.workspaces.msbuild.5.0.0.nupkg'. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 907.4 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.workspaces.msbuild/5.0.0/microsoft.codeanalysis.workspaces.msbuild.5.0.0.nupkg' has timed out after 100000ms. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 908.7   Failed to download package 'Microsoft.CodeAnalysis.CSharp.Workspaces.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp.workspaces/5.0.0/microsoft.codeanalysis.csharp.workspaces.5.0.0.nupkg'.
+14:29:45 #11 908.7   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp.workspaces/5.0.0/microsoft.codeanalysis.csharp.workspaces.5.0.0.nupkg' has timed out after 100000ms.
+14:29:45 #11 917.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/mailkit/index.json'.
+14:29:45 #11 917.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/mailkit/index.json' has timed out after 100000ms.
+14:29:45 #11 928.3   Failed to download package 'Microsoft.EntityFrameworkCore.Relational.10.0.11' from 'https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/10.0.11/microsoft.entityframeworkcore.relational.10.0.11.nupkg'.
+14:29:45 #11 928.3   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/10.0.11/microsoft.entityframeworkcore.relational.10.0.11.nupkg' has timed out after 100000ms.
+14:29:45 #11 931.6   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/mailkit/index.json'.
+14:29:45 #11 931.6   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/mailkit/index.json' has timed out after 100000ms.
+14:29:45 #11 937.1   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json'.
+14:29:45 #11 937.1   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json' has timed out after 100000ms.
+14:29:45 #11 938.2   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json'.
+14:29:45 #11 938.2   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json' has timed out after 100000ms.
+14:29:45 #11 940.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/index.json'.
+14:29:45 #11 940.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/index.json' has timed out after 100000ms.
+14:29:45 #11 946.0 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Failed to download package 'Mono.TextTemplating.3.0.0' from 'https://api.nuget.org/v3-flatcontainer/mono.texttemplating/3.0.0/mono.texttemplating.3.0.0.nupkg'. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 946.0 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Resource temporarily unavailable (api.nuget.org:443) [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 946.0 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error :   Resource temporarily unavailable [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 951.7 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Failed to download package 'Microsoft.CodeAnalysis.CSharp.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/5.0.0/microsoft.codeanalysis.csharp.5.0.0.nupkg'. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 951.7 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/5.0.0/microsoft.codeanalysis.csharp.5.0.0.nupkg' has timed out after 100000ms. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 958.3   Failed to download package 'Microsoft.Extensions.DependencyModel.10.0.11' from 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencymodel/10.0.11/microsoft.extensions.dependencymodel.10.0.11.nupkg'.
+14:29:45 #11 958.3   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencymodel/10.0.11/microsoft.extensions.dependencymodel.10.0.11.nupkg' has timed out after 100000ms.
+14:29:45 #11 968.3   Failed to download package 'Swashbuckle.AspNetCore.SwaggerUI.10.2.3' from 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggerui/10.2.3/swashbuckle.aspnetcore.swaggerui.10.2.3.nupkg'.
+14:29:45 #11 968.3   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggerui/10.2.3/swashbuckle.aspnetcore.swaggerui.10.2.3.nupkg' has timed out after 100000ms.
+14:29:45 #11 978.3   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/index.json'.
+14:29:45 #11 978.3   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/index.json' has timed out after 100000ms.
+14:29:45 #11 981.8   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.build.framework/index.json'.
+14:29:45 #11 981.8   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.build.framework/index.json' has timed out after 100000ms.
+14:29:45 #11 987.3 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Failed to download package 'Newtonsoft.Json.13.0.4' from 'https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.4/newtonsoft.json.13.0.4.nupkg'. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 987.3 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.4/newtonsoft.json.13.0.4.nupkg' has timed out after 100000ms. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 992.3   Failed to download package 'Microsoft.OpenApi.2.7.5' from 'https://api.nuget.org/v3-flatcontainer/microsoft.openapi/2.7.5/microsoft.openapi.2.7.5.nupkg'.
+14:29:45 #11 992.3   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.openapi/2.7.5/microsoft.openapi.2.7.5.nupkg' has timed out after 100000ms.
+14:29:45 #11 998.5 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Failed to download package 'Humanizer.Core.2.14.1' from 'https://api.nuget.org/v3-flatcontainer/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg'. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 998.5 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg' has timed out after 100000ms. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 1007.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.workspaces.msbuild/index.json'.
+14:29:45 #11 1007.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.workspaces.msbuild/index.json' has timed out after 100000ms.
+14:29:45 #11 1009.9 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Failed to download package 'Microsoft.CodeAnalysis.CSharp.Workspaces.5.0.0' from 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp.workspaces/5.0.0/microsoft.codeanalysis.csharp.workspaces.5.0.0.nupkg'. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 1009.9 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp.workspaces/5.0.0/microsoft.codeanalysis.csharp.workspaces.5.0.0.nupkg' has timed out after 100000ms. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 1018.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/mailkit/index.json'.
+14:29:45 #11 1018.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/mailkit/index.json' has timed out after 100000ms.
+14:29:45 #11 1029.4 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Failed to download package 'Microsoft.EntityFrameworkCore.Relational.10.0.11' from 'https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/10.0.11/microsoft.entityframeworkcore.relational.10.0.11.nupkg'. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 1029.4 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/10.0.11/microsoft.entityframeworkcore.relational.10.0.11.nupkg' has timed out after 100000ms. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 1032.7   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/mailkit/index.json'.
+14:29:45 #11 1032.7   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/mailkit/index.json' has timed out after 100000ms.
+14:29:45 #11 1037.1   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json'.
+14:29:45 #11 1037.1   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json' has timed out after 100000ms.
+14:29:45 #11 1038.2   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json'.
+14:29:45 #11 1038.2   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json' has timed out after 100000ms.
+14:29:45 #11 1039.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json'.
+14:29:45 #11 1039.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json' has timed out after 100000ms.
+14:29:45 #11 1041.6   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/index.json'.
+14:29:45 #11 1041.6   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/index.json' has timed out after 100000ms.
+14:29:45 #11 1046.0   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/mono.texttemplating/index.json'.
+14:29:45 #11 1046.0   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/mono.texttemplating/index.json' has timed out after 100000ms.
+14:29:45 #11 1051.7   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/index.json'.
+14:29:45 #11 1051.7   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/index.json' has timed out after 100000ms.
+14:29:45 #11 1059.4 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Failed to download package 'Microsoft.Extensions.DependencyModel.10.0.11' from 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencymodel/10.0.11/microsoft.extensions.dependencymodel.10.0.11.nupkg'. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 1059.4 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencymodel/10.0.11/microsoft.extensions.dependencymodel.10.0.11.nupkg' has timed out after 100000ms. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 1069.4 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Failed to download package 'Swashbuckle.AspNetCore.SwaggerUI.10.2.3' from 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggerui/10.2.3/swashbuckle.aspnetcore.swaggerui.10.2.3.nupkg'. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 1069.4 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggerui/10.2.3/swashbuckle.aspnetcore.swaggerui.10.2.3.nupkg' has timed out after 100000ms. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 1079.5   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/index.json'.
+14:29:45 #11 1079.5   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/index.json' has timed out after 100000ms.
+14:29:45 #11 1082.9   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.build.framework/index.json'.
+14:29:45 #11 1082.9   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.build.framework/index.json' has timed out after 100000ms.
+14:29:45 #11 1087.3   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/newtonsoft.json/index.json'.
+14:29:45 #11 1087.3   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/newtonsoft.json/index.json' has timed out after 100000ms.
+14:29:45 #11 1093.4 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : Failed to download package 'Microsoft.OpenApi.2.7.5' from 'https://api.nuget.org/v3-flatcontainer/microsoft.openapi/2.7.5/microsoft.openapi.2.7.5.nupkg'. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 1093.4 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.openapi/2.7.5/microsoft.openapi.2.7.5.nupkg' has timed out after 100000ms. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:45 #11 1098.5   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/humanizer.core/index.json'.
+14:29:45 #11 1098.5   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/humanizer.core/index.json' has timed out after 100000ms.
+14:29:45 #11 1108.5   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.workspaces.msbuild/index.json'.
+14:29:45 #11 1108.5   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.workspaces.msbuild/index.json' has timed out after 100000ms.
+14:29:45 #11 1109.9   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp.workspaces/index.json'.
+14:29:45 #11 1109.9   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp.workspaces/index.json' has timed out after 100000ms.
+14:29:45 #11 1119.5   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/mailkit/index.json'.
+14:29:45 #11 1119.5   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/mailkit/index.json' has timed out after 100000ms.
+14:29:45 #11 1129.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/index.json'.
+14:29:45 #11 1129.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/index.json' has timed out after 100000ms.
+14:29:45 #11 1133.8   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/mailkit/index.json'.
+14:29:45 #11 1133.8   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/mailkit/index.json' has timed out after 100000ms.
+14:29:45 #11 1137.1   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json'.
+14:29:45 #11 1137.1   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json' has timed out after 100000ms.
+14:29:45 #11 1138.3   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json'.
+14:29:45 #11 1138.3   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json' has timed out after 100000ms.
+14:29:45 #11 1139.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json'.
+14:29:45 #11 1139.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json' has timed out after 100000ms.
+14:29:45 #11 1140.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json'.
+14:29:45 #11 1140.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json' has timed out after 100000ms.
+14:29:45 #11 1142.6   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/index.json'.
+14:29:45 #11 1142.6   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/index.json' has timed out after 100000ms.
+14:29:45 #11 1147.0   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/mono.texttemplating/index.json'.
+14:29:45 #11 1147.0   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/mono.texttemplating/index.json' has timed out after 100000ms.
+14:29:45 #11 1152.7   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/index.json'.
+14:29:45 #11 1152.7   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/index.json' has timed out after 100000ms.
+14:29:45 #11 1159.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencymodel/index.json'.
+14:29:45 #11 1159.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencymodel/index.json' has timed out after 100000ms.
+14:29:45 #11 1169.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggerui/index.json'.
+14:29:45 #11 1169.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggerui/index.json' has timed out after 100000ms.
+14:29:45 #11 1180.6 /src/Sillar.Api/Sillar.Api.csproj : error NU1301: Failed to retrieve information about 'Microsoft.Extensions.ApiDescription.Server' from remote source 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/index.json'.
+14:29:45 #11 1180.6 /src/Sillar.Api/Sillar.Api.csproj : error NU1301:   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.extensions.apidescription.server/index.json' has timed out after 100000ms.
+14:29:45 #11 1184.0   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.build.framework/index.json'.
+14:29:45 #11 1184.0   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.build.framework/index.json' has timed out after 100000ms.
+14:29:45 #11 1188.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/newtonsoft.json/index.json'.
+14:29:45 #11 1188.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/newtonsoft.json/index.json' has timed out after 100000ms.
+14:29:45 #11 1193.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.openapi/index.json'.
+14:29:45 #11 1193.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.openapi/index.json' has timed out after 100000ms.
+14:29:45 #11 1199.6   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/humanizer.core/index.json'.
+14:29:45 #11 1199.6   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/humanizer.core/index.json' has timed out after 100000ms.
+14:29:45 #11 1209.6   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.workspaces.msbuild/index.json'.
+14:29:45 #11 1209.6   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.workspaces.msbuild/index.json' has timed out after 100000ms.
+14:29:45 #11 1210.9   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp.workspaces/index.json'.
+14:29:45 #11 1210.9   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp.workspaces/index.json' has timed out after 100000ms.
+14:29:45 #11 1220.7   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/mailkit/index.json'.
+14:29:45 #11 1220.7   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/mailkit/index.json' has timed out after 100000ms.
+14:29:45 #11 1230.5   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/index.json'.
+14:29:45 #11 1230.5   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/index.json' has timed out after 100000ms.
+14:29:45 #11 1234.9 /src/Sillar.Api/Sillar.Api.csproj : error NU1301: Failed to retrieve information about 'MailKit' from remote source 'https://api.nuget.org/v3-flatcontainer/mailkit/index.json'.
+14:29:45 #11 1234.9 /src/Sillar.Api/Sillar.Api.csproj : error NU1301:   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/mailkit/index.json' has timed out after 100000ms.
+14:29:45 #11 1237.1   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json'.
+14:29:45 #11 1237.1   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json' has timed out after 100000ms.
+14:29:45 #11 1238.2   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json'.
+14:29:45 #11 1238.2   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json' has timed out after 100000ms.
+14:29:45 #11 1239.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json'.
+14:29:45 #11 1239.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json' has timed out after 100000ms.
+14:29:45 #11 1240.6   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json'.
+14:29:45 #11 1240.6   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json' has timed out after 100000ms.
+14:29:45 #11 1241.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json'.
+14:29:46 #11 1241.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/npgsql.entityframeworkcore.postgresql/index.json' has timed out after 100000ms.
+14:29:46 #11 1243.8   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/index.json'.
+14:29:46 #11 1243.8   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggergen/index.json' has timed out after 100000ms.
+14:29:46 #11 1248.0   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/mono.texttemplating/index.json'.
+14:29:46 #11 1248.0   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/mono.texttemplating/index.json' has timed out after 100000ms.
+14:29:46 #11 1253.9   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/index.json'.
+14:29:46 #11 1253.9   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.csharp/index.json' has timed out after 100000ms.
+14:29:46 #11 1260.5   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencymodel/index.json'.
+14:29:46 #11 1260.5   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencymodel/index.json' has timed out after 100000ms.
+14:29:46 #11 1270.4   Retrying 'FindPackagesByIdAsync' for source 'https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggerui/index.json'.
+14:29:46 #11 1270.4   The HTTP request to 'GET https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore.swaggerui/index.json' has timed out after 100000ms.
+14:29:46 #11 1276.8 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The feed 'nuget.org [https://api.nuget.org/v3/index.json]' lists package 'Mono.TextTemplating.3.0.0' but multiple attempts to download the nupkg have failed. The feed is either invalid or required packages were removed while the current operation was in progress. Verify the package exists on the feed and try again. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:46 #11 1277.2 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The feed 'nuget.org [https://api.nuget.org/v3/index.json]' lists package 'Microsoft.CodeAnalysis.Workspaces.MSBuild.5.0.0' but multiple attempts to download the nupkg have failed. The feed is either invalid or required packages were removed while the current operation was in progress. Verify the package exists on the feed and try again. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:46 #11 1278.4 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The feed 'nuget.org [https://api.nuget.org/v3/index.json]' lists package 'Swashbuckle.AspNetCore.SwaggerGen.10.2.3' but multiple attempts to download the nupkg have failed. The feed is either invalid or required packages were removed while the current operation was in progress. Verify the package exists on the feed and try again. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:46 #11 1278.5   Failed to restore /src/Sillar.Api/Sillar.Api.csproj (in 21.18 min).
+14:29:46 #11 1279.9 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The feed 'nuget.org [https://api.nuget.org/v3/index.json]' lists package 'Newtonsoft.Json.13.0.4' but multiple attempts to download the nupkg have failed. The feed is either invalid or required packages were removed while the current operation was in progress. Verify the package exists on the feed and try again. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:46 #11 1281.3 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The feed 'nuget.org [https://api.nuget.org/v3/index.json]' lists package 'Microsoft.Build.Framework.18.0.2' but multiple attempts to download the nupkg have failed. The feed is either invalid or required packages were removed while the current operation was in progress. Verify the package exists on the feed and try again. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:46 #11 1283.3 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The feed 'nuget.org [https://api.nuget.org/v3/index.json]' lists package 'Swashbuckle.AspNetCore.SwaggerUI.10.2.3' but multiple attempts to download the nupkg have failed. The feed is either invalid or required packages were removed while the current operation was in progress. Verify the package exists on the feed and try again. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:46 #11 1283.8 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The feed 'nuget.org [https://api.nuget.org/v3/index.json]' lists package 'MailKit.4.17.0' but multiple attempts to download the nupkg have failed. The feed is either invalid or required packages were removed while the current operation was in progress. Verify the package exists on the feed and try again. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:46 #11 1286.6 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The feed 'nuget.org [https://api.nuget.org/v3/index.json]' lists package 'Microsoft.EntityFrameworkCore.Relational.10.0.11' but multiple attempts to download the nupkg have failed. The feed is either invalid or required packages were removed while the current operation was in progress. Verify the package exists on the feed and try again. [/src/Sillar.Api/Sillar.Api.csproj]
+14:29:46 #11 1287.5 /usr/share/dotnet/sdk/10.0.400/NuGet.targets(198,5): error : The feed 'nuget.org [https://api.nuget.org/v3/index.json]' lists package 'Microsoft.OpenApi.2.7.5' but multiple attempts to download the nupkg have failed. The feed is either invalid or required packages were removed while the current operation was in progress. Verify the package exists on the feed and try again. [/src/Sillar.Api/Sillar.Api.csproj]
+# rc=1
+# Fin: 2026-09-27 14:29:49 -0500

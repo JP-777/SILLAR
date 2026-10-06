@@ -6,8 +6,8 @@ import { run } from './shell.js';
 const BACKEND = path.join(ROOT, 'backend');
 
 /**
- * Aplica las migraciones de CORE, Catalog, Cms, CRM, Services y Sales contra la
- * base e2e.
+ * Aplica las migraciones de CORE, Catalog, Cms, CRM, Services, Sales y B2B
+ * contra la base e2e.
  *
  * `ConnectionStrings__Default` se pasa como variable de entorno real al
  * proceso `dotnet`, no por `.env`: `DotEnv.Load()` nunca sobreescribe lo que
@@ -56,6 +56,19 @@ export async function migrate(): Promise<void> {
   // No se activa `sales` en `global-setup.ts`: esto repara la
   // **restaurabilidad** del arnés, no la cobertura funcional de M03.
   await applyMigrations('Sillar.Modules.Sales');
+  // **M07 el último, por lo mismo que M03 y además de él:** sus cinco claves
+  // foráneas cruzadas apuntan a `catalog` y a `crm` (dependencias duras
+  // declaradas en `B2BModule.cs:57`), así que esas tablas tienen que existir
+  // antes. Es la mitad del arnés de la C9 —la otra es el `ProjectReference` del
+  // host—, y sin ella la etapa e2e podía ejecutar el producto entero **sin que
+  // M07 existiera en el escenario**: activar `b2b` fallaría y una suite en
+  // verde no diría nada de M07.
+  //
+  // **El hueco que M03 tenía aquí ya no es deuda:** lo cerró `main` con la
+  // reparación de restaurabilidad de M03, y por eso `Sillar.Modules.Sales`
+  // aparece arriba. Esta línea es el mismo arreglo aplicado a M07, no su
+  // repetición.
+  await applyMigrations('Sillar.Modules.B2B');
 }
 
 /** Los seeds del producto. Ninguno lleva datos de negocio (SPEC de M01 §6.9, de M02 §6.6). */
@@ -63,10 +76,10 @@ export async function seed(): Promise<void> {
   // `ON_ERROR_STOP=1` en todos: sin él, `psql` se come el error de un
   // seed y el arnés sigue con la base a medio preparar, fallando después en
   // una prueba que no tiene la culpa.
-  for (const modulo of ['core', 'catalog', 'cms', 'crm', 'services', 'sales']) {
-    // Los de `crm` y `sales` están hoy intencionalmente vacíos, y se aplican
-    // igual: no aplicarlos sería una asimetría que solo se nota el día que
-    // dejen de estar vacíos.
+  for (const modulo of ['core', 'catalog', 'cms', 'crm', 'services', 'sales', 'b2b']) {
+    // Los de `crm`, `sales` y `b2b` están hoy intencionalmente vacíos, y se
+    // aplican igual: no aplicarlos sería una asimetría que solo se nota el día
+    // que dejen de estar vacíos.
     await psqlArchivo(`/scripts/modules/${modulo}/02_seed.sql`);
   }
 }

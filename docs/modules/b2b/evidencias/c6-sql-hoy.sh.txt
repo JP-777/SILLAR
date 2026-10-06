@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# C6 vía SQL directo, con los scripts de main SIN guardas. Base efímera propia.
+set -uo pipefail
+W=/home/JP777/sillar-b2b
+C=sillar_b2b_db
+DB="sillar_c6_hoy_$(date +%s)"
+CS="$(grep '^ConnectionStrings__Default=' $W/.env | cut -d= -f2- | sed -E "s/Database=[^;]*/Database=$DB/")"
+q(){ docker exec -i $C psql -U postgres -d "$DB" -v ON_ERROR_STOP=1 -X -q "$@"; }
+fks(){ q -Atc "SELECT conrelid::regclass||' → '||confrelid::regclass||' ('||conname||')' FROM pg_constraint WHERE contype='f' AND connamespace='b2b'::regnamespace ORDER BY 1"; }
+mig(){ (cd $W/backend && ConnectionStrings__Default="$CS" dotnet ef database update --project "$1" --startup-project Sillar.Api >/dev/null 2>&1) && echo "  migraciones de $1 aplicadas" || echo "  ERROR migrando $1"; }
+echo "# SHA de main probado: $(git -C $W rev-parse HEAD) (árbol de la rama, scripts 99_drop sin modificar)"
+echo "# Base efímera: $DB · inicio $(TZ=America/Lima date '+%F %T %z')"
+docker exec $C psql -U postgres -q -c "CREATE DATABASE \"$DB\"" || exit 1
+trap 'docker exec $C psql -U postgres -q -c "DROP DATABASE IF EXISTS \"'$DB'\" WITH (FORCE)"; echo "# Base efímera $DB eliminada"' EXIT
+echo "## 1 · Instalar CORE, M01, M04"; mig Sillar.Core; mig Sillar.Modules.Catalog; mig Sillar.Modules.Crm
+echo "## 2 · Esquema b2b mínimo con las FK duras que declarará M07"
+q <<'SQL'
+CREATE SCHEMA b2b;
+CREATE TABLE b2b.special_order_leads (special_order_lead_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  customer_id uuid NOT NULL CONSTRAINT fk_special_order_leads_customer REFERENCES crm.customers(customer_id),
+  product_id uuid CONSTRAINT fk_special_order_leads_product REFERENCES catalog.products(id));
+CREATE TABLE b2b.quote_lines (quote_line_id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  item_id uuid CONSTRAINT fk_quote_lines_item REFERENCES catalog.product_items(id));
+SQL
+echo "FK de b2b antes:"; fks
+echo "## 3 · catalog/99_drop.sql de main, ejecutado directamente"
+docker exec -i $C psql -U postgres -d "$DB" -v ON_ERROR_STOP=1 -X -f /scripts/modules/catalog/99_drop.sql 2>&1; echo "  rc=$?"
+echo "FK de b2b después:"; fks; echo "Tablas de b2b después: $(q -Atc "SELECT count(*) FROM pg_tables WHERE schemaname='b2b'")"
+echo "Insertar en b2b un item_id que no existe en ningún catálogo:"; q -c "INSERT INTO b2b.quote_lines(item_id) VALUES (gen_random_uuid())" 2>&1 && echo "  ACEPTADO: sin integridad referencial"
+echo "## 4 · Reinstalar M01 (sus migraciones)"; mig Sillar.Modules.Catalog
+echo "FK de b2b tras reinstalar M01:"; fks
+echo "## 5 · crm/99_drop.sql de main, ejecutado directamente"
+docker exec -i $C psql -U postgres -d "$DB" -v ON_ERROR_STOP=1 -X -f /scripts/modules/crm/99_drop.sql 2>&1; echo "  rc=$?"
+echo "FK de b2b después:"; fks
+echo "## 6 · DROP SCHEMA catalog CASCADE arbitrario, fuera de los scripts"; mig Sillar.Modules.Catalog
+q -c "DELETE FROM b2b.quote_lines"
+q -c "ALTER TABLE b2b.quote_lines ADD CONSTRAINT fk_quote_lines_item FOREIGN KEY (item_id) REFERENCES catalog.product_items(id)"
+echo "FK antes:"; fks
+q -c "DROP SCHEMA catalog CASCADE" 2>&1 | tail -3; echo "  rc=$?"; echo "FK después:"; fks
+echo "# Fin $(TZ=America/Lima date '+%F %T %z')"

@@ -1,0 +1,10 @@
+FALLA ObtenerItemAsync: InvalidOperationException: The LINQ expression 'DbSet<ProductItem>()
+FALLA VariantesDeAsync: InvalidOperationException: The LINQ expression 'DbSet<ProductItem>()
+FALLA BuscarAsync: InvalidOperationException: The LINQ expression 'DbSet<ProductItem>()
+FALLA BuscarPorCodigoAsync: InvalidOperationException: The LINQ expression 'DbSet<ProductItem>()
+OK    ItemExisteYEstaActivoAsync: True
+OK    BuscarParaSeleccionAsync: 1
+OK    ObtenerParaSeleccionAsync: Pañuelo bordado
+
+# Servicio REAL de M01 (CatalogModule.RegisterServices) sobre una base efímera, árbol eb722df + cambios del microcierre. Prueba temporal de diagnóstico, retirada tras ejecutarse.
+# Nota: el registro fue normalizado para almacenamiento en Git (sin espacios al final de línea) sin alterar los resultados observados.

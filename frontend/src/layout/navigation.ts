@@ -1,3 +1,4 @@
+import { b2bNavigation } from '../modules/b2b/routes';
 import { catalogNavigation } from '../modules/catalog/routes';
 import { cmsNavigation } from '../modules/cms/routes';
 import { coreNavigation } from '../modules/core/routes';
@@ -52,6 +53,7 @@ export const MODULE_NAVIGATION: readonly ModuleNavigation[] = [
   cmsNavigation,
   servicesNavigation,
   crmNavigation,
+  b2bNavigation,
 ];
 
 /** Filtra la navegación por módulos activos y por rol. */

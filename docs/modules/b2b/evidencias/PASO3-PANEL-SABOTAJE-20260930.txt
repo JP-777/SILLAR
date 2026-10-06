@@ -1,0 +1,8 @@
+# Sabotaje del paso 3, tramo del panel · base 7fb97eb + cambios sin commitear · 2026-09-30 01:46:23 -0500
+[Q1 transiciones sin guarda] Failed!  - Failed:     2, Passed:     3, Skipped:     0, Total:     5, Duration:
+[Q2 baja de personalización sin rol admin] Failed!  - Failed:     1, Passed:     2, Skipped:     0, Total:     3, Duration:
+[Q3 invalidación en cualquier estado] Failed!  - Failed:     1, Passed:    11, Skipped:     0, Total:    12, Duration:
+[Q4 reenlace sin comprobar que el producto está activo] Failed!  - Failed:     1, Passed:     1, Skipped:     0, Total:     2, Duration:
+[Q5 rutas públicas con política de panel] Failed!  - Failed:     1, Passed:     2, Skipped:     0, Total:     3, Duration:
+[Q6 desactivar invalida cotizaciones] Failed!  - Failed:     1, Passed:     1, Skipped:     0, Total:     2, Duration:
+[restaurado] Passed!  - Failed:     0, Passed:    49, Skipped:     0, Total:    49, Duration:

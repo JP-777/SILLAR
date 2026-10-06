@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# C6 vía SQL directo, DESPUÉS: migración real de M07 y 99_drop con guarda. Base efímera propia.
+set -uo pipefail
+W=/home/JP777/sillar-b2b; C=sillar_b2b_db; DB="sillar_c6_despues_$(date +%s)"
+CS="$(grep '^ConnectionStrings__Default=' $W/.env | cut -d= -f2- | sed -E "s/Database=[^;]*/Database=$DB/")"
+API=$W/backend/Sillar.Api/Sillar.Api.csproj; cp $API /tmp/claude-1000/api-audit.bak
+q(){ docker exec -i $C psql -U postgres -d "$DB" -X -q "$@"; }
+fks(){ q -Atc "SELECT conname FROM pg_constraint c JOIN pg_namespace n ON n.oid=c.connamespace WHERE contype='f' AND n.nspname='b2b' AND confrelid::regclass::text NOT LIKE 'b2b.%' ORDER BY 1" | tr '\n' ' '; echo; }
+esq(){ q -Atc "SELECT string_agg(nspname, ' ' ORDER BY nspname) FROM pg_namespace WHERE nspname IN ('core','catalog','crm','b2b')"; }
+mig(){ (cd $W/backend && ConnectionStrings__Default="$CS" dotnet ef database update --project "$1" --startup-project Sillar.Api >/dev/null 2>&1) && echo "  migraciones de $1 aplicadas" || echo "  ERROR migrando $1"; }
+echo "# Árbol: $(git -C $W rev-parse HEAD) + cambios sin commitear de la rama (guardas y M07) · base $DB · inicio $(TZ=America/Lima date '+%F %T %z')"
+echo "# Nota: para aplicar la migración de M07 con dotnet ef, Sillar.Api referencia M07 SOLO durante este script; se restaura al salir."
+sed -i 's#    <ProjectReference Include="..\\Sillar.Modules.Cms\\Sillar.Modules.Cms.csproj" />#&\n    <ProjectReference Include="..\\Sillar.Modules.B2B\\Sillar.Modules.B2B.csproj" />#' $API
+docker exec $C psql -U postgres -q -c "CREATE DATABASE \"$DB\"" || exit 1
+trap 'cp /tmp/claude-1000/api-audit.bak '$API'; docker exec '$C' psql -U postgres -q -c "DROP DATABASE IF EXISTS \"'$DB'\" WITH (FORCE)"; echo "# Base efímera '$DB' eliminada; Sillar.Api.csproj restaurado"' EXIT
+echo "## 1 · Instalar CORE, M01, M04 y M07"; for p in Sillar.Core Sillar.Modules.Catalog Sillar.Modules.Crm Sillar.Modules.B2B; do mig $p; done
+echo "FK duras de b2b: $(fks)"
+for m in catalog crm; do
+  echo "## catalog|crm → $m/99_drop.sql con ON_ERROR_STOP=1"
+  docker exec -i $C psql -U postgres -d "$DB" -X -v ON_ERROR_STOP=1 -f /scripts/modules/$m/99_drop.sql 2>&1 | sed 's/^/  /'; echo "  rc=${PIPESTATUS[0]} · schemas: $(esq) · FK de b2b: $(fks)"
+  echo "## $m/99_drop.sql SIN ON_ERROR_STOP (psql sigue tras un error)"
+  docker exec -i $C psql -U postgres -d "$DB" -X -f /scripts/modules/$m/99_drop.sql 2>&1 | sed 's/^/  /'; echo "  rc=${PIPESTATUS[0]} · schemas: $(esq) · FK de b2b: $(fks)"
+done
+echo "## LÍMITE · DROP SCHEMA catalog CASCADE escrito a mano, fuera de los scripts"
+q -c "DROP SCHEMA catalog CASCADE" 2>&1 | sed 's/^/  /'; echo "  schemas: $(esq) · FK de b2b: $(fks)"
+echo "## Retorno · reinstalar M01: ¿vuelven las FK de M07?"; mig Sillar.Modules.Catalog; echo "  FK de b2b: $(fks)"
+echo "## Orden correcto · b2b/99_drop.sql, después catalog y crm"
+for m in b2b catalog crm; do docker exec -i $C psql -U postgres -d "$DB" -X -v ON_ERROR_STOP=1 -f /scripts/modules/$m/99_drop.sql 2>&1 | grep -v 'drop cascades' | sed 's/^/  /'; echo "  $m rc=${PIPESTATUS[0]} · schemas: $(esq)"; done
+echo "# Fin $(TZ=America/Lima date '+%F %T %z')"

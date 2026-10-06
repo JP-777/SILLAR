@@ -1,0 +1,7 @@
+# Sabotaje de los selectores · base eb722df + cambios sin commitear · 2026-09-30 13:52:23 -0500
+[T1 productos sin filtrar inactivos] Failed!  - Failed:     1, Passed:     6, Skipped:     0, Total:     7, D
+[T2 sin comprobar el texto vacío] Failed!  - Failed:     3, Passed:     4, Skipped:     0, Total:     7, D
+[T3 el DTO expone el código interno de M01] Failed!  - Failed:     1, Passed:     6, Skipped:     0, Total:     7, D
+[restaurado] Passed!  - Failed:     0, Passed:     7, Skipped:     0, Total:     7, D
+
+# Nota: el registro fue normalizado para almacenamiento en Git (sin espacios al final de línea) sin alterar los resultados observados.

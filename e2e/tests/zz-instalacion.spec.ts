@@ -183,15 +183,22 @@ test('El schema catalog se elimina sin llevarse nada de core, y M03 vuelve igual
   expect(Number(usuariosAntes), 'la base de prueba debería tener usuarios').toBeGreaterThan(0);
 
   // =======================================================================
-  // M03 antes de la cirugía
+  // DOS dependientes duros de M01, y los dos tienen que salir primero
   //
-  // **M03 depende duro de M01, y eso cambia lo que esta prueba tiene que
-  // hacer.** `catalog/99_drop.sql` lleva una guarda que se niega mientras otro
-  // módulo instalado dependa de él de forma dura, y aquí hay uno: `sales`, que
-  // la instalación creó porque M03 está en el binario. Así que M03 se retira
-  // primero, por su propio mecanismo, y vuelve con el mismo `migrate()` +
-  // `seed()` de abajo.
+  // `catalog/99_drop.sql` lleva una guarda que se niega mientras otro módulo
+  // instalado dependa de él de forma dura, y en este árbol hay **dos**: `sales`
+  // (M03) y `b2b` (M07). Los dos están en el binario, así que la instalación los
+  // crea, y los dos declaran claves foráneas hacia `catalog`.
+  //
+  // Se retiran los dos por su propio mecanismo y vuelven con el mismo
+  // `migrate()` + `seed()` de abajo. **El rechazo de la guarda con cualquiera de
+  // ellos presente es el comportamiento correcto, no un fallo.**
+  //
+  // El orden entre `b2b` y `sales` es libre: ninguno declara claves foráneas
+  // hacia el otro —la dependencia de M03 sobre M07 es **blanda**, y una blanda
+  // no lleva FK—. Lo que no es libre es que los dos vayan antes de `catalog`.
   // =======================================================================
+
   const salesAntes = await estadoDeSales();
 
   // **La preparación se comprueba, y es la guarda que sostiene toda la
@@ -219,6 +226,21 @@ test('El schema catalog se elimina sin llevarse nada de core, y M03 vuelve igual
   expect(
     (await estadoDeSales()).schema,
     'sales sigue ahí después de soltarlo: la guarda de catalog se va a negar',
+  ).toBe('0');
+
+
+  // M07 también. Se comprueba que está antes de soltarlo: si no estuviera, el
+  // drop sería un no-op y la prueba seguiría como si lo hubiera retirado.
+  expect(
+    await psql("SELECT count(*) FROM information_schema.schemata WHERE schema_name = 'b2b'"),
+    'la instalación del arnés debería haber creado el schema b2b: M07 está en el binario',
+  ).toBe('1');
+
+  await psqlArchivo('/scripts/modules/b2b/99_drop.sql');
+
+  expect(
+    await psql("SELECT count(*) FROM information_schema.schemata WHERE schema_name = 'b2b'"),
+    'b2b sigue ahí después de soltarlo: la guarda de catalog se va a negar',
   ).toBe('0');
 
   await psqlArchivo('/scripts/modules/catalog/99_drop.sql');
@@ -249,9 +271,12 @@ test('El schema catalog se elimina sin llevarse nada de core, y M03 vuelve igual
   await seed();
 
   const vuelta = await psql(
-    "SELECT count(*) FROM information_schema.schemata WHERE schema_name = 'catalog'",
+    "SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('catalog', 'sales', 'b2b')",
   );
-  expect(vuelta.trim(), 'el schema catalog no se pudo volver a crear').toBe('1');
+  expect(
+    vuelta.trim(),
+    'no se pudieron volver a crear los tres schemas que esta prueba suelta',
+  ).toBe('3');
 
   // =======================================================================
   // 5 · Y M03 vuelve **equivalente**, no «vuelve»

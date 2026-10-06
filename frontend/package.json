@@ -15,7 +15,8 @@
     "typecheck": "tsc --build --force",
     "test:frontend-hygiene": "node --test tests/frontendHygiene.test.mjs",
     "test:fronteras": "node scripts/fronteras-frontend.mjs && node --test tests/fronterasFrontend.test.mjs",
-    "test:services": "node --test tests/services.test.mjs"
+    "test:services": "node --test tests/services.test.mjs",
+    "test:b2b": "node --test tests/b2bModulo.test.mjs"
   },
   "dependencies": {
     "react": "^19.2.0",

@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+  <!--
+    Las pruebas de instalación necesitan instalar de verdad lo que M07 exige:
+    CORE, M01 y M04. Por eso este proyecto —no el módulo— referencia sus
+    módulos: solo para llamar a sus migraciones, igual que Sillar.Core.Tests.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Modules.B2B\Sillar.Modules.B2B.csproj" />
+    <ProjectReference Include="..\Sillar.Core\Sillar.Core.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Catalog\Sillar.Modules.Catalog.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Crm\Sillar.Modules.Crm.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

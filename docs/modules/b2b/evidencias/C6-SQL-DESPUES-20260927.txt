@@ -1,0 +1,49 @@
+# Árbol: 49dd7c8b619f868b496e2e40ee6acaca08f36c5a + cambios sin commitear de la rama (guardas y M07) · base sillar_c6_despues_1790533780 · inicio 2026-09-27 13:29:40 -0500
+# Nota: para aplicar la migración de M07 con dotnet ef, Sillar.Api referencia M07 SOLO durante este script; se restaura al salir.
+## 1 · Instalar CORE, M01, M04 y M07
+  migraciones de Sillar.Core aplicadas
+  migraciones de Sillar.Modules.Catalog aplicadas
+  migraciones de Sillar.Modules.Crm aplicadas
+  migraciones de Sillar.Modules.B2B aplicadas
+FK duras de b2b: fk_institution_requests_customer fk_quote_lines_item fk_quotes_customer fk_special_order_leads_customer fk_special_order_leads_product 
+## catalog|crm → catalog/99_drop.sql con ON_ERROR_STOP=1
+  psql:/scripts/modules/catalog/99_drop.sql:97: ERROR:  No se desinstala M01 Catálogo: hay módulos instalados que dependen de él de forma dura (con claves foráneas hacia catalog: b2b). Desinstala antes esos módulos con su 99_drop.sql y repite. No se ha borrado nada.
+  CONTEXT:  PL/pgSQL function inline_code_block line 30 at RAISE
+  rc=3 · schemas: b2b catalog core crm · FK de b2b: fk_institution_requests_customer fk_quote_lines_item fk_quotes_customer fk_special_order_leads_customer fk_special_order_leads_product 
+## catalog/99_drop.sql SIN ON_ERROR_STOP (psql sigue tras un error)
+  psql:/scripts/modules/catalog/99_drop.sql:97: ERROR:  No se desinstala M01 Catálogo: hay módulos instalados que dependen de él de forma dura (con claves foráneas hacia catalog: b2b). Desinstala antes esos módulos con su 99_drop.sql y repite. No se ha borrado nada.
+  CONTEXT:  PL/pgSQL function inline_code_block line 30 at RAISE
+  rc=0 · schemas: b2b catalog core crm · FK de b2b: fk_institution_requests_customer fk_quote_lines_item fk_quotes_customer fk_special_order_leads_customer fk_special_order_leads_product 
+## catalog|crm → crm/99_drop.sql con ON_ERROR_STOP=1
+  psql:/scripts/modules/crm/99_drop.sql:84: ERROR:  No se desinstala M04 Clientes: hay módulos instalados que dependen de él de forma dura (con claves foráneas hacia crm: b2b). Desinstala antes esos módulos con su 99_drop.sql y repite. No se ha borrado nada.
+  CONTEXT:  PL/pgSQL function inline_code_block line 30 at RAISE
+  rc=3 · schemas: b2b catalog core crm · FK de b2b: fk_institution_requests_customer fk_quote_lines_item fk_quotes_customer fk_special_order_leads_customer fk_special_order_leads_product 
+## crm/99_drop.sql SIN ON_ERROR_STOP (psql sigue tras un error)
+  psql:/scripts/modules/crm/99_drop.sql:84: ERROR:  No se desinstala M04 Clientes: hay módulos instalados que dependen de él de forma dura (con claves foráneas hacia crm: b2b). Desinstala antes esos módulos con su 99_drop.sql y repite. No se ha borrado nada.
+  CONTEXT:  PL/pgSQL function inline_code_block line 30 at RAISE
+  rc=0 · schemas: b2b catalog core crm · FK de b2b: fk_institution_requests_customer fk_quote_lines_item fk_quotes_customer fk_special_order_leads_customer fk_special_order_leads_product 
+## LÍMITE · DROP SCHEMA catalog CASCADE escrito a mano, fuera de los scripts
+  NOTICE:  drop cascades to 10 other objects
+  DETAIL:  drop cascades to table catalog.__migrations
+  drop cascades to table catalog.brands
+  drop cascades to table catalog.categories
+  drop cascades to table catalog.products
+  drop cascades to constraint fk_special_order_leads_product on table b2b.special_order_leads
+  drop cascades to table catalog.product_categories
+  drop cascades to table catalog.product_images
+  drop cascades to table catalog.product_items
+  drop cascades to constraint fk_quote_lines_item on table b2b.quote_lines
+  drop cascades to function catalog.set_updated_at()
+  schemas: b2b core crm · FK de b2b: fk_institution_requests_customer fk_quotes_customer fk_special_order_leads_customer 
+## Retorno · reinstalar M01: ¿vuelven las FK de M07?
+  migraciones de Sillar.Modules.Catalog aplicadas
+  FK de b2b: fk_institution_requests_customer fk_quotes_customer fk_special_order_leads_customer 
+## Orden correcto · b2b/99_drop.sql, después catalog y crm
+  DO
+  b2b rc=0 · schemas: catalog core crm
+  DO
+  catalog rc=0 · schemas: core crm
+  DO
+  crm rc=0 · schemas: core
+# Fin 2026-09-27 13:32:05 -0500
+# Base efímera sillar_c6_despues_1790533780 eliminada; Sillar.Api.csproj restaurado
