@@ -1,0 +1,16 @@
+sillar_verify_1791307197943_1704228
+schemas: b2b,catalog,cms,core,crm,sales,services
+b2b.__migrations: 20261004225318_B2bInitial 10.0.11
+catalog.__migrations: 20260816073647_CatalogInitial 10.0.11
+cms.__migrations: 20260820050000_CmsInitial 10.0.11
+core.__migrations: 20260816073536_CoreInitial 10.0.11
+core.__migrations: 20260828200857_CoreEmailSettings 10.0.11
+core.__migrations: 20260829011000_CoreSmtpSettings 10.0.11
+core.__migrations: 20261003203701_CoreHomeNodeYAutorDeMedios 10.0.11
+crm.__migrations: 20260824190200_CrmInitial 10.0.11
+crm.__migrations: 20260922115958_CrmCustomersEmailTrimAuthority 10.0.11
+sales.__migrations: 20260930185029_SalesInitial 10.0.11
+services.__migrations: 20260928090000_ServicesInitial 10.0.11
+tablas b2b: __migrations,institution_requests,quote_lines,quote_number_series,quotes,special_order_leads
+FK cruzadas b2b: fk_institution_requests_customer->crm.customers, fk_quote_lines_item->catalog.product_items, fk_quotes_customer->crm.customers, fk_special_order_leads_customer->crm.customers, fk_special_order_leads_product->catalog.products
+2026-10-06 12:22:33 -0500

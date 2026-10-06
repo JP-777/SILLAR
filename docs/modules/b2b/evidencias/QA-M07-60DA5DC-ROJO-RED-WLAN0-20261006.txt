@@ -1,0 +1,51 @@
+Oct 06 12:21:24 archlinux NetworkManager[524]: <info>  [1791307284.8182] dhcp4 (wlan0): state changed new lease, address=10.7.122.206
+Oct 06 12:31:24 archlinux NetworkManager[524]: <info>  [1791307884.6624] dhcp4 (wlan0): state changed new lease, address=10.7.122.206
+Oct 06 12:42:25 archlinux NetworkManager[524]: <info>  [1791308545.0507] dhcp4 (wlan0): state changed new lease, address=10.7.122.206
+Oct 06 12:52:25 archlinux NetworkManager[524]: <info>  [1791309145.0430] dhcp4 (wlan0): state changed new lease, address=10.7.122.206
+Oct 06 13:02:25 archlinux NetworkManager[524]: <info>  [1791309745.1512] dhcp4 (wlan0): state changed new lease, address=10.7.122.206
+Oct 06 13:10:21 archlinux NetworkManager[524]: <info>  [1791310221.4901] dhcp4 (wlan0): state changed no lease
+Oct 06 13:10:21 archlinux kernel: wlan0: associated
+Oct 06 13:10:21 archlinux wpa_supplicant[529]: wlan0: CTRL-EVENT-CONNECTED - Connection to 34:20:e3:05:43:1c completed [id=0 id_str=]
+Oct 06 13:10:21 archlinux NetworkManager[524]: <info>  [1791310221.6080] dhcp4 (wlan0): state changed no lease
+Oct 06 13:10:23 archlinux NetworkManager[524]: <info>  [1791310223.3100] dhcp4 (wlan0): state changed new lease, address=10.7.122.206, acd pending
+Oct 06 13:10:23 archlinux NetworkManager[524]: <info>  [1791310223.3103] dhcp4 (wlan0): state changed new lease, address=10.7.122.206
+Oct 06 13:10:49 archlinux NetworkManager[524]: <info>  [1791310249.5816] dhcp4 (wlan0): state changed no lease
+Oct 06 13:11:03 archlinux kernel: wlan0: associated
+Oct 06 13:11:03 archlinux wpa_supplicant[529]: wlan0: CTRL-EVENT-CONNECTED - Connection to 34:20:e3:05:43:1c completed [id=0 id_str=]
+Oct 06 13:11:03 archlinux NetworkManager[524]: <info>  [1791310263.7050] dhcp4 (wlan0): state changed no lease
+Oct 06 13:11:18 archlinux NetworkManager[524]: <info>  [1791310278.8621] dhcp4 (wlan0): state changed no lease
+Oct 06 13:11:28 archlinux NetworkManager[524]: <info>  [1791310288.3013] dhcp4 (wlan0): state changed new lease, address=10.7.122.206, acd pending
+Oct 06 13:11:28 archlinux NetworkManager[524]: <info>  [1791310288.4182] dhcp4 (wlan0): state changed new lease, address=10.7.122.206
+Oct 06 13:11:41 archlinux NetworkManager[524]: <info>  [1791310301.0252] dhcp4 (wlan0): state changed no lease
+Oct 06 13:11:41 archlinux kernel: wlan0: associated
+Oct 06 13:11:41 archlinux wpa_supplicant[529]: wlan0: CTRL-EVENT-CONNECTED - Connection to c8:03:f5:2e:6e:bc completed [id=0 id_str=]
+Oct 06 13:11:41 archlinux NetworkManager[524]: <info>  [1791310301.1241] dhcp4 (wlan0): state changed no lease
+Oct 06 13:11:44 archlinux NetworkManager[524]: <info>  [1791310304.9573] dhcp4 (wlan0): state changed new lease, address=10.7.122.206, acd pending
+Oct 06 13:11:44 archlinux NetworkManager[524]: <info>  [1791310304.9576] dhcp4 (wlan0): state changed new lease, address=10.7.122.206
+Oct 06 13:12:12 archlinux NetworkManager[524]: <info>  [1791310332.0657] dhcp4 (wlan0): state changed no lease
+Oct 06 13:12:17 archlinux kernel: wlan0: associated
+Oct 06 13:12:17 archlinux wpa_supplicant[529]: wlan0: CTRL-EVENT-CONNECTED - Connection to c8:03:f5:2e:6e:bc completed [id=0 id_str=]
+Oct 06 13:12:17 archlinux NetworkManager[524]: <info>  [1791310337.1692] dhcp4 (wlan0): state changed no lease
+Oct 06 13:12:17 archlinux NetworkManager[524]: <info>  [1791310337.4176] dhcp4 (wlan0): state changed new lease, address=10.7.122.206, acd pending
+Oct 06 13:12:17 archlinux NetworkManager[524]: <info>  [1791310337.4182] dhcp4 (wlan0): state changed new lease, address=10.7.122.206
+Oct 06 13:12:35 archlinux NetworkManager[524]: <info>  [1791310355.5491] dhcp4 (wlan0): state changed no lease
+Oct 06 13:12:35 archlinux kernel: wlan0: associated
+Oct 06 13:12:35 archlinux wpa_supplicant[529]: wlan0: CTRL-EVENT-CONNECTED - Connection to 34:20:e3:05:43:1c completed [id=0 id_str=]
+Oct 06 13:12:35 archlinux NetworkManager[524]: <info>  [1791310355.6741] dhcp4 (wlan0): state changed no lease
+Oct 06 13:12:38 archlinux NetworkManager[524]: <info>  [1791310358.0890] dhcp4 (wlan0): state changed new lease, address=10.7.122.206, acd pending
+Oct 06 13:12:38 archlinux NetworkManager[524]: <info>  [1791310358.0894] dhcp4 (wlan0): state changed new lease, address=10.7.122.206
+Oct 06 13:12:51 archlinux kernel: wlan0: deauthenticated from 34:20:e3:05:43:1c (Reason: 6=CLASS2_FRAME_FROM_NONAUTH_STA)
+Oct 06 13:12:51 archlinux NetworkManager[524]: <info>  [1791310371.2982] dhcp4 (wlan0): state changed no lease
+Oct 06 13:12:51 archlinux wpa_supplicant[529]: wlan0: CTRL-EVENT-DISCONNECTED bssid=34:20:e3:05:43:1c reason=6
+Oct 06 13:12:53 archlinux kernel: wlan0: associated
+Oct 06 13:12:53 archlinux wpa_supplicant[529]: wlan0: CTRL-EVENT-CONNECTED - Connection to c8:03:f5:2e:6e:b8 completed [id=0 id_str=]
+Oct 06 13:12:53 archlinux NetworkManager[524]: <info>  [1791310373.4431] dhcp4 (wlan0): state changed no lease
+Oct 06 13:12:53 archlinux NetworkManager[524]: <info>  [1791310373.4574] dhcp4 (wlan0): state changed new lease, address=10.7.122.206, acd pending
+Oct 06 13:12:53 archlinux NetworkManager[524]: <info>  [1791310373.4577] dhcp4 (wlan0): state changed new lease, address=10.7.122.206
+Oct 06 13:14:25 archlinux NetworkManager[524]: <info>  [1791310465.5950] dhcp4 (wlan0): state changed no lease
+Oct 06 13:14:25 archlinux kernel: wlan0: associated
+Oct 06 13:14:25 archlinux wpa_supplicant[529]: wlan0: CTRL-EVENT-CONNECTED - Connection to c8:03:f5:2e:6e:bc completed [id=0 id_str=]
+Oct 06 13:14:25 archlinux NetworkManager[524]: <info>  [1791310465.7001] dhcp4 (wlan0): state changed no lease
+Oct 06 13:14:25 archlinux NetworkManager[524]: <info>  [1791310465.7912] dhcp4 (wlan0): state changed new lease, address=10.7.122.206, acd pending
+Oct 06 13:14:25 archlinux NetworkManager[524]: <info>  [1791310465.7916] dhcp4 (wlan0): state changed new lease, address=10.7.122.206
+Oct 06 13:24:25 archlinux NetworkManager[524]: <info>  [1791311065.7348] dhcp4 (wlan0): state changed new lease, address=10.7.122.206

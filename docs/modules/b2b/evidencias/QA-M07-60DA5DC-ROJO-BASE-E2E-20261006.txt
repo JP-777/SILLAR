@@ -1,0 +1,21 @@
+# Base PostgreSQL de la pila e2e durante la etapa 6 de la puerta · 2026-10-06 12:27:39 -0500
+# SHA: 60da5dc39d83ea7653ff93789aa86e9b2e1275c0
+## Contenedores de la pila
+sillar_qa_m04_e2e_api · sillar_qa_m04_e2e-api · Up Less than a second · 0.0.0.0:56061->8080/tcp, [::]:56061->8080/tcp
+sillar_qa_m04_e2e_db · postgres:16 · Up 2 minutes (healthy) · 0.0.0.0:55961->5432/tcp, [::]:55961->5432/tcp
+## Cadena del contenedor API, sin contraseña
+Host=db;Port=5432;Database=sillar_qa_m04_e2e;Username=postgres;Password=<oculta>
+## Bases del servidor e2e
+postgres
+sillar_qa_m04_e2e
+## Schemas y migraciones de la base e2e
+b2b,catalog,cms,core,crm,sales,services
+sales: 20260930185029_SalesInitial
+services: 20260928090000_ServicesInitial
+b2b: 20261004225318_B2bInitial
+ERROR:  column "is_active" does not exist
+LINE 1: ...ode,',' order by code),'') from core.modules where is_active
+                                                              ^
+## Volumen
+volume sillar_qa_m04_e2e_db_data -> /var/lib/postgresql/data
+bind  -> /scripts

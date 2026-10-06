@@ -1,0 +1,421 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: catalogo.spec.ts >> Con M01 desactivado no queda entrada de menú, ni ruta viva, ni hueco en el inicio
+- Location: tests/catalogo.spec.ts:209:1
+
+# Error details
+
+```
+Test timeout of 180000ms exceeded.
+```
+
+```
+Error: locator.click: Test timeout of 180000ms exceeded.
+Call log:
+  - waiting for locator('#modulo-catalog').getByRole('switch')
+    - locator resolved to <button disabled type="button" role="switch" class="mod__switch" aria-checked="true" aria-label="Desactivar Catálogo de Productos"></button>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is not enabled
+    - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is not enabled
+    - retrying click action
+      - waiting 100ms
+    372 × waiting for element to be visible, enabled and stable
+        - element is not enabled
+      - retrying click action
+        - waiting 500ms
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=f1e2]:
+  - link "Saltar al contenido" [ref=f1e3] [cursor=pointer]:
+    - /url: "#contenido"
+  - generic [ref=f1e4]:
+    - complementary [ref=f1e5]:
+      - navigation "Secciones del panel" [ref=f1e6]:
+        - link "Inicio" [ref=f1e7] [cursor=pointer]:
+          - /url: /admin
+        - generic [ref=f1e8]:
+          - paragraph [ref=f1e9]: Sistema
+          - link "Módulos" [ref=f1e10] [cursor=pointer]:
+            - /url: /admin/modulos
+          - link "Configuración" [ref=f1e11] [cursor=pointer]:
+            - /url: /admin/configuracion
+          - link "Archivos" [ref=f1e12] [cursor=pointer]:
+            - /url: /admin/archivos
+          - link "Usuarios" [ref=f1e13] [cursor=pointer]:
+            - /url: /admin/usuarios
+          - link "Auditoría" [ref=f1e14] [cursor=pointer]:
+            - /url: /admin/auditoria
+        - generic [ref=f1e15]:
+          - paragraph [ref=f1e16]: Catálogo
+          - link "Productos" [ref=f1e17] [cursor=pointer]:
+            - /url: /admin/catalogo/productos
+          - link "Categorías" [ref=f1e18] [cursor=pointer]:
+            - /url: /admin/catalogo/categorias
+          - link "Marcas" [ref=f1e19] [cursor=pointer]:
+            - /url: /admin/catalogo/marcas
+        - generic [ref=f1e20]:
+          - paragraph [ref=f1e21]: Contenido
+          - link "Banners" [ref=f1e22] [cursor=pointer]:
+            - /url: /admin/contenido/banners
+          - link "Promociones" [ref=f1e23] [cursor=pointer]:
+            - /url: /admin/contenido/promociones
+          - link "Productos destacados" [ref=f1e24] [cursor=pointer]:
+            - /url: /admin/contenido/productos-destacados
+          - link "Trabajos destacados" [ref=f1e25] [cursor=pointer]:
+            - /url: /admin/contenido/trabajos-destacados
+          - link "Redes sociales" [ref=f1e26] [cursor=pointer]:
+            - /url: /admin/contenido/redes-sociales
+        - generic [ref=f1e27]:
+          - paragraph [ref=f1e28]: Clientes
+          - link "Clientes" [ref=f1e29] [cursor=pointer]:
+            - /url: /admin/clientes
+          - link "Mensajes" [ref=f1e30] [cursor=pointer]:
+            - /url: /admin/mensajes
+        - generic [ref=f1e31]:
+          - paragraph [ref=f1e32]: Solicitudes
+          - link "Personalizadas" [ref=f1e33] [cursor=pointer]:
+            - /url: /admin/solicitudes/personalizadas
+          - link "Por volumen" [ref=f1e34] [cursor=pointer]:
+            - /url: /admin/solicitudes/institucionales
+          - link "Cotizaciones" [ref=f1e35] [cursor=pointer]:
+            - /url: /admin/solicitudes/cotizaciones
+      - generic [ref=f1e36]:
+        - generic [ref=f1e37]: SILLAR
+        - generic [ref=f1e38]: v1.0.0
+    - banner [ref=f1e39]:
+      - generic [ref=f1e40]: Arnés e2e
+      - generic [ref=f1e41]:
+        - generic [ref=f1e42]:
+          - generic [ref=f1e43]: Persona Verificadora
+          - generic [ref=f1e44]: Administrador principal
+        - button "Cambiar a tema oscuro" [ref=f1e45] [cursor=pointer]: Tema oscuro
+        - link "Mi contraseña" [ref=f1e46] [cursor=pointer]:
+          - /url: /admin/mi-contrasena
+        - button "Cerrar sesión" [ref=f1e47] [cursor=pointer]
+    - main [ref=f1e48]:
+      - generic [ref=f1e49]:
+        - generic [ref=f1e50]:
+          - heading "Módulos" [level=1] [ref=f1e52]
+          - paragraph [ref=f1e53]: Los bloques que componen tu sistema. Activar o desactivar uno reinicia el servicio unos segundos.
+        - generic [ref=f1e54]:
+          - article [ref=f1e55]:
+            - generic [ref=f1e57]:
+              - generic [ref=f1e58]: core
+              - heading "Núcleo de plataforma" [level=2] [ref=f1e59]
+            - paragraph [ref=f1e60]: Identidad de la instalación, catálogo de módulos y su activación, usuarios administradores, autenticación, configuración del sitio, gestión de archivos y auditoría.
+            - generic [ref=f1e61]:
+              - generic [ref=f1e62]:
+                - text: Lo necesita
+                - button "Solicitudes B2B y Especiales" [ref=f1e64] [cursor=pointer]
+                - generic [ref=f1e65]:
+                  - text: ","
+                  - button "Catálogo de Productos" [ref=f1e66] [cursor=pointer]
+                - generic [ref=f1e67]:
+                  - text: ","
+                  - button "Contenido Web" [ref=f1e68] [cursor=pointer]
+                - generic [ref=f1e69]:
+                  - text: ","
+                  - button "Clientes y Contacto" [ref=f1e70] [cursor=pointer]
+                - generic [ref=f1e71]:
+                  - text: ","
+                  - button "Catálogo de Productos (demostración)" [ref=f1e72] [cursor=pointer]
+                - generic [ref=f1e73]:
+                  - text: ","
+                  - button "Ventas Online (demostración)" [ref=f1e74] [cursor=pointer]
+              - generic [ref=f1e75]: Núcleo
+          - article [ref=f1e76]:
+            - generic [ref=f1e77]:
+              - generic [ref=f1e78]:
+                - generic [ref=f1e79]: catalog
+                - heading "Catálogo de Productos" [level=2] [ref=f1e80]
+              - switch "Desactivar Catálogo de Productos" [checked] [disabled] [ref=f1e81]
+            - paragraph [ref=f1e82]: "Categorías, productos, variantes, marcas e imágenes. Es la base de todo lo comercial: no se vende ni se cuenta lo que no está catalogado."
+            - generic [ref=f1e83]:
+              - generic [ref=f1e84]:
+                - text: Lo necesita
+                - button "Solicitudes B2B y Especiales" [ref=f1e86] [cursor=pointer]
+              - generic [ref=f1e87]: Activo
+          - article [ref=f1e88]:
+            - generic [ref=f1e89]:
+              - generic [ref=f1e90]:
+                - generic [ref=f1e91]: demo_catalog
+                - heading "Catálogo de Productos (demostración)" [level=2] [ref=f1e92]
+              - switch "Desactivar Catálogo de Productos (demostración)" [checked] [disabled] [ref=f1e93]
+            - paragraph [ref=f1e94]: Categorías, productos, imágenes y búsqueda. Es la base de casi todo lo comercial.
+            - generic [ref=f1e95]:
+              - generic [ref=f1e96]:
+                - text: Lo necesita
+                - button "Ventas Online (demostración)" [ref=f1e98] [cursor=pointer]
+              - generic [ref=f1e99]: Activo
+          - article [ref=f1e100]:
+            - generic [ref=f1e101]:
+              - generic [ref=f1e102]:
+                - generic [ref=f1e103]: cms
+                - heading "Contenido Web" [level=2] [ref=f1e104]
+              - switch "Desactivar Contenido Web" [checked] [ref=f1e105] [cursor=pointer]
+            - paragraph [ref=f1e106]: Banners, promociones, productos destacados, trabajos y redes sociales para una web administrable.
+            - generic [ref=f1e107]:
+              - generic [ref=f1e108]: usa Catálogo de Productos
+              - generic [ref=f1e109]: Activo
+          - article [ref=f1e110]:
+            - generic [ref=f1e111]:
+              - generic [ref=f1e112]:
+                - generic [ref=f1e113]: demo_crm
+                - heading "Clientes y Contacto (demostración)" [level=2] [ref=f1e114]
+              - switch "Activar Clientes y Contacto (demostración)" [ref=f1e115] [cursor=pointer]
+            - paragraph [ref=f1e116]: Registro de clientes y mensajes del formulario de contacto. Se vende solo.
+            - generic [ref=f1e117]:
+              - generic [ref=f1e118]: Sin dependencias
+              - generic [ref=f1e119]: Inactivo
+          - article [ref=f1e120]:
+            - generic [ref=f1e121]:
+              - generic [ref=f1e122]:
+                - generic [ref=f1e123]: demo_sales
+                - heading "Ventas Online (demostración)" [level=2] [ref=f1e124]
+              - switch "Desactivar Ventas Online (demostración)" [checked] [ref=f1e125] [cursor=pointer]
+            - paragraph [ref=f1e126]: Carrito, pedidos y confirmación. No se vende lo que no está catalogado.
+            - generic [ref=f1e127]:
+              - generic [ref=f1e128]: Requiere Catálogo de Productos (demostración) · usa Clientes y Contacto (demostración)
+              - generic [ref=f1e129]: Activo
+          - article [ref=f1e130]:
+            - generic [ref=f1e131]:
+              - generic [ref=f1e132]:
+                - generic [ref=f1e133]: sales
+                - heading "Ventas Online" [level=2] [ref=f1e134]
+              - switch "Activar Ventas Online" [ref=f1e135] [cursor=pointer]
+            - paragraph [ref=f1e136]: "Carrito, pedidos y pago manual. Recojo en tienda: no hay entrega a domicilio."
+            - generic [ref=f1e137]:
+              - generic [ref=f1e138]: Requiere Catálogo de Productos, Clientes y Contacto · usa Solicitudes B2B y Especiales
+              - generic [ref=f1e139]: Inactivo
+          - article [ref=f1e140]:
+            - generic [ref=f1e141]:
+              - generic [ref=f1e142]:
+                - generic [ref=f1e143]: crm
+                - heading "Clientes y Contacto" [level=2] [ref=f1e144]
+              - switch "Desactivar Clientes y Contacto" [checked] [disabled] [ref=f1e145]
+            - paragraph [ref=f1e146]: Clientes, cuentas de tienda, direcciones y contacto. Es dueño de la identidad de la clientela.
+            - generic [ref=f1e147]:
+              - generic [ref=f1e148]:
+                - text: Lo necesita
+                - button "Solicitudes B2B y Especiales" [ref=f1e150] [cursor=pointer]
+              - generic [ref=f1e151]: Activo
+          - article [ref=f1e152]:
+            - generic [ref=f1e153]:
+              - generic [ref=f1e154]:
+                - generic [ref=f1e155]: demo_services
+                - heading "Servicios — Vitrina (demostración)" [level=2] [ref=f1e156]
+              - switch "Activar Servicios — Vitrina (demostración)" [ref=f1e157] [cursor=pointer]
+            - paragraph [ref=f1e158]: Catálogo de servicios permanentes para mostrarlos en la web.
+            - generic [ref=f1e159]:
+              - generic [ref=f1e160]: Sin dependencias
+              - generic [ref=f1e161]: Inactivo
+          - article [ref=f1e162]:
+            - generic [ref=f1e163]:
+              - generic [ref=f1e164]:
+                - generic [ref=f1e165]: demo_service_orders
+                - heading "Servicios — Órdenes (demostración)" [level=2] [ref=f1e166]
+              - switch "Activar Servicios — Órdenes (demostración)" [disabled] [ref=f1e167]
+            - paragraph [ref=f1e168]: "Registro de encargos: qué se pidió, quién, cuándo y a qué precio."
+            - generic [ref=f1e169]:
+              - generic [ref=f1e170]:
+                - text: Falta
+                - button "Servicios — Vitrina (demostración)" [ref=f1e172] [cursor=pointer]
+              - generic [ref=f1e173]: Bloqueado
+          - article [ref=f1e174]:
+            - generic [ref=f1e175]:
+              - generic [ref=f1e176]:
+                - generic [ref=f1e177]: services
+                - heading "Servicios — Vitrina" [level=2] [ref=f1e178]
+              - switch "Activar Servicios — Vitrina" [ref=f1e179] [cursor=pointer]
+            - paragraph [ref=f1e180]: Vitrina pública y administración editorial de servicios permanentes.
+            - generic [ref=f1e181]:
+              - generic [ref=f1e182]: Sin dependencias
+              - generic [ref=f1e183]: Inactivo
+          - article [ref=f1e184]:
+            - generic [ref=f1e185]:
+              - generic [ref=f1e186]:
+                - generic [ref=f1e187]: demo_tracking
+                - heading "Seguimiento de Servicios (demostración)" [level=2] [ref=f1e188]
+              - switch "Activar Seguimiento de Servicios (demostración)" [disabled] [ref=f1e189]
+            - paragraph [ref=f1e190]: Historial de estados de una orden y tablero de trabajo para el cliente.
+            - generic [ref=f1e191]:
+              - generic [ref=f1e192]:
+                - text: Falta
+                - button "Servicios — Órdenes (demostración)" [ref=f1e194] [cursor=pointer]
+              - generic [ref=f1e195]: Bloqueado
+          - article [ref=f1e196]:
+            - generic [ref=f1e197]:
+              - generic [ref=f1e198]:
+                - generic [ref=f1e199]: b2b
+                - heading "Solicitudes B2B y Especiales" [level=2] [ref=f1e200]
+              - switch "Desactivar Solicitudes B2B y Especiales" [checked] [ref=f1e201] [cursor=pointer]
+            - paragraph [ref=f1e202]: Encargos personalizados y pedidos por volumen, con bandeja de estados y cotizaciones.
+            - generic [ref=f1e203]:
+              - generic [ref=f1e204]: Requiere Catálogo de Productos, Clientes y Contacto
+              - generic [ref=f1e205]: Activo
+```
+
+# Test source
+
+```ts
+  125 |
+  126 |   await record('marcas-aviso-antes-de-dar-de-baja');
+  127 |
+  128 |   await dialogo.getByRole('button', { name: 'Dar de baja' }).click();
+  129 |
+  130 |   // Baja lógica: sigue en la lista, atenuada, no desaparecida. Desaparecerla
+  131 |   // haría creer que se borró.
+  132 |   await expect(stanford).toBeVisible();
+  133 |   await expect(stanford).toContainText('Oculta');
+  134 |   await expect(stanford).toHaveAttribute('data-dimmed', 'true');
+  135 |
+  136 |   await record('marcas-con-una-oculta');
+  137 | });
+  138 |
+  139 | test('El indicador de carga no parpadea en una respuesta rápida', async ({ page }) => {
+  140 |   await loginAsE2eAdmin(page);
+  141 |
+  142 |   // Respuesta deliberadamente lenta, pero por debajo del umbral: 300 ms.
+  143 |   await page.route('**/api/admin/catalog/brands', async (route) => {
+  144 |     if (route.request().method() !== 'GET') {
+  145 |       await route.continue();
+  146 |       return;
+  147 |     }
+  148 |
+  149 |     await new Promise((resolve) => setTimeout(resolve, 300));
+  150 |     await route.continue();
+  151 |   });
+  152 |
+  153 |   await page.goto(MARCAS);
+  154 |
+  155 |   // Se vigila **el indicador de la tabla**, no cualquier spinner: el arranque
+  156 |   // de la aplicación tiene el suyo mientras resuelve capacidades y sesión, y
+  157 |   // ese es legítimo — es una pantalla en blanco lo que evita.
+  158 |   const indicadorDeLaTabla = page.locator('.ui-table__state .ui-spinner');
+  159 |
+  160 |   // Durante los primeros 900 ms no debe aparecer: un indicador que entra y
+  161 |   // sale hace que una respuesta rápida se perciba como lenta.
+  162 |   const hasta = Date.now() + 900;
+  163 |   while (Date.now() < hasta) {
+  164 |     expect(
+  165 |       await indicadorDeLaTabla.count(),
+  166 |       'el indicador de la tabla apareció en una carga de 300 ms',
+  167 |     ).toBe(0);
+  168 |   }
+  169 |
+  170 |   // Y la pantalla acabó cargando de verdad, no quedó en blanco.
+  171 |   await expect(page.locator('.ui-table-wrap')).toBeVisible();
+  172 |   await expect(page.locator('.ui-table__state .ui-spinner')).toHaveCount(0);
+  173 |
+  174 |   await page.unroute('**/api/admin/catalog/brands');
+  175 | });
+  176 |
+  177 | test('El foco no se pierde y Escape cierra el panel sin guardar', async ({ page }) => {
+  178 |   await loginAsE2eAdmin(page);
+  179 |   await page.goto(MARCAS);
+  180 |
+  181 |   await expect(page.locator('main')).toBeVisible();
+  182 |
+  183 |   // Recorrido con teclado: en ningún salto el foco puede caer al body.
+  184 |   const enfocables = await page
+  185 |     .locator('main a[href], main button:not([disabled]), main input:not([disabled])')
+  186 |     .count();
+  187 |
+  188 |   for (let salto = 1; salto < Math.max(enfocables, 4); salto += 1) {
+  189 |     await page.keyboard.press('Tab');
+  190 |
+  191 |     const perdido = await page.evaluate(
+  192 |       () => !document.activeElement || document.activeElement === document.body,
+  193 |     );
+  194 |     expect(perdido, `tras ${salto} pulsaciones de Tab el foco se perdió`).toBe(false);
+  195 |   }
+  196 |
+  197 |   // Escape cierra el panel **sin guardar**: si guardara, «Vinifan» existiría.
+  198 |   await page.getByRole('button', { name: 'Nueva marca', exact: true }).click();
+  199 |   const panel = page.getByRole('dialog');
+  200 |   await expect(panel).toBeVisible();
+  201 |
+  202 |   await panel.getByLabel('Nombre').fill('Vinifan');
+  203 |   await page.keyboard.press('Escape');
+  204 |
+  205 |   await expect(panel).toBeHidden();
+  206 |   await expect(fila(page, 'Vinifan')).toHaveCount(0);
+  207 | });
+  208 |
+  209 | test('Con M01 desactivado no queda entrada de menú, ni ruta viva, ni hueco en el inicio', async ({
+  210 |   page,
+  211 | }) => {
+  212 |   test.setTimeout(180_000);
+  213 |
+  214 |   await loginAsE2eAdmin(page);
+  215 |
+  216 |   // Con M01 activo, la entrada está.
+  217 |   await page.goto('/admin');
+  218 |   await expect(page.getByRole('navigation')).toContainText('Marcas');
+  219 |
+  220 |   await page.goto('/admin/modulos');
+  221 |
+  222 |   // Desactivar reinicia el host de verdad: el sondeo de reconexión falla a
+  223 |   // propósito varias veces mientras el contenedor vuelve.
+  224 |   await duringExpectedOutage(page, async () => {
+> 225 |     await page.locator('#modulo-catalog').getByRole('switch').click();
+      |                                                               ^ Error: locator.click: Test timeout of 180000ms exceeded.
+  226 |     await page.getByRole('alertdialog').getByRole('button', { name: /^Desactivar/ }).click();
+  227 |
+  228 |     const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
+  229 |     await expect(overlay).toBeVisible();
+  230 |     await expect(overlay).toBeHidden({ timeout: 90_000 });
+  231 |   });
+  232 |
+  233 |   await expect(page.locator('#modulo-catalog')).toContainText('Inactivo');
+  234 |
+  235 |   // 1 · No hay entrada de menú. No aparece deshabilitada ni tachada: no está.
+  236 |   await page.goto('/admin');
+  237 |   await expect(page.getByRole('navigation')).not.toContainText('Marcas');
+  238 |
+  239 |   // 2 · La ruta no existe. Quien la escriba a mano no encuentra una pantalla
+  240 |   // rota, sino la redirección de `app/routes.tsx`.
+  241 |   await page.goto(MARCAS);
+  242 |   await expect(page).not.toHaveURL(new RegExp(`${MARCAS}$`));
+  243 |
+  244 |   // 3 · El inicio no queda con un hueco: la lista de módulos activos sale de
+  245 |   // /api/capabilities, así que catalog sencillamente ya no está.
+  246 |   //
+  247 |   // La insignia se busca por su texto exacto: «catalog» a secas es subcadena
+  248 |   // de «demo_catalog», que sí sigue activo, y buscarla suelta daría un falso
+  249 |   // positivo permanente.
+  250 |   await page.goto('/admin');
+  251 |   await expect(page.getByText('Módulos activos')).toBeVisible();
+  252 |   await expect(page.getByText(/^catalog\s/)).toHaveCount(0);
+  253 |   await expect(page.getByText(/^demo_catalog\s/)).toHaveCount(1);
+  254 |
+  255 |   // Se deja como se encontró: el arnés no puede dejar el entorno distinto
+  256 |   // para quien corra la siguiente prueba.
+  257 |   await page.goto('/admin/modulos');
+  258 |   await duringExpectedOutage(page, async () => {
+  259 |     await page.locator('#modulo-catalog').getByRole('switch').click();
+  260 |     await page.getByRole('alertdialog').getByRole('button', { name: /^Activar/ }).click();
+  261 |
+  262 |     const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
+  263 |     await expect(overlay).toBeVisible();
+  264 |     await expect(overlay).toBeHidden({ timeout: 90_000 });
+  265 |   });
+  266 |
+  267 |   await expect(page.locator('#modulo-catalog')).toContainText('Activo');
+  268 | });
+  269 |
+```

@@ -1,0 +1,8 @@
+# Pruebas e2e fallidas en la corrida 60da5dc (hora America/Lima)
+12:28:40  aa-vacios.spec.ts:246  Con el catálogo vacío y nadie más aportando, la portada lo dice  ·
+12:34:23  catalogo.spec.ts:209  Con M01 desactivado no queda entrada de menú, ni ruta viva, ni hueco en el inici  ·
+12:39:29  contenido.spec.ts:836  Con M02 activo y sin nada publicado, la portada lo dice en vez de quedarse muda  ·
+12:47:58  m02-cierre-evidencia.spec.ts:497  [M02-C24] Catálogo inactivo: ninguna solicitud al selector  ·
+12:58:23  tienda.spec.ts:364  Con M01 desactivado, las rutas públicas desaparecen y el inicio no deja hueco  ·
+13:07:08  zz-desmontaje.spec.ts:104  Desactivar M01 no borra nada, y al volver el catálogo está donde lo dejaron  ·
+13:14:44  zz-z-m04-ciclo.spec.ts:302  [M04-CICLO] desactivar, desinstalar, reinstalar y activar M04 sin romper CORE, M  ·

@@ -1,0 +1,946 @@
+# SHA: 60da5dc39d83ea7653ff93789aa86e9b2e1275c0
+# Worktree: /home/JP777/sillar-qa-m04 · cambios sin commitear: 0
+# Inicio: 2026-10-06 12:19:57 -0500
+# Comando: node scripts/verificar.mjs
+# Entorno añadido: TMPDIR=/var/tmp/sillar-qa-m04-preparacion/tmpdir · VSTestSetting=/var/tmp/sillar-qa-m04-1.2.0/trx.runsettings · VSTestResultsDirectory=/var/tmp/sillar-qa-m04-preparacion/corrida-20261006-121954/trx-1
+# Cada línea lleva delante la hora America/Lima en que se emitió.
+12:19:57 Comprobando el entorno...
+12:19:58   Suspensión bloqueada durante la corrida (2/2 inhibidores).
+12:19:58 Preflight: coherencia de .env.example...
+12:19:58 Base backend efímera: sillar_verify_1791307197943_1704228
+12:19:58 Barrido: sin bases huérfanas antiguas.
+12:19:59 [1/6] tipos del frontend...
+12:20:24 [2/6] tipos del arnés e2e...
+12:20:30 [3/6] compilación del backend...
+12:21:35 [4/6] migraciones backend (BD efímera)...
+12:22:25 [5/6] pruebas del backend...
+12:25:23 [6/6] suite e2e...
+13:28:39
+13:28:39 FALLÓ en la etapa: suite e2e
+13:28:39   Terminó con código 1.
+13:28:39 [WebServer]
+13:28:39 [WebServer]   VITE v7.3.6  ready in 802 ms
+13:28:39 [WebServer]
+13:28:39 [WebServer]   ➜  Local:   http://localhost:56161/
+13:28:39 [WebServer]   ➜  Network: use --host to expose
+13:28:39 [e2e] destruyendo un stack anterior, si quedó alguno...
+13:28:39 [e2e] levantando la base de datos...
+13:28:39 [e2e] aplicando migraciones (CORE, Catalog, Cms, CRM, Services, Sales, B2B)...
+13:28:39 Build started...
+13:28:39 Build succeeded.
+13:28:39 Failed executing DbCommand (50ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+13:28:39 SELECT "MigrationId", "ProductVersion"
+13:28:39 FROM core.__migrations
+13:28:39 ORDER BY "MigrationId";
+13:28:39 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:39 Applying migration '20260816073536_CoreInitial'.
+13:28:39 Applying migration '20260828200857_CoreEmailSettings'.
+13:28:39 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:39 Applying migration '20260829011000_CoreSmtpSettings'.
+13:28:39 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:39 Applying migration '20261003203701_CoreHomeNodeYAutorDeMedios'.
+13:28:39 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:39 Done.
+13:28:39 Build started...
+13:28:39 Build succeeded.
+13:28:39 Failed executing DbCommand (47ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+13:28:39 SELECT "MigrationId", "ProductVersion"
+13:28:39 FROM catalog.__migrations
+13:28:39 ORDER BY "MigrationId";
+13:28:39 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:39 Applying migration '20260816073647_CatalogInitial'.
+13:28:39 Done.
+13:28:39 Build started...
+13:28:39 Build succeeded.
+13:28:39 Failed executing DbCommand (41ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+13:28:39 SELECT "MigrationId", "ProductVersion"
+13:28:39 FROM cms.__migrations
+13:28:39 ORDER BY "MigrationId";
+13:28:39 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:39 Applying migration '20260820050000_CmsInitial'.
+13:28:39 Done.
+13:28:39 Build started...
+13:28:39 Build succeeded.
+13:28:39 Failed executing DbCommand (52ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+13:28:39 SELECT "MigrationId", "ProductVersion"
+13:28:39 FROM crm.__migrations
+13:28:39 ORDER BY "MigrationId";
+13:28:39 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:39 Applying migration '20260824190200_CrmInitial'.
+13:28:39 Applying migration '20260922115958_CrmCustomersEmailTrimAuthority'.
+13:28:39 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:39 Done.
+13:28:39 Build started...
+13:28:39 Build succeeded.
+13:28:39 Failed executing DbCommand (46ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+13:28:39 SELECT "MigrationId", "ProductVersion"
+13:28:39 FROM services.__migrations
+13:28:39 ORDER BY "MigrationId";
+13:28:39 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:39 Applying migration '20260928090000_ServicesInitial'.
+13:28:39 Done.
+13:28:39 Build started...
+13:28:39 Build succeeded.
+13:28:39 Failed executing DbCommand (43ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+13:28:39 SELECT "MigrationId", "ProductVersion"
+13:28:39 FROM sales.__migrations
+13:28:39 ORDER BY "MigrationId";
+13:28:39 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:39 Applying migration '20260930185029_SalesInitial'.
+13:28:39 Done.
+13:28:39 Build started...
+13:28:39 Build succeeded.
+13:28:39 Failed executing DbCommand (68ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+13:28:39 SELECT "MigrationId", "ProductVersion"
+13:28:39 FROM b2b.__migrations
+13:28:39 ORDER BY "MigrationId";
+13:28:39 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:39 Applying migration '20261004225318_B2bInitial'.
+13:28:39 Done.
+13:28:39 [e2e] aplicando seeds (sin datos de negocio)...
+13:28:39 BEGIN
+13:28:39 INSERT 0 11
+13:28:39 INSERT 0 0
+13:28:39 UPDATE 3
+13:28:39 COMMIT
+13:28:39 BEGIN
+13:28:39 COMMIT
+13:28:39 BEGIN
+13:28:39 COMMIT
+13:28:39  ?column?
+13:28:39 ----------
+13:28:39         1
+13:28:39 (1 row)
+13:28:39
+13:28:39  ?column?
+13:28:39 ----------
+13:28:39         1
+13:28:39 (1 row)
+13:28:39
+13:28:39  ?column?
+13:28:39 ----------
+13:28:39         1
+13:28:39 (1 row)
+13:28:39
+13:28:39 BEGIN
+13:28:39 COMMIT
+13:28:39 [e2e] construyendo y levantando la API (Debug, con módulos de mentira)...
+13:28:39 #1 [internal] load local bake definitions
+13:28:39 #1 reading from stdin 590B done
+13:28:39 #1 DONE 0.0s
+13:28:39
+13:28:39 #2 [internal] load build definition from Dockerfile
+13:28:39 #2 transferring dockerfile: 2.39kB 0.0s done
+13:28:39 #2 DONE 0.1s
+13:28:39
+13:28:39 #3 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:10.0
+13:28:39 #3 DONE 0.0s
+13:28:39
+13:28:39 #4 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:10.0
+13:28:39 #4 DONE 0.0s
+13:28:39
+13:28:39 #5 [internal] load .dockerignore
+13:28:39 #5 transferring context: 1.40kB done
+13:28:39 #5 DONE 0.0s
+13:28:39
+13:28:39 #6 [final 1/3] FROM mcr.microsoft.com/dotnet/aspnet:10.0
+13:28:39 #6 DONE 0.0s
+13:28:39
+13:28:39 #7 [build 1/4] FROM mcr.microsoft.com/dotnet/sdk:10.0
+13:28:39 #7 DONE 0.0s
+13:28:39
+13:28:39 #8 [internal] load build context
+13:28:39 #8 transferring context: 1.90MB 0.3s done
+13:28:39 #8 DONE 0.3s
+13:28:39
+13:28:39 #9 [final 2/3] WORKDIR /app
+13:28:39 #9 CACHED
+13:28:39
+13:28:39 #10 [build 2/4] WORKDIR /src
+13:28:39 #10 CACHED
+13:28:39
+13:28:39 #11 [build 3/4] COPY . .
+13:28:39 #11 CACHED
+13:28:39
+13:28:39 #12 [build 4/4] RUN dotnet publish Sillar.Api/Sillar.Api.csproj -c Debug -o /app
+13:28:39 #12 CACHED
+13:28:39
+13:28:39 #13 [final 3/3] COPY --from=build /app .
+13:28:39 #13 CACHED
+13:28:39
+13:28:39 #14 exporting to image
+13:28:39 #14 exporting layers done
+13:28:39 #14 writing image sha256:b9e316d02426eac2934087323728ee79549f2af877bc0600654db03f4ae3af8c 0.0s done
+13:28:39 #14 naming to docker.io/library/sillar_qa_m04_e2e-api 0.0s done
+13:28:39 #14 DONE 0.1s
+13:28:39
+13:28:39 #15 resolving provenance for metadata file
+13:28:39 #15 DONE 0.0s
+13:28:39 [e2e] completando la instalación...
+13:28:39 [e2e] iniciando sesión (reintenta hasta que el proceso nuevo esté arriba)...
+13:28:39 [e2e] creando el segundo usuario, de rol admin...
+13:28:39 [e2e] montando el grafo de módulos de mentira (las cuatro variantes de tarjeta)...
+13:28:39 [e2e] activando M01 catálogo...
+13:28:39 [e2e] activando M02 contenido...
+13:28:39 [e2e] activando M04 clientes y contacto...
+13:28:39 [e2e] activando M07 solicitudes B2B...
+13:28:39 [e2e] entorno listo.
+13:28:39
+13:28:39 Running 179 tests using 1 worker
+13:28:39
+13:28:39   ✓    1 [chromium] › tests/aa-vacios.spec.ts:39:1 › Sin marcas, la pantalla invita a crear la primera (7.9s)
+13:28:39   ✓    2 [chromium] › tests/aa-vacios.spec.ts:62:1 › Sin categorías, la pantalla invita a crear la primera (5.4s)
+13:28:39   ✓    3 [chromium] › tests/aa-vacios.spec.ts:79:1 › Sin productos, la pantalla invita a crear el primero (5.3s)
+13:28:39   ✓    4 [chromium] › tests/aa-vacios.spec.ts:96:1 › El sitio recién instalado tiene nombre, sin que nadie lo escriba dos veces (1.5s)
+13:28:39   ✓    5 [chromium] › tests/aa-vacios.spec.ts:136:1 › Sin contenido publicado, la portada no enseña ningún bloque de M02 (1.8s)
+13:28:39   ✓    6 [chromium] › tests/aa-vacios.spec.ts:189:1 › Con el catálogo vacío, la portada no invita a verlo (1.7s)
+13:28:39   ✘    7 [chromium] › tests/aa-vacios.spec.ts:246:1 › Con el catálogo vacío y nadie más aportando, la portada lo dice (3.2m)
+13:28:39   ✓    8 [chromium] › tests/aa-vacios.spec.ts:311:1 › Con M02 activo y sin redes publicadas, no hay pie en el documento (1.6s)
+13:28:39   ✓    9 [chromium] › tests/aa-vacios.spec.ts:359:1 › Mientras las redes se cargan, el pie no aparece ni parpadea (6.3s)
+13:28:39   ✓   10 [chromium] › tests/api-traduccion.spec.ts:111:1 › Ningún endpoint de M01 revienta al traducir su consulta a SQL (1.4s)
+13:28:39   ✓   11 [chromium] › tests/api-traduccion.spec.ts:136:1 › Ningún endpoint responde 200 con el cuerpo vacío (1.2s)
+13:28:39   ✓   12 [chromium] › tests/api-traduccion.spec.ts:179:1 › La lista de endpoints vigilados no se queda corta (757ms)
+13:28:39   ✓   13 [chromium] › tests/arnes-diagnostico-arranque.spec.ts:44:1 › Arnés: una página de error de plataforma se nombra como tal, no como «no pintó» (18.0s)
+13:28:39   ✓   14 [chromium] › tests/arnes-diagnostico-arranque.spec.ts:55:1 › Arnés: la pantalla de migraciones pendientes se nombra como tal (17.5s)
+13:28:39   ✓   15 [chromium] › tests/arnes-diagnostico-arranque.spec.ts:66:1 › Arnés: el asistente de instalación se nombra como tal (17.5s)
+13:28:39   ✓   16 [chromium] › tests/arnes-diagnostico-arranque.spec.ts:76:1 › Arnés: un arranque que no termina se distingue de uno que terminó en error (16.4s)
+13:28:39   ✓   17 [chromium] › tests/arnes-diagnostico-arranque.spec.ts:92:1 › Arnés: el diagnóstico no copia la consulta de la URL, que puede llevar un token (17.6s)
+13:28:39   ✓   18 [chromium] › tests/auditoria.spec.ts:19:1 › Para filtrar por persona no hace falta saberse ningún identificador (3.1s)
+13:28:39   ✓   19 [chromium] › tests/b2b-cliente.spec.ts:116:1 › Sin sesión de cliente, las cuatro rutas dan 401 y no dejan ninguna fila (465ms)
+13:28:39   ✓   20 [chromium] › tests/b2b-cliente.spec.ts:164:1 › La cookie del panel no sirve como cliente, y la de cliente no abre el panel (2.4s)
+13:28:39   ✓   21 [chromium] › tests/b2b-cliente.spec.ts:209:1 › Con sesión y sin token CSRF, crear da 403 y no deja fila (1.3s)
+13:28:39   ✓   22 [chromium] › tests/b2b-cliente.spec.ts:242:1 › La cotización de otro cliente responde igual que una inexistente, y sin notas internas (3.0s)
+13:28:39   ✓   23 [chromium] › tests/b2b-cliente.spec.ts:338:1 › Pasado el cupo, la cuenta recibe 429 con Retry-After, una frase sin «error», y no deja fila (1.0s)
+13:28:39   ✓   24 [chromium] › tests/b2b-panel.spec.ts:257:1 › Un editor lee y escribe lo suyo, y las cuatro rutas de admin le dan 403 sin cambiar nada (4.2s)
+13:28:39   ✓   25 [chromium] › tests/b2b-panel.spec.ts:338:1 › Toda escritura del panel sin token CSRF da 403 y no cambia nada (2.2s)
+13:28:39   ✓   26 [chromium] › tests/b2b-panel.spec.ts:405:1 › Toda escritura del panel deja auditoría b2b, y el resumen nombra la cotización (1.6s)
+13:28:39   ✓   27 [chromium] › tests/b2b-panel.spec.ts:447:1 › Las rutas de M07 que esta suite ejerce y las de Swagger son el mismo conjunto (760ms)
+13:28:39   ✓   28 [chromium] › tests/b2b-panel.spec.ts:517:1 › Una cotización enviada no admite edición de líneas, y su total no cambia (2.1s)
+13:28:39   ✓   29 [chromium] › tests/catalogo.spec.ts:46:1 › Una marca creada aparece en el listado con su dirección web (5.3s)
+13:28:39   ✓   30 [chromium] › tests/catalogo.spec.ts:65:1 › Crear ARTESCO existiendo Artesco explica que los nombres no distinguen mayúsculas (5.8s)
+13:28:39   ✓   31 [chromium] › tests/catalogo.spec.ts:102:1 › Dar de baja una marca avisa sin contar productos y no actúa en cascada (8.5s)
+13:28:39   ✓   32 [chromium] › tests/catalogo.spec.ts:139:1 › El indicador de carga no parpadea en una respuesta rápida (2.9s)
+13:28:39   ✓   33 [chromium] › tests/catalogo.spec.ts:177:1 › El foco no se pierde y Escape cierra el panel sin guardar (2.3s)
+13:28:39   ✘   34 [chromium] › tests/catalogo.spec.ts:209:1 › Con M01 desactivado no queda entrada de menú, ni ruta viva, ni hueco en el inicio (3.2m)
+13:28:39   ✓   35 [chromium] › tests/categorias.spec.ts:40:1 › Una subcategoría se ve colgando de su padre, no suelta (5.9s)
+13:28:39   ✓   36 [chromium] › tests/categorias.spec.ts:68:1 › Una categoría no puede colgar de su propia descendiente (2.9s)
+13:28:39   ✓   37 [chromium] › tests/categorias.spec.ts:94:1 › Dar de baja una categoría con productos dice cuántos se quedan sin ella (10.6s)
+13:28:39   ✓   38 [chromium] › tests/categorias.spec.ts:182:1 › El slug repetido de una categoría se explica sin jerga (3.0s)
+13:28:39   ✓   39 [chromium] › tests/categorias.spec.ts:206:1 › El foco no se pierde y Escape cierra el panel sin guardar (2.6s)
+13:28:39   ✓   40 [chromium] › tests/componentes.spec.ts:45:1 › El contraste de lo designado se cumple en los dos temas (5.9s)
+13:28:39   ✓   41 [chromium] › tests/componentes.spec.ts:65:1 › Un filtro encendido lo dice sin depender del color (1.9s)
+13:28:39   ✓   42 [chromium] › tests/componentes.spec.ts:87:1 › Los controles pequeños llegan al mínimo táctil (2.1s)
+13:28:39   ✓   43 [chromium] › tests/configuracion.spec.ts:12:1 › Los datos sin definir se destacan y se cuentan (8.2s)
+13:28:39   ✓   44 [chromium] › tests/configuracion.spec.ts:41:1 › Con rol admin el interruptor de publicación está deshabilitado y dice por qué (7.1s)
+13:28:39   ✓   45 [chromium] › tests/configuracion.spec.ts:65:1 › Con rol super_admin el interruptor de publicación sí se puede usar (1.8s)
+13:28:39   ✓   46 [chromium] › tests/contenido.spec.ts:88:1 › Un banner se crea, se edita, cambia de sitio y se desactiva, y la portada lo sigue (14.6s)
+13:28:39   ✓   47 [chromium] › tests/contenido.spec.ts:204:1 › Reactivar una red social recupera su misma fila, no crea otra (12.0s)
+13:28:39   ✓   48 [chromium] › tests/contenido.spec.ts:299:1 › Un producto se busca, se destaca y su snapshot se pone al día cuando el catálogo cambia (15.1s)
+13:28:39   ✓   49 [chromium] › tests/contenido.spec.ts:446:1 › Con contenido de los cuatro tipos, la portada enseña los cuatro bloques (5.3s)
+13:28:39   ✓   50 [chromium] › tests/contenido.spec.ts:608:1 › Una red publicada aparece en el pie de toda la web pública (3.8s)
+13:28:39   ✓   51 [chromium] › tests/contenido.spec.ts:664:1 › Navegar por la web pública no remonta al contribuyente del pie (4.0s)
+13:28:39   ✓   52 [chromium] › tests/contenido.spec.ts:757:1 › Al retirar todo el contenido, la portada vuelve a quedarse sin bloques (2.4s)
+13:28:39   ✘   53 [chromium] › tests/contenido.spec.ts:836:1 › Con M02 activo y sin nada publicado, la portada lo dice en vez de quedarse muda (5.4m)
+13:28:39   ✓   54 [chromium] › tests/core-email-settings.spec.ts:7:1 › CORE/M04 — super_admin configura y diagnostica SMTP sin exponer el secreto (2.7s)
+13:28:39   ✓   55 [chromium] › tests/core-email-settings.spec.ts:47:1 › CORE/M04 — admin puede ver SMTP pero no editarlo ni probarlo (2.2s)
+13:28:40   ✓   56 [chromium] › tests/crm-admin-customers.spec.ts:4:1 › M04 — panel crea, edita, invita y reactiva una ficha (3.4s)
+13:28:40   ✓   57 [chromium] › tests/crm-auth-isolation.spec.ts:58:3 › M04 — aislamiento HTTP de identidades › la cookie de cliente no autentica rutas del panel (2.2s)
+13:28:40   ✓   58 [chromium] › tests/crm-auth-isolation.spec.ts:70:3 › M04 — aislamiento HTTP de identidades › la cookie administrativa no autentica rutas de cliente (583ms)
+13:28:40   ✓   59 [chromium] › tests/crm-contact.spec.ts:4:1 › M04 — contacto público llega al panel y admite baja lógica (3.5s)
+13:28:40   ✓   60 [chromium] › tests/crm-customer-auth.spec.ts:6:1 › M04 — registro, login y sesiones cliente/panel coexisten (5.6s)
+13:28:40   ✓   61 [chromium] › tests/crm-customer-profile.spec.ts:5:1 › M04 — perfil muestra verificación y cambia dirección preferida (6.5s)
+13:28:40   ✓   62 [chromium] › tests/crm-email-verification.spec.ts:93:1 › M04 criterio 1 — el registro recibe y consume su correo de verificación (26.9s)
+13:28:40   ✓   63 [chromium] › tests/crm-final-accessibility.spec.ts:6:1 › M04 — contacto público y panel quedan limpios en axe, claro y oscuro (13.1s)
+13:28:40   ✓   64 [chromium] › tests/crm-final-accessibility.spec.ts:19:1 › M04 — contacto respeta reduced motion y sigue limpio en axe (2.5s)
+13:28:40   ✓   65 [chromium] › tests/errores-de-arranque-y-reinicio.spec.ts:83:1 › H03: un 503 sin respuesta del servidor no se presenta igual que una negativa del instalador (2.9s)
+13:28:40   ✓   66 [chromium] › tests/errores-de-arranque-y-reinicio.spec.ts:100:1 › Arnés: una página propia se cierra aunque la prueba falle dentro (111ms)
+13:28:40   ✓   67 [chromium] › tests/errores-de-arranque-y-reinicio.spec.ts:117:1 › H03: tras un corte de red en modo instalación, reintentar vuelve a enviar la instalación (6.3s)
+13:28:40   ✓   68 [chromium] › tests/errores-de-arranque-y-reinicio.spec.ts:176:1 › H08: tras el reinicio, el primer Reintentar ya alcanza al servidor en cuanto ha vuelto (1.9s)
+13:28:40   ✓   69 [chromium] › tests/errores-de-arranque-y-reinicio.spec.ts:194:1 › H08: si el servidor vuelve todavía en modo instalación, Reintentar lo alcanza (5.8s)
+13:28:40   ✓   70 [chromium] › tests/errores-de-arranque-y-reinicio.spec.ts:211:1 › H22: un fallo de /api/setup/status no se atribuye a los módulos (1.3s)
+13:28:40   ✓   71 [chromium] › tests/errores-de-arranque-y-reinicio.spec.ts:223:1 › H22: un corte de red no aconseja revisar un módulo recién activado si nadie activó ninguno (1.3s)
+13:28:40   ✓   72 [chromium] › tests/errores-de-arranque-y-reinicio.spec.ts:233:1 › H22 (contraste): si fallan las capacidades, se ve una página de error con Reintentar, no una pantalla vacía (1.3s)
+13:28:40   ✓   73 [chromium] › tests/h29-navegacion-estrecha.spec.ts:54:1 › H29: a 390 px hay topbar compacta y 16 destinos usan grupos plegables (3.0s)
+13:28:40   ✓   74 [chromium] › tests/h29-navegacion-estrecha.spec.ts:103:1 › H29: editor con 10 destinos conserva disclosures (2.9s)
+13:28:40   ✓   75 [chromium] › tests/h29-navegacion-estrecha.spec.ts:118:1 › H29: editor con CORE y Catálogo tiene 5 destinos sin disclosures (2.3s)
+13:28:40   ✓   76 [chromium] › tests/h29-navegacion-estrecha.spec.ts:139:1 › H29: cuenta estrecha conserva tema, contraseña y cierre de sesión (2.5s)
+13:28:40   ✓   77 [chromium] › tests/h29-navegacion-estrecha.spec.ts:169:1 › H29: movimiento reducido elimina el desplazamiento de las superficies (2.1s)
+13:28:40   ✓   78 [chromium] › tests/h29-navegacion-estrecha.spec.ts:216:1 › H29: escritorio conserva la barra lateral y oculta los controles móviles (2.1s)
+13:28:40   ✓   79 [chromium] › tests/imagenes-asociadas.spec.ts:40:1 › Quitar la asociación de una imagen no borra el archivo, y otro producto la sigue viendo (3.5s)
+13:28:40   ✓   80 [chromium] › tests/imagenes-asociadas.spec.ts:152:1 › Una recarga de la ficha que llega tarde no reabre el cajón que el guardado cerró (3.0s)
+13:28:40   ✓   81 [chromium] › tests/imagenes-asociadas.spec.ts:262:1 › Una asociación de imagen que termina después del guardado no reabre el cajón (2.5s)
+13:28:40   ✓   82 [chromium] › tests/m02-cierre-evidencia.spec.ts:242:1 › [M02-C3] módulo inactivo: arranque, menú, portada y pie sin huecos (42.2s)
+13:28:40   ✓   83 [chromium] › tests/m02-cierre-evidencia.spec.ts:316:1 › [M02-C5] banner móvil: fallback real y dos proporciones (5.6s)
+13:28:40   ✓   84 [chromium] › tests/m02-cierre-evidencia.spec.ts:350:1 › [M02-C13] corregir slug cambia el enlace público de verdad (4.9s)
+13:28:40   ✓   85 [chromium] › tests/m02-cierre-evidencia.spec.ts:371:1 › [M02-C16] precios variables: Desde; sin precio: A consultar (3.1s)
+13:28:40   ✓   86 [chromium] › tests/m02-cierre-evidencia.spec.ts:389:1 › [M02-C17] gratis puro no se confunde con gratis + pago (3.3s)
+13:28:40   ✓   87 [chromium] › tests/m02-cierre-evidencia.spec.ts:406:1 › [M02-C18] retirar presentación cara cambia el estado de precio en portada (4.2s)
+13:28:40   ✓   88 [chromium] › tests/m02-cierre-evidencia.spec.ts:426:1 › [M02-C19] editar precio de presentación llega al destacado (2.7s)
+13:28:40   ✓   89 [chromium] › tests/m02-cierre-evidencia.spec.ts:440:1 › [M02-C21] destacado sin foto compara nombre y categoría con tarjeta Catálogo (3.9s)
+13:28:40   ✘   90 [chromium] › tests/m02-cierre-evidencia.spec.ts:497:1 › [M02-C24] Catálogo inactivo: ninguna solicitud al selector (4.3m)
+13:28:40   ✓   91 [chromium] › tests/m02-cierre-evidencia.spec.ts:536:1 › [M02-C25] prefijos explican que hace falta una palabra completa (3.7s)
+13:28:40   ✓   92 [chromium] › tests/m02-cierre-evidencia.spec.ts:570:1 › [M02-C32] móvil, escritorio, teclado y colores solo desde tokens (16.6s)
+13:28:40   ✓   93 [chromium] › tests/medios-compartidos.spec.ts:23:1 › Dar de baja un archivo usado por cuatro cosas no rompe ninguna (1.4s)
+13:28:40   ✓   94 [chromium] › tests/medios.spec.ts:48:1 › Los tres rechazos de subida dicen cosas distintas entre sí (9.1s)
+13:28:40   ✓   95 [chromium] › tests/medios.spec.ts:89:1 › Subir dos veces el mismo archivo avisa, no falla (6.3s)
+13:28:40   ✓   96 [chromium] › tests/medios.spec.ts:109:1 › Antes de dar de baja un archivo se avisa sin contar cuántos lo usan (6.5s)
+13:28:40   ✓   97 [chromium] › tests/medios.spec.ts:155:1 › El resumen de una subida no contiene el identificador, y la entrada sigue completa (778ms)
+13:28:40   ✓   98 [chromium] › tests/modulos.spec.ts:15:1 › Las cuatro variantes de tarjeta se ven correctas (5.8s)
+13:28:40   ✓   99 [chromium] › tests/modulos.spec.ts:30:1 › Se pinta una tarjeta por cada módulo que el servidor conoce (2.1s)
+13:28:40   ✓  100 [chromium] › tests/modulos.spec.ts:57:1 › CORE aparece sin interruptor, no con uno deshabilitado (2.0s)
+13:28:40   ✓  101 [chromium] › tests/modulos.spec.ts:77:1 › Una tarjeta bloqueada nombra el módulo que le falta y enlaza a él (9.3s)
+13:28:40   ✓  102 [chromium] › tests/modulos.spec.ts:101:1 › El diálogo de confirmación dice la verdad sobre el reinicio (10.9s)
+13:28:40   ✓  103 [chromium] › tests/modulos.spec.ts:159:1 › El 409 al desactivar nombra quién bloquea y no reinicia nada (6.4s)
+13:28:40   ✓  104 [chromium] › tests/modulos.spec.ts:228:1 › Activar lleva al estado de reconexión y vuelve solo, con la sesión abierta (22.3s)
+13:28:40   ✓  105 [chromium] › tests/movil-teclado.spec.ts:99:1 › A 390 px, ninguna pantalla del panel se sale por la derecha (16.0s)
+13:28:40   ✓  106 [chromium] › tests/movil-teclado.spec.ts:120:1 › A 390 px, ninguna pantalla pública se sale por la derecha (4.6s)
+13:28:40   ✓  107 [chromium] › tests/movil-teclado.spec.ts:155:1 › A 390 px, el menú del panel sigue estando y lleva a todas partes (2.8s)
+13:28:40   ✓  108 [chromium] › tests/movil-teclado.spec.ts:196:1 › Con el teclado se llega al contenido de cada pantalla, y el foco se ve (15.1s)
+13:28:40   ✓  109 [chromium] › tests/presentaciones.spec.ts:45:1 › El momento: los valores se quedan, se anuncia con palabras y el cursor va a la segunda (9.1s)
+13:28:40   ✓  110 [chromium] › tests/presentaciones.spec.ts:91:1 › El momento funciona entero con movimiento reducido (4.0s)
+13:28:40   ✓  111 [chromium] › tests/presentaciones.spec.ts:115:1 › La vuelta atrás cambia de nombre según si destruye algo (3.8s)
+13:28:40   ✓  112 [chromium] › tests/presentaciones.spec.ts:130:1 › Ninguna celda de precio queda en blanco: dice de qué hereda y con qué valor (11.0s)
+13:28:40   ✓  113 [chromium] › tests/presentaciones.spec.ts:157:1 › Dos presentaciones sin código conviven, y la interfaz dice que está bien (5.1s)
+13:28:40   ✓  114 [chromium] › tests/presentaciones.spec.ts:185:1 › El caso del plumón: tres colores, tres códigos de barras, un solo nombre y precio (9.7s)
+13:28:40   ✓  115 [chromium] › tests/presentaciones.spec.ts:239:1 › El caso del cuaderno: dos precios propios conviven con el del producto (4.1s)
+13:28:40   ✓  116 [chromium] › tests/presentaciones.spec.ts:268:1 › Desactivar la última presentación activa propone desactivar el producto (3.5s)
+13:28:40   ✓  117 [chromium] › tests/presentaciones.spec.ts:302:1 › Un código repetido dice con qué producto choca (6.8s)
+13:28:40   ✓  118 [chromium] › tests/presentaciones.spec.ts:327:1 › A 390 px la tabla es una tarjeta por presentación, sin perder campos ni acciones (3.6s)
+13:28:40   ✓  119 [chromium] › tests/producto-categorias.spec.ts:66:1 › Con una sola categoría no hay nada que elegir, y se dice por qué (7.1s)
+13:28:40   ✓  120 [chromium] › tests/producto-categorias.spec.ts:85:1 › Dos categorías: se elige la principal, y la elección sobrevive al guardado (8.2s)
+13:28:40   ✓  121 [chromium] › tests/producto-categorias.spec.ts:125:1 › Quitar la principal promueve otra y lo dice con palabras (2.9s)
+13:28:40   ✓  122 [chromium] › tests/productos.spec.ts:56:1 › El caso del restaurante: un plato sin código ni precio, y sin la palabra «variante» (7.5s)
+13:28:40   ✓  123 [chromium] › tests/productos.spec.ts:102:1 › Nulo es «consultar» y cero es «gratis», y no se confunden (6.4s)
+13:28:40   ✓  124 [chromium] › tests/productos.spec.ts:128:1 › Renombrar un producto no cambia su dirección web (2.9s)
+13:28:40   ✓  125 [chromium] › tests/productos.spec.ts:149:1 › El código de la variante única se guarda y se relee como campo del producto (3.2s)
+13:28:40   ✓  126 [chromium] › tests/productos.spec.ts:174:1 › El listado pagina, y se llega a la página 2 con controles alcanzables en móvil (2.6s)
+13:28:40   ✓  127 [chromium] › tests/productos.spec.ts:228:1 › Un campo y un botón puestos en la misma fila miden lo mismo (2.0s)
+13:28:40   ✓  128 [chromium] › tests/public-contact.spec.ts:47:1 › §18 — CORE publica contacto y su WhatsApp prevalece sobre CMS (2.7s)
+13:28:40   ✓  129 [chromium] › tests/public-contact.spec.ts:130:1 › §18 — valores pendientes o vacíos no se publican (2.6s)
+13:28:40   ✓  130 [chromium] › tests/recorrido.spec.ts:28:1 › El recorrido de la demostración, de entrar al panel a verlo en la tienda (29.7s)
+13:28:40   ✓  131 [chromium] › tests/sesion-csrf.spec.ts:31:1 › Dos pestañas escriben alternando sin que ninguna reciba un 403 (4.6s)
+13:28:40   ✓  132 [chromium] › tests/setup-arranque.spec.ts:3:1 › migraciones pendientes no abren el asistente (1.3s)
+13:28:40   ✓  133 [chromium] › tests/setup-arranque.spec.ts:40:1 › Ir al acceso espera modo normal antes de cambiar de URL (2.6s)
+13:28:40   ✓  134 [chromium] › tests/tarjeta-precio.spec.ts:72:1 › Con presentaciones de distinto precio, la tarjeta dice «Desde» y el más barato (4.3s)
+13:28:40   ✓  135 [chromium] › tests/tarjeta-precio.spec.ts:110:1 › Si una presentación es «a consultar», toda la tarjeta lo es (1.9s)
+13:28:40   ✓  136 [chromium] › tests/tarjeta-precio.spec.ts:140:1 › Con todas al mismo precio, la tarjeta no dice «Desde» (2.1s)
+13:28:40   ✓  137 [chromium] › tests/tarjeta-precio.spec.ts:168:1 › El listado de una categoría enseña el mismo precio que el general (2.0s)
+13:28:40   ✓  138 [chromium] › tests/teclado.spec.ts:70:1 › El foco nunca se pierde al recorrer Módulos con Tab (3.0s)
+13:28:40   ✓  139 [chromium] › tests/teclado.spec.ts:78:1 › El foco nunca se pierde al recorrer Usuarios con Tab (9.1s)
+13:28:40   ✓  140 [chromium] › tests/teclado.spec.ts:86:1 › El Tab no se escapa del diálogo abierto (2.3s)
+13:28:40   ✓  141 [chromium] › tests/teclado.spec.ts:110:1 › Escape cierra el diálogo sin ejecutar la acción (2.2s)
+13:28:40   ✓  142 [chromium] › tests/teclado.spec.ts:130:1 › El anillo de foco se ve al abrir el diálogo con el ratón (6.0s)
+13:28:40   ✓  143 [chromium] › tests/teclado.spec.ts:174:1 › Un aviso que caduca no mueve el foco del panel ni del diálogo abiertos (11.6s)
+13:28:40   ✓  144 [chromium] › tests/tema.spec.ts:19:1 › Con el sistema en oscuro, elegir tema claro deja la interfaz clara de verdad (2.3s)
+13:28:40   ✓  145 [chromium] › tests/tienda.spec.ts:129:1 › El caso del cono: en las dos categorías, y la miga usa solo la principal (6.8s)
+13:28:40   ✓  146 [chromium] › tests/tienda.spec.ts:158:1 › Buscar «lapiz» devuelve «LÁPIZ», y el término se queda en el campo (2.3s)
+13:28:40   ✓  147 [chromium] › tests/tienda.spec.ts:174:1 › Cero y vacío se distinguen sin leer la letra pequeña (6.8s)
+13:28:40   ✓  148 [chromium] › tests/tienda.spec.ts:204:1 › Los productos sin foto llenan su cuadrado y la rejilla no parece rota (2.2s)
+13:28:40   ✓  149 [chromium] › tests/tienda.spec.ts:229:1 › Un producto despublicado responde 404, no 403 (2.0s)
+13:28:40   ✓  150 [chromium] › tests/tienda.spec.ts:276:1 › Con la categoría principal desactivada, la miga cae a otra activa (2.3s)
+13:28:40   ✓  151 [chromium] › tests/tienda.spec.ts:314:1 › Cambiar de filtro vuelve a la página 1, y la paginación se usa a 390 px (3.0s)
+13:28:40   ✘  152 [chromium] › tests/tienda.spec.ts:364:1 › Con M01 desactivado, las rutas públicas desaparecen y el inicio no deja hueco (3.2m)
+13:28:40   ✓  153 [chromium] › tests/transversal.spec.ts:41:1 › Ninguna pantalla dice «Ha ocurrido un error» (14.1s)
+13:28:40   ✓  154 [chromium] › tests/transversal.spec.ts:51:1 › Ningún botón se llama «Aceptar» (14.6s)
+13:28:40   ✓  155 [chromium] › tests/transversal.spec.ts:99:1 › Ninguna pantalla enseña un identificador al usuario (13.3s)
+13:28:40   ✓  156 [chromium] › tests/transversal.spec.ts:131:1 › La auditoría no enseña identificadores (4.6s)
+13:28:40   ✓  157 [chromium] › tests/transversal.spec.ts:204:1 › Con movimiento reducido, el indicador se detiene y sigue diciendo qué espera (4.3s)
+13:28:40   ✓  158 [chromium] › tests/transversal.spec.ts:269:1 › El proyecto dice qué preferencia de movimiento aplica, y coincide (2.2s)
+13:28:40   ✓  159 [chromium] › tests/transversal.spec.ts:293:1 › Cada pantalla tiene su propio título de documento (17.5s)
+13:28:40   ✓  160 [chromium] › tests/transversal.spec.ts:313:1 › Al cambiar de ruta el foco va al contenido, no se queda en el menú (3.4s)
+13:28:40   ✓  161 [chromium] › tests/transversal.spec.ts:344:1 › El enlace de salto existe, está oculto y aparece al enfocarlo (2.5s)
+13:28:40   ✓  162 [chromium] › tests/zz-b2b-ciclo.spec.ts:273:1 › M07 se usa, se apaga y vuelve: sin enlace roto, sin ruta muerta y sin perder nada (1.0m)
+13:28:40 BEGIN
+13:28:40 COMMIT
+13:28:40 BEGIN
+13:28:40 COMMIT
+13:28:40 DO
+13:28:40 DO
+13:28:40 Build started...
+13:28:40 Build succeeded.
+13:28:40 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:40 No migrations were applied. The database is already up to date.
+13:28:40 Done.
+13:28:40 Build started...
+13:28:40 Build succeeded.
+13:28:40 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:40 No migrations were applied. The database is already up to date.
+13:28:40 Done.
+13:28:40 Build started...
+13:28:40 Build succeeded.
+13:28:40 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:40 No migrations were applied. The database is already up to date.
+13:28:40 Done.
+13:28:40 Build started...
+13:28:40 Build succeeded.
+13:28:40 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:40 No migrations were applied. The database is already up to date.
+13:28:40 Done.
+13:28:40 Build started...
+13:28:40 Build succeeded.
+13:28:40 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:40 No migrations were applied. The database is already up to date.
+13:28:40 Done.
+13:28:40 Build started...
+13:28:40 Build succeeded.
+13:28:40 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:40 No migrations were applied. The database is already up to date.
+13:28:40 Done.
+13:28:40 Build started...
+13:28:40 Build succeeded.
+13:28:40 Failed executing DbCommand (70ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+13:28:40 SELECT "MigrationId", "ProductVersion"
+13:28:40 FROM b2b.__migrations
+13:28:40 ORDER BY "MigrationId";
+13:28:40 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:40 Applying migration '20261004225318_B2bInitial'.
+13:28:40 Done.
+13:28:40 BEGIN
+13:28:40 INSERT 0 0
+13:28:40 INSERT 0 0
+13:28:40 UPDATE 3
+13:28:40 COMMIT
+13:28:40 BEGIN
+13:28:40 COMMIT
+13:28:40 BEGIN
+13:28:40 COMMIT
+13:28:40  ?column?
+13:28:40 ----------
+13:28:40         1
+13:28:40 (1 row)
+13:28:40
+13:28:40  ?column?
+13:28:40 ----------
+13:28:40         1
+13:28:40 (1 row)
+13:28:40
+13:28:40  ?column?
+13:28:40 ----------
+13:28:40         1
+13:28:40 (1 row)
+13:28:40
+13:28:40 BEGIN
+13:28:40 COMMIT
+13:28:40   ✓  163 [chromium] › tests/zz-b2b-instalacion.spec.ts:135:1 › M07 se instala, se suelta y se reinstala sin tocar a nadie, y sus claves cruzadas vuelven (3.1m)
+13:28:40   ✘  164 [chromium] › tests/zz-desmontaje.spec.ts:104:1 › Desactivar M01 no borra nada, y al volver el catálogo está donde lo dejaron (4.4m)
+13:28:40   ✓  165 [chromium] › tests/zz-instalacion.spec.ts:104:1 › Swagger lleva las rutas de M01, y ningún cuerpo de ningún módulo se queda sin ejemplo (1.3s)
+13:28:40 BEGIN
+13:28:40 COMMIT
+13:28:40   ✓  166 [chromium] › tests/zz-instalacion.spec.ts:157:1 › Los scripts del catálogo son idempotentes (749ms)
+13:28:40 DROP SCHEMA
+13:28:40 DO
+13:28:40 DO
+13:28:40 DO
+13:28:40 Build started...
+13:28:40 Build succeeded.
+13:28:40 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:40 No migrations were applied. The database is already up to date.
+13:28:40 Done.
+13:28:40 Build started...
+13:28:40 Build succeeded.
+13:28:40 Failed executing DbCommand (57ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+13:28:40 SELECT "MigrationId", "ProductVersion"
+13:28:40 FROM catalog.__migrations
+13:28:40 ORDER BY "MigrationId";
+13:28:40 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:40 Applying migration '20260816073647_CatalogInitial'.
+13:28:40 Done.
+13:28:40 Build started...
+13:28:40 Build succeeded.
+13:28:40 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:40 No migrations were applied. The database is already up to date.
+13:28:40 Done.
+13:28:40 Build started...
+13:28:40 Build succeeded.
+13:28:40 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:40 No migrations were applied. The database is already up to date.
+13:28:40 Done.
+13:28:40 Build started...
+13:28:40 Build succeeded.
+13:28:40 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:40 No migrations were applied. The database is already up to date.
+13:28:40 Done.
+13:28:40 Build started...
+13:28:40 Build succeeded.
+13:28:40 Failed executing DbCommand (55ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+13:28:40 SELECT "MigrationId", "ProductVersion"
+13:28:40 FROM sales.__migrations
+# rc=1
+13:28:40 ORDER BY "MigrationId";
+# Fin: 2026-10-06 13:28:40 -0500
+13:28:40 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:40 Applying migration '20260930185029_SalesInitial'.
+13:28:40 Done.
+13:28:40 Build started...
+13:28:40 Build succeeded.
+13:28:40 Failed executing DbCommand (58ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+13:28:40 SELECT "MigrationId", "ProductVersion"
+13:28:40 FROM b2b.__migrations
+13:28:40 ORDER BY "MigrationId";
+13:28:40 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:40 Applying migration '20261004225318_B2bInitial'.
+13:28:40 Done.
+13:28:40 BEGIN
+13:28:40 INSERT 0 0
+13:28:40 INSERT 0 0
+13:28:40 UPDATE 3
+13:28:40 COMMIT
+13:28:40 BEGIN
+13:28:40 COMMIT
+13:28:40 BEGIN
+13:28:40 COMMIT
+13:28:40  ?column?
+13:28:40 ----------
+13:28:40         1
+13:28:40 (1 row)
+13:28:40
+13:28:40  ?column?
+13:28:40 ----------
+13:28:40         1
+13:28:40 (1 row)
+13:28:40
+13:28:40  ?column?
+13:28:40 ----------
+13:28:40         1
+13:28:40 (1 row)
+13:28:40
+13:28:40 BEGIN
+13:28:40 COMMIT
+13:28:40   ✓  167 [chromium] › tests/zz-instalacion.spec.ts:174:1 › El schema catalog se elimina sin llevarse nada de core, y M03 vuelve igual que lo dejó la instalación (1.8m)
+13:28:40 DO
+13:28:40 DO
+13:28:40 DO
+13:28:40 DO
+13:28:40 DROP SCHEMA
+13:28:40 DROP SCHEMA
+13:28:40 Build started...
+13:28:40 Build succeeded.
+13:28:40 Failed executing DbCommand (51ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+13:28:40 SELECT "MigrationId", "ProductVersion"
+13:28:40 FROM cms.__migrations
+13:28:40 ORDER BY "MigrationId";
+13:28:40 Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+13:28:40 Applying migration '20260820050000_CmsInitial'.
+13:28:40 Done.
+13:28:40 BEGIN
+13:28:40 COMMIT
+13:28:40 BEGIN
+13:28:40 COMMIT
+13:28:40 DO
+13:28:40 DO
+13:28:40   ✓  168 [chromium] › tests/zz-z-m02-ciclo-diagnostico.spec.ts:285:1 › [M02-CICLO] desmontar e instalar sin romper CORE, Catálogo ni superficies (1.3m)
+13:28:40   ✘  169 [chromium] › tests/zz-z-m04-ciclo.spec.ts:302:1 › [M04-CICLO] desactivar, desinstalar, reinstalar y activar M04 sin romper CORE, M01 ni M02 (8.5m)
+13:28:40   ✓  170 [chromium] › tests/zz-z-m05a-ciclo.spec.ts:327:1 › [M05A-CICLO] activar, desactivar y reactivar M05a sin romper CORE, M01, M02 ni M04 (3.9m)
+13:28:40   ✓  171 [chromium-movimiento-reducido] › tests/transversal.spec.ts:41:1 › Ninguna pantalla dice «Ha ocurrido un error» (19.4s)
+13:28:40   ✓  172 [chromium-movimiento-reducido] › tests/transversal.spec.ts:51:1 › Ningún botón se llama «Aceptar» (17.3s)
+13:28:40   ✓  173 [chromium-movimiento-reducido] › tests/transversal.spec.ts:99:1 › Ninguna pantalla enseña un identificador al usuario (13.8s)
+13:28:40   ✓  174 [chromium-movimiento-reducido] › tests/transversal.spec.ts:131:1 › La auditoría no enseña identificadores (4.6s)
+13:28:40   ✓  175 [chromium-movimiento-reducido] › tests/transversal.spec.ts:204:1 › Con movimiento reducido, el indicador se detiene y sigue diciendo qué espera (3.9s)
+13:28:40   ✓  176 [chromium-movimiento-reducido] › tests/transversal.spec.ts:269:1 › El proyecto dice qué preferencia de movimiento aplica, y coincide (2.2s)
+13:28:40   ✓  177 [chromium-movimiento-reducido] › tests/transversal.spec.ts:293:1 › Cada pantalla tiene su propio título de documento (15.8s)
+13:28:40   ✓  178 [chromium-movimiento-reducido] › tests/transversal.spec.ts:313:1 › Al cambiar de ruta el foco va al contenido, no se queda en el menú (2.9s)
+13:28:40   ✓  179 [chromium-movimiento-reducido] › tests/transversal.spec.ts:344:1 › El enlace de salto existe, está oculto y aparece al enfocarlo (2.3s)
+13:28:40 [e2e] generando la galería de capturas...
+13:28:40 [e2e] destruyendo el stack e2e...
+13:28:40
+13:28:40
+13:28:40   1) [chromium] › tests/aa-vacios.spec.ts:246:1 › Con el catálogo vacío y nadie más aportando, la portada lo dice
+13:28:40
+13:28:40     Test timeout of 180000ms exceeded.
+13:28:40
+13:28:40     Error: locator.click: Test timeout of 180000ms exceeded.
+13:28:40     Call log:
+13:28:40       - waiting for locator('#modulo-crm').getByRole('switch')
+13:28:40         - locator resolved to <button disabled type="button" role="switch" class="mod__switch" aria-checked="true" aria-label="Desactivar Clientes y Contacto"></button>
+13:28:40       - attempting click action
+13:28:40         2 × waiting for element to be visible, enabled and stable
+13:28:40           - element is not enabled
+13:28:40         - retrying click action
+13:28:40         - waiting 20ms
+13:28:40         2 × waiting for element to be visible, enabled and stable
+13:28:40           - element is not enabled
+13:28:40         - retrying click action
+13:28:40           - waiting 100ms
+13:28:40         373 × waiting for element to be visible, enabled and stable
+13:28:40             - element is not enabled
+13:28:40           - retrying click action
+13:28:40             - waiting 500ms
+13:28:40
+13:28:40
+13:28:40       282 |
+13:28:40       283 |   await duringExpectedOutage(page, async () => {
+13:28:40     > 284 |     await page.locator(`#modulo-${codigo}`).getByRole('switch').click();
+13:28:40           |                                                                 ^
+13:28:41       285 |     await page.getByRole('alertdialog').getByRole('button', { name: new RegExp(`^${accion}`) }).click();
+13:28:41       286 |
+13:28:41       287 |     const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
+13:28:41         at fn (/home/JP777/sillar-qa-m04/e2e/tests/aa-vacios.spec.ts:284:65)
+13:28:41         at duringExpectedOutage (/home/JP777/sillar-qa-m04/e2e/fixtures/base.ts:187:18)
+13:28:41         at cambiarModulo (/home/JP777/sillar-qa-m04/e2e/tests/aa-vacios.spec.ts:283:9)
+13:28:41         at /home/JP777/sillar-qa-m04/e2e/tests/aa-vacios.spec.ts:250:3
+13:28:41
+13:28:41     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+13:28:41     test-results/aa-vacios-Con-el-catálogo--bddae-portando-la-portada-lo-dice-chromium/test-failed-1.png
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+13:28:41     test-results/aa-vacios-Con-el-catálogo--bddae-portando-la-portada-lo-dice-chromium/video.webm
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41     Error Context: test-results/aa-vacios-Con-el-catálogo--bddae-portando-la-portada-lo-dice-chromium/error-context.md
+13:28:41
+13:28:41     attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+13:28:41     test-results/aa-vacios-Con-el-catálogo--bddae-portando-la-portada-lo-dice-chromium/trace.zip
+13:28:41     Usage:
+13:28:41
+13:28:41         pnpm exec playwright show-trace test-results/aa-vacios-Con-el-catálogo--bddae-portando-la-portada-lo-dice-chromium/trace.zip
+13:28:41
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41   2) [chromium] › tests/catalogo.spec.ts:209:1 › Con M01 desactivado no queda entrada de menú, ni ruta viva, ni hueco en el inicio
+13:28:41
+13:28:41     Test timeout of 180000ms exceeded.
+13:28:41
+13:28:41     Error: locator.click: Test timeout of 180000ms exceeded.
+13:28:41     Call log:
+13:28:41       - waiting for locator('#modulo-catalog').getByRole('switch')
+13:28:41         - locator resolved to <button disabled type="button" role="switch" class="mod__switch" aria-checked="true" aria-label="Desactivar Catálogo de Productos"></button>
+13:28:41       - attempting click action
+13:28:41         2 × waiting for element to be visible, enabled and stable
+13:28:41           - element is not enabled
+13:28:41         - retrying click action
+13:28:41         - waiting 20ms
+13:28:41         2 × waiting for element to be visible, enabled and stable
+13:28:41           - element is not enabled
+13:28:41         - retrying click action
+13:28:41           - waiting 100ms
+13:28:41         372 × waiting for element to be visible, enabled and stable
+13:28:41             - element is not enabled
+13:28:41           - retrying click action
+13:28:41             - waiting 500ms
+13:28:41
+13:28:41
+13:28:41       223 |   // propósito varias veces mientras el contenedor vuelve.
+13:28:41       224 |   await duringExpectedOutage(page, async () => {
+13:28:41     > 225 |     await page.locator('#modulo-catalog').getByRole('switch').click();
+13:28:41           |                                                               ^
+13:28:41       226 |     await page.getByRole('alertdialog').getByRole('button', { name: /^Desactivar/ }).click();
+13:28:41       227 |
+13:28:41       228 |     const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
+13:28:41         at fn (/home/JP777/sillar-qa-m04/e2e/tests/catalogo.spec.ts:225:63)
+13:28:41         at duringExpectedOutage (/home/JP777/sillar-qa-m04/e2e/fixtures/base.ts:187:18)
+13:28:41         at /home/JP777/sillar-qa-m04/e2e/tests/catalogo.spec.ts:224:9
+13:28:41
+13:28:41     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+13:28:41     test-results/catalogo-Con-M01-desactiva-437bf--viva-ni-hueco-en-el-inicio-chromium/test-failed-1.png
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+13:28:41     test-results/catalogo-Con-M01-desactiva-437bf--viva-ni-hueco-en-el-inicio-chromium/video.webm
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41     Error Context: test-results/catalogo-Con-M01-desactiva-437bf--viva-ni-hueco-en-el-inicio-chromium/error-context.md
+13:28:41
+13:28:41     attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+13:28:41     test-results/catalogo-Con-M01-desactiva-437bf--viva-ni-hueco-en-el-inicio-chromium/trace.zip
+13:28:41     Usage:
+13:28:41
+13:28:41         pnpm exec playwright show-trace test-results/catalogo-Con-M01-desactiva-437bf--viva-ni-hueco-en-el-inicio-chromium/trace.zip
+13:28:41
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41   3) [chromium] › tests/contenido.spec.ts:836:1 › Con M02 activo y sin nada publicado, la portada lo dice en vez de quedarse muda
+13:28:41
+13:28:41     Test timeout of 300000ms exceeded.
+13:28:41
+13:28:41     Error: locator.click: Test timeout of 300000ms exceeded.
+13:28:41     Call log:
+13:28:41       - waiting for locator('#modulo-catalog').getByRole('switch')
+13:28:41         - locator resolved to <button disabled type="button" role="switch" class="mod__switch" aria-checked="true" aria-label="Desactivar Catálogo de Productos"></button>
+13:28:41       - attempting click action
+13:28:41         2 × waiting for element to be visible, enabled and stable
+13:28:41           - element is not enabled
+13:28:41         - retrying click action
+13:28:41         - waiting 20ms
+13:28:41         2 × waiting for element to be visible, enabled and stable
+13:28:41           - element is not enabled
+13:28:41         - retrying click action
+13:28:41           - waiting 100ms
+13:28:41         620 × waiting for element to be visible, enabled and stable
+13:28:41             - element is not enabled
+13:28:41           - retrying click action
+13:28:41             - waiting 500ms
+13:28:41
+13:28:41
+13:28:41       896 |
+13:28:41       897 |   await duringExpectedOutage(page, async () => {
+13:28:41     > 898 |     await page.locator(`#modulo-${codigo}`).getByRole('switch').click();
+13:28:41           |                                                                 ^
+13:28:41       899 |     await page.getByRole('alertdialog').getByRole('button', { name: new RegExp(`^${accion}`) }).click();
+13:28:41       900 |
+13:28:41       901 |     const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
+13:28:41         at fn (/home/JP777/sillar-qa-m04/e2e/tests/contenido.spec.ts:898:65)
+13:28:41         at duringExpectedOutage (/home/JP777/sillar-qa-m04/e2e/fixtures/base.ts:187:18)
+13:28:41         at cambiarModulo (/home/JP777/sillar-qa-m04/e2e/tests/contenido.spec.ts:897:9)
+13:28:41         at /home/JP777/sillar-qa-m04/e2e/tests/contenido.spec.ts:847:3
+13:28:41
+13:28:41     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+13:28:41     test-results/contenido-Con-M02-activo-y-50d8e-ice-en-vez-de-quedarse-muda-chromium/test-failed-1.png
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+13:28:41     test-results/contenido-Con-M02-activo-y-50d8e-ice-en-vez-de-quedarse-muda-chromium/video.webm
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41     Error Context: test-results/contenido-Con-M02-activo-y-50d8e-ice-en-vez-de-quedarse-muda-chromium/error-context.md
+13:28:41
+13:28:41     attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+13:28:41     test-results/contenido-Con-M02-activo-y-50d8e-ice-en-vez-de-quedarse-muda-chromium/trace.zip
+13:28:41     Usage:
+13:28:41
+13:28:41         pnpm exec playwright show-trace test-results/contenido-Con-M02-activo-y-50d8e-ice-en-vez-de-quedarse-muda-chromium/trace.zip
+13:28:41
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41   4) [chromium] › tests/m02-cierre-evidencia.spec.ts:497:1 › [M02-C24] Catálogo inactivo: ninguna solicitud al selector
+13:28:41
+13:28:41     Test timeout of 240000ms exceeded.
+13:28:41
+13:28:41     Error: locator.click: Test timeout of 240000ms exceeded.
+13:28:41     Call log:
+13:28:41       - waiting for locator('#modulo-catalog').getByRole('switch')
+13:28:41         - locator resolved to <button disabled type="button" role="switch" class="mod__switch" aria-checked="true" aria-label="Desactivar Catálogo de Productos"></button>
+13:28:41       - attempting click action
+13:28:41         2 × waiting for element to be visible, enabled and stable
+13:28:41           - element is not enabled
+13:28:41         - retrying click action
+13:28:41         - waiting 20ms
+13:28:41         2 × waiting for element to be visible, enabled and stable
+13:28:41           - element is not enabled
+13:28:41         - retrying click action
+13:28:41           - waiting 100ms
+13:28:41         497 × waiting for element to be visible, enabled and stable
+13:28:41             - element is not enabled
+13:28:41           - retrying click action
+13:28:41             - waiting 500ms
+13:28:41
+13:28:41
+13:28:41       208 |   await page.goto('/admin/modulos');
+13:28:41       209 |   await duringExpectedOutage(page, async () => {
+13:28:41     > 210 |     await page.locator(`#modulo-${code}`).getByRole('switch').click();
+13:28:41           |                                                               ^
+13:28:41       211 |     await page.getByRole('alertdialog')
+13:28:41       212 |       .getByRole('button', { name: new RegExp(`^${action}`) }).click();
+13:28:41       213 |     const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
+13:28:41         at fn (/home/JP777/sillar-qa-m04/e2e/tests/m02-cierre-evidencia.spec.ts:210:63)
+13:28:41         at duringExpectedOutage (/home/JP777/sillar-qa-m04/e2e/fixtures/base.ts:187:18)
+13:28:41         at modulo (/home/JP777/sillar-qa-m04/e2e/tests/m02-cierre-evidencia.spec.ts:209:9)
+13:28:41         at /home/JP777/sillar-qa-m04/e2e/tests/m02-cierre-evidencia.spec.ts:517:3
+13:28:41
+13:28:41     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+13:28:41     test-results/m02-cierre-evidencia--M02--89aa7-nguna-solicitud-al-selector-chromium/test-failed-1.png
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+13:28:41     test-results/m02-cierre-evidencia--M02--89aa7-nguna-solicitud-al-selector-chromium/video.webm
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41     Error Context: test-results/m02-cierre-evidencia--M02--89aa7-nguna-solicitud-al-selector-chromium/error-context.md
+13:28:41
+13:28:41     attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+13:28:41     test-results/m02-cierre-evidencia--M02--89aa7-nguna-solicitud-al-selector-chromium/trace.zip
+13:28:41     Usage:
+13:28:41
+13:28:41         pnpm exec playwright show-trace test-results/m02-cierre-evidencia--M02--89aa7-nguna-solicitud-al-selector-chromium/trace.zip
+13:28:41
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41   5) [chromium] › tests/tienda.spec.ts:364:1 › Con M01 desactivado, las rutas públicas desaparecen y el inicio no deja hueco
+13:28:41
+13:28:41     Test timeout of 180000ms exceeded.
+13:28:41
+13:28:41     Error: locator.click: Test timeout of 180000ms exceeded.
+13:28:41     Call log:
+13:28:41       - waiting for locator('#modulo-catalog').getByRole('switch')
+13:28:41         - locator resolved to <button disabled type="button" role="switch" class="mod__switch" aria-checked="true" aria-label="Desactivar Catálogo de Productos"></button>
+13:28:41       - attempting click action
+13:28:41         2 × waiting for element to be visible, enabled and stable
+13:28:41           - element is not enabled
+13:28:41         - retrying click action
+13:28:41         - waiting 20ms
+13:28:41         2 × waiting for element to be visible, enabled and stable
+13:28:41           - element is not enabled
+13:28:41         - retrying click action
+13:28:41           - waiting 100ms
+13:28:41         372 × waiting for element to be visible, enabled and stable
+13:28:41             - element is not enabled
+13:28:41           - retrying click action
+13:28:41             - waiting 500ms
+13:28:41
+13:28:41
+13:28:41       387 |   await page.goto('/admin/modulos');
+13:28:41       388 |   await duringExpectedOutage(page, async () => {
+13:28:41     > 389 |     await page.locator('#modulo-catalog').getByRole('switch').click();
+13:28:41           |                                                               ^
+13:28:41       390 |     await page.getByRole('alertdialog').getByRole('button', { name: /^Desactivar/ }).click();
+13:28:41       391 |
+13:28:41       392 |     const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
+13:28:41         at fn (/home/JP777/sillar-qa-m04/e2e/tests/tienda.spec.ts:389:63)
+13:28:41         at duringExpectedOutage (/home/JP777/sillar-qa-m04/e2e/fixtures/base.ts:187:18)
+13:28:41         at /home/JP777/sillar-qa-m04/e2e/tests/tienda.spec.ts:388:9
+13:28:41
+13:28:41     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+13:28:41     test-results/tienda-Con-M01-desactivado-6953f-n-y-el-inicio-no-deja-hueco-chromium/test-failed-1.png
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+13:28:41     test-results/tienda-Con-M01-desactivado-6953f-n-y-el-inicio-no-deja-hueco-chromium/video.webm
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41     Error Context: test-results/tienda-Con-M01-desactivado-6953f-n-y-el-inicio-no-deja-hueco-chromium/error-context.md
+13:28:41
+13:28:41     attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+13:28:41     test-results/tienda-Con-M01-desactivado-6953f-n-y-el-inicio-no-deja-hueco-chromium/trace.zip
+13:28:41     Usage:
+13:28:41
+13:28:41         pnpm exec playwright show-trace test-results/tienda-Con-M01-desactivado-6953f-n-y-el-inicio-no-deja-hueco-chromium/trace.zip
+13:28:41
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41   6) [chromium] › tests/zz-desmontaje.spec.ts:104:1 › Desactivar M01 no borra nada, y al volver el catálogo está donde lo dejaron
+13:28:41
+13:28:41     Test timeout of 240000ms exceeded.
+13:28:41
+13:28:41     Error: locator.click: Test timeout of 240000ms exceeded.
+13:28:41     Call log:
+13:28:41       - waiting for locator('#modulo-catalog').getByRole('switch')
+13:28:41         - locator resolved to <button disabled type="button" role="switch" class="mod__switch" aria-checked="true" aria-label="Desactivar Catálogo de Productos"></button>
+13:28:41       - attempting click action
+13:28:41         2 × waiting for element to be visible, enabled and stable
+13:28:41           - element is not enabled
+13:28:41         - retrying click action
+13:28:41         - waiting 20ms
+13:28:41         2 × waiting for element to be visible, enabled and stable
+13:28:41           - element is not enabled
+13:28:41         - retrying click action
+13:28:41           - waiting 100ms
+13:28:41         498 × waiting for element to be visible, enabled and stable
+13:28:41             - element is not enabled
+13:28:41           - retrying click action
+13:28:41             - waiting 500ms
+13:28:41
+13:28:41
+13:28:41       93 |
+13:28:41       94 |   await duringExpectedOutage(page, async () => {
+13:28:41     > 95 |     await page.locator('#modulo-catalog').getByRole('switch').click();
+13:28:41          |                                                               ^
+13:28:41       96 |     await page.getByRole('alertdialog').getByRole('button', { name: new RegExp(`^${accion}`) }).click();
+13:28:41       97 |
+13:28:41       98 |     const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
+13:28:41         at fn (/home/JP777/sillar-qa-m04/e2e/tests/zz-desmontaje.spec.ts:95:63)
+13:28:41         at duringExpectedOutage (/home/JP777/sillar-qa-m04/e2e/fixtures/base.ts:187:18)
+13:28:41         at cambiarModulo (/home/JP777/sillar-qa-m04/e2e/tests/zz-desmontaje.spec.ts:94:9)
+13:28:41         at /home/JP777/sillar-qa-m04/e2e/tests/zz-desmontaje.spec.ts:120:3
+13:28:41
+13:28:41     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+13:28:41     test-results/zz-desmontaje-Desactivar-M-11f62-álogo-está-donde-lo-dejaron-chromium/test-failed-1.png
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+13:28:41     test-results/zz-desmontaje-Desactivar-M-11f62-álogo-está-donde-lo-dejaron-chromium/video.webm
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41     Error Context: test-results/zz-desmontaje-Desactivar-M-11f62-álogo-está-donde-lo-dejaron-chromium/error-context.md
+13:28:41
+13:28:41     attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+13:28:41     test-results/zz-desmontaje-Desactivar-M-11f62-álogo-está-donde-lo-dejaron-chromium/trace.zip
+13:28:41     Usage:
+13:28:41
+13:28:41         pnpm exec playwright show-trace test-results/zz-desmontaje-Desactivar-M-11f62-álogo-está-donde-lo-dejaron-chromium/trace.zip
+13:28:41
+13:28:41     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:41
+13:28:41   7) [chromium] › tests/zz-z-m04-ciclo.spec.ts:302:1 › [M04-CICLO] desactivar, desinstalar, reinstalar y activar M04 sin romper CORE, M01 ni M02
+13:28:41
+13:28:41     Test timeout of 480000ms exceeded.
+13:28:41
+13:28:41     Error: locator.click: Test timeout of 480000ms exceeded.
+13:28:41     Call log:
+13:28:41       - waiting for locator('#modulo-crm').getByRole('switch')
+13:28:41         - locator resolved to <button disabled type="button" role="switch" class="mod__switch" aria-checked="true" aria-label="Desactivar Clientes y Contacto"></button>
+13:28:41       - attempting click action
+13:28:41         2 × waiting for element to be visible, enabled and stable
+13:28:41           - element is not enabled
+13:28:41         - retrying click action
+13:28:41         - waiting 20ms
+13:28:41         2 × waiting for element to be visible, enabled and stable
+13:28:41           - element is not enabled
+13:28:41         - retrying click action
+13:28:41           - waiting 100ms
+13:28:41         809 × waiting for element to be visible, enabled and stable
+13:28:41             - element is not enabled
+13:28:42           - retrying click action
+13:28:42             - waiting 500ms
+13:28:42
+13:28:42
+13:28:42       75 |
+13:28:42       76 |   await duringExpectedOutage(page, async () => {
+13:28:42     > 77 |     await page.locator('#modulo-crm').getByRole('switch').click();
+13:28:42          |                                                           ^
+13:28:42       78 |     await page
+13:28:42       79 |       .getByRole('alertdialog')
+13:28:42       80 |       .getByRole('button', { name: new RegExp(`^${accion}`) })
+13:28:42         at fn (/home/JP777/sillar-qa-m04/e2e/tests/zz-z-m04-ciclo.spec.ts:77:59)
+13:28:42         at duringExpectedOutage (/home/JP777/sillar-qa-m04/e2e/fixtures/base.ts:187:18)
+13:28:42         at cambiarModulo (/home/JP777/sillar-qa-m04/e2e/tests/zz-z-m04-ciclo.spec.ts:76:9)
+13:28:42         at /home/JP777/sillar-qa-m04/e2e/tests/zz-z-m04-ciclo.spec.ts:335:3
+13:28:42
+13:28:42     attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+13:28:42     test-results/zz-z-m04-ciclo--M04-CICLO--33628--sin-romper-CORE-M01-ni-M02-chromium/test-failed-1.png
+13:28:42     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:42
+13:28:42     attachment #3: video (video/webm) ──────────────────────────────────────────────────────────────
+13:28:42     test-results/zz-z-m04-ciclo--M04-CICLO--33628--sin-romper-CORE-M01-ni-M02-chromium/video.webm
+13:28:42     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:42
+13:28:42     Error Context: test-results/zz-z-m04-ciclo--M04-CICLO--33628--sin-romper-CORE-M01-ni-M02-chromium/error-context.md
+13:28:42
+13:28:42     attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+13:28:42     test-results/zz-z-m04-ciclo--M04-CICLO--33628--sin-romper-CORE-M01-ni-M02-chromium/trace.zip
+13:28:42     Usage:
+13:28:42
+13:28:42         pnpm exec playwright show-trace test-results/zz-z-m04-ciclo--M04-CICLO--33628--sin-romper-CORE-M01-ni-M02-chromium/trace.zip
+13:28:42
+13:28:42     ────────────────────────────────────────────────────────────────────────────────────────────────
+13:28:42
+13:28:42   Slow test file: [chromium] › tests/zz-z-m04-ciclo.spec.ts (8.5m)
+13:28:42   Slow test file: [chromium] › tests/contenido.spec.ts (6.3m)
+13:28:42   Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+13:28:42   7 failed
+13:28:42     [chromium] › tests/aa-vacios.spec.ts:246:1 › Con el catálogo vacío y nadie más aportando, la portada lo dice
+13:28:42     [chromium] › tests/catalogo.spec.ts:209:1 › Con M01 desactivado no queda entrada de menú, ni ruta viva, ni hueco en el inicio
+13:28:42     [chromium] › tests/contenido.spec.ts:836:1 › Con M02 activo y sin nada publicado, la portada lo dice en vez de quedarse muda
+13:28:42     [chromium] › tests/m02-cierre-evidencia.spec.ts:497:1 › [M02-C24] Catálogo inactivo: ninguna solicitud al selector
+13:28:42     [chromium] › tests/tienda.spec.ts:364:1 › Con M01 desactivado, las rutas públicas desaparecen y el inicio no deja hueco
+13:28:42     [chromium] › tests/zz-desmontaje.spec.ts:104:1 › Desactivar M01 no borra nada, y al volver el catálogo está donde lo dejaron
+13:28:42     [chromium] › tests/zz-z-m04-ciclo.spec.ts:302:1 › [M04-CICLO] desactivar, desinstalar, reinstalar y activar M04 sin romper CORE, M01 ni M02
+13:28:42   172 passed (1.1h)
+13:28:42 [WebServer] $ vite --port 56161 --strictPort
+13:28:42  Network sillar_qa_m04_e2e_default Creating
+13:28:42  Network sillar_qa_m04_e2e_default Created
+13:28:42  Volume sillar_qa_m04_e2e_db_data Creating
+13:28:42  Volume sillar_qa_m04_e2e_db_data Created
+13:28:42  Container sillar_qa_m04_e2e_db Creating
+13:28:42  Container sillar_qa_m04_e2e_db Created
+13:28:42  Container sillar_qa_m04_e2e_db Starting
+13:28:42  Container sillar_qa_m04_e2e_db Started
+13:28:42  Image sillar_qa_m04_e2e-api Building
+13:28:42  Image sillar_qa_m04_e2e-api Built
+13:28:42  Container sillar_qa_m04_e2e_db Running
+13:28:42  Container sillar_qa_m04_e2e_api Creating
+13:28:42  Container sillar_qa_m04_e2e_api Created
+13:28:42  Container sillar_qa_m04_e2e_db Waiting
+13:28:42  Container sillar_qa_m04_e2e_db Healthy
+13:28:42  Container sillar_qa_m04_e2e_api Starting
+13:28:42  Container sillar_qa_m04_e2e_api Started
+13:28:42  Container sillar_qa_m04_e2e_mailpit Creating

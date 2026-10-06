@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Observador de solo lectura de la API e2e durante la etapa 6: capacidades cada 10 s y foto de Swagger cada 2 min.
+C=/var/tmp/sillar-qa-m07-60da5dc; V=$(cat $C/CORRIDA); A=http://localhost:56061; O=$C/OBSERVADOR-E2E.log
+B2B=$(paste -sd, $C/B2B-REQUEST-TIPOS.txt)
+echo "# Observador · inicio $(TZ=America/Lima date '+%F %T %z') · API $A · tipos Request de B2B: $B2B" > $O
+ult=0
+while [ ! -f $V/RC-1 ]; do
+  cap=$(curl -s -m 5 $A/api/capabilities 2>/dev/null | python3 -c "import sys,json
+try: print(','.join(sorted(m['code'] for m in json.load(sys.stdin)['modules'])))
+except Exception: print('-')" 2>/dev/null)
+  echo "$(TZ=America/Lima date +%T) capacidades=$cap" >> $O
+  ahora=$(date +%s)
+  if [ "$cap" != "-" ] && [ $((ahora-ult)) -ge 120 ]; then
+    curl -s -m 10 $A/swagger/v1/swagger.json 2>/dev/null | B2B="$B2B" python3 -c "import sys,json,os
+try:
+  d=json.load(sys.stdin); s=d.get('components',{}).get('schemas',{}); req=[k for k in s if k.endswith('Request')]
+  sin=[k for k in req if s[k].get('example') is None]; b2b=os.environ['B2B'].split(',')
+  pres=[k for k in b2b if k in s]; b2bsin=[k for k in pres if s[k].get('example') is None]
+  print(f'  swagger: Request={len(req)} sin_ejemplo={len(sin)} {sin} · B2B presentes={len(pres)}/{len(b2b)} B2B_sin_ejemplo={b2bsin}')
+except Exception as e: print('  swagger: no disponible', type(e).__name__)" >> $O
+    ult=$ahora
+  fi
+  sleep 10
+done
+echo "# Observador · fin $(TZ=America/Lima date '+%F %T %z')" >> $O
