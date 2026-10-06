@@ -31,7 +31,8 @@ $ npx playwright test tests/b2b-cliente.spec.ts tests/b2b-panel.spec.ts \
   15 passed (14.7m)       0 failed · 0 skipped       EXIT=0
 
 ANTECEDENTE: 12 passed · 0 skipped sobre 343ff7c, con las cuatro specs de M07.
-AQUÍ: las mismas cuatro (11 pruebas) MÁS las tres de zz-instalacion.spec.ts, que
+AQUÍ: las mismas cuatro (12 pruebas: 5 + 5 + 1 + 1) MÁS las tres de
+zz-instalacion.spec.ts, que
 es la costura compartida: comprueba que B2B + Sales conviviendo no rompen la
 restaurabilidad.
 

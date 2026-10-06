@@ -155,7 +155,9 @@ Es trabajo **propio de M07** —sus DTO, su documentación, la regla 6 de
 15 passed (14.7m)       0 failed · 0 skipped
 ```
 
-Las cuatro specs de M07 —11 pruebas— más las tres de `zz-instalacion.spec.ts`.
+Las cuatro specs de M07 —**12 pruebas**: 5 de `b2b-cliente`, 5 de `b2b-panel`,
+1 de `zz-b2b-ciclo` y 1 de `zz-b2b-instalacion`— más las tres de
+`zz-instalacion.spec.ts`. **12 + 3 = 15.**
 El antecedente sobre `343ff7c` fue 12 passed · 0 omitidas, y **no certifica este
 árbol**. Evidencia: `evidencias/E2E-FOCAL-M07-9F098A4.txt`.
 

@@ -89,7 +89,8 @@ npx playwright test tests/b2b-cliente tests/b2b-panel tests/zz-b2b-ciclo \
   15 passed (14.7m)       0 failed · 0 skipped
 ```
 
-Son las **cuatro specs de M07** (11 pruebas) más las **tres de
+Son las **cuatro specs de M07** (12 pruebas: 5 de cliente, 5 de panel, 1 de
+ciclo y 1 de instalación) más las **tres de
 `zz-instalacion.spec.ts`**, la costura compartida: con M03 y M07 conviviendo,
 M01 tiene dos dependientes duros instalados y la restaurabilidad tiene que
 seguir en pie. Detalle en `evidencias/E2E-FOCAL-M07-9F098A4.txt`.
@@ -320,18 +321,38 @@ El detalle y la medición del día están en
 
 ## 7 · La barrera del despliegue, tres direcciones
 
-`ModulosEnElDespliegueTests` (`aecf4aa`) se acreditó en las tres direcciones que
-la doctrina exige, con evidencia separada:
+**La acreditación vigente es la del árbol recompuesto** —`main 9f098a4` + M07—,
+y vive en un solo archivo:
 
-| | Evidencia |
+> `evidencias/BARRERA-DESPLIEGUE-9F098A4.txt`
+
+| | Qué se hace | Resultado |
+|---|---|---|
+| **1 · legal** | El árbol tal como queda en HEAD, con Services, Sales y B2B en el host | **VERDE** |
+| **2 · ilegal** | Se retira **solo B2B** del host —**Services y Sales se conservan**, comprobado antes de medir— | **ROJO**, y nombra `Sillar.Modules.B2B` y solo a él. El build seguía dando **0 errores**, que es justo el problema |
+| **3 · sabotaje** | `ProyectosDeModulo` devuelve colección vacía | **ROJO** por la guarda `proyectos.Length >= 4` |
+
+Que la dirección 2 conserve Services y Sales es lo que hace el rojo atribuible:
+con los tres fuera, el mensaje no diría de quién es.
+
+Y la tercera es la que más importa: con la lista vacía, «ninguno falta» es
+trivialmente cierto, y esa guarda es lo único que impide el verde.
+
+Ningún sabotaje queda en HEAD: `git diff --stat` de los dos archivos tocados sin
+salida, `grep -rn "SABOTAJE" backend/ --include=*.cs` sin salida, y la barrera de
+vuelta en verde sobre el árbol restaurado.
+
+### Antecedente histórico · no acredita este árbol
+
+Los tres archivos de la candidata congelada `343ff7c` se conservan como
+antecedente del cierre focal anterior y **no certifican la recomposición**:
+
+| | |
 |---|---|
-| 1 · árbol legal → verde | `evidencias/BARRERA-DESPLIEGUE-1-LEGAL.txt` |
-| 2 · módulo sin ensamblado → rojo **nombrándolo** | `evidencias/BARRERA-DESPLIEGUE-2-ILEGAL.txt` |
-| 3 · sabotaje de la propia detección → rojo, no verde silencioso | `evidencias/BARRERA-DESPLIEGUE-3-SABOTAJE.txt` |
+| `evidencias/BARRERA-DESPLIEGUE-1-LEGAL.txt` | antecedente, sobre `343ff7c` |
+| `evidencias/BARRERA-DESPLIEGUE-2-ILEGAL.txt` | antecedente, sobre `343ff7c` |
+| `evidencias/BARRERA-DESPLIEGUE-3-SABOTAJE.txt` | antecedente, sobre `343ff7c` |
 
-La tercera es la que importa más de las tres: con `ProyectosDeModulo` devolviendo
-lista vacía, «ninguno falta» es trivialmente cierto. La guarda
-`proyectos.Length >= 4` es lo único que impide ese verde.
-
-Ningún sabotaje queda en HEAD: comprobado con `git diff --stat` de los dos
-archivos tocados y `grep -rn "SABOTAJE" backend/ --include=*.cs` sin salida.
+Aquella medición se hizo sobre un árbol **sin Services y sin la reparación de
+M03**, así que su dirección ilegal no podía demostrar lo que demuestra la de
+ahora: que el rojo es de B2B **teniendo los otros dos dentro**.
