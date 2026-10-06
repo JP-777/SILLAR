@@ -149,11 +149,19 @@ Es la asimetría la que hace falta vigilar, no el módulo. Por eso la regla se
 dispara con la **entrada de un módulo a `main`**, que es el momento en que la
 lista puede quedarse atrás.
 
-**Lo que ya se vio dos veces.** M03 abrió el hueco al entrar en `main` el 3 de
-octubre de 2026 y se cerró aquí. **M05a Services lo abrió y se cerró en el mismo
-cambio**, dentro de `main`: la lista de `migrate()` y el bucle de `seed()`
-llegaron con el módulo. Esa es la forma correcta — el arreglo entra con el
-módulo, no después.
+**Los dos casos que ya hay, y son opuestos.**
+
+- **M03 abrió el hueco.** Entró a `main` el 3 de octubre de 2026 con su módulo
+  en el binario y **sin** su mitad del arnés, y el hueco vivió hasta que esta
+  rama lo cerró. Dos días en los que `/api/setup` creaba `sales` y
+  `migrate()+seed()` no sabía devolverlo.
+- **M05a Services no abrió el hueco.** Entró a `main` **con su migración y su
+  seed ya incorporados al arnés**, así que nunca existió un árbol de `main` con
+  Services en el binario y fuera de `migrate()`. **Es el ejemplo correcto de
+  aplicar esta regla en el mismo cambio que introduce el módulo.**
+
+El contraste es la lección: la regla no se cumple arreglando después, se cumple
+entrando acompañado.
 
 **El próximo caso conocido es M07 B2B.** Su candidata
 (`m07-b2b-sobre-main`, `343ff7c`) ya lleva su mitad hecha: añade
@@ -189,8 +197,8 @@ Medido así, sobre el árbol ya recompuesto:
 binario (Sillar.Api.csproj)   Core · Catalog · Cms · Crm · Demo · Sales · Services
 migrate()                     Core · Catalog · Cms · Crm · Services · Sales
 seed()                        core · catalog · cms · crm · services · sales
-migraciones por proyecto      Core 5 · Catalog 2 · Cms 2 · Crm 3 · Sales 2 ·
-                              Services 2 · Demo 0
+migraciones reales            Core 4 · Catalog 1 · Cms 1 · Crm 2 · Sales 1 ·
+                              Services 1 · Demo 0
 ```
 
 **El orden importa en un solo sitio.** Sales va el último porque es el único con
@@ -236,8 +244,6 @@ E2E funcional de M03, que es otro trabajo.
 Los rojos van en archivos aparte del verde: una barrera que solo se ha visto en
 verde no se ha visto.
 
-| | Qué se hace | Esperado | Evidencia |
-|---|---|---|---|
 Las tres se repitieron **sobre el árbol combinado**, no se heredaron.
 
 | | Resultado | Evidencia |
