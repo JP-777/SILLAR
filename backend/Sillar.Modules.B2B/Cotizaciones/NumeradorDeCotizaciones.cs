@@ -1,7 +1,5 @@
-using System.Data.Common;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Sillar.Modules.B2B.Data;
+using Sillar.Shared.Data.Numbering;
 
 namespace Sillar.Modules.B2B.Cotizaciones;
 
@@ -31,42 +29,24 @@ public static class NumeradorDeCotizaciones
 {
     public const string Serie = "C";
 
-    private static readonly TimeZoneInfo Lima = TimeZoneInfo.FindSystemTimeZoneById("America/Lima");
+    private static readonly TransactionalSeriesDefinition Series = new(
+        B2bDbContext.Schema,
+        "quote_number_series",
+        "series_code",
+        "year",
+        "last_value");
 
     public static string Formatear(int anio, int correlativo) => $"{Serie}-{anio}-{correlativo:0000}";
 
-    public static int AnioDe(DateTimeOffset instante) => TimeZoneInfo.ConvertTime(instante, Lima).Year;
+    public static int AnioDe(DateTimeOffset instante)
+        => TransactionalSeriesAllocator.YearInLima(instante);
 
     /// <summary>Reserva el siguiente número dentro de la transacción abierta del contexto.</summary>
     public static async Task<string> SiguienteAsync(B2bDbContext db, DateTimeOffset ahora, CancellationToken ct)
     {
-        var transaccion = db.Database.CurrentTransaction
-            ?? throw new InvalidOperationException(
-                "El número de cotización se pide dentro de la transacción que la crea; fuera de ella, un fallo dejaría hueco.");
-
         var anio = AnioDe(ahora);
-        var conexion = db.Database.GetDbConnection();
-        await using var comando = conexion.CreateCommand();
-        comando.Transaction = transaccion.GetDbTransaction();
-        comando.CommandText = """
-            INSERT INTO b2b.quote_number_series (series_code, year, last_value)
-            VALUES (@serie, @anio, 1)
-            ON CONFLICT (series_code, year)
-            DO UPDATE SET last_value = b2b.quote_number_series.last_value + 1
-            RETURNING last_value
-            """;
-        Parametro(comando, "serie", Serie);
-        Parametro(comando, "anio", anio);
-
-        var correlativo = Convert.ToInt32(await comando.ExecuteScalarAsync(ct));
+        var correlativo = await TransactionalSeriesAllocator.ReserveNextAsync(
+            db, Series, Serie, anio, ct);
         return Formatear(anio, correlativo);
-    }
-
-    private static void Parametro(DbCommand comando, string nombre, object valor)
-    {
-        var p = comando.CreateParameter();
-        p.ParameterName = nombre;
-        p.Value = valor;
-        comando.Parameters.Add(p);
     }
 }

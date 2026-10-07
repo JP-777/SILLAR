@@ -1,6 +1,6 @@
 # Pendientes
 
-**Última modificación parcial:** 2026-10-07 — America/Lima (entrada 29). **Base verificada de esta entrada:** `f7ceea8257ba20a27065645f1c86288c73507bec`.
+**Última modificación parcial:** 2026-10-07 — America/Lima (entrada 30). **Base verificada de esta entrada:** `312cd0dcdab256ce5cdbf4b99011c62611fcccb2`.
 
 **Creación:** 25 de agosto de 2026, 21:04:02 -05:00 — America/Lima (`1d3f78874cae9a57659166495bb84151b0797db4`)
 **Última verificación:** 7 de octubre de 2026 — America/Lima
@@ -550,6 +550,26 @@ que recibió un hecho. En particular, releer esta entrada antes de:
 - si puede releer la verdad → lectura;
 - si necesita entrega durable asíncrona → decidir mecanismo durable;
 - si solo es aviso → bus puede bastar.
+
+---
+
+## 30 · Convergencia multinodo de prioridad y plazo en M06
+
+**Pendiente.** Las tablas propias de M06 serán replicables. Dos nodos pueden modificar de forma
+concurrente la prioridad o el plazo operativo de una misma tarjeta y producir dos valores válidos
+localmente sin una política ratificada que determine cuál converge.
+
+**Consecuencia.** M05b no resuelve este conflicto: es dueño del estado y su historial, no de la
+prioridad ni del plazo de seguimiento. M06 tampoco debe inventar ahora “última escritura gana”,
+bloqueo global ni una autoridad central. La marca `row_version` conserva material para la futura
+sincronización, pero por sí sola no decide el significado del conflicto entre nodos.
+
+**Disparador.** SPEC de M16 Replicación y Sincronización. Allí debe fijarse y probarse la política
+de convergencia de las escrituras concurrentes de prioridad/plazo de M06 antes de habilitar su
+sincronización real.
+
+**No hacer ahora.** No añadir campos, colas, bloqueos ni dependencias a M05b; no resolver la
+política dentro del Paso 1 de M06.
 
 ---
 

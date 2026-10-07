@@ -6,7 +6,8 @@ import { run } from './shell.js';
 const BACKEND = path.join(ROOT, 'backend');
 
 /**
- * Aplica las migraciones de CORE, Catalog, Cms, CRM, Services, Sales y B2B
+ * Aplica las migraciones de CORE, Catalog, Cms, CRM, Services, ServiceOrders,
+ * Sales y B2B
  * contra la base e2e.
  *
  * `ConnectionStrings__Default` se pasa como variable de entorno real al
@@ -37,6 +38,9 @@ export async function migrate(): Promise<void> {
   // M05a: el instalador también lo migraría, pero la base e2e sale de aquí
   // completa, y una lista que omite un módulo es la que un día se olvida.
   await applyMigrations('Sillar.Modules.Services');
+  // M05b depende duro de M05a, por lo que se migra inmediatamente después.
+  // Su presencia aquí es independiente de que no tenga seed de negocio.
+  await applyMigrations('Sillar.Modules.ServiceOrders');
   // **M03, y va el último porque es el único con claves foráneas cruzadas**:
   // sus dos apuntan a `catalog` y a `crm` (dependencias duras declaradas en
   // `SalesModule.cs:74`), así que esas tablas tienen que existir antes. M05a
@@ -76,8 +80,8 @@ export async function seed(): Promise<void> {
   // `ON_ERROR_STOP=1` en todos: sin él, `psql` se come el error de un
   // seed y el arnés sigue con la base a medio preparar, fallando después en
   // una prueba que no tiene la culpa.
-  for (const modulo of ['core', 'catalog', 'cms', 'crm', 'services', 'sales', 'b2b']) {
-    // Los de `crm`, `sales` y `b2b` están hoy intencionalmente vacíos, y se
+  for (const modulo of ['core', 'catalog', 'cms', 'crm', 'services', 'service_orders', 'sales', 'b2b']) {
+    // Los de `crm`, `service_orders`, `sales` y `b2b` están hoy intencionalmente vacíos, y se
     // aplican igual: no aplicarlos sería una asimetría que solo se nota el día
     // que dejen de estar vacíos.
     await psqlArchivo(`/scripts/modules/${modulo}/02_seed.sql`);

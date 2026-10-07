@@ -7,17 +7,16 @@
 - **Proyecto de contratos previsto:** `Sillar.Modules.ServiceOrders.Contracts`
 - **Schema:** `service_orders`
 - **Versión propuesta:** 1.0.0
-- **Estado:** Ratificada · Paso 1 cerrado
+- **Estado:** Ratificada · Paso 2 Datos autorizado y en ejecución
 - **Fase:** Fase 2 — Operación de servicios
 - **Fecha de creación:** 6 de octubre de 2026
 - **Última verificación:** 7 de octubre de 2026
 - **Zona horaria de negocio:** America/Lima
 - **Base efectivamente leída:** `d26f28a0439a9ac72dbedcc097dd8731b37a27c9`
-- **Siguiente paso:** Paso 2 Datos, exclusivamente después de autorización expresa de Chat 2
+- **Siguiente parada obligatoria:** STOP 3.5, después de Datos y API
 
-> Esta SPEC cierra el Paso 1, pero no autoriza todavía migraciones, código productivo, endpoints ni
-> interfaz. La clasificación de replicación y la costura de numeración deben auditarse antes del
-> primer `CREATE TABLE`.
+> El Paso 1 quedó cerrado por Chat 2 sobre `312cd0dcdab256ce5cdbf4b99011c62611fcccb2`.
+> Datos y API pueden avanzar; la interfaz permanece prohibida hasta STOP 3.5 y entrega de Diseño.
 
 ## 0. Decisiones y evidencia de partida
 
@@ -384,17 +383,39 @@ public interface IServiceOrderTrackingSource
         Guid serviceOrderId,
         CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<ServiceOrderTrackingSummary>> ListOpenAsync(
+    Task<PagedResult<ServiceOrderTrackingSummary>> ListAsync(
+        ServiceOrderQuery query,
         CancellationToken cancellationToken);
 }
 
 public interface IServiceOrderTransitions
 {
-    Task<ServiceOrderTransitionResult> TransitionAsync(
+    Task<ServiceOrderOperation<ServiceOrderTransitionResult>> TransitionAsync(
         Guid serviceOrderId,
-        string toStatus,
+        string expectedStatus,
+        string targetStatus,
         CancellationToken cancellationToken);
 }
+
+public static class ServiceOrderStatuses
+{
+    // All: código, nombre visible, orden de presentación y condición terminal.
+    // LegalTransitions: pares origen/destino ratificados.
+}
+
+public sealed record ServiceOrderQuery(
+    ServiceOrderScope Scope,       // Open, Closed o All
+    string? Status,
+    ServiceOrderSort Sort,         // ReceivedAt, PromisedAt, UpdatedAt o VisibleCode
+    ServiceOrderSortDirection Direction,
+    PageRequest Page);
+
+public enum ServiceOrderOutcome { Ok, NotFound, Invalid, Conflict }
+
+public sealed record ServiceOrderOperation<T>(
+    ServiceOrderOutcome Outcome,
+    string? Error = null,
+    T? Value = default);
 
 public sealed record ServiceOrderTrackingSummary(
     Guid ServiceOrderId,
@@ -403,7 +424,8 @@ public sealed record ServiceOrderTrackingSummary(
     string CurrentStatus,
     DateTimeOffset ReceivedAt,
     DateTimeOffset? PromisedAt,
-    StaffSnapshot? CurrentAssignee);
+    StaffSnapshot? CurrentAssignee,
+    DateTimeOffset UpdatedAt);
 
 public sealed record ServiceOrderTrackingSnapshot(
     Guid ServiceOrderId,
@@ -414,7 +436,8 @@ public sealed record ServiceOrderTrackingSnapshot(
     DateTimeOffset? PromisedAt,
     IReadOnlyList<ServiceOrderWorkItemSnapshot> Items,
     StaffSnapshot? CurrentAssignee,
-    IReadOnlyList<ServiceOrderStatusHistorySnapshot> StatusHistory);
+    IReadOnlyList<ServiceOrderStatusHistorySnapshot> StatusHistory,
+    DateTimeOffset UpdatedAt);
 
 public sealed record ServiceOrderWorkItemSnapshot(
     Guid ServiceOrderItemId,
@@ -441,6 +464,28 @@ public sealed record ServiceOrderTransitionResult(
     string CurrentStatus,
     ServiceOrderStatusHistorySnapshot HistoryEntry);
 ```
+
+`PagedResult<T>` y `PageRequest` son los tipos compartidos de SILLAR; M05b no crea una paginación
+paralela. El alcance abierta/cerrada/todas, el estado, el orden y su dirección viajan como datos
+tipados. La lista ordenada de estados y las transiciones legales también las publica M05b como datos:
+M06 puede representarlas, pero nunca mantiene constantes ni una máquina propias.
+
+`UpdatedAt` es la marca estable de última modificación para v1. No constituye un change-feed y el
+bus no es requisito de refresco.
+
+Los identificadores UUID y snapshots del contrato son compatibles con la clasificación ratificada
+de las futuras tablas `tracking.order_tracking` y `tracking.tracking_notes` como replicables. Esa
+clasificación no expone notas: `tracking_notes` seguirá siendo interno de M06, M08 no lo recibe por
+Contracts y v1 no inventa `customer_visible`. Una futura comunicación pública sería un concepto
+nuevo; nunca una reinterpretación de notas internas antiguas.
+
+`ServiceOrderOperation<T>` sigue el patrón `Outcome + Operation<T>` dentro de Contracts. El enum es
+el protocolo: inexistente → `NotFound`; transición ilegal → `Invalid`; estado esperado distinto del
+real → `Conflict`; confirmada → `Ok`. `Error` solo apoya a una persona y ningún consumidor lo parsea.
+
+La transición recibe `expectedStatus`. Dentro de una única operación autoritativa M05b lee el estado,
+rechaza con `Conflict` y cero escrituras si no coincide, vuelve a validar origen/destino, cambia estado,
+inserta exactamente un historial y confirma la misma transacción. No hay reintento automático.
 
 Este contrato no expone entidades EF ni permite lectura directa del schema. M06 no define estados,
 no escribe historial y no actualiza `service_orders.status`. Si su tablero provoca una transición,
