@@ -1,0 +1,8 @@
+# Las siete pruebas que fallaron en 60da5dc, en la corrida canónica de 91eb85b (hora America/Lima)
+expected  18:40:16   62.5 s  aa-vacios.spec.ts:247  Con el catálogo vacío y nadie más aportando, la portada lo dice
+expected  18:43:48   61.0 s  catalogo.spec.ts:210  Con M01 desactivado no queda entrada de menú, ni ruta viva, ni hueco en el inicio
+expected  18:46:46  100.3 s  contenido.spec.ts:837  Con M02 activo y sin nada publicado, la portada lo dice en vez de quedarse muda
+expected  18:51:37   72.3 s  m02-cierre-evidencia.spec.ts:498  [M02-C24] Catálogo inactivo: ninguna solicitud al selector
+expected  18:58:59   72.2 s  tienda.spec.ts:365  Con M01 desactivado, las rutas públicas desaparecen y el inicio no deja hueco
+expected  19:05:09   69.8 s  zz-desmontaje.spec.ts:105  Desactivar M01 no borra nada, y al volver el catálogo está donde lo dejaron
+expected  19:08:55  407.6 s  zz-z-m04-ciclo.spec.ts:306  [M04-CICLO] desactivar, desinstalar, reinstalar y activar M04 sin romper CORE, M01 ni M02

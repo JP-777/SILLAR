@@ -1,0 +1,14 @@
+# Paridad binario / setup ↔ migrate ↔ seed · árbol 91eb85b2b5c7e23ad6fdf32ff16a7b0464a91d5a · pila e2e viva · 2026-10-06 18:39:23 -0500
+# binario = ProjectReference en backend/Sillar.Api/Sillar.Api.csproj · setup = fila en core.modules de la base e2e (la instalación por /api/setup registra el binario)
+# migrate = applyMigrations('<proyecto>') en e2e/setup/migrate.ts · historial = filas de <schema>.__migrations en la base e2e frente a migraciones *.cs del repo
+# seed = '<código>' en la lista de seed() de e2e/setup/migrate.ts y database/modules/<código>/02_seed.sql en el repo
+modulo    | binario  | setup | migrate | historial_e2e/repo     | seed | 02_seed.sql
+Core      | sí      | 1     | sí     | 4/4                    | sí  | sí
+Catalog   | sí      | 1     | sí     | 1/1                    | sí  | sí
+Cms       | sí      | 1     | sí     | 1/1                    | sí  | sí
+Crm       | sí      | 1     | sí     | 2/2                    | sí  | sí
+Services  | sí      | 1     | sí     | 1/1                    | sí  | sí
+Sales     | sí      | 1     | sí     | 1/1                    | sí  | sí
+B2B       | sí      | 1     | sí     | 1/1                    | sí  | sí
+## Demo (aparte)
+binario: 1 ProjectReference · core.modules demo_*: demo_catalog,demo_crm,demo_sales,demo_service_orders,demo_services,demo_tracking · migraciones en repo: 0 · database/modules/demo*: 0

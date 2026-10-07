@@ -1,0 +1,13 @@
+# Base e2e durante la fase A focal · 2026-10-06 18:19:39 -0500
+# SHA: 91eb85b2b5c7e23ad6fdf32ff16a7b0464a91d5a
+sillar_qa_m04_e2e_api · sillar_qa_m04_e2e-api · Up 5 seconds · 0.0.0.0:56061->8080/tcp, [::]:56061->8080/tcp
+sillar_qa_m04_e2e_db · postgres:16 · Up 2 minutes (healthy) · 0.0.0.0:55961->5432/tcp, [::]:55961->5432/tcp
+## Cadena API (sin contraseña)
+Host=db;Port=5432;Database=sillar_qa_m04_e2e;Username=postgres;Password=<oculta>
+## Bases
+postgres
+sillar_qa_m04_e2e
+## Schemas
+b2b,catalog,cms,core,crm,sales,services
+## Capacidades
+core,demo_catalog
