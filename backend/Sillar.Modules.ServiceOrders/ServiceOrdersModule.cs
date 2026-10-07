@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sillar.Modules.ServiceOrders.Data;
+using Sillar.Modules.ServiceOrders.Contracts;
 using Sillar.Modules.ServiceOrders.Numbering;
+using Sillar.Modules.ServiceOrders.Services;
 using Sillar.Shared.Data.Modularity;
 using Sillar.Shared.Modularity;
 using Sillar.Shared.Replication;
@@ -50,6 +52,7 @@ public sealed class ServiceOrdersModule : IModule, IModuleMigrations
             ServiceOrdersDbContext.Schema,
             ServiceOrdersDbContext.MigrationsHistoryTable));
         services.AddScoped<ServiceOrderCodeAllocator>();
+        services.AddScoped<IServiceOrderTransitions, ServiceOrderTransitionService>();
     }
 
     // Paso 2 publica persistencia y contratos. Los endpoints se incorporan en Paso 3.

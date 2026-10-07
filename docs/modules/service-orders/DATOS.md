@@ -81,16 +81,19 @@ e2e. El ciclo completo `[M05B-CICLO]` sigue reservado para etapa 6: este paso no
 - `ServiceOrderOutcome` + `ServiceOrderOperation<T>` propios (`Ok`, `NotFound`, `Invalid`, `Conflict`);
 - `TransitionAsync(id, expectedStatus, targetStatus, ct)` sin reintento automático.
 
-El contrato no publica notas de M06. La concurrencia `expectedStatus`, la atomicidad estado+historial
-y la carrera de dos consumidores se implementan y ejecutan con la operación autoritativa en Paso 3;
-este paso deja la firma compilable y la persistencia necesaria.
+El contrato no publica notas de M06. La operación autoritativa mínima de transición queda materializada
+junto a la persistencia porque C7 exige comprobar ahora su costura transaccional: bloquea la orden,
+contrasta `expectedStatus`, vuelve a validar la máquina y confirma estado + una fila de historial en la
+misma transacción. La prueba PostgreSQL real enfrenta dos consumidores con el mismo estado esperado:
+uno obtiene `Ok`, el otro `Conflict` y solo queda una transición. Paso 3 sigue siendo dueño de las rutas
+y del resto de operaciones; este paso no publica endpoints.
 
 ## 6. Evidencia exigida para cerrar esta candidata
 
 La suite `Sillar.Modules.ServiceOrders.Tests` usa bases PostgreSQL 16 desechables y cubre migración,
 catálogo físico, FK, clasificación, triples, actor de sistema, cantidad decimal, fecha prometida,
-serie concurrente, rollback, seed, guardas y aislamiento de drop. También hay regresión focal sobre
-M03 y M07 tras la extracción común.
+serie concurrente, rollback, seed, guardas, aislamiento de drop y atomicidad/carrera de transición.
+También hay regresión focal sobre M03 y M07 tras la extracción común.
 
 Los sabotajes dirigidos deben observarse antes del commit final:
 
