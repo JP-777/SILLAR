@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
+    <ProjectReference Include="..\Sillar.Shared.Data\Sillar.Shared.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Sillar.Modules.Tracking.Tests" />
+  </ItemGroup>
+</Project>
