@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Sillar.Modules.Tracking.Data;
 using Sillar.Modules.Tracking.Domain;
 using Sillar.Shared.Replication;
@@ -25,7 +27,8 @@ public sealed class ModelContractTests
     {
         using var database = Context();
 
-        var entity = database.Model.FindEntityType(typeof(OrderTracking))!;
+        var model = database.GetService<IDesignTimeModel>().Model;
+        var entity = model.FindEntityType(typeof(OrderTracking))!;
         var priority = entity.FindProperty(nameof(OrderTracking.BoardPriority))!;
 
         Assert.True(priority.IsNullable);
