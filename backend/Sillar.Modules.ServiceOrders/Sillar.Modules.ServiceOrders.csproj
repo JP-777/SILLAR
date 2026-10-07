@@ -3,6 +3,7 @@
     <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
     <ProjectReference Include="..\Sillar.Shared.Data\Sillar.Shared.Data.csproj" />
     <ProjectReference Include="..\Sillar.Core.Contracts\Sillar.Core.Contracts.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Crm.Contracts\Sillar.Modules.Crm.Contracts.csproj" />
     <ProjectReference Include="..\Sillar.Modules.Services.Contracts\Sillar.Modules.Services.Contracts.csproj" />
     <ProjectReference Include="..\Sillar.Modules.ServiceOrders.Contracts\Sillar.Modules.ServiceOrders.Contracts.csproj" />
   </ItemGroup>

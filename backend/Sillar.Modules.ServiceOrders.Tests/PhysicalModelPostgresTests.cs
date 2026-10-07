@@ -28,7 +28,7 @@ public sealed class PhysicalModelPostgresTests
                  WHERE table_schema = 'service_orders' AND table_name <> '__migrations'
                 """);
             Assert.Equal(ExpectedTables, tables.Split(','));
-            Assert.Equal(1L, await EphemeralDatabase.ScalarAsync<long>(connection,
+            Assert.Equal(2L, await EphemeralDatabase.ScalarAsync<long>(connection,
                 "SELECT count(*) FROM service_orders.__migrations"));
 
             await EphemeralDatabase.ExecuteAsync(connection, EphemeralDatabase.Script("01_schema.sql"));
@@ -123,7 +123,7 @@ public sealed class PhysicalModelPostgresTests
             }
 
             await AssertColumns("service_orders",
-                "service_order_id", "visible_code", "status", "customer_id",
+                "service_order_id", "visible_code", "status", "create_idempotency_key", "customer_id",
                 "customer_name_snapshot", "customer_phone_snapshot", "customer_email_snapshot",
                 "received_notes", "received_at", "promised_at",
                 "created_by_admin_name", "created_by_admin_user_id", "created_by_admin_user_home_node",
@@ -164,7 +164,8 @@ public sealed class PhysicalModelPostgresTests
                     """));
 
             Assert.Equal(
-                "uq_service_order_items_order_sort,uq_service_order_series_node_code_year,uq_service_orders_visible_code",
+                "uq_service_order_items_order_sort,uq_service_order_series_node_code_year," +
+                "uq_service_orders_create_idempotency_key,uq_service_orders_visible_code",
                 await EphemeralDatabase.ScalarAsync<string>(connection, """
                     SELECT string_agg(indexname, ',' ORDER BY indexname)
                       FROM pg_indexes
