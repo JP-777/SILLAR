@@ -4,6 +4,15 @@
 - **Última verificación:** 7 de octubre de 2026 · America/Lima
 - **Rama:** `m06-tracking-pre-spec`, desde `main d26f28a0439a9ac72dbedcc097dd8731b37a27c9`
 
+> ## TRANSCRITAS · este archivo ya no es la fuente definitiva
+>
+> **7 de octubre de 2026.** Las tres entradas de abajo **ya están en el ledger canónico**,
+> `docs/integracion/REGISTRO-PARALELIZACION.md` de la rama `m05b-service-orders-spec`.
+>
+> Este archivo se conserva como **registro histórico de cómo se produjeron** —y de la costura que
+> obligó a escribirlas aparte—, no como fuente. **Al converger manda el ledger canónico**, y estas
+> entradas no se vuelven a copiar: estarían dos veces.
+
 ## Por qué están aquí y no en el archivo de siempre
 
 El ledger es `docs/integracion/REGISTRO-PARALELIZACION.md` y **existe solo en la rama

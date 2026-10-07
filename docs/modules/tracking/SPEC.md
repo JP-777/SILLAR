@@ -5,15 +5,20 @@
 - **Commit base de este documento:** `d26f28a0439a9ac72dbedcc097dd8731b37a27c9` (`main` vigente)
 - **Base de conocimiento autoritativa:** rama `m05b-service-orders-spec`, cierre del Paso 1 de M05b
   en `312cd0dcdab256ce5cdbf4b99011c62611fcccb2`
+- **Contrato real contrastado:** `f494eae81aa89872ebe4860aad319e25fd9dca1c` —primer SHA remoto donde
+  `Sillar.Modules.ServiceOrders.Contracts` existe compilable—, archivo
+  `backend/Sillar.Modules.ServiceOrders.Contracts/ServiceOrderContracts.cs`. Paso 2 posterior de M05b
+  en `d36ac6066ff7c1cda3a4a1b36ef26805c2632e55`
 
 > **Qué es este documento y qué no es.** Es el Paso 1 **documental** de M06, escrito contra la
 > frontera M05b/M06 **ya ratificada**. No autoriza código: no hay proyecto `Sillar.Modules.Tracking`,
 > ni migraciones, ni schema, ni endpoints, ni frontend.
 >
-> **Y no está definitivamente cerrado.** Todo lo que M06 espera consumir de M05b existe hoy como
-> **decisión ratificada en prosa y como firma C# propuesta**, no como paquete publicado. Cada punto en
-> esa situación lleva la marca `CONTRATO_PENDIENTE_DE_MATERIALIZAR`. El Paso 1 de M06 solo podrá
-> cerrarse cuando se contraste esta SPEC contra el `Sillar.Modules.ServiceOrders.Contracts` real.
+> **Contrastado el 7 de octubre de 2026 contra el contrato real.** Los siete huecos que esta SPEC
+> registró como `CONTRATO_PENDIENTE_DE_MATERIALIZAR` **están los siete resueltos** en el código
+> publicado, y las tres decisiones que quedaban abiertas fueron ratificadas. El §6.2 ya no describe
+> carencias: describe la firma real, citada por archivo. **No queda ninguna marca
+> `CONTRATO_PENDIENTE_DE_MATERIALIZAR` en este documento.**
 
 ---
 
@@ -34,6 +39,19 @@ De la frontera ratificada de M05b (`312cd0dc`, §3.3, §6.2 y D1–D9):
 - **El bus nunca es el camino por el que viaja un hecho que alguien necesita; es el camino por el que
   viaja un aviso.** M06 no reconstruye historia desde `InProcessEventBus`.
 - M06 depende **duro** de M05b.
+
+Y lo ratificado el 7 de octubre de 2026, que cierra lo que este documento dejaba abierto:
+
+- **Los datos de seguimiento se replican**: `order_tracking` y `tracking_notes` con UUID v7 de
+  aplicación, `origin_node` y `row_version`. La razón que lo decide no la había visto yo: **M08 Portal
+  puede ejecutarse en un nodo web y tiene que poder ver el seguimiento de órdenes nacidas en
+  mostrador.** Sin replicar, el portal no vería nada de lo que ocurre donde se trabaja.
+- **Las notas son exclusivamente internas**, y de ahí la frase que gobierna el apartado:
+  **replicación física no es exposición contractual.**
+- **La fila de seguimiento es *lazy*:** no existe mientras nadie cambie datos propios de M06.
+- **Un solo tablero en v1.** No se anticipan talleres ni sucursales.
+- **La concurrencia multinodo de prioridad y plazo no se resuelve aquí**: está diferida a M16 y
+  registrada en `docs/PENDIENTES.md` §30.
 
 ### 0.2 Evidencia leída, con su cita
 
@@ -157,16 +175,23 @@ puede referenciar a una no replicada (ADR-018), y una FK cruzada de M06 apunta a
 
 | Tabla conceptual de M06 | ¿Replicable? | Motivo | PK propuesta | `origin_node` | Versión |
 |---|---|---|---|---|---|
-| `tracking.order_tracking` — una fila por orden seguida: su prioridad y sus plazos internos | **Sí** (propuesto) | La orden viaja; si su posición de trabajo no viajara, al llegar a otro nodo la tarjeta aparecería sin prioridad y alguien tendría que reordenarla a mano | uuid v7 generado por la aplicación | Sí | `row_version` |
-| `tracking.tracking_notes` — notas de avance | **Sí** (propuesto) | Una nota de seguimiento es parte de cómo se entiende el trabajo; leerla solo en el nodo donde se escribió la vuelve inútil | uuid v7 generado por la aplicación | Sí | `row_version` |
+| `tracking.order_tracking` — una fila por orden seguida: su prioridad y sus plazos internos | **Sí** · ratificado | **M08 Portal puede ejecutarse en un nodo web y tiene que poder ver el seguimiento de órdenes nacidas en mostrador.** Si el seguimiento no viaja, el portal no ve nada de lo que ocurre donde se trabaja | uuid v7 generado por la aplicación | Sí | `row_version` |
+| `tracking.tracking_notes` — notas internas de avance | **Sí** · ratificado | Misma razón: la nota explica el trabajo, y el trabajo se consulta desde otro nodo. **Replicarla no la expone** — ver §5.2 | uuid v7 generado por la aplicación | Sí | `row_version` |
 
-> **`DECISION_PENDIENTE` · la replicación de los datos de seguimiento no está ratificada.**
-> Lo de arriba es **propuesta razonada, no decisión**, y es exactamente de las caras de deshacer: cambia
-> el tipo de la clave primaria. Si JP decide que la prioridad del tablero es **operativa de cada nodo**
-> —«cada taller ordena su propia cola»— entonces `order_tracking` pasa a `integer GENERATED ALWAYS AS
-> IDENTITY`, sin `origin_node` ni `row_version`, y **deja de poder ser referenciada por cualquier tabla
-> replicada**. No se decide aquí. Se decide antes del primer `CREATE TABLE`, que es cuando todavía es
-> barato.
+> **Ratificado el 7 de octubre de 2026, y por una razón que yo no había visto.** Mi propuesta era la
+> correcta pero el argumento era más débil: hablaba de que la tarjeta no perdiera su prioridad al
+> cambiar de nodo. El argumento que decide es otro y es de producto: **M08 Portal puede ejecutarse en un
+> nodo web y debe poder ver el seguimiento de órdenes nacidas en mostrador.** Con los datos locales, el
+> portal sería ciego a todo lo que pasa en el taller.
+>
+> Queda cerrado: UUID v7 de aplicación, `origin_node` y `row_version` en las dos tablas. **La decisión
+> cara de deshacer está tomada antes del primer `CREATE TABLE`**, que era el único momento en que era
+> barata.
+
+> **Y lo que la replicación NO decide: la concurrencia.** Dos nodos pueden cambiar la prioridad o el
+> plazo de la misma tarjeta y producir dos valores igual de válidos. **M06 no resuelve eso y no inventa
+> «última escritura gana»:** está diferido a M16 y registrado en `docs/PENDIENTES.md` §30. Replicar es
+> hacer que el dato viaje; converger es otra cosa y tiene otro dueño.
 
 ### 4.1 Consecuencias ADR-016/018, bajo la propuesta de arriba
 
@@ -228,13 +253,33 @@ distintos— pero **nunca anterior a la recepción de la orden**, que se lee del
 > `service_orders` sería más corto y sería exactamente el error: M06 escribiendo en el schema de M05b.
 > La fila propia es la forma de que la prioridad sea de Seguimiento y desaparezca al desmontarlo.
 
-> **`DECISION_PENDIENTE` · ¿se crea la fila sola?** Si el seguimiento solo existe cuando alguien
-> ordena una tarjeta, hay órdenes sin fila y el tablero las pinta con prioridad implícita. Si se crea
-> al ver la orden por primera vez, M06 escribe por el hecho de leer. Hay una tercera: prioridad
-> implícita por `received_at` mientras nadie la toque, y fila solo al tocarla. **La tercera es la que
-> recomiendo** —no escribe por leer y no necesita fila para funcionar— pero es decisión de producto.
+> **Ratificado: la fila es *lazy*.** No existe mientras nadie cambie datos propios de M06. El orden
+> inicial es **implícito por `received_at`**, que llega en el contrato, y la fila **se materializa** al
+> fijar, reordenar, poner un plazo o añadir cualquier información propia.
+>
+> Es la tercera vía, la que recomendé y por el motivo que importa: **M06 no escribe por el hecho de
+> leer.** Un tablero que creara una fila por cada orden que alguien mira ensuciaría la base con
+> seguimiento que nadie pidió, y haría imposible distinguir «sin prioridad asignada» de «prioridad
+> cero». Con la fila *lazy*, su existencia **significa algo**: alguien decidió sobre esta orden.
+>
+> Consecuencia para el tablero: una tarjeta sin fila **no es un caso de error**. Se pinta en su orden
+> implícito, y la primera acción sobre ella la materializa.
 
-### 5.2 `tracking.tracking_notes`
+### 5.2 `tracking.tracking_notes` — internas, y solo internas
+
+**Las notas de seguimiento son exclusivamente internas.** Y la regla que lo gobierna, dicha una vez
+para no tener que deducirla después:
+
+> **Replicación física no es exposición contractual.**
+
+Que una nota viaje entre nodos no la vuelve visible para nadie fuera del personal. Concretamente,
+**M08 Portal no lee `tracking_notes`, no las recibe por Contracts y no accede al schema `tracking`**.
+Lo que M06 publique para M08 (§6.5) no incluye notas.
+
+**No existe `customer_visible` en v1.** No es un olvido: una columna así invitaría a escribir en el
+mismo sitio dos cosas con audiencias distintas, y el día que alguien marcara mal una casilla una nota
+de taller aparecería en el portal de un cliente. Si alguna vez hace falta un mensaje para el cliente,
+será **otra cosa con otro nombre**, no una nota interna con un interruptor.
 
 | Campo conceptual | Tipo propuesto | Nulo | Significado |
 |---|---|---:|---|
@@ -270,45 +315,71 @@ de estar vacío — es la lección que M03 pagó en el arnés e2e.
 
 ---
 
-## 6. Contrato que M06 espera consumir de M05b
+## 6. Contrato que M06 consume de M05b
 
-### 6.1 Lo ratificado, tal como está
+### 6.1 La firma real, citada
 
-M06 consume `Sillar.Modules.ServiceOrders.Contracts` según `312cd0dc` §6.2:
-`IServiceOrderTrackingSource` (`GetAsync`, `ListOpenAsync`), `IServiceOrderTransitions`
-(`TransitionAsync`) y los `record` de snapshot, resumen, línea, triple de personal, historial y
-resultado de transición.
+Fuente: `backend/Sillar.Modules.ServiceOrders.Contracts/ServiceOrderContracts.cs` en
+`f494eae81aa89872ebe4860aad319e25fd9dca1c`. **No se transcribe aquí una firma inventada**: lo que sigue
+es lo que el archivo declara.
 
-> **`CONTRATO_PENDIENTE_DE_MATERIALIZAR` · todo el bloque anterior.** La decisión está ratificada y la
-> firma está propuesta, pero **el paquete no existe**. Ningún dato de este documento se apoya en una
-> firma publicada.
+| Pieza | Qué publica |
+|---|---|
+| `ServiceOrderStatuses` | Las cinco constantes, `All` como `IReadOnlyList<ServiceOrderStateDefinition>` y `LegalTransitions` como `IReadOnlyList<ServiceOrderTransitionDefinition>` |
+| `ServiceOrderStateDefinition` | `Code`, `DisplayName`, `DisplayOrder`, `IsTerminal` |
+| `ServiceOrderTransitionDefinition` | `FromStatus`, `ToStatus` |
+| `ServiceOrderScope` | `Open`, `Closed`, `All` |
+| `ServiceOrderSort` · `ServiceOrderSortDirection` | `ReceivedAt`, `PromisedAt`, `UpdatedAt`, `VisibleCode` · `Ascending`, `Descending` |
+| `ServiceOrderQuery` | `Scope`, `Status?`, `Sort`, `Direction`, `Page` (`PageRequest` de `Sillar.Shared.Paging`) |
+| `ServiceOrderOutcome` | `Ok`, `NotFound`, `Invalid`, `Conflict` |
+| `ServiceOrderOperation<T>` | `Outcome`, `Error?`, `Value?` |
+| `IServiceOrderTrackingSource` | `GetAsync(id, ct)` → `ServiceOrderTrackingSnapshot?` · `ListAsync(query, ct)` → `PagedResult<ServiceOrderTrackingSummary>` |
+| `IServiceOrderTransitions` | `TransitionAsync(id, expectedStatus, targetStatus, ct)` → `ServiceOrderOperation<ServiceOrderTransitionResult>` |
+| `ServiceOrderTrackingSummary` | id, `VisibleCode`, `CustomerName`, `CurrentStatus`, `ReceivedAt`, `PromisedAt?`, `CurrentAssignee?`, **`UpdatedAt`** |
+| `ServiceOrderTrackingSnapshot` | lo del resumen más `Items`, `StatusHistory` y **`UpdatedAt`** |
+| `ServiceOrderWorkItemSnapshot` | `ServiceOrderItemId`, `ServiceName`, `SaleUnit?`, `Quantity`, `RequestedDetails` |
+| `StaffSnapshot` | `DisplayName`, `AdminUserId`, `HomeNode` — la triple, tal cual |
+| `ServiceOrderStatusHistorySnapshot` | `StatusHistoryId`, `FromStatus?`, `ToStatus`, `OccurredAt`, `PerformedBy?`, `OriginNode` |
+| `ServiceOrderTransitionResult` | `ServiceOrderId`, `CurrentStatus`, `HistoryEntry` |
 
-### 6.2 Huecos entre lo que un tablero necesita y lo que la firma propuesta ofrece
+El archivo no expone `IQueryable`, ni entidades EF, ni SQL. **M06 no necesita nada más y no pedirá
+nada más para v1.**
 
-Esto **no son campos inventados**: son necesidades del tablero que la firma actual no cubre. Se
-registran para contrastarlas cuando C materialice el contrato. **Ninguna se da por concedida.**
+### 6.2 Los siete huecos, contrastados uno a uno
 
-| # | Qué necesita el tablero | Qué ofrece hoy la firma | Marca |
+Los siete están **resueltos en el código publicado**. Se conserva la columna de lo que faltaba porque
+el valor de este apartado es poder comprobar que ninguna necesidad quedó sin respuesta — y que ninguna
+se resolvió inventándola desde M06.
+
+| # | Lo que el tablero necesitaba | Cómo lo resuelve el contrato real | Estado |
 |---|---|---|---|
-| **C1** | Saber **qué columnas pintar**: la lista de estados vigentes, en su orden | nada | `CONTRATO_PENDIENTE_DE_MATERIALIZAR` |
-| **C2** | Saber **qué arrastres son legales** desde un estado, para no ofrecer un movimiento que M05b va a rechazar | nada | `CONTRATO_PENDIENTE_DE_MATERIALIZAR` |
-| **C3** | Listar órdenes **cerradas o canceladas**, para una columna de terminadas o una vista de historia | `ListOpenAsync()` solo abiertas | `CONTRATO_PENDIENTE_DE_MATERIALIZAR` |
-| **C4** | **Filtrar, ordenar y paginar** el listado: un tablero de treinta tarjetas no es el de trescientas | `ListOpenAsync()` sin parámetros | `CONTRATO_PENDIENTE_DE_MATERIALIZAR` |
-| **C5** | Saber **si algo cambió** desde la última lectura, para refrescar sin recargar todo | el resumen no lleva versión ni marca temporal de cambio | `CONTRATO_PENDIENTE_DE_MATERIALIZAR` |
-| **C6** | **Qué pasa cuando la transición es ilegal**: ¿excepción, o resultado que lo dice? | `TransitionAsync` solo devuelve el caso correcto | `CONTRATO_PENDIENTE_DE_MATERIALIZAR` |
-| **C7** | **Transición condicionada al estado que el tablero vio**, para que dos personas arrastrando a la vez no provoquen un movimiento que ninguna quiso | `TransitionAsync(id, toStatus, ct)` sin estado esperado | `CONTRATO_PENDIENTE_DE_MATERIALIZAR` |
+| **C1** | Qué columnas pintar, y en qué orden | `ServiceOrderStatuses.All`, con `DisplayName` en español y `DisplayOrder` | **RESUELTO** |
+| **C2** | Qué arrastres son legales desde un estado | `ServiceOrderStatuses.LegalTransitions`, siete pares | **RESUELTO** |
+| **C3** | Listar cerradas, o todas | `ServiceOrderScope { Open, Closed, All }` en la consulta | **RESUELTO** |
+| **C4** | Filtrar, ordenar y paginar | `ServiceOrderQuery` con `Status?`, `Sort`, `Direction` y `PageRequest`; respuesta `PagedResult<T>` | **RESUELTO** |
+| **C5** | Saber si algo cambió | `UpdatedAt` en resumen **y** en snapshot, y `ServiceOrderSort.UpdatedAt` para ordenar por él | **RESUELTO** |
+| **C6** | Qué pasa con una transición ilegal | `ServiceOrderOperation<T>` con `Outcome`: `Ok`, `NotFound`, `Invalid`, `Conflict`. **Sin excepciones** | **RESUELTO** |
+| **C7** | Transición condicionada al estado visto | `TransitionAsync(id, **expectedStatus**, targetStatus, ct)` | **RESUELTO** |
 
-**C1 y C2 son las que deciden si M06 puede existir sin romper la frontera.** Sin ellas, la única forma
-de pintar un tablero es escribir los estados y los arrastres dentro de M06 — es decir, **una segunda
-máquina de estados**, que es justo lo que la frontera prohíbe. No propongo una firma: propongo que el
-contrato de M05b publique su máquina como **dato de lectura**, y que la forma la decida M05b, que es su
-dueño.
+Y tres cosas que el contrato real decide y que **cambian cómo M06 las usa**:
 
-**C7 es la que más se parece a un defecto latente.** Dos personas con el tablero abierto ven
-`in_progress`; una arrastra a `ready` y la otra a `cancelled`. Las dos transiciones son legales por
-separado, así que M05b aceptará las dos y la segunda ganará sin que nadie sepa que hubo un conflicto.
-No lo arregla M06 reintentando: hace falta que la operación acepte el estado esperado. **Lo reporto;
-no lo decido.**
+**1 · `LegalTransitions` es dato de representación, no autoridad.** El propio archivo lo dice: «la
+operación las revalida». M06 las usa para **no ofrecer** un arrastre que va a fracasar; **nunca** para
+concluir que uno va a funcionar. La autoridad sigue siendo `TransitionAsync`, y M06 obedece su
+`Outcome` aunque su copia de la lista diga otra cosa. Si alguna vez discrepan, **manda la operación** y
+la discrepancia es un defecto de M05b que M06 no disimula.
+
+**2 · La semántica vive en `Outcome`, no en `Error`.** M06 **ramifica por el `enum`** y jamás interpreta
+el texto. `Error` se enseña a la persona tal como llega; leerlo para decidir sería construir una regla
+sobre una cadena que su dueño puede reescribir mañana.
+
+**3 · `IsTerminal` es información nueva, y útil.** `completed` y `cancelled` son terminales. Una columna
+terminal no ofrece arrastres de salida, y eso sale del dato, no de que M06 sepa cuáles son.
+
+**C7, que era mi hallazgo más serio, quedó cerrado por donde tenía que cerrarse.** Dos personas con el
+tablero abierto ven `in_progress`; ahora la segunda recibe `Conflict` en vez de provocar un cambio que
+nadie pidió. M06 **no reintenta en silencio**: relee y enseña el estado real, porque reintentar sobre un
+estado que ya cambió repite el problema con otra cara.
 
 ### 6.3 El bus, y para qué sirve aquí
 
@@ -408,10 +479,10 @@ impide y qué hacer, y un botón nombra la acción que ejecuta.
 
 | Regla | ¿Por el mundo, o por la circunstancia? |
 |---|---|
-| «La prioridad es un entero y basta» | **Por la circunstancia.** Con un solo nodo nadie reordena en dos sitios a la vez. Es la decisión del §4 |
-| «El tablero cabe en una pantalla» | **Por la circunstancia**: hoy no hay instalación con trescientas órdenes. Es el hueco C4 |
-| «Las columnas son cinco» | **Por la circunstancia**, y además no es de M06. Huecos C1 y C2 |
-| «Solo hay un tablero» | **Por la circunstancia.** Si mañana hay dos talleres, ¿un tablero o dos? No se decide aquí |
+| «La prioridad es un entero y basta» | **Por la circunstancia, y sigue abierto.** Con un solo nodo nadie reordena en dos sitios a la vez; con dos, los dos valores son válidos. **Diferido a M16**, `PENDIENTES.md` §30 |
+| «El tablero cabe en una pantalla» | **Por la circunstancia**, y ya está cubierto: el contrato pagina (`PageRequest`, por omisión 50 y máximo 200) |
+| «Las columnas son cinco» | **Por la circunstancia, y no es de M06.** Se leen de `ServiceOrderStatuses.All`: si M05b añade un estado, el tablero crece sin tocar M06 |
+| «Solo hay un tablero» | **Por la circunstancia, y ratificado así para v1.** Si mañana hay dos talleres habrá que volver aquí; hoy no se anticipa |
 
 ### 8.2 Barreras nuevas y lugar de aplicación
 
@@ -513,9 +584,18 @@ ningún sitio, y el contenido visible irá en español.
 
 ### 9.1 A1 — Tablero
 
-Agrupaciones **derivadas de los estados que publica M05b** (huecos C1/C2), y en cada una las tarjetas
-en su `board_priority`. Cada tarjeta: código visible, cliente, responsable actual y plazo interno si lo
-tiene. Las fijadas, arriba. Vacío honesto: «Todavía no hay órdenes que seguir», sin inventar columnas.
+**Un solo tablero.** Las agrupaciones salen de `ServiceOrderStatuses.All`: el rótulo es su
+`DisplayName` —ya en español, de M05b— y el orden su `DisplayOrder`. **M06 no traduce ni ordena estados
+por su cuenta.** Las terminales (`IsTerminal`) no ofrecen arrastre de salida.
+
+Dentro de cada agrupación, las tarjetas por `board_priority`, y las que **no tienen fila** —la mayoría,
+por el *lazy* del §5.1— en su orden implícito por `ReceivedAt`. Las fijadas, arriba.
+
+Cada tarjeta: código visible, cliente, responsable actual y plazo interno si lo tiene. La lista llega
+por `ListAsync` con `Scope.Open` para las columnas de trabajo; `Scope.Closed` alimenta la vista de
+terminadas, que **se pagina** porque crece sin parar.
+
+Vacío honesto: «Todavía no hay órdenes que seguir», sin inventar columnas.
 
 ### 9.2 A2 — Reordenar y fijar
 
@@ -535,8 +615,21 @@ M05b**, que es otra cosa y de otro dueño.
 
 ### 9.5 A5 — Confirmación de transición
 
-Dice el estado de origen, el destino y qué se va a registrar. Al aceptar llama a M05b; al volver,
-**relee** y pinta lo que M05b conteste. Si M05b rechaza, se enseña su frase tal cual.
+Dice el estado de origen, el destino y qué se va a registrar. Al aceptar llama a
+`TransitionAsync(id, expectedStatus, targetStatus, ct)` —`expectedStatus` es **el que el tablero estaba
+enseñando**, no el que se supone— y al volver **relee** y pinta lo que M05b conteste.
+
+El `Outcome` decide qué se ve, y se ramifica por el `enum`, nunca leyendo `Error`:
+
+| `Outcome` | Qué ve la persona |
+|---|---|
+| `Ok` | La tarjeta en su nueva columna, releída |
+| `Conflict` | «Esta orden cambió mientras lo mirabas: ahora está <estado>. Vuelve a intentarlo si todavía quieres moverla.» Y el tablero se refresca **antes** de que decida |
+| `Invalid` | La frase de M05b, tal cual. M06 no reinterpreta la regla ajena |
+| `NotFound` | «Esa orden ya no está disponible. Vuelve al tablero para ver las actuales.» |
+
+**`Conflict` no se reintenta solo.** Reintentar sobre un estado que ya cambió repite el problema con
+otra cara: lo que hace falta es que la persona vea el estado real y decida.
 
 ### 9.6 Estados de composición
 
@@ -560,32 +653,47 @@ Dice el estado de origen, el destino y qué se va a registrar. Al aceptar llama 
 4. Una transición ilegal se rechaza con la frase de M05b, y **no deja nada escrito** en `tracking`.
 5. El ensamblado de M06 no referencia `Domain` ni `Data` de M05b (barrido, no revisión).
 6. La suite de M06 pasa **con el bus apagado**.
+7. **Las columnas del tablero salen de `ServiceOrderStatuses.All`**: añadir un estado en M05b hace
+   crecer el tablero sin tocar una línea de M06. Se comprueba con un estado añadido en una copia
+   desechable del contrato, no leyendo el código.
+8. **`LegalTransitions` no manda.** Si la lista dijera que un arrastre es legal y `TransitionAsync`
+   devolviera `Invalid`, M06 obedece la operación y enseña su frase. Se provoca haciendo divergir la
+   lista a propósito en entorno desechable.
+9. **M06 ramifica por `Outcome` y nunca por `Error`.** Cambiar el texto de `Error` no cambia ni una
+   rama de M06: se comprueba sustituyéndolo por otro y viendo que el comportamiento es idéntico.
+10. **`expectedStatus` es el que el tablero enseñaba.** Dos clientes con la misma vista: el primero
+    mueve, el segundo recibe `Conflict`, **no** un segundo cambio de estado. El historial queda con
+    exactamente una fila nueva.
 
 ### 10.2 Datos propios
 
-7. Reordenar no cambia el estado; cambiar de estado no altera la prioridad de las demás.
-8. El plazo interno no sustituye `promised_at`, y las dos fechas se enseñan como lo que son.
-9. La triple de atribución es completa o enteramente nula, forzado por `CHECK`.
-10. Una nota del sistema guarda tres `NULL`, nunca «Sistema».
-11. Las bajas son lógicas: ningún `DELETE` físico en tablas de negocio.
+11. Reordenar no cambia el estado; cambiar de estado no altera la prioridad de las demás.
+12. El plazo interno no sustituye `promised_at`, y las dos fechas se enseñan como lo que son.
+13. La triple de atribución es completa o enteramente nula, forzado por `CHECK`.
+14. Una nota del sistema guarda tres `NULL`, nunca «Sistema».
+15. Las bajas son lógicas: ningún `DELETE` físico en tablas de negocio.
 
 ### 10.3 Replicación y numeración
 
-12. Las tablas de M06 cumplen la decisión del §4, comprobado por consulta ejecutable y no por lectura.
-13. Ninguna FK de M06 apunta a `core.admin_users` ni a la serie local de M05b.
-14. M06 **no emite** ningún código visible.
+16. Las tablas de M06 cumplen la decisión ratificada del §4 —replicadas, UUID v7, `origin_node`,
+    `row_version`—, comprobado por consulta ejecutable y no por lectura.
+17. Ninguna FK de M06 apunta a `core.admin_users` ni a la serie local de M05b.
+18. M06 **no emite** ningún código visible.
+19. **Las notas internas no salen por ningún contrato de M06.** Se comprueba contra el cuerpo crudo de
+    todo lo que M06 publique: un marcador único escrito en una nota no aparece en ninguna respuesta
+    destinada a otro módulo. *Replicación física no es exposición contractual.*
 
 ### 10.4 API, errores e interfaz
 
-15. Las rutas de M06 en Swagger son el conjunto que la suite ejerce, contrastado contra el documento.
-16. Ningún `*Request` de M06 queda sin ejemplo, **comprobado con M06 activo**.
-17. Ninguna frase dice «error» ni ofrece «Aceptar»; cada botón nombra su acción.
-18. Ningún componente lleva un color escrito.
+20. Las rutas de M06 en Swagger son el conjunto que la suite ejerce, contrastado contra el documento.
+21. Ningún `*Request` de M06 queda sin ejemplo, **comprobado con M06 activo**.
+22. Ninguna frase dice «error» ni ofrece «Aceptar»; cada botón nombra su acción.
+23. Ningún componente lleva un color escrito.
 
 ### 10.5 Barreras y falsificación
 
-19. Las ocho barreras del §8.2 se ven dejar pasar y rechazar, con el sabotaje del detector en rojo.
-20. Ningún sabotaje queda en HEAD, comprobado con `git diff` y un barrido por la palabra.
+24. Las ocho barreras del §8.2 se ven dejar pasar y rechazar, con el sabotaje del detector en rojo.
+25. Ningún sabotaje queda en HEAD, comprobado con `git diff` y un barrido por la palabra.
 
 ### 10.6 `[M06-CICLO]` — dentro de la etapa 6
 
@@ -610,9 +718,9 @@ destruir nada.
 
 ### 10.7 Paridad de instalación
 
-21. La auditoría binario ↔ setup ↔ migrate ↔ seed se **vuelve a medir** con M06 dentro, arrancando el
+26. La auditoría binario ↔ setup ↔ migrate ↔ seed se **vuelve a medir** con M06 dentro, arrancando el
     host, no leyendo listas.
-22. Quitar M06 de `migrate()` pone la barrera roja **nombrando `tracking`**.
+27. Quitar M06 de `migrate()` pone la barrera roja **nombrando `tracking`**.
 
 ---
 
@@ -620,27 +728,35 @@ destruir nada.
 
 | Punto | Marca | De quién es |
 |---|---|---|
-| Replicación de los datos de seguimiento (§4) | `DECISION_PENDIENTE` | JP. **Cara de deshacer:** cambia la clave primaria |
-| Creación implícita o explícita de la fila de seguimiento (§5.1) | `DECISION_PENDIENTE` | Producto |
-| Uno o varios tableros si hubiera dos talleres (§8.1) | `DECISION_PENDIENTE` | Producto |
-| Lista de estados y transiciones legales como dato (C1, C2) | `CONTRATO_PENDIENTE_DE_MATERIALIZAR` | **M05b**, que es su dueño |
-| Listado de cerradas, filtro, orden y paginación (C3, C4) | `CONTRATO_PENDIENTE_DE_MATERIALIZAR` | M05b |
-| Marca de cambio para refresco (C5) | `CONTRATO_PENDIENTE_DE_MATERIALIZAR` | M05b |
-| Forma del rechazo de una transición (C6) | `CONTRATO_PENDIENTE_DE_MATERIALIZAR` | M05b |
-| Transición condicionada al estado visto (C7) | `CONTRATO_PENDIENTE_DE_MATERIALIZAR` | M05b |
+| Replicación de los datos de seguimiento (§4) | **RESUELTO** · replicables, UUID v7, `origin_node`, `row_version` | JP, 07/10/2026 |
+| Creación de la fila de seguimiento (§5.1) | **RESUELTO** · *lazy*, orden implícito por `received_at` | Producto, 07/10/2026 |
+| Uno o varios tableros (§8.1) | **RESUELTO** · **un tablero** en v1 | Producto, 07/10/2026 |
+| Lista de estados y transiciones legales (C1, C2) | **RESUELTO** · `ServiceOrderStatuses.All` y `.LegalTransitions` | M05b, en `f494eae` |
+| Listado por alcance, filtro, orden y paginación (C3, C4) | **RESUELTO** · `ServiceOrderQuery` + `PagedResult<T>` | M05b, en `f494eae` |
+| Marca de cambio para refresco (C5) | **RESUELTO** · `UpdatedAt` en resumen y snapshot | M05b, en `f494eae` |
+| Forma del rechazo (C6) | **RESUELTO** · `ServiceOrderOutcome` + `ServiceOrderOperation<T>` | M05b, en `f494eae` |
+| Transición condicionada al estado visto (C7) | **RESUELTO** · `expectedStatus` + `targetStatus` | M05b, en `f494eae` |
+| **Convergencia multinodo de prioridad y plazo** | **DIFERIDO a M16**, `docs/PENDIENTES.md` §30. M06 no inventa «última escritura gana» | M16 |
 | Forma del contrato de M06 para M08 (§6.5) | abierto a propósito | se decide al abrir M08 |
 
 ---
 
 ## 12. Flujo y parada obligatoria
 
-**Paso 1 documental: entregado, no cerrado.**
+**Paso 1 documental: contrastado contra el contrato real.**
 
-No se cruza a Datos. No hay proyecto, migración, schema, endpoint ni frontend. El Paso 1 de M06 queda
-cerrado **solo** cuando se contraste esta SPEC contra el `Sillar.Modules.ServiceOrders.Contracts` real
-y se resuelvan, al menos, **C1 y C2** — sin ellas no hay forma de pintar un tablero sin fabricar una
-segunda máquina de estados.
+Los siete huecos están resueltos en `f494eae` y las tres decisiones abiertas fueron ratificadas. Nada
+de este documento se apoya ya en una firma propuesta.
 
-Las entradas de ledger que este trabajo produce están en
-`docs/modules/tracking/LEDGER-M06-PENDIENTE-DE-TRANSCRIBIR.md`, con el motivo de que todavía no estén
-en el archivo compartido.
+**Y sigue sin haber código.** No se cruza a Datos: ni proyecto `Sillar.Modules.Tracking`, ni migración,
+ni schema, ni endpoint, ni frontend, ni costura en `Sillar.Api.csproj`, `routes.tsx` o `migrate.ts`.
+
+**Lo único que queda abierto a propósito**, y no bloquea el cierre:
+
+- la **convergencia multinodo** de prioridad y plazo, diferida a M16 (`docs/PENDIENTES.md` §30). M06 no
+  inventa «última escritura gana»;
+- la **forma del contrato de M06 para M08** (§6.5), que se decide al abrir M08.
+
+Las tres entradas de ledger de este trabajo **ya están transcritas al ledger canónico** en la rama de
+M05b. `docs/modules/tracking/LEDGER-M06-PENDIENTE-DE-TRANSCRIBIR.md` queda como **registro histórico de
+cómo se produjeron, no como fuente definitiva**: al converger manda el ledger canónico.
