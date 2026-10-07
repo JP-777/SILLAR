@@ -232,7 +232,7 @@ Una fila por orden seguida. **No duplica nada de M05b.**
 |---|---|---:|---|
 | `order_tracking_id` | uuid v7 | no | PK técnica generada por la aplicación |
 | `service_order_id` | uuid | no | La orden de M05b. FK cruzada; es el único dato suyo que M06 copia |
-| `board_priority` | integer | no | Posición de trabajo dentro de su agrupación. Menor es antes |
+| `board_priority` | integer | sí | `NULL` = nadie fijó orden manual; entero >= 0 = prioridad manual explícita |
 | `internal_due_at` | timestamptz | sí | Plazo **interno** de taller. **No es la promesa al cliente**: ésa es `promised_at` y es de M05b |
 | `pinned` | boolean | no | Fijada arriba por el personal, con `DEFAULT false` |
 | `last_touched_by_name` | text | sí | Nombre congelado de quien tocó el seguimiento por última vez |
@@ -244,25 +244,40 @@ Una fila por orden seguida. **No duplica nada de M05b.**
 | `origin_node` | text | no | Nodo donde nació la fila |
 | `row_version` | bigint | no | Marca futura de sincronización |
 
-Reglas de valor para el `CHECK`: `board_priority >= 0`; la triple de `last_touched_*` **completa o
-enteramente nula**; `internal_due_at` sin relación impuesta con `promised_at` —son dos hechos
-distintos— pero **nunca anterior a la recepción de la orden**, que se lee del contrato.
+Reglas de valor para el `CHECK`: `board_priority IS NULL OR board_priority >= 0`; la triple de
+`last_touched_*` **completa o enteramente nula**; `internal_due_at` sin relación impuesta con
+`promised_at` —son dos hechos distintos— pero **nunca anterior a la recepción de la orden**, que se
+lee del contrato.
 
 > **Por qué una fila por orden y no una columna en la orden.** Añadir `board_priority` a
 > `service_orders` sería más corto y sería exactamente el error: M06 escribiendo en el schema de M05b.
 > La fila propia es la forma de que la prioridad sea de Seguimiento y desaparezca al desmontarlo.
 
-> **Ratificado: la fila es *lazy*.** No existe mientras nadie cambie datos propios de M06. El orden
-> inicial es **implícito por `received_at`**, que llega en el contrato, y la fila **se materializa** al
-> fijar, reordenar, poner un plazo o añadir cualquier información propia.
+> **Ratificado: la fila es *lazy*.** No existe mientras nadie cambie datos propios de M06. Mientras `board_priority IS NULL`, el orden
+> es **implícito por `received_at`**, que llega en el contrato, y la fila **se materializa** al fijar,
+> reordenar, poner un plazo o añadir cualquier información propia.
 >
 > Es la tercera vía, la que recomendé y por el motivo que importa: **M06 no escribe por el hecho de
 > leer.** Un tablero que creara una fila por cada orden que alguien mira ensuciaría la base con
 > seguimiento que nadie pidió, y haría imposible distinguir «sin prioridad asignada» de «prioridad
 > cero». Con la fila *lazy*, su existencia **significa algo**: alguien decidió sobre esta orden.
 >
+> **Decisión ratificada el 7 de octubre de 2026 · America/Lima — antes del primer `CREATE TABLE`.**
+> `board_priority` es nullable precisamente porque la estrategia *lazy* debe distinguir
+> **«sin prioridad asignada» de «prioridad cero»**. Si una nota o un plazo materializa la fila cuando
+> nadie ha ordenado manualmente la tarjeta, obligar `NOT NULL` exigiría inventar un valor y convertiría
+> la columna en una afirmación falsa. `NULL` significa que nadie fijó orden manual y el tablero conserva
+> `received_at`; un entero `>= 0` significa que una persona fijó prioridad. No existe centinela `-1`,
+> no se usa `0` para representar ausencia y no existe un booleano paralelo.
+>
+> **Pruebas obligatorias del Paso 2.** Materializar seguimiento únicamente por una nota debe conservar
+> `board_priority = NULL` y el orden efectivo debe seguir `received_at`; reordenar después debe guardar
+> un entero `>= 0` y cambiar el orden. Además, una escritura con prioridad negativa debe ser rechazada
+> por el `CHECK`, y esa prueba debe observar el rechazo real de PostgreSQL.
+>
 > Consecuencia para el tablero: una tarjeta sin fila **no es un caso de error**. Se pinta en su orden
-> implícito, y la primera acción sobre ella la materializa.
+> implícito, y la primera acción sobre ella la materializa. Una fila materializada por nota o plazo
+> tampoco implica por sí misma que exista prioridad manual.
 
 ### 5.2 `tracking.tracking_notes` — internas, y solo internas
 

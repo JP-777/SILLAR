@@ -115,6 +115,20 @@ Registra únicamente esperas reales causadas por contratos, decisiones o costura
 - **Consecuencia:** M05b define tipos públicos propios y no referencia CMS/Services para reutilizar tipos internos; tampoco crea un `Result<T>` global durante este paso.
 - **Posible punto de desacople, sin decidirlo:** después de M08, evaluar con la evidencia de tres implementaciones si existe una primitiva contractual reusable sin acoplar módulos ni alterar semánticas ya publicadas.
 
+## 2026-10-07 · M06 — prioridad lazy antes del primer DDL
+
+- **Fecha:** 2026-10-07 — America/Lima.
+- **Frentes:** M06 / Paso 2 Datos.
+- **Causa:** `DECISION_PENDIENTE`.
+- **Hecho:** la SPEC ratificaba una fila `order_tracking` *lazy* para distinguir «sin prioridad asignada» de «prioridad cero», pero todavía describía `board_priority` como `integer NOT NULL`. Una fila puede materializarse solo por una nota o un plazo, sin que nadie haya decidido una prioridad.
+- **Qué tuvo que esperar:** la primera migración y el primer `CREATE TABLE` de M06.
+- **Contrato, recurso o decisión causante:** semántica de ausencia de prioridad manual en `tracking.order_tracking`.
+- **Archivos/costura afectados:** `docs/modules/tracking/SPEC.md`, futuro modelo/configuración/migración de `tracking.order_tracking` y pruebas PostgreSQL de Paso 2.
+- **Consecuencia:** la contradicción se detectó y resolvió antes de existir DDL o datos reales; no hace falta migración correctiva ni reinterpretar valores ya persistidos.
+- **Resolución ratificada:** `board_priority integer NULL`; `NULL` significa que nadie fijó orden manual y el tablero usa `received_at`; entero `>= 0` significa prioridad manual explícita; `CHECK (board_priority IS NULL OR board_priority >= 0)`. Sin centinela `-1`, sin `0` como ausencia y sin booleano paralelo.
+- **Prueba exigida:** materialización solo por nota conserva `NULL` y orden implícito; reordenar fija un entero y cambia el orden; prioridad negativa es rechazada físicamente por PostgreSQL.
+- **Posible punto de desacople, sin decidirlo:** llevar decisiones de nulabilidad y semántica de ausencia a la SPEC antes de que otro frente materialice schema, para reducir esperas y migraciones correctivas posteriores.
+
 ## Regla para próximas entradas
 
 Cuando M05b toque `migrate()`, `seed()`, setup, solución/host o pruebas compartidas de instalación,
