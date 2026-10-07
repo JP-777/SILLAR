@@ -52,7 +52,8 @@ La SPEC no elige silenciosamente estas materias:
 - si una orden puede contener varias líneas —esta SPEC lo propone porque una recepción puede agrupar
   más de un servicio, pero necesita ratificación de producto;
 - precisión de la cantidad (`numeric(12,3)` propuesta) y si algún servicio exige solo enteros;
-- permisos finales para cancelar/cerrar y reasignar;
+- obligatoriedad o exclusión de la fecha de compromiso `promised_at`;
+- permisos finales para cancelar/cerrar y tomar/liberar asignaciones;
 - política de supervivencia del binario fotográfico cuando CORE retira el medio;
 - frontera exacta de transición de estado entre M05b y el futuro M06.
 
@@ -759,12 +760,12 @@ Ninguno se declara cumplido en Paso 1.
 | D3 | ¿Quién es dueño de cambiar estado cuando exista M06? | M05b autoritativo con evento / operación coordinada por contrato | Arquitectura M05b/M06 | Contrato y atomicidad |
 | D4 | ¿Formato y continuidad del código visible? | Serie anual por nodo / otra serie humana; continuidad sí/no | JP + arquitectura | Tabla de serie y asignador |
 | D5 | ¿Cantidad fraccionaria? | `numeric(12,3)` / entero | JP Producto | Tipo físico y validación |
-| D6 | ¿Quién puede cancelar, cerrar y reasignar? | editor / admin según acción | JP Producto | Autorización y pantallas |
+| D6 | ¿Quién puede cancelar, cerrar y tomar/liberar una asignación? | editor / admin según acción | JP Producto | Autorización y pantallas |
 | D7 | ¿Qué sobrevive de la fotografía binaria? | Retención CORE / copia binaria M05b / snapshot textual y fallback | JP + arquitectura | Política de medios, no resto del modelo |
 | D8 | ¿Se necesitará asignar a otra persona en una versión posterior? | Mantener solo autoasignación / autorizar en el futuro una costura explícita | JP + arquitectura | Solo la futura asignación a terceros; no el modelo base |
 | D9 | ¿Compromiso `promised_at` es opcional? | Opcional / obligatorio / fuera de v1 | JP Producto | Diccionario y formulario |
 
-No se abre Paso 2 hasta auditar la clasificación de replicación y cerrar D1–D6 en lo necesario
+No se abre Paso 2 hasta auditar la clasificación de replicación y cerrar D1–D6 y D9 en lo necesario
 para una migración coherente. D7 puede escalar sin paralizar snapshots textuales y reglas independientes.
 
 ## 12. Flujo y parada obligatoria
