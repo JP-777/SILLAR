@@ -41,6 +41,9 @@ export async function migrate(): Promise<void> {
   // M05b depende duro de M05a, por lo que se migra inmediatamente después.
   // Su presencia aquí es independiente de que no tenga seed de negocio.
   await applyMigrations('Sillar.Modules.ServiceOrders');
+  // M06 depende duro de M05b y su FK física apunta a
+  // service_orders.service_orders, por lo que siempre se migra después.
+  await applyMigrations('Sillar.Modules.Tracking');
   // **M03, y va el último porque es el único con claves foráneas cruzadas**:
   // sus dos apuntan a `catalog` y a `crm` (dependencias duras declaradas en
   // `SalesModule.cs:74`), así que esas tablas tienen que existir antes. M05a
@@ -80,7 +83,7 @@ export async function seed(): Promise<void> {
   // `ON_ERROR_STOP=1` en todos: sin él, `psql` se come el error de un
   // seed y el arnés sigue con la base a medio preparar, fallando después en
   // una prueba que no tiene la culpa.
-  for (const modulo of ['core', 'catalog', 'cms', 'crm', 'services', 'service_orders', 'sales', 'b2b']) {
+  for (const modulo of ['core', 'catalog', 'cms', 'crm', 'services', 'service_orders', 'tracking', 'sales', 'b2b']) {
     // Los de `crm`, `service_orders`, `sales` y `b2b` están hoy intencionalmente vacíos, y se
     // aplican igual: no aplicarlos sería una asimetría que solo se nota el día
     // que dejen de estar vacíos.

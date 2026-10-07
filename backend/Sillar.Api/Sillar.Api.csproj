@@ -20,6 +20,7 @@
     <ProjectReference Include="..\Sillar.Modules.Sales\Sillar.Modules.Sales.csproj" />
     <ProjectReference Include="..\Sillar.Modules.Services\Sillar.Modules.Services.csproj" />
     <ProjectReference Include="..\Sillar.Modules.ServiceOrders\Sillar.Modules.ServiceOrders.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Tracking\Sillar.Modules.Tracking.csproj" />
     <ProjectReference Include="..\Sillar.Modules.B2B\Sillar.Modules.B2B.csproj" />
   </ItemGroup>
 
