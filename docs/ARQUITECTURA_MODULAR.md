@@ -109,7 +109,7 @@ No es vendible ni desmontable. Es la base sobre la que se enchufa todo lo demás
 
 **M05b — Servicios (Órdenes).** Registro real de órdenes de servicio: qué se encargó, quién, cuándo, con qué características y a qué precio. **Esto no existe en el diseño actual y hay que construirlo.**
 
-**M06 — Seguimiento de Servicios.** Historial de estados de una orden de servicio y tablero tipo kanban. Es la funcionalidad de trazabilidad que pidió la cliente en la entrevista.
+**M06 — Seguimiento de Servicios.** Tablero tipo kanban de las órdenes de servicio, con su prioridad y orden operativo, plazos internos y notas propias de seguimiento. **El estado no es suyo:** el estado actual, la máquina de estados y el historial autoritativo de estados pertenecen a M05b. M06 depende duro de M05b, lee estado e historial por sus Contracts y provoca las transiciones llamando la operación de M05b; no tiene otra máquina ni mantiene otro historial autoritativo. Es la funcionalidad de trazabilidad que pidió la cliente en la entrevista.
 
 **M07 — Solicitudes B2B y Especiales.** Pedidos especiales y solicitudes de colegios, empresas y profesores, con estados de atención y cotización.
 
@@ -194,9 +194,9 @@ Las 17 tablas del diseño original se reparten así. **Ninguna se pierde**; solo
 | `crm` | `customers`, `contact_messages` | — |
 | `sales` | `orders`, `order_items`, `order_statuses` | — |
 | `services` | `services` | — |
-| `service_orders` | — | `service_orders`, `service_order_items`, `service_order_statuses` |
+| `service_orders` | — | `service_orders`, `service_order_items`, `service_order_statuses`, `service_order_status_history` (historial autoritativo de estados) |
 | `b2b` | `special_order_leads`, `institution_requests` | `quotes` (fase 2) |
-| `tracking` | — | `service_status_history` |
+| `tracking` | — | Las del tablero: prioridad y orden operativo, plazos internos y notas de seguimiento. **Sin historial de estados**, que es de M05b |
 | `portal` | — | `users`, `customer_profiles` |
 | `inventory` | — | `inventory_movements` |
 
@@ -213,7 +213,7 @@ sales.order_items.order_id          → sales.orders              (interna)
 sales.order_items.product_id        → catalog.products          (cruzada, M03→M01)
 sales.orders.order_status_id        → sales.order_statuses      (interna)
 crm.contact_messages.customer_id    → crm.customers             (interna)
-tracking.service_status_history.service_order_id → service_orders.service_orders  (cruzada, M06→M05b)
+tracking.<seguimiento de la orden>.service_order_id → service_orders.service_orders  (cruzada, M06→M05b)
 inventory.inventory_movements.product_id → catalog.products     (cruzada, M09→M01)
 sales.orders.customer_id            → crm.customers             (cruzada, M03→M04)
 b2b.special_order_leads.customer_id → crm.customers             (cruzada, M07→M04)
