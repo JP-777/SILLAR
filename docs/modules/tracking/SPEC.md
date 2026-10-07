@@ -1,4 +1,4 @@
-# SPEC — M06 Seguimiento · Paso 1 documental (pre-SPEC)
+# SPEC — M06 Seguimiento · Paso 1 documental
 
 - **Creación:** 7 de octubre de 2026 · America/Lima
 - **Última verificación:** 7 de octubre de 2026 · America/Lima
@@ -35,7 +35,7 @@ De la frontera ratificada de M05b (`312cd0dc`, §3.3, §6.2 y D1–D9):
   valida, cambia estado e inserta historial **en una única transacción PostgreSQL**, y M06 relee
   después. Dos módulos no mantienen copias autoritativas del mismo hecho.
 - Los estados v1 son `received`, `in_progress`, `ready`, `completed` y `cancelled` — **propiedad de
-  M05b**, citados aquí como dato, no adoptados como constantes de M06 (ver §6.2, hueco C6).
+  M05b**, citados aquí como dato, no adoptados como constantes de M06 (ver §6.1–6.2).
 - **El bus nunca es el camino por el que viaja un hecho que alguien necesita; es el camino por el que
   viaja un aviso.** M06 no reconstruye historia desde `InProcessEventBus`.
 - M06 depende **duro** de M05b.
@@ -130,8 +130,8 @@ autoritativo. Lo que falta es la vista de conjunto.
 
 > **La frontera más fácil de cruzar sin darse cuenta.** Un tablero necesita saber qué columnas pintar
 > y qué arrastres son legales. La tentación es escribir esa lista en M06 «porque ya se sabe cuál es».
-> **Eso sería una segunda máquina de estados**, aunque empiece como un `const`. M06 pide esa lista al
-> contrato; si el contrato no la da, no se inventa: se registra (§6.2, hueco C6).
+> **Eso sería una segunda máquina de estados**, aunque empiece como un `const`. M06 obtiene esa lista
+> de `ServiceOrderStatuses.All` y `.LegalTransitions` (§6.1–6.2); no mantiene una copia propia.
 
 ---
 
@@ -193,7 +193,7 @@ puede referenciar a una no replicada (ADR-018), y una FK cruzada de M06 apunta a
 > «última escritura gana»:** está diferido a M16 y registrado en `docs/PENDIENTES.md` §30. Replicar es
 > hacer que el dato viaje; converger es otra cosa y tiene otro dueño.
 
-### 4.1 Consecuencias ADR-016/018, bajo la propuesta de arriba
+### 4.1 Consecuencias ADR-016/018 de la decisión ratificada
 
 - Los UUID v7 los genera la aplicación, nunca PostgreSQL.
 - `origin_node` dice dónde nació la fila; no identifica al trabajador.
@@ -215,9 +215,8 @@ puede referenciar a una no replicada (ADR-018), y una FK cruzada de M06 apunta a
 | cualquier fila de M06 | `services.*` de M05a | replicada | no replicada | **Sin referencia alguna**: M06 no conoce M05a |
 | cualquier fila de M06 | estado/historial de M05b | — | — | **Sin copia**: se lee por contrato |
 
-> **Si la decisión del §4 cambia a «local», este barrido cambia con ella** y la FK cruzada hacia la
-> orden replicada deja de ser aceptable sin volver a mirar. Es la razón de pedir la ratificación antes
-> y no después.
+> **Esta clasificación queda cerrada para v1.** Cambiarla en el futuro exigiría reabrir explícitamente
+> la decisión ADR-016/018 y revisar PK, FK y estrategia de sincronización; no es una variable del Paso 2.
 
 ---
 
@@ -743,7 +742,7 @@ destruir nada.
 
 ## 12. Flujo y parada obligatoria
 
-**Paso 1 documental: contrastado contra el contrato real.**
+**Paso 1 documental: CERRADO por Chat 2 el 7 de octubre de 2026 tras contraste contra el contrato real.**
 
 Los siete huecos están resueltos en `f494eae` y las tres decisiones abiertas fueron ratificadas. Nada
 de este documento se apoya ya en una firma propuesta.
