@@ -1,10 +1,10 @@
 # Pendientes
 
-**Última modificación parcial:** 2026-09-27 15:45:30 -0500 — America/Lima (entrada 28). **Base verificada de esta entrada:** `3758b6e3a9367bde8a262b4efd9f6927343aa1cd`.
+**Última modificación parcial:** 2026-10-07 — America/Lima (entrada 29). **Base verificada de esta entrada:** `f7ceea8257ba20a27065645f1c86288c73507bec`.
 
 **Creación:** 25 de agosto de 2026, 21:04:02 -05:00 — America/Lima (`1d3f78874cae9a57659166495bb84151b0797db4`)
-**Última verificación:** 22 de septiembre de 2026, 06:55:03 -05:00 — America/Lima
-**Commit verificado:** `01f7e42bb6ec25b1687094c2b4138a86d653bec8`
+**Última verificación:** 7 de octubre de 2026 — America/Lima
+**Commit verificado:** `f7ceea8257ba20a27065645f1c86288c73507bec`
 
 Lo que está decidido pero no hecho, y lo que está aplazado a propósito.
 
@@ -516,6 +516,40 @@ observación.
 
 **Responsable de seguimiento:** Integración. **Estado:** ABIERTO hasta el próximo repaso de
 criterios de cierre de un módulo cerrado.
+
+---
+
+## 29 · `InProcessEventBus` no es una garantía de entrega entre módulos
+
+**Hallazgo previo.** El bus en proceso puede perder eventos y por tanto no garantiza que un
+consumidor durable reciba cada hecho.
+
+**Consecuencia material — 06/10/2026, America/Lima.** El hallazgo dejó de ser teórico durante el
+Paso 1 de M05b. La primera propuesta contemplaba eventos de transición para M06. El líder técnico
+decidió que eso es incorrecto porque M06 depende duro de M05b y necesita la historia completa.
+
+La arquitectura quedó:
+
+- M05b cambia estado y escribe historial en una única transacción;
+- M06 lee el historial por contrato;
+- M06 llama una operación M05b cuando necesita provocar una transición;
+- el bus queda reservado para avisos opcionales.
+
+**El bus nunca es el camino por el que viaja un hecho que alguien necesita; es el camino por el que viaja un aviso.**
+
+**Disparador.** Antes de diseñar cualquier integración donde otro módulo **necesite garantizar**
+que recibió un hecho. En particular, releer esta entrada antes de:
+
+- cualquier garantía futura de M10;
+- cualquier reacción durable de M11;
+- cualquier nuevo consumidor que no pueda reconstruir la verdad leyendo al dueño.
+
+**No hacer ahora.** No reemplazar globalmente `InProcessEventBus`. No implementar una cola general
+“por si acaso”. El patrón depende de la necesidad:
+
+- si puede releer la verdad → lectura;
+- si necesita entrega durable asíncrona → decidir mecanismo durable;
+- si solo es aviso → bus puede bastar.
 
 ---
 

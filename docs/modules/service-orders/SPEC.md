@@ -7,15 +7,17 @@
 - **Proyecto de contratos previsto:** `Sillar.Modules.ServiceOrders.Contracts`
 - **Schema:** `service_orders`
 - **Versión propuesta:** 1.0.0
-- **Estado:** Propuesta para auditoría · Paso 1
+- **Estado:** Ratificada · Paso 1 cerrado
 - **Fase:** Fase 2 — Operación de servicios
-- **Fecha de creación y última verificación:** 6 de octubre de 2026
+- **Fecha de creación:** 6 de octubre de 2026
+- **Última verificación:** 7 de octubre de 2026
 - **Zona horaria de negocio:** America/Lima
 - **Base efectivamente leída:** `d26f28a0439a9ac72dbedcc097dd8731b37a27c9`
-- **Siguiente paso:** Paso 2 Datos, exclusivamente después de ratificar esta SPEC y las decisiones marcadas
+- **Siguiente paso:** Paso 2 Datos, exclusivamente después de autorización expresa de Chat 2
 
-> Esta SPEC no autoriza migraciones, código productivo, endpoints ni interfaz. La clasificación de
-> replicación debe auditarse antes del primer `CREATE TABLE`.
+> Esta SPEC cierra el Paso 1, pero no autoriza todavía migraciones, código productivo, endpoints ni
+> interfaz. La clasificación de replicación y la costura de numeración deben auditarse antes del
+> primer `CREATE TABLE`.
 
 ## 0. Decisiones y evidencia de partida
 
@@ -43,22 +45,23 @@
 - `ProductItemConfiguration` y otras implementaciones existentes no son autoridad para el modelo de
   M05b. Las ADR y esta SPEC prevalecen.
 
-### 0.3 Decisiones que requiere la auditoría
+### 0.3 Decisiones D1–D9 ratificadas el 6 de octubre de 2026
 
-La SPEC no elige silenciosamente estas materias:
+- una orden contiene **1..N líneas**;
+- M05b es dueño del estado actual, su máquina y su historial autoritativo;
+- los estados v1 son `received`, `in_progress`, `ready`, `completed` y `cancelled`;
+- M06 lee estado e historial mediante Contracts y provoca cambios llamando la operación de M05b;
+- los eventos son avisos opcionales, nunca el camino autoritativo;
+- el código visible usa serie anual propia y el mecanismo transaccional reusable ya demostrado por
+  M03/M07, con rollback sin consumo y nunca `nextval()` como garantía;
+- la cantidad común es `numeric(12,3)` y admite fracciones;
+- `editor+` opera; cancelar exige `admin+`;
+- M05b conserva `MediaAssetId`, URL y alt, pero no duplica el binario;
+- v1 solo permite “asignarme” y “liberar”;
+- `promised_at` es opcional y, si existe, no precede a `received_at`.
 
-- vocabulario y transiciones del estado actual de una orden;
-- formato, prefijo, reinicio y garantía de continuidad del código visible;
-- si una orden puede contener varias líneas —esta SPEC lo propone porque una recepción puede agrupar
-  más de un servicio, pero necesita ratificación de producto;
-- precisión de la cantidad (`numeric(12,3)` propuesta) y si algún servicio exige solo enteros;
-- obligatoriedad o exclusión de la fecha de compromiso `promised_at`;
-- permisos finales para cancelar/cerrar y tomar/liberar asignaciones;
-- política de supervivencia del binario fotográfico cuando CORE retira el medio;
-- frontera exacta de transición de estado entre M05b y el futuro M06.
-
-Estas decisiones no impiden revisar propósito, dependencias, snapshots, atribución o pantallas, pero
-**sí impiden generar la primera migración**.
+La trazabilidad completa, dueño y efecto de D1–D9 está en §11. Todas las respuestas de producto
+están cerradas para abrir el Paso 2; permanecen las comprobaciones y costuras técnicas ya decididas.
 
 ## 1. Propósito y valor comercial
 
@@ -80,22 +83,22 @@ servicio dentro de SILLAR.
 ### 2.1 Dentro de alcance
 
 - alta administrativa de una orden;
-- selección de uno o más servicios publicados de M05a;
+- selección de **uno o más** servicios publicados de M05a;
 - fotografía inmutable de cada servicio al agregarlo a la orden;
 - características concretas solicitadas por línea;
 - cantidad y precio acordado, admitiendo precio todavía pendiente;
 - contacto congelado, manual o enriquecido por M04 cuando esté disponible;
 - código visible separado de la PK técnica;
-- estado actual de la orden, con vocabulario pendiente de ratificación;
+- estado actual, máquina de estados e historial autoritativo de transiciones;
 - responsable actual y registro inmutable de toma/liberación/reasignación a la cuenta actual;
 - auditoría administrativa con nombres humanos;
-- contrato de lectura para el futuro M06;
+- contrato de lectura de estado/historial y operación autoritativa de transición para el futuro M06;
 - ciclo completo de instalación, activación, desactivación, desmontaje, reinstalación y reactivación.
 
 ### 2.2 Fuera de alcance
 
 - vitrina y edición de servicios — M05a;
-- historial operativo y tablero kanban — M06;
+- tablero kanban, notas y seguimiento operativo adicional — M06; el historial autoritativo de estados pertenece a M05b;
 - portal e historial visible al cliente — M08;
 - cobro, caja, turnos o comprobantes — M13/M14;
 - pagos en línea — M11;
@@ -112,8 +115,8 @@ servicio dentro de SILLAR.
 |---|---|---|---|
 | CORE | Plataforma | `ICurrentAdmin`, autenticación, CSRF, auditoría, capacidades, reloj/nodo y medios indirectamente | CORE siempre está |
 | M05a Servicios | **Dura** | `IServiceShowcaseSnapshots` para obtener una fotografía publicada | M05b no se activa ni crea líneas nuevas |
-| M04 Clientes | **Blanda** | Contrato público de identidad/snapshot, si se ratifica su uso | Alta manual de contacto; ninguna ruta falla |
-| M06 Seguimiento | No es dependencia de M05b | M06 consumirá el contrato de M05b | M05b opera sin tablero ni historial de seguimiento |
+| M04 Clientes | **Blanda** | Contrato público de identidad/snapshot | Alta manual de contacto; ninguna ruta falla |
+| M06 Seguimiento | No es dependencia de M05b | M06 consumirá estado, historial y transición mediante Contracts | M05b opera con su estado e historial, sin tablero M06 |
 | M08 Portal | Ninguna | Futuro consumidor indirecto por M06/M04 | Sin efecto |
 
 ### 3.1 Qué significa que M05a sea dependencia dura
@@ -140,13 +143,13 @@ requisito para recibir una orden en mostrador.
 
 ### 3.3 M06 como dependiente
 
-M06 no puede cerrar su contrato hasta que M05b publique el suyo. M05b expondrá identidad, código,
-estado actual, fechas, resumen del trabajo y asignación actual mediante Contracts; M06 no leerá el
-schema `service_orders` salvo la FK física de su historial, permitida por su dependencia dura y
-sujeta a la clasificación ADR-018.
+M05b es dueño del estado actual, de la máquina y del historial autoritativo. M06 expondrá tablero y
+seguimiento, pero no define estados, no escribe el historial de M05b, no actualiza
+`service_orders.status` y no lee el schema. Consume exclusivamente Contracts.
 
-La propiedad exacta de las transiciones operativas se ratifica antes de la API: esta SPEC no permite
-que M05b y M06 mantengan dos estados actuales competidores.
+Si una acción futura del tablero mueve una tarjeta, M06 llama la operación de transición de M05b.
+M05b valida, cambia estado, inserta historial y confirma ambas escrituras en una única transacción
+PostgreSQL; M06 lee después el resultado. Dos módulos no mantienen copias autoritativas del mismo hecho.
 
 ## 4. Replicación antes de la primera migración
 
@@ -157,6 +160,7 @@ Pregunta aplicada a cada tabla: **¿esta fila puede nacer en un nodo y tener que
 | `service_orders` | **Sí** | Una orden puede recibirse en un nodo y consultarse/operarse en otro | UUID v7 generado por aplicación | Sí | `row_version` | Ninguna FK a tablas locales/ajenas |
 | `service_order_items` | **Sí** | El detalle debe viajar con la orden | UUID v7 generado por aplicación | Sí | `row_version` | `order_id` UUID → orden replicada; válido |
 | `service_order_assignment_events` | **Sí** | La asignación debe entenderse en cualquier nodo | UUID v7 generado por aplicación | Sí | `row_version` | `order_id` UUID → orden replicada; sin FK a admin local |
+| `service_order_status_history` | **Sí** | La historia autoritativa debe viajar con la orden replicada | UUID v7 generado por aplicación | Sí | `row_version` | `order_id` UUID → orden replicada; sin FK a admin local |
 | `service_order_series` | **No** | El contador pertenece a una serie local; replicarlo produciría dos autoridades | integer identity | No | No | Ninguna tabla replicada lo referencia |
 
 ### 4.1 Consecuencias ADR-016/018
@@ -164,7 +168,7 @@ Pregunta aplicada a cada tabla: **¿esta fila puede nacer en un nodo y tener que
 - Los UUID v7 los genera la aplicación, nunca PostgreSQL.
 - `origin_node` dice dónde nació la fila; no identifica al trabajador ni al servicio fotografiado.
 - `row_version` permite ordenar cambios futuros; su mecanismo físico se define en Datos.
-- Todas las FK entre las tres tablas replicadas son UUID.
+- Todas las FK entre las cuatro tablas replicadas son UUID.
 - Ninguna tabla replicada referencia `core.admin_users`, M05a ni la serie local.
 - El código visible se copia como texto en la orden y no referencia al contador.
 - El entero local de M05a se conserva junto a `service_source_node`, sin FK.
@@ -176,14 +180,16 @@ Pregunta aplicada a cada tabla: **¿esta fila puede nacer en un nodo y tener que
 |---|---|---:|---:|---|
 | item.order_id | service_orders | replicada | replicada | Permitida |
 | assignment.order_id | service_orders | replicada | replicada | Permitida |
+| status_history.order_id | service_orders | replicada | replicada | Permitida |
 | item.service_source_id | M05a services | replicada | no replicada | **Sin FK; snapshot + nodo** |
 | order.customer_id | M04 customer | replicada | replicada, pero dependencia blanda | **Sin FK; snapshot propio** |
 | atribuciones | core.admin_users | replicada | no replicada | **Sin FK; triple congelada** |
 | order.visible_code | service_order_series | replicada | no replicada | **Sin FK; valor copiado** |
 | item.media_asset_id | core.media_assets | replicada | replicada | Sin FK por semántica histórica; es parte del snapshot |
 
-No hay tabla ambigua en su clasificación. Sí hay decisiones físicas y comerciales pendientes; por
-eso esta tabla debe auditarse y las decisiones de §11 cerrarse antes del Paso 2.
+No hay tabla ambigua en su clasificación. La auditoría previa a la migración debe comprobar que las
+cinco tablas conservan esta decisión, en especial que historial y orden sean replicables y que la
+serie local no sea destino de una FK replicada.
 
 ## 5. Modelo conceptual de datos
 
@@ -194,15 +200,15 @@ Los tipos son propuestas conceptuales; el diccionario físico definitivo pertene
 | Campo conceptual | Tipo propuesto | Nulo | Significado e invariantes |
 |---|---|---:|---|
 | `service_order_id` | uuid v7 | no | PK técnica; jamás visible |
-| `visible_code` | text | no | Código humano único; formato pendiente de ratificación |
-| `status` | text | no | Estado actual; vocabulario cerrado pendiente, con `CHECK` futuro |
+| `visible_code` | text | no | Código humano único de serie anual propia; separado de la PK |
+| `status` | text | no | `received`, `in_progress`, `ready`, `completed` o `cancelled` |
 | `customer_id` | uuid | sí | Procedencia opcional de M04, sin FK |
 | `customer_name_snapshot` | text | no | Nombre de quien encarga, congelado |
 | `customer_phone_snapshot` | text | sí | Teléfono congelado |
 | `customer_email_snapshot` | text | sí | Correo congelado |
 | `received_notes` | text | sí | Contexto general no repetido en una línea |
 | `received_at` | timestamptz | no | Momento en que el negocio recibe la orden |
-| `promised_at` | timestamptz | sí | Compromiso informado; su obligatoriedad requiere producto |
+| `promised_at` | timestamptz | sí | Compromiso opcional; si existe, no precede a `received_at` |
 | `created_by_admin_name` | text | no | `ICurrentAdmin.DisplayName` congelado |
 | `created_by_admin_user_id` | integer | no | ID local de la cuenta |
 | `created_by_admin_user_home_node` | text | no | Nodo contra el que se interpreta el ID |
@@ -210,9 +216,9 @@ Los tipos son propuestas conceptuales; el diccionario físico definitivo pertene
 | `current_assignee_admin_user_id` | integer | sí | ID local del responsable |
 | `current_assignee_admin_user_home_node` | text | sí | Nodo de pertenencia del responsable |
 | `last_status_changed_at` | timestamptz | no | Último cambio del estado actual; al crear coincide con recepción |
-| `last_status_changed_by_name` | text | no | Autor del último cambio, triple completa |
-| `last_status_changed_by_admin_user_id` | integer | no | ID local del autor |
-| `last_status_changed_by_admin_user_home_node` | text | no | Nodo de pertenencia del autor |
+| `last_status_changed_by_name` | text | sí | Autor del último cambio; nulo si fue transición de sistema |
+| `last_status_changed_by_admin_user_id` | integer | sí | ID local del autor; nulo si fue de sistema |
+| `last_status_changed_by_admin_user_home_node` | text | sí | Nodo de la cuenta; nulo si fue de sistema |
 | `origin_node` | text | no | Nodo donde nació la fila |
 | `row_version` | bigint | no | Marca para sincronización futura |
 | `created_at` | timestamptz | no | Creación técnica |
@@ -220,17 +226,18 @@ Los tipos son propuestas conceptuales; el diccionario físico definitivo pertene
 
 **Invariantes:**
 
-- al menos teléfono o correo debe estar presente, salvo ratificación expresa de recepción anónima;
+- al menos teléfono o correo debe estar presente;
 - las tres columnas del responsable son todas nulas o todas no nulas;
-- cada triple de autor es completa, no admite correo como sustituto del nombre;
+- cada triple de autor es completa o enteramente nula; no admite correo como sustituto del nombre;
 - `promised_at`, si existe, no puede ser anterior a `received_at`;
-- no existe borrado físico operativo; cancelar es una transición, no `DELETE`;
+- el estado inicial es `received`; `completed` y `cancelled` son terminales;
+- no existe borrado físico operativo; cancelar es una transición exclusiva de `admin+`, no `DELETE`;
 - el total se deriva de líneas: si alguna no tiene precio acordado, el total es “pendiente”, no cero.
 
 ### 5.2 `service_orders.service_order_items` — línea y snapshot congelado
 
-Cada línea representa un servicio concreto encargado con sus características. La propuesta 1.0
-admite una o más líneas por orden; la cardinalidad requiere ratificación.
+Cada línea representa un servicio concreto encargado con sus características. Una orden contiene
+**1..N líneas**; una recepción puede agrupar varios servicios.
 
 | Campo conceptual | Tipo propuesto | Nulo | Significado e invariantes |
 |---|---|---:|---|
@@ -248,7 +255,7 @@ admite una o más líneas por orden; la cardinalidad requiere ratificación.
 | `image_url_snapshot` | text | sí | `ImageUrl` congelada; no promete binario eterno |
 | `image_alt_text_snapshot` | text | sí | `ImageAltText` congelado |
 | `requested_details` | text | no | Características del encargo concreto; no vacío |
-| `quantity` | numeric(12,3) | no | Positiva; precisión pendiente de ratificación |
+| `quantity` | numeric(12,3) | no | Positiva; admite fracciones; un servicio podrá exigir enteros con una regla más restrictiva |
 | `agreed_unit_price` | numeric(12,2) | sí | Precio acordado para esta orden; nulo = pendiente, cero = gratuito |
 | `sort_order` | integer | no | Orden estable dentro de la orden; `>= 0` |
 | `origin_node` | text | no | Nodo donde nació la línea y se tomó la fotografía |
@@ -286,9 +293,35 @@ proyección del responsable actual para lectura eficiente; ambos se escriben en 
 En `unassigned` se conserva la triple de quien dejó de estar asignado. No se crea una “persona
 vacía”. No hay FK, JOIN ni resolución posterior contra CORE.
 
-### 5.4 `service_orders.service_order_series` — contador local
+### 5.4 `service_orders.service_order_status_history` — historial autoritativo replicado
 
-Tabla local solo si se ratifica una serie correlativa. No la referencia ninguna tabla.
+Cada orden recibe al crearse una fila inicial `NULL → received`. Cada transición posterior inserta
+exactamente una fila. La actualización de `service_orders.status` y la inserción del historial ocurren
+en la misma transacción PostgreSQL: se confirman ambas o ninguna.
+
+| Campo conceptual | Tipo propuesto | Nulo | Significado |
+|---|---|---:|---|
+| `status_history_id` | uuid v7 | no | PK técnica generada por aplicación |
+| `service_order_id` | uuid | no | FK interna a orden replicada |
+| `from_status` | text | sí | Nulo solo en la fila inicial de creación |
+| `to_status` | text | no | Estado destino válido |
+| `occurred_at` | timestamptz | no | Momento de la transición |
+| `performed_by_name` | text | sí | Nombre congelado; nulo en transición de sistema |
+| `performed_by_admin_user_id` | integer | sí | ID local; nulo en transición de sistema |
+| `performed_by_admin_user_home_node` | text | sí | Nodo de la cuenta; nulo en transición de sistema |
+| `origin_node` | text | no | Nodo donde ocurrió/nació la fila; no sustituye `HomeNode` |
+| `row_version` | bigint | no | Marca futura de sincronización |
+
+La triple de actor es completa o enteramente nula. Una transición humana toma las tres piezas
+exclusivamente de `ICurrentAdmin`. Una transición de sistema guarda tres `NULL`; nunca crea una
+persona ficticia llamada `"Sistema"`. No hay FK a `core.admin_users`.
+
+### 5.5 `service_orders.service_order_series` — contador local
+
+M05b conserva su propia tabla y sus propios datos de serie. La referencia reusable es el mecanismo
+probado de M03 —`OrderSeries`, contador local `(node_code, year)`, índice único, reserva dentro de la
+transacción y alta concurrente—; M07 confirma el mismo principio. M05b no depende de Sales, no escribe
+en `sales` y no copia otra variante del algoritmo.
 
 | Campo conceptual | Tipo propuesto | Nulo | Significado |
 |---|---|---:|---|
@@ -297,21 +330,26 @@ Tabla local solo si se ratifica una serie correlativa. No la referencia ninguna 
 | `year` | integer | no | Año en America/Lima |
 | `last_number` | integer | no | Último correlativo confirmado, `>= 0` |
 
-`UNIQUE(node_code, year)`. Si JP exige continuidad sin huecos, se reutiliza el patrón transaccional
-`UPDATE ... RETURNING`, nunca `nextval()`. Si no la exige, se documentará la garantía menor. No se
-implementa ninguna hasta ratificar formato y continuidad.
+`UNIQUE(node_code, year)`. El código sigue el patrón `<LETRA_PROPIA>-AAAA-NNNN`; la letra/etiqueta
+pertenece a M05b y se configura para la instalación, no se toma de Sales. La serie reinicia por año
+de America/Lima y reserva el número dentro de la misma transacción que crea la orden. El mecanismo común debe conservar
+concurrencia, `UPDATE ... RETURNING` y rollback sin hueco; nunca usa `nextval()` como garantía.
 
-### 5.5 Relaciones
+Antes de la migración, Paso 2 presentará la extracción/reutilización mínima de ese mecanismo desde
+su ubicación actual en M03/Sales, sin cambiar la semántica certificada de M03 y sin importar su dominio.
+
+### 5.6 Relaciones
 
 ```text
 service_orders 1 ─── 1..N service_order_items
 service_orders 1 ─── 0..N service_order_assignment_events
+service_orders 1 ─── 1..N service_order_status_history
 service_order_series ─── sin FK hacia órdenes
 ```
 
 No hay FK hacia `services`, `crm`, `core.admin_users` ni `core.media_assets`.
 
-### 5.6 Datos semilla
+### 5.7 Datos semilla
 
 M05b no necesita órdenes, estados de negocio ni personal de demostración para funcionar. La
 clasificación propuesta es **sin datos semilla de dominio**. Su `02_seed.sql` será transaccional,
@@ -335,7 +373,7 @@ Al agregar una línea, dentro de la operación autoritativa:
 La fotografía se toma al confirmar el alta de la línea, no al abrir el formulario ni al listar la
 vitrina. Reintentar una petición idempotente no debe crear dos líneas ni tomar dos fotografías.
 
-### 6.2 Contrato público de M05b para M06 — borrador para ratificación
+### 6.2 Contrato público de M05b para M06 — frontera ratificada
 
 ```csharp
 namespace Sillar.Modules.ServiceOrders.Contracts;
@@ -347,6 +385,14 @@ public interface IServiceOrderTrackingSource
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<ServiceOrderTrackingSummary>> ListOpenAsync(
+        CancellationToken cancellationToken);
+}
+
+public interface IServiceOrderTransitions
+{
+    Task<ServiceOrderTransitionResult> TransitionAsync(
+        Guid serviceOrderId,
+        string toStatus,
         CancellationToken cancellationToken);
 }
 
@@ -367,7 +413,8 @@ public sealed record ServiceOrderTrackingSnapshot(
     DateTimeOffset ReceivedAt,
     DateTimeOffset? PromisedAt,
     IReadOnlyList<ServiceOrderWorkItemSnapshot> Items,
-    StaffSnapshot? CurrentAssignee);
+    StaffSnapshot? CurrentAssignee,
+    IReadOnlyList<ServiceOrderStatusHistorySnapshot> StatusHistory);
 
 public sealed record ServiceOrderWorkItemSnapshot(
     Guid ServiceOrderItemId,
@@ -380,37 +427,57 @@ public sealed record StaffSnapshot(
     string DisplayName,
     int AdminUserId,
     string HomeNode);
+
+public sealed record ServiceOrderStatusHistorySnapshot(
+    Guid StatusHistoryId,
+    string? FromStatus,
+    string ToStatus,
+    DateTimeOffset OccurredAt,
+    StaffSnapshot? PerformedBy,
+    string OriginNode);
+
+public sealed record ServiceOrderTransitionResult(
+    Guid ServiceOrderId,
+    string CurrentStatus,
+    ServiceOrderStatusHistorySnapshot HistoryEntry);
 ```
 
-Este contrato no expone entidades EF ni permite que M06 edite tablas M05b. La operación que cambie
-el estado actual se añadirá al contrato solo después de decidir su dueño y atomicidad con el historial
-de M06.
+Este contrato no expone entidades EF ni permite lectura directa del schema. M06 no define estados,
+no escribe historial y no actualiza `service_orders.status`. Si su tablero provoca una transición,
+llama `IServiceOrderTransitions`; la implementación autoritativa de M05b valida la máquina, cambia el
+estado, inserta el historial y confirma una única transacción. M06 lee el resultado después.
 
-### 6.3 Eventos propuestos
+### 6.3 Eventos como avisos opcionales
 
-Consumidor verificable: M06, una vez implementado. Se proponen como borradores:
+**El bus nunca es el camino por el que viaja un hecho que alguien necesita; es el camino por el que
+viaja un aviso.**
+
+La verdad durable es el estado y el historial de M05b. M06 los lee por contrato y jamás depende de
+que un evento llegue. Como avisos opcionales se permiten:
 
 - `ServiceOrderCreated`: ID, código, estado inicial, recepción y resumen congelado.
 - `ServiceOrderAssignmentChanged`: ID de orden, responsable anterior/nuevo como triples, actor y fecha.
-- `ServiceOrderCurrentStatusChanged`: ID, estado anterior/nuevo, triple del actor y fecha.
+- `ServiceOrderStatusChanged`: ID, estado anterior/nuevo, triple opcional del actor y fecha.
 
-No se publica un evento “servicio actualizado”: las líneas son históricas y no se refrescan. La
-entrega exacta y consistencia con M06 se ratifican en Paso 3; no se inventa un bus distribuido.
+Estos avisos pueden refrescar una UI, disparar una notificación o alimentar una integración futura
+que pueda releer la verdad. Tampoco se excluye un futuro M10 si su contrato permite reconstrucción.
+Ningún consumidor que necesite garantía depende exclusivamente del bus. No se publica “servicio
+actualizado”: las líneas son históricas y no se refrescan; tampoco se inventa una cola general.
 
 ### 6.4 Endpoints administrativos propuestos
 
-Todos requieren sesión administrativa, CSRF en escritura y mínimo `editor`, salvo decisiones de
-permiso destructivo pendientes.
+Todos requieren sesión administrativa y CSRF en escritura. Leer, crear, editar mientras el estado
+lo permita, tomar/liberar y transiciones ordinarias exigen `editor+`; cancelar exige `admin+`.
 
 | Método | Ruta | Responsabilidad | Respuestas relevantes |
 |---|---|---|---|
 | GET | `/api/admin/service-orders` | Listar con filtros por estado, responsable, texto y fechas | 200, 400, 403 |
-| POST | `/api/admin/service-orders` | Crear orden y líneas congelando M05a/contacto/personal | 201, 400, 404/409, 403 |
+| POST | `/api/admin/service-orders` | Crear orden con 1..N líneas, snapshot M05a, estado `received` e historial inicial | 201, 400, 404/409, 403 |
 | GET | `/api/admin/service-orders/{id}` | Detalle histórico completo | 200, 404, 403 |
 | PUT | `/api/admin/service-orders/{id}` | Editar contacto, compromiso y líneas mientras la regla de estado lo permita | 200, 400, 409, 403 |
 | POST | `/api/admin/service-orders/{id}/take` | Asignar/reasignar a la cuenta actual y registrar evento | 200, 400, 409, 403 |
 | POST | `/api/admin/service-orders/{id}/unassign` | Retirar responsable actual conservando su fotografía previa | 200, 409, 403 |
-| POST | `/api/admin/service-orders/{id}/transition` | Cambiar estado cuando el vocabulario sea ratificado | 200, 400, 409, 403 |
+| POST | `/api/admin/service-orders/{id}/transition` | Ejecutar la operación autoritativa estado+historial; cancelar solo `admin+` | 200, 400, 409, 403 |
 
 No hay endpoints públicos ni de cliente en 1.0. M08 no se anticipa.
 
@@ -418,37 +485,45 @@ No hay endpoints públicos ni de cliente en 1.0. M08 no se anticipa.
 
 ### 7.1 Reglas de negocio
 
-1. Una orden tiene al menos una línea; si se rechaza la cardinalidad múltiple, esta regla se ajusta a exactamente una.
+1. Una orden tiene entre una y muchas líneas; no existe “una orden = un servicio”.
 2. Solo un servicio publicado de M05a puede originar una línea nueva.
 3. La línea nunca se refresca desde M05a.
 4. `showcase_price_snapshot`, `agreed_unit_price` y cero/nulo conservan significados distintos.
 5. Toda orden tiene un contacto legible aunque M04 esté ausente.
 6. La PK técnica nunca se muestra; se usa `visible_code`.
-7. Estado actual usa un vocabulario cerrado y transiciones aplicadas en la operación, no solo en UI.
-8. Una orden cancelada no se borra y sus snapshots permanecen.
-9. Toda atribución guardada lleva las tres piezas o ninguna cuando el dato sea opcional.
-10. `HomeNode` del personal no se deriva de `origin_node`: pertenencia de cuenta y lugar de actuación son hechos distintos.
-11. No se consulta CORE para “actualizar” nombres históricos.
-12. Tomar/reasignar a la cuenta actual crea un evento y actualiza la proyección actual en la misma transacción.
-13. La versión base no permite elegir a otra cuenta: toda nueva triple de asignado procede del mismo
+7. El estado inicial es `received`. Solo se permiten `received → in_progress`,
+   `received → cancelled`, `in_progress → ready`, `in_progress → cancelled`,
+   `ready → completed`, `ready → in_progress` y `ready → cancelled`.
+8. `completed` y `cancelled` son terminales; `ready → in_progress` es la reapertura operativa explícita.
+9. La guarda vive dentro de la operación autoritativa M05b, no en endpoint, UI ni M06.
+10. Cada transición válida cambia estado e inserta exactamente un historial en la misma transacción.
+11. Una orden cancelada no se borra y sus snapshots permanecen; cancelar exige `admin+`.
+12. Toda atribución guardada lleva las tres piezas o ninguna cuando el actor de estado sea sistema.
+13. `HomeNode` del personal no se deriva de `origin_node`: pertenencia de cuenta y lugar de actuación son hechos distintos.
+14. No se consulta CORE para “actualizar” nombres históricos.
+15. Tomar/reasignar a la cuenta actual crea un evento y actualiza la proyección actual en la misma transacción.
+16. La versión base no permite elegir a otra cuenta: toda nueva triple de asignado procede del mismo
     `ICurrentAdmin` que autoriza el acto. Liberar conserva en el evento la triple histórica ya almacenada.
+17. El código visible reutiliza el mecanismo común M03/M07; la orden y el número se confirman juntos.
+18. `MediaAssetId`, URL y alt son snapshot; M05b no copia el binario y sigue legible si este desaparece.
+19. `promised_at` es opcional y, cuando existe, cumple `promised_at >= received_at`.
 
 ### 7.2 Lugares de atribución triple
 
 | Acto/dato | Triple congelada | Fuente |
 |---|---|---|
 | Crear/recibir orden | `created_by_*` | `ICurrentAdmin` actual |
-| Estado inicial y cada cambio actual | `last_status_changed_by_*` | `ICurrentAdmin` actual |
+| Estado inicial y transición humana | `last_status_changed_by_*` y `status_history.performed_by_*` | `ICurrentAdmin` actual |
+| Transición de sistema | las mismas columnas | Tres `NULL`; nunca `"Sistema"` ficticio |
 | Tomar/reasignar a la cuenta actual — actor | `performed_by_*` | `ICurrentAdmin` actual |
 | Tomar/reasignar a la cuenta actual — persona asignada | `assignee_*` | La misma triple de `ICurrentAdmin` actual |
 | Liberar — actor | `performed_by_*` | `ICurrentAdmin` actual |
 | Liberar — persona que deja la asignación | `assignee_*` | Copia de la triple histórica del responsable actual, originalmente obtenida de `ICurrentAdmin` |
 | Responsable actual | `current_assignee_*` | Copia del último evento válido |
 
-El contrato actual solo identifica al **actor actual**. Por ello el alcance ratificable sin ampliar
-dependencias es “tomar para mí” y “liberar”. Seleccionar a otra cuenta queda fuera hasta una decisión
-expresa posterior; no se propone ahora otro contrato, no se elude leyendo `admin_users` y no se inventa
-un nombre desde correo, cookie o token.
+El contrato actual solo identifica al **actor actual**. Por ello v1 ofrece “tomar para mí” y
+“liberar”. Seleccionar a otra cuenta está fuera de v1; no se propone otro contrato, no se elude
+leyendo `admin_users` y no se inventa un nombre desde correo, cookie o token.
 
 ### 7.3 Auditoría
 
@@ -470,9 +545,12 @@ Nunca “Orden actualizada” sin código. La auditoría local no sustituye las 
 | Línea sin características | 400 junto al campo |
 | Cantidad/precio inválido | 400; precio nulo permitido, negativo rechazado |
 | Contacto insuficiente | 400 contextual |
-| Código visible concurrente | La operación reintenta el asignador según política ratificada; nunca duplica |
+| Código visible concurrente | El mecanismo común transaccional serializa la misma serie; nunca duplica ni deja hueco por rollback |
 | Transición no permitida | 409 con estado origen/destino |
+| Editor intenta cancelar | 403; no se modifica estado ni historial |
+| Falla la inserción de historial | Rollback completo; el estado anterior permanece |
 | Asignación cambió mientras se editaba | 409; no sobrescribe silenciosamente |
+| Medio físico no disponible | Fallback textual con nombre, descripciones y alt congelados; la orden sigue legible |
 | M04 ausente | Selector no aparece; alta manual sigue disponible |
 | M05a inactivo | M05b no debe estar activo; inconsistencia diagnosticada, no 500 genérico |
 | Sin permiso | 403 y pantalla de permiso denegado |
@@ -485,7 +563,7 @@ Nunca “Orden actualizada” sin código. La auditoría local no sustituye las 
 
 - Un entero de personal o servicio no identifica globalmente sin su nodo.
 - El nodo donde ocurre una asignación puede diferir del nodo al que pertenece la cuenta.
-- Una orden puede tener más de una línea; no se codifica “un servicio por orden” sin ratificación.
+- Una orden puede contener varias líneas y cada línea puede tener cantidad fraccionaria.
 - M04 puede estar ausente; no se hace obligatorio porque hoy esté instalado.
 - Un servicio puede tener precio nulo, cero o fijo.
 - Una orden puede estar activa sin responsable.
@@ -500,8 +578,8 @@ Nunca “Orden actualizada” sin código. La auditoría local no sustituye las 
 | B2 Snapshot congelado | No refrescar historia ni depender de FK viva | Servicio de dominio y mapping |
 | B3 Atribución triple | No guardar ID/nombre/nodo incompletos | Operaciones de creación, estado y asignación |
 | B4 Replicación coherente | No FK replicada → local | Modelo y migración |
-| B5 Estado válido | No transición fuera de máquina ratificada | Operación de transición |
-| B6 Código visible | No duplicado ni consumo incorrecto | Asignador transaccional |
+| B5 Estado + historial atómicos | No transición fuera de máquina ni estado sin historial | Operación autoritativa de transición M05b |
+| B6 Código visible | No duplicado, algoritmo divergente ni consumo por rollback | Primitiva reusable y transacción de alta |
 | B7 Dependencia dura | No activar M05b sin M05a | Operación de activación/grafo |
 | B8 Aislamiento | Desmontar M05b no toca `services`, `tracking`, `crm` ni CORE | `99_drop.sql` y orquestador |
 | B9 Paridad E2E | Ningún módulo presente queda fuera de migrate/seed/setup | Detector del arnés |
@@ -512,16 +590,21 @@ Nunca “Orden actualizada” sin código. La auditoría local no sustituye las 
 |---|---|---|---|
 | B1 | Crear con servicio publicado | ID inexistente/despublicado | Sustituir lector por aceptación constante; prueba debe fallar |
 | B2 | Cambiar M05a y releer snapshot intacto | Intentar refrescar línea histórica | Reintroducir consulta viva en detalle; comparación debe fallar |
-| B3 | Triple completa con nodos distintos | ID sin HomeNode o nombre | Omitir una columna en mapping; prueba de persistencia roja |
+| B3 | Triple humana completa o triple de sistema enteramente nula | ID sin HomeNode, o `"Sistema"` ficticio | Omitir una columna o escribir actor ficticio; prueba roja |
 | B4 | FK UUID entre replicadas | Añadir FK a admin/serie/M05a | Sabotear analizador para ignorar M05b; autoprueba roja |
-| B5 | Transición permitida | Transición prohibida | Quitar guarda en operación; API real roja |
-| B6 | Dos altas concurrentes distintas | Duplicado/rollback consume según política | Debilitar transacción/unique; prueba roja |
+| B5 | Transición válida cambia estado y crea exactamente un historial; ambas confirman juntas | Transición ilegal o escritura productiva directa de `status` se rechaza/detecta | Romper la inserción de historial mientras cambia estado; la prueba debe quedar roja y observar rollback |
+| B6 | Altas concurrentes conservan unicidad y rollback no consume | Duplicar el algoritmo o reservar fuera de transacción | Sustituir la primitiva por `nextval()`/`count+1`; prueba roja |
 | B7 | Activar tras M05a | Activar sin M05a | Hacer que detector devuelva siempre true; prueba roja |
 | B8 | Ciclo conserva datos centinela ajenos | Drop apunta a otro schema | Alterar destino en base desechable; prueba roja |
 | B9 | Binario/setup/migrate/seed coherentes | Quitar M05b de migrate o mitad aplicable | Romper el detector para que acepte omisión; autoprueba roja |
 
 Cada barrera debe verse dejar pasar y rechazar. La falsificación ocurre en entorno desechable, se
 documenta y se restaura; no se ejecuta en Paso 1.
+
+Para B5 no existe atajo productivo: endpoint, UI y M06 llaman la misma operación autoritativa. Una
+escritura que intente cambiar `status` por fuera debe ser rechazada o detectada por la barrera. El
+sabotaje obligatorio rompe deliberadamente la inserción del historial después de solicitar el cambio
+y demuestra que la orden conserva el estado anterior porque la transacción completa retrocede.
 
 ### 8.4 Segunda vía independiente
 
@@ -532,6 +615,9 @@ documenta y se restaura; no se ejecuta en Paso 1.
 | UUID v7 y columnas réplica | Prueba de dominio | Inspección física/migración |
 | INNER/relaciones internas correctas | Modelo | SQL generado y constraints reales |
 | Código visible distinto de PK | API | Lectura de columnas/serialización |
+| Estado e historial atómicos | Prueba de operación real | Lectura SQL de orden/historial tras éxito y fallo provocado |
+| Actor de sistema nulo | Prueba de dominio | Constraints y lectura SQL de las tres columnas |
+| Numeración común no duplicada | Pruebas de la primitiva reusable | Inspección de dependencias y sabotaje rollback/concurrencia |
 | M04 degrada | Prueba sin registro M04 | Arranque/API con capacidad ausente |
 | Aislamiento de desmontaje | Ciclo aplicación | Hash/conteo de schemas centinela |
 | Navegación desaparece | Prueba UI | Inventario de rutas/capacidades |
@@ -600,12 +686,12 @@ tendrán variantes clara/oscura, móvil/escritorio, foco visible y estados no ex
 - **Ruta:** `/admin/ordenes-servicio/nueva`.
 - **Propósito:** recibir una orden y congelar servicios/contacto/autor.
 - **Quién entra:** `editor` o superior.
-- **Datos:** contacto manual; selector M04 opcional; líneas con selector de servicios publicados,
+- **Datos:** contacto manual; selector M04 opcional; **1..N líneas** con selector de servicios publicados,
   características, cantidad, precio de vitrina y precio acordado; recepción/compromiso; opción “asignarme”.
 - **Acciones:** agregar/quitar/reordenar líneas, elegir cliente si M04 existe, asignarse, confirmar o cancelar formulario.
 - **Navegación:** desde A1; éxito conduce a A3.
 - **Cargando:** al abrir selector o confirmar, conserva los datos y nombra qué se espera.
-- **Vacío:** formulario inicial con una línea vacía; no trae servicios demo.
+- **Vacío:** formulario inicial con una línea vacía; no trae servicios demo y no permite confirmar sin línea válida.
 - **Con datos:** resumen del código aún no asignado y diferencias claras entre precio publicado/acordado.
 - **Conflicto:** servicio despublicado entre selección y confirmación señala esa línea; toma incompatible
   o código concurrente no duplica la orden; datos escritos se conservan.
@@ -618,9 +704,11 @@ tendrán variantes clara/oscura, móvil/escritorio, foco visible y estados no ex
 - **Ruta:** `/admin/ordenes-servicio/:id`.
 - **Propósito:** leer la verdad histórica y operar sobre la orden actual.
 - **Quién entra:** `editor` o superior.
-- **Datos:** código, estado, contacto congelado, recepción/compromiso, creador triple presentada como
-  nombre, responsable, líneas con snapshot y precio acordado, total/pendiente, historial de asignación.
-- **Acciones:** editar lo permitido, tomar/liberar asignación, cambiar estado según contrato, imprimir/copiar código.
+- **Datos:** código, estado actual, contacto congelado, recepción/compromiso, creador triple presentada como
+  nombre, responsable, líneas con snapshot y precio acordado, total/pendiente, historial autoritativo
+  de estados e historial de asignación.
+- **Acciones:** editar lo permitido, tomar/liberar asignación y ejecutar únicamente las transiciones
+  habilitadas por la máquina; cancelar solo aparece para `admin+`; imprimir/copiar código.
 - **Navegación:** regreso a A1 conservando filtros; acceso a A4/A5.
 - **Cargando:** esqueleto por secciones.
 - **Vacío:** no aplica; ID inexistente presenta ausencia amigable y regreso a bandeja.
@@ -633,7 +721,7 @@ tendrán variantes clara/oscura, móvil/escritorio, foco visible y estados no ex
 
 - **Ruta:** desde A3, pantalla o drawer según Diseño.
 - **Propósito:** corregir contacto, compromiso, características y precio cuando el estado lo permita.
-- **Quién entra:** `editor` o superior; cancelación/cierre quedan sujetos a decisión de rol.
+- **Quién entra:** `editor+`; cancelar no pertenece a esta edición y exige acción separada de `admin+`.
 - **Datos:** valores actuales, snapshot M05a en solo lectura y campos propios editables claramente separados.
 - **Acciones:** guardar/cancelar edición; agregar una nueva línea toma un snapshot nuevo; una existente no se refresca.
 - **Cargando:** bloqueo solo durante carga/guardado.
@@ -647,7 +735,7 @@ tendrán variantes clara/oscura, móvil/escritorio, foco visible y estados no ex
 
 - **Ruta:** acción desde A1/A3; drawer o diálogo según Diseño.
 - **Propósito:** tomar la orden para la cuenta actual o liberar al responsable sin perder autoría.
-- **Quién entra:** permiso propuesto `editor`; pendiente de ratificación.
+- **Quién entra:** `editor+`.
 - **Datos:** responsable actual triple presentada por nombre/nodo y eventos previos con actor/fecha.
 - **Acciones:** “Asignarme esta orden”, “Liberar responsable” y cancelar.
 - **Cargando:** confirmación con anuncio; no aparece un selector de cuentas.
@@ -661,12 +749,12 @@ tendrán variantes clara/oscura, móvil/escritorio, foco visible y estados no ex
 
 - **Ruta:** acción contextual desde A3.
 - **Propósito:** evitar transiciones destructivas accidentales y explicar consecuencias.
-- **Quién entra:** según matriz de permisos pendiente.
-- **Datos:** código, estado origen/destino, responsable y advertencias ratificadas.
+- **Quién entra:** `editor+` para transiciones ordinarias; exclusivamente `admin+` si el destino es `cancelled`.
+- **Datos:** código, estado origen/destino, responsable y efecto terminal o de reapertura.
 - **Acciones:** confirmar o volver.
 - **Cargando:** confirmación bloqueada una vez enviada.
 - **Vacío:** no aplica.
-- **Con datos:** causa obligatoria solo si producto la ratifica.
+- **Con datos:** muestra la transición exacta; `ready → in_progress` se presenta como reapertura explícita.
 - **Conflicto:** estado cambió; no intenta encadenar una segunda transición automáticamente.
 - **Error:** reintento seguro.
 - **Permiso denegado:** 403.
@@ -678,7 +766,7 @@ tendrán variantes clara/oscura, móvil/escritorio, foco visible y estados no ex
 - Grafo incoherente: el arranque/activación lo diagnostica; la UI no simula un modo degradado para una dependencia dura.
 - M04 activo: selector opcional de cliente.
 - M04 inactivo: alta manual, sin aviso alarmista ni espacio reservado.
-- M06 ausente: detalle sin tablero/historial de seguimiento; las órdenes siguen operativas.
+- M06 ausente: detalle conserva estado e historial autoritativo M05b; solo faltan tablero y seguimiento adicional.
 
 ## 10. Criterios de aceptación futuros
 
@@ -686,53 +774,77 @@ Ninguno se declara cumplido en Paso 1.
 
 ### 10.1 Funcionales y snapshots
 
+- [ ] Crear acepta entre una y muchas líneas y rechaza una orden sin líneas.
 - [ ] Crear una orden congela todos los campos de `ServiceSnapshot` por línea.
 - [ ] Cambiar/despublicar/eliminar la entrada M05a no altera una línea existente.
 - [ ] Un servicio no publicado no puede crear una línea nueva.
 - [ ] La línea conserva `service_source_id` junto a su nodo y sin FK.
 - [ ] Precio de vitrina nulo permanece nulo; precio acordado cero permanece cero.
+- [ ] Cantidad `numeric(12,3)` conserva fracciones; una regla de servicio puede exigir enteros sin cambiar el tipo común.
+- [ ] `MediaAssetId`, URL y alt se congelan; no se duplica el binario y su ausencia no vuelve ilegible la orden.
 - [ ] Contacto manual funciona sin M04.
 - [ ] Con M04, seleccionar cliente copia snapshot y la orden sobrevive a su cambio/baja.
 - [ ] Una orden tiene PK UUID v7 y código visible distinto.
-- [ ] El estado actual solo acepta el vocabulario ratificado.
-- [ ] Cancelar no borra snapshots.
+- [ ] `promised_at` admite nulo y, si existe, no precede a `received_at`.
+- [ ] Cancelar exige `admin+`, no ejecuta `DELETE` y no borra snapshots.
 
 ### 10.2 Atribución triple
 
-- [ ] Creación, último cambio de estado, actor de asignación y persona asignada guardan nombre, ID local y HomeNode obtenidos de `ICurrentAdmin`.
+- [ ] Creación, transición humana, actor de asignación y persona asignada guardan nombre, ID local y HomeNode obtenidos de `ICurrentAdmin`.
 - [ ] Una triple parcial es rechazada por dominio y restricción física cuando aplique.
+- [ ] Una transición de sistema guarda las tres columnas de actor en `NULL` y nunca `"Sistema"`.
 - [ ] `origin_node` puede diferir de `HomeNode` y ambos conservan su significado.
 - [ ] Renombrar/desactivar una cuenta no reescribe fotografías históricas.
 - [ ] No hay FK, JOIN ni consulta directa a `core.admin_users`.
 - [ ] La versión base solo permite asignarse a la cuenta actual; no ofrece selección de terceros ni lee CORE.
 
-### 10.3 Replicación y datos
+### 10.3 Estado, historial y contrato M06
+
+- [ ] Toda orden nace `received` y con exactamente una fila inicial `NULL → received`.
+- [ ] Solo se aceptan las siete transiciones de §7.1; `completed` y `cancelled` son terminales.
+- [ ] `ready → in_progress` funciona como reapertura explícita.
+- [ ] Una transición legal modifica estado e inserta exactamente una fila de historial; ambas confirman juntas.
+- [ ] Una transición ilegal deja estado e historial intactos y devuelve conflicto atribuible.
+- [ ] Ningún endpoint, UI, servicio productivo ni M06 escribe `status` saltándose la operación M05b.
+- [ ] Sabotear la inserción del historial mientras se cambia estado deja la barrera roja y demuestra rollback total.
+- [ ] M06 lee identidad, código, estado, fechas, líneas, responsable e historial mediante Contracts sin entidades EF ni schema directo.
+- [ ] Una acción M06 que mueve tarjeta llama la transición de M05b; M06 no define estados ni mantiene otro historial autoritativo.
+- [ ] Perder un aviso del bus no pierde el hecho: estado e historial siguen disponibles para relectura.
+
+### 10.4 Replicación, datos y numeración
 
 - [ ] Cada fila replicable recibe UUID v7 de aplicación, `origin_node` y `row_version`.
 - [ ] La serie local usa integer identity y no es destino de FK replicada.
 - [ ] Todas las FK replicada→replicada usan UUID.
 - [ ] Catálogos PostgreSQL confirman ausencia de FK a M05a, M04, admin users y medios.
 - [ ] Cero/nulo y timestamps sobreviven serialización y persistencia real.
-- [ ] La clasificación de las cuatro tablas queda auditada antes de la migración.
+- [ ] La clasificación de las cinco tablas —cuatro replicables y una local— queda auditada antes de la migración.
+- [ ] Paso 2 presenta la extracción/reutilización mínima del numerador común antes de migrar M05b.
+- [ ] M05b conserva tabla y datos propios sin depender de M03/Sales ni escribir en `sales`.
+- [ ] Altas concurrentes en la misma serie son únicas; rollback no consume número y el año es America/Lima.
+- [ ] Sabotear con `nextval()`, `count+1` o reserva fuera de transacción deja las pruebas rojas.
 
-### 10.4 API, errores y UI
+### 10.5 API, errores y UI
 
 - [ ] Los endpoints están documentados en OpenAPI y exigen rol/CSRF correctos.
+- [ ] `editor+` crea, edita cuando corresponde, toma/libera y ejecuta transiciones ordinarias.
+- [ ] Un editor no puede cancelar; `admin+` sí puede hacerlo desde un estado permitido.
 - [ ] Errores son contextuales y no filtran detalles técnicos.
 - [ ] Las seis pantallas cubren carga, vacío, datos y conflicto; error/403 donde aplica.
+- [ ] El detalle muestra el historial autoritativo M05b aunque M06 esté ausente.
 - [ ] Móvil/escritorio y claro/oscuro tienen paridad funcional.
 - [ ] Teclado, foco y regiones vivas permiten operar sin depender del color.
 - [ ] M04 ausente no deja hueco ni rompe alta.
 - [ ] M05b inactivo elimina navegación y rutas.
 
-### 10.5 Barreras y falsificación
+### 10.6 Barreras y falsificación
 
 - [ ] B1–B9 tienen positivo, negativo, mensaje/efecto observable y segunda vía.
 - [ ] Cada barrera fue provocada para dejar pasar y rechazar.
 - [ ] Cada prueba se rompió deliberadamente y se observó roja antes de restaurarla.
 - [ ] La paridad E2E legal queda verde, la omisión queda roja nombrando M05b y el sabotaje del detector queda rojo.
 
-### 10.6 `[M05B-CICLO]` — cierre real dentro de etapa 6
+### 10.7 `[M05B-CICLO]` — cierre real dentro de etapa 6
 
 - [ ] La prueba identificable `[M05B-CICLO]` corre dentro de etapa 6 de la puerta canónica.
 - [ ] Instala M05a y M05b en orden, activa M05b y crea una orden centinela mediante aplicación/API.
@@ -744,29 +856,30 @@ Ninguno se declara cumplido en Paso 1.
 - [ ] No acepta como sustituto una prueba aislada de `DROP/CREATE SCHEMA`.
 - [ ] No deja rutas muertas, enlaces rotos, huecos visuales, fallos de arranque, dependencia circular ni destrucción ajena.
 
-### 10.7 Paridad de instalación
+### 10.8 Paridad de instalación
 
 - [ ] Binario, setup, migrate y seed/ausencia explícita enumeran M05b coherentemente.
 - [ ] Quitar M05b de `migrate()` pone la barrera roja y lo nombra.
 - [ ] Quitar su mitad aplicable de setup/seed pone la barrera roja y lo nombra.
 - [ ] Sabotear el detector para aceptar una omisión también pone su autoprueba roja.
 
-## 11. Decisiones y escaladas antes del Paso 2
+## 11. Decisiones D1–D9 cerradas
 
-| ID | Pregunta | Alternativas | Dueño | Bloquea |
+| ID | Decisión | Dueño | Fecha | Efecto |
 |---|---|---|---|---|
-| D1 | ¿Una orden admite una o varias líneas? | Exactamente una / una o más | JP Producto | Cardinalidad y UI de alta |
-| D2 | ¿Cuáles son estados y transiciones M05b? | Vocabulario mínimo a ratificar; no copiar modelo viejo | JP + arquitectura | CHECK, API, M06 |
-| D3 | ¿Quién es dueño de cambiar estado cuando exista M06? | M05b autoritativo con evento / operación coordinada por contrato | Arquitectura M05b/M06 | Contrato y atomicidad |
-| D4 | ¿Formato y continuidad del código visible? | Serie anual por nodo / otra serie humana; continuidad sí/no | JP + arquitectura | Tabla de serie y asignador |
-| D5 | ¿Cantidad fraccionaria? | `numeric(12,3)` / entero | JP Producto | Tipo físico y validación |
-| D6 | ¿Quién puede cancelar, cerrar y tomar/liberar una asignación? | editor / admin según acción | JP Producto | Autorización y pantallas |
-| D7 | ¿Qué sobrevive de la fotografía binaria? | Retención CORE / copia binaria M05b / snapshot textual y fallback | JP + arquitectura | Política de medios, no resto del modelo |
-| D8 | ¿Se necesitará asignar a otra persona en una versión posterior? | Mantener solo autoasignación / autorizar en el futuro una costura explícita | JP + arquitectura | Solo la futura asignación a terceros; no el modelo base |
-| D9 | ¿Compromiso `promised_at` es opcional? | Opcional / obligatorio / fuera de v1 | JP Producto | Diccionario y formulario |
+| D1 | Una orden contiene 1..N líneas | JP Producto | 06/10/2026 | Modelo, alta, API, UI y pruebas admiten varios servicios |
+| D2 | M05b posee `received`, `in_progress`, `ready`, `completed`, `cancelled` y las siete transiciones de §7.1 | JP + líder técnico | 06/10/2026 | Guarda dentro de la operación; terminales y reapertura explícita |
+| D3 | M05b posee estado e historial; M06 lee y llama la transición M05b; el bus solo avisa | JP + líder técnico | 06/10/2026 | Nueva tabla replicable, transacción atómica y contrato sin lectura de schema |
+| D4 | Código humano con serie anual propia, mecanismo común M03/M07 y rollback sin hueco | JP + líder técnico | 06/10/2026 | Paso 2 coordina extracción reusable; M05b conserva sus datos y no depende de Sales |
+| D5 | Cantidad común `numeric(12,3)` con fracciones | JP Producto | 06/10/2026 | Un servicio puede restringir a enteros sin cambiar tipo físico |
+| D6 | `editor+` opera; cancelar exige exclusivamente `admin+` | JP Producto | 06/10/2026 | Autorización de API/UI; no existe DELETE operativo |
+| D7 | Snapshot conserva `MediaAssetId`, URL y alt; no copia binario | JP + líder técnico | 06/10/2026 | Ausencia física usa fallback textual; réplica/retención es CORE/M16 |
+| D8 | Asignación a terceros fuera de v1 | JP Producto | 06/10/2026 | Solo asignarme/liberar; sin selector, lectura de cuentas ni ampliación de `ICurrentAdmin` |
+| D9 | `promised_at` opcional y `>= received_at` cuando existe | JP Producto | 06/10/2026 | Una orden puede recibirse sin fecha comprometida |
 
-No se abre Paso 2 hasta auditar la clasificación de replicación y cerrar D1–D6 y D9 en lo necesario
-para una migración coherente. D7 puede escalar sin paralizar snapshots textuales y reglas independientes.
+D1–D9 están cerradas. Paso 1 queda cerrado. Antes de crear la primera migración, Paso 2
+debe auditar la clasificación ADR-016/018 y presentar la extracción/reutilización mínima del mecanismo
+de numeración, ambas decisiones ya tomadas y no nuevas consultas de producto.
 
 ## 12. Flujo y parada obligatoria
 
