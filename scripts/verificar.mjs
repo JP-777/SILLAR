@@ -2104,6 +2104,9 @@ const etapas = [
         // efímera y sus pruebas de persistencia fallan en la etapa 5 diciendo
         // por qué (ESCALADAS.md E3 de M05a).
         'Sillar.Modules.Services',
+        // M05b depende duro de M05a. Aunque no tenga seed de dominio, omitir
+        // esta migración debe poner roja la puerta con su nombre.
+        'Sillar.Modules.ServiceOrders',
         // B2B al final por el mismo motivo que Sales: sus claves foráneas
         // cruzadas apuntan a catalog y a crm (dependencias duras declaradas en
         // B2BModule.cs:57), así que esas tablas tienen que existir antes.

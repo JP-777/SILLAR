@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using Npgsql;
 using Sillar.Core.Contracts;
+using Sillar.Shared.Data.Numbering;
 using Sillar.Shared.Replication;
 
 namespace Sillar.Modules.Sales.Data;
@@ -53,6 +52,13 @@ internal sealed class OrderCodeAllocator(
     NodeIdentity node,
     TimeProvider clock)
 {
+    private static readonly TransactionalSeriesDefinition Series = new(
+        SalesDbContext.Schema,
+        "order_series",
+        "node_code",
+        "year",
+        "last_number");
+
     /// <summary>
     /// Toma el siguiente código de la serie del nodo para el año en curso.
     /// </summary>
@@ -118,49 +124,9 @@ internal sealed class OrderCodeAllocator(
         // OrderCode.AnioDe, que es puro y por eso su frontera se prueba sin base.
         var year = OrderCode.AnioDe(clock.GetUtcNow());
 
-        // Un solo comando: inserta la serie si no existe y, si ya existía, incrementa.
-        // El RETURNING devuelve el número en la misma ida y vuelta.
-        //
-        // Va por DbCommand y no por SqlQueryRaw<int>, y la razón es concreta: un
-        // UPDATE … RETURNING no es SQL componible, así que EF Core intenta envolverlo
-        // en una subconsulta al añadirle el Single() y falla al traducir. Se descubrió
-        // ejecutándolo de verdad contra PostgreSQL —el barrido a mano con psql no pasa
-        // por este camino—, que es exactamente lo que el §4 de
-        // ANTES-DE-EMPEZAR-UN-MODULO advierte: una comprobación por otra vía no
-        // acredita la vía que el código usa.
-        //
-        // El ON CONFLICT resuelve además el cambio de año: el primer pedido de enero
-        // puede llegar dos veces a la vez y las dos intentarían crear la fila.
-        const string tomarNumero =
-            """
-            INSERT INTO sales.order_series (node_code, year, last_number)
-            VALUES (@nodo, @anio, 1)
-            ON CONFLICT (node_code, year)
-            DO UPDATE SET last_number = sales.order_series.last_number + 1
-            RETURNING last_number
-            """;
-
-        var conexion = database.Database.GetDbConnection();
-        await using var comando = conexion.CreateCommand();
-
-        comando.CommandText = tomarNumero;
-        comando.Transaction = database.Database.CurrentTransaction!.GetDbTransaction();
-        Parametro(comando, "nodo", node.Code);
-        Parametro(comando, "anio", year);
-
-        var correlative = Convert.ToInt32(
-            await comando.ExecuteScalarAsync(cancellationToken),
-            System.Globalization.CultureInfo.InvariantCulture);
+        var correlative = await TransactionalSeriesAllocator.ReserveNextAsync(
+            database, Series, node.Code, year, cancellationToken);
 
         return OrderCode.Componer(label, year, correlative);
-    }
-
-    /// <summary>Un parámetro con nombre, sin repetir las cuatro líneas en cada uso.</summary>
-    private static void Parametro(System.Data.Common.DbCommand comando, string nombre, object valor)
-    {
-        var p = comando.CreateParameter();
-        p.ParameterName = nombre;
-        p.Value = valor;
-        comando.Parameters.Add(p);
     }
 }

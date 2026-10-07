@@ -1,4 +1,5 @@
 using System.Globalization;
+using Sillar.Shared.Data.Numbering;
 
 namespace Sillar.Modules.Sales.Data;
 
@@ -40,9 +41,7 @@ public static class OrderCode
     /// desarrollo alterna entre Windows y Arch Linux—.
     /// </para>
     /// </remarks>
-    public const string ZonaDelNegocio = "America/Lima";
-
-    private static readonly TimeZoneInfo Lima = TimeZoneInfo.FindSystemTimeZoneById(ZonaDelNegocio);
+    public const string ZonaDelNegocio = TransactionalSeriesAllocator.BusinessTimeZone;
 
     /// <summary>
     /// El año al que pertenece la serie de un instante dado, en hora de Lima.
@@ -54,7 +53,7 @@ public static class OrderCode
     /// </remarks>
     /// <param name="instante">El momento, con su desplazamiento.</param>
     public static int AnioDe(DateTimeOffset instante)
-        => TimeZoneInfo.ConvertTime(instante, Lima).Year;
+        => TransactionalSeriesAllocator.YearInLima(instante);
 
     /// <summary>Cuántos dígitos lleva el correlativo, rellenando con ceros.</summary>
     /// <remarks>
