@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Sillar.Modules.Tracking.Application;
 using Sillar.Modules.Tracking.Data;
+using Sillar.Modules.Tracking.Endpoints;
 using Sillar.Shared.Data.Modularity;
 using Sillar.Shared.Modularity;
 using Sillar.Shared.Replication;
@@ -63,10 +65,12 @@ public sealed class TrackingModule : IModule, IModuleMigrations
                 connection,
                 TrackingDbContext.Schema,
                 TrackingDbContext.MigrationsHistoryTable));
+
+        services.AddScoped<TrackingApplicationService>();
     }
 
-    // Paso 2 solo materializa datos. API llegará después.
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
+        endpoints.MapTrackingEndpoints();
     }
 }

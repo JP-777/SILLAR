@@ -13,7 +13,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Compila la infraestructura real del host sin referenciar el ejecutable
+         Web (que ya referencia a Tracking y no es una biblioteca de pruebas). -->
+    <Compile Include="..\Sillar.Api\Documentation\ModuleSchemaExamples.cs"
+             Link="Documentation\ModuleSchemaExamples.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
