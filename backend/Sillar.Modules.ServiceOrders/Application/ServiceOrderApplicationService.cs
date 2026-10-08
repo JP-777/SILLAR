@@ -378,6 +378,14 @@ internal sealed class ServiceOrderApplicationService(
         order.ReceivedNotes = CleanNullable(request.ReceivedNotes);
         order.PromisedAt = request.PromisedAt;
 
+        // UpdatedAt es el token observable del agregado completo. Aunque el
+        // cambio sea solo de líneas, el padre debe participar en este commit
+        // para que el stamping incremente RowVersion y el trigger avance
+        // service_orders.updated_at.
+        database.Entry(order)
+            .Property(value => value.RowVersion)
+            .IsModified = true;
+
         await database.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
