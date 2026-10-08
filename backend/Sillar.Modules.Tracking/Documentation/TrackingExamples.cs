@@ -13,7 +13,8 @@ public sealed class TrackingExamples : ISchemaExamples
         [typeof(SetTrackingPriorityRequest)] = """
             {
               "boardPriority": 0,
-              "pinned": true
+              "pinned": true,
+              "orderedPeerIds": null
             }
             """,
         [typeof(SetTrackingDueRequest)] = """

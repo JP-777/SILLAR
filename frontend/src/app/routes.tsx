@@ -12,6 +12,7 @@ import { cmsRoutes } from '../modules/cms/routes';
 import { coreRoutes } from '../modules/core/routes';
 import { crmAdminRoutes, crmPublicRoutes } from '../modules/crm/routes';
 import { servicesAdminRoutes, servicesPublicRoutes } from '../modules/services/routes';
+import { trackingRoutes } from '../modules/tracking/routes';
 
 /**
  * Rutas de la aplicación.
@@ -57,6 +58,7 @@ export function AppRoutes() {
           {has('services') && servicesAdminRoutes}
           {has('crm') && crmAdminRoutes}
           {has('b2b') && b2bRoutes}
+          {has('tracking') && trackingRoutes}
         </Route>
       </Route>
 

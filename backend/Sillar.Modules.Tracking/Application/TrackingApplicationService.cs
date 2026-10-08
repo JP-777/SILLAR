@@ -18,32 +18,57 @@ internal sealed class TrackingApplicationService(
     IAuditWriter audit,
     TimeProvider clock)
 {
-    internal async Task<TrackingBoardResponse> GetBoardAsync(CancellationToken cancellationToken)
-    {
-        var openOrders = new List<ServiceOrderTrackingSummary>();
-        var pageNumber = 1;
+    internal Task<TrackingBoardResponse> GetBoardAsync(CancellationToken cancellationToken)
+        => GetBoardAsync(
+            ServiceOrderScope.Open,
+            PageRequest.Of(1, PageRequest.MaxSize),
+            cancellationToken);
 
-        while (true)
+    internal async Task<TrackingBoardResponse> GetBoardAsync(
+        ServiceOrderScope scope,
+        PageRequest pageRequest,
+        CancellationToken cancellationToken)
+    {
+        var selectedOrders = new List<ServiceOrderTrackingSummary>();
+        PagedResult<ServiceOrderTrackingSummary>? paged = null;
+
+        if (scope == ServiceOrderScope.Open)
         {
-            var page = await orders.ListAsync(
+            var pageNumber = 1;
+            while (true)
+            {
+                var page = await orders.ListAsync(
+                    new ServiceOrderQuery(
+                        ServiceOrderScope.Open,
+                        Status: null,
+                        ServiceOrderSort.ReceivedAt,
+                        ServiceOrderSortDirection.Ascending,
+                        PageRequest.Of(pageNumber, PageRequest.MaxSize)),
+                    cancellationToken);
+
+                selectedOrders.AddRange(page.Items);
+                if (!page.HasNext)
+                {
+                    break;
+                }
+
+                pageNumber++;
+            }
+        }
+        else
+        {
+            paged = await orders.ListAsync(
                 new ServiceOrderQuery(
-                    ServiceOrderScope.Open,
+                    scope,
                     Status: null,
                     ServiceOrderSort.ReceivedAt,
-                    ServiceOrderSortDirection.Ascending,
-                    PageRequest.Of(pageNumber, PageRequest.MaxSize)),
+                    ServiceOrderSortDirection.Descending,
+                    pageRequest),
                 cancellationToken);
-
-            openOrders.AddRange(page.Items);
-            if (!page.HasNext)
-            {
-                break;
-            }
-
-            pageNumber++;
+            selectedOrders.AddRange(paged.Items);
         }
 
-        var orderIds = openOrders.Select(order => order.ServiceOrderId).Distinct().ToArray();
+        var orderIds = selectedOrders.Select(order => order.ServiceOrderId).Distinct().ToArray();
         var ownRows = orderIds.Length == 0
             ? new Dictionary<Guid, OwnBoardData>()
             : await database.OrderTracking
@@ -56,7 +81,7 @@ internal sealed class TrackingApplicationService(
                     row.InternalDueAt))
                 .ToDictionaryAsync(row => row.ServiceOrderId, cancellationToken);
 
-        var cards = openOrders.Select(order =>
+        var cards = selectedOrders.Select(order =>
         {
             ownRows.TryGetValue(order.ServiceOrderId, out var own);
             return new TrackingBoardCardResponse(
@@ -84,16 +109,21 @@ internal sealed class TrackingApplicationService(
                     .Where(transition => transition.FromStatus == state.Code)
                     .Select(transition => transition.ToStatus)
                     .ToArray(),
-                cards.Where(card => card.CurrentStatus == state.Code)
-                    .OrderByDescending(card => card.Pinned)
-                    .ThenBy(card => card.BoardPriority.HasValue ? 0 : 1)
-                    .ThenBy(card => card.BoardPriority)
-                    .ThenBy(card => card.ReceivedAt)
-                    .ThenBy(card => card.ServiceOrderId)
-                    .ToArray()))
+                SortCards(
+                    cards.Where(card => card.CurrentStatus == state.Code),
+                    scope)))
             .ToArray();
 
-        return new TrackingBoardResponse(columns);
+        var pagination = paged is null
+            ? null
+            : new TrackingBoardPaginationResponse(
+                paged.Page,
+                paged.PageSize,
+                paged.TotalItems,
+                paged.TotalPages,
+                paged.HasNext);
+
+        return new TrackingBoardResponse(columns, pagination);
     }
 
     internal async Task<TrackingOrderDetailResponse?> GetDetailAsync(
@@ -128,13 +158,29 @@ internal sealed class TrackingApplicationService(
                 "boardPriority");
         }
 
+        if (request.OrderedPeerIds is not null && request.BoardPriority is not null)
+        {
+            return Invalid<TrackingMutationResponse>(
+                "Envía una prioridad directa o un orden de pares, no ambos a la vez.",
+                "orderedPeerIds");
+        }
+
         var order = await orders.GetAsync(serviceOrderId, cancellationToken);
         if (order is null)
         {
             return Missing<TrackingMutationResponse>();
         }
 
-        await using var transaction = await BeginLazyWriteAsync(serviceOrderId, cancellationToken);
+        if (request.OrderedPeerIds is { } orderedPeerIds)
+        {
+            return await ReorderPriorityAsync(
+                order,
+                request.Pinned,
+                orderedPeerIds,
+                cancellationToken);
+        }
+
+        await using var transaction = await BeginBoardWriteAsync(order.CurrentStatus, cancellationToken);
         var row = await GetOrCreateAsync(serviceOrderId, cancellationToken);
         row.BoardPriority = request.BoardPriority;
         row.Pinned = request.Pinned;
@@ -150,6 +196,90 @@ internal sealed class TrackingApplicationService(
             cancellationToken);
 
         return Ok(Mutation(row));
+    }
+
+    private async Task<TrackingOperation<TrackingMutationResponse>> ReorderPriorityAsync(
+        ServiceOrderTrackingSnapshot targetOrder,
+        bool pinned,
+        IReadOnlyList<Guid> orderedPeerIds,
+        CancellationToken cancellationToken)
+    {
+        if (orderedPeerIds.Count == 0
+            || orderedPeerIds.Distinct().Count() != orderedPeerIds.Count
+            || !orderedPeerIds.Contains(targetOrder.ServiceOrderId))
+        {
+            return Invalid<TrackingMutationResponse>(
+                "El orden enviado debe contener una sola vez la orden que se está moviendo.",
+                "orderedPeerIds");
+        }
+
+        await using var transaction = await BeginBoardWriteAsync(
+            targetOrder.CurrentStatus,
+            cancellationToken);
+
+        var currentStatusOrders = await ListStatusAsync(
+            targetOrder.CurrentStatus,
+            cancellationToken);
+        var statusIds = currentStatusOrders.Select(order => order.ServiceOrderId).ToArray();
+        var existingRows = statusIds.Length == 0
+            ? new Dictionary<Guid, OrderTracking>()
+            : await database.OrderTracking
+                .Where(row => row.IsActive && statusIds.Contains(row.ServiceOrderId))
+                .ToDictionaryAsync(row => row.ServiceOrderId, cancellationToken);
+
+        bool EffectivePinned(Guid id)
+            => id == targetOrder.ServiceOrderId
+                ? pinned
+                : existingRows.TryGetValue(id, out var row) && row.Pinned;
+
+        var expectedPeers = currentStatusOrders
+            .Where(order => EffectivePinned(order.ServiceOrderId) == pinned)
+            .Select(order => order.ServiceOrderId)
+            .ToHashSet();
+        var requestedPeers = orderedPeerIds.ToHashSet();
+
+        if (!expectedPeers.SetEquals(requestedPeers))
+        {
+            return Invalid<TrackingMutationResponse>(
+                "El tablero cambió mientras se reordenaba. Recárgalo antes de volver a intentarlo.",
+                "orderedPeerIds");
+        }
+
+        var visibleCodes = currentStatusOrders.ToDictionary(
+            order => order.ServiceOrderId,
+            order => order.VisibleCode);
+        var changedRows = new List<OrderTracking>(orderedPeerIds.Count);
+
+        for (var index = 0; index < orderedPeerIds.Count; index++)
+        {
+            var id = orderedPeerIds[index];
+            if (!existingRows.TryGetValue(id, out var row))
+            {
+                row = new OrderTracking { ServiceOrderId = id };
+                existingRows.Add(id, row);
+                database.OrderTracking.Add(row);
+            }
+
+            row.Pinned = pinned;
+            row.BoardPriority = index;
+            Touch(row);
+            changedRows.Add(row);
+        }
+
+        await database.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        foreach (var row in changedRows)
+        {
+            await AuditAsync(
+                AuditAction.Update,
+                "order_tracking",
+                row.OrderTrackingId,
+                $"Orden de trabajo de la orden «{visibleCodes[row.ServiceOrderId]}» cambiada.",
+                cancellationToken);
+        }
+
+        return Ok(Mutation(existingRows[targetOrder.ServiceOrderId]));
     }
 
     internal async Task<TrackingOperation<TrackingMutationResponse>> SetDueAsync(
@@ -294,6 +424,34 @@ internal sealed class TrackingApplicationService(
             : new(result.Outcome, result.Error);
     }
 
+    private async Task<IReadOnlyList<ServiceOrderTrackingSummary>> ListStatusAsync(
+        string status,
+        CancellationToken cancellationToken)
+    {
+        var result = new List<ServiceOrderTrackingSummary>();
+        var pageNumber = 1;
+
+        while (true)
+        {
+            var page = await orders.ListAsync(
+                new ServiceOrderQuery(
+                    ServiceOrderScope.All,
+                    status,
+                    ServiceOrderSort.ReceivedAt,
+                    ServiceOrderSortDirection.Ascending,
+                    PageRequest.Of(pageNumber, PageRequest.MaxSize)),
+                cancellationToken);
+            result.AddRange(page.Items);
+
+            if (!page.HasNext)
+            {
+                return result;
+            }
+
+            pageNumber++;
+        }
+    }
+
     private async Task<OrderTracking> GetOrCreateAsync(
         Guid serviceOrderId,
         CancellationToken cancellationToken)
@@ -313,6 +471,26 @@ internal sealed class TrackingApplicationService(
         row = new OrderTracking { ServiceOrderId = serviceOrderId };
         database.OrderTracking.Add(row);
         return row;
+    }
+
+    private async Task<IDbContextTransaction> BeginBoardWriteAsync(
+        string status,
+        CancellationToken cancellationToken)
+    {
+        var transaction = await database.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var lockName = $"tracking:board:{status}";
+            await database.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT pg_advisory_xact_lock(hashtextextended({lockName}, 0))",
+                cancellationToken);
+            return transaction;
+        }
+        catch
+        {
+            await transaction.DisposeAsync();
+            throw;
+        }
     }
 
     private async Task<IDbContextTransaction> BeginLazyWriteAsync(
@@ -376,6 +554,20 @@ internal sealed class TrackingApplicationService(
                 Summary = summary
             },
             cancellationToken);
+
+    private static IReadOnlyList<TrackingBoardCardResponse> SortCards(
+        IEnumerable<TrackingBoardCardResponse> cards,
+        ServiceOrderScope scope)
+        => scope == ServiceOrderScope.Closed
+            ? cards.OrderByDescending(card => card.ReceivedAt)
+                .ThenBy(card => card.ServiceOrderId)
+                .ToArray()
+            : cards.OrderByDescending(card => card.Pinned)
+                .ThenBy(card => card.BoardPriority.HasValue ? 0 : 1)
+                .ThenBy(card => card.BoardPriority)
+                .ThenBy(card => card.ReceivedAt)
+                .ThenBy(card => card.ServiceOrderId)
+                .ToArray();
 
     private static TrackingOrderDetailResponse Detail(
         ServiceOrderTrackingSnapshot order,

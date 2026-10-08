@@ -5,6 +5,7 @@ using Sillar.Core.Contracts;
 using Sillar.Modules.ServiceOrders.Contracts;
 using Sillar.Modules.Tracking.Application;
 using Sillar.Modules.Tracking.Dtos;
+using Sillar.Shared.Paging;
 
 namespace Sillar.Modules.Tracking.Endpoints;
 
@@ -23,7 +24,7 @@ internal static class TrackingEndpoints
 
         group.MapGet("/board", GetBoard)
             .WithName("GetTrackingBoard")
-            .WithSummary("Obtiene el tablero abierto, agrupado por los estados publicados por M05b.")
+            .WithSummary("Obtiene el tablero abierto o la vista paginada de terminadas, agrupados por los estados publicados por M05b.")
             .Produces<TrackingBoardResponse>(StatusCodes.Status200OK);
 
         group.MapGet("/orders/{serviceOrderId:guid}", GetDetail)
@@ -72,9 +73,34 @@ internal static class TrackingEndpoints
     }
 
     private static async Task<IResult> GetBoard(
+        string? scope,
+        int? page,
+        int? pageSize,
         TrackingApplicationService service,
         CancellationToken cancellationToken)
-        => Results.Ok(await service.GetBoardAsync(cancellationToken));
+    {
+        var parsedScope = scope?.Trim().ToLowerInvariant() switch
+        {
+            null or "" or "open" => ServiceOrderScope.Open,
+            "closed" => ServiceOrderScope.Closed,
+            _ => (ServiceOrderScope?)null
+        };
+
+        if (parsedScope is null)
+        {
+            return Results.ValidationProblem(
+                new Dictionary<string, string[]>
+                {
+                    ["scope"] = ["scope solo admite 'open' o 'closed'."]
+                },
+                title: "La vista del tablero no es válida.");
+        }
+
+        return Results.Ok(await service.GetBoardAsync(
+            parsedScope.Value,
+            PageRequest.Of(page, pageSize),
+            cancellationToken));
+    }
 
     private static async Task<IResult> GetDetail(
         Guid serviceOrderId,

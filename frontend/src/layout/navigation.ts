@@ -4,6 +4,7 @@ import { cmsNavigation } from '../modules/cms/routes';
 import { coreNavigation } from '../modules/core/routes';
 import { crmNavigation } from '../modules/crm/routes';
 import { servicesNavigation } from '../modules/services/routes';
+import { trackingNavigation } from '../modules/tracking/routes';
 import type { Role } from '../session/SessionProvider';
 
 /**
@@ -54,6 +55,7 @@ export const MODULE_NAVIGATION: readonly ModuleNavigation[] = [
   servicesNavigation,
   crmNavigation,
   b2bNavigation,
+  trackingNavigation,
 ];
 
 /** Filtra la navegación por módulos activos y por rol. */

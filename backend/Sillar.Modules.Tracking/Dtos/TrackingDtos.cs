@@ -3,7 +3,11 @@ namespace Sillar.Modules.Tracking.Dtos;
 /// <summary>Fija o elimina la prioridad manual de una orden y decide si queda anclada.</summary>
 /// <param name="BoardPriority"><c>null</c> elimina la prioridad; cero es una prioridad válida.</param>
 /// <param name="Pinned">Indica si la tarjeta aparece antes que las no fijadas.</param>
-public sealed record SetTrackingPriorityRequest(int? BoardPriority, bool Pinned);
+/// <param name="OrderedPeerIds">Orden completo de las tarjetas del mismo estado cuando se realiza un reordenamiento; <c>null</c> conserva el modo de actualización individual.</param>
+public sealed record SetTrackingPriorityRequest(
+    int? BoardPriority,
+    bool Pinned,
+    IReadOnlyList<Guid>? OrderedPeerIds = null);
 
 /// <summary>Fija o limpia el plazo interno de taller.</summary>
 /// <param name="InternalDueAt"><c>null</c> limpia el plazo.</param>
@@ -16,7 +20,16 @@ public sealed record AddTrackingNoteRequest(string? Body);
 /// <summary>Solicita a M05b una transición condicionada al estado que vio el cliente.</summary>
 public sealed record TransitionTrackingStatusRequest(string? ExpectedStatus, string? TargetStatus);
 
-public sealed record TrackingBoardResponse(IReadOnlyList<TrackingBoardColumnResponse> Columns);
+public sealed record TrackingBoardResponse(
+    IReadOnlyList<TrackingBoardColumnResponse> Columns,
+    TrackingBoardPaginationResponse? Pagination = null);
+
+public sealed record TrackingBoardPaginationResponse(
+    int Page,
+    int PageSize,
+    long TotalItems,
+    int TotalPages,
+    bool HasNext);
 
 public sealed record TrackingBoardColumnResponse(
     string Status,
