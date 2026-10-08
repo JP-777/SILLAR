@@ -1,0 +1,46 @@
+# FÍSICO · base sillar_qa_m05b_focal_1791487035 · 253286b914eb98a0ec0c94b95820ac071723b48f · cambios 0 · 2026-10-08 14:22:11 -0500
+## 1 · Todas las FK cuyo origen es el schema tracking
+ERROR:  operator is not unique: text || "char"
+LINE 1: ...ss||' -> '||c.confrelid::regclass||' · on delete '||c.confde...
+                                                             ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
+## 2 · FK de tracking hacia schemas ajenos distintos de service_orders (deben ser 0)
+0
+## 3 · Columnas de tracking (sin estado ni historia)
+order_tracking: order_tracking_id,service_order_id,board_priority,internal_due_at,pinned,last_touched_by_name,last_touched_by_admin_user_id,last_touched_by_admin_user_home_node,last_touched_at,is_active,origin_node,row_version,created_at,updated_at
+tracking_notes: tracking_note_id,order_tracking_id,body,author_name,author_admin_user_id,author_admin_user_home_node,is_active,origin_node,row_version,created_at,updated_at
+   columnas con 'status|state|history' en tracking: 0
+## 4 · Autoridad de estado en M05b
+service_orders.service_orders.status: text
+tablas M05b: __migrations,service_order_assignment_events,service_order_items,service_order_series,service_order_status_history,service_orders
+   triggers/funciones de tracking que escriban en service_orders: 0
+## 5 · series_label: seed dos veces
+== psql -v ON_ERROR_STOP=1 -f database/modules/service_orders/02_seed.sql
+   rc=0
+== psql -v ON_ERROR_STOP=1 -f database/modules/service_orders/02_seed.sql
+   rc=0
+core.site_settings: key=service_orders.series_label value=PENDIENTE_DEFINIR is_public=false is_active=true filas=1
+   contador service_order_series tras el seed (no debe consumir): 0
+## 6 · tracking/99_drop.sql no destruye M05b
+   antes: órdenes M05b=0 seguimiento=0
+## 7 · service_orders/99_drop.sql se niega con Tracking instalado
+== psql -v ON_ERROR_STOP=1 -f database/modules/service_orders/99_drop.sql
+ERROR:  No se desinstala M05b Servicios — Órdenes: hay dependientes duros instalados (FK desde: tracking). Desinstálalos antes; no se ha borrado nada.
+CONTEXT:  PL/pgSQL function inline_code_block line 35 at RAISE
+   rc=3
+   schemas: service_orders,tracking
+## 8 · tracking/99_drop.sql con datos de seguimiento
+== psql -v ON_ERROR_STOP=1 -f database/modules/tracking/99_drop.sql
+   rc=0
+   después: tracking=0 órdenes M05b=0 (la orden QA-B1 sigue: 0)
+## 9 · tracking/99_drop.sql repetido (idempotente)
+== psql -v ON_ERROR_STOP=1 -f database/modules/tracking/99_drop.sql
+   rc=0
+## 10 · Reinstalación de M06 por migrate() y paridad
+Applying migration '20261007212800_TrackingInitial'.
+Done.
+   tablas=2 triggers=2 migraciones=1 · seguimiento vacío=0 · orden M05b conservada=0
+== psql -v ON_ERROR_STOP=1 -f database/modules/tracking/01_schema.sql
+   rc=0
+== psql -v ON_ERROR_STOP=1 -f database/modules/tracking/02_seed.sql
+   rc=0

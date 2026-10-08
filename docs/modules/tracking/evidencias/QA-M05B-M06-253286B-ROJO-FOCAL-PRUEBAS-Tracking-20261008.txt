@@ -1,0 +1,48 @@
+# FOCAL · dotnet test backend/Sillar.Modules.Tracking.Tests · 253286b914eb98a0ec0c94b95820ac071723b48f · cambios 0 · base sillar_qa_m05b_focal_1791487035 · 2026-10-08 14:20:26 -0500
+Test run for /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.10)
+[xUnit.net 00:00:00.35]   Discovering: Sillar.Modules.Tracking.Tests
+[xUnit.net 00:00:00.76]   Discovered:  Sillar.Modules.Tracking.Tests
+[xUnit.net 00:00:01.10]   Starting:    Sillar.Modules.Tracking.Tests
+  Passed Sillar.Modules.Tracking.Tests.ModelContractTests.Both_business_tables_are_replicated_with_application_UUID_v7 [31 ms]
+  Passed Sillar.Modules.Tracking.Tests.ModuleContractTests.Tracking_does_not_reference_the_concrete_ServiceOrders_assembly [33 ms]
+  Passed Sillar.Modules.Tracking.Tests.ModuleContractTests.Module_declares_only_ratified_dependencies [4 ms]
+  Passed Sillar.Modules.Tracking.Tests.ApiYFronterasTests.B2_y_B3_la_capa_productiva_solo_conoce_Contracts_y_no_ejecuta_SQL_ajeno [64 ms]
+  Passed Sillar.Modules.Tracking.Tests.ApiYFronterasTests.B8_el_OpenAPI_real_publica_las_siete_rutas_y_los_cuatro_ejemplos_copiables [786 ms]
+  Passed Sillar.Modules.Tracking.Tests.ApiYFronterasTests.Invalid_de_M05b_es_el_mensaje_principal_observable_sin_reinterpretacion [11 ms]
+  Passed Sillar.Modules.Tracking.Tests.ApiYFronterasTests.La_api_publica_exactamente_las_siete_rutas_administrativas_ratificadas [133 ms]
+  Passed Sillar.Modules.Tracking.Tests.ModelContractTests.Lazy_priority_is_nullable_and_negative_values_have_a_model_check [1 s]
+  Passed Sillar.Modules.Tracking.Tests.ModelContractTests.There_is_one_tracking_row_per_service_order_without_importing_M05b_entities [48 ms]
+  Passed Sillar.Modules.Tracking.Tests.ModelContractTests.Notes_are_internal_and_only_reference_the_local_tracking_row [65 ms]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Tracking_for_unknown_service_order_is_rejected_by_FK [8 s]
+  Passed Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests.Reordenar_con_una_lista_obsoleta_se_rechaza_sin_escribir [8 s]
+  Passed Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Nota_vacia_no_escribe_y_nota_valida_conserva_prioridad_null_y_triple_completa [9 s]
+  Passed Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Escrituras_propias_no_cambian_estado_historial_ni_row_version_de_M05b [6 s]
+  Passed Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests.Reordenar_un_grupo_es_atomico_materializa_sus_pares_y_deja_el_orden_exacto [7 s]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Updated_at_trigger_runs_for_tracking_and_notes [7 s]
+  Passed Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Prioridad_cero_es_valida_negativa_es_invalida_y_la_escritura_lazy_atribuye [6 s]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_replication_checks_on_both_tables [5 s]
+  Passed Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests.La_vista_cerrada_respeta_la_paginacion_del_contrato [6 s]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_actor_triples_and_rejects_fictitious_actor [5 s]
+  Passed Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.El_detalle_separa_la_orden_leida_de_M05b_de_los_datos_editables_de_M06 [5 s]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Negative_priority_is_rejected_by_PostgreSQL_check [6 s]
+  Passed Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.La_baja_de_nota_es_logica_y_no_borra_la_fila [6 s]
+  Passed Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Transicion_exitosa_no_crea_tracking_y_el_tablero_refleja_la_relectura_sin_eventos [6 s]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Lazy_row_and_note_allow_null_priority [6 s]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_unique_tracking_row_and_internal_note_FK [5 s]
+  Passed Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Dos_primeras_escrituras_concurrentes_comparten_una_fila_y_conservan_ambos_efectos [6 s]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Migration_rejects_installation_without_hard_dependencies [3 s]
+  Passed Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.El_tablero_agota_paginas_ordena_globalmente_y_no_materializa_filas [8 s]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Migration_materializes_expected_schema_FKs_and_triggers [8 s]
+  Passed Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Conflicto_no_reintenta_invalid_conserva_mensaje_y_ninguna_transicion_escribe_tracking [6 s]
+  Passed Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Sin_prioridad_la_tarjeta_con_o_sin_fila_conserva_el_orden_de_recepcion [4 s]
+[xUnit.net 00:01:13.88]   Finished:    Sillar.Modules.Tracking.Tests (ID = '8c9360453527a42fb70856123a3d8d7f19f5ed6e4a4ad35be233bf712114470d')
+  Passed Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.El_plazo_usa_received_at_del_contrato_y_solo_materializa_si_es_valido [5 s]
+
+Test Run Successful.
+Total tests: 33
+     Passed: 33
+ Total time: 1.2432 Minutes
+Results File: /var/tmp/sillar-qa-m05b-m06-253286b/trx-focal/Tracking.trx
+# rc=0

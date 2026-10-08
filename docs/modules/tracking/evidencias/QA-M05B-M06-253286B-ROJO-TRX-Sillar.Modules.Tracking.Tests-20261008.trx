@@ -1,0 +1,652 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="61694af4-4aa4-41d3-8076-48f0c0d2b17c" name="@archlinux 2026-10-08 14:31:19" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-08T14:31:19.5023205-05:00" queuing="2026-10-08T14:31:19.5023207-05:00" start="2026-10-08T14:31:05.9042299-05:00" finish="2026-10-08T14:41:33.6415775-05:00" />
+  <TestSettings name="default" id="026c77c6-efe8-4eac-b7e9-3640dbd35829">
+    <Deployment runDeploymentRoot="_archlinux_2026-10-08_14_31_19" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="d188132f-7507-4e40-b282-e669c30f73fb" testId="f9458090-c6aa-83db-67a1-5c95a5e0621f" testName="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Dos_primeras_escrituras_concurrentes_comparten_una_fila_y_conservan_ambos_efectos" computerName="archlinux" duration="00:00:26.7567682" startTime="2026-10-08T14:39:45.1106561-05:00" endTime="2026-10-08T14:40:11.8674894-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d188132f-7507-4e40-b282-e669c30f73fb" />
+    <UnitTestResult executionId="48a08194-e86d-49f8-938a-a3a68bcb16c8" testId="2256b821-b113-4901-ef9c-a1ce13674409" testName="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Sin_prioridad_la_tarjeta_con_o_sin_fila_conserva_el_orden_de_recepcion" computerName="archlinux" duration="00:00:16.7099631" startTime="2026-10-08T14:40:59.6641735-05:00" endTime="2026-10-08T14:41:16.3742398-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="48a08194-e86d-49f8-938a-a3a68bcb16c8" />
+    <UnitTestResult executionId="32eb2038-a60d-40b5-8eb6-061118aa1f3e" testId="6ae4332c-93f5-155d-ae16-cce4f2bfc734" testName="Sillar.Modules.Tracking.Tests.ApiYFronterasTests.B8_el_OpenAPI_real_publica_las_siete_rutas_y_los_cuatro_ejemplos_copiables" computerName="archlinux" duration="00:00:04.9576626" startTime="2026-10-08T14:31:18.4341836-05:00" endTime="2026-10-08T14:31:23.4061586-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="32eb2038-a60d-40b5-8eb6-061118aa1f3e" />
+    <UnitTestResult executionId="ed040cce-b5e1-4509-b1d0-19b5f3ace282" testId="650d3ebf-9c2d-ec55-9bd4-28d2f77ef149" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Migration_materializes_expected_schema_FKs_and_triggers" computerName="archlinux" duration="00:00:21.4336023" startTime="2026-10-08T14:40:37.7684807-05:00" endTime="2026-10-08T14:40:59.2024345-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ed040cce-b5e1-4509-b1d0-19b5f3ace282" />
+    <UnitTestResult executionId="cc6d61a8-2147-48af-a222-bfd54a497420" testId="bf9037a8-6bb2-313f-8ffc-bee9ca58433f" testName="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.El_tablero_agota_paginas_ordena_globalmente_y_no_materializa_filas" computerName="archlinux" duration="00:00:26.7405930" startTime="2026-10-08T14:40:11.8760376-05:00" endTime="2026-10-08T14:40:38.6167130-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cc6d61a8-2147-48af-a222-bfd54a497420" />
+    <UnitTestResult executionId="fd0d5e28-0e63-4965-8d54-f1344c058f53" testId="dcd14d1d-eb18-477b-9a4b-178a70180d00" testName="Sillar.Modules.Tracking.Tests.ModelContractTests.There_is_one_tracking_row_per_service_order_without_importing_M05b_entities" computerName="archlinux" duration="00:00:00.1421072" startTime="2026-10-08T14:31:25.2430354-05:00" endTime="2026-10-08T14:31:25.3852613-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fd0d5e28-0e63-4965-8d54-f1344c058f53" />
+    <UnitTestResult executionId="1d9d26d8-ba9e-4597-9034-cefcf0c1e588" testId="5a9161c5-721d-d6ae-4fc5-e68da77d9373" testName="Sillar.Modules.Tracking.Tests.ApiYFronterasTests.Invalid_de_M05b_es_el_mensaje_principal_observable_sin_reinterpretacion" computerName="archlinux" duration="00:00:00.0285687" startTime="2026-10-08T14:31:23.4683198-05:00" endTime="2026-10-08T14:31:23.4970043-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1d9d26d8-ba9e-4597-9034-cefcf0c1e588" />
+    <UnitTestResult executionId="d5b056f9-d17a-4470-97b3-8af3704b5dc2" testId="d8f20649-c03e-d366-1ac1-7c3d8d614af2" testName="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.El_detalle_separa_la_orden_leida_de_M05b_de_los_datos_editables_de_M06" computerName="archlinux" duration="00:01:52.2787037" startTime="2026-10-08T14:35:31.8250842-05:00" endTime="2026-10-08T14:37:24.1126224-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d5b056f9-d17a-4470-97b3-8af3704b5dc2">
+      <Output>
+        <ErrorInfo>
+          <Message>Npgsql.NpgsqlException : Exception while reading from stream
+---- System.TimeoutException : Timeout during reading attempt</Message>
+          <StackTrace>   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 49
+   at Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.El_detalle_separa_la_orden_leida_de_M05b_de_los_datos_editables_de_M06() in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/ApplicationPostgresTests.cs:line 260
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="df4d0257-0bd5-43a4-939f-410ba21bc066" testId="2b21b17d-3ed3-9151-ff6f-a0e9917b58bd" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Negative_priority_is_rejected_by_PostgreSQL_check" computerName="archlinux" duration="00:02:00.6369905" startTime="2026-10-08T14:37:10.2766871-05:00" endTime="2026-10-08T14:39:10.9220472-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="df4d0257-0bd5-43a4-939f-410ba21bc066">
+      <Output>
+        <ErrorInfo>
+          <Message>Npgsql.NpgsqlException : Exception while reading from stream
+---- System.TimeoutException : Timeout during reading attempt</Message>
+          <StackTrace>   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 49
+   at Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Negative_priority_is_rejected_by_PostgreSQL_check() in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/PhysicalModelPostgresTests.cs:line 175
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="3c74ca20-e3cd-443c-8195-c25ed96ba149" testId="162bb571-2913-049a-eb5a-d597ecdd5d04" testName="Sillar.Modules.Tracking.Tests.ModuleContractTests.Tracking_does_not_reference_the_concrete_ServiceOrders_assembly" computerName="archlinux" duration="00:00:00.2542370" startTime="2026-10-08T14:31:17.9343098-05:00" endTime="2026-10-08T14:31:18.3319029-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3c74ca20-e3cd-443c-8195-c25ed96ba149" />
+    <UnitTestResult executionId="6397ada0-dc02-4f6d-8643-02cfdb0f223a" testId="cdd2b255-040c-eb27-77cf-544d86e35060" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_replication_checks_on_both_tables" computerName="archlinux" duration="00:02:57.1271399" startTime="2026-10-08T14:32:24.9064435-05:00" endTime="2026-10-08T14:35:22.0378957-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6397ada0-dc02-4f6d-8643-02cfdb0f223a">
+      <Output>
+        <ErrorInfo>
+          <Message>Npgsql.NpgsqlException : Exception while reading from stream
+---- System.TimeoutException : Timeout during reading attempt</Message>
+          <StackTrace>   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 49
+   at Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_replication_checks_on_both_tables() in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/PhysicalModelPostgresTests.cs:line 555
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="ccd993b2-2c17-4592-bc61-80ea8d45650f" testId="f48e4b42-fe92-76db-8a8f-98c410cbf5e3" testName="Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests.Reordenar_con_una_lista_obsoleta_se_rechaza_sin_escribir" computerName="archlinux" duration="00:00:38.7774941" startTime="2026-10-08T14:31:17.9332508-05:00" endTime="2026-10-08T14:31:56.8115772-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ccd993b2-2c17-4592-bc61-80ea8d45650f" />
+    <UnitTestResult executionId="67b955bb-a8b3-4e28-8848-684382a8b60b" testId="89e30058-8aa8-e787-85f6-c829983df062" testName="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.El_plazo_usa_received_at_del_contrato_y_solo_materializa_si_es_valido" computerName="archlinux" duration="00:00:17.0940337" startTime="2026-10-08T14:41:16.3762088-05:00" endTime="2026-10-08T14:41:33.4703593-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="67b955bb-a8b3-4e28-8848-684382a8b60b" />
+    <UnitTestResult executionId="66fbe4c9-1afe-462b-bdad-82024b76e5d5" testId="0b8f4a0d-fa8f-a230-a7ce-ae4a1aece2a2" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Tracking_for_unknown_service_order_is_rejected_by_FK" computerName="archlinux" duration="00:00:22.1258811" startTime="2026-10-08T14:31:17.9342354-05:00" endTime="2026-10-08T14:31:40.1637221-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="66fbe4c9-1afe-462b-bdad-82024b76e5d5" />
+    <UnitTestResult executionId="bfd7aae9-d62f-434d-935b-9e5ce05059ae" testId="bbb875c5-bde6-873e-6877-6f416e3920ca" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Lazy_row_and_note_allow_null_priority" computerName="archlinux" duration="00:00:34.2132567" startTime="2026-10-08T14:39:10.9236157-05:00" endTime="2026-10-08T14:39:45.1369842-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bfd7aae9-d62f-434d-935b-9e5ce05059ae" />
+    <UnitTestResult executionId="ad6dae70-d6dd-4bb4-9909-0d0eb75dc576" testId="cbb7ef4e-67d9-9dbf-fc09-b6a2d1aacb8e" testName="Sillar.Modules.Tracking.Tests.ModelContractTests.Lazy_priority_is_nullable_and_negative_values_have_a_model_check" computerName="archlinux" duration="00:00:06.8230761" startTime="2026-10-08T14:31:18.4133211-05:00" endTime="2026-10-08T14:31:25.2365442-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ad6dae70-d6dd-4bb4-9909-0d0eb75dc576" />
+    <UnitTestResult executionId="21e81812-12e4-4188-9e71-37c38cf1dfe4" testId="845589a4-e75f-6a5c-9aab-9149795912ad" testName="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Escrituras_propias_no_cambian_estado_historial_ni_row_version_de_M05b" computerName="archlinux" duration="00:01:18.4794299" startTime="2026-10-08T14:31:56.8186633-05:00" endTime="2026-10-08T14:33:15.3097552-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="21e81812-12e4-4188-9e71-37c38cf1dfe4">
+      <Output>
+        <ErrorInfo>
+          <Message>Npgsql.NpgsqlException : Exception while reading from stream
+---- System.TimeoutException : Timeout during reading attempt</Message>
+          <StackTrace>   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 49
+   at Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Escrituras_propias_no_cambian_estado_historial_ni_row_version_de_M05b() in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/ApplicationPostgresTests.cs:line 365
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="8865b56e-8010-49cc-8410-8071fb5b4d6b" testId="b9b3c2e2-62e4-7341-f710-3cb839caa7c1" testName="Sillar.Modules.Tracking.Tests.ModelContractTests.Notes_are_internal_and_only_reference_the_local_tracking_row" computerName="archlinux" duration="00:00:00.2082482" startTime="2026-10-08T14:31:25.3861510-05:00" endTime="2026-10-08T14:31:25.5945164-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8865b56e-8010-49cc-8410-8071fb5b4d6b" />
+    <UnitTestResult executionId="eef8af06-d8e6-48b7-a055-bf2f35622800" testId="61f4b6a9-f734-cbbf-2bcf-7bcb9c4fc73e" testName="Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests.La_vista_cerrada_respeta_la_paginacion_del_contrato" computerName="archlinux" duration="00:02:11.4293575" startTime="2026-10-08T14:33:15.3131226-05:00" endTime="2026-10-08T14:35:26.7498457-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="eef8af06-d8e6-48b7-a055-bf2f35622800">
+      <Output>
+        <ErrorInfo>
+          <Message>Npgsql.NpgsqlException : Exception while reading from stream
+---- System.TimeoutException : Timeout during reading attempt</Message>
+          <StackTrace>   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 49
+   at Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests.La_vista_cerrada_respeta_la_paginacion_del_contrato() in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/BoardContractCompletionPostgresTests.cs:line 20
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="2f314f29-9a45-4941-963a-7857b66f69a3" testId="a0919270-227a-9034-dda2-aab9c8d44536" testName="Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests.Reordenar_un_grupo_es_atomico_materializa_sus_pares_y_deja_el_orden_exacto" computerName="archlinux" duration="00:01:18.4862265" startTime="2026-10-08T14:31:56.8199377-05:00" endTime="2026-10-08T14:33:15.3121776-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2f314f29-9a45-4941-963a-7857b66f69a3">
+      <Output>
+        <ErrorInfo>
+          <Message>Npgsql.NpgsqlException : Exception while reading from stream
+---- System.TimeoutException : Timeout during reading attempt</Message>
+          <StackTrace>   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 49
+   at Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests.Reordenar_un_grupo_es_atomico_materializa_sus_pares_y_deja_el_orden_exacto() in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/BoardContractCompletionPostgresTests.cs:line 52
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="269ae3f8-4704-4421-81fa-9843c5315c38" testId="aa09579c-2578-6e22-40d3-e34109717c85" testName="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Conflicto_no_reintenta_invalid_conserva_mensaje_y_ninguna_transicion_escribe_tracking" computerName="archlinux" duration="00:00:21.0448723" startTime="2026-10-08T14:40:38.6179404-05:00" endTime="2026-10-08T14:40:59.6628899-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="269ae3f8-4704-4421-81fa-9843c5315c38" />
+    <UnitTestResult executionId="cf5444a9-5d1b-49fe-a281-e1547cf2ab0e" testId="0fc4c85a-008c-8dca-4b1c-0a3b35fdfb09" testName="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Nota_vacia_no_escribe_y_nota_valida_conserva_prioridad_null_y_triple_completa" computerName="archlinux" duration="00:00:38.7803638" startTime="2026-10-08T14:31:17.9342896-05:00" endTime="2026-10-08T14:31:56.8117451-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cf5444a9-5d1b-49fe-a281-e1547cf2ab0e" />
+    <UnitTestResult executionId="c7659cde-7167-4110-a7f1-64cb2bb87fc7" testId="266b7f1a-e6fc-8e3b-37de-3b6df622e0df" testName="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.La_baja_de_nota_es_logica_y_no_borra_la_fila" computerName="archlinux" duration="00:01:47.0552535" startTime="2026-10-08T14:37:24.1139005-05:00" endTime="2026-10-08T14:39:11.1724348-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c7659cde-7167-4110-a7f1-64cb2bb87fc7">
+      <Output>
+        <ErrorInfo>
+          <Message>Npgsql.NpgsqlException : Exception while reading from stream
+---- System.TimeoutException : Timeout during reading attempt</Message>
+          <StackTrace>   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 49
+   at Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.La_baja_de_nota_es_logica_y_no_borra_la_fila() in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/ApplicationPostgresTests.cs:line 229
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="94d5fe80-ffe5-4c9b-b2c6-60806e8e6943" testId="fbe69e26-0505-ad74-8327-a6f614d136c2" testName="Sillar.Modules.Tracking.Tests.ApiYFronterasTests.La_api_publica_exactamente_las_siete_rutas_administrativas_ratificadas" computerName="archlinux" duration="00:00:00.3712925" startTime="2026-10-08T14:31:23.4981512-05:00" endTime="2026-10-08T14:31:23.8695365-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="94d5fe80-ffe5-4c9b-b2c6-60806e8e6943" />
+    <UnitTestResult executionId="a0a7cb07-fe0f-46d5-b68d-ecaf51811b2f" testId="81b0bb54-ab4f-85eb-136f-01579eacabef" testName="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Transicion_exitosa_no_crea_tracking_y_el_tablero_refleja_la_relectura_sin_eventos" computerName="archlinux" duration="00:00:33.9360256" startTime="2026-10-08T14:39:11.1730456-05:00" endTime="2026-10-08T14:39:45.1091241-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a0a7cb07-fe0f-46d5-b68d-ecaf51811b2f" />
+    <UnitTestResult executionId="dfdd428c-ef84-4f33-95d6-38c0af848e63" testId="2fef2fc5-ec3f-185b-ad87-27555324c809" testName="Sillar.Modules.Tracking.Tests.ModelContractTests.Both_business_tables_are_replicated_with_application_UUID_v7" computerName="archlinux" duration="00:00:00.2490839" startTime="2026-10-08T14:31:17.9343716-05:00" endTime="2026-10-08T14:31:18.3331153-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="dfdd428c-ef84-4f33-95d6-38c0af848e63" />
+    <UnitTestResult executionId="1b3e5b1e-cdea-4fb2-b7e0-1a756f6de35d" testId="ee485851-0323-fc5b-4f81-a06ab8235d4f" testName="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Prioridad_cero_es_valida_negativa_es_invalida_y_la_escritura_lazy_atribuye" computerName="archlinux" duration="00:02:16.5092522" startTime="2026-10-08T14:33:15.3111555-05:00" endTime="2026-10-08T14:35:31.8233544-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1b3e5b1e-cdea-4fb2-b7e0-1a756f6de35d">
+      <Output>
+        <ErrorInfo>
+          <Message>Npgsql.PostgresException : 57014: canceling statement due to user request</Message>
+          <StackTrace>   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 49
+   at Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Prioridad_cero_es_valida_negativa_es_invalida_y_la_escritura_lazy_atribuye() in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/ApplicationPostgresTests.cs:line 113
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="5bce353e-8110-4a99-ac1e-a93e3d249c3b" testId="f618a867-c5ce-7712-d357-f45d378402b5" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_unique_tracking_row_and_internal_note_FK" computerName="archlinux" duration="00:00:26.7271858" startTime="2026-10-08T14:39:45.1399011-05:00" endTime="2026-10-08T14:40:11.8672029-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5bce353e-8110-4a99-ac1e-a93e3d249c3b" />
+    <UnitTestResult executionId="95670b86-deaa-4474-b9c8-e563e17e74cb" testId="ca0712a0-d9cd-580c-a5af-8fd9432964e8" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_actor_triples_and_rejects_fictitious_actor" computerName="archlinux" duration="00:01:48.2322531" startTime="2026-10-08T14:35:22.0389254-05:00" endTime="2026-10-08T14:37:10.2753725-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="95670b86-deaa-4474-b9c8-e563e17e74cb">
+      <Output>
+        <ErrorInfo>
+          <Message>Npgsql.NpgsqlException : Exception while reading from stream
+---- System.TimeoutException : Timeout during reading attempt</Message>
+          <StackTrace>   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 49
+   at Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_actor_triples_and_rejects_fictitious_actor() in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/PhysicalModelPostgresTests.cs:line 421
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="8d382c33-2e63-4554-8f4f-a26c3bf033b6" testId="1886a2c1-ba14-8eed-96d6-5d10fb61db07" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Migration_rejects_installation_without_hard_dependencies" computerName="archlinux" duration="00:00:25.8927565" startTime="2026-10-08T14:40:11.8745254-05:00" endTime="2026-10-08T14:40:37.7673841-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8d382c33-2e63-4554-8f4f-a26c3bf033b6" />
+    <UnitTestResult executionId="b09c4245-eb3c-402c-86ba-5ca66f63a3cb" testId="bcc6702c-35c1-9898-fccf-5543a4b568bd" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Updated_at_trigger_runs_for_tracking_and_notes" computerName="archlinux" duration="00:00:44.5774297" startTime="2026-10-08T14:31:40.1736688-05:00" endTime="2026-10-08T14:32:24.9048662-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b09c4245-eb3c-402c-86ba-5ca66f63a3cb">
+      <Output>
+        <ErrorInfo>
+          <Message>Npgsql.NpgsqlException : Exception while reading from stream
+---- System.TimeoutException : Timeout during reading attempt</Message>
+          <StackTrace>   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 87
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 49
+   at Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Updated_at_trigger_runs_for_tracking_and_notes() in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/PhysicalModelPostgresTests.cs:line 230
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="4e72c052-f831-4456-bb17-5cab843417db" testId="36f221d5-1c00-9008-2834-d50ad826cc52" testName="Sillar.Modules.Tracking.Tests.ApiYFronterasTests.B2_y_B3_la_capa_productiva_solo_conoce_Contracts_y_no_ejecuta_SQL_ajeno" computerName="archlinux" duration="00:00:00.2561753" startTime="2026-10-08T14:31:17.9343374-05:00" endTime="2026-10-08T14:31:18.3330827-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4e72c052-f831-4456-bb17-5cab843417db" />
+    <UnitTestResult executionId="a519899a-1158-4c79-b47b-2c24144ad143" testId="6f6af591-d680-db6d-99a5-9225bc253b4c" testName="Sillar.Modules.Tracking.Tests.ModuleContractTests.Module_declares_only_ratified_dependencies" computerName="archlinux" duration="00:00:00.0541045" startTime="2026-10-08T14:31:18.4273005-05:00" endTime="2026-10-08T14:31:18.4853978-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a519899a-1158-4c79-b47b-2c24144ad143" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests.Reordenar_con_una_lista_obsoleta_se_rechaza_sin_escribir" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="f48e4b42-fe92-76db-8a8f-98c410cbf5e3">
+      <Execution id="ccd993b2-2c17-4592-bc61-80ea8d45650f" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests" name="Reordenar_con_una_lista_obsoleta_se_rechaza_sin_escribir" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.El_plazo_usa_received_at_del_contrato_y_solo_materializa_si_es_valido" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="89e30058-8aa8-e787-85f6-c829983df062">
+      <Execution id="67b955bb-a8b3-4e28-8848-684382a8b60b" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests" name="El_plazo_usa_received_at_del_contrato_y_solo_materializa_si_es_valido" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Prioridad_cero_es_valida_negativa_es_invalida_y_la_escritura_lazy_atribuye" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="ee485851-0323-fc5b-4f81-a06ab8235d4f">
+      <Execution id="1b3e5b1e-cdea-4fb2-b7e0-1a756f6de35d" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests" name="Prioridad_cero_es_valida_negativa_es_invalida_y_la_escritura_lazy_atribuye" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_unique_tracking_row_and_internal_note_FK" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="f618a867-c5ce-7712-d357-f45d378402b5">
+      <Execution id="5bce353e-8110-4a99-ac1e-a93e3d249c3b" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Database_enforces_unique_tracking_row_and_internal_note_FK" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.ApiYFronterasTests.La_api_publica_exactamente_las_siete_rutas_administrativas_ratificadas" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="fbe69e26-0505-ad74-8327-a6f614d136c2">
+      <Execution id="94d5fe80-ffe5-4c9b-b2c6-60806e8e6943" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.ApiYFronterasTests" name="La_api_publica_exactamente_las_siete_rutas_administrativas_ratificadas" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests.La_vista_cerrada_respeta_la_paginacion_del_contrato" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="61f4b6a9-f734-cbbf-2bcf-7bcb9c4fc73e">
+      <Execution id="eef8af06-d8e6-48b7-a055-bf2f35622800" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests" name="La_vista_cerrada_respeta_la_paginacion_del_contrato" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.ModelContractTests.Lazy_priority_is_nullable_and_negative_values_have_a_model_check" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="cbb7ef4e-67d9-9dbf-fc09-b6a2d1aacb8e">
+      <Execution id="ad6dae70-d6dd-4bb4-9909-0d0eb75dc576" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.ModelContractTests" name="Lazy_priority_is_nullable_and_negative_values_have_a_model_check" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.ModelContractTests.Notes_are_internal_and_only_reference_the_local_tracking_row" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="b9b3c2e2-62e4-7341-f710-3cb839caa7c1">
+      <Execution id="8865b56e-8010-49cc-8410-8071fb5b4d6b" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.ModelContractTests" name="Notes_are_internal_and_only_reference_the_local_tracking_row" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Updated_at_trigger_runs_for_tracking_and_notes" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="bcc6702c-35c1-9898-fccf-5543a4b568bd">
+      <Execution id="b09c4245-eb3c-402c-86ba-5ca66f63a3cb" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Updated_at_trigger_runs_for_tracking_and_notes" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_replication_checks_on_both_tables" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="cdd2b255-040c-eb27-77cf-544d86e35060">
+      <Execution id="6397ada0-dc02-4f6d-8643-02cfdb0f223a" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Database_enforces_replication_checks_on_both_tables" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Negative_priority_is_rejected_by_PostgreSQL_check" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="2b21b17d-3ed3-9151-ff6f-a0e9917b58bd">
+      <Execution id="df4d0257-0bd5-43a4-939f-410ba21bc066" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Negative_priority_is_rejected_by_PostgreSQL_check" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.La_baja_de_nota_es_logica_y_no_borra_la_fila" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="266b7f1a-e6fc-8e3b-37de-3b6df622e0df">
+      <Execution id="c7659cde-7167-4110-a7f1-64cb2bb87fc7" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests" name="La_baja_de_nota_es_logica_y_no_borra_la_fila" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.ModuleContractTests.Module_declares_only_ratified_dependencies" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="6f6af591-d680-db6d-99a5-9225bc253b4c">
+      <Execution id="a519899a-1158-4c79-b47b-2c24144ad143" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.ModuleContractTests" name="Module_declares_only_ratified_dependencies" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Sin_prioridad_la_tarjeta_con_o_sin_fila_conserva_el_orden_de_recepcion" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="2256b821-b113-4901-ef9c-a1ce13674409">
+      <Execution id="48a08194-e86d-49f8-938a-a3a68bcb16c8" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests" name="Sin_prioridad_la_tarjeta_con_o_sin_fila_conserva_el_orden_de_recepcion" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Dos_primeras_escrituras_concurrentes_comparten_una_fila_y_conservan_ambos_efectos" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="f9458090-c6aa-83db-67a1-5c95a5e0621f">
+      <Execution id="d188132f-7507-4e40-b282-e669c30f73fb" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests" name="Dos_primeras_escrituras_concurrentes_comparten_una_fila_y_conservan_ambos_efectos" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Tracking_for_unknown_service_order_is_rejected_by_FK" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="0b8f4a0d-fa8f-a230-a7ce-ae4a1aece2a2">
+      <Execution id="66fbe4c9-1afe-462b-bdad-82024b76e5d5" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Tracking_for_unknown_service_order_is_rejected_by_FK" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Lazy_row_and_note_allow_null_priority" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="bbb875c5-bde6-873e-6877-6f416e3920ca">
+      <Execution id="bfd7aae9-d62f-434d-935b-9e5ce05059ae" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Lazy_row_and_note_allow_null_priority" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.ModuleContractTests.Tracking_does_not_reference_the_concrete_ServiceOrders_assembly" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="162bb571-2913-049a-eb5a-d597ecdd5d04">
+      <Execution id="3c74ca20-e3cd-443c-8195-c25ed96ba149" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.ModuleContractTests" name="Tracking_does_not_reference_the_concrete_ServiceOrders_assembly" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.ModelContractTests.There_is_one_tracking_row_per_service_order_without_importing_M05b_entities" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="dcd14d1d-eb18-477b-9a4b-178a70180d00">
+      <Execution id="fd0d5e28-0e63-4965-8d54-f1344c058f53" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.ModelContractTests" name="There_is_one_tracking_row_per_service_order_without_importing_M05b_entities" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.El_tablero_agota_paginas_ordena_globalmente_y_no_materializa_filas" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="bf9037a8-6bb2-313f-8ffc-bee9ca58433f">
+      <Execution id="cc6d61a8-2147-48af-a222-bfd54a497420" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests" name="El_tablero_agota_paginas_ordena_globalmente_y_no_materializa_filas" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Transicion_exitosa_no_crea_tracking_y_el_tablero_refleja_la_relectura_sin_eventos" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="81b0bb54-ab4f-85eb-136f-01579eacabef">
+      <Execution id="a0a7cb07-fe0f-46d5-b68d-ecaf51811b2f" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests" name="Transicion_exitosa_no_crea_tracking_y_el_tablero_refleja_la_relectura_sin_eventos" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Escrituras_propias_no_cambian_estado_historial_ni_row_version_de_M05b" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="845589a4-e75f-6a5c-9aab-9149795912ad">
+      <Execution id="21e81812-12e4-4188-9e71-37c38cf1dfe4" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests" name="Escrituras_propias_no_cambian_estado_historial_ni_row_version_de_M05b" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.El_detalle_separa_la_orden_leida_de_M05b_de_los_datos_editables_de_M06" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="d8f20649-c03e-d366-1ac1-7c3d8d614af2">
+      <Execution id="d5b056f9-d17a-4470-97b3-8af3704b5dc2" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests" name="El_detalle_separa_la_orden_leida_de_M05b_de_los_datos_editables_de_M06" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Migration_materializes_expected_schema_FKs_and_triggers" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="650d3ebf-9c2d-ec55-9bd4-28d2f77ef149">
+      <Execution id="ed040cce-b5e1-4509-b1d0-19b5f3ace282" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Migration_materializes_expected_schema_FKs_and_triggers" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_actor_triples_and_rejects_fictitious_actor" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="ca0712a0-d9cd-580c-a5af-8fd9432964e8">
+      <Execution id="95670b86-deaa-4474-b9c8-e563e17e74cb" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Database_enforces_actor_triples_and_rejects_fictitious_actor" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.ApiYFronterasTests.B2_y_B3_la_capa_productiva_solo_conoce_Contracts_y_no_ejecuta_SQL_ajeno" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="36f221d5-1c00-9008-2834-d50ad826cc52">
+      <Execution id="4e72c052-f831-4456-bb17-5cab843417db" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.ApiYFronterasTests" name="B2_y_B3_la_capa_productiva_solo_conoce_Contracts_y_no_ejecuta_SQL_ajeno" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.ModelContractTests.Both_business_tables_are_replicated_with_application_UUID_v7" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="2fef2fc5-ec3f-185b-ad87-27555324c809">
+      <Execution id="dfdd428c-ef84-4f33-95d6-38c0af848e63" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.ModelContractTests" name="Both_business_tables_are_replicated_with_application_UUID_v7" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Conflicto_no_reintenta_invalid_conserva_mensaje_y_ninguna_transicion_escribe_tracking" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="aa09579c-2578-6e22-40d3-e34109717c85">
+      <Execution id="269ae3f8-4704-4421-81fa-9843c5315c38" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests" name="Conflicto_no_reintenta_invalid_conserva_mensaje_y_ninguna_transicion_escribe_tracking" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Nota_vacia_no_escribe_y_nota_valida_conserva_prioridad_null_y_triple_completa" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="0fc4c85a-008c-8dca-4b1c-0a3b35fdfb09">
+      <Execution id="cf5444a9-5d1b-49fe-a281-e1547cf2ab0e" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.AplicacionPostgresTests" name="Nota_vacia_no_escribe_y_nota_valida_conserva_prioridad_null_y_triple_completa" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.ApiYFronterasTests.Invalid_de_M05b_es_el_mensaje_principal_observable_sin_reinterpretacion" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="5a9161c5-721d-d6ae-4fc5-e68da77d9373">
+      <Execution id="1d9d26d8-ba9e-4597-9034-cefcf0c1e588" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.ApiYFronterasTests" name="Invalid_de_M05b_es_el_mensaje_principal_observable_sin_reinterpretacion" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests.Reordenar_un_grupo_es_atomico_materializa_sus_pares_y_deja_el_orden_exacto" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="a0919270-227a-9034-dda2-aab9c8d44536">
+      <Execution id="2f314f29-9a45-4941-963a-7857b66f69a3" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests" name="Reordenar_un_grupo_es_atomico_materializa_sus_pares_y_deja_el_orden_exacto" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Migration_rejects_installation_without_hard_dependencies" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="1886a2c1-ba14-8eed-96d6-5d10fb61db07">
+      <Execution id="8d382c33-2e63-4554-8f4f-a26c3bf033b6" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Migration_rejects_installation_without_hard_dependencies" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.ApiYFronterasTests.B8_el_OpenAPI_real_publica_las_siete_rutas_y_los_cuatro_ejemplos_copiables" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="6ae4332c-93f5-155d-ae16-cce4f2bfc734">
+      <Execution id="32eb2038-a60d-40b5-8eb6-061118aa1f3e" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.ApiYFronterasTests" name="B8_el_OpenAPI_real_publica_las_siete_rutas_y_los_cuatro_ejemplos_copiables" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="f9458090-c6aa-83db-67a1-5c95a5e0621f" executionId="d188132f-7507-4e40-b282-e669c30f73fb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2256b821-b113-4901-ef9c-a1ce13674409" executionId="48a08194-e86d-49f8-938a-a3a68bcb16c8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6ae4332c-93f5-155d-ae16-cce4f2bfc734" executionId="32eb2038-a60d-40b5-8eb6-061118aa1f3e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="650d3ebf-9c2d-ec55-9bd4-28d2f77ef149" executionId="ed040cce-b5e1-4509-b1d0-19b5f3ace282" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bf9037a8-6bb2-313f-8ffc-bee9ca58433f" executionId="cc6d61a8-2147-48af-a222-bfd54a497420" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dcd14d1d-eb18-477b-9a4b-178a70180d00" executionId="fd0d5e28-0e63-4965-8d54-f1344c058f53" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5a9161c5-721d-d6ae-4fc5-e68da77d9373" executionId="1d9d26d8-ba9e-4597-9034-cefcf0c1e588" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d8f20649-c03e-d366-1ac1-7c3d8d614af2" executionId="d5b056f9-d17a-4470-97b3-8af3704b5dc2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2b21b17d-3ed3-9151-ff6f-a0e9917b58bd" executionId="df4d0257-0bd5-43a4-939f-410ba21bc066" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="162bb571-2913-049a-eb5a-d597ecdd5d04" executionId="3c74ca20-e3cd-443c-8195-c25ed96ba149" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cdd2b255-040c-eb27-77cf-544d86e35060" executionId="6397ada0-dc02-4f6d-8643-02cfdb0f223a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f48e4b42-fe92-76db-8a8f-98c410cbf5e3" executionId="ccd993b2-2c17-4592-bc61-80ea8d45650f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="89e30058-8aa8-e787-85f6-c829983df062" executionId="67b955bb-a8b3-4e28-8848-684382a8b60b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0b8f4a0d-fa8f-a230-a7ce-ae4a1aece2a2" executionId="66fbe4c9-1afe-462b-bdad-82024b76e5d5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bbb875c5-bde6-873e-6877-6f416e3920ca" executionId="bfd7aae9-d62f-434d-935b-9e5ce05059ae" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cbb7ef4e-67d9-9dbf-fc09-b6a2d1aacb8e" executionId="ad6dae70-d6dd-4bb4-9909-0d0eb75dc576" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="845589a4-e75f-6a5c-9aab-9149795912ad" executionId="21e81812-12e4-4188-9e71-37c38cf1dfe4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b9b3c2e2-62e4-7341-f710-3cb839caa7c1" executionId="8865b56e-8010-49cc-8410-8071fb5b4d6b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="61f4b6a9-f734-cbbf-2bcf-7bcb9c4fc73e" executionId="eef8af06-d8e6-48b7-a055-bf2f35622800" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a0919270-227a-9034-dda2-aab9c8d44536" executionId="2f314f29-9a45-4941-963a-7857b66f69a3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="aa09579c-2578-6e22-40d3-e34109717c85" executionId="269ae3f8-4704-4421-81fa-9843c5315c38" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0fc4c85a-008c-8dca-4b1c-0a3b35fdfb09" executionId="cf5444a9-5d1b-49fe-a281-e1547cf2ab0e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="266b7f1a-e6fc-8e3b-37de-3b6df622e0df" executionId="c7659cde-7167-4110-a7f1-64cb2bb87fc7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="fbe69e26-0505-ad74-8327-a6f614d136c2" executionId="94d5fe80-ffe5-4c9b-b2c6-60806e8e6943" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="81b0bb54-ab4f-85eb-136f-01579eacabef" executionId="a0a7cb07-fe0f-46d5-b68d-ecaf51811b2f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2fef2fc5-ec3f-185b-ad87-27555324c809" executionId="dfdd428c-ef84-4f33-95d6-38c0af848e63" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ee485851-0323-fc5b-4f81-a06ab8235d4f" executionId="1b3e5b1e-cdea-4fb2-b7e0-1a756f6de35d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f618a867-c5ce-7712-d357-f45d378402b5" executionId="5bce353e-8110-4a99-ac1e-a93e3d249c3b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ca0712a0-d9cd-580c-a5af-8fd9432964e8" executionId="95670b86-deaa-4474-b9c8-e563e17e74cb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1886a2c1-ba14-8eed-96d6-5d10fb61db07" executionId="8d382c33-2e63-4554-8f4f-a26c3bf033b6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bcc6702c-35c1-9898-fccf-5543a4b568bd" executionId="b09c4245-eb3c-402c-86ba-5ca66f63a3cb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="36f221d5-1c00-9008-2834-d50ad826cc52" executionId="4e72c052-f831-4456-bb17-5cab843417db" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6f6af591-d680-db6d-99a5-9225bc253b4c" executionId="a519899a-1158-4c79-b47b-2c24144ad143" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="33" executed="33" passed="23" failed="10" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.02] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.10)
+[xUnit.net 00:00:02.24]   Discovering: Sillar.Modules.Tracking.Tests
+[xUnit.net 00:00:04.44]   Discovered:  Sillar.Modules.Tracking.Tests
+[xUnit.net 00:00:06.75]   Starting:    Sillar.Modules.Tracking.Tests
+[xUnit.net 00:01:14.61]       Npgsql.NpgsqlException : Exception while reading from stream
+[xUnit.net 00:01:14.61]       ---- System.TimeoutException : Timeout during reading attempt
+[xUnit.net 00:01:14.61]       Stack Trace:
+[xUnit.net 00:01:14.61]            at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[xUnit.net 00:01:14.61]            at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+[xUnit.net 00:01:14.61]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:01:14.61]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:01:14.61]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:01:14.61]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:01:14.61]            at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+[xUnit.net 00:01:14.61]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:01:14.61]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:01:14.61]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:01:14.61]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(49,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body)
+[xUnit.net 00:01:14.61]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/PhysicalModelPostgresTests.cs(230,0): at Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Updated_at_trigger_runs_for_tracking_and_notes()
+[xUnit.net 00:01:14.61]         --- End of stack trace from previous location ---
+[xUnit.net 00:01:14.61]         ----- Inner Stack Trace -----
+[xUnit.net 00:01:14.61]
+[xUnit.net 00:02:05.00]       Npgsql.NpgsqlException : Exception while reading from stream
+[xUnit.net 00:02:05.00]       ---- System.TimeoutException : Timeout during reading attempt
+[xUnit.net 00:02:05.00]       Stack Trace:
+[xUnit.net 00:02:05.00]            at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[xUnit.net 00:02:05.00]            at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+[xUnit.net 00:02:05.00]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:02:05.00]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:02:05.00]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:02:05.00]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:02:05.00]            at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+[xUnit.net 00:02:05.00]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:02:05.00]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:02:05.00]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:02:05.00]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(49,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body)
+[xUnit.net 00:02:05.00]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/ApplicationPostgresTests.cs(365,0): at Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Escrituras_propias_no_cambian_estado_historial_ni_row_version_de_M05b()
+[xUnit.net 00:02:05.00]         --- End of stack trace from previous location ---
+[xUnit.net 00:02:05.00]         ----- Inner Stack Trace -----
+[xUnit.net 00:02:05.00]
+[xUnit.net 00:02:05.00]       Npgsql.NpgsqlException : Exception while reading from stream
+[xUnit.net 00:02:05.00]       ---- System.TimeoutException : Timeout during reading attempt
+[xUnit.net 00:02:05.00]       Stack Trace:
+[xUnit.net 00:02:05.00]            at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[xUnit.net 00:02:05.00]            at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+[xUnit.net 00:02:05.00]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:02:05.00]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:02:05.00]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:02:05.00]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:02:05.00]            at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+[xUnit.net 00:02:05.00]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:02:05.00]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:02:05.00]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:02:05.00]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(49,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body)
+[xUnit.net 00:02:05.00]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/BoardContractCompletionPostgresTests.cs(52,0): at Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests.Reordenar_un_grupo_es_atomico_materializa_sus_pares_y_deja_el_orden_exacto()
+[xUnit.net 00:02:05.00]         --- End of stack trace from previous location ---
+[xUnit.net 00:02:05.00]         ----- Inner Stack Trace -----
+[xUnit.net 00:02:05.00]
+[xUnit.net 00:04:11.72]       Npgsql.NpgsqlException : Exception while reading from stream
+[xUnit.net 00:04:11.72]       ---- System.TimeoutException : Timeout during reading attempt
+[xUnit.net 00:04:11.73]       Stack Trace:
+[xUnit.net 00:04:11.73]            at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[xUnit.net 00:04:11.73]            at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+[xUnit.net 00:04:11.73]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:04:11.73]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:04:11.73]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:04:11.73]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:04:11.73]            at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+[xUnit.net 00:04:11.73]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:04:11.73]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:04:11.73]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:04:11.73]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(49,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body)
+[xUnit.net 00:04:11.73]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/PhysicalModelPostgresTests.cs(555,0): at Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_replication_checks_on_both_tables()
+[xUnit.net 00:04:11.73]         --- End of stack trace from previous location ---
+[xUnit.net 00:04:11.73]         ----- Inner Stack Trace -----
+[xUnit.net 00:04:11.73]
+[xUnit.net 00:04:16.44]       Npgsql.NpgsqlException : Exception while reading from stream
+[xUnit.net 00:04:16.44]       ---- System.TimeoutException : Timeout during reading attempt
+[xUnit.net 00:04:16.44]       Stack Trace:
+[xUnit.net 00:04:16.44]            at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[xUnit.net 00:04:16.44]            at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+[xUnit.net 00:04:16.44]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:04:16.44]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:04:16.44]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:04:16.44]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:04:16.44]            at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+[xUnit.net 00:04:16.44]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:04:16.44]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:04:16.44]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:04:16.44]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(49,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body)
+[xUnit.net 00:04:16.44]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/BoardContractCompletionPostgresTests.cs(20,0): at Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests.La_vista_cerrada_respeta_la_paginacion_del_contrato()
+[xUnit.net 00:04:16.44]         --- End of stack trace from previous location ---
+[xUnit.net 00:04:16.44]         ----- Inner Stack Trace -----
+[xUnit.net 00:04:16.44]
+[xUnit.net 00:04:21.51]       Npgsql.PostgresException : 57014: canceling statement due to user request
+[xUnit.net 00:04:21.51]       Stack Trace:
+[xUnit.net 00:04:21.51]            at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[xUnit.net 00:04:21.51]            at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+[xUnit.net 00:04:21.51]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:04:21.51]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:04:21.51]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:04:21.51]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:04:21.51]            at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+[xUnit.net 00:04:21.51]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:04:21.51]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:04:21.51]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:04:21.51]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(49,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body)
+[xUnit.net 00:04:21.51]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/ApplicationPostgresTests.cs(113,0): at Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Prioridad_cero_es_valida_negativa_es_invalida_y_la_escritura_lazy_atribuye()
+[xUnit.net 00:04:21.51]         --- End of stack trace from previous location ---
+[xUnit.net 00:05:59.96]       Npgsql.NpgsqlException : Exception while reading from stream
+[xUnit.net 00:05:59.96]       ---- System.TimeoutException : Timeout during reading attempt
+[xUnit.net 00:05:59.96]       Stack Trace:
+[xUnit.net 00:05:59.96]            at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[xUnit.net 00:05:59.96]            at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+[xUnit.net 00:05:59.96]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:05:59.96]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:05:59.96]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:05:59.96]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:05:59.96]            at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+[xUnit.net 00:05:59.96]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:05:59.96]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:05:59.96]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:05:59.96]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(49,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body)
+[xUnit.net 00:05:59.96]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/PhysicalModelPostgresTests.cs(421,0): at Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_actor_triples_and_rejects_fictitious_actor()
+[xUnit.net 00:05:59.96]         --- End of stack trace from previous location ---
+[xUnit.net 00:05:59.96]         ----- Inner Stack Trace -----
+[xUnit.net 00:05:59.96]
+[xUnit.net 00:06:13.80]       Npgsql.NpgsqlException : Exception while reading from stream
+[xUnit.net 00:06:13.80]       ---- System.TimeoutException : Timeout during reading attempt
+[xUnit.net 00:06:13.80]       Stack Trace:
+[xUnit.net 00:06:13.80]            at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[xUnit.net 00:06:13.80]            at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+[xUnit.net 00:06:13.80]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:06:13.80]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:06:13.80]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:06:13.80]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:06:13.80]            at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+[xUnit.net 00:06:13.80]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:06:13.80]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:06:13.80]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:06:13.80]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(49,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body)
+[xUnit.net 00:06:13.80]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/ApplicationPostgresTests.cs(260,0): at Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.El_detalle_separa_la_orden_leida_de_M05b_de_los_datos_editables_de_M06()
+[xUnit.net 00:06:13.80]         --- End of stack trace from previous location ---
+[xUnit.net 00:06:13.80]         ----- Inner Stack Trace -----
+[xUnit.net 00:06:13.80]
+[xUnit.net 00:08:00.61]       Npgsql.NpgsqlException : Exception while reading from stream
+[xUnit.net 00:08:00.61]       ---- System.TimeoutException : Timeout during reading attempt
+[xUnit.net 00:08:00.61]       Stack Trace:
+[xUnit.net 00:08:00.61]            at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[xUnit.net 00:08:00.61]            at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+[xUnit.net 00:08:00.61]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:08:00.61]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:08:00.61]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:08:00.61]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:08:00.61]            at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+[xUnit.net 00:08:00.61]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:08:00.61]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:08:00.61]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:08:00.61]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(49,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body)
+[xUnit.net 00:08:00.61]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/PhysicalModelPostgresTests.cs(175,0): at Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Negative_priority_is_rejected_by_PostgreSQL_check()
+[xUnit.net 00:08:00.61]         --- End of stack trace from previous location ---
+[xUnit.net 00:08:00.61]         ----- Inner Stack Trace -----
+[xUnit.net 00:08:00.61]
+[xUnit.net 00:08:00.86]       Npgsql.NpgsqlException : Exception while reading from stream
+[xUnit.net 00:08:00.86]       ---- System.TimeoutException : Timeout during reading attempt
+[xUnit.net 00:08:00.86]       Stack Trace:
+[xUnit.net 00:08:00.86]            at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[xUnit.net 00:08:00.86]            at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+[xUnit.net 00:08:00.86]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:08:00.86]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:08:00.86]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:08:00.86]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:08:00.86]            at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+[xUnit.net 00:08:00.86]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:08:00.86]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:08:00.86]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(87,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.ExecuteAsync(String connection, String sql)
+[xUnit.net 00:08:00.86]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(49,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body)
+[xUnit.net 00:08:00.86]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/ApplicationPostgresTests.cs(229,0): at Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.La_baja_de_nota_es_logica_y_no_borra_la_fila()
+[xUnit.net 00:08:00.86]         --- End of stack trace from previous location ---
+[xUnit.net 00:08:00.86]         ----- Inner Stack Trace -----
+[xUnit.net 00:08:00.86]
+[xUnit.net 00:10:23.17]   Finished:    Sillar.Modules.Tracking.Tests (ID = '8c9360453527a42fb70856123a3d8d7f19f5ed6e4a4ad35be233bf712114470d')
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="archlinux" outcome="Error" timestamp="2026-10-08T14:32:24.9211390-05:00">
+        <Text>[xUnit.net 00:01:14.60]     Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Updated_at_trigger_runs_for_tracking_and_notes [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="archlinux" outcome="Error" timestamp="2026-10-08T14:33:15.3116831-05:00">
+        <Text>[xUnit.net 00:02:05.00]     Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Escrituras_propias_no_cambian_estado_historial_ni_row_version_de_M05b [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="archlinux" outcome="Error" timestamp="2026-10-08T14:33:15.3193183-05:00">
+        <Text>[xUnit.net 00:02:05.00]     Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests.Reordenar_un_grupo_es_atomico_materializa_sus_pares_y_deja_el_orden_exacto [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="archlinux" outcome="Error" timestamp="2026-10-08T14:35:22.0398440-05:00">
+        <Text>[xUnit.net 00:04:11.72]     Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_replication_checks_on_both_tables [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="archlinux" outcome="Error" timestamp="2026-10-08T14:35:26.7508684-05:00">
+        <Text>[xUnit.net 00:04:16.44]     Sillar.Modules.Tracking.Tests.TableroContratoPostgresTests.La_vista_cerrada_respeta_la_paginacion_del_contrato [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="archlinux" outcome="Error" timestamp="2026-10-08T14:35:31.8238916-05:00">
+        <Text>[xUnit.net 00:04:21.51]     Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.Prioridad_cero_es_valida_negativa_es_invalida_y_la_escritura_lazy_atribuye [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="archlinux" outcome="Error" timestamp="2026-10-08T14:37:10.2764413-05:00">
+        <Text>[xUnit.net 00:05:59.96]     Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_actor_triples_and_rejects_fictitious_actor [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="archlinux" outcome="Error" timestamp="2026-10-08T14:37:24.1139772-05:00">
+        <Text>[xUnit.net 00:06:13.80]     Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.El_detalle_separa_la_orden_leida_de_M05b_de_los_datos_editables_de_M06 [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="archlinux" outcome="Error" timestamp="2026-10-08T14:39:10.9233425-05:00">
+        <Text>[xUnit.net 00:08:00.61]     Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Negative_priority_is_rejected_by_PostgreSQL_check [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="archlinux" outcome="Error" timestamp="2026-10-08T14:39:11.1732660-05:00">
+        <Text>[xUnit.net 00:08:00.86]     Sillar.Modules.Tracking.Tests.AplicacionPostgresTests.La_baja_de_nota_es_logica_y_no_borra_la_fila [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

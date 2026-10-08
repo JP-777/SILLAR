@@ -1,0 +1,32 @@
+# Complementario (no sustituye a la puerta) · 253286b914eb98a0ec0c94b95820ac071723b48f · 2026-10-08 14:45:23 -0500
+== node --test frontend/tests/b2bModulo.test.mjs
+ℹ tests 16
+ℹ pass 16
+ℹ fail 0
+ℹ skipped 0
+== node --test frontend/tests/trackingModulo.test.mjs
+ℹ tests 7
+ℹ pass 7
+ℹ fail 0
+ℹ skipped 0
+== node --test frontend/tests/services.test.mjs
+ℹ tests 7
+ℹ pass 7
+ℹ fail 0
+ℹ skipped 0
+== node --test frontend/tests/fronterasFrontend.test.mjs
+ℹ tests 34
+ℹ pass 34
+ℹ fail 0
+ℹ skipped 0
+== node --test frontend/tests/frontendHygiene.test.mjs
+ℹ tests 18
+ℹ pass 18
+ℹ fail 0
+ℹ skipped 0
+== pnpm --dir frontend build
+dist/index.html                   0.45 kB │ gzip:   0.29 kB
+dist/assets/index-DZPkmk5a.css   48.89 kB │ gzip:   8.88 kB
+dist/assets/index-B6a1IRlH.js   483.88 kB │ gzip: 139.41 kB │ map: 2,360.97 kB
+✓ built in 4.01s
+rc=0

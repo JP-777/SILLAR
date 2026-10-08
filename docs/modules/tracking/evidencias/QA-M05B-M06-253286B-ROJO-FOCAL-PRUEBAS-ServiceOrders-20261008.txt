@@ -1,0 +1,60 @@
+# FOCAL · dotnet test backend/Sillar.Modules.ServiceOrders.Tests · 253286b914eb98a0ec0c94b95820ac071723b48f · cambios 0 · base sillar_qa_m05b_focal_1791487035 · 2026-10-08 14:18:50 -0500
+Test run for /home/JP777/sillar-qa-m04/backend/Sillar.Modules.ServiceOrders.Tests/bin/Debug/net10.0/Sillar.Modules.ServiceOrders.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.01] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.10)
+[xUnit.net 00:00:00.52]   Discovering: Sillar.Modules.ServiceOrders.Tests
+[xUnit.net 00:00:01.15]   Discovered:  Sillar.Modules.ServiceOrders.Tests
+[xUnit.net 00:00:01.55]   Starting:    Sillar.Modules.ServiceOrders.Tests
+  Passed Sillar.Modules.ServiceOrders.Tests.ParityBarrierTests.M05b_is_named_in_every_applicable_installation_surface [47 ms]
+  Passed Sillar.Modules.ServiceOrders.Tests.ReplicationClassificationTests.Four_replicated_entities_start_with_application_UUID_v7_and_series_is_local [49 ms]
+  Passed Sillar.Modules.ServiceOrders.Tests.ContractsAndModuleTests.Public_contract_resolves_C3_through_C7_without_EF_or_error_text_protocol [92 ms]
+  Passed Sillar.Modules.ServiceOrders.Tests.ContractsAndModuleTests.Public_contract_owns_exactly_the_ratified_state_vocabulary [4 ms]
+  Passed Sillar.Modules.ServiceOrders.Tests.ContractsAndModuleTests.Public_contract_exposes_exactly_the_ratified_legal_transitions [1 ms]
+  Passed Sillar.Modules.ServiceOrders.Tests.ContractsAndModuleTests.Module_declares_only_ratified_hard_and_soft_dependencies [2 ms]
+  Passed Sillar.Modules.ServiceOrders.Tests.EndpointContractTests.Module_registers_the_tracking_contract_for_future_M06 [264 ms]
+  Passed Sillar.Modules.ServiceOrders.Tests.EndpointContractTests.Api_exposes_exactly_the_seven_ratified_routes [490 ms]
+  Passed Sillar.Modules.ServiceOrders.Tests.EndpointContractTests.Swagger_provider_has_valid_examples_for_every_M05b_request_body [11 ms]
+  Passed Sillar.Modules.ServiceOrders.Tests.EndpointContractTests.Transition_endpoint_delegates_audit_to_authoritative_operation [1 ms]
+  Passed Sillar.Modules.ServiceOrders.Tests.EndpointContractTests.Every_service_order_route_requires_editor_or_higher [85 ms]
+  Passed Sillar.Modules.ServiceOrders.Tests.PhysicalModelPostgresTests.Every_ratified_column_PK_and_unique_constraint_exists_physically [18 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.AggregateVersionPostgresTests.Tracking_source_observes_new_updated_at_after_child_only_edit [18 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.ApplicationBehaviorPostgresTests.Cancellation_is_forbidden_to_editor_inside_authoritative_operation [18 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.SeriesConfigurationPostgresTests.Missing_or_pending_series_label_is_clean_invalid_and_reserves_nothing(seriesLabel: null) [18 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.NumberingPostgresTests.Rollback_does_not_consume_a_number [18 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.CreateServiceOrderPostgresTests.Customer_id_without_active_crm_is_a_clean_conflict_and_does_not_reserve_number [18 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.NumberingPostgresTests.It_refuses_to_number_outside_the_document_transaction [10 ms]
+  Passed Sillar.Modules.ServiceOrders.Tests.TransitionPostgresTests.Invalid_and_missing_orders_produce_no_writes [19 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.SeriesConfigurationPostgresTests.Missing_or_pending_series_label_is_clean_invalid_and_reserves_nothing(seriesLabel: "PENDIENTE_DEFINIR") [16 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.PhysicalModelPostgresTests.Status_actor_accepts_complete_human_or_all_null_and_rejects_partial_or_fictitious [17 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.TransitionPostgresTests.A_legal_transition_commits_state_and_exactly_one_history_row [17 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.CreateServiceOrderPostgresTests.Failure_after_number_reservation_rolls_back_document_and_number [18 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.AggregateVersionPostgresTests.Stale_parent_token_is_rejected_after_child_only_edit [18 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.NumberingPostgresTests.Own_series_is_consecutive_under_concurrency [18 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.ApplicationBehaviorPostgresTests.Editing_keeps_existing_snapshot_and_only_snapshots_new_lines [18 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.SeriesConfigurationPostgresTests.Missing_or_pending_series_label_is_clean_invalid_and_reserves_nothing(seriesLabel: "") [27 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.CreateServiceOrderPostgresTests.Manual_creation_freezes_two_lines_and_writes_initial_history_atomically [26 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.ApplicationBehaviorPostgresTests.Crm_snapshot_is_optional_and_frozen_when_used [26 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.PhysicalModelPostgresTests.Drop_is_idempotent_isolated_and_blocks_future_hard_dependent [27 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.AggregateVersionPostgresTests.Child_only_edit_advances_parent_updated_at_and_row_version [26 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.TransitionPostgresTests.A_history_failure_rolls_back_the_state_change [26 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.SeriesConfigurationPostgresTests.Seed_registers_private_pending_series_setting_idempotently [6 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.AggregateVersionPostgresTests.Pure_reorder_advances_parent_updated_at [6 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.ApplicationBehaviorPostgresTests.Inserting_new_line_first_shifts_persisted_lines_without_sort_collision [6 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.TransitionPostgresTests.Two_consumers_with_the_same_expected_state_yield_one_ok_and_one_conflict [6 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.CreateServiceOrderPostgresTests.Same_idempotency_key_returns_same_order_without_second_snapshot_or_number [6 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.PhysicalModelPostgresTests.Physical_catalog_matches_ADR_classification_and_FKs_are_internal [6 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.PhysicalModelPostgresTests.Installing_without_M05a_is_rejected_with_attributable_message [5 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.ApplicationBehaviorPostgresTests.Ready_requires_reopen_to_in_progress_before_content_edit [7 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.PhysicalModelPostgresTests.Decimal_quantity_and_promised_at_boundaries_are_physical_constraints [6 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.ApplicationBehaviorPostgresTests.Take_and_release_are_atomic_and_stale_assignment_is_rejected [6 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.PhysicalModelPostgresTests.Clean_migration_is_idempotent_and_materializes_five_tables [6 s]
+  Passed Sillar.Modules.ServiceOrders.Tests.ApplicationBehaviorPostgresTests.Persisted_line_omission_is_rejected_without_deleting_or_mutating_lines [4 s]
+[xUnit.net 00:01:33.07]   Finished:    Sillar.Modules.ServiceOrders.Tests (ID = '86fb688cc7b7b82ddfe6ac3e8d1ad863dc7d9691d4000d8c21b364c718c5e55a')
+  Passed Sillar.Modules.ServiceOrders.Tests.ApplicationBehaviorPostgresTests.Reordering_two_persisted_lines_preserves_both_without_sort_collision [3 s]
+
+Test Run Successful.
+Total tests: 45
+     Passed: 45
+ Total time: 1.5652 Minutes
+Results File: /var/tmp/sillar-qa-m05b-m06-253286b/trx-focal/ServiceOrders.trx
+# rc=0

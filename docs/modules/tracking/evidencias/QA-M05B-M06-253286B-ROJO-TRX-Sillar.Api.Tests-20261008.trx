@@ -1,0 +1,175 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="be6914f5-b9c0-4366-95af-de08442eca9a" name="@archlinux 2026-10-08 14:30:46" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-08T14:30:46.4906518-05:00" queuing="2026-10-08T14:30:46.4906521-05:00" start="2026-10-08T14:30:26.7720436-05:00" finish="2026-10-08T14:35:32.2517103-05:00" />
+  <TestSettings name="default" id="f69c1e3d-b9e2-4a8f-9d9e-66fc02117da2">
+    <Deployment runDeploymentRoot="_archlinux_2026-10-08_14_30_46" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="84de3da1-f619-415f-b707-0811ff488519" testId="906a5477-0868-5495-d83f-0c93220004f6" testName="Sillar.Api.Tests.ModulosEnElDespliegueTests.Cada_modulo_del_repositorio_tiene_su_ensamblado_junto_al_host" computerName="archlinux" duration="00:00:00.1254844" startTime="2026-10-08T14:30:44.5153756-05:00" endTime="2026-10-08T14:30:44.7291682-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="84de3da1-f619-415f-b707-0811ff488519" />
+    <UnitTestResult executionId="bf5b0af6-ea25-43cd-876b-c842cf2f5075" testId="36aa96ad-3e01-6a2a-6f10-df738ef35aee" testName="Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.Criterio17_fallo_de_correo_de_un_registro_concreto_es_visible_para_admin" computerName="archlinux" duration="00:02:53.2854050" startTime="2026-10-08T14:32:38.7998681-05:00" endTime="2026-10-08T14:35:32.0917045-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bf5b0af6-ea25-43cd-876b-c842cf2f5075">
+      <Output>
+        <ErrorInfo>
+          <Message>Npgsql.NpgsqlException : Exception while reading from stream
+---- System.TimeoutException : Timeout during reading attempt</Message>
+          <StackTrace>   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct) in /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs:line 149
+   at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct) in /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs:line 149
+   at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct) in /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs:line 149
+   at Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.ConCrmActivoAsync(Func`5 body, CancellationToken ct) in /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/CierreM04SeguridadYCorreoTests.cs:line 142
+   at Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.Criterio17_fallo_de_correo_de_un_registro_concreto_es_visible_para_admin() in /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/CierreM04SeguridadYCorreoTests.cs:line 75
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="7a078b02-3594-4ed0-abe9-547c0f038210" testId="2c2676a2-bb38-738d-f6cc-ea45dd3c3762" testName="Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.Criterio13_password_de_registro_no_aparece_en_respuesta_logs_ni_auditoria" computerName="archlinux" duration="00:01:54.2070881" startTime="2026-10-08T14:30:44.5724188-05:00" endTime="2026-10-08T14:32:38.7965807-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7a078b02-3594-4ed0-abe9-547c0f038210">
+      <Output>
+        <ErrorInfo>
+          <Message>Npgsql.NpgsqlException : Exception while reading from stream
+---- System.TimeoutException : Timeout during reading attempt</Message>
+          <StackTrace>   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct) in /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs:line 149
+   at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct) in /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs:line 149
+   at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct) in /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs:line 149
+   at Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.ConCrmActivoAsync(Func`5 body, CancellationToken ct) in /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/CierreM04SeguridadYCorreoTests.cs:line 142
+   at Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.Criterio13_password_de_registro_no_aparece_en_respuesta_logs_ni_auditoria() in /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/CierreM04SeguridadYCorreoTests.cs:line 27
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="b3178c61-9064-45f5-ac11-c7c8f5285df1" testId="46eb484d-c2dc-4727-bea7-2f6092f50718" testName="Sillar.Api.Tests.ArranqueConModuloActivoAusenteTests.Un_modulo_activo_que_el_binario_no_trae_impide_arrancar_al_host" computerName="archlinux" duration="00:01:50.4456672" startTime="2026-10-08T14:30:44.5117073-05:00" endTime="2026-10-08T14:32:35.0627583-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b3178c61-9064-45f5-ac11-c7c8f5285df1">
+      <Output>
+        <ErrorInfo>
+          <Message>Npgsql.PostgresException : 57014: canceling statement due to user request</Message>
+          <StackTrace>   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+   at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+   at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct) in /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs:line 149
+   at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct) in /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs:line 149
+   at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct) in /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs:line 149
+   at Sillar.Api.Tests.ArranqueConModuloActivoAusenteTests.Un_modulo_activo_que_el_binario_no_trae_impide_arrancar_al_host() in /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/ArranqueConModuloActivoAusenteTests.cs:line 81
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.Criterio17_fallo_de_correo_de_un_registro_concreto_es_visible_para_admin" storage="/home/jp777/sillar-qa-m04/backend/sillar.api.tests/bin/debug/net10.0/sillar.api.tests.dll" id="36aa96ad-3e01-6a2a-6f10-df738ef35aee">
+      <Execution id="bf5b0af6-ea25-43cd-876b-c842cf2f5075" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/bin/Debug/net10.0/Sillar.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Api.Tests.CierreM04SeguridadYCorreoTests" name="Criterio17_fallo_de_correo_de_un_registro_concreto_es_visible_para_admin" />
+    </UnitTest>
+    <UnitTest name="Sillar.Api.Tests.ArranqueConModuloActivoAusenteTests.Un_modulo_activo_que_el_binario_no_trae_impide_arrancar_al_host" storage="/home/jp777/sillar-qa-m04/backend/sillar.api.tests/bin/debug/net10.0/sillar.api.tests.dll" id="46eb484d-c2dc-4727-bea7-2f6092f50718">
+      <Execution id="b3178c61-9064-45f5-ac11-c7c8f5285df1" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/bin/Debug/net10.0/Sillar.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Api.Tests.ArranqueConModuloActivoAusenteTests" name="Un_modulo_activo_que_el_binario_no_trae_impide_arrancar_al_host" />
+    </UnitTest>
+    <UnitTest name="Sillar.Api.Tests.ModulosEnElDespliegueTests.Cada_modulo_del_repositorio_tiene_su_ensamblado_junto_al_host" storage="/home/jp777/sillar-qa-m04/backend/sillar.api.tests/bin/debug/net10.0/sillar.api.tests.dll" id="906a5477-0868-5495-d83f-0c93220004f6">
+      <Execution id="84de3da1-f619-415f-b707-0811ff488519" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/bin/Debug/net10.0/Sillar.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Api.Tests.ModulosEnElDespliegueTests" name="Cada_modulo_del_repositorio_tiene_su_ensamblado_junto_al_host" />
+    </UnitTest>
+    <UnitTest name="Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.Criterio13_password_de_registro_no_aparece_en_respuesta_logs_ni_auditoria" storage="/home/jp777/sillar-qa-m04/backend/sillar.api.tests/bin/debug/net10.0/sillar.api.tests.dll" id="2c2676a2-bb38-738d-f6cc-ea45dd3c3762">
+      <Execution id="7a078b02-3594-4ed0-abe9-547c0f038210" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/bin/Debug/net10.0/Sillar.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Api.Tests.CierreM04SeguridadYCorreoTests" name="Criterio13_password_de_registro_no_aparece_en_respuesta_logs_ni_auditoria" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="906a5477-0868-5495-d83f-0c93220004f6" executionId="84de3da1-f619-415f-b707-0811ff488519" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="36aa96ad-3e01-6a2a-6f10-df738ef35aee" executionId="bf5b0af6-ea25-43cd-876b-c842cf2f5075" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2c2676a2-bb38-738d-f6cc-ea45dd3c3762" executionId="7a078b02-3594-4ed0-abe9-547c0f038210" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="46eb484d-c2dc-4727-bea7-2f6092f50718" executionId="b3178c61-9064-45f5-ac11-c7c8f5285df1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="4" executed="4" passed="1" failed="3" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.09] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.10)
+[xUnit.net 00:00:03.70]   Discovering: Sillar.Api.Tests
+[xUnit.net 00:00:06.63]   Discovered:  Sillar.Api.Tests
+[xUnit.net 00:00:09.93]   Starting:    Sillar.Api.Tests
+[xUnit.net 00:02:01.11]       Npgsql.PostgresException : 57014: canceling statement due to user request
+[xUnit.net 00:02:01.11]       Stack Trace:
+[xUnit.net 00:02:01.11]            at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[xUnit.net 00:02:01.11]            at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+[xUnit.net 00:02:01.11]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:02:01.11]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:02:01.11]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:02:01.11]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:02:01.11]            at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+[xUnit.net 00:02:01.11]         /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs(149,0): at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct)
+[xUnit.net 00:02:01.11]         /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs(149,0): at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct)
+[xUnit.net 00:02:01.12]         /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs(149,0): at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct)
+[xUnit.net 00:02:01.12]         /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/ArranqueConModuloActivoAusenteTests.cs(81,0): at Sillar.Api.Tests.ArranqueConModuloActivoAusenteTests.Un_modulo_activo_que_el_binario_no_trae_impide_arrancar_al_host()
+[xUnit.net 00:02:01.12]         --- End of stack trace from previous location ---
+[xUnit.net 00:02:04.83]       Npgsql.NpgsqlException : Exception while reading from stream
+[xUnit.net 00:02:04.83]       ---- System.TimeoutException : Timeout during reading attempt
+[xUnit.net 00:02:04.83]       Stack Trace:
+[xUnit.net 00:02:04.83]            at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[xUnit.net 00:02:04.83]            at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+[xUnit.net 00:02:04.83]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:02:04.83]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:02:04.83]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:02:04.83]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:02:04.83]            at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+[xUnit.net 00:02:04.83]         /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs(149,0): at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct)
+[xUnit.net 00:02:04.83]         /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs(149,0): at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct)
+[xUnit.net 00:02:04.83]         /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs(149,0): at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct)
+[xUnit.net 00:02:04.83]         /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/CierreM04SeguridadYCorreoTests.cs(142,0): at Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.ConCrmActivoAsync(Func`5 body, CancellationToken ct)
+[xUnit.net 00:02:04.83]         /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/CierreM04SeguridadYCorreoTests.cs(27,0): at Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.Criterio13_password_de_registro_no_aparece_en_respuesta_logs_ni_auditoria()
+[xUnit.net 00:02:04.83]         --- End of stack trace from previous location ---
+[xUnit.net 00:02:04.83]         ----- Inner Stack Trace -----
+[xUnit.net 00:02:04.83]
+[xUnit.net 00:04:58.13]       Npgsql.NpgsqlException : Exception while reading from stream
+[xUnit.net 00:04:58.13]       ---- System.TimeoutException : Timeout during reading attempt
+[xUnit.net 00:04:58.13]       Stack Trace:
+[xUnit.net 00:04:58.13]            at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[xUnit.net 00:04:58.13]            at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource&lt;TResult&gt;.GetResult(Int16 token)
+[xUnit.net 00:04:58.13]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:04:58.13]            at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[xUnit.net 00:04:58.13]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:04:58.13]            at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[xUnit.net 00:04:58.13]            at Npgsql.NpgsqlCommand.ExecuteNonQuery(Boolean async, CancellationToken cancellationToken)
+[xUnit.net 00:04:58.13]         /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs(149,0): at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct)
+[xUnit.net 00:04:58.13]         /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs(149,0): at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct)
+[xUnit.net 00:04:58.13]         /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/HostDePrueba.cs(149,0): at Sillar.Api.Tests.HostDePrueba.ConBaseVaciaAsync(Func`2 cuerpo, CancellationToken ct)
+[xUnit.net 00:04:58.13]         /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/CierreM04SeguridadYCorreoTests.cs(142,0): at Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.ConCrmActivoAsync(Func`5 body, CancellationToken ct)
+[xUnit.net 00:04:58.13]         /home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/CierreM04SeguridadYCorreoTests.cs(75,0): at Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.Criterio17_fallo_de_correo_de_un_registro_concreto_es_visible_para_admin()
+[xUnit.net 00:04:58.13]         --- End of stack trace from previous location ---
+[xUnit.net 00:04:58.13]         ----- Inner Stack Trace -----
+[xUnit.net 00:04:58.13]
+[xUnit.net 00:04:58.15]   Finished:    Sillar.Api.Tests (ID = '4eef0175e01f16ff6b2c1e21f6e7e54e3325e58474293327c9ea7b0303cc7afd')
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="archlinux" outcome="Error" timestamp="2026-10-08T14:32:35.0788127-05:00">
+        <Text>[xUnit.net 00:02:01.11]     Sillar.Api.Tests.ArranqueConModuloActivoAusenteTests.Un_modulo_activo_que_el_binario_no_trae_impide_arrancar_al_host [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="archlinux" outcome="Error" timestamp="2026-10-08T14:32:38.7985354-05:00">
+        <Text>[xUnit.net 00:02:04.83]     Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.Criterio13_password_de_registro_no_aparece_en_respuesta_logs_ni_auditoria [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="archlinux" outcome="Error" timestamp="2026-10-08T14:35:32.0968731-05:00">
+        <Text>[xUnit.net 00:04:58.13]     Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.Criterio17_fallo_de_correo_de_un_registro_concreto_es_visible_para_admin [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

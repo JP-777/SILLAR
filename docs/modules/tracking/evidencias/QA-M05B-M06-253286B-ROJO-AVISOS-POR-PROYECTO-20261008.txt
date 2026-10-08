@@ -1,0 +1,4 @@
+      5 Sillar.Modules.B2B.Tests xUnit1051
+      1 Sillar.Modules.Catalog.Tests xUnit2031
+      1 Sillar.Modules.Crm.Tests xUnit1026
+    121 Sillar.Modules.Crm.Tests xUnit1051

@@ -1,0 +1,9 @@
+checkpoint_timeout=300 s
+fsync=on
+full_page_writes=on
+log_checkpoints=on
+max_connections=100
+max_wal_size=1024 MB
+server_version=16.15 (Debian 16.15-1.pgdg13+2)
+shared_buffers=16384 8kB
+synchronous_commit=on

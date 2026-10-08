@@ -1,0 +1,36 @@
+# FÍSICO (2ª pasada: corrige la consulta de FK y la orden de prueba, que en la 1ª pasada no se insertó) · base sillar_qa_m05b_focal_1791487035 · 253286b914eb98a0ec0c94b95820ac071723b48f · cambios 0 · 2026-10-08 14:22:48 -0500
+## 1 · Todas las FK cuyo origen es el schema tracking
+fk_order_tracking_service_order_id : tracking.order_tracking -> service_orders.service_orders · on delete r (r = RESTRICT)
+fk_tracking_notes_order_tracking_id : tracking.tracking_notes -> tracking.order_tracking · on delete r (r = RESTRICT)
+## 6 · Orden M05b con seguimiento M06 (create_idempotency_key: uuid)
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+   antes: órdenes M05b=1 seguimiento=1 notas=1 estado de la orden=received
+## 7 · service_orders/99_drop.sql se niega con Tracking instalado (y con datos)
+== psql -v ON_ERROR_STOP=1 -f database/modules/service_orders/99_drop.sql
+ERROR:  No se desinstala M05b Servicios — Órdenes: hay dependientes duros instalados (FK desde: tracking). Desinstálalos antes; no se ha borrado nada.
+CONTEXT:  PL/pgSQL function inline_code_block line 35 at RAISE
+   rc=3
+   schemas: service_orders,tracking · orden QA-B1: 1
+## 8 · tracking/99_drop.sql con seguimiento y notas
+== psql -v ON_ERROR_STOP=1 -f database/modules/tracking/99_drop.sql
+   rc=0
+   después: tracking=0 · orden QA-B1 conservada=1 · estado=received · historial de estados intacto=0
+## 9 · tracking/99_drop.sql repetido (idempotente)
+== psql -v ON_ERROR_STOP=1 -f database/modules/tracking/99_drop.sql
+   rc=0
+## 10 · Reinstalación de M06 por migrate()
+Applying migration '20261007212800_TrackingInitial'.
+Done.
+   tablas=2 triggers=2 migraciones=1 · M06 vuelve vacío: seguimiento=0 notas=0 · orden M05b conservada=1
+== psql -v ON_ERROR_STOP=1 -f database/modules/tracking/01_schema.sql
+   rc=0
+== psql -v ON_ERROR_STOP=1 -f database/modules/tracking/02_seed.sql
+   rc=0
+## 11 · Escritura lazy tras reinstalar sobre la misma orden M05b (prioridad NULL)
+INSERT 0 1
+   seguimiento=1 board_priority=NULL
+## 12 · Limpieza de los datos QA
+DELETE 1
+DELETE 1

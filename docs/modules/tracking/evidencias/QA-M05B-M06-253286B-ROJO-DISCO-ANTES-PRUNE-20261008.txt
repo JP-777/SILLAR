@@ -1,0 +1,4 @@
+/dev/nvme0n1p2    119111 103420      9596  92% /
+tf5qbpclr4dcgbe9wvk9pn6w7               	true 	0B        	Less than a second ago
+Total:	7.515GB
+/dev/nvme0n1p2    119111 96054     16962  85% /

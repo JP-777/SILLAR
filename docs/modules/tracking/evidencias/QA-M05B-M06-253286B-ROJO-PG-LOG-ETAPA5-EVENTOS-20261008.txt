@@ -1,0 +1,1529 @@
+2026-10-08 19:28:03.474 UTC [26] LOG:  checkpoint starting: time
+2026-10-08 19:29:02.265 UTC [53300] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:29:02.265 UTC [53300] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:29:09.910 UTC [53309] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:29:09.910 UTC [53309] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:29:20.591 UTC [53319] ERROR:  relation "cms.__migrations" does not exist at character 45
+2026-10-08 19:29:20.591 UTC [53319] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:29:27.453 UTC [53320] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:29:27.453 UTC [53320] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:29:35.280 UTC [53330] ERROR:  relation "sales.__migrations" does not exist at character 45
+2026-10-08 19:29:35.280 UTC [53330] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:29:55.860 UTC [53348] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:29:55.860 UTC [53348] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:00.331 UTC [26] LOG:  checkpoint complete: wrote 931 buffers (5.7%); 0 WAL file(s) added, 0 removed, 0 recycled; write=96.831 s, sync=19.177 s, total=116.858 s; sync files=505, longest=1.717 s, average=0.038 s; distance=4319 kB, estimate=6328 kB; lsn=1/2DA0D610, redo lsn=1/2D7D23F8
+2026-10-08 19:30:03.028 UTC [53357] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:30:03.028 UTC [53357] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:12.353 UTC [53366] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:30:12.353 UTC [53366] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:17.863 UTC [53368] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:30:17.863 UTC [53368] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:53.136 UTC [53434] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:30:53.136 UTC [53434] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:53.136 UTC [53433] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:30:53.136 UTC [53433] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:53.138 UTC [53435] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:30:53.138 UTC [53435] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:53.139 UTC [53436] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:30:53.139 UTC [53436] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:53.183 UTC [53432] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:30:53.183 UTC [53432] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:55.532 UTC [53438] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:30:55.532 UTC [53438] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:55.535 UTC [53439] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:30:55.535 UTC [53439] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:55.536 UTC [53442] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:30:55.536 UTC [53442] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:55.536 UTC [53441] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:30:55.536 UTC [53441] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:55.542 UTC [53440] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:30:55.542 UTC [53440] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:56.204 UTC [53446] FATAL:  database "no_existe_0bbd84180fe94059814960bbdb581e5b" does not exist
+2026-10-08 19:30:56.282 UTC [53445] ERROR:  relation "core.installation" does not exist at character 183
+2026-10-08 19:30:56.282 UTC [53445] STATEMENT:  SELECT i.installation_id, i.business_name, i.created_at, i.installation_key, i.is_setup_complete, i.license_type, i.licensed_until, i.product_version, i.singleton, i.updated_at
+2026-10-08 19:30:56.468 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:30:56.740 UTC [53443] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:30:56.740 UTC [53443] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:57.032 UTC [53444] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:30:57.032 UTC [53444] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:57.952 UTC [53449] ERROR:  relation "core.admin_sessions" does not exist at character 362
+2026-10-08 19:30:57.952 UTC [53449] STATEMENT:  SELECT a.admin_session_id, a.admin_user_id, a.csrf_token_hash, a.expires_at, a.ip_address, a.issued_at, a.last_seen_at, a.revoked_at, a.token_hash, a.user_agent, a0.admin_user_id, a0.created_at, a0.email, a0.failed_login_count, a0.full_name, a0.home_node, a0.is_active, a0.last_login_at, a0.locked_until, a0.password_hash, a0.phone, a0.role, a0.updated_at
+2026-10-08 19:30:58.398 UTC [53430] ERROR:  duplicate key value violates unique constraint "uq_social_links_plataforma"
+2026-10-08 19:30:58.398 UTC [53430] DETAIL:  Key (platform)=(instagram) already exists.
+2026-10-08 19:30:58.398 UTC [53430] STATEMENT:  INSERT INTO cms.social_links (display_order, platform, url)
+2026-10-08 19:30:59.136 UTC [26] LOG:  checkpoint complete: wrote 11744 buffers (71.7%); 0 WAL file(s) added, 0 removed, 4 recycled; write=1.095 s, sync=1.522 s, total=2.668 s; sync files=4298, longest=0.036 s, average=0.001 s; distance=60283 kB, estimate=60283 kB; lsn=1/3197BB48, redo lsn=1/312B1240
+2026-10-08 19:30:59.141 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:30:59.169 UTC [53464] ERROR:  core.media_assets tiene 2 fila(s) cuyo autor (created_by) no existe en core.admin_users. No se puede fotografiar un autor que no está.
+2026-10-08 19:30:59.169 UTC [53464] HINT:  SELECT m.media_asset_id, m.created_by FROM core.media_assets m WHERE m.created_by IS NOT NULL AND NOT EXISTS (SELECT 1 FROM core.admin_users a WHERE a.admin_user_id = m.created_by); — decide qué hacer con cada una y repite la migración. No se ha cambiado nada.
+2026-10-08 19:30:59.169 UTC [53464] CONTEXT:  PL/pgSQL function inline_code_block line 11 at RAISE
+2026-10-08 19:30:59.169 UTC [53464] STATEMENT:  DO $corrupcion$
+2026-10-08 19:30:59.299 UTC [26] LOG:  checkpoint complete: wrote 600 buffers (3.7%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.078 s, sync=0.055 s, total=0.159 s; sync files=409, longest=0.020 s, average=0.001 s; distance=6954 kB, estimate=54950 kB; lsn=1/319991F8, redo lsn=1/3197BE00
+2026-10-08 19:30:59.365 UTC [53467] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:30:59.365 UTC [53467] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:59.370 UTC [53468] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:30:59.370 UTC [53468] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:30:59.472 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:30:59.597 UTC [53470] ERROR:  relation "core.installation" does not exist at character 183
+2026-10-08 19:30:59.597 UTC [53470] STATEMENT:  SELECT i.installation_id, i.business_name, i.created_at, i.installation_key, i.is_setup_complete, i.license_type, i.licensed_until, i.product_version, i.singleton, i.updated_at
+2026-10-08 19:30:59.613 UTC [53470] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:30:59.613 UTC [53470] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:01.364 UTC [26] LOG:  checkpoint complete: wrote 1012 buffers (6.2%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.176 s, sync=1.677 s, total=1.892 s; sync files=448, longest=0.048 s, average=0.004 s; distance=4512 kB, estimate=49906 kB; lsn=1/32751EF0, redo lsn=1/31DE3ED8
+2026-10-08 19:31:01.365 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:31:01.865 UTC [53492] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:01.865 UTC [53492] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:01.934 UTC [26] LOG:  checkpoint complete: wrote 1890 buffers (11.5%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.155 s, sync=0.337 s, total=0.569 s; sync files=1244, longest=0.036 s, average=0.001 s; distance=9656 kB, estimate=45881 kB; lsn=1/32CD2CB8, redo lsn=1/32751F68
+2026-10-08 19:31:01.936 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:31:02.116 UTC [26] LOG:  checkpoint complete: wrote 1210 buffers (7.4%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.045 s, sync=0.116 s, total=0.180 s; sync files=465, longest=0.033 s, average=0.001 s; distance=5635 kB, estimate=41857 kB; lsn=1/32CDD058, redo lsn=1/32CD2D30
+2026-10-08 19:31:02.536 UTC [53497] ERROR:  relation "core.admin_sessions" does not exist at character 362
+2026-10-08 19:31:02.536 UTC [53497] STATEMENT:  SELECT a.admin_session_id, a.admin_user_id, a.csrf_token_hash, a.expires_at, a.ip_address, a.issued_at, a.last_seen_at, a.revoked_at, a.token_hash, a.user_agent, a0.admin_user_id, a0.created_at, a0.email, a0.failed_login_count, a0.full_name, a0.home_node, a0.is_active, a0.last_login_at, a0.locked_until, a0.password_hash, a0.phone, a0.role, a0.updated_at
+2026-10-08 19:31:03.000 UTC [53499] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:03.000 UTC [53499] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:03.046 UTC [53502] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:03.046 UTC [53502] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:03.056 UTC [53503] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:03.056 UTC [53503] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:03.060 UTC [53501] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:03.060 UTC [53501] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:03.060 UTC [53500] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:03.060 UTC [53500] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:03.316 UTC [53505] ERROR:  relation "core.installation" does not exist at character 183
+2026-10-08 19:31:03.316 UTC [53505] STATEMENT:  SELECT i.installation_id, i.business_name, i.created_at, i.installation_key, i.is_setup_complete, i.license_type, i.licensed_until, i.product_version, i.singleton, i.updated_at
+2026-10-08 19:31:03.381 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:31:03.482 UTC [53513] ERROR:  new row for relation "media_assets" violates check constraint "ck_media_assets_autor_completo"
+2026-10-08 19:31:03.482 UTC [53513] DETAIL:  Failing row contains (01a11cff-6a7f-7bf5-94fd-127616480c48, n, 1, a.png, null, 2026/10/a.png, image/png, 1, null, null, null, null, null, f, t, null, 2026-10-08 19:31:03.479997+00, 2026-10-08 19:31:03.479997+00, Solo Nombre, null).
+2026-10-08 19:31:03.482 UTC [53513] STATEMENT:  INSERT INTO core.media_assets (media_asset_id, origin_node, stored_name, relative_path, mime_type, size_bytes, created_by_admin_user_name) VALUES ('01a11cff-6a7f-7bf5-94fd-127616480c48', 'n', 'a.png', '2026/10/a.png', 'image/png', 1, 'Solo Nombre')
+2026-10-08 19:31:03.495 UTC [53514] ERROR:  relation "cms.__migrations" does not exist at character 45
+2026-10-08 19:31:03.495 UTC [53514] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:03.653 UTC [26] LOG:  checkpoint complete: wrote 258 buffers (1.6%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.043 s, sync=0.175 s, total=0.272 s; sync files=254, longest=0.034 s, average=0.001 s; distance=5167 kB, estimate=38188 kB; lsn=1/33280C98, redo lsn=1/331DEAB8
+2026-10-08 19:31:03.653 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:31:03.890 UTC [26] LOG:  checkpoint complete: wrote 149 buffers (0.9%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.022 s, sync=0.098 s, total=0.237 s; sync files=166, longest=0.015 s, average=0.001 s; distance=797 kB, estimate=34449 kB; lsn=1/332BBA00, redo lsn=1/332A61E0
+2026-10-08 19:31:04.318 UTC [53524] ERROR:  column i.installation_id does not exist at character 8
+2026-10-08 19:31:04.318 UTC [53524] STATEMENT:  SELECT i.installation_id, i.business_name, i.created_at, i.installation_key, i.is_setup_complete, i.license_type, i.licensed_until, i.product_version, i.singleton, i.updated_at
+2026-10-08 19:31:04.393 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:31:04.469 UTC [53527] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:04.469 UTC [53527] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:04.473 UTC [53528] ERROR:  relation "core.admin_sessions" does not exist at character 362
+2026-10-08 19:31:04.473 UTC [53528] STATEMENT:  SELECT a.admin_session_id, a.admin_user_id, a.csrf_token_hash, a.expires_at, a.ip_address, a.issued_at, a.last_seen_at, a.revoked_at, a.token_hash, a.user_agent, a0.admin_user_id, a0.created_at, a0.email, a0.failed_login_count, a0.full_name, a0.home_node, a0.is_active, a0.last_login_at, a0.locked_until, a0.password_hash, a0.phone, a0.role, a0.updated_at
+2026-10-08 19:31:04.849 UTC [53443] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:04.849 UTC [53443] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:05.458 UTC [26] LOG:  checkpoint complete: wrote 1694 buffers (10.3%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.298 s, sync=0.737 s, total=1.065 s; sync files=965, longest=0.053 s, average=0.001 s; distance=12550 kB, estimate=32259 kB; lsn=1/341A98F8, redo lsn=1/33EE7C58
+2026-10-08 19:31:05.461 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:31:05.494 UTC [53534] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:05.494 UTC [53534] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:05.737 UTC [26] LOG:  checkpoint complete: wrote 520 buffers (3.2%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.041 s, sync=0.119 s, total=0.277 s; sync files=345, longest=0.035 s, average=0.001 s; distance=2824 kB, estimate=29315 kB; lsn=1/341F0370, redo lsn=1/341A9F80
+2026-10-08 19:31:05.738 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:31:05.862 UTC [26] LOG:  checkpoint complete: wrote 55 buffers (0.3%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.012 s, sync=0.024 s, total=0.124 s; sync files=38, longest=0.017 s, average=0.001 s; distance=303 kB, estimate=26414 kB; lsn=1/3420CB90, redo lsn=1/341F5D30
+2026-10-08 19:31:06.276 UTC [53541] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:06.276 UTC [53541] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:06.276 UTC [53544] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:06.276 UTC [53544] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:06.278 UTC [53542] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:06.278 UTC [53542] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:06.280 UTC [53540] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:06.280 UTC [53540] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:06.281 UTC [53543] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:06.281 UTC [53543] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:06.373 UTC [53545] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:06.373 UTC [53545] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:06.436 UTC [53546] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:06.436 UTC [53546] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:06.459 UTC [53547] ERROR:  relation "core.admin_sessions" does not exist at character 362
+2026-10-08 19:31:06.459 UTC [53547] STATEMENT:  SELECT a.admin_session_id, a.admin_user_id, a.csrf_token_hash, a.expires_at, a.ip_address, a.issued_at, a.last_seen_at, a.revoked_at, a.token_hash, a.user_agent, a0.admin_user_id, a0.created_at, a0.email, a0.failed_login_count, a0.full_name, a0.home_node, a0.is_active, a0.last_login_at, a0.locked_until, a0.password_hash, a0.phone, a0.role, a0.updated_at
+2026-10-08 19:31:07.504 UTC [53545] ERROR:  relation "cms.__migrations" does not exist at character 45
+2026-10-08 19:31:07.504 UTC [53545] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:08.226 UTC [53545] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:08.226 UTC [53545] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:08.271 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:31:08.725 UTC [53564] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:31:08.725 UTC [53564] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:08.759 UTC [53565] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:31:08.759 UTC [53565] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:08.767 UTC [53566] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:31:08.767 UTC [53566] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:08.767 UTC [53567] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:31:08.767 UTC [53567] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:08.996 UTC [53568] ERROR:  relation "core.installation" does not exist at character 183
+2026-10-08 19:31:08.996 UTC [53568] STATEMENT:  SELECT i.installation_id, i.business_name, i.created_at, i.installation_key, i.is_setup_complete, i.license_type, i.licensed_until, i.product_version, i.singleton, i.updated_at
+2026-10-08 19:31:10.458 UTC [26] LOG:  checkpoint complete: wrote 2385 buffers (14.6%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.465 s, sync=1.681 s, total=2.187 s; sync files=1074, longest=0.214 s, average=0.002 s; distance=13795 kB, estimate=25152 kB; lsn=1/35269460, redo lsn=1/34F6EC30
+2026-10-08 19:31:10.462 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:31:10.881 UTC [53591] ERROR:  new row for relation "quotes" violates check constraint "ck_quotes_origen"
+2026-10-08 19:31:10.881 UTC [53591] DETAIL:  Failing row contains (1, PRUEBA-DOS, 00000000-0000-7000-8000-000000000001, 1, 1, 0.00, borrador, null, null, null, null, null, null, null, null, null, t, 2026-10-08 19:31:10.876799+00, 2026-10-08 19:31:10.876799+00).
+2026-10-08 19:31:10.881 UTC [53591] STATEMENT:  INSERT INTO b2b.quotes (quote_number, customer_id, special_order_lead_id, institution_request_id, total_amount)
+2026-10-08 19:31:10.947 UTC [53592] ERROR:  new row for relation "quotes" violates check constraint "ck_quotes_origen"
+2026-10-08 19:31:10.947 UTC [53592] DETAIL:  Failing row contains (2, PRUEBA-NINGUNO, 00000000-0000-7000-8000-000000000001, null, null, 0.00, borrador, null, null, null, null, null, null, null, null, null, t, 2026-10-08 19:31:10.944881+00, 2026-10-08 19:31:10.944881+00).
+2026-10-08 19:31:10.947 UTC [53592] STATEMENT:  INSERT INTO b2b.quotes (quote_number, customer_id, special_order_lead_id, institution_request_id, total_amount)
+2026-10-08 19:31:11.356 UTC [53596] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:11.356 UTC [53596] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:11.433 UTC [53537] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:11.433 UTC [53537] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:11.454 UTC [26] LOG:  checkpoint complete: wrote 496 buffers (3.0%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.128 s, sync=0.735 s, total=0.992 s; sync files=430, longest=0.240 s, average=0.002 s; distance=3059 kB, estimate=22943 kB; lsn=1/357EF5D0, redo lsn=1/3526B9D8
+2026-10-08 19:31:11.485 UTC [53444] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:11.485 UTC [53444] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:11.498 UTC [53443] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:11.498 UTC [53443] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:12.033 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:31:12.187 UTC [53601] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:12.187 UTC [53601] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:12.264 UTC [53602] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:12.264 UTC [53602] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:14.036 UTC [53610] ERROR:  relation "core.installation" does not exist at character 183
+2026-10-08 19:31:14.036 UTC [53610] STATEMENT:  SELECT i.installation_id, i.business_name, i.created_at, i.installation_key, i.is_setup_complete, i.license_type, i.licensed_until, i.product_version, i.singleton, i.updated_at
+2026-10-08 19:31:14.120 UTC [53610] ERROR:  relation "core.admin_sessions" does not exist at character 362
+2026-10-08 19:31:14.120 UTC [53610] STATEMENT:  SELECT a.admin_session_id, a.admin_user_id, a.csrf_token_hash, a.expires_at, a.ip_address, a.issued_at, a.last_seen_at, a.revoked_at, a.token_hash, a.user_agent, a0.admin_user_id, a0.created_at, a0.email, a0.failed_login_count, a0.full_name, a0.home_node, a0.is_active, a0.last_login_at, a0.locked_until, a0.password_hash, a0.phone, a0.role, a0.updated_at
+2026-10-08 19:31:14.235 UTC [53443] ERROR:  relation "cms.__migrations" does not exist at character 45
+2026-10-08 19:31:14.235 UTC [53443] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:14.244 UTC [53596] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:14.244 UTC [53596] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:14.253 UTC [53602] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:14.253 UTC [53602] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:14.413 UTC [53610] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:14.413 UTC [53610] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:14.498 UTC [26] LOG:  checkpoint complete: wrote 3143 buffers (19.2%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.681 s, sync=1.707 s, total=2.466 s; sync files=1153, longest=0.101 s, average=0.002 s; distance=14504 kB, estimate=22099 kB; lsn=1/364291B8, redo lsn=1/36095A00
+2026-10-08 19:31:14.502 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:31:14.861 UTC [53601] ERROR:  La fotografía del autor de core.media_assets no se modifica una vez escrita (media_asset_id 01a11cff-93b7-77f7-8304-3dc520ef95d1).
+2026-10-08 19:31:14.861 UTC [53601] CONTEXT:  PL/pgSQL function core.media_assets_autor_inmutable() line 6 at RAISE
+2026-10-08 19:31:14.861 UTC [53601] STATEMENT:  UPDATE core.media_assets SET created_by_admin_user_name = 'Otro Nombre' WHERE media_asset_id = '01a11cff-93b7-77f7-8304-3dc520ef95d1'
+2026-10-08 19:31:15.411 UTC [53630] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:15.411 UTC [53630] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:15.863 UTC [26] LOG:  checkpoint complete: wrote 749 buffers (4.6%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.235 s, sync=1.089 s, total=1.362 s; sync files=556, longest=0.130 s, average=0.002 s; distance=3672 kB, estimate=20256 kB; lsn=1/36B52B70, redo lsn=1/3642BCD0
+2026-10-08 19:31:15.865 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:31:15.925 UTC [53443] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:15.925 UTC [53443] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:16.555 UTC [53634] ERROR:  relation "cms.__migrations" does not exist at character 45
+2026-10-08 19:31:16.555 UTC [53634] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:16.572 UTC [53635] ERROR:  relation "cms.__migrations" does not exist at character 45
+2026-10-08 19:31:16.572 UTC [53635] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:16.620 UTC [53444] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:16.620 UTC [53444] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:16.978 UTC [53643] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:16.978 UTC [53643] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:17.217 UTC [53645] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:17.217 UTC [53645] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:17.603 UTC [53634] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:17.603 UTC [53634] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:17.612 UTC [53635] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:17.612 UTC [53635] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:17.837 UTC [53443] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:31:17.837 UTC [53443] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:17.931 UTC [53647] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:17.931 UTC [53647] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:19.552 UTC [53444] ERROR:  relation "cms.__migrations" does not exist at character 45
+2026-10-08 19:31:19.552 UTC [53444] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:19.962 UTC [53656] ERROR:  relation "cms.__migrations" does not exist at character 45
+2026-10-08 19:31:19.962 UTC [53656] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:20.458 UTC [53665] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:20.458 UTC [53665] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:20.468 UTC [53659] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:20.468 UTC [53659] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:20.575 UTC [53443] ERROR:  relation "sales.__migrations" does not exist at character 45
+2026-10-08 19:31:20.575 UTC [53443] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:20.585 UTC [26] LOG:  checkpoint complete: wrote 1527 buffers (9.3%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.522 s, sync=3.982 s, total=4.721 s; sync files=802, longest=0.191 s, average=0.005 s; distance=7350 kB, estimate=18966 kB; lsn=1/395DE1F0, redo lsn=1/36B59748
+2026-10-08 19:31:20.588 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:31:20.789 UTC [53444] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:20.789 UTC [53444] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:21.113 UTC [53673] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:21.113 UTC [53673] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:22.135 UTC [53676] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:22.135 UTC [53676] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:23.229 UTC [53537] ERROR:  duplicate key value violates unique constraint "uq_service_entries_slug"
+2026-10-08 19:31:23.229 UTC [53537] DETAIL:  Key (slug)=(ANILLADO) already exists.
+2026-10-08 19:31:23.229 UTC [53537] STATEMENT:  INSERT INTO services.service_entries (name, slug, short_description) VALUES ('Otro', 'ANILLADO', 'Texto')
+2026-10-08 19:31:23.524 UTC [53681] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:23.524 UTC [53681] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:23.524 UTC [53683] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:23.524 UTC [53683] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:23.525 UTC [53679] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:23.525 UTC [53679] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:23.525 UTC [53685] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:23.525 UTC [53685] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:23.524 UTC [53682] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:23.524 UTC [53682] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:23.553 UTC [53684] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:23.553 UTC [53684] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:23.553 UTC [53680] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:23.553 UTC [53680] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:23.666 UTC [53687] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:23.666 UTC [53687] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:24.409 UTC [53690] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:24.409 UTC [53690] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:25.760 UTC [53443] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:25.760 UTC [53443] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:25.813 UTC [53705] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:31:25.813 UTC [53705] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:25.896 UTC [53706] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:25.896 UTC [53706] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:25.903 UTC [53707] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:25.903 UTC [53707] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:25.936 UTC [53708] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:25.936 UTC [53708] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:25.967 UTC [53444] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:31:25.967 UTC [53444] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:26.202 UTC [53711] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:26.202 UTC [53711] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:26.419 UTC [53443] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:26.419 UTC [53443] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:27.341 UTC [53722] ERROR:  No se desinstala M01 Catálogo: hay módulos instalados que dependen de él de forma dura (con claves foráneas hacia catalog: b2b). Desinstala antes esos módulos con su 99_drop.sql y repite. No se ha borrado nada.
+2026-10-08 19:31:27.341 UTC [53722] CONTEXT:  PL/pgSQL function inline_code_block line 30 at RAISE
+2026-10-08 19:31:27.341 UTC [53722] STATEMENT:  DO $guarda$
+2026-10-08 19:31:27.546 UTC [53726] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:27.546 UTC [53726] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:27.560 UTC [53728] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:27.560 UTC [53728] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:27.787 UTC [53733] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:31:27.787 UTC [53733] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:27.803 UTC [53444] ERROR:  relation "sales.__migrations" does not exist at character 45
+2026-10-08 19:31:27.803 UTC [53444] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:28.021 UTC [53443] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:31:28.021 UTC [53443] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:28.675 UTC [53737] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:28.675 UTC [53737] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:28.681 UTC [53736] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:28.681 UTC [53736] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:28.684 UTC [53740] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:28.684 UTC [53740] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:28.691 UTC [53738] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:28.691 UTC [53738] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:28.691 UTC [53739] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:28.691 UTC [53739] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:28.699 UTC [53742] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:28.699 UTC [53742] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:28.708 UTC [53741] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:28.708 UTC [53741] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:29.484 UTC [53760] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:29.484 UTC [53760] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:29.522 UTC [53761] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:29.522 UTC [53761] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:29.523 UTC [53762] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:29.523 UTC [53762] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:29.535 UTC [53766] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:29.535 UTC [53766] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:29.535 UTC [53763] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:29.535 UTC [53763] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:29.548 UTC [53764] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:29.548 UTC [53764] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:29.556 UTC [53767] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:29.556 UTC [53767] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:29.557 UTC [53765] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:29.557 UTC [53765] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:29.601 UTC [53444] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:29.601 UTC [53444] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:29.641 UTC [53768] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:29.641 UTC [53768] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:30.316 UTC [53444] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:30.316 UTC [53444] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:30.425 UTC [53789] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:30.425 UTC [53789] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:30.436 UTC [53791] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:30.436 UTC [53791] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:30.437 UTC [53792] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:30.437 UTC [53792] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:30.854 UTC [53807] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:31:30.854 UTC [53807] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:31.265 UTC [53811] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:31.265 UTC [53811] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:31.281 UTC [53814] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:31:31.281 UTC [53814] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:31.296 UTC [53812] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:31.296 UTC [53812] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:31.309 UTC [53816] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:31.309 UTC [53816] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:31.791 UTC [53444] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:31:31.791 UTC [53444] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:32.939 UTC [53858] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:31:32.939 UTC [53858] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:33.118 UTC [53863] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:31:33.118 UTC [53863] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:33.129 UTC [53861] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:31:33.129 UTC [53861] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:33.839 UTC [53880] ERROR:  insert or update on table "order_tracking" violates foreign key constraint "fk_order_tracking_service_order_id"
+2026-10-08 19:31:33.839 UTC [53880] DETAIL:  Key (service_order_id)=(01a11cff-e139-7aff-b381-9f850644590c) is not present in table "service_orders".
+2026-10-08 19:31:33.839 UTC [53880] STATEMENT:  INSERT INTO tracking.order_tracking
+2026-10-08 19:31:36.033 UTC [26] LOG:  checkpoint complete: wrote 8487 buffers (51.8%); 0 WAL file(s) added, 0 removed, 3 recycled; write=3.987 s, sync=10.974 s, total=15.446 s; sync files=2398, longest=0.281 s, average=0.005 s; distance=46425 kB, estimate=46425 kB; lsn=1/3BFBD2C0, redo lsn=1/398AFC30
+2026-10-08 19:31:36.040 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:31:37.380 UTC [53907] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:37.380 UTC [53907] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:37.782 UTC [53909] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:37.782 UTC [53909] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:39.106 UTC [26] LOG:  checkpoint complete: wrote 1205 buffers (7.4%); 0 WAL file(s) added, 0 removed, 2 recycled; write=0.419 s, sync=2.258 s, total=3.067 s; sync files=742, longest=0.219 s, average=0.004 s; distance=39989 kB, estimate=45781 kB; lsn=1/3C8C4EA8, redo lsn=1/3BFBD338
+2026-10-08 19:31:39.110 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:31:43.191 UTC [53934] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:43.191 UTC [53934] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:44.021 UTC [53936] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:44.021 UTC [53936] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:44.036 UTC [53935] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:44.036 UTC [53935] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:44.059 UTC [53937] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:44.059 UTC [53937] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:45.011 UTC [53939] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:45.011 UTC [53939] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:45.319 UTC [53941] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:45.319 UTC [53941] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:45.323 UTC [53951] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:45.323 UTC [53951] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:45.359 UTC [53950] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:45.359 UTC [53950] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:45.853 UTC [53955] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:45.853 UTC [53955] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:45.900 UTC [53954] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:45.900 UTC [53954] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:46.188 UTC [53969] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:46.188 UTC [53969] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:46.189 UTC [53968] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:46.189 UTC [53968] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:48.798 UTC [53975] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:48.798 UTC [53975] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:48.838 UTC [53977] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:48.838 UTC [53977] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:48.980 UTC [53980] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:48.980 UTC [53980] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:49.225 UTC [53983] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:49.225 UTC [53983] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:49.242 UTC [53984] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:49.242 UTC [53984] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:49.281 UTC [53985] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:31:49.281 UTC [53985] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:49.334 UTC [53986] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:49.334 UTC [53986] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:49.560 UTC [53995] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:49.560 UTC [53995] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:49.561 UTC [53996] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:49.561 UTC [53996] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:49.686 UTC [53999] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:49.686 UTC [53999] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:49.810 UTC [54004] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:49.810 UTC [54004] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:49.946 UTC [54007] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:49.946 UTC [54007] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:49.951 UTC [54008] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:31:49.951 UTC [54008] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:50.420 UTC [54014] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:50.420 UTC [54014] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:50.446 UTC [54015] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:50.446 UTC [54015] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:50.477 UTC [54017] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:50.477 UTC [54017] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:50.481 UTC [54016] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:50.481 UTC [54016] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:50.787 UTC [54026] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:50.787 UTC [54026] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:51.175 UTC [54029] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:31:51.175 UTC [54029] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:51.533 UTC [53975] ERROR:  relation "cms.__migrations" does not exist at character 45
+2026-10-08 19:31:51.533 UTC [53975] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:51.829 UTC [54035] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:51.829 UTC [54035] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:52.323 UTC [54049] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:52.323 UTC [54049] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:52.942 UTC [54053] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:52.942 UTC [54053] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:52.944 UTC [54054] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:52.944 UTC [54054] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:52.950 UTC [53975] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:31:52.950 UTC [53975] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:53.121 UTC [54065] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:31:53.121 UTC [54065] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:53.374 UTC [54075] ERROR:  sabotaje alta
+2026-10-08 19:31:53.374 UTC [54075] CONTEXT:  PL/pgSQL function service_orders.reject_initial_history() line 3 at RAISE
+2026-10-08 19:31:53.374 UTC [54075] STATEMENT:  INSERT INTO service_orders.service_order_status_history (status_history_id, created_at, from_status, occurred_at, origin_node, performed_by_admin_user_home_node, performed_by_admin_user_id, performed_by_name, row_version, service_order_id, to_status)
+2026-10-08 19:31:53.594 UTC [54082] ERROR:  new row for relation "service_order_status_history" violates check constraint "ck_service_order_status_history_actor_triple"
+2026-10-08 19:31:53.594 UTC [54082] DETAIL:  Failing row contains (01a11d00-2e31-7e47-aa94-d3f6e334001f, 01a11d00-2cb4-7611-b7ca-8328c4590432, null, received, 2026-10-07 10:00:00+00, Ana Pérez, 7, null, principal, 1, 2026-10-08 19:31:53.589311+00, 2026-10-08 19:31:53.589311+00).
+2026-10-08 19:31:53.594 UTC [54082] STATEMENT:  INSERT INTO service_orders.service_order_status_history
+2026-10-08 19:31:53.689 UTC [54086] ERROR:  new row for relation "service_order_status_history" violates check constraint "ck_service_order_status_history_actor_not_fictitious"
+2026-10-08 19:31:53.689 UTC [54086] DETAIL:  Failing row contains (01a11d00-2e80-7305-8209-ef007910b978, 01a11d00-2cb4-7611-b7ca-8328c4590432, null, received, 2026-10-07 10:00:00+00, Sistema, 7, principal, principal, 1, 2026-10-08 19:31:53.669662+00, 2026-10-08 19:31:53.669662+00).
+2026-10-08 19:31:53.689 UTC [54086] STATEMENT:  INSERT INTO service_orders.service_order_status_history
+2026-10-08 19:31:54.295 UTC [54098] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:31:54.295 UTC [54098] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:54.317 UTC [54100] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:31:54.317 UTC [54100] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:55.020 UTC [54112] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:31:55.020 UTC [54112] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:55.150 UTC [54115] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:31:55.150 UTC [54115] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:56.128 UTC [54121] ERROR:  No se desinstala M04 Clientes: hay módulos instalados que dependen de él de forma dura (con claves foráneas hacia crm: b2b). Desinstala antes esos módulos con su 99_drop.sql y repite. No se ha borrado nada.
+2026-10-08 19:31:56.128 UTC [54121] CONTEXT:  PL/pgSQL function inline_code_block line 30 at RAISE
+2026-10-08 19:31:56.128 UTC [54121] STATEMENT:  DO $guarda$
+2026-10-08 19:31:56.292 UTC [26] LOG:  checkpoint complete: wrote 1954 buffers (11.9%); 0 WAL file(s) added, 0 removed, 1 recycled; write=2.234 s, sync=14.398 s, total=17.183 s; sync files=500, longest=0.544 s, average=0.029 s; distance=9312 kB, estimate=42134 kB; lsn=1/40B867E8, redo lsn=1/3C8D5378
+2026-10-08 19:31:56.297 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:31:59.212 UTC [54134] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:59.212 UTC [54134] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:59.222 UTC [54135] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:59.222 UTC [54135] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:31:59.519 UTC [54143] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:31:59.519 UTC [54143] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:32:07.959 UTC [54164] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:32:07.959 UTC [54164] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:32:07.999 UTC [54167] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:32:07.999 UTC [54167] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:32:08.004 UTC [54168] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:32:08.004 UTC [54168] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:32:09.171 UTC [54175] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:32:09.171 UTC [54175] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:32:09.503 UTC [54178] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:32:09.503 UTC [54178] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:32:09.736 UTC [54181] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:32:09.736 UTC [54181] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:32:15.133 UTC [53942] ERROR:  canceling statement due to user request
+2026-10-08 19:32:15.133 UTC [53942] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_9edf0febf05441d3a5ed12e28e1b61b1" WITH (FORCE)
+2026-10-08 19:32:15.144 UTC [53944] ERROR:  canceling statement due to user request
+2026-10-08 19:32:15.144 UTC [53944] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_52bca032277a4b35a35b0bb4d14e2927" WITH (FORCE)
+2026-10-08 19:32:16.441 UTC [53972] ERROR:  canceling statement due to user request
+2026-10-08 19:32:16.441 UTC [53972] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_eee7c0185dae4f2db9776639468acdce" WITH (FORCE)
+2026-10-08 19:32:21.874 UTC [54037] ERROR:  canceling statement due to user request
+2026-10-08 19:32:21.874 UTC [54037] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_872c2037ca554d11aacbda37f24b" WITH (FORCE)
+2026-10-08 19:32:23.448 UTC [54078] ERROR:  canceling statement due to user request
+2026-10-08 19:32:23.448 UTC [54078] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_887f651d98a74770b0dab0014746" WITH (FORCE)
+2026-10-08 19:32:23.619 UTC [54084] ERROR:  canceling statement due to user request
+2026-10-08 19:32:23.619 UTC [54084] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_5fc9efbe6a5a47bfba542be18820" WITH (FORCE)
+2026-10-08 19:32:23.813 UTC [54090] ERROR:  canceling statement due to user request
+2026-10-08 19:32:23.813 UTC [54090] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_1dbbd9d192424ed8b6b01322f0ea" WITH (FORCE)
+2026-10-08 19:32:24.133 UTC [54094] ERROR:  canceling statement due to user request
+2026-10-08 19:32:24.133 UTC [54094] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_ffa908379a3041648cdca9608994" WITH (FORCE)
+2026-10-08 19:32:24.446 UTC [54106] ERROR:  canceling statement due to user request
+2026-10-08 19:32:24.446 UTC [54106] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_a2179acc34d0425bac9caa2b81d2" WITH (FORCE)
+2026-10-08 19:32:24.604 UTC [54111] ERROR:  canceling statement due to user request
+2026-10-08 19:32:24.604 UTC [54111] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m06_7e0007df38c34075972c93457ee26" WITH (FORCE)
+2026-10-08 19:32:25.432 UTC [54118] ERROR:  canceling statement due to user request
+2026-10-08 19:32:25.432 UTC [54118] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_f06cdcc2a68e42658ddeb2aa9d2cf819" WITH (FORCE)
+2026-10-08 19:32:26.139 UTC [54123] ERROR:  canceling statement due to user request
+2026-10-08 19:32:26.139 UTC [54123] STATEMENT:  DROP DATABASE IF EXISTS "sillar_b2b_prueba_0121e1d272ff4c819f7d78" WITH (FORCE)
+2026-10-08 19:32:26.226 UTC [54126] ERROR:  canceling statement due to user request
+2026-10-08 19:32:26.226 UTC [54126] STATEMENT:  DROP DATABASE IF EXISTS "sillar_b2b_prueba_5b39a90c2e6241ac84ac53" WITH (FORCE)
+2026-10-08 19:32:26.235 UTC [54227] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:32:26.235 UTC [54227] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:32:26.535 UTC [54225] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:32:26.535 UTC [54225] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:32:26.738 UTC [54232] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:32:26.738 UTC [54232] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:32:27.548 UTC [54233] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:32:27.548 UTC [54233] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:32:29.508 UTC [54145] ERROR:  canceling statement due to user request
+2026-10-08 19:32:29.508 UTC [54145] STATEMENT:  DROP DATABASE IF EXISTS "sillar_b2b_prueba_6ca86190196d4b298a4066" WITH (FORCE)
+2026-10-08 19:32:29.695 UTC [54150] ERROR:  canceling statement due to user request
+2026-10-08 19:32:29.695 UTC [54150] STATEMENT:  DROP DATABASE IF EXISTS "sillar_b2b_prueba_4f042db28adf4b819f792e" WITH (FORCE)
+2026-10-08 19:32:32.822 UTC [54160] ERROR:  canceling statement due to user request
+2026-10-08 19:32:32.822 UTC [54160] STATEMENT:  DROP DATABASE IF EXISTS "sillar_adr019_d76369a8170d45aa9f1af8c1da50ebbc" WITH (FORCE)
+2026-10-08 19:32:38.788 UTC [54174] ERROR:  canceling statement due to user request
+2026-10-08 19:32:38.788 UTC [54174] STATEMENT:  DROP DATABASE IF EXISTS "sillar_adr019_d25c328cc3bf4e8dbb7e8c9192b227f9" WITH (FORCE)
+2026-10-08 19:32:39.904 UTC [53431] ERROR:  canceling statement due to user request
+2026-10-08 19:32:39.904 UTC [53431] STATEMENT:  TRUNCATE crm.contact_messages, crm.customer_tokens, crm.customer_sessions, crm.customer_accounts, crm.customer_addresses, crm.customers RESTART IDENTITY CASCADE
+2026-10-08 19:32:45.388 UTC [54253] LOG:  could not send data to client: Broken pipe
+2026-10-08 19:32:45.388 UTC [54253] FATAL:  connection to client lost
+2026-10-08 19:32:45.541 UTC [54255] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:32:45.541 UTC [54255] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:32:45.682 UTC [54262] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:32:45.682 UTC [54262] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:32:50.106 UTC [54260] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:32:50.106 UTC [54260] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:32:50.862 UTC [54258] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:32:50.862 UTC [54258] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:32:50.863 UTC [54261] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:32:50.863 UTC [54261] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:32:55.027 UTC [54211] ERROR:  canceling statement due to user request
+2026-10-08 19:32:55.027 UTC [54211] STATEMENT:  CREATE DATABASE "sillar_m05b_baaafd9b58384b689683393d94b2"
+2026-10-08 19:32:58.368 UTC [54288] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:32:58.368 UTC [54288] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:33:00.170 UTC [54235] ERROR:  canceling statement due to user request
+2026-10-08 19:33:00.170 UTC [54235] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_3723f4aba7004bd2bf5c8f2ca8762617" WITH (FORCE)
+2026-10-08 19:33:04.320 UTC [54237] FATAL:  cannot connect to invalid database "sillar_vacia_3723f4aba7004bd2bf5c8f2ca8762617"
+2026-10-08 19:33:04.320 UTC [54237] HINT:  Use DROP DATABASE to drop invalid databases.
+2026-10-08 19:33:04.323 UTC [54292] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:33:04.323 UTC [54292] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:33:04.325 UTC [54293] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:33:04.325 UTC [54293] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:33:12.940 UTC [53431] ERROR:  canceling statement due to user request
+2026-10-08 19:33:12.940 UTC [53431] STATEMENT:  TRUNCATE crm.contact_messages, crm.customer_tokens, crm.customer_sessions, crm.customer_accounts, crm.customer_addresses, crm.customers RESTART IDENTITY CASCADE
+2026-10-08 19:33:15.298 UTC [54263] ERROR:  canceling statement due to user request
+2026-10-08 19:33:15.298 UTC [54263] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m06_e84599d1573b4720906b2f5f29804" WITH (FORCE)
+2026-10-08 19:33:15.302 UTC [54264] ERROR:  canceling statement due to user request
+2026-10-08 19:33:15.302 UTC [54264] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m06_15e01457f9a147c5a19bf793828b5" WITH (FORCE)
+2026-10-08 19:33:15.317 UTC [54265] ERROR:  canceling statement due to user request
+2026-10-08 19:33:15.317 UTC [54265] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_4af1088b0dcc44488710706165e2" WITH (FORCE)
+2026-10-08 19:33:17.916 UTC [54326] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:33:17.916 UTC [54326] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:33:17.919 UTC [54314] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:33:17.919 UTC [54314] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:33:21.234 UTC [54313] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:33:21.234 UTC [54313] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:33:21.351 UTC [54323] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:33:21.351 UTC [54323] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:33:29.344 UTC [54348] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:33:29.344 UTC [54348] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:33:29.463 UTC [54323] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:33:29.463 UTC [54323] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:33:31.313 UTC [26] LOG:  checkpoint complete: wrote 2071 buffers (12.6%); 0 WAL file(s) added, 0 removed, 4 recycled; write=1.996 s, sync=81.017 s, total=95.016 s; sync files=435, longest=2.777 s, average=0.187 s; distance=68303 kB, estimate=68303 kB; lsn=1/46404718, redo lsn=1/40B89088
+2026-10-08 19:33:31.323 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:33:39.109 UTC [54370] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:33:39.109 UTC [54370] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:33:39.119 UTC [54369] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:33:39.119 UTC [54369] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:33:39.650 UTC [54375] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:33:39.650 UTC [54375] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:33:43.292 UTC [53431] ERROR:  canceling statement due to user request
+2026-10-08 19:33:43.292 UTC [53431] STATEMENT:  TRUNCATE crm.contact_messages, crm.customer_tokens, crm.customer_sessions, crm.customer_accounts, crm.customer_addresses, crm.customers RESTART IDENTITY CASCADE
+2026-10-08 19:33:59.354 UTC [54352] ERROR:  canceling statement due to user request
+2026-10-08 19:33:59.354 UTC [54352] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_e44a182f7ace401f9e26659a8001c1e5" WITH (FORCE)
+2026-10-08 19:33:59.370 UTC [54399] FATAL:  database "no_existe_a86aabea8c124ce7b6df7fb70a87151b" does not exist
+2026-10-08 19:34:02.432 UTC [54409] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:34:02.432 UTC [54409] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:04.082 UTC [54368] ERROR:  canceling statement due to user request
+2026-10-08 19:34:04.082 UTC [54368] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_b5703f6e57d249d5a73ab01fcedef680" WITH (FORCE)
+2026-10-08 19:34:09.691 UTC [54413] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:34:09.691 UTC [54413] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:11.358 UTC [54424] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:34:11.358 UTC [54424] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:13.798 UTC [53431] ERROR:  canceling statement due to user request
+2026-10-08 19:34:13.798 UTC [53431] STATEMENT:  TRUNCATE crm.contact_messages, crm.customer_tokens, crm.customer_sessions, crm.customer_accounts, crm.customer_addresses, crm.customers RESTART IDENTITY CASCADE
+2026-10-08 19:34:13.804 UTC [54425] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:34:13.804 UTC [54425] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:14.875 UTC [54430] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:34:14.875 UTC [54430] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:15.033 UTC [54435] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:34:15.033 UTC [54435] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:15.035 UTC [54434] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:34:15.035 UTC [54434] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:15.059 UTC [54436] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:34:15.059 UTC [54436] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:15.625 UTC [54433] ERROR:  No se puede rellenar core.admin_users.home_node: hay 1 cuenta(s) y esta conexión no trae el nodo configurado.
+2026-10-08 19:34:15.625 UTC [54433] HINT:  Configura Sillar:Node:Code (variable Sillar__Node__Code) en la instalación que aplica la migración y repítela. No se ha cambiado nada.
+2026-10-08 19:34:15.625 UTC [54433] CONTEXT:  PL/pgSQL function inline_code_block line 9 at RAISE
+2026-10-08 19:34:15.625 UTC [54433] STATEMENT:  DO $relleno$
+2026-10-08 19:34:18.494 UTC [54443] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:34:18.494 UTC [54443] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:18.598 UTC [54446] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:34:18.598 UTC [54446] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:20.605 UTC [54449] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:34:20.605 UTC [54449] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:20.609 UTC [54450] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:34:20.609 UTC [54450] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:21.165 UTC [54463] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:34:21.165 UTC [54463] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:21.317 UTC [54466] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:34:21.317 UTC [54466] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:24.212 UTC [54469] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:34:24.212 UTC [54469] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:24.216 UTC [54470] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:34:24.216 UTC [54470] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:25.611 UTC [54475] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:34:25.611 UTC [54475] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:26.545 UTC [54478] ERROR:  relation "cms.__migrations" does not exist at character 45
+2026-10-08 19:34:26.545 UTC [54478] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:27.753 UTC [54323] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:34:27.753 UTC [54323] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:28.338 UTC [54479] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:34:28.338 UTC [54479] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:28.378 UTC [54481] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:34:28.378 UTC [54481] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:29.299 UTC [54486] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:34:29.299 UTC [54486] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:30.072 UTC [54489] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:34:30.072 UTC [54489] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:31.209 UTC [54505] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:34:31.209 UTC [54505] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:32.599 UTC [54509] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:34:32.599 UTC [54509] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:33.946 UTC [54513] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:34:33.946 UTC [54513] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:35.273 UTC [54521] ERROR:  No se desinstala M05b Servicios — Órdenes: hay dependientes duros instalados (registro modular: tracking). Desinstálalos antes; no se ha borrado nada.
+2026-10-08 19:34:35.273 UTC [54521] CONTEXT:  PL/pgSQL function inline_code_block line 35 at RAISE
+2026-10-08 19:34:35.273 UTC [54521] STATEMENT:  -- M05b · desinstalación idempotente y aislada.
+2026-10-08 19:34:37.922 UTC [54478] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:34:37.922 UTC [54478] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:40.317 UTC [54529] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:34:40.317 UTC [54529] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:40.338 UTC [54532] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:34:40.338 UTC [54532] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:45.660 UTC [54441] ERROR:  canceling statement due to user request
+2026-10-08 19:34:45.660 UTC [54441] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_e7c5222b586e49979934cab688484468" WITH (FORCE)
+2026-10-08 19:34:46.500 UTC [53431] ERROR:  canceling statement due to user request
+2026-10-08 19:34:46.500 UTC [53431] STATEMENT:  TRUNCATE crm.contact_messages, crm.customer_tokens, crm.customer_sessions, crm.customer_accounts, crm.customer_addresses, crm.customers RESTART IDENTITY CASCADE
+2026-10-08 19:34:46.693 UTC [54558] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:34:46.693 UTC [54558] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:49.388 UTC [54562] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:34:49.388 UTC [54562] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:51.051 UTC [54564] ERROR:  new row for relation "order_tracking" violates check constraint "ck_order_tracking_replication"
+2026-10-08 19:34:51.051 UTC [54564] DETAIL:  Failing row contains (01a11d02-db42-741e-b3a9-7d9e6ebf8362, 01a11d02-db42-75eb-8e7d-0f38c8a35a7d, null, null, f, null, null, null, null, t, principal, 0, 2026-10-08 19:34:50.446112+00, 2026-10-08 19:34:51.049913+00).
+2026-10-08 19:34:51.051 UTC [54564] STATEMENT:  UPDATE tracking.order_tracking
+2026-10-08 19:34:51.066 UTC [54565] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:34:51.066 UTC [54565] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:52.016 UTC [54575] ERROR:  new row for relation "tracking_notes" violates check constraint "ck_tracking_notes_replication"
+2026-10-08 19:34:52.016 UTC [54575] DETAIL:  Failing row contains (01a11d02-db42-7252-9cae-4f7d77737a4b, 01a11d02-db42-741e-b3a9-7d9e6ebf8362, Nota válida, null, null, null, t, , 1, 2026-10-08 19:34:51.061022+00, 2026-10-08 19:34:52.014484+00).
+2026-10-08 19:34:52.016 UTC [54575] STATEMENT:  UPDATE tracking.tracking_notes
+2026-10-08 19:34:52.747 UTC [54578] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:34:52.747 UTC [54578] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:53.430 UTC [54588] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:34:53.430 UTC [54588] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:34:53.490 UTC [54591] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:34:53.490 UTC [54591] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:00.088 UTC [54323] ERROR:  relation "cms.__migrations" does not exist at character 45
+2026-10-08 19:35:00.088 UTC [54323] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:00.201 UTC [54497] ERROR:  canceling statement due to user request
+2026-10-08 19:35:00.201 UTC [54497] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_b09a996a29b3479595b2a9cfc952" WITH (FORCE)
+2026-10-08 19:35:00.304 UTC [54605] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:35:00.304 UTC [54605] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:00.972 UTC [54608] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:35:00.972 UTC [54608] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:02.085 UTC [54323] FATAL:  terminating connection due to administrator command
+2026-10-08 19:35:02.085 UTC [54323] STATEMENT:  CREATE TABLE cms.featured_products (
+2026-10-08 19:35:02.226 UTC [54621] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:35:02.226 UTC [54621] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:03.986 UTC [54520] ERROR:  canceling statement due to user request
+2026-10-08 19:35:03.986 UTC [54520] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_a25ea89a7cdf4389a0370e59986d" WITH (FORCE)
+2026-10-08 19:35:05.927 UTC [54528] ERROR:  canceling statement due to user request
+2026-10-08 19:35:05.927 UTC [54528] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_ba4f4f9464f94a5bab1baa35b243" WITH (FORCE)
+2026-10-08 19:35:07.559 UTC [54629] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:35:07.559 UTC [54629] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:10.560 UTC [54538] ERROR:  canceling statement due to user request
+2026-10-08 19:35:10.560 UTC [54538] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_64190b9488a24038bf01de38560a" WITH (FORCE)
+2026-10-08 19:35:12.317 UTC [54641] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:35:12.317 UTC [54641] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:12.757 UTC [54552] ERROR:  canceling statement due to user request
+2026-10-08 19:35:12.757 UTC [54552] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_f7122f850ebc480280d10fc02ec7" WITH (FORCE)
+2026-10-08 19:35:13.317 UTC [54647] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:35:13.317 UTC [54647] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:13.783 UTC [54554] ERROR:  canceling statement due to user request
+2026-10-08 19:35:13.783 UTC [54554] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_2762dbb8fd194656877ceed5e43228f8" WITH (FORCE)
+2026-10-08 19:35:16.818 UTC [53431] ERROR:  canceling statement due to user request
+2026-10-08 19:35:16.818 UTC [53431] STATEMENT:  TRUNCATE crm.contact_messages, crm.customer_tokens, crm.customer_sessions, crm.customer_accounts, crm.customer_addresses, crm.customers RESTART IDENTITY CASCADE
+2026-10-08 19:35:19.287 UTC [54653] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:35:19.287 UTC [54653] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:19.305 UTC [54655] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:35:19.305 UTC [54655] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:20.935 UTC [54661] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:35:20.935 UTC [54661] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:22.028 UTC [54576] ERROR:  canceling statement due to user request
+2026-10-08 19:35:22.028 UTC [54576] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m06_692340597f104b40835ea52e1e8af" WITH (FORCE)
+2026-10-08 19:35:23.142 UTC [54673] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:35:23.142 UTC [54673] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:23.433 UTC [54587] ERROR:  canceling statement due to user request
+2026-10-08 19:35:23.433 UTC [54587] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_6bd9148734694292b01836523b8d" WITH (FORCE)
+2026-10-08 19:35:24.368 UTC [54678] ERROR:  relation "cms.__migrations" does not exist at character 45
+2026-10-08 19:35:24.368 UTC [54678] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:26.737 UTC [54595] ERROR:  canceling statement due to user request
+2026-10-08 19:35:26.737 UTC [54595] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m06_37e9e22bb8a542f781ec97d470cb7" WITH (FORCE)
+2026-10-08 19:35:29.814 UTC [54601] ERROR:  canceling statement due to user request
+2026-10-08 19:35:29.814 UTC [54601] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m06_6a8bf17adedc42c9a43ffa98a2c47" WITH (FORCE)
+2026-10-08 19:35:29.896 UTC [54602] ERROR:  canceling statement due to user request
+2026-10-08 19:35:29.896 UTC [54602] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_d3b7272030d74efa805aa5d50a2f837d" WITH (FORCE)
+2026-10-08 19:35:31.706 UTC [54620] ERROR:  canceling statement due to user request
+2026-10-08 19:35:31.706 UTC [54620] STATEMENT:  DROP DATABASE IF EXISTS "sillar_adr019_297a4af3d71d4002a933a34df1857852" WITH (FORCE)
+2026-10-08 19:35:33.188 UTC [54700] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:35:33.188 UTC [54700] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:42.569 UTC [54705] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:35:42.569 UTC [54705] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:42.737 UTC [54704] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:35:42.737 UTC [54704] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:45.910 UTC [54717] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:35:45.910 UTC [54717] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:46.537 UTC [54720] ERROR:  relation "core.admin_users" does not exist at character 398
+2026-10-08 19:35:46.537 UTC [54720] STATEMENT:  SELECT a.admin_session_id, a.admin_user_id, a.csrf_token_hash, a.expires_at, a.ip_address, a.issued_at, a.last_seen_at, a.revoked_at, a.token_hash, a.user_agent, a0.admin_user_id, a0.created_at, a0.email, a0.failed_login_count, a0.full_name, a0.home_node, a0.is_active, a0.last_login_at, a0.locked_until, a0.password_hash, a0.phone, a0.role, a0.updated_at
+2026-10-08 19:35:46.781 UTC [54723] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:35:46.781 UTC [54723] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:47.264 UTC [54733] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:35:47.264 UTC [54733] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:49.673 UTC [53431] ERROR:  canceling statement due to user request
+2026-10-08 19:35:49.673 UTC [53431] STATEMENT:  TRUNCATE crm.contact_messages, crm.customer_tokens, crm.customer_sessions, crm.customer_accounts, crm.customer_addresses, crm.customers RESTART IDENTITY CASCADE
+2026-10-08 19:35:50.694 UTC [54747] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:35:50.694 UTC [54747] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:51.460 UTC [54750] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:35:51.460 UTC [54750] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:51.752 UTC [54753] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:35:51.752 UTC [54753] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:51.841 UTC [54756] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:35:51.841 UTC [54756] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:52.031 UTC [54759] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:35:52.031 UTC [54759] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:52.061 UTC [54762] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:35:52.061 UTC [54762] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:52.487 UTC [54764] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:35:52.487 UTC [54764] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:57.448 UTC [54786] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:35:57.448 UTC [54786] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:57.851 UTC [54794] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:35:57.851 UTC [54794] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:57.946 UTC [54804] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:35:57.946 UTC [54804] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:57.982 UTC [54807] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:35:57.982 UTC [54807] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:35:58.539 UTC [54683] ERROR:  canceling statement due to user request
+2026-10-08 19:35:58.539 UTC [54683] STATEMENT:  DROP DATABASE IF EXISTS "sillar_b2b_prueba_a7be815603f54655a2cd2b" WITH (FORCE)
+2026-10-08 19:35:58.553 UTC [54684] ERROR:  canceling statement due to user request
+2026-10-08 19:35:58.553 UTC [54684] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_641430f0505b49db95550d85ebbd472a" WITH (FORCE)
+2026-10-08 19:36:02.119 UTC [54699] ERROR:  canceling statement due to user request
+2026-10-08 19:36:02.119 UTC [54699] STATEMENT:  DROP DATABASE IF EXISTS "sillar_b2b_prueba_f9dd411a50e145178fbd7b" WITH (FORCE)
+2026-10-08 19:36:02.741 UTC [54816] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:36:02.741 UTC [54816] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:36:02.741 UTC [54815] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:36:02.741 UTC [54815] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:36:12.365 UTC [54832] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:36:12.365 UTC [54832] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:36:12.366 UTC [54834] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:36:12.366 UTC [54834] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:36:16.561 UTC [54721] ERROR:  canceling statement due to user request
+2026-10-08 19:36:16.561 UTC [54721] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_9afbb510ccfb4343a6d8c1e4bdd309d9" WITH (FORCE)
+2026-10-08 19:36:16.909 UTC [54729] ERROR:  canceling statement due to user request
+2026-10-08 19:36:16.909 UTC [54729] STATEMENT:  DROP DATABASE IF EXISTS "sillar_b2b_prueba_8eccdf975a874fd99b7641" WITH (FORCE)
+2026-10-08 19:36:18.675 UTC [54745] ERROR:  canceling statement due to user request
+2026-10-08 19:36:18.675 UTC [54745] STATEMENT:  DROP DATABASE IF EXISTS "sillar_b2b_prueba_e1f3fc65181d403ca3adb7" WITH (FORCE)
+2026-10-08 19:36:21.097 UTC [54746] ERROR:  canceling statement due to user request
+2026-10-08 19:36:21.097 UTC [54746] STATEMENT:  TRUNCATE crm.contact_messages, crm.customer_tokens, crm.customer_sessions, crm.customer_accounts, crm.customer_addresses, crm.customers RESTART IDENTITY CASCADE
+2026-10-08 19:36:21.929 UTC [26] LOG:  checkpoint complete: wrote 9095 buffers (55.5%); 0 WAL file(s) added, 0 removed, 6 recycled; write=47.156 s, sync=104.233 s, total=170.615 s; sync files=772, longest=3.023 s, average=0.135 s; distance=96073 kB, estimate=96073 kB; lsn=1/4C40D400, redo lsn=1/4695B4E0
+2026-10-08 19:36:21.934 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:36:22.083 UTC [54859] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:36:22.083 UTC [54859] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:36:23.044 UTC [54862] ERROR:  relation "core.admin_sessions" does not exist at character 362
+2026-10-08 19:36:23.044 UTC [54862] STATEMENT:  SELECT a.admin_session_id, a.admin_user_id, a.csrf_token_hash, a.expires_at, a.ip_address, a.issued_at, a.last_seen_at, a.revoked_at, a.token_hash, a.user_agent, a0.admin_user_id, a0.created_at, a0.email, a0.failed_login_count, a0.full_name, a0.home_node, a0.is_active, a0.last_login_at, a0.locked_until, a0.password_hash, a0.phone, a0.role, a0.updated_at
+2026-10-08 19:36:23.050 UTC [54861] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:36:23.050 UTC [54861] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:36:23.055 UTC [54862] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:36:23.055 UTC [54862] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:36:24.368 UTC [54877] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:36:24.368 UTC [54877] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:36:27.059 UTC [54776] ERROR:  canceling statement due to user request
+2026-10-08 19:36:27.059 UTC [54776] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_6cafeb423c204e00892b33cd2ab02b80" WITH (FORCE)
+2026-10-08 19:36:27.296 UTC [54785] ERROR:  canceling statement due to user request
+2026-10-08 19:36:27.296 UTC [54785] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_9777d8cb2ff941a68a4472b5190d" WITH (FORCE)
+2026-10-08 19:36:27.897 UTC [54888] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:36:27.897 UTC [54888] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:36:27.899 UTC [54800] ERROR:  canceling statement due to user request
+2026-10-08 19:36:27.899 UTC [54800] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_549a0f78f99047baaf14695b8454" WITH (FORCE)
+2026-10-08 19:36:27.944 UTC [54803] ERROR:  canceling statement due to user request
+2026-10-08 19:36:27.944 UTC [54803] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_bbe92ddea4ee47e09ef788d8f242" WITH (FORCE)
+2026-10-08 19:36:40.219 UTC [54903] LOG:  could not send data to client: Broken pipe
+2026-10-08 19:36:40.219 UTC [54903] FATAL:  connection to client lost
+2026-10-08 19:36:40.222 UTC [54894] ERROR:  new row for relation "order_tracking" violates check constraint "ck_order_tracking_last_touched_triple"
+2026-10-08 19:36:40.222 UTC [54894] DETAIL:  Failing row contains (01a11d04-5a05-7f25-b452-fadca676a1a4, 01a11d04-5a05-7399-a4ba-f702f3021252, null, null, f, Ana, null, null, null, t, principal, 1, 2026-10-08 19:36:27.894312+00, 2026-10-08 19:36:40.219402+00).
+2026-10-08 19:36:40.222 UTC [54894] STATEMENT:  UPDATE tracking.order_tracking
+2026-10-08 19:36:40.234 UTC [54904] ERROR:  new row for relation "order_tracking" violates check constraint "ck_order_tracking_last_touched_not_fictitious"
+2026-10-08 19:36:40.234 UTC [54904] DETAIL:  Failing row contains (01a11d04-5a05-7f25-b452-fadca676a1a4, 01a11d04-5a05-7399-a4ba-f702f3021252, null, null, f, Sistema, 7, principal, null, t, principal, 1, 2026-10-08 19:36:27.894312+00, 2026-10-08 19:36:40.231947+00).
+2026-10-08 19:36:40.234 UTC [54904] STATEMENT:  UPDATE tracking.order_tracking
+2026-10-08 19:36:40.247 UTC [54906] ERROR:  new row for relation "tracking_notes" violates check constraint "ck_tracking_notes_author_triple"
+2026-10-08 19:36:40.247 UTC [54906] DETAIL:  Failing row contains (01a11d04-8e2b-7ae5-aef2-0e024848b42d, 01a11d04-5a05-7f25-b452-fadca676a1a4, Actor incompleto, Ana, null, null, t, principal, 1, 2026-10-08 19:36:40.246524+00, 2026-10-08 19:36:40.246524+00).
+2026-10-08 19:36:40.247 UTC [54906] STATEMENT:  INSERT INTO tracking.tracking_notes
+2026-10-08 19:36:40.257 UTC [54907] ERROR:  new row for relation "tracking_notes" violates check constraint "ck_tracking_notes_author_not_fictitious"
+2026-10-08 19:36:40.257 UTC [54907] DETAIL:  Failing row contains (01a11d04-8e38-72de-930c-39706b1c8955, 01a11d04-5a05-7f25-b452-fadca676a1a4, Actor ficticio, Sistema, 7, principal, t, principal, 1, 2026-10-08 19:36:40.256781+00, 2026-10-08 19:36:40.256781+00).
+2026-10-08 19:36:40.257 UTC [54907] STATEMENT:  INSERT INTO tracking.tracking_notes
+2026-10-08 19:36:42.381 UTC [54836] ERROR:  canceling statement due to user request
+2026-10-08 19:36:42.381 UTC [54836] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_3d0f3be822f7450a8992e2e8239c" WITH (FORCE)
+2026-10-08 19:36:46.486 UTC [54913] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:36:46.486 UTC [54913] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:36:52.553 UTC [54746] ERROR:  canceling statement due to user request
+2026-10-08 19:36:52.553 UTC [54746] STATEMENT:  TRUNCATE crm.contact_messages, crm.customer_tokens, crm.customer_sessions, crm.customer_accounts, crm.customer_addresses, crm.customers RESTART IDENTITY CASCADE
+2026-10-08 19:36:54.494 UTC [54880] ERROR:  canceling statement due to user request
+2026-10-08 19:36:54.494 UTC [54880] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_e9d458182f924a7f93dc7f6511dfaa89" WITH (FORCE)
+2026-10-08 19:36:57.431 UTC [54944] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:36:57.431 UTC [54944] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:03.903 UTC [54948] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:37:03.903 UTC [54948] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:03.930 UTC [54951] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:37:03.930 UTC [54951] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:04.883 UTC [54954] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:37:04.883 UTC [54954] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:04.940 UTC [54957] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:37:04.940 UTC [54957] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:05.022 UTC [54960] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:37:05.022 UTC [54960] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:06.669 UTC [54969] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:37:06.669 UTC [54969] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:10.268 UTC [54908] ERROR:  canceling statement due to user request
+2026-10-08 19:37:10.268 UTC [54908] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m06_1470b6b49db2433588aaf24a93ab9" WITH (FORCE)
+2026-10-08 19:37:11.844 UTC [54971] ERROR:  M05b Servicios — Órdenes no se puede instalar porque falta: M05a Servicios — Vitrina (schema services). Instala eso antes y repite la instalación de M05b.
+2026-10-08 19:37:11.844 UTC [54971] CONTEXT:  PL/pgSQL function inline_code_block line 12 at RAISE
+2026-10-08 19:37:11.844 UTC [54971] STATEMENT:  DO $$
+2026-10-08 19:37:12.229 UTC [54910] ERROR:  canceling statement due to user request
+2026-10-08 19:37:12.229 UTC [54910] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_5d30c1eb81ae47a0bd1cbb3293e7" WITH (FORCE)
+2026-10-08 19:37:22.053 UTC [54985] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:37:22.053 UTC [54985] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:23.998 UTC [54746] ERROR:  canceling statement due to user request
+2026-10-08 19:37:23.998 UTC [54746] STATEMENT:  TRUNCATE crm.contact_messages, crm.customer_tokens, crm.customer_sessions, crm.customer_accounts, crm.customer_addresses, crm.customers RESTART IDENTITY CASCADE
+2026-10-08 19:37:24.088 UTC [54933] ERROR:  canceling statement due to user request
+2026-10-08 19:37:24.088 UTC [54933] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_9aa710c373c54d3cad5875544d0a26cf" WITH (FORCE)
+2026-10-08 19:37:24.099 UTC [54934] ERROR:  canceling statement due to user request
+2026-10-08 19:37:24.099 UTC [54934] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m06_f855bf152c804717afce8820ae6ca" WITH (FORCE)
+2026-10-08 19:37:24.558 UTC [54992] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:37:24.558 UTC [54992] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:32.736 UTC [55003] LOG:  could not send data to client: Broken pipe
+2026-10-08 19:37:32.736 UTC [55003] FATAL:  connection to client lost
+2026-10-08 19:37:32.742 UTC [55006] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:37:32.742 UTC [55006] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:32.743 UTC [55005] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:37:32.743 UTC [55005] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:32.744 UTC [55004] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:37:32.744 UTC [55004] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:32.760 UTC [55007] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:37:32.760 UTC [55007] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:41.215 UTC [55028] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:37:41.215 UTC [55028] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:41.885 UTC [54975] ERROR:  canceling statement due to user request
+2026-10-08 19:37:41.885 UTC [54975] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_fc02af19a4e3409499a0a768f9b0" WITH (FORCE)
+2026-10-08 19:37:46.176 UTC [55033] ERROR:  relation "cms.__migrations" does not exist at character 45
+2026-10-08 19:37:46.176 UTC [55033] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:46.177 UTC [55034] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:37:46.177 UTC [55034] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:52.094 UTC [55045] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:37:52.094 UTC [55045] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:37:54.598 UTC [54746] ERROR:  canceling statement due to user request
+2026-10-08 19:37:54.598 UTC [54746] STATEMENT:  TRUNCATE crm.contact_messages, crm.customer_tokens, crm.customer_sessions, crm.customer_accounts, crm.customer_addresses, crm.customers RESTART IDENTITY CASCADE
+2026-10-08 19:38:03.364 UTC [55033] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:38:03.364 UTC [55033] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:38:08.523 UTC [55019] ERROR:  canceling statement due to user request
+2026-10-08 19:38:08.523 UTC [55019] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_da5c2c9a83f247cd9f3336fc5a2daec0" WITH (FORCE)
+2026-10-08 19:38:08.874 UTC [55071] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:38:08.874 UTC [55071] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:38:09.929 UTC [55074] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:38:09.929 UTC [55074] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:38:16.816 UTC [55088] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:38:16.816 UTC [55088] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:38:18.432 UTC [55091] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:38:18.432 UTC [55091] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:38:21.140 UTC [55102] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:38:21.140 UTC [55102] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:38:27.623 UTC [54746] ERROR:  canceling statement due to user request
+2026-10-08 19:38:27.623 UTC [54746] STATEMENT:  TRUNCATE crm.contact_messages, crm.customer_tokens, crm.customer_sessions, crm.customer_accounts, crm.customer_addresses, crm.customers RESTART IDENTITY CASCADE
+2026-10-08 19:38:29.051 UTC [55107] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:38:29.051 UTC [55107] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:38:29.705 UTC [55110] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:38:29.705 UTC [55110] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:38:32.833 UTC [55121] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:38:32.833 UTC [55121] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:38:35.718 UTC [55137] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:38:35.718 UTC [55137] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:38:36.320 UTC [55149] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:38:36.320 UTC [55149] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:38:36.502 UTC [55069] ERROR:  canceling statement due to user request
+2026-10-08 19:38:36.502 UTC [55069] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_b85b11efeaa148838b8983c022a4" WITH (FORCE)
+2026-10-08 19:38:38.108 UTC [55158] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:38:38.108 UTC [55158] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:38:39.408 UTC [55161] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:38:39.408 UTC [55161] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:38:39.809 UTC [55165] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:38:39.809 UTC [55165] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:38:39.996 UTC [55169] ERROR:  new row for relation "order_tracking" violates check constraint "ck_order_tracking_priority"
+2026-10-08 19:38:39.996 UTC [55169] DETAIL:  Failing row contains (01a11d06-61ee-70f3-8f99-6c381d9b99a4, 01a11d06-61c5-73b2-9d6d-e05e13801464, -1, null, f, null, null, null, null, t, principal, 1, 2026-10-08 19:38:39.995689+00, 2026-10-08 19:38:39.995689+00).
+2026-10-08 19:38:39.996 UTC [55169] STATEMENT:  INSERT INTO tracking.order_tracking
+2026-10-08 19:38:44.637 UTC [55189] ERROR:  new row for relation "service_order_items" violates check constraint "ck_service_order_items_quantity"
+2026-10-08 19:38:44.637 UTC [55189] DETAIL:  Failing row contains (01a11d06-7414-7820-80ae-430b67d9cd16, 01a11d06-73cc-7c22-ad87-10af52d6afa4, 12, principal, Impresión, impresion, null, Impresión por hoja, null, null, null, null, null, A4, 0.000, null, 1, principal, 1, 2026-10-08 19:38:44.636099+00, 2026-10-08 19:38:44.636099+00).
+2026-10-08 19:38:44.637 UTC [55189] STATEMENT:  INSERT INTO service_orders.service_order_items
+2026-10-08 19:38:44.648 UTC [55190] ERROR:  new row for relation "service_orders" violates check constraint "ck_service_orders_promised_at"
+2026-10-08 19:38:44.648 UTC [55190] DETAIL:  Failing row contains (01a11d06-741e-7783-b633-0b6799855ff6, S-2026-0002, received, null, Cliente, 999111222, null, null, 2026-10-07 10:00:00+00, 2026-10-07 09:59:59+00, Ana Pérez, 7, principal, null, null, null, 2026-10-07 10:00:00+00, null, null, null, principal, 1, 2026-10-08 19:38:44.646878+00, 2026-10-08 19:38:44.646878+00, 01a11d06-741e-7783-b633-0b6799855ff6).
+2026-10-08 19:38:44.648 UTC [55190] STATEMENT:  INSERT INTO service_orders.service_orders
+2026-10-08 19:38:46.035 UTC [55087] ERROR:  canceling statement due to user request
+2026-10-08 19:38:46.035 UTC [55087] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_bc4bca5ac3fa49b585d67992c70bbb5e" WITH (FORCE)
+2026-10-08 19:38:55.340 UTC [55204] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:38:55.340 UTC [55204] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:38:55.408 UTC [26] LOG:  checkpoint complete: wrote 6703 buffers (40.9%); 0 WAL file(s) added, 0 removed, 6 recycled; write=33.576 s, sync=111.181 s, total=153.475 s; sync files=693, longest=4.210 s, average=0.161 s; distance=103508 kB, estimate=103508 kB; lsn=1/50A23488, redo lsn=1/4CE70570
+2026-10-08 19:38:55.411 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:38:55.997 UTC [55207] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:38:55.997 UTC [55207] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:03.439 UTC [55125] ERROR:  canceling statement due to user request
+2026-10-08 19:39:03.439 UTC [55125] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_8d73ac17565d4cef9038f91e2a4fbb88" WITH (FORCE)
+2026-10-08 19:39:04.452 UTC [55134] ERROR:  canceling statement due to user request
+2026-10-08 19:39:04.452 UTC [55134] STATEMENT:  DROP DATABASE IF EXISTS "sillar_b2b_prueba_376319df96e84b4db497fb" WITH (FORCE)
+2026-10-08 19:39:05.671 UTC [55136] ERROR:  canceling statement due to user request
+2026-10-08 19:39:05.671 UTC [55136] STATEMENT:  DROP DATABASE IF EXISTS "sillar_b2b_prueba_6ca9bde82cd34e228c2ea2" WITH (FORCE)
+2026-10-08 19:39:05.959 UTC [55143] ERROR:  canceling statement due to user request
+2026-10-08 19:39:05.959 UTC [55143] STATEMENT:  DROP DATABASE IF EXISTS "sillar_b2b_prueba_e6abb1fd541f4c7a9e4a03" WITH (FORCE)
+2026-10-08 19:39:06.939 UTC [55157] ERROR:  canceling statement due to user request
+2026-10-08 19:39:06.939 UTC [55157] STATEMENT:  DROP DATABASE IF EXISTS "sillar_b2b_prueba_78ae7089fe6b405e9c59d7" WITH (FORCE)
+2026-10-08 19:39:10.010 UTC [55170] ERROR:  canceling statement due to user request
+2026-10-08 19:39:10.010 UTC [55170] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m06_218d464d11fc44298776818a8dc92" WITH (FORCE)
+2026-10-08 19:39:11.130 UTC [55228] ERROR:  column a.admin_user_id does not exist at character 424
+2026-10-08 19:39:11.130 UTC [55228] STATEMENT:  SELECT a.admin_session_id, a.admin_user_id, a.csrf_token_hash, a.expires_at, a.ip_address, a.issued_at, a.last_seen_at, a.revoked_at, a.token_hash, a.user_agent, a0.admin_user_id, a0.created_at, a0.email, a0.failed_login_count, a0.full_name, a0.home_node, a0.is_active, a0.last_login_at, a0.locked_until, a0.password_hash, a0.phone, a0.role, a0.updated_at
+2026-10-08 19:39:11.165 UTC [55185] ERROR:  canceling statement due to user request
+2026-10-08 19:39:11.165 UTC [55185] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m06_3bb50c14c9c74886978e60b6ea6e0" WITH (FORCE)
+2026-10-08 19:39:14.062 UTC [55240] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:39:14.062 UTC [55240] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:14.661 UTC [55191] ERROR:  canceling statement due to user request
+2026-10-08 19:39:14.661 UTC [55191] STATEMENT:  DROP DATABASE IF EXISTS "sillar_m05b_f1b5b383c3b844be82eac26c34e8" WITH (FORCE)
+2026-10-08 19:39:15.439 UTC [55245] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:39:15.439 UTC [55245] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:18.330 UTC [55195] ERROR:  canceling statement due to user request
+2026-10-08 19:39:18.330 UTC [55195] STATEMENT:  DROP DATABASE IF EXISTS "sillar_vacia_eb839236e5ec43dd8899ee3552d93945" WITH (FORCE)
+2026-10-08 19:39:18.671 UTC [55257] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:39:18.671 UTC [55257] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:18.681 UTC [55261] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:39:18.681 UTC [55261] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:18.683 UTC [55258] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:39:18.683 UTC [55258] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:20.232 UTC [55106] ERROR:  canceling statement due to user request
+2026-10-08 19:39:20.232 UTC [55106] STATEMENT:  TRUNCATE crm.contact_messages, crm.customer_tokens, crm.customer_sessions, crm.customer_accounts, crm.customer_addresses, crm.customers RESTART IDENTITY CASCADE
+2026-10-08 19:39:20.359 UTC [55272] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:39:20.359 UTC [55272] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:20.363 UTC [55273] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:39:20.363 UTC [55273] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:21.126 UTC [55289] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:39:21.126 UTC [55289] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:23.717 UTC [55293] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:39:23.717 UTC [55293] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:23.758 UTC [55296] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:39:23.758 UTC [55296] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:23.774 UTC [26] LOG:  checkpoint complete: wrote 1048 buffers (6.4%); 0 WAL file(s) added, 0 removed, 4 recycled; write=6.019 s, sync=21.526 s, total=28.364 s; sync files=432, longest=0.728 s, average=0.050 s; distance=61241 kB, estimate=99281 kB; lsn=1/532F6C18, redo lsn=1/50A3E980
+2026-10-08 19:39:23.775 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:39:24.754 UTC [55300] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:39:24.754 UTC [55300] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:25.275 UTC [55304] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:39:25.275 UTC [55304] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:25.275 UTC [55303] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:39:25.275 UTC [55303] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:28.591 UTC [55309] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:39:28.591 UTC [55309] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:28.594 UTC [55310] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:39:28.594 UTC [55310] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:28.598 UTC [55311] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:39:28.598 UTC [55311] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:29.260 UTC [55289] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:39:29.260 UTC [55289] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:32.254 UTC [55326] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:39:32.254 UTC [55326] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:32.654 UTC [55329] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:39:32.654 UTC [55329] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:38.777 UTC [55332] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:39:38.777 UTC [55332] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:39.030 UTC [55335] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:39:39.030 UTC [55335] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:39.084 UTC [55338] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:39:39.084 UTC [55338] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:39.146 UTC [55342] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:39:39.146 UTC [55342] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:39.164 UTC [55337] ERROR:  M07 Solicitudes B2B no se puede instalar porque falta: M04 Clientes (schema crm). Instala eso antes y repite la instalación de M07.
+2026-10-08 19:39:39.164 UTC [55337] CONTEXT:  PL/pgSQL function inline_code_block line 12 at RAISE
+2026-10-08 19:39:39.164 UTC [55337] STATEMENT:  DO $$
+2026-10-08 19:39:39.622 UTC [55361] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:39:39.622 UTC [55361] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:39.652 UTC [55363] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:39:39.652 UTC [55363] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:40.018 UTC [55289] ERROR:  relation "cms.__migrations" does not exist at character 45
+2026-10-08 19:39:40.018 UTC [55289] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:40.684 UTC [55380] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:39:40.684 UTC [55380] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:40.733 UTC [55289] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:39:40.733 UTC [55289] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:41.095 UTC [55384] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:39:41.095 UTC [55384] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:41.100 UTC [55385] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:39:41.100 UTC [55385] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:43.059 UTC [26] LOG:  checkpoint complete: wrote 7803 buffers (47.6%); 0 WAL file(s) added, 0 removed, 3 recycled; write=12.746 s, sync=6.031 s, total=19.284 s; sync files=497, longest=0.364 s, average=0.013 s; distance=41930 kB, estimate=93546 kB; lsn=1/53CCFA48, redo lsn=1/533314A0
+2026-10-08 19:39:43.063 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:39:44.610 UTC [55404] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:39:44.610 UTC [55404] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:45.017 UTC [26] LOG:  checkpoint complete: wrote 42 buffers (0.3%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.131 s, sync=1.665 s, total=1.954 s; sync files=169, longest=0.403 s, average=0.010 s; distance=9856 kB, estimate=85177 kB; lsn=1/54137118, redo lsn=1/53CD16F0
+2026-10-08 19:39:50.686 UTC [55415] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:39:50.686 UTC [55415] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:50.687 UTC [55414] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:39:50.687 UTC [55414] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:50.912 UTC [55416] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:39:50.912 UTC [55416] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:50.912 UTC [55418] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:39:50.912 UTC [55418] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:50.917 UTC [55417] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:39:50.917 UTC [55417] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:51.554 UTC [55438] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:39:51.554 UTC [55438] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:52.627 UTC [55442] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:39:52.627 UTC [55442] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:53.714 UTC [55446] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:39:53.714 UTC [55446] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:54.860 UTC [55451] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:39:54.860 UTC [55451] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:54.869 UTC [55453] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:39:54.869 UTC [55453] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:54.914 UTC [55458] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:39:54.914 UTC [55458] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:54.948 UTC [55462] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:39:54.948 UTC [55462] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:54.951 UTC [55464] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:39:54.951 UTC [55464] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:54.961 UTC [55463] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:39:54.961 UTC [55463] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:55.011 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:39:55.571 UTC [55475] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:39:55.571 UTC [55475] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:39:55.748 UTC [55478] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:39:55.748 UTC [55478] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:04.982 UTC [55490] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:40:04.982 UTC [55490] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:05.003 UTC [55492] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:40:05.003 UTC [55492] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:05.529 UTC [55503] ERROR:  duplicate key value violates unique constraint "uq_order_tracking_service_order_id"
+2026-10-08 19:40:05.529 UTC [55503] DETAIL:  Key (service_order_id)=(01a11d07-afca-72a9-96cc-9511441fbf9a) already exists.
+2026-10-08 19:40:05.529 UTC [55503] STATEMENT:  INSERT INTO tracking.order_tracking
+2026-10-08 19:40:05.539 UTC [55504] ERROR:  insert or update on table "tracking_notes" violates foreign key constraint "fk_tracking_notes_order_tracking_id"
+2026-10-08 19:40:05.539 UTC [55504] DETAIL:  Key (order_tracking_id)=(01a11d07-b01a-71c7-bcd0-74a6ed24cfd9) is not present in table "order_tracking".
+2026-10-08 19:40:05.539 UTC [55504] STATEMENT:  INSERT INTO tracking.tracking_notes
+2026-10-08 19:40:05.590 UTC [55506] ERROR:  update or delete on table "order_tracking" violates foreign key constraint "fk_tracking_notes_order_tracking_id" on table "tracking_notes"
+2026-10-08 19:40:05.590 UTC [55506] DETAIL:  Key (order_tracking_id)=(01a11d07-afca-760f-8d20-4ff6a8355b09) is still referenced from table "tracking_notes".
+2026-10-08 19:40:05.590 UTC [55506] STATEMENT:  DELETE FROM tracking.order_tracking
+2026-10-08 19:40:05.718 UTC [55513] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:40:05.718 UTC [55513] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:05.799 UTC [55516] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:40:05.799 UTC [55516] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:05.816 UTC [55518] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:40:05.816 UTC [55518] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:05.816 UTC [55519] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:40:05.816 UTC [55519] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:07.235 UTC [55525] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:40:07.235 UTC [55525] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:07.242 UTC [55527] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:40:07.242 UTC [55527] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:07.242 UTC [55526] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:40:07.242 UTC [55526] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:07.244 UTC [55528] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:40:07.244 UTC [55528] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:08.571 UTC [55540] ERROR:  No se desinstala M04 Clientes: hay módulos instalados que dependen de él de forma dura (con claves foráneas hacia crm: b2b). Desinstala antes esos módulos con su 99_drop.sql y repite. No se ha borrado nada.
+2026-10-08 19:40:08.571 UTC [55540] CONTEXT:  PL/pgSQL function inline_code_block line 30 at RAISE
+2026-10-08 19:40:08.571 UTC [55540] STATEMENT:  -- ============================================================
+2026-10-08 19:40:09.147 UTC [26] LOG:  checkpoint complete: wrote 5958 buffers (36.4%); 0 WAL file(s) added, 0 removed, 2 recycled; write=8.679 s, sync=4.572 s, total=14.136 s; sync files=605, longest=0.119 s, average=0.008 s; distance=33331 kB, estimate=79992 kB; lsn=1/5648D550, redo lsn=1/55D5E5C8
+2026-10-08 19:40:09.150 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:40:10.638 UTC [55569] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:40:10.638 UTC [55569] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:11.575 UTC [26] LOG:  checkpoint complete: wrote 61 buffers (0.4%); 0 WAL file(s) added, 1 removed, 0 recycled; write=0.102 s, sync=2.109 s, total=2.426 s; sync files=153, longest=0.413 s, average=0.014 s; distance=7360 kB, estimate=72729 kB; lsn=1/56920BF8, redo lsn=1/5648E7F0
+2026-10-08 19:40:15.680 UTC [55586] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:40:15.680 UTC [55586] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:15.959 UTC [55587] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:40:15.959 UTC [55587] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:16.679 UTC [55588] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:40:16.679 UTC [55588] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:17.822 UTC [55592] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:40:17.822 UTC [55592] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:18.724 UTC [55601] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:40:18.724 UTC [55601] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:18.725 UTC [55602] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:40:18.725 UTC [55602] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:18.937 UTC [55605] ERROR:  M06 Seguimiento no se puede instalar porque falta: CORE (schema core) y M05b Servicios — Órdenes (schema service_orders). Instala eso antes y repite la instalación de M06.
+2026-10-08 19:40:18.937 UTC [55605] CONTEXT:  PL/pgSQL function inline_code_block line 16 at RAISE
+2026-10-08 19:40:18.937 UTC [55605] STATEMENT:  DO $$
+2026-10-08 19:40:19.045 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:40:19.073 UTC [55610] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:40:19.073 UTC [55610] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:19.780 UTC [55614] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:40:19.780 UTC [55614] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:32.380 UTC [55639] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:40:32.380 UTC [55639] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:32.444 UTC [55642] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:40:32.444 UTC [55642] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:32.470 UTC [55645] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:40:32.470 UTC [55645] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:32.549 UTC [55648] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:40:32.549 UTC [55648] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:32.590 UTC [55651] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:40:32.590 UTC [55651] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:32.881 UTC [55654] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:40:32.881 UTC [55654] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:33.949 UTC [55657] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:40:33.949 UTC [55657] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:34.512 UTC [55667] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:40:34.512 UTC [55667] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:34.512 UTC [55666] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:40:34.512 UTC [55666] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:34.599 UTC [55674] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:40:34.599 UTC [55674] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:34.639 UTC [55677] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:40:34.639 UTC [55677] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:35.804 UTC [55680] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:40:35.804 UTC [55680] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:35.822 UTC [55682] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:40:35.822 UTC [55682] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:35.872 UTC [55686] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:40:35.872 UTC [55686] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:35.963 UTC [55689] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:40:35.963 UTC [55689] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:37.117 UTC [55704] ERROR:  No se desinstala M01 Catálogo: hay módulos instalados que dependen de él de forma dura (con claves foráneas hacia catalog: b2b). Desinstala antes esos módulos con su 99_drop.sql y repite. No se ha borrado nada.
+2026-10-08 19:40:37.117 UTC [55704] CONTEXT:  PL/pgSQL function inline_code_block line 30 at RAISE
+2026-10-08 19:40:37.117 UTC [55704] STATEMENT:  -- ============================================================================
+2026-10-08 19:40:37.641 UTC [26] LOG:  checkpoint complete: wrote 5780 buffers (35.3%); 0 WAL file(s) added, 2 removed, 0 recycled; write=10.899 s, sync=7.053 s, total=18.596 s; sync files=663, longest=0.728 s, average=0.011 s; distance=30920 kB, estimate=68548 kB; lsn=1/58B91330, redo lsn=1/582C0880
+2026-10-08 19:40:37.643 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:40:38.482 UTC [26] LOG:  checkpoint complete: wrote 38 buffers (0.2%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.058 s, sync=0.181 s, total=0.840 s; sync files=152, longest=0.042 s, average=0.002 s; distance=9026 kB, estimate=62596 kB; lsn=1/58EE19C0, redo lsn=1/58B913A8
+2026-10-08 19:40:38.609 UTC [55721] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:40:38.609 UTC [55721] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:41.377 UTC [55738] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:40:41.377 UTC [55738] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:42.077 UTC [55729] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:40:42.077 UTC [55729] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:42.988 UTC [55744] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:40:42.988 UTC [55744] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:43.144 UTC [55747] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:40:43.144 UTC [55747] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:44.591 UTC [55752] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:40:44.591 UTC [55752] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:44.855 UTC [55755] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:40:44.855 UTC [55755] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:45.255 UTC [55759] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:40:45.255 UTC [55759] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:45.289 UTC [55762] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:40:45.289 UTC [55762] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:45.314 UTC [55765] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:40:45.314 UTC [55765] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:45.330 UTC [55767] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:40:45.330 UTC [55767] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:45.651 UTC [55771] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:40:45.651 UTC [55771] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:46.120 UTC [55774] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:40:46.120 UTC [55774] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:46.550 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:40:46.828 UTC [55781] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:40:46.828 UTC [55781] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:55.279 UTC [55795] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:40:55.279 UTC [55795] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:55.297 UTC [55797] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:40:55.297 UTC [55797] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:55.340 UTC [55801] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:40:55.340 UTC [55801] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:56.644 UTC [55804] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:40:56.644 UTC [55804] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:56.675 UTC [55807] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:40:56.675 UTC [55807] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:56.748 UTC [55810] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:40:56.748 UTC [55810] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:40:57.919 UTC [55816] ERROR:  No se desinstala M01 Catálogo: hay módulos instalados que dependen de él de forma dura (registrados como dependencia dura: b2b). Desinstala antes esos módulos con su 99_drop.sql y repite. No se ha borrado nada.
+2026-10-08 19:40:57.919 UTC [55816] CONTEXT:  PL/pgSQL function inline_code_block line 30 at RAISE
+2026-10-08 19:40:57.919 UTC [55816] STATEMENT:  -- ============================================================================
+2026-10-08 19:40:58.883 UTC [26] LOG:  checkpoint complete: wrote 4048 buffers (24.7%); 0 WAL file(s) added, 1 removed, 1 recycled; write=7.251 s, sync=4.744 s, total=12.334 s; sync files=491, longest=0.638 s, average=0.010 s; distance=25043 kB, estimate=58841 kB; lsn=1/5A7CA618, redo lsn=1/5A406318
+2026-10-08 19:40:58.886 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:40:59.593 UTC [26] LOG:  checkpoint complete: wrote 59 buffers (0.4%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.087 s, sync=0.466 s, total=0.708 s; sync files=153, longest=0.081 s, average=0.004 s; distance=3860 kB, estimate=53343 kB; lsn=1/5A7DF290, redo lsn=1/5A7CB530
+2026-10-08 19:41:02.495 UTC [55854] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:41:02.495 UTC [55854] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:03.004 UTC [55855] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:41:03.004 UTC [55855] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:03.680 UTC [55861] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:41:03.680 UTC [55861] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:03.719 UTC [55863] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:41:03.719 UTC [55863] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:05.503 UTC [55869] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:41:05.503 UTC [55869] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:05.503 UTC [55870] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:41:05.503 UTC [55870] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:05.607 UTC [55875] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:41:05.607 UTC [55875] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:05.648 UTC [55878] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:41:05.648 UTC [55878] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:05.958 UTC [55881] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:41:05.958 UTC [55881] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:06.915 UTC [55885] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:41:06.915 UTC [55885] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:07.379 UTC [55890] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:41:07.379 UTC [55890] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:07.408 UTC [55894] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:41:07.408 UTC [55894] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:07.489 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:41:07.501 UTC [55900] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:41:07.501 UTC [55900] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:13.387 UTC [55911] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:41:13.387 UTC [55911] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:13.393 UTC [55912] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:41:13.393 UTC [55912] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:13.522 UTC [55917] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:41:13.522 UTC [55917] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:14.883 UTC [55938] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:41:14.883 UTC [55938] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:16.142 UTC [26] LOG:  checkpoint complete: wrote 3124 buffers (19.1%); 0 WAL file(s) added, 0 removed, 1 recycled; write=4.560 s, sync=3.801 s, total=8.654 s; sync files=505, longest=0.395 s, average=0.008 s; distance=20540 kB, estimate=50062 kB; lsn=1/5BEF3460, redo lsn=1/5BBDA580
+2026-10-08 19:41:16.145 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:41:17.661 UTC [55947] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:41:17.661 UTC [55947] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:17.980 UTC [26] LOG:  checkpoint complete: wrote 50 buffers (0.3%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.135 s, sync=1.568 s, total=1.836 s; sync files=147, longest=0.450 s, average=0.011 s; distance=3174 kB, estimate=45373 kB; lsn=1/5C363118, redo lsn=1/5BEF3DF0
+2026-10-08 19:41:21.899 UTC [55954] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:41:21.899 UTC [55954] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:22.050 UTC [55957] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:41:22.050 UTC [55957] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:22.214 UTC [55960] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:41:22.214 UTC [55960] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:23.160 UTC [55106] ERROR:  duplicate key value violates unique constraint "uq_customers_email"
+2026-10-08 19:41:23.160 UTC [55106] DETAIL:  Key (email)=(DUP@ejemplo.pe) already exists.
+2026-10-08 19:41:23.160 UTC [55106] STATEMENT:  INSERT INTO crm.customers (customer_id, blocked_at, created_at, deactivated_at, document_number, document_type, email, full_name, internal_notes, is_active, origin_node, phone, reactivation_requested_at, reactivation_resolved_at, row_version)
+2026-10-08 19:41:23.352 UTC [55973] ERROR:  relation "services.__migrations" does not exist at character 45
+2026-10-08 19:41:23.352 UTC [55973] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:23.598 UTC [55977] ERROR:  relation "service_orders.__migrations" does not exist at character 45
+2026-10-08 19:41:23.598 UTC [55977] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:24.351 UTC [55980] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:41:24.351 UTC [55980] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:24.379 UTC [55982] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:41:24.379 UTC [55982] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:24.411 UTC [55986] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:41:24.411 UTC [55986] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:24.772 UTC [55990] ERROR:  relation "tracking.__migrations" does not exist at character 45
+2026-10-08 19:41:24.772 UTC [55990] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:25.336 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:41:28.871 UTC [55998] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:41:28.871 UTC [55998] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:29.353 UTC [56000] ERROR:  M07 Solicitudes B2B no se puede instalar porque falta: M01 Catálogo (schema catalog). Instala eso antes y repite la instalación de M07.
+2026-10-08 19:41:29.353 UTC [56000] CONTEXT:  PL/pgSQL function inline_code_block line 12 at RAISE
+2026-10-08 19:41:29.353 UTC [56000] STATEMENT:  DO $$
+2026-10-08 19:41:29.385 UTC [56003] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:41:29.385 UTC [56003] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:30.384 UTC [55106] ERROR:  duplicate key value violates unique constraint "uq_customers_email"
+2026-10-08 19:41:30.384 UTC [55106] DETAIL:  Key (email)=(DUP@ejemplo.pe) already exists.
+2026-10-08 19:41:30.384 UTC [55106] STATEMENT:  INSERT INTO crm.customers (customer_id, blocked_at, created_at, deactivated_at, document_number, document_type, email, full_name, internal_notes, is_active, origin_node, phone, reactivation_requested_at, reactivation_resolved_at, row_version)
+2026-10-08 19:41:30.492 UTC [56006] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:41:30.492 UTC [56006] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:30.611 UTC [56009] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:41:30.611 UTC [56009] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:31.727 UTC [56013] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:41:31.727 UTC [56013] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:31.810 UTC [56018] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:41:31.810 UTC [56018] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:33.223 UTC [26] LOG:  checkpoint complete: wrote 3048 buffers (18.6%); 0 WAL file(s) added, 2 removed, 0 recycled; write=3.507 s, sync=3.630 s, total=7.888 s; sync files=540, longest=0.330 s, average=0.007 s; distance=20107 kB, estimate=42847 kB; lsn=1/5D5DDA28, redo lsn=1/5D296A50
+2026-10-08 19:41:33.225 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:41:33.847 UTC [26] LOG:  checkpoint complete: wrote 52 buffers (0.3%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.113 s, sync=0.323 s, total=0.623 s; sync files=139, longest=0.089 s, average=0.003 s; distance=3360 kB, estimate=38898 kB; lsn=1/5D5F0678, redo lsn=1/5D5DEB88
+2026-10-08 19:41:36.125 UTC [56044] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:41:36.125 UTC [56044] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:36.143 UTC [56045] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:41:36.143 UTC [56045] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:37.513 UTC [55106] ERROR:  duplicate key value violates unique constraint "uq_customer_addresses_preferred"
+2026-10-08 19:41:37.513 UTC [55106] DETAIL:  Key (customer_id)=(01a11d09-174a-7ffc-9adf-16735e09e1a1) already exists.
+2026-10-08 19:41:37.513 UTC [55106] STATEMENT:  INSERT INTO crm.customer_addresses (customer_address_id, address_line, created_at, customer_id, department, district, is_active, is_preferred, label, origin_node, province, reference, row_version)
+2026-10-08 19:41:38.030 UTC [56052] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:41:38.030 UTC [56052] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:38.073 UTC [56055] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:41:38.073 UTC [56055] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:39.605 UTC [56058] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:41:39.605 UTC [56058] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:39.723 UTC [56061] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:41:39.723 UTC [56061] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:40.246 UTC [55106] ERROR:  No se puede aplicar ck_customers_email_sin_blancos_en_bordes: 1 fila(s) de crm.customers tienen blancos al principio o al final que String.Trim() recorta.
+2026-10-08 19:41:40.246 UTC [55106] HINT:
+2026-10-08 19:41:40.246 UTC [55106] CONTEXT:  PL/pgSQL function inline_code_block line 12 at RAISE
+2026-10-08 19:41:40.246 UTC [55106] STATEMENT:  DO $m04$
+2026-10-08 19:41:40.836 UTC [56064] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:41:40.836 UTC [56064] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:40.982 UTC [56067] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:41:40.982 UTC [56067] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:42.113 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:41:43.679 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_lifecycle_state"
+2026-10-08 19:41:43.679 UTC [55106] DETAIL:  Failing row contains (01a11d09-2f7d-76b5-860d-9b226b217e5f, Cliente Prueba, lc_2ba2169e2a694a74812953480185d5cd@ejemplo.pe, null, null, null, null, t, 2026-10-08 19:41:43.677418+00, null, null, null, principal, 1, 2026-10-08 19:41:43.67816+00, 2026-10-08 19:41:43.678973+00).
+2026-10-08 19:41:43.679 UTC [55106] STATEMENT:  INSERT INTO crm.customers (customer_id, blocked_at, created_at, deactivated_at, document_number, document_type, email, full_name, internal_notes, is_active, origin_node, phone, reactivation_requested_at, reactivation_resolved_at, row_version)
+2026-10-08 19:41:43.808 UTC [26] LOG:  checkpoint complete: wrote 523 buffers (3.2%); 0 WAL file(s) added, 1 removed, 0 recycled; write=0.866 s, sync=0.556 s, total=1.696 s; sync files=266, longest=0.127 s, average=0.003 s; distance=11516 kB, estimate=36160 kB; lsn=1/5E139230, redo lsn=1/5E11DEC8
+2026-10-08 19:41:43.808 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:41:45.276 UTC [26] LOG:  checkpoint complete: wrote 32 buffers (0.2%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.057 s, sync=0.384 s, total=1.468 s; sync files=46, longest=0.203 s, average=0.009 s; distance=133 kB, estimate=32557 kB; lsn=1/5E152868, redo lsn=1/5E13F308
+2026-10-08 19:41:45.296 UTC [56098] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:41:45.296 UTC [56098] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:46.644 UTC [56103] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:41:46.644 UTC [56103] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:48.226 UTC [56107] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:41:48.226 UTC [56107] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:48.356 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_lifecycle_state"
+2026-10-08 19:41:48.356 UTC [55106] DETAIL:  Failing row contains (01a11d09-41c2-7f89-8372-eb450e6bb5b6, Cliente Prueba, lc_79ad24549f954caa9a15710bc10cda19@ejemplo.pe, null, null, null, null, f, null, null, null, null, principal, 1, 2026-10-08 19:41:48.354642+00, 2026-10-08 19:41:48.35553+00).
+2026-10-08 19:41:48.356 UTC [55106] STATEMENT:  INSERT INTO crm.customers (customer_id, blocked_at, created_at, deactivated_at, document_number, document_type, email, full_name, internal_notes, is_active, origin_node, phone, reactivation_requested_at, reactivation_resolved_at, row_version)
+2026-10-08 19:41:48.463 UTC [56110] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:41:48.463 UTC [56110] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:49.822 UTC [56113] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:41:49.822 UTC [56113] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:50.041 UTC [56116] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:41:50.041 UTC [56116] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:50.773 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_lifecycle_state"
+2026-10-08 19:41:50.773 UTC [55106] DETAIL:  Failing row contains (01a11d09-4b33-7588-b4d9-5c7ef7807fe8, Cliente Prueba, lc_c30e0f3ea11846e3a7586c4fd5fa0351@ejemplo.pe, null, null, null, null, f, 2026-10-08 19:41:50.771316+00, 2026-10-08 19:41:50.771316+00, null, null, principal, 1, 2026-10-08 19:41:50.771677+00, 2026-10-08 19:41:50.772579+00).
+2026-10-08 19:41:50.773 UTC [55106] STATEMENT:  INSERT INTO crm.customers (customer_id, blocked_at, created_at, deactivated_at, document_number, document_type, email, full_name, internal_notes, is_active, origin_node, phone, reactivation_requested_at, reactivation_resolved_at, row_version)
+2026-10-08 19:41:50.945 UTC [56119] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:41:50.945 UTC [56119] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:51.190 UTC [56122] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:41:51.190 UTC [56122] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:52.136 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:41:53.132 UTC [26] LOG:  checkpoint complete: wrote 77 buffers (0.5%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.145 s, sync=0.647 s, total=0.997 s; sync files=250, longest=0.092 s, average=0.003 s; distance=11399 kB, estimate=30441 kB; lsn=1/5ECC3760, redo lsn=1/5EC61120
+2026-10-08 19:41:53.133 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:41:53.216 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_lifecycle_state"
+2026-10-08 19:41:53.216 UTC [55106] DETAIL:  Failing row contains (01a11d09-54be-7310-af41-fc26cd4e154b, Cliente Prueba, lc_ab9f536dcc86423b85447339932c7b10@ejemplo.pe, null, null, null, null, t, null, 2026-10-08 19:41:53.21493+00, null, null, principal, 1, 2026-10-08 19:41:53.215158+00, 2026-10-08 19:41:53.215755+00).
+2026-10-08 19:41:53.216 UTC [55106] STATEMENT:  INSERT INTO crm.customers (customer_id, blocked_at, created_at, deactivated_at, document_number, document_type, email, full_name, internal_notes, is_active, origin_node, phone, reactivation_requested_at, reactivation_resolved_at, row_version)
+2026-10-08 19:41:54.321 UTC [56146] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:41:54.321 UTC [56146] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:54.336 UTC [26] LOG:  checkpoint complete: wrote 30 buffers (0.2%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.077 s, sync=0.415 s, total=1.204 s; sync files=46, longest=0.159 s, average=0.010 s; distance=394 kB, estimate=27437 kB; lsn=1/5F1165D8, redo lsn=1/5ECC3BD8
+2026-10-08 19:41:55.456 UTC [56151] ERROR:  relation "core.__migrations" does not exist at character 45
+2026-10-08 19:41:55.456 UTC [56151] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:56.994 UTC [56155] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:41:56.994 UTC [56155] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:57.447 UTC [56158] ERROR:  relation "catalog.__migrations" does not exist at character 45
+2026-10-08 19:41:57.447 UTC [56158] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:57.579 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.579 UTC [55106] DETAIL:  Failing row contains (01a11d09-65ca-78bb-9be2-e442e7d767b2, U+0009 inicio, 	ws-0009-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.578624+00, 2026-10-08 19:41:57.578624+00).
+2026-10-08 19:41:57.579 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.580 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.580 UTC [55106] DETAIL:  Failing row contains (01a11d09-65cb-7867-8b11-b05e0151a161, U+0009 final, ws-0009-final@sillar.test	, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.579995+00, 2026-10-08 19:41:57.579995+00).
+2026-10-08 19:41:57.580 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.581 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.581 UTC [55106] DETAIL:  Failing row contains (01a11d09-65cc-73ae-be75-c6ecc6db8c33, U+000A inicio,
+2026-10-08 19:41:57.581 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.582 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.582 UTC [55106] DETAIL:  Failing row contains (01a11d09-65ce-7772-88a0-62308c72a957, U+000A final, ws-000A-final@sillar.test
+2026-10-08 19:41:57.582 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.583 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.583 UTC [55106] DETAIL:  Failing row contains (01a11d09-65cf-775e-addd-7168ee08f04e, U+000B inicio, ws-000B-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.583206+00, 2026-10-08 19:41:57.583206+00).
+2026-10-08 19:41:57.583 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.584 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.584 UTC [55106] DETAIL:  Failing row contains (01a11d09-65d0-78dc-b900-dd3532809566, U+000B final, ws-000B-final@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.58426+00, 2026-10-08 19:41:57.58426+00).
+2026-10-08 19:41:57.584 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.586 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.586 UTC [55106] DETAIL:  Failing row contains (01a11d09-65d1-7491-a5cc-12f0a1ce1207, U+000C inicio, ws-000C-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.585662+00, 2026-10-08 19:41:57.585662+00).
+2026-10-08 19:41:57.586 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.589 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.589 UTC [55106] DETAIL:  Failing row contains (01a11d09-65d2-7970-b3c3-7a51f830ec86, U+000C final, ws-000C-final@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.588418+00, 2026-10-08 19:41:57.588418+00).
+2026-10-08 19:41:57.589 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.590 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.590 UTC [55106] DETAIL:  Failing row contains (01a11d09-65d5-745c-952a-fefc643388be, U+000D inicio, ws-000D-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.590214+00, 2026-10-08 19:41:57.590214+00).
+2026-10-08 19:41:57.590 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.591 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.591 UTC [55106] DETAIL:  Failing row contains (01a11d09-65d7-7955-bd92-fb6c420c0c24, U+000D final, ws-000D-final@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.591322+00, 2026-10-08 19:41:57.591322+00).
+2026-10-08 19:41:57.591 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.592 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.592 UTC [55106] DETAIL:  Failing row contains (01a11d09-65d8-7cfc-af10-b70e966f2c4c, U+0020 inicio,  ws-0020-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.592458+00, 2026-10-08 19:41:57.592458+00).
+2026-10-08 19:41:57.592 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.593 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.593 UTC [55106] DETAIL:  Failing row contains (01a11d09-65d9-7e0c-b13e-4ea09194b553, U+0020 final, ws-0020-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.593351+00, 2026-10-08 19:41:57.593351+00).
+2026-10-08 19:41:57.593 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.594 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.594 UTC [55106] DETAIL:  Failing row contains (01a11d09-65d9-7a50-a9f8-a3f1f48de1a6, U+0085 inicio, ws-0085-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.593949+00, 2026-10-08 19:41:57.593949+00).
+2026-10-08 19:41:57.594 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.594 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.594 UTC [55106] DETAIL:  Failing row contains (01a11d09-65da-7523-8f52-c31e04ac5099, U+0085 final, ws-0085-final@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.594554+00, 2026-10-08 19:41:57.594554+00).
+2026-10-08 19:41:57.594 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.595 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.595 UTC [55106] DETAIL:  Failing row contains (01a11d09-65da-76f7-bc97-372c24077369, U+00A0 inicio,  ws-00A0-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.59505+00, 2026-10-08 19:41:57.59505+00).
+2026-10-08 19:41:57.595 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.595 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.595 UTC [55106] DETAIL:  Failing row contains (01a11d09-65db-7bf4-8e4f-c082dd048da9, U+00A0 final, ws-00A0-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.595759+00, 2026-10-08 19:41:57.595759+00).
+2026-10-08 19:41:57.595 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.596 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.596 UTC [55106] DETAIL:  Failing row contains (01a11d09-65dc-7b81-8d09-60ae5562d769, U+1680 inicio,  ws-1680-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.596425+00, 2026-10-08 19:41:57.596425+00).
+2026-10-08 19:41:57.596 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.597 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.597 UTC [55106] DETAIL:  Failing row contains (01a11d09-65dc-7a38-999e-352707f8d49c, U+1680 final, ws-1680-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.597153+00, 2026-10-08 19:41:57.597153+00).
+2026-10-08 19:41:57.597 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.598 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.598 UTC [55106] DETAIL:  Failing row contains (01a11d09-65dd-7dca-a167-1a66a819f8fc, U+2000 inicio,  ws-2000-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.597858+00, 2026-10-08 19:41:57.597858+00).
+2026-10-08 19:41:57.598 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.598 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.598 UTC [55106] DETAIL:  Failing row contains (01a11d09-65de-7c11-b8ba-df5ed1c919dd, U+2000 final, ws-2000-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.598581+00, 2026-10-08 19:41:57.598581+00).
+2026-10-08 19:41:57.598 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.599 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.599 UTC [55106] DETAIL:  Failing row contains (01a11d09-65df-74f2-a4c6-e31d759ca801, U+2001 inicio,  ws-2001-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.599526+00, 2026-10-08 19:41:57.599526+00).
+2026-10-08 19:41:57.599 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.600 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.600 UTC [55106] DETAIL:  Failing row contains (01a11d09-65e0-7b33-9b79-b21e4117d171, U+2001 final, ws-2001-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.600433+00, 2026-10-08 19:41:57.600433+00).
+2026-10-08 19:41:57.600 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.601 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.601 UTC [55106] DETAIL:  Failing row contains (01a11d09-65e1-76a6-9101-82ef63ee6295, U+2002 inicio,  ws-2002-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.601311+00, 2026-10-08 19:41:57.601311+00).
+2026-10-08 19:41:57.601 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.602 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.602 UTC [55106] DETAIL:  Failing row contains (01a11d09-65e2-7c99-8bbf-0bcc4893d4cd, U+2002 final, ws-2002-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.602307+00, 2026-10-08 19:41:57.602307+00).
+2026-10-08 19:41:57.602 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.603 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.603 UTC [55106] DETAIL:  Failing row contains (01a11d09-65e3-72cc-a7c2-cc20b3acf842, U+2003 inicio,  ws-2003-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.603557+00, 2026-10-08 19:41:57.603557+00).
+2026-10-08 19:41:57.603 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.605 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.605 UTC [55106] DETAIL:  Failing row contains (01a11d09-65e4-70c0-b4ab-0f991b32ff7a, U+2003 final, ws-2003-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.604583+00, 2026-10-08 19:41:57.604583+00).
+2026-10-08 19:41:57.605 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.606 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.606 UTC [55106] DETAIL:  Failing row contains (01a11d09-65e5-7765-b049-c99e0f53bc76, U+2004 inicio,  ws-2004-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.60573+00, 2026-10-08 19:41:57.60573+00).
+2026-10-08 19:41:57.606 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.607 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.607 UTC [55106] DETAIL:  Failing row contains (01a11d09-65e6-722a-8918-68898b0bf64a, U+2004 final, ws-2004-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.606672+00, 2026-10-08 19:41:57.606672+00).
+2026-10-08 19:41:57.607 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.607 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.607 UTC [55106] DETAIL:  Failing row contains (01a11d09-65e7-71fa-ac00-a03c768627aa, U+2005 inicio,  ws-2005-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.607565+00, 2026-10-08 19:41:57.607565+00).
+2026-10-08 19:41:57.607 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.608 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.608 UTC [55106] DETAIL:  Failing row contains (01a11d09-65e8-7ce6-9811-3179a8a3a98c, U+2005 final, ws-2005-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.60846+00, 2026-10-08 19:41:57.60846+00).
+2026-10-08 19:41:57.608 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.609 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.609 UTC [55106] DETAIL:  Failing row contains (01a11d09-65e9-71f9-83a3-98f55baf07dd, U+2006 inicio,  ws-2006-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.609367+00, 2026-10-08 19:41:57.609367+00).
+2026-10-08 19:41:57.609 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.610 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.610 UTC [55106] DETAIL:  Failing row contains (01a11d09-65ea-7d5a-aee0-1c99268e816a, U+2006 final, ws-2006-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.610264+00, 2026-10-08 19:41:57.610264+00).
+2026-10-08 19:41:57.610 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.611 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.611 UTC [55106] DETAIL:  Failing row contains (01a11d09-65eb-7ead-8806-286621ccfb78, U+2007 inicio,  ws-2007-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.611154+00, 2026-10-08 19:41:57.611154+00).
+2026-10-08 19:41:57.611 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.612 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.612 UTC [55106] DETAIL:  Failing row contains (01a11d09-65eb-7126-8551-ea2342107bdc, U+2007 final, ws-2007-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.611997+00, 2026-10-08 19:41:57.611997+00).
+2026-10-08 19:41:57.612 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.613 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.613 UTC [55106] DETAIL:  Failing row contains (01a11d09-65ec-7c2d-ab8d-9697c1c18a3d, U+2008 inicio,  ws-2008-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.612811+00, 2026-10-08 19:41:57.612811+00).
+2026-10-08 19:41:57.613 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.613 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.613 UTC [55106] DETAIL:  Failing row contains (01a11d09-65ed-7628-88b4-8dcf9e54894e, U+2008 final, ws-2008-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.613648+00, 2026-10-08 19:41:57.613648+00).
+2026-10-08 19:41:57.613 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.614 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.614 UTC [55106] DETAIL:  Failing row contains (01a11d09-65ee-73d4-89d9-c037262e06da, U+2009 inicio,  ws-2009-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.614525+00, 2026-10-08 19:41:57.614525+00).
+2026-10-08 19:41:57.614 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.615 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.615 UTC [55106] DETAIL:  Failing row contains (01a11d09-65ef-7e08-8ae4-19d8307e9739, U+2009 final, ws-2009-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.615394+00, 2026-10-08 19:41:57.615394+00).
+2026-10-08 19:41:57.615 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.616 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.616 UTC [55106] DETAIL:  Failing row contains (01a11d09-65f0-7992-91e4-918984543db6, U+200A inicio,  ws-200A-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.616221+00, 2026-10-08 19:41:57.616221+00).
+2026-10-08 19:41:57.616 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.617 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.617 UTC [55106] DETAIL:  Failing row contains (01a11d09-65f0-7aa9-b48c-5ce2044f1b60, U+200A final, ws-200A-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.617093+00, 2026-10-08 19:41:57.617093+00).
+2026-10-08 19:41:57.617 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.618 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.618 UTC [55106] DETAIL:  Failing row contains (01a11d09-65f1-7101-a5a9-55a5348f438d, U+2028 inicio,  ws-2028-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.618025+00, 2026-10-08 19:41:57.618025+00).
+2026-10-08 19:41:57.618 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.619 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.619 UTC [55106] DETAIL:  Failing row contains (01a11d09-65f2-77b4-bcae-fe7032be599e, U+2028 final, ws-2028-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.61901+00, 2026-10-08 19:41:57.61901+00).
+2026-10-08 19:41:57.619 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.620 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.620 UTC [55106] DETAIL:  Failing row contains (01a11d09-65f3-7d9d-92d2-8547bc5dab61, U+2029 inicio,  ws-2029-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.620076+00, 2026-10-08 19:41:57.620076+00).
+2026-10-08 19:41:57.620 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.621 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.621 UTC [55106] DETAIL:  Failing row contains (01a11d09-65f4-7573-a647-849ab37f0dce, U+2029 final, ws-2029-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.620876+00, 2026-10-08 19:41:57.620876+00).
+2026-10-08 19:41:57.621 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.621 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.621 UTC [55106] DETAIL:  Failing row contains (01a11d09-65f5-76df-ba94-537d7fe73b48, U+202F inicio,  ws-202F-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.621565+00, 2026-10-08 19:41:57.621565+00).
+2026-10-08 19:41:57.621 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.622 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.622 UTC [55106] DETAIL:  Failing row contains (01a11d09-65f6-748d-9a93-6455461597f2, U+202F final, ws-202F-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.622317+00, 2026-10-08 19:41:57.622317+00).
+2026-10-08 19:41:57.622 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.623 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.623 UTC [55106] DETAIL:  Failing row contains (01a11d09-65f6-7c72-97c9-22ac397f5471, U+205F inicio,  ws-205F-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.623109+00, 2026-10-08 19:41:57.623109+00).
+2026-10-08 19:41:57.623 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.623 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.623 UTC [55106] DETAIL:  Failing row contains (01a11d09-65f7-704b-94bb-0f6eabe45d4b, U+205F final, ws-205F-final@sillar.test , null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.623784+00, 2026-10-08 19:41:57.623784+00).
+2026-10-08 19:41:57.623 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.624 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.624 UTC [55106] DETAIL:  Failing row contains (01a11d09-65f8-7f6f-b6da-fbe6adb45afe, U+3000 inicio, 　ws-3000-inicio@sillar.test, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.624406+00, 2026-10-08 19:41:57.624406+00).
+2026-10-08 19:41:57.624 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:57.625 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_email_sin_blancos_en_bordes"
+2026-10-08 19:41:57.625 UTC [55106] DETAIL:  Failing row contains (01a11d09-65f8-7456-a67d-664185ac42d2, U+3000 final, ws-3000-final@sillar.test　, null, null, null, null, t, null, null, null, null, principal, 1, 2026-10-08 19:41:57.624994+00, 2026-10-08 19:41:57.624994+00).
+2026-10-08 19:41:57.625 UTC [55106] STATEMENT:  INSERT INTO crm.customers
+2026-10-08 19:41:58.680 UTC [56161] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:41:58.680 UTC [56161] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:59.105 UTC [56164] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:41:59.105 UTC [56164] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:41:59.750 UTC [56167] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:41:59.750 UTC [56167] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:42:00.126 UTC [56170] ERROR:  relation "b2b.__migrations" does not exist at character 45
+2026-10-08 19:42:00.126 UTC [56170] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:42:00.960 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:42:04.302 UTC [26] LOG:  checkpoint complete: wrote 1154 buffers (7.0%); 0 WAL file(s) added, 1 removed, 0 recycled; write=2.417 s, sync=0.681 s, total=3.343 s; sync files=245, longest=0.151 s, average=0.003 s; distance=11393 kB, estimate=25832 kB; lsn=1/5F83E7B8, redo lsn=1/5F7E4360
+2026-10-08 19:42:04.303 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:42:04.869 UTC [55106] ERROR:  duplicate key value violates unique constraint "uq_customers_email"
+2026-10-08 19:42:04.869 UTC [55106] DETAIL:  Key (email)=(josé@ejemplo.pe) already exists.
+2026-10-08 19:42:04.869 UTC [55106] STATEMENT:  INSERT INTO crm.customers (customer_id, full_name, email, origin_node)
+2026-10-08 19:42:04.889 UTC [26] LOG:  checkpoint complete: wrote 17 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.121 s, sync=0.238 s, total=0.586 s; sync files=41, longest=0.062 s, average=0.006 s; distance=363 kB, estimate=23285 kB; lsn=1/5F84E818, redo lsn=1/5F83F1A0
+2026-10-08 19:42:06.428 UTC [55106] ERROR:  duplicate key value violates unique constraint "uq_customers_document"
+2026-10-08 19:42:06.428 UTC [55106] DETAIL:  Key (document_type, document_number)=(dni, 12345678) already exists.
+2026-10-08 19:42:06.428 UTC [55106] STATEMENT:  INSERT INTO crm.customers (customer_id, blocked_at, created_at, deactivated_at, document_number, document_type, email, full_name, internal_notes, is_active, origin_node, phone, reactivation_requested_at, reactivation_resolved_at, row_version)
+2026-10-08 19:42:07.683 UTC [55106] ERROR:  new row for relation "customer_tokens" violates check constraint "ck_customer_tokens_purpose"
+2026-10-08 19:42:07.683 UTC [55106] DETAIL:  Failing row contains (1, 01a11d09-8d30-7b2c-9dfd-e982d3fd004f, reset, hash_reset_a9a665e4974649048fa7fe087dafadca, 2026-10-08 19:42:07.682445+00, 2026-10-08 20:42:07.681547+00, null).
+2026-10-08 19:42:07.683 UTC [55106] STATEMENT:  INSERT INTO crm.customer_tokens (customer_id, expires_at, purpose, token_hash, used_at)
+2026-10-08 19:42:08.820 UTC [55106] ERROR:  new row for relation "customer_tokens" violates check constraint "ck_customer_tokens_purpose"
+2026-10-08 19:42:08.820 UTC [55106] DETAIL:  Failing row contains (1, 01a11d09-91aa-782c-a63b-cb8102676206, login, hash_login_9de88cfc49c44863aae72dd726fdca41, 2026-10-08 19:42:08.819942+00, 2026-10-08 20:42:08.819473+00, null).
+2026-10-08 19:42:08.820 UTC [55106] STATEMENT:  INSERT INTO crm.customer_tokens (customer_id, expires_at, purpose, token_hash, used_at)
+2026-10-08 19:42:10.235 UTC [55106] ERROR:  new row for relation "customer_tokens" violates check constraint "ck_customer_tokens_purpose"
+2026-10-08 19:42:10.235 UTC [55106] DETAIL:  Failing row contains (1, 01a11d09-9730-7f67-ac01-d0e990616982, , hash__d80f73518b834d20ad95edea095b4fce, 2026-10-08 19:42:10.235134+00, 2026-10-08 20:42:10.234298+00, null).
+2026-10-08 19:42:10.235 UTC [55106] STATEMENT:  INSERT INTO crm.customer_tokens (customer_id, expires_at, purpose, token_hash, used_at)
+2026-10-08 19:42:10.337 UTC [56203] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:42:10.337 UTC [56203] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:42:11.108 UTC [55106] ERROR:  relation "crm.__migrations" does not exist at character 45
+2026-10-08 19:42:11.108 UTC [55106] STATEMENT:  SELECT "MigrationId", "ProductVersion"
+2026-10-08 19:42:12.057 UTC [56203] ERROR:  new row for relation "customers" violates check constraint "ck_customers_reactivation_timestamps"
+2026-10-08 19:42:12.057 UTC [56203] DETAIL:  Failing row contains (01a11d09-9e55-764b-9bd2-040b97e90bb7, Cliente Prueba, react7@ejemplo.pe, null, null, null, null, f, null, 2026-10-08 19:42:12.053722+00, null, 2026-10-08 19:42:12.053722+00, principal, 1, 2026-10-08 19:42:12.054802+00, 2026-10-08 19:42:12.056398+00).
+2026-10-08 19:42:12.057 UTC [56203] STATEMENT:  INSERT INTO crm.customers (customer_id, blocked_at, created_at, deactivated_at, document_number, document_type, email, full_name, internal_notes, is_active, origin_node, phone, reactivation_requested_at, reactivation_resolved_at, row_version)
+2026-10-08 19:42:12.965 UTC [55106] ERROR:  new row for relation "contact_messages" violates check constraint "ck_contact_messages_contact_channel"
+2026-10-08 19:42:12.965 UTC [55106] DETAIL:  Failing row contains (1, null, Sin Contacto, null, null, null, Mensaje, t, 2026-10-08 19:42:12.964709+00, 2026-10-08 19:42:12.964709+00).
+2026-10-08 19:42:12.965 UTC [55106] STATEMENT:  INSERT INTO crm.contact_messages (full_name, email, phone, subject, message)
+2026-10-08 19:42:13.535 UTC [56203] ERROR:  insert or update on table "contact_messages" violates foreign key constraint "fk_contact_messages_customer_id"
+2026-10-08 19:42:13.535 UTC [56203] DETAIL:  Key (customer_id)=(01a11d09-a41e-7006-9c4f-02aa24815254) is not present in table "customers".
+2026-10-08 19:42:13.535 UTC [56203] STATEMENT:  INSERT INTO crm.contact_messages (customer_id, full_name, email, phone, subject, message)
+2026-10-08 19:42:16.548 UTC [55106] ERROR:  new row for relation "customers" violates check constraint "ck_customers_reactivation_timestamps"
+2026-10-08 19:42:16.548 UTC [55106] DETAIL:  Failing row contains (01a11d09-afdd-7245-87be-329ce296e563, Cliente Prueba, react8@ejemplo.pe, null, null, null, null, f, null, 2026-10-08 19:42:16.541061+00, 2026-10-08 19:42:16.541061+00, 2026-10-08 19:42:15.541405+00, principal, 1, 2026-10-08 19:42:16.546238+00, 2026-10-08 19:42:16.547781+00).
+2026-10-08 19:42:16.548 UTC [55106] STATEMENT:  INSERT INTO crm.customers (customer_id, blocked_at, created_at, deactivated_at, document_number, document_type, email, full_name, internal_notes, is_active, origin_node, phone, reactivation_requested_at, reactivation_resolved_at, row_version)
+2026-10-08 19:42:17.686 UTC [55106] ERROR:  duplicate key value violates unique constraint "uq_customer_accounts_customer_id"
+2026-10-08 19:42:17.686 UTC [55106] DETAIL:  Key (customer_id)=(01a11d09-b43e-78b6-be76-4fa2a9f9e55d) already exists.
+2026-10-08 19:42:17.686 UTC [55106] STATEMENT:  INSERT INTO crm.customer_accounts (customer_id, email_verified_at, password_hash)
+2026-10-08 19:42:25.728 UTC [26] LOG:  checkpoint starting: immediate force wait
+2026-10-08 19:42:25.783 UTC [26] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.012 s, sync=0.013 s, total=0.055 s; sync files=2, longest=0.008 s, average=0.006 s; distance=2016 kB, estimate=21158 kB; lsn=1/5FA37488, redo lsn=1/5FA37450
