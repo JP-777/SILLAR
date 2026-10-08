@@ -24,6 +24,22 @@ internal sealed class ServiceOrderCodeAllocator(
         "year",
         "last_number");
 
+    public string? ConfigurationError()
+    {
+        var label = settings.Get(ServiceOrderSettingsKeys.SeriesLabel);
+
+        return IsConfigured(label)
+            ? null
+            : $"Configura el ajuste '{ServiceOrderSettingsKeys.SeriesLabel}' para este nodo antes de crear órdenes de servicio.";
+    }
+
+    private static bool IsConfigured(string? label)
+        => !string.IsNullOrWhiteSpace(label)
+           && !string.Equals(
+               label.Trim(),
+               "PENDIENTE_DEFINIR",
+               StringComparison.OrdinalIgnoreCase);
+
     public async Task<string> NextAsync(CancellationToken cancellationToken)
     {
         // Se conserva antes de la configuración: ningún camino puede tocar el
@@ -35,15 +51,16 @@ internal sealed class ServiceOrderCodeAllocator(
         }
 
         var label = settings.Get(ServiceOrderSettingsKeys.SeriesLabel);
-        if (string.IsNullOrWhiteSpace(label))
+        if (!IsConfigured(label))
         {
             throw new InvalidOperationException(
-                $"Falta el ajuste '{ServiceOrderSettingsKeys.SeriesLabel}' para la serie propia de M05b.");
+                ConfigurationError()
+                ?? $"Falta el ajuste '{ServiceOrderSettingsKeys.SeriesLabel}' para la serie propia de M05b.");
         }
 
         var year = TransactionalSeriesAllocator.YearInLima(clock.GetUtcNow());
         var number = await TransactionalSeriesAllocator.ReserveNextAsync(
             database, Series, node.Code, year, cancellationToken);
-        return $"{label.Trim()}-{year.ToString(CultureInfo.InvariantCulture)}-{number.ToString(CultureInfo.InvariantCulture).PadLeft(4, '0')}";
+        return $"{label!.Trim()}-{year.ToString(CultureInfo.InvariantCulture)}-{number.ToString(CultureInfo.InvariantCulture).PadLeft(4, '0')}";
     }
 }

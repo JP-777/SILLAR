@@ -115,6 +115,8 @@ export const CONNECTION_STRING = cadenaDeConexion({
  */
 export const ENTORNO_DE_COMPOSE: Record<string, string> = {
   COMPOSE_PROJECT_NAME: PROJECT_NAME,
+  POSTGRES_USER,
+  POSTGRES_PASSWORD,
   POSTGRES_DB: DB_NAME,
   POSTGRES_PORT: DB_PORT,
   API_PORT,

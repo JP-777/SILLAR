@@ -87,6 +87,12 @@ internal sealed class ServiceOrderApplicationService(
                 IsReplay: true);
         }
 
+        if (codes.ConfigurationError() is { } configurationError)
+        {
+            return Invalid<ServiceOrderAdminDetail>(
+                configurationError);
+        }
+
         var contact = await ResolveContactAsync(
             request.CustomerId,
             request.CustomerName,
