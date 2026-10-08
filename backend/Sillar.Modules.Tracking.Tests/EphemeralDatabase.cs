@@ -106,6 +106,7 @@ internal static class EphemeralDatabase
             INSERT INTO service_orders.service_orders
                 (
                     service_order_id,
+                    create_idempotency_key,
                     visible_code,
                     status,
                     customer_name_snapshot,
@@ -120,6 +121,7 @@ internal static class EphemeralDatabase
                 )
             VALUES
                 (
+                    '{id}',
                     '{id}',
                     '{code}',
                     'received',

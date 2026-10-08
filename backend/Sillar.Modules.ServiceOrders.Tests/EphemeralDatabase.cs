@@ -76,11 +76,11 @@ internal static class EphemeralDatabase
     public static string InsertOrder(Guid id, string code = "S-2026-0001", string promisedAt = "NULL")
         => $"""
             INSERT INTO service_orders.service_orders
-                (service_order_id, visible_code, status, customer_name_snapshot,
-                 customer_phone_snapshot, received_at, promised_at,
+                (service_order_id, visible_code, status, create_idempotency_key,
+                 customer_name_snapshot, customer_phone_snapshot, received_at, promised_at,
                  created_by_admin_name, created_by_admin_user_id, created_by_admin_user_home_node,
                  last_status_changed_at, origin_node, row_version)
-            VALUES ('{id}', '{code}', 'received', 'Cliente', '999111222',
+            VALUES ('{id}', '{code}', 'received', '{id}', 'Cliente', '999111222',
                     '2026-10-07T10:00:00Z', {promisedAt},
                     'Ana Pérez', 7, 'principal', '2026-10-07T10:00:00Z', 'principal', 1)
             """;

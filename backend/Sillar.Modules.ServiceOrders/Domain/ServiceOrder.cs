@@ -9,6 +9,7 @@ public sealed class ServiceOrder : IReplicatedEntity
     public Guid ServiceOrderId { get; set; } = Guid.CreateVersion7();
     public required string VisibleCode { get; set; }
     public string Status { get; set; } = ServiceOrderStatuses.Received;
+    public Guid CreateIdempotencyKey { get; set; }
     public Guid? CustomerId { get; set; }
     public required string CustomerNameSnapshot { get; set; }
     public string? CustomerPhoneSnapshot { get; set; }
