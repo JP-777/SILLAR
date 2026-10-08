@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -7,6 +8,7 @@ using Sillar.Core.Contracts;
 using Sillar.Modules.ServiceOrders.Application;
 using Sillar.Modules.ServiceOrders.Contracts;
 using Sillar.Modules.ServiceOrders.Documentation;
+using Sillar.Modules.ServiceOrders.Endpoints;
 using Sillar.Modules.Services.Contracts;
 
 namespace Sillar.Modules.ServiceOrders.Tests;
@@ -116,6 +118,19 @@ public sealed class EndpointContractTests
             builder.Services,
             descriptor =>
                 descriptor.ServiceType == typeof(IServiceOrderTrackingSource));
+    }
+
+    [Fact]
+    public void Transition_endpoint_delegates_audit_to_authoritative_operation()
+    {
+        var method = typeof(ServiceOrderEndpoints).GetMethod(
+            "Transition",
+            BindingFlags.NonPublic | BindingFlags.Static);
+
+        Assert.NotNull(method);
+        Assert.DoesNotContain(
+            method.GetParameters(),
+            parameter => parameter.ParameterType == typeof(IAuditWriter));
     }
 
     [Fact]

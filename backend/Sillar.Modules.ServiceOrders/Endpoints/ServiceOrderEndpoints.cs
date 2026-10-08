@@ -297,8 +297,6 @@ public static class ServiceOrderEndpoints
         Guid id,
         ServiceOrderTransitionRequest request,
         IServiceOrderTransitions transitions,
-        ServiceOrderApplicationService service,
-        IAuditWriter audit,
         ICurrentAdmin current,
         CancellationToken cancellationToken)
     {
@@ -322,15 +320,6 @@ public static class ServiceOrderEndpoints
             return Results.Problem(
                 title: "Cancelar una orden exige rol admin o superior.",
                 statusCode: StatusCodes.Status403Forbidden);
-        }
-
-        var order = await service.GetAdminAsync(
-            id,
-            cancellationToken);
-
-        if (order is null)
-        {
-            return Results.NotFound();
         }
 
         var operation = await transitions.TransitionAsync(
@@ -363,23 +352,7 @@ public static class ServiceOrderEndpoints
             };
         }
 
-        var value = operation.Value!;
-
-        await audit.WriteAsync(
-            new AuditEntry(AuditAction.Update)
-            {
-                AdminUserId = current.AdminUserId,
-                AdminUserEmail = current.Email,
-                ModuleCode = ServiceOrdersModule.ModuleCode,
-                EntityType = "service_order",
-                EntityId = value.ServiceOrderId.ToString(),
-                Summary =
-                    $"Orden de servicio {order.VisibleCode} pasó de " +
-                    $"{value.HistoryEntry.FromStatus} a {value.CurrentStatus}."
-            },
-            cancellationToken);
-
-        return Results.Ok(value);
+        return Results.Ok(operation.Value);
     }
 
     private static IResult Result(

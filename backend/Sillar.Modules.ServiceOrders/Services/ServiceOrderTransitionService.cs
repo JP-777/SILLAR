@@ -13,6 +13,7 @@ namespace Sillar.Modules.ServiceOrders.Services;
 public sealed class ServiceOrderTransitionService(
     ServiceOrdersDbContext database,
     ICurrentAdmin currentAdmin,
+    IAuditWriter audit,
     TimeProvider clock) : IServiceOrderTransitions
 {
     public async Task<ServiceOrderOperation<ServiceOrderTransitionResult>> TransitionAsync(
@@ -94,6 +95,20 @@ public sealed class ServiceOrderTransitionService(
 
         await database.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        await audit.WriteAsync(
+            new AuditEntry(AuditAction.Update)
+            {
+                AdminUserId = actor.AdminUserId,
+                AdminUserEmail = currentAdmin.Email,
+                ModuleCode = ServiceOrdersModule.ModuleCode,
+                EntityType = "service_order",
+                EntityId = order.ServiceOrderId.ToString(),
+                Summary =
+                    $"Orden de servicio {order.VisibleCode} pasó de " +
+                    $"{history.FromStatus} a {order.Status}."
+            },
+            cancellationToken);
 
         var snapshot = new ServiceOrderStatusHistorySnapshot(
             history.StatusHistoryId,

@@ -396,6 +396,7 @@ public sealed class ApplicationBehaviorPostgresTests
                 var result = await new ServiceOrderTransitionService(
                         database,
                         new Admin(AdminRole.Editor),
+                        new NoOpAuditWriter(),
                         new FixedTimeProvider(Now))
                     .TransitionAsync(
                         created.ServiceOrderId,
@@ -1059,6 +1060,7 @@ public sealed class ApplicationBehaviorPostgresTests
                 var denied = await new ServiceOrderTransitionService(
                         editorDatabase,
                         new Admin(AdminRole.Editor),
+                        new NoOpAuditWriter(),
                         new FixedTimeProvider(Now))
                     .TransitionAsync(
                         id,
@@ -1098,6 +1100,7 @@ public sealed class ApplicationBehaviorPostgresTests
                 var allowed = await new ServiceOrderTransitionService(
                         adminDatabase,
                         new Admin(AdminRole.Admin),
+                        new NoOpAuditWriter(),
                         new FixedTimeProvider(Now))
                     .TransitionAsync(
                         id,
@@ -1268,6 +1271,14 @@ public sealed class ApplicationBehaviorPostgresTests
 
         public IReadOnlyDictionary<string, string> GetPublic()
             => new Dictionary<string, string>();
+    }
+
+    private sealed class NoOpAuditWriter : IAuditWriter
+    {
+        public Task WriteAsync(
+            AuditEntry entry,
+            CancellationToken cancellationToken)
+            => Task.CompletedTask;
     }
 
     private sealed class FixedTimeProvider(DateTimeOffset now)
