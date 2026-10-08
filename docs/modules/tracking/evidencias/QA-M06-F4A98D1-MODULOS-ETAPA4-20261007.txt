@@ -1,0 +1,9 @@
+Sillar.Core
+Sillar.Modules.Catalog
+Sillar.Modules.Cms
+Sillar.Modules.Crm
+Sillar.Modules.Sales
+Sillar.Modules.Services
+Sillar.Modules.ServiceOrders
+Sillar.Modules.Tracking
+Sillar.Modules.B2B

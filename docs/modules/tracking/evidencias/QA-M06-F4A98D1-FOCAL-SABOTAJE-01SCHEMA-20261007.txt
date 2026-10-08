@@ -1,0 +1,8 @@
+# SABOTAJE · verificador 01_schema.sql sobre base sillar_qa_m06_sabot_1791417653 migrada con la migración saboteada · f4a98d1c2d3cfd09736ddb17bfc12f10c0c31d31 · cambios:  M backend/Sillar.Modules.Tracking/Migrations/20261007212800_TrackingInitial.cs  · 2026-10-07 19:00:53 -0500
+CREATE DATABASE
+ck_order_tracking_priority presente: 0
+== psql -v ON_ERROR_STOP=1 -f database/modules/tracking/01_schema.sql
+ERROR:  M06 está en setup/seed pero migrate() no materializó: ck_order_tracking_priority
+CONTEXT:  PL/pgSQL function inline_code_block line 133 at RAISE
+# rc=3
+DROP DATABASE

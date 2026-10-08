@@ -1,0 +1,130 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="90c0f634-a0c9-4657-9338-ae77631ef431" name="@archlinux 2026-10-07 19:10:26" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-07T19:10:26.9350204-05:00" queuing="2026-10-07T19:10:26.9350206-05:00" start="2026-10-07T19:10:07.7300034-05:00" finish="2026-10-07T19:10:53.1932855-05:00" />
+  <TestSettings name="default" id="f943ccaf-4725-44b3-8334-256a8e19b93e">
+    <Deployment runDeploymentRoot="_archlinux_2026-10-07_19_10_26" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="793f520d-f10c-4796-ab37-c34a388f43dc" testId="0554bd86-5d49-7fb8-ce4b-525e5e53f606" testName="Sillar.Modules.Services.Tests.ServicesPostgresTests.La_unica_referencia_cruzada_va_de_una_tabla_local_a_una_replicada_como_permite_la_ADR_018" computerName="archlinux" duration="00:00:00.1068129" startTime="2026-10-07T19:10:51.6348529-05:00" endTime="2026-10-07T19:10:51.7417972-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="793f520d-f10c-4796-ab37-c34a388f43dc" />
+    <UnitTestResult executionId="2e92e3ae-036b-4388-96b8-45180dcf47ed" testId="980b9931-8054-d06d-c17d-0ec37ec13d43" testName="Sillar.Modules.Services.Tests.ServicesPostgresTests.La_fotografia_de_un_servicio_publicado_trae_sus_datos_y_la_url_de_su_imagen" computerName="archlinux" duration="00:00:00.2856201" startTime="2026-10-07T19:10:52.0369146-05:00" endTime="2026-10-07T19:10:52.3226957-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2e92e3ae-036b-4388-96b8-45180dcf47ed" />
+    <UnitTestResult executionId="2ed678bd-a9e3-4b78-9341-019a25020aba" testId="5ff750c4-a187-709d-2aad-734b6f1c5dce" testName="Sillar.Modules.Services.Tests.ServicesPostgresTests.La_direccion_publica_es_unica_sin_distinguir_mayusculas" computerName="archlinux" duration="00:00:00.1470961" startTime="2026-10-07T19:10:51.7474425-05:00" endTime="2026-10-07T19:10:51.8946764-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2ed678bd-a9e3-4b78-9341-019a25020aba" />
+    <UnitTestResult executionId="95c55c53-ca5e-469d-8fb6-98fb8d857c89" testId="7d2452db-06fa-065e-c865-16cd7c099ac0" testName="Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(caso: &quot;archivado&quot;)" computerName="archlinux" duration="00:00:00.5947513" startTime="2026-10-07T19:10:49.4428646-05:00" endTime="2026-10-07T19:10:50.0377812-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="95c55c53-ca5e-469d-8fb6-98fb8d857c89" />
+    <UnitTestResult executionId="320e61f4-24c4-46bc-93ea-429f5c7110ba" testId="49cf522e-ca85-fe7e-2303-cb87988c881e" testName="Sillar.Modules.Services.Tests.ServiceRulesTests.Imagen_exige_texto_alternativo" computerName="archlinux" duration="00:00:00.0097609" startTime="2026-10-07T19:10:25.9966576-05:00" endTime="2026-10-07T19:10:26.0066064-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="320e61f4-24c4-46bc-93ea-429f5c7110ba" />
+    <UnitTestResult executionId="44c4e8c2-6e13-4a8f-b646-9772bc6b10a5" testId="b7d49060-df35-7df4-75fe-51404c95723d" testName="Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(caso: &quot;borrador&quot;)" computerName="archlinux" duration="00:00:00.3323795" startTime="2026-10-07T19:10:50.0496540-05:00" endTime="2026-10-07T19:10:50.3821838-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="44c4e8c2-6e13-4a8f-b646-9772bc6b10a5" />
+    <UnitTestResult executionId="e688107b-c51e-43db-a9ac-04885a9ce54b" testId="cd0ad4af-9e29-54de-6880-6a92beb7105d" testName="Sillar.Modules.Services.Tests.ServiceRulesTests.Precio_nulo_es_valido_para_consultar" computerName="archlinux" duration="00:00:00.0126722" startTime="2026-10-07T19:10:25.9826019-05:00" endTime="2026-10-07T19:10:25.9954265-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e688107b-c51e-43db-a9ac-04885a9ce54b" />
+    <UnitTestResult executionId="80031db1-04bd-4a37-80ce-220e16c58530" testId="f5a77024-6d35-0d71-4005-ff96cb9a0c84" testName="Sillar.Modules.Services.Tests.ServiceRulesTests.Publicar_desde_borrador_es_valido" computerName="archlinux" duration="00:00:00.0115834" startTime="2026-10-07T19:10:25.9692095-05:00" endTime="2026-10-07T19:10:25.9809326-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="80031db1-04bd-4a37-80ce-220e16c58530" />
+    <UnitTestResult executionId="4dbdfa4e-d96e-439e-aed1-ba4282fa4024" testId="56b5dfc0-844b-d0f1-d0f4-3f8e1995d53f" testName="Sillar.Modules.Services.Tests.ServiceRulesTests.Restaurar_archivado_no_se_inventa" computerName="archlinux" duration="00:00:00.0136145" startTime="2026-10-07T19:10:25.9456556-05:00" endTime="2026-10-07T19:10:25.9594167-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4dbdfa4e-d96e-439e-aed1-ba4282fa4024" />
+    <UnitTestResult executionId="426b3ce0-cbb6-4df0-8cfc-250166a8baf9" testId="b1b7c39a-971d-c899-c9e8-d5e8ea986373" testName="Sillar.Modules.Services.Tests.ServiceRulesTests.Precio_negativo_se_rechaza" computerName="archlinux" duration="00:00:00.0126876" startTime="2026-10-07T19:10:25.9178333-05:00" endTime="2026-10-07T19:10:25.9306747-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="426b3ce0-cbb6-4df0-8cfc-250166a8baf9" />
+    <UnitTestResult executionId="3fa0e3bd-babf-4d3b-ba2f-72f2925dcd6e" testId="8a15b164-18c6-e2f9-a95d-bb4baf10a4d5" testName="Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(caso: &quot;inexistente&quot;)" computerName="archlinux" duration="00:00:06.5173298" startTime="2026-10-07T19:10:42.9172370-05:00" endTime="2026-10-07T19:10:49.4347538-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3fa0e3bd-babf-4d3b-ba2f-72f2925dcd6e" />
+    <UnitTestResult executionId="c7c83aae-bed7-417e-b05c-72de281e727b" testId="e59fe04d-877e-937b-c0c5-653dc80b92d7" testName="Sillar.Modules.Services.Tests.ServiceRulesTests.Slug_quita_tildes_y_normaliza_separadores" computerName="archlinux" duration="00:00:00.2407039" startTime="2026-10-07T19:10:25.6649109-05:00" endTime="2026-10-07T19:10:25.9060835-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c7c83aae-bed7-417e-b05c-72de281e727b" />
+    <UnitTestResult executionId="d28c34f4-28c5-41f0-81ff-2ab4da01bf41" testId="09be532f-696c-1884-c4c7-86209c8cd529" testName="Sillar.Modules.Services.Tests.ServicesPostgresTests.La_migracion_crea_solo_el_schema_services_con_su_historial_dentro" computerName="archlinux" duration="00:00:00.1098851" startTime="2026-10-07T19:10:51.5196333-05:00" endTime="2026-10-07T19:10:51.6296840-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d28c34f4-28c5-41f0-81ff-2ab4da01bf41" />
+    <UnitTestResult executionId="191c1bff-c1e9-451d-88c0-93e31e06a2a5" testId="c9c9f41a-fbe9-b61c-0364-107597cee266" testName="Sillar.Modules.Services.Tests.ServicesPostgresTests.La_vitrina_publica_solo_enseña_lo_publicado_en_su_orden" computerName="archlinux" duration="00:00:01.1247893" startTime="2026-10-07T19:10:50.3874733-05:00" endTime="2026-10-07T19:10:51.5124132-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="191c1bff-c1e9-451d-88c0-93e31e06a2a5" />
+    <UnitTestResult executionId="3d923738-5691-4f0f-a67d-f2a0042e3d11" testId="242da154-1003-44ca-9e63-57ce52fb9d35" testName="Sillar.Modules.Services.Tests.ServicesPostgresTests.El_99_drop_quita_services_dos_veces_sin_tocar_core_y_la_migracion_reinstala" computerName="archlinux" duration="00:00:16.1281076" startTime="2026-10-07T19:10:26.5674371-05:00" endTime="2026-10-07T19:10:42.7464609-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3d923738-5691-4f0f-a67d-f2a0042e3d11" />
+    <UnitTestResult executionId="fedf0907-06ca-4bbb-a2f6-0e5448c87258" testId="b12dbec6-8557-0ea2-e771-64356073a0d6" testName="Sillar.Modules.Services.Tests.ServicesPostgresTests.Una_transicion_no_permitida_se_explica_en_castellano" computerName="archlinux" duration="00:00:00.1275809" startTime="2026-10-07T19:10:51.9027844-05:00" endTime="2026-10-07T19:10:52.0305226-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fedf0907-06ca-4bbb-a2f6-0e5448c87258" />
+    <UnitTestResult executionId="78da3530-9bb9-4f33-94d1-2a83737dec7a" testId="3556c6d8-280c-9b10-c890-080c5ef6b02d" testName="Sillar.Modules.Services.Tests.ServiceRulesTests.Precio_cero_es_valido_y_distinto_de_nulo" computerName="archlinux" duration="00:00:00.1956179" startTime="2026-10-07T19:10:25.1884409-05:00" endTime="2026-10-07T19:10:25.4297929-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="78da3530-9bb9-4f33-94d1-2a83737dec7a" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServicesPostgresTests.Una_transicion_no_permitida_se_explica_en_castellano" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="b12dbec6-8557-0ea2-e771-64356073a0d6">
+      <Execution id="fedf0907-06ca-4bbb-a2f6-0e5448c87258" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServicesPostgresTests" name="Una_transicion_no_permitida_se_explica_en_castellano" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServicesPostgresTests.La_vitrina_publica_solo_enseña_lo_publicado_en_su_orden" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="c9c9f41a-fbe9-b61c-0364-107597cee266">
+      <Execution id="191c1bff-c1e9-451d-88c0-93e31e06a2a5" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServicesPostgresTests" name="La_vitrina_publica_solo_enseña_lo_publicado_en_su_orden" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServicesPostgresTests.La_unica_referencia_cruzada_va_de_una_tabla_local_a_una_replicada_como_permite_la_ADR_018" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="0554bd86-5d49-7fb8-ce4b-525e5e53f606">
+      <Execution id="793f520d-f10c-4796-ab37-c34a388f43dc" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServicesPostgresTests" name="La_unica_referencia_cruzada_va_de_una_tabla_local_a_una_replicada_como_permite_la_ADR_018" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(caso: &quot;borrador&quot;)" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="b7d49060-df35-7df4-75fe-51404c95723d">
+      <Execution id="44c4e8c2-6e13-4a8f-b646-9772bc6b10a5" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServicesPostgresTests" name="Solo_un_servicio_publicado_tiene_fotografia" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServiceRulesTests.Precio_cero_es_valido_y_distinto_de_nulo" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="3556c6d8-280c-9b10-c890-080c5ef6b02d">
+      <Execution id="78da3530-9bb9-4f33-94d1-2a83737dec7a" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServiceRulesTests" name="Precio_cero_es_valido_y_distinto_de_nulo" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(caso: &quot;archivado&quot;)" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="7d2452db-06fa-065e-c865-16cd7c099ac0">
+      <Execution id="95c55c53-ca5e-469d-8fb6-98fb8d857c89" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServicesPostgresTests" name="Solo_un_servicio_publicado_tiene_fotografia" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServicesPostgresTests.La_fotografia_de_un_servicio_publicado_trae_sus_datos_y_la_url_de_su_imagen" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="980b9931-8054-d06d-c17d-0ec37ec13d43">
+      <Execution id="2e92e3ae-036b-4388-96b8-45180dcf47ed" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServicesPostgresTests" name="La_fotografia_de_un_servicio_publicado_trae_sus_datos_y_la_url_de_su_imagen" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServiceRulesTests.Restaurar_archivado_no_se_inventa" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="56b5dfc0-844b-d0f1-d0f4-3f8e1995d53f">
+      <Execution id="4dbdfa4e-d96e-439e-aed1-ba4282fa4024" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServiceRulesTests" name="Restaurar_archivado_no_se_inventa" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServicesPostgresTests.La_direccion_publica_es_unica_sin_distinguir_mayusculas" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="5ff750c4-a187-709d-2aad-734b6f1c5dce">
+      <Execution id="2ed678bd-a9e3-4b78-9341-019a25020aba" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServicesPostgresTests" name="La_direccion_publica_es_unica_sin_distinguir_mayusculas" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServicesPostgresTests.Solo_un_servicio_publicado_tiene_fotografia(caso: &quot;inexistente&quot;)" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="8a15b164-18c6-e2f9-a95d-bb4baf10a4d5">
+      <Execution id="3fa0e3bd-babf-4d3b-ba2f-72f2925dcd6e" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServicesPostgresTests" name="Solo_un_servicio_publicado_tiene_fotografia" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServiceRulesTests.Precio_negativo_se_rechaza" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="b1b7c39a-971d-c899-c9e8-d5e8ea986373">
+      <Execution id="426b3ce0-cbb6-4df0-8cfc-250166a8baf9" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServiceRulesTests" name="Precio_negativo_se_rechaza" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServicesPostgresTests.La_migracion_crea_solo_el_schema_services_con_su_historial_dentro" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="09be532f-696c-1884-c4c7-86209c8cd529">
+      <Execution id="d28c34f4-28c5-41f0-81ff-2ab4da01bf41" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServicesPostgresTests" name="La_migracion_crea_solo_el_schema_services_con_su_historial_dentro" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServiceRulesTests.Precio_nulo_es_valido_para_consultar" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="cd0ad4af-9e29-54de-6880-6a92beb7105d">
+      <Execution id="e688107b-c51e-43db-a9ac-04885a9ce54b" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServiceRulesTests" name="Precio_nulo_es_valido_para_consultar" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServiceRulesTests.Slug_quita_tildes_y_normaliza_separadores" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="e59fe04d-877e-937b-c0c5-653dc80b92d7">
+      <Execution id="c7c83aae-bed7-417e-b05c-72de281e727b" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServiceRulesTests" name="Slug_quita_tildes_y_normaliza_separadores" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServicesPostgresTests.El_99_drop_quita_services_dos_veces_sin_tocar_core_y_la_migracion_reinstala" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="242da154-1003-44ca-9e63-57ce52fb9d35">
+      <Execution id="3d923738-5691-4f0f-a67d-f2a0042e3d11" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServicesPostgresTests" name="El_99_drop_quita_services_dos_veces_sin_tocar_core_y_la_migracion_reinstala" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServiceRulesTests.Imagen_exige_texto_alternativo" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="49cf522e-ca85-fe7e-2303-cb87988c881e">
+      <Execution id="320e61f4-24c4-46bc-93ea-429f5c7110ba" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServiceRulesTests" name="Imagen_exige_texto_alternativo" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Services.Tests.ServiceRulesTests.Publicar_desde_borrador_es_valido" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.services.tests/bin/debug/net10.0/sillar.modules.services.tests.dll" id="f5a77024-6d35-0d71-4005-ff96cb9a0c84">
+      <Execution id="80031db1-04bd-4a37-80ce-220e16c58530" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Services.Tests/bin/Debug/net10.0/Sillar.Modules.Services.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Services.Tests.ServiceRulesTests" name="Publicar_desde_borrador_es_valido" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="0554bd86-5d49-7fb8-ce4b-525e5e53f606" executionId="793f520d-f10c-4796-ab37-c34a388f43dc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="980b9931-8054-d06d-c17d-0ec37ec13d43" executionId="2e92e3ae-036b-4388-96b8-45180dcf47ed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5ff750c4-a187-709d-2aad-734b6f1c5dce" executionId="2ed678bd-a9e3-4b78-9341-019a25020aba" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7d2452db-06fa-065e-c865-16cd7c099ac0" executionId="95c55c53-ca5e-469d-8fb6-98fb8d857c89" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="49cf522e-ca85-fe7e-2303-cb87988c881e" executionId="320e61f4-24c4-46bc-93ea-429f5c7110ba" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b7d49060-df35-7df4-75fe-51404c95723d" executionId="44c4e8c2-6e13-4a8f-b646-9772bc6b10a5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cd0ad4af-9e29-54de-6880-6a92beb7105d" executionId="e688107b-c51e-43db-a9ac-04885a9ce54b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f5a77024-6d35-0d71-4005-ff96cb9a0c84" executionId="80031db1-04bd-4a37-80ce-220e16c58530" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="56b5dfc0-844b-d0f1-d0f4-3f8e1995d53f" executionId="4dbdfa4e-d96e-439e-aed1-ba4282fa4024" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b1b7c39a-971d-c899-c9e8-d5e8ea986373" executionId="426b3ce0-cbb6-4df0-8cfc-250166a8baf9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8a15b164-18c6-e2f9-a95d-bb4baf10a4d5" executionId="3fa0e3bd-babf-4d3b-ba2f-72f2925dcd6e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e59fe04d-877e-937b-c0c5-653dc80b92d7" executionId="c7c83aae-bed7-417e-b05c-72de281e727b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="09be532f-696c-1884-c4c7-86209c8cd529" executionId="d28c34f4-28c5-41f0-81ff-2ab4da01bf41" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c9c9f41a-fbe9-b61c-0364-107597cee266" executionId="191c1bff-c1e9-451d-88c0-93e31e06a2a5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="242da154-1003-44ca-9e63-57ce52fb9d35" executionId="3d923738-5691-4f0f-a67d-f2a0042e3d11" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b12dbec6-8557-0ea2-e771-64356073a0d6" executionId="fedf0907-06ca-4bbb-a2f6-0e5448c87258" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3556c6d8-280c-9b10-c890-080c5ef6b02d" executionId="78da3530-9bb9-4f33-94d1-2a83737dec7a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="17" executed="17" passed="17" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.01] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.10)
+[xUnit.net 00:00:03.11]   Discovering: Sillar.Modules.Services.Tests
+[xUnit.net 00:00:05.98]   Discovered:  Sillar.Modules.Services.Tests
+[xUnit.net 00:00:11.26]   Starting:    Sillar.Modules.Services.Tests
+[xUnit.net 00:00:39.60]   Finished:    Sillar.Modules.Services.Tests (ID = '3c8774487e3cb0ea9865864816bc22d733a3d718ad3f91d45b6f2ba0d46e89cd')
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

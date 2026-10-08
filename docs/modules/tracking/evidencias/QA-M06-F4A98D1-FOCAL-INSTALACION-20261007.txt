@@ -1,0 +1,40 @@
+# INSTALACIÓN / DROP / REINSTALACIÓN de M06 · base sillar_qa_m06_focal_1791417460 · f4a98d1c2d3cfd09736ddb17bfc12f10c0c31d31 · cambios 0 · 2026-10-07 19:02:32 -0500
+# CASCADE en 99_drop.sql de tracking: 1 apariciones (solo en el comentario de cabecera, ver línea 2)
+## 1 · Estado instalado por migrate()
+PARIDAD instalado · tablas=2 · triggers=2 · migraciones=1 · schemas=core,service_orders,services,tracking
+== psql -v ON_ERROR_STOP=1 -f database/modules/tracking/01_schema.sql
+   rc=0
+== psql -v ON_ERROR_STOP=1 -f database/modules/tracking/02_seed.sql
+   rc=0
+## 2 · M05b no se desmonta mientras M06 exista
+== psql -v ON_ERROR_STOP=1 -f database/modules/service_orders/99_drop.sql
+ERROR:  No se desinstala M05b Servicios — Órdenes: hay dependientes duros instalados (FK desde: tracking). Desinstálalos antes; no se ha borrado nada.
+CONTEXT:  PL/pgSQL function inline_code_block line 35 at RAISE
+   rc=3
+   schemas tras el intento: service_orders,tracking
+## 3 · Drop de M06 bloqueado ante un dependiente externo (FK simulada en schema qa_dep)
+== psql -v ON_ERROR_STOP=1 -f database/modules/tracking/99_drop.sql
+ERROR:  No se desinstala M06 Seguimiento: hay dependientes duros instalados (FK desde: qa_dep). Desinstálalos antes; no se ha borrado nada.
+CONTEXT:  PL/pgSQL function inline_code_block line 49 at RAISE
+   rc=3
+   tracking sigue: 1 · tablas 3
+   qa_dep retirado: 0
+## 4 · Drop legal
+== psql -v ON_ERROR_STOP=1 -f database/modules/tracking/99_drop.sql
+   rc=0
+   tracking: 0 · service_orders intacto: 6 tablas
+## 5 · Drop legal repetido (idempotente)
+== psql -v ON_ERROR_STOP=1 -f database/modules/tracking/99_drop.sql
+   rc=0
+## 6 · Reinstalación por migrate()
+Applying migration '20261007212800_TrackingInitial'.
+Done.
+PARIDAD reinstalado · tablas=2 · triggers=2 · migraciones=1 · schemas=core,service_orders,services,tracking
+== psql -v ON_ERROR_STOP=1 -f database/modules/tracking/01_schema.sql
+   rc=0
+== psql -v ON_ERROR_STOP=1 -f database/modules/tracking/02_seed.sql
+   rc=0
+## 7 · Reinstalación repetida (sin cambios)
+No migrations were applied. The database is already up to date.
+Done.
+PARIDAD repetido · tablas=2 · triggers=2 · migraciones=1 · schemas=core,service_orders,services,tracking

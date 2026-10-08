@@ -1,0 +1,30 @@
+# LEGAL · dotnet test backend/Sillar.Modules.Tracking.Tests · f4a98d1c2d3cfd09736ddb17bfc12f10c0c31d31 · cambios 0 · base sillar_qa_m06_focal_1791417460 · 2026-10-07 18:58:47 -0500
+Test run for /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.10)
+[xUnit.net 00:00:00.36]   Discovering: Sillar.Modules.Tracking.Tests
+[xUnit.net 00:00:00.75]   Discovered:  Sillar.Modules.Tracking.Tests
+[xUnit.net 00:00:01.14]   Starting:    Sillar.Modules.Tracking.Tests
+  Passed Sillar.Modules.Tracking.Tests.ModuleContractTests.Tracking_does_not_reference_the_concrete_ServiceOrders_assembly [40 ms]
+  Passed Sillar.Modules.Tracking.Tests.ModelContractTests.Both_business_tables_are_replicated_with_application_UUID_v7 [39 ms]
+  Passed Sillar.Modules.Tracking.Tests.ModuleContractTests.Module_declares_only_ratified_dependencies [5 ms]
+  Passed Sillar.Modules.Tracking.Tests.ModelContractTests.Lazy_priority_is_nullable_and_negative_values_have_a_model_check [1 s]
+  Passed Sillar.Modules.Tracking.Tests.ModelContractTests.There_is_one_tracking_row_per_service_order_without_importing_M05b_entities [49 ms]
+  Passed Sillar.Modules.Tracking.Tests.ModelContractTests.Notes_are_internal_and_only_reference_the_local_tracking_row [92 ms]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Tracking_for_unknown_service_order_is_rejected_by_FK [3 s]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Updated_at_trigger_runs_for_tracking_and_notes [1 s]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_replication_checks_on_both_tables [1 s]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_actor_triples_and_rejects_fictitious_actor [1 s]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Negative_priority_is_rejected_by_PostgreSQL_check [1 s]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Lazy_row_and_note_allow_null_priority [1 s]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_unique_tracking_row_and_internal_note_FK [1 s]
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Migration_rejects_installation_without_hard_dependencies [547 ms]
+[xUnit.net 00:00:16.42]   Finished:    Sillar.Modules.Tracking.Tests (ID = '8c9360453527a42fb70856123a3d8d7f19f5ed6e4a4ad35be233bf712114470d')
+  Passed Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Migration_materializes_expected_schema_FKs_and_triggers [1 s]
+
+Test Run Successful.
+Total tests: 15
+     Passed: 15
+ Total time: 17.2370 Seconds
+Results File: /var/tmp/sillar-qa-m06-f4a98d1/trx-focal/legal.trx
+# rc=0

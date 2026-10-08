@@ -1,0 +1,145 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="9ad4421d-9307-4ef6-a5fe-25327205bfdb" name="@archlinux 2026-10-07 19:00:29" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-07T19:00:29.5085113-05:00" queuing="2026-10-07T19:00:29.5085115-05:00" start="2026-10-07T19:00:25.7188287-05:00" finish="2026-10-07T19:00:43.0714904-05:00" />
+  <TestSettings name="default" id="2d676dfc-cfd1-46f1-bdb9-527dc232f05a">
+    <Deployment runDeploymentRoot="_archlinux_2026-10-07_19_00_29" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="c697f725-44a8-405b-8dde-df488790d9d3" testId="2b21b17d-3ed3-9151-ff6f-a0e9917b58bd" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Negative_priority_is_rejected_by_PostgreSQL_check" computerName="archlinux" duration="00:00:01.7446367" startTime="2026-10-07T19:00:36.9023798-05:00" endTime="2026-10-07T19:00:38.6832033-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c697f725-44a8-405b-8dde-df488790d9d3">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Throws() Failure: No exception was thrown
+Expected: typeof(Npgsql.PostgresException)</Message>
+          <StackTrace>   at Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.&lt;&gt;c.&lt;&lt;Negative_priority_is_rejected_by_PostgreSQL_check&gt;b__3_0&gt;d.MoveNext() in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/PhysicalModelPostgresTests.cs:line 185
+--- End of stack trace from previous location ---
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 43
+   at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body) in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs:line 52
+   at Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Negative_priority_is_rejected_by_PostgreSQL_check() in /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/PhysicalModelPostgresTests.cs:line 175
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="5361d73a-f314-4594-a434-ab222b95d185" testId="f618a867-c5ce-7712-d357-f45d378402b5" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_unique_tracking_row_and_internal_note_FK" computerName="archlinux" duration="00:00:01.2663926" startTime="2026-10-07T19:00:40.1309794-05:00" endTime="2026-10-07T19:00:41.3974588-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5361d73a-f314-4594-a434-ab222b95d185" />
+    <UnitTestResult executionId="22c5e93b-259d-4a6a-8456-7027f2e8f13a" testId="dcd14d1d-eb18-477b-9a4b-178a70180d00" testName="Sillar.Modules.Tracking.Tests.ModelContractTests.There_is_one_tracking_row_per_service_order_without_importing_M05b_entities" computerName="archlinux" duration="00:00:00.0515074" startTime="2026-10-07T19:00:29.4963118-05:00" endTime="2026-10-07T19:00:29.5478799-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="22c5e93b-259d-4a6a-8456-7027f2e8f13a" />
+    <UnitTestResult executionId="555c3486-626f-4be5-8969-7b92207aac06" testId="2fef2fc5-ec3f-185b-ad87-27555324c809" testName="Sillar.Modules.Tracking.Tests.ModelContractTests.Both_business_tables_are_replicated_with_application_UUID_v7" computerName="archlinux" duration="00:00:00.0473466" startTime="2026-10-07T19:00:27.9176844-05:00" endTime="2026-10-07T19:00:27.9903657-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="555c3486-626f-4be5-8969-7b92207aac06" />
+    <UnitTestResult executionId="76e4f288-19ab-409e-9654-5bbd3a1ad4d6" testId="bbb875c5-bde6-873e-6877-6f416e3920ca" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Lazy_row_and_note_allow_null_priority" computerName="archlinux" duration="00:00:01.4445913" startTime="2026-10-07T19:00:38.6849572-05:00" endTime="2026-10-07T19:00:40.1296208-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="76e4f288-19ab-409e-9654-5bbd3a1ad4d6" />
+    <UnitTestResult executionId="d63b11d8-0908-404f-9076-66dcb2833dbc" testId="bcc6702c-35c1-9898-fccf-5543a4b568bd" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Updated_at_trigger_runs_for_tracking_and_notes" computerName="archlinux" duration="00:00:01.4990504" startTime="2026-10-07T19:00:32.0273390-05:00" endTime="2026-10-07T19:00:33.5265391-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d63b11d8-0908-404f-9076-66dcb2833dbc" />
+    <UnitTestResult executionId="8868c0fe-7d80-4280-9fb1-9be473b13730" testId="0b8f4a0d-fa8f-a230-a7ce-ae4a1aece2a2" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Tracking_for_unknown_service_order_is_rejected_by_FK" computerName="archlinux" duration="00:00:04.0778316" startTime="2026-10-07T19:00:27.9177018-05:00" endTime="2026-10-07T19:00:32.0169795-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8868c0fe-7d80-4280-9fb1-9be473b13730" />
+    <UnitTestResult executionId="c61b9f20-f854-499c-9d48-007a163820a5" testId="6f6af591-d680-db6d-99a5-9225bc253b4c" testName="Sillar.Modules.Tracking.Tests.ModuleContractTests.Module_declares_only_ratified_dependencies" computerName="archlinux" duration="00:00:00.0076606" startTime="2026-10-07T19:00:28.0109977-05:00" endTime="2026-10-07T19:00:28.0188391-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c61b9f20-f854-499c-9d48-007a163820a5" />
+    <UnitTestResult executionId="4c3b38dd-8697-4356-920a-00f2088bb6a6" testId="650d3ebf-9c2d-ec55-9bd4-28d2f77ef149" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Migration_materializes_expected_schema_FKs_and_triggers" computerName="archlinux" duration="00:00:01.0849273" startTime="2026-10-07T19:00:41.8035735-05:00" endTime="2026-10-07T19:00:42.8885906-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4c3b38dd-8697-4356-920a-00f2088bb6a6" />
+    <UnitTestResult executionId="47a80374-9b4c-4d59-b36f-276a4b3d8c76" testId="1886a2c1-ba14-8eed-96d6-5d10fb61db07" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Migration_rejects_installation_without_hard_dependencies" computerName="archlinux" duration="00:00:00.4029350" startTime="2026-10-07T19:00:41.3994670-05:00" endTime="2026-10-07T19:00:41.8025029-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="47a80374-9b4c-4d59-b36f-276a4b3d8c76" />
+    <UnitTestResult executionId="966e4e00-3c37-4b0e-aedc-d842f9d72845" testId="ca0712a0-d9cd-580c-a5af-8fd9432964e8" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_actor_triples_and_rejects_fictitious_actor" computerName="archlinux" duration="00:00:01.8751503" startTime="2026-10-07T19:00:35.0223248-05:00" endTime="2026-10-07T19:00:36.8975815-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="966e4e00-3c37-4b0e-aedc-d842f9d72845" />
+    <UnitTestResult executionId="58453967-31f1-4aaf-8373-9f2ff27231ce" testId="b9b3c2e2-62e4-7341-f710-3cb839caa7c1" testName="Sillar.Modules.Tracking.Tests.ModelContractTests.Notes_are_internal_and_only_reference_the_local_tracking_row" computerName="archlinux" duration="00:00:00.0888141" startTime="2026-10-07T19:00:29.5483194-05:00" endTime="2026-10-07T19:00:29.6372005-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="58453967-31f1-4aaf-8373-9f2ff27231ce" />
+    <UnitTestResult executionId="da914d77-aedf-4007-8f8f-8c5b70c098b8" testId="cbb7ef4e-67d9-9dbf-fc09-b6a2d1aacb8e" testName="Sillar.Modules.Tracking.Tests.ModelContractTests.Lazy_priority_is_nullable_and_negative_values_have_a_model_check" computerName="archlinux" duration="00:00:01.4835839" startTime="2026-10-07T19:00:28.0115582-05:00" endTime="2026-10-07T19:00:29.4952655-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="da914d77-aedf-4007-8f8f-8c5b70c098b8" />
+    <UnitTestResult executionId="72e2367f-d8f0-4a6b-8bbc-04e3de20f41b" testId="cdd2b255-040c-eb27-77cf-544d86e35060" testName="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_replication_checks_on_both_tables" computerName="archlinux" duration="00:00:01.4912145" startTime="2026-10-07T19:00:33.5292810-05:00" endTime="2026-10-07T19:00:35.0205915-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="72e2367f-d8f0-4a6b-8bbc-04e3de20f41b" />
+    <UnitTestResult executionId="d9d08b0a-eb8d-4980-8857-e6207ec82b42" testId="162bb571-2913-049a-eb5a-d597ecdd5d04" testName="Sillar.Modules.Tracking.Tests.ModuleContractTests.Tracking_does_not_reference_the_concrete_ServiceOrders_assembly" computerName="archlinux" duration="00:00:00.0473320" startTime="2026-10-07T19:00:27.9176745-05:00" endTime="2026-10-07T19:00:27.9903516-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d9d08b0a-eb8d-4980-8857-e6207ec82b42" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.ModelContractTests.There_is_one_tracking_row_per_service_order_without_importing_M05b_entities" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="dcd14d1d-eb18-477b-9a4b-178a70180d00">
+      <Execution id="22c5e93b-259d-4a6a-8456-7027f2e8f13a" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.ModelContractTests" name="There_is_one_tracking_row_per_service_order_without_importing_M05b_entities" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Negative_priority_is_rejected_by_PostgreSQL_check" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="2b21b17d-3ed3-9151-ff6f-a0e9917b58bd">
+      <Execution id="c697f725-44a8-405b-8dde-df488790d9d3" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Negative_priority_is_rejected_by_PostgreSQL_check" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_actor_triples_and_rejects_fictitious_actor" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="ca0712a0-d9cd-580c-a5af-8fd9432964e8">
+      <Execution id="966e4e00-3c37-4b0e-aedc-d842f9d72845" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Database_enforces_actor_triples_and_rejects_fictitious_actor" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.ModuleContractTests.Module_declares_only_ratified_dependencies" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="6f6af591-d680-db6d-99a5-9225bc253b4c">
+      <Execution id="c61b9f20-f854-499c-9d48-007a163820a5" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.ModuleContractTests" name="Module_declares_only_ratified_dependencies" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.ModuleContractTests.Tracking_does_not_reference_the_concrete_ServiceOrders_assembly" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="162bb571-2913-049a-eb5a-d597ecdd5d04">
+      <Execution id="d9d08b0a-eb8d-4980-8857-e6207ec82b42" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.ModuleContractTests" name="Tracking_does_not_reference_the_concrete_ServiceOrders_assembly" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Migration_rejects_installation_without_hard_dependencies" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="1886a2c1-ba14-8eed-96d6-5d10fb61db07">
+      <Execution id="47a80374-9b4c-4d59-b36f-276a4b3d8c76" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Migration_rejects_installation_without_hard_dependencies" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_unique_tracking_row_and_internal_note_FK" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="f618a867-c5ce-7712-d357-f45d378402b5">
+      <Execution id="5361d73a-f314-4594-a434-ab222b95d185" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Database_enforces_unique_tracking_row_and_internal_note_FK" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.ModelContractTests.Both_business_tables_are_replicated_with_application_UUID_v7" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="2fef2fc5-ec3f-185b-ad87-27555324c809">
+      <Execution id="555c3486-626f-4be5-8969-7b92207aac06" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.ModelContractTests" name="Both_business_tables_are_replicated_with_application_UUID_v7" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.ModelContractTests.Notes_are_internal_and_only_reference_the_local_tracking_row" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="b9b3c2e2-62e4-7341-f710-3cb839caa7c1">
+      <Execution id="58453967-31f1-4aaf-8373-9f2ff27231ce" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.ModelContractTests" name="Notes_are_internal_and_only_reference_the_local_tracking_row" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Migration_materializes_expected_schema_FKs_and_triggers" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="650d3ebf-9c2d-ec55-9bd4-28d2f77ef149">
+      <Execution id="4c3b38dd-8697-4356-920a-00f2088bb6a6" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Migration_materializes_expected_schema_FKs_and_triggers" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Lazy_row_and_note_allow_null_priority" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="bbb875c5-bde6-873e-6877-6f416e3920ca">
+      <Execution id="76e4f288-19ab-409e-9654-5bbd3a1ad4d6" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Lazy_row_and_note_allow_null_priority" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Tracking_for_unknown_service_order_is_rejected_by_FK" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="0b8f4a0d-fa8f-a230-a7ce-ae4a1aece2a2">
+      <Execution id="8868c0fe-7d80-4280-9fb1-9be473b13730" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Tracking_for_unknown_service_order_is_rejected_by_FK" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Database_enforces_replication_checks_on_both_tables" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="cdd2b255-040c-eb27-77cf-544d86e35060">
+      <Execution id="72e2367f-d8f0-4a6b-8bbc-04e3de20f41b" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Database_enforces_replication_checks_on_both_tables" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Updated_at_trigger_runs_for_tracking_and_notes" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="bcc6702c-35c1-9898-fccf-5543a4b568bd">
+      <Execution id="d63b11d8-0908-404f-9076-66dcb2833dbc" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests" name="Updated_at_trigger_runs_for_tracking_and_notes" />
+    </UnitTest>
+    <UnitTest name="Sillar.Modules.Tracking.Tests.ModelContractTests.Lazy_priority_is_nullable_and_negative_values_have_a_model_check" storage="/home/jp777/sillar-qa-m04/backend/sillar.modules.tracking.tests/bin/debug/net10.0/sillar.modules.tracking.tests.dll" id="cbb7ef4e-67d9-9dbf-fc09-b6a2d1aacb8e">
+      <Execution id="da914d77-aedf-4007-8f8f-8c5b70c098b8" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/bin/Debug/net10.0/Sillar.Modules.Tracking.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Modules.Tracking.Tests.ModelContractTests" name="Lazy_priority_is_nullable_and_negative_values_have_a_model_check" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="2b21b17d-3ed3-9151-ff6f-a0e9917b58bd" executionId="c697f725-44a8-405b-8dde-df488790d9d3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f618a867-c5ce-7712-d357-f45d378402b5" executionId="5361d73a-f314-4594-a434-ab222b95d185" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dcd14d1d-eb18-477b-9a4b-178a70180d00" executionId="22c5e93b-259d-4a6a-8456-7027f2e8f13a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2fef2fc5-ec3f-185b-ad87-27555324c809" executionId="555c3486-626f-4be5-8969-7b92207aac06" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bbb875c5-bde6-873e-6877-6f416e3920ca" executionId="76e4f288-19ab-409e-9654-5bbd3a1ad4d6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bcc6702c-35c1-9898-fccf-5543a4b568bd" executionId="d63b11d8-0908-404f-9076-66dcb2833dbc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0b8f4a0d-fa8f-a230-a7ce-ae4a1aece2a2" executionId="8868c0fe-7d80-4280-9fb1-9be473b13730" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6f6af591-d680-db6d-99a5-9225bc253b4c" executionId="c61b9f20-f854-499c-9d48-007a163820a5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="650d3ebf-9c2d-ec55-9bd4-28d2f77ef149" executionId="4c3b38dd-8697-4356-920a-00f2088bb6a6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1886a2c1-ba14-8eed-96d6-5d10fb61db07" executionId="47a80374-9b4c-4d59-b36f-276a4b3d8c76" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ca0712a0-d9cd-580c-a5af-8fd9432964e8" executionId="966e4e00-3c37-4b0e-aedc-d842f9d72845" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b9b3c2e2-62e4-7341-f710-3cb839caa7c1" executionId="58453967-31f1-4aaf-8373-9f2ff27231ce" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cbb7ef4e-67d9-9dbf-fc09-b6a2d1aacb8e" executionId="da914d77-aedf-4007-8f8f-8c5b70c098b8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cdd2b255-040c-eb27-77cf-544d86e35060" executionId="72e2367f-d8f0-4a6b-8bbc-04e3de20f41b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="162bb571-2913-049a-eb5a-d597ecdd5d04" executionId="d9d08b0a-eb8d-4980-8857-e6207ec82b42" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="15" executed="15" passed="14" failed="1" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.10)
+[xUnit.net 00:00:00.39]   Discovering: Sillar.Modules.Tracking.Tests
+[xUnit.net 00:00:00.88]   Discovered:  Sillar.Modules.Tracking.Tests
+[xUnit.net 00:00:01.34]   Starting:    Sillar.Modules.Tracking.Tests
+[xUnit.net 00:00:12.27]       Assert.Throws() Failure: No exception was thrown
+[xUnit.net 00:00:12.27]       Expected: typeof(Npgsql.PostgresException)
+[xUnit.net 00:00:12.27]       Stack Trace:
+[xUnit.net 00:00:12.27]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/PhysicalModelPostgresTests.cs(185,0): at Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.&lt;&gt;c.&lt;&lt;Negative_priority_is_rejected_by_PostgreSQL_check&gt;b__3_0&gt;d.MoveNext()
+[xUnit.net 00:00:12.27]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:12.27]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(43,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body)
+[xUnit.net 00:00:12.27]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs(52,0): at Sillar.Modules.Tracking.Tests.EphemeralDatabase.RunAsync(Func`2 body)
+[xUnit.net 00:00:12.27]         /home/JP777/sillar-qa-m04/backend/Sillar.Modules.Tracking.Tests/PhysicalModelPostgresTests.cs(175,0): at Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Negative_priority_is_rejected_by_PostgreSQL_check()
+[xUnit.net 00:00:12.27]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:16.47]   Finished:    Sillar.Modules.Tracking.Tests (ID = '8c9360453527a42fb70856123a3d8d7f19f5ed6e4a4ad35be233bf712114470d')
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="archlinux" outcome="Error" timestamp="2026-10-07T19:00:38.7060253-05:00">
+        <Text>[xUnit.net 00:00:12.26]     Sillar.Modules.Tracking.Tests.PhysicalModelPostgresTests.Negative_priority_is_rejected_by_PostgreSQL_check [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

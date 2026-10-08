@@ -1,0 +1,29 @@
+# Base focal sillar_qa_m06_focal_1791417460 · f4a98d1c2d3cfd09736ddb17bfc12f10c0c31d31 · 2026-10-07 18:57:40 -0500
+CREATE DATABASE
+== Sillar.Core
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Done.
+== Sillar.Modules.Catalog
+Applying migration '20260816073647_CatalogInitial'.
+Done.
+== Sillar.Modules.Cms
+Applying migration '20260820050000_CmsInitial'.
+Done.
+== Sillar.Modules.Crm
+Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+Done.
+== Sillar.Modules.Sales
+Applying migration '20260930185029_SalesInitial'.
+Done.
+== Sillar.Modules.Services
+Applying migration '20260928090000_ServicesInitial'.
+Done.
+== Sillar.Modules.ServiceOrders
+Applying migration '20261007150148_ServiceOrdersInitial'.
+Done.
+== Sillar.Modules.Tracking
+Applying migration '20261007212800_TrackingInitial'.
+Done.
+== Sillar.Modules.B2B
+Applying migration '20261004225318_B2bInitial'.
+Done.

@@ -1,0 +1,19 @@
+# Paridad binario / setup ↔ migrate ↔ seed · árbol f4a98d1c2d3cfd09736ddb17bfc12f10c0c31d31 · pila e2e viva · 2026-10-07 19:19:34 -0500
+modulo         | binario | setup | migrate | historial e/r | seed | 02_seed.sql
+Core           | sí     | 1     | sí     | 4/4           | sí  | sí
+Catalog        | sí     | 1     | sí     | 1/1           | sí  | sí
+Cms            | sí     | 1     | sí     | 1/1           | sí  | sí
+Crm            | sí     | 1     | sí     | 2/2           | sí  | sí
+Services       | sí     | 1     | sí     | 1/1           | sí  | sí
+ServiceOrders  | sí     | 1     | sí     | 1/1           | sí  | sí
+Tracking       | sí     | 1     | sí     | 1/1           | sí  | sí
+Sales          | sí     | 1     | sí     | 1/1           | sí  | sí
+B2B            | sí     | 1     | sí     | 1/1           | sí  | sí
+## Demo (aparte)
+binario: 1 ProjectReference · core.modules demo_*: demo_catalog,demo_crm,demo_sales,demo_service_orders,demo_services,demo_tracking · migraciones repo: 0 · database/modules/demo*: 0
+## Registro modular de M06 en la base e2e (core.module_dependencies)
+service_orders → core (hard)
+service_orders → crm (soft)
+service_orders → services (hard)
+tracking → core (hard)
+tracking → service_orders (hard)

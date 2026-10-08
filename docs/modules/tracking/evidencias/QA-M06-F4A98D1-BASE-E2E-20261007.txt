@@ -1,0 +1,11 @@
+# Base e2e durante la etapa 6 de la puerta · 2026-10-07 19:19:33 -0500
+# SHA: f4a98d1c2d3cfd09736ddb17bfc12f10c0c31d31
+sillar_qa_m04_e2e_api · sillar_qa_m04_e2e-api · Up 5 seconds · 0.0.0.0:56061->8080/tcp, [::]:56061->8080/tcp
+sillar_qa_m04_e2e_db · postgres:16 · Up 6 minutes (healthy) · 0.0.0.0:55961->5432/tcp, [::]:55961->5432/tcp
+## Cadena API (sin contraseña)
+Host=db;Port=5432;Database=sillar_qa_m04_e2e;Username=postgres;Password=<oculta>
+## Bases
+postgres
+sillar_qa_m04_e2e
+## Schemas
+b2b,catalog,cms,core,crm,sales,service_orders,services,tracking

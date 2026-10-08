@@ -1,0 +1,6 @@
+# dotnet build backend/Sillar.sln · f4a98d1c2d3cfd09736ddb17bfc12f10c0c31d31 · 2026-10-07 18:56:16 -0500
+/home/JP777/sillar-qa-m04/backend/Sillar.Modules.B2B.Tests/SelectoresDeCatalogoTests.cs(57,63): warning xUnit1051: Calls to methods which accept CancellationToken should use TestContext.Current.CancellationToken to allow test cancellation to be more responsive. (https://xunit.net/xunit.analyzers/rules/xUnit1051) [/home/JP777/sillar-qa-m04/backend/Sillar.Modules.B2B.Tests/Sillar.Modules.B2B.Tests.csproj]
+    128 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:01:02.66

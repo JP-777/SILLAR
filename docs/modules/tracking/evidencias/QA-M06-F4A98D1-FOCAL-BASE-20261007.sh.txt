@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Base efímera propia para la QA focal de M06: crea, migra en el orden de la etapa 4 de la puerta, o destruye.
+# Uso: focal-base.sh crear <nombre> | migrar <nombre> <proyecto> | destruir <nombre> | cadena <nombre>
+# La contraseña sale del .env de la worktree de QA y nunca se imprime.
+W=/home/JP777/sillar-qa-m04; C=/var/tmp/sillar-qa-m06-f4a98d1
+BASE_CADENA=$(grep -E '^ConnectionStrings__Default=' $W/.env | cut -d= -f2-)
+cadena(){ echo "$BASE_CADENA" | sed -E "s/(Database=)[^;]*/\1$1/"; }
+psqlc(){ docker exec -i sillar_qa_m04_db psql -U "$(docker exec sillar_qa_m04_db printenv POSTGRES_USER)" -v ON_ERROR_STOP=1 "$@"; }
+case "$1" in
+  crear) psqlc -d postgres -c "CREATE DATABASE \"$2\"";;
+  destruir) psqlc -d postgres -c "DROP DATABASE IF EXISTS \"$2\" WITH (FORCE)";;
+  migrar) cd $W && ConnectionStrings__Default="$(cadena $2)" SILLAR_VERIFY_DATABASE="$2" dotnet ef database update --project backend/$3 --startup-project backend/Sillar.Api --no-build 2>&1 | tail -2;;
+  cadena) cadena $2;;
+esac

@@ -1,0 +1,35 @@
+-- Dirección ILEGAL de M06 en la base focal. Todo dentro de una transacción que se revierte.
+BEGIN;
+INSERT INTO service_orders.service_orders (service_order_id, visible_code, customer_name_snapshot, customer_phone_snapshot, received_at, created_by_admin_name, created_by_admin_user_id, created_by_admin_user_home_node, last_status_changed_at, origin_node)
+VALUES ('0192f000-0000-7000-8000-000000000001', 'QA-1', 'Cliente QA', '999000111', now(), 'QA', 1, 'principal', now(), 'principal');
+INSERT INTO tracking.order_tracking (order_tracking_id, service_order_id, origin_node)
+VALUES ('0192f000-0000-7000-8000-0000000000a1', '0192f000-0000-7000-8000-000000000001', 'principal');
+DO $q$
+DECLARE r record; casos text[][] := ARRAY[
+ ['prioridad -1', $$INSERT INTO tracking.order_tracking (order_tracking_id, service_order_id, board_priority, origin_node) VALUES (gen_random_uuid(), '0192f000-0000-7000-8000-000000000001', -1, 'principal')$$],
+ ['prioridad -1 por UPDATE', $$UPDATE tracking.order_tracking SET board_priority = -1 WHERE order_tracking_id = '0192f000-0000-7000-8000-0000000000a1'$$],
+ ['segunda fila para la misma orden', $$INSERT INTO tracking.order_tracking (order_tracking_id, service_order_id, origin_node) VALUES (gen_random_uuid(), '0192f000-0000-7000-8000-000000000001', 'principal')$$],
+ ['orden inexistente', $$INSERT INTO tracking.order_tracking (order_tracking_id, service_order_id, origin_node) VALUES (gen_random_uuid(), gen_random_uuid(), 'principal')$$],
+ ['nota hacia seguimiento inexistente', $$INSERT INTO tracking.tracking_notes (tracking_note_id, order_tracking_id, body, origin_node) VALUES (gen_random_uuid(), gen_random_uuid(), 'x', 'principal')$$],
+ ['borrar la orden con seguimiento (RESTRICT)', $$DELETE FROM service_orders.service_orders WHERE service_order_id = '0192f000-0000-7000-8000-000000000001'$$],
+ ['columna customer_visible', $$INSERT INTO tracking.tracking_notes (tracking_note_id, order_tracking_id, body, origin_node, customer_visible) VALUES (gen_random_uuid(), '0192f000-0000-7000-8000-0000000000a1', 'x', 'principal', true)$$]
+];
+ i int; est text; msg text; con text;
+BEGIN
+ FOR i IN 1..array_length(casos,1) LOOP
+  BEGIN
+   EXECUTE casos[i][2];
+   RAISE NOTICE 'ACEPTADO (inesperado) · %', casos[i][1];
+  EXCEPTION WHEN OTHERS THEN
+   GET STACKED DIAGNOSTICS est = RETURNED_SQLSTATE, msg = MESSAGE_TEXT, con = CONSTRAINT_NAME;
+   RAISE NOTICE 'RECHAZADO · % · SQLSTATE % · restricción % · %', casos[i][1], est, coalesce(nullif(con,''),'-'), msg;
+  END;
+ END LOOP;
+END
+$q$;
+-- Legal en la misma transacción: prioridad NULL (orden por received_at) y 0 explícito.
+UPDATE tracking.order_tracking SET board_priority = NULL WHERE order_tracking_id = '0192f000-0000-7000-8000-0000000000a1';
+UPDATE tracking.order_tracking SET board_priority = 0 WHERE order_tracking_id = '0192f000-0000-7000-8000-0000000000a1';
+SELECT 'LEGAL · prioridad NULL y 0 aceptadas; board_priority actual = ' || board_priority FROM tracking.order_tracking WHERE order_tracking_id = '0192f000-0000-7000-8000-0000000000a1';
+ROLLBACK;
+SELECT 'tras ROLLBACK · filas en tracking.order_tracking = ' || count(*) FROM tracking.order_tracking;

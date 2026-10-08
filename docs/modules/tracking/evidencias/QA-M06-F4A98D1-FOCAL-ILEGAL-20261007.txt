@@ -1,0 +1,17 @@
+# ILEGAL · base sillar_qa_m06_focal_1791417460 · f4a98d1c2d3cfd09736ddb17bfc12f10c0c31d31 · 2026-10-07 18:59:34 -0500
+BEGIN
+INSERT 0 1
+INSERT 0 1
+NOTICE:  RECHAZADO · prioridad -1 · SQLSTATE 23514 · restricción ck_order_tracking_priority · new row for relation "order_tracking" violates check constraint "ck_order_tracking_priority"
+NOTICE:  RECHAZADO · prioridad -1 por UPDATE · SQLSTATE 23514 · restricción ck_order_tracking_priority · new row for relation "order_tracking" violates check constraint "ck_order_tracking_priority"
+NOTICE:  RECHAZADO · segunda fila para la misma orden · SQLSTATE 23505 · restricción uq_order_tracking_service_order_id · duplicate key value violates unique constraint "uq_order_tracking_service_order_id"
+NOTICE:  RECHAZADO · orden inexistente · SQLSTATE 23503 · restricción fk_order_tracking_service_order_id · insert or update on table "order_tracking" violates foreign key constraint "fk_order_tracking_service_order_id"
+NOTICE:  RECHAZADO · nota hacia seguimiento inexistente · SQLSTATE 23503 · restricción fk_tracking_notes_order_tracking_id · insert or update on table "tracking_notes" violates foreign key constraint "fk_tracking_notes_order_tracking_id"
+NOTICE:  RECHAZADO · borrar la orden con seguimiento (RESTRICT) · SQLSTATE 23503 · restricción fk_order_tracking_service_order_id · update or delete on table "service_orders" violates foreign key constraint "fk_order_tracking_service_order_id" on table "order_tracking"
+NOTICE:  RECHAZADO · columna customer_visible · SQLSTATE 42703 · restricción - · column "customer_visible" of relation "tracking_notes" does not exist
+DO
+UPDATE 1
+UPDATE 1
+LEGAL · prioridad NULL y 0 aceptadas; board_priority actual = 0
+ROLLBACK
+tras ROLLBACK · filas en tracking.order_tracking = 0
