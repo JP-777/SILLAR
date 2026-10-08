@@ -13,6 +13,7 @@ namespace Sillar.Modules.ServiceOrders.Services;
 public sealed class ServiceOrderTransitionService(
     ServiceOrdersDbContext database,
     ICurrentAdmin currentAdmin,
+    IAuditWriter audit,
     TimeProvider clock) : IServiceOrderTransitions
 {
     public async Task<ServiceOrderOperation<ServiceOrderTransitionResult>> TransitionAsync(
@@ -56,6 +57,14 @@ public sealed class ServiceOrderTransitionService(
                 "La orden cambió desde la última lectura. Recarga su estado antes de volver a intentarlo.");
         }
 
+        if (targetStatus == ServiceOrderStatuses.Cancelled
+            && !currentAdmin.IsInRole(AdminRole.Admin))
+        {
+            return new(
+                ServiceOrderOutcome.Invalid,
+                "Cancelar una orden exige rol admin o superior.");
+        }
+
         var legal = ServiceOrderStatuses.LegalTransitions.Any(candidate =>
             candidate.FromStatus == expectedStatus && candidate.ToStatus == targetStatus);
         if (!legal)
@@ -86,6 +95,20 @@ public sealed class ServiceOrderTransitionService(
 
         await database.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        await audit.WriteAsync(
+            new AuditEntry(AuditAction.Update)
+            {
+                AdminUserId = actor.AdminUserId,
+                AdminUserEmail = currentAdmin.Email,
+                ModuleCode = ServiceOrdersModule.ModuleCode,
+                EntityType = "service_order",
+                EntityId = order.ServiceOrderId.ToString(),
+                Summary =
+                    $"Orden de servicio {order.VisibleCode} pasó de " +
+                    $"{history.FromStatus} a {order.Status}."
+            },
+            cancellationToken);
 
         var snapshot = new ServiceOrderStatusHistorySnapshot(
             history.StatusHistoryId,

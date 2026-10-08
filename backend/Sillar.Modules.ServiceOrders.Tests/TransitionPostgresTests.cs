@@ -22,7 +22,10 @@ public sealed class TransitionPostgresTests
             await EphemeralDatabase.ExecuteAsync(connection, EphemeralDatabase.InsertOrder(id));
 
             await using var database = Context(connection);
-            var result = await Service(database).TransitionAsync(
+            var audit = new RecordingAuditWriter();
+
+            IServiceOrderTransitions transitions = Service(database, audit);
+            var result = await transitions.TransitionAsync(
                 id,
                 ServiceOrderStatuses.Received,
                 ServiceOrderStatuses.InProgress,
@@ -36,6 +39,21 @@ public sealed class TransitionPostgresTests
             Assert.Equal(1, await HistoryCount(connection, id));
             Assert.Equal("principal", result.Value.HistoryEntry.OriginNode);
             Assert.Equal(ServiceOrderStatuses.InProgress, await Status(connection, id));
+
+            Assert.Collection(
+                audit.Entries,
+                entry =>
+                {
+                    Assert.Equal(AuditAction.Update, entry.Action);
+                    Assert.Equal(19, entry.AdminUserId);
+                    Assert.Equal("ana@example.test", entry.AdminUserEmail);
+                    Assert.Equal(ServiceOrdersModule.ModuleCode, entry.ModuleCode);
+                    Assert.Equal("service_order", entry.EntityType);
+                    Assert.Equal(id.ToString(), entry.EntityId);
+                    Assert.Equal(
+                        "Orden de servicio S-2026-0001 pasó de received a in_progress.",
+                        entry.Summary);
+                });
         });
 
     [Fact]
@@ -47,12 +65,15 @@ public sealed class TransitionPostgresTests
             await EphemeralDatabase.ExecuteAsync(connection, EphemeralDatabase.InsertOrder(id));
 
             await using var database = Context(connection);
-            var invalid = await Service(database).TransitionAsync(
+            var audit = new RecordingAuditWriter();
+
+            IServiceOrderTransitions transitions = Service(database, audit);
+            var invalid = await transitions.TransitionAsync(
                 id,
                 ServiceOrderStatuses.Received,
                 ServiceOrderStatuses.Completed,
                 CancellationToken.None);
-            var missing = await Service(database).TransitionAsync(
+            var missing = await transitions.TransitionAsync(
                 Guid.CreateVersion7(),
                 ServiceOrderStatuses.Received,
                 ServiceOrderStatuses.InProgress,
@@ -62,6 +83,7 @@ public sealed class TransitionPostgresTests
             Assert.Equal(ServiceOrderOutcome.NotFound, missing.Outcome);
             Assert.Equal(ServiceOrderStatuses.Received, await Status(connection, id));
             Assert.Equal(0, await HistoryCount(connection, id));
+            Assert.Empty(audit.Entries);
         });
 
     [Fact]
@@ -72,12 +94,14 @@ public sealed class TransitionPostgresTests
             var id = Guid.CreateVersion7();
             await EphemeralDatabase.ExecuteAsync(connection, EphemeralDatabase.InsertOrder(id));
             var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var audit = new RecordingAuditWriter();
 
             async Task<ServiceOrderOperation<ServiceOrderTransitionResult>> ChangeAsync(string target)
             {
                 await using var database = Context(connection);
                 await start.Task;
-                return await Service(database).TransitionAsync(
+                IServiceOrderTransitions transitions = Service(database, audit);
+                return await transitions.TransitionAsync(
                     id,
                     ServiceOrderStatuses.Received,
                     target,
@@ -95,6 +119,7 @@ public sealed class TransitionPostgresTests
             Assert.Equal(
                 results.Single(result => result.Outcome == ServiceOrderOutcome.Ok).Value!.CurrentStatus,
                 await Status(connection, id));
+            Assert.Single(audit.Entries);
         });
 
     [Fact]
@@ -113,7 +138,10 @@ public sealed class TransitionPostgresTests
                 """);
 
             await using var database = Context(connection);
-            var error = await Assert.ThrowsAsync<DbUpdateException>(() => Service(database).TransitionAsync(
+            var audit = new RecordingAuditWriter();
+
+            IServiceOrderTransitions transitions = Service(database, audit);
+            var error = await Assert.ThrowsAsync<DbUpdateException>(() => transitions.TransitionAsync(
                 id,
                 ServiceOrderStatuses.Received,
                 ServiceOrderStatuses.InProgress,
@@ -123,10 +151,13 @@ public sealed class TransitionPostgresTests
             Assert.Contains("sabotaje historial", postgres.MessageText, StringComparison.Ordinal);
             Assert.Equal(ServiceOrderStatuses.Received, await Status(connection, id));
             Assert.Equal(0, await HistoryCount(connection, id));
+            Assert.Empty(audit.Entries);
         });
 
-    private static ServiceOrderTransitionService Service(ServiceOrdersDbContext database)
-        => new(database, new Admin(), new FixedTimeProvider(Now));
+    private static ServiceOrderTransitionService Service(
+        ServiceOrdersDbContext database,
+        IAuditWriter audit)
+        => new(database, new Admin(), audit, new FixedTimeProvider(Now));
 
     private static ServiceOrdersDbContext Context(string connection)
         => new(
@@ -145,6 +176,35 @@ public sealed class TransitionPostgresTests
     private static Task<long> HistoryCount(string connection, Guid id)
         => EphemeralDatabase.ScalarAsync<long>(connection,
             $"SELECT count(*) FROM service_orders.service_order_status_history WHERE service_order_id = '{id}'");
+
+    private sealed class RecordingAuditWriter : IAuditWriter
+    {
+        private readonly object gate = new();
+        private readonly List<AuditEntry> entries = [];
+
+        public IReadOnlyList<AuditEntry> Entries
+        {
+            get
+            {
+                lock (gate)
+                {
+                    return entries.ToArray();
+                }
+            }
+        }
+
+        public Task WriteAsync(
+            AuditEntry entry,
+            CancellationToken cancellationToken)
+        {
+            lock (gate)
+            {
+                entries.Add(entry);
+            }
+
+            return Task.CompletedTask;
+        }
+    }
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
     {

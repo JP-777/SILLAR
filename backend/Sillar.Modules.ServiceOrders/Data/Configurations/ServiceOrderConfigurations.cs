@@ -26,6 +26,7 @@ internal sealed class ServiceOrderConfiguration : IEntityTypeConfiguration<Servi
             table.HasCheckConstraint("ck_service_orders_status", ServiceOrderChecks.Status("status"));
             table.HasCheckConstraint("ck_service_orders_customer_name", "btrim(customer_name_snapshot) <> ''");
             table.HasCheckConstraint("ck_service_orders_contact", "nullif(btrim(customer_phone_snapshot), '') IS NOT NULL OR nullif(btrim(customer_email_snapshot), '') IS NOT NULL");
+            table.HasCheckConstraint("ck_service_orders_create_idempotency_key", "create_idempotency_key <> '00000000-0000-0000-0000-000000000000'::uuid");
             table.HasCheckConstraint("ck_service_orders_phone", "customer_phone_snapshot IS NULL OR btrim(customer_phone_snapshot) <> ''");
             table.HasCheckConstraint("ck_service_orders_email", "customer_email_snapshot IS NULL OR btrim(customer_email_snapshot) <> ''");
             table.HasCheckConstraint("ck_service_orders_promised_at", "promised_at IS NULL OR promised_at >= received_at");
@@ -43,6 +44,7 @@ internal sealed class ServiceOrderConfiguration : IEntityTypeConfiguration<Servi
         builder.Property(x => x.ServiceOrderId).HasColumnName("service_order_id").HasColumnType("uuid").ValueGeneratedNever();
         builder.Property(x => x.VisibleCode).HasColumnName("visible_code").IsRequired();
         builder.Property(x => x.Status).HasColumnName("status").HasDefaultValue(ServiceOrderStatuses.Received).ValueGeneratedNever();
+        builder.Property(x => x.CreateIdempotencyKey).HasColumnName("create_idempotency_key").HasColumnType("uuid");
         builder.Property(x => x.CustomerId).HasColumnName("customer_id").HasColumnType("uuid");
         builder.Property(x => x.CustomerNameSnapshot).HasColumnName("customer_name_snapshot").IsRequired();
         builder.Property(x => x.CustomerPhoneSnapshot).HasColumnName("customer_phone_snapshot");
@@ -63,6 +65,8 @@ internal sealed class ServiceOrderConfiguration : IEntityTypeConfiguration<Servi
         builder.MapReplication();
 
         builder.HasIndex(x => x.VisibleCode).IsUnique().HasDatabaseName("uq_service_orders_visible_code");
+        builder.HasIndex(x => x.CreateIdempotencyKey).IsUnique()
+            .HasDatabaseName("uq_service_orders_create_idempotency_key");
         builder.HasIndex(x => x.Status).HasDatabaseName("idx_service_orders_status");
         builder.HasIndex(x => x.ReceivedAt).HasDatabaseName("idx_service_orders_received_at");
     }

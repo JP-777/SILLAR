@@ -65,6 +65,10 @@ namespace Sillar.Modules.ServiceOrders.Migrations
                         .HasColumnType("text")
                         .HasColumnName("customer_email_snapshot");
 
+                    b.Property<Guid>("CreateIdempotencyKey")
+                        .HasColumnType("uuid")
+                        .HasColumnName("create_idempotency_key");
+
                     b.Property<Guid?>("CustomerId")
                         .HasColumnType("uuid")
                         .HasColumnName("customer_id");
@@ -136,6 +140,10 @@ namespace Sillar.Modules.ServiceOrders.Migrations
                     b.HasKey("ServiceOrderId")
                         .HasName("pk_service_orders");
 
+                    b.HasIndex("CreateIdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("uq_service_orders_create_idempotency_key");
+
                     b.HasIndex("ReceivedAt")
                         .HasDatabaseName("idx_service_orders_received_at");
 
@@ -153,6 +161,8 @@ namespace Sillar.Modules.ServiceOrders.Migrations
                             t.HasCheckConstraint("ck_service_orders_assignee_values", "current_assignee_name IS NULL OR (btrim(current_assignee_name) <> '' AND current_assignee_admin_user_id > 0 AND btrim(current_assignee_admin_user_home_node) <> '')");
 
                             t.HasCheckConstraint("ck_service_orders_contact", "nullif(btrim(customer_phone_snapshot), '') IS NOT NULL OR nullif(btrim(customer_email_snapshot), '') IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_service_orders_create_idempotency_key", "create_idempotency_key <> '00000000-0000-0000-0000-000000000000'::uuid");
 
                             t.HasCheckConstraint("ck_service_orders_created_by", "btrim(created_by_admin_name) <> '' AND created_by_admin_user_id > 0 AND btrim(created_by_admin_user_home_node) <> ''");
 

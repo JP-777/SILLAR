@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Sillar.Modules.ServiceOrders\Sillar.Modules.ServiceOrders.csproj" />
     <ProjectReference Include="..\Sillar.Core\Sillar.Core.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Crm.Contracts\Sillar.Modules.Crm.Contracts.csproj" />
     <ProjectReference Include="..\Sillar.Modules.Services\Sillar.Modules.Services.csproj" />
   </ItemGroup>
   <ItemGroup>
