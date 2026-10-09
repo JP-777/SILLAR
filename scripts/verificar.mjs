@@ -2139,6 +2139,7 @@ const etapas = [
       }
       return correr('dotnet', [
         'test', 'backend/Sillar.sln', '--nologo', '--no-build',
+        '-m:1',
         '--logger', 'console;verbosity=normal',
       ], {
         env: {
