@@ -2,7 +2,7 @@
 
 - **Propósito:** ledger factual para diseñar, después de M08, un plan de cuatro agentes sobre módulos independientes.
 - **Creación:** 6 de octubre de 2026 · America/Lima
-- **Última verificación:** 7 de octubre de 2026 · America/Lima
+- **Última modificación parcial:** 9 de octubre de 2026 · America/Lima (entrada QA); **última revisión general:** 7 de octubre de 2026 · America/Lima
 - **Base de la secuencia:** `d26f28a0439a9ac72dbedcc097dd8731b37a27c9`
 
 Este archivo no decide el plan, no asigna agentes y no convierte coincidencia temporal en dependencia.
@@ -128,6 +128,19 @@ Registra únicamente esperas reales causadas por contratos, decisiones o costura
 - **Resolución ratificada:** `board_priority integer NULL`; `NULL` significa que nadie fijó orden manual y el tablero usa `received_at`; entero `>= 0` significa prioridad manual explícita; `CHECK (board_priority IS NULL OR board_priority >= 0)`. Sin centinela `-1`, sin `0` como ausencia y sin booleano paralelo.
 - **Prueba exigida:** materialización solo por nota conserva `NULL` y orden implícito; reordenar fija un entero y cambia el orden; prioridad negativa es rechazada físicamente por PostgreSQL.
 - **Posible punto de desacople, sin decidirlo:** llevar decisiones de nulabilidad y semántica de ausencia a la SPEC antes de que otro frente materialice schema, para reducir esperas y migraciones correctivas posteriores.
+
+## 2026-10-08–09 · M05b / M06 / Integración — infraestructura de la puerta compartida
+
+- **Fecha:** 2026-10-08 y 2026-10-09 — America/Lima.
+- **Frentes:** M05b + M06 / Integración / QA independiente.
+- **Causa:** `COSTURA_COMPARTIDA`.
+- **Hecho:** el runner canónico ejecutaba simultáneamente doce proyectos sobre un único servidor PostgreSQL de QA; las suites que crean y eliminan bases por prueba provocaron 81 fallos de conexión/timeout sobre `253286b`, sin fallo funcional focal. La prueba del candidato completo quedó bloqueada y `[M06-CICLO]` no se ejecutó en aquella corrida.
+- **Qué tuvo que esperar:** certificación de M05b + M06 y, por dependencia deliberada del proceso, el pase a `main`.
+- **Contrato o recurso compartido causante:** `scripts/verificar.mjs` y servidor PostgreSQL de QA; 147 bases efímeras durante la corrida roja y checkpoints forzados prolongados.
+- **Archivos/costura afectados:** `scripts/verificar.mjs`, `backend/Sillar.sln`, `backend/Sillar.Modules.ServiceOrders.Tests/EphemeralDatabase.cs`, `backend/Sillar.Modules.Tracking.Tests/EphemeralDatabase.cs`.
+- **Resolución observada:** commit `92ec272` añadió solo `-m:1` a `dotnet test`; se midieron cero solapamientos entre proyectos y un máximo de un testhost, con 782/782 backend y 180/180 e2e, cero omisiones. Evidencias en `db07c22` (rama QA documental).
+- **Posible punto de desacople, sin decidirlo:** disponer de una capacidad/aislamiento de QA dimensionado para la rotación de bases y de presupuestos de concurrencia medidos, en lugar de dejar el paralelismo implícito. Revisar antes de relajar `-m:1`.
+- **Clasificación deliberada:** no se asigna `RECURSO_PUERTA_EXCLUSIVA`: no se acreditó colisión de agentes por una puerta reservada, sino sobrecarga interna de la misma ejecución.
 
 ## Regla para próximas entradas
 

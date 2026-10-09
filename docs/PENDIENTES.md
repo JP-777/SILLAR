@@ -1,10 +1,10 @@
 # Pendientes
 
-**Última modificación parcial:** 2026-10-07 — America/Lima (entrada 30). **Base verificada de esta entrada:** `312cd0dcdab256ce5cdbf4b99011c62611fcccb2`.
+**Última modificación parcial:** 2026-10-09 — America/Lima (entradas 31–33). **Base verificada de estas entradas:** `db07c22b3d66ba2d1ac29ed9a9168715c5a968af`.
 
 **Creación:** 25 de agosto de 2026, 21:04:02 -05:00 — America/Lima (`1d3f78874cae9a57659166495bb84151b0797db4`)
-**Última verificación:** 7 de octubre de 2026 — America/Lima
-**Commit verificado:** `f7ceea8257ba20a27065645f1c86288c73507bec`
+**Última revisión general anterior:** 7 de octubre de 2026 — America/Lima
+**Commit verificado en la revisión general anterior:** `f7ceea8257ba20a27065645f1c86288c73507bec`
 
 Lo que está decidido pero no hecho, y lo que está aplazado a propósito.
 
@@ -570,6 +570,66 @@ sincronización real.
 
 **No hacer ahora.** No añadir campos, colas, bloqueos ni dependencias a M05b; no resolver la
 política dentro del Paso 1 de M06.
+
+---
+
+## 31 · Paralelismo de la puerta canónica: límite `-m:1` y causa registrada
+
+**Hecho.** En la puerta sobre `253286b914eb98a0ec0c94b95820ac071723b48f`, 81 de 782
+pruebas backend fallaron por desconexiones, cancelaciones o timeouts PostgreSQL mientras
+varios proyectos creaban y borraban bases efímeras concurrentemente. La corrección
+`92ec272a958c575c7a04b30d36cd4064a46b7a78` introdujo `-m:1` en la etapa 5 de
+`scripts/verificar.mjs`: los 12 proyectos pasaron a ejecutarse secuencialmente, 782/782
+quedaron verdes y las cancelaciones 57014 observadas bajaron de 79 a 0. La evidencia
+independiente está en `qa/m05b-m06-92ec272-evidencias`, commit `db07c22`.
+
+**Riesgo.** El límite protege al servidor QA actual, pero deja de someter a presión
+conjunta las suites de los 12 proyectos. No prueba que el pool, los checkpoints o el
+modelo base-por-prueba escalen sin el límite. Se observó un checkpoint de 93,4 s.
+
+**Disparador.** Cuando cambie PostgreSQL de QA, su capacidad/pool o la forma de crear
+bases de prueba, o cuando se incremente sustancialmente el número de suites que hacen
+CREATE/DROP DATABASE, revisar si el límite corresponde al arnés o a la capacidad del
+servidor y ejecutar una contraprueba controlada antes de relajar `-m:1`.
+
+**No hacer ahora.** No retirar `-m:1`, no inflar los timeouts y no atribuir estas 81
+fallas al producto sin evidencia nueva.
+
+---
+
+## 32 · Duración de la puerta canónica con módulos adicionales
+
+**Hecho.** La puerta verde de `92ec272` inició el 08/10/2026 a las 22:59:13 y
+terminó el 09/10/2026 a las 00:00:07 (America/Lima): aproximadamente 60 min 54 s,
+de los cuales la etapa backend tomó 5 min 31 s y la suite e2e cerca de 52,4 min.
+Se acreditaron 782 pruebas backend y 180 e2e sin omisiones.
+
+**Riesgo.** Un aumento del número de módulos o de ciclos físicos puede encarecer la
+frecuencia de la certificación y la integración sin mejorar proporcionalmente la señal.
+
+**Disparador.** Cuando la duración canónica alcance tres horas o su crecimiento
+comprometa el ciclo de integración, medir el desglose por etapa y diseñar una
+estrategia de ejecución que conserve una puerta final completa con cobertura íntegra.
+
+**No hacer ahora.** No omitir suites, desactivar ciclos ni convertir una focal verde en
+certificación final.
+
+---
+
+## 33 · Nombres de pruebas en inglés en M05b y M06
+
+**Hecho.** En el candidato certificado permanecen pruebas de ServiceOrders y Tracking
+con nombres de métodos mayoritariamente en inglés, contrarios a la norma de trabajo
+en español. La QA independiente registró el hallazgo, no lo corrigió y confirmó que
+no bloqueaba la integración funcional.
+
+**Disparador.** Antes de implementar el primer conjunto de pruebas de cualquier módulo
+nuevo, exigir nomenclatura en español desde el diseño. Cuando se vuelva a tocar por
+razones funcionales una suite heredada de M05b o M06, planificar su renombrado en un
+delta documental/test separado y sin alterar las aserciones.
+
+**No hacer ahora.** No abrir una corrección cosmética sobre el SHA funcional ya
+certificado ni repetir la puerta canónica únicamente por renombrar métodos.
 
 ---
 
