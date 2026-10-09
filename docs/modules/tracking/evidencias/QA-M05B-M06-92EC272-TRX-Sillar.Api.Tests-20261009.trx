@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="77ff7076-c4e2-4f6d-8c42-967feaa5342e" name="@archlinux 2026-10-08 23:04:09" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-08T23:04:09.9876910-05:00" queuing="2026-10-08T23:04:09.9876911-05:00" start="2026-10-08T23:04:06.2527242-05:00" finish="2026-10-08T23:04:55.3383110-05:00" />
+  <TestSettings name="default" id="9154152f-24bc-4b79-9036-1ca6eb996c9b">
+    <Deployment runDeploymentRoot="_archlinux_2026-10-08_23_04_09" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="f6e1a288-0f82-4af5-86bb-70b2157b7efc" testId="36aa96ad-3e01-6a2a-6f10-df738ef35aee" testName="Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.Criterio17_fallo_de_correo_de_un_registro_concreto_es_visible_para_admin" computerName="archlinux" duration="00:00:21.3534543" startTime="2026-10-08T23:04:33.7926823-05:00" endTime="2026-10-08T23:04:55.1463857-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f6e1a288-0f82-4af5-86bb-70b2157b7efc" />
+    <UnitTestResult executionId="9a3967f1-631a-407e-b66e-241a8702d6cc" testId="46eb484d-c2dc-4727-bea7-2f6092f50718" testName="Sillar.Api.Tests.ArranqueConModuloActivoAusenteTests.Un_modulo_activo_que_el_binario_no_trae_impide_arrancar_al_host" computerName="archlinux" duration="00:00:22.2142394" startTime="2026-10-08T23:04:08.4363899-05:00" endTime="2026-10-08T23:04:30.6715896-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9a3967f1-631a-407e-b66e-241a8702d6cc" />
+    <UnitTestResult executionId="baa49582-9577-4409-94c3-ee63354da239" testId="906a5477-0868-5495-d83f-0c93220004f6" testName="Sillar.Api.Tests.ModulosEnElDespliegueTests.Cada_modulo_del_repositorio_tiene_su_ensamblado_junto_al_host" computerName="archlinux" duration="00:00:00.0492850" startTime="2026-10-08T23:04:08.4364035-05:00" endTime="2026-10-08T23:04:08.5044380-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="baa49582-9577-4409-94c3-ee63354da239" />
+    <UnitTestResult executionId="d09d26d6-feb0-467c-be40-09e14ab44884" testId="2c2676a2-bb38-738d-f6cc-ea45dd3c3762" testName="Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.Criterio13_password_de_registro_no_aparece_en_respuesta_logs_ni_auditoria" computerName="archlinux" duration="00:00:25.3361009" startTime="2026-10-08T23:04:08.4363904-05:00" endTime="2026-10-08T23:04:33.7868416-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d09d26d6-feb0-467c-be40-09e14ab44884" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.Criterio17_fallo_de_correo_de_un_registro_concreto_es_visible_para_admin" storage="/home/jp777/sillar-qa-m04/backend/sillar.api.tests/bin/debug/net10.0/sillar.api.tests.dll" id="36aa96ad-3e01-6a2a-6f10-df738ef35aee">
+      <Execution id="f6e1a288-0f82-4af5-86bb-70b2157b7efc" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/bin/Debug/net10.0/Sillar.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Api.Tests.CierreM04SeguridadYCorreoTests" name="Criterio17_fallo_de_correo_de_un_registro_concreto_es_visible_para_admin" />
+    </UnitTest>
+    <UnitTest name="Sillar.Api.Tests.ArranqueConModuloActivoAusenteTests.Un_modulo_activo_que_el_binario_no_trae_impide_arrancar_al_host" storage="/home/jp777/sillar-qa-m04/backend/sillar.api.tests/bin/debug/net10.0/sillar.api.tests.dll" id="46eb484d-c2dc-4727-bea7-2f6092f50718">
+      <Execution id="9a3967f1-631a-407e-b66e-241a8702d6cc" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/bin/Debug/net10.0/Sillar.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Api.Tests.ArranqueConModuloActivoAusenteTests" name="Un_modulo_activo_que_el_binario_no_trae_impide_arrancar_al_host" />
+    </UnitTest>
+    <UnitTest name="Sillar.Api.Tests.ModulosEnElDespliegueTests.Cada_modulo_del_repositorio_tiene_su_ensamblado_junto_al_host" storage="/home/jp777/sillar-qa-m04/backend/sillar.api.tests/bin/debug/net10.0/sillar.api.tests.dll" id="906a5477-0868-5495-d83f-0c93220004f6">
+      <Execution id="baa49582-9577-4409-94c3-ee63354da239" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/bin/Debug/net10.0/Sillar.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Api.Tests.ModulosEnElDespliegueTests" name="Cada_modulo_del_repositorio_tiene_su_ensamblado_junto_al_host" />
+    </UnitTest>
+    <UnitTest name="Sillar.Api.Tests.CierreM04SeguridadYCorreoTests.Criterio13_password_de_registro_no_aparece_en_respuesta_logs_ni_auditoria" storage="/home/jp777/sillar-qa-m04/backend/sillar.api.tests/bin/debug/net10.0/sillar.api.tests.dll" id="2c2676a2-bb38-738d-f6cc-ea45dd3c3762">
+      <Execution id="d09d26d6-feb0-467c-be40-09e14ab44884" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Api.Tests/bin/Debug/net10.0/Sillar.Api.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Api.Tests.CierreM04SeguridadYCorreoTests" name="Criterio13_password_de_registro_no_aparece_en_respuesta_logs_ni_auditoria" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="36aa96ad-3e01-6a2a-6f10-df738ef35aee" executionId="f6e1a288-0f82-4af5-86bb-70b2157b7efc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="46eb484d-c2dc-4727-bea7-2f6092f50718" executionId="9a3967f1-631a-407e-b66e-241a8702d6cc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="906a5477-0868-5495-d83f-0c93220004f6" executionId="baa49582-9577-4409-94c3-ee63354da239" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2c2676a2-bb38-738d-f6cc-ea45dd3c3762" executionId="d09d26d6-feb0-467c-be40-09e14ab44884" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="4" executed="4" passed="4" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.01] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.10)
+[xUnit.net 00:00:00.52]   Discovering: Sillar.Api.Tests
+[xUnit.net 00:00:00.89]   Discovered:  Sillar.Api.Tests
+[xUnit.net 00:00:01.30]   Starting:    Sillar.Api.Tests
+[xUnit.net 00:00:48.17]   Finished:    Sillar.Api.Tests (ID = '4eef0175e01f16ff6b2c1e21f6e7e54e3325e58474293327c9ea7b0303cc7afd')
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

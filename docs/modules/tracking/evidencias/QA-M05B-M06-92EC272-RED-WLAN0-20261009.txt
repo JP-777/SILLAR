@@ -1,0 +1,2 @@
+Oct 08 23:12:34 archlinux NetworkManager[516]: <info>  [1791519154.7651] dhcp4 (wlan0): state changed new lease, address=10.38.177.66
+Oct 08 23:42:33 archlinux NetworkManager[516]: <info>  [1791520953.7675] dhcp4 (wlan0): state changed new lease, address=10.38.177.66

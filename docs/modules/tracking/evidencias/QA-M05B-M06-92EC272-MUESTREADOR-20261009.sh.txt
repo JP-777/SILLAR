@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Muestreo de solo lectura cada 2 s: procesos testhost vivos (con su ensamblado de pruebas) y actividad del PostgreSQL de QA.
+C=/var/tmp/sillar-qa-m05b-m06-92ec272; V=$(cat $C/CORRIDA); O=$C/CONCURRENCIA.tsv
+U=$(docker exec sillar_qa_m04_db printenv POSTGRES_USER)
+printf 'hora\ttesthost_vivos\tensamblados\tpg_conexiones\tpg_activas\tpg_bases_efimeras\n' > $O
+while [ ! -f $V/RC-1 ]; do
+  n=0; ens=""
+  # Solo procesos cuyo ejecutable es dotnet y que cargan testhost.dll (los hosts de pruebas reales).
+  for p in $(pgrep -x dotnet || true); do c=$(tr '\0' ' ' </proc/$p/cmdline 2>/dev/null) || continue; case "$c" in *testhost.dll*) ;; *) continue;; esac; n=$((n+1)); d=$(readlink /proc/$p/cwd 2>/dev/null | sed -E 's#.*/backend/([^/]+)/bin.*#\1#'); ens="$ens${ens:+,}$d"; done
+  pg=$(docker exec sillar_qa_m04_db psql -U "$U" -d postgres -Atc "select count(*), count(*) filter (where state='active'), (select count(*) from pg_database where datname ~ '^sillar_(m05b|m06|b2b_prueba|vacia|adr019)_') from pg_stat_activity where backend_type='client backend'" 2>/dev/null | tr '|' '\t')
+  printf '%s\t%s\t%s\t%s\n' "$(TZ=America/Lima date +%T)" "$n" "${ens:--}" "${pg:-?	?	?}" >> $O
+  sleep 2
+done

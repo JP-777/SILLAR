@@ -1,0 +1,10 @@
+sillar_verify_1791518353854_3280520
+schemas: b2b,catalog,cms,core,crm,sales,service_orders,services,tracking
+b2b: 20261004225318_B2bInitial
+sales: 20260930185029_SalesInitial
+service_orders: 20261007150148_ServiceOrdersInitial
+service_orders: 20261007202000_AddServiceOrderCreateIdempotency
+services: 20260928090000_ServicesInitial
+tracking: 20261007212800_TrackingInitial
+FK desde tracking: fk_order_tracking_service_order_id->service_orders.service_orders, fk_tracking_notes_order_tracking_id->tracking.order_tracking
+2026-10-08 23:02:30 -0500

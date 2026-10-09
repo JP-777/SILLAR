@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="7628dc18-7ec2-4345-81e0-172c7508cd9c" name="@archlinux 2026-10-08 23:04:05" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-08T23:04:05.7608374-05:00" queuing="2026-10-08T23:04:05.7608375-05:00" start="2026-10-08T23:04:02.2738675-05:00" finish="2026-10-08T23:04:05.8646305-05:00" />
+  <TestSettings name="default" id="a1f5f263-0597-4e6a-9aec-d3b159587812">
+    <Deployment runDeploymentRoot="_archlinux_2026-10-08_23_04_05" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="70b58e8b-2485-4660-9593-c569910e78cf" testId="647cd645-b2c2-998d-5950-5da898006ede" testName="Sillar.Shared.Data.Tests.ReplicationMappingTests.Sin_MapReplication_EF_las_nombraria_de_otra_forma" computerName="archlinux" duration="00:00:00.0015821" startTime="2026-10-08T23:04:05.6190109-05:00" endTime="2026-10-08T23:04:05.6207921-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="70b58e8b-2485-4660-9593-c569910e78cf" />
+    <UnitTestResult executionId="b309791a-d798-46ac-a51c-c40b8e6f809d" testId="ff4b224b-2467-9463-48f0-00aead996a12" testName="Sillar.Shared.Data.Tests.ReplicationStampingTests.Una_fila_sin_cambios_no_se_sella" computerName="archlinux" duration="00:00:00.0068016" startTime="2026-10-08T23:04:05.6761498-05:00" endTime="2026-10-08T23:04:05.6830324-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b309791a-d798-46ac-a51c-c40b8e6f809d" />
+    <UnitTestResult executionId="8ba4be20-0ca6-4164-998f-ec6ebd3dd353" testId="2209d786-bb67-2c85-785f-78718f03f49b" testName="Sillar.Shared.Data.Tests.ReplicationMappingTests.La_fecha_de_cambio_la_pone_el_trigger_al_insertar_y_al_actualizar" computerName="archlinux" duration="00:00:00.0011944" startTime="2026-10-08T23:04:05.6329102-05:00" endTime="2026-10-08T23:04:05.6341713-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8ba4be20-0ca6-4164-998f-ec6ebd3dd353" />
+    <UnitTestResult executionId="e6b490f1-5ca6-467e-83b4-42939da56d5e" testId="e3dd07f0-d67a-b183-0af0-2425ca9b20e8" testName="Sillar.Shared.Data.Tests.ReplicationMappingTests.Las_cuatro_columnas_llevan_el_nombre_en_snake_case_del_esquema" computerName="archlinux" duration="00:00:01.2180730" startTime="2026-10-08T23:04:04.3643449-05:00" endTime="2026-10-08T23:04:05.6025760-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e6b490f1-5ca6-467e-83b4-42939da56d5e" />
+    <UnitTestResult executionId="55d1a444-d4e1-44c5-911e-49b92d5bde81" testId="efe5b489-d545-df20-ac21-4f5faf5feff8" testName="Sillar.Shared.Data.Tests.ReplicationMappingTests.La_version_nace_en_uno_y_no_la_genera_la_base" computerName="archlinux" duration="00:00:00.0058721" startTime="2026-10-08T23:04:05.6349798-05:00" endTime="2026-10-08T23:04:05.6409218-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="55d1a444-d4e1-44c5-911e-49b92d5bde81" />
+    <UnitTestResult executionId="3da5f257-f5bb-408d-ae42-65f33edd718e" testId="21b1edcf-650e-ac41-3389-4d315742f193" testName="Sillar.Shared.Data.Tests.ReplicationStampingTests.El_borrado_tampoco_sube_la_version" computerName="archlinux" duration="00:00:00.0077995" startTime="2026-10-08T23:04:05.6835413-05:00" endTime="2026-10-08T23:04:05.6913948-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3da5f257-f5bb-408d-ae42-65f33edd718e" />
+    <UnitTestResult executionId="9ee8a9ba-aec4-42cc-8eea-37b9d0311710" testId="c69e8174-3e5b-6448-9ad1-110e2e2c692a" testName="Sillar.Shared.Data.Tests.ReplicationStampingTests.Al_modificar_no_se_reescriben_ni_el_origen_ni_la_fecha_de_alta" computerName="archlinux" duration="00:00:01.2963747" startTime="2026-10-08T23:04:04.3643422-05:00" endTime="2026-10-08T23:04:05.6755523-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9ee8a9ba-aec4-42cc-8eea-37b9d0311710" />
+    <UnitTestResult executionId="60ea0954-0036-4b4d-97ef-fb6a737809d4" testId="caa8aa0b-9278-f000-d530-0dfc20e6c31a" testName="Sillar.Shared.Data.Tests.ReplicationStampingTests.Al_modificar_sube_la_version_y_el_origen_no_se_toca" computerName="archlinux" duration="00:00:00.0010808" startTime="2026-10-08T23:04:05.6920047-05:00" endTime="2026-10-08T23:04:05.6931334-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="60ea0954-0036-4b4d-97ef-fb6a737809d4" />
+    <UnitTestResult executionId="9ac8e5b7-3f89-4727-93b5-28d1da4253ba" testId="dd95d9dd-949a-5ee8-5d32-648889ca117e" testName="Sillar.Shared.Data.Tests.ReplicationMappingTests.La_fecha_de_alta_la_pone_la_base_y_solo_al_insertar" computerName="archlinux" duration="00:00:00.0084250" startTime="2026-10-08T23:04:05.6215563-05:00" endTime="2026-10-08T23:04:05.6300525-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9ac8e5b7-3f89-4727-93b5-28d1da4253ba" />
+    <UnitTestResult executionId="d31cd13f-5f93-49d2-be00-99f16dd2725c" testId="02e5331b-49db-fef2-345b-7b83f7bb9614" testName="Sillar.Shared.Data.Tests.ReplicationMappingTests.El_nodo_de_origen_es_obligatorio" computerName="archlinux" duration="00:00:00.0013289" startTime="2026-10-08T23:04:05.6308301-05:00" endTime="2026-10-08T23:04:05.6322374-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d31cd13f-5f93-49d2-be00-99f16dd2725c" />
+    <UnitTestResult executionId="30ffb300-acf4-468a-bc4d-2ab7fcde6fbc" testId="4ffee362-88b1-07f7-fabb-03a58ea6f985" testName="Sillar.Shared.Data.Tests.ReplicationStampingTests.Una_fila_nueva_nace_con_el_nodo_la_version_uno_y_las_dos_fechas" computerName="archlinux" duration="00:00:00.0035092" startTime="2026-10-08T23:04:05.6936691-05:00" endTime="2026-10-08T23:04:05.6972568-05:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="30ffb300-acf4-468a-bc4d-2ab7fcde6fbc" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Sillar.Shared.Data.Tests.ReplicationStampingTests.Una_fila_nueva_nace_con_el_nodo_la_version_uno_y_las_dos_fechas" storage="/home/jp777/sillar-qa-m04/backend/sillar.shared.data.tests/bin/debug/net10.0/sillar.shared.data.tests.dll" id="4ffee362-88b1-07f7-fabb-03a58ea6f985">
+      <Execution id="30ffb300-acf4-468a-bc4d-2ab7fcde6fbc" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Shared.Data.Tests/bin/Debug/net10.0/Sillar.Shared.Data.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Shared.Data.Tests.ReplicationStampingTests" name="Una_fila_nueva_nace_con_el_nodo_la_version_uno_y_las_dos_fechas" />
+    </UnitTest>
+    <UnitTest name="Sillar.Shared.Data.Tests.ReplicationStampingTests.El_borrado_tampoco_sube_la_version" storage="/home/jp777/sillar-qa-m04/backend/sillar.shared.data.tests/bin/debug/net10.0/sillar.shared.data.tests.dll" id="21b1edcf-650e-ac41-3389-4d315742f193">
+      <Execution id="3da5f257-f5bb-408d-ae42-65f33edd718e" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Shared.Data.Tests/bin/Debug/net10.0/Sillar.Shared.Data.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Shared.Data.Tests.ReplicationStampingTests" name="El_borrado_tampoco_sube_la_version" />
+    </UnitTest>
+    <UnitTest name="Sillar.Shared.Data.Tests.ReplicationMappingTests.La_fecha_de_cambio_la_pone_el_trigger_al_insertar_y_al_actualizar" storage="/home/jp777/sillar-qa-m04/backend/sillar.shared.data.tests/bin/debug/net10.0/sillar.shared.data.tests.dll" id="2209d786-bb67-2c85-785f-78718f03f49b">
+      <Execution id="8ba4be20-0ca6-4164-998f-ec6ebd3dd353" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Shared.Data.Tests/bin/Debug/net10.0/Sillar.Shared.Data.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Shared.Data.Tests.ReplicationMappingTests" name="La_fecha_de_cambio_la_pone_el_trigger_al_insertar_y_al_actualizar" />
+    </UnitTest>
+    <UnitTest name="Sillar.Shared.Data.Tests.ReplicationMappingTests.El_nodo_de_origen_es_obligatorio" storage="/home/jp777/sillar-qa-m04/backend/sillar.shared.data.tests/bin/debug/net10.0/sillar.shared.data.tests.dll" id="02e5331b-49db-fef2-345b-7b83f7bb9614">
+      <Execution id="d31cd13f-5f93-49d2-be00-99f16dd2725c" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Shared.Data.Tests/bin/Debug/net10.0/Sillar.Shared.Data.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Shared.Data.Tests.ReplicationMappingTests" name="El_nodo_de_origen_es_obligatorio" />
+    </UnitTest>
+    <UnitTest name="Sillar.Shared.Data.Tests.ReplicationStampingTests.Al_modificar_no_se_reescriben_ni_el_origen_ni_la_fecha_de_alta" storage="/home/jp777/sillar-qa-m04/backend/sillar.shared.data.tests/bin/debug/net10.0/sillar.shared.data.tests.dll" id="c69e8174-3e5b-6448-9ad1-110e2e2c692a">
+      <Execution id="9ee8a9ba-aec4-42cc-8eea-37b9d0311710" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Shared.Data.Tests/bin/Debug/net10.0/Sillar.Shared.Data.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Shared.Data.Tests.ReplicationStampingTests" name="Al_modificar_no_se_reescriben_ni_el_origen_ni_la_fecha_de_alta" />
+    </UnitTest>
+    <UnitTest name="Sillar.Shared.Data.Tests.ReplicationMappingTests.Sin_MapReplication_EF_las_nombraria_de_otra_forma" storage="/home/jp777/sillar-qa-m04/backend/sillar.shared.data.tests/bin/debug/net10.0/sillar.shared.data.tests.dll" id="647cd645-b2c2-998d-5950-5da898006ede">
+      <Execution id="70b58e8b-2485-4660-9593-c569910e78cf" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Shared.Data.Tests/bin/Debug/net10.0/Sillar.Shared.Data.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Shared.Data.Tests.ReplicationMappingTests" name="Sin_MapReplication_EF_las_nombraria_de_otra_forma" />
+    </UnitTest>
+    <UnitTest name="Sillar.Shared.Data.Tests.ReplicationMappingTests.La_version_nace_en_uno_y_no_la_genera_la_base" storage="/home/jp777/sillar-qa-m04/backend/sillar.shared.data.tests/bin/debug/net10.0/sillar.shared.data.tests.dll" id="efe5b489-d545-df20-ac21-4f5faf5feff8">
+      <Execution id="55d1a444-d4e1-44c5-911e-49b92d5bde81" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Shared.Data.Tests/bin/Debug/net10.0/Sillar.Shared.Data.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Shared.Data.Tests.ReplicationMappingTests" name="La_version_nace_en_uno_y_no_la_genera_la_base" />
+    </UnitTest>
+    <UnitTest name="Sillar.Shared.Data.Tests.ReplicationStampingTests.Al_modificar_sube_la_version_y_el_origen_no_se_toca" storage="/home/jp777/sillar-qa-m04/backend/sillar.shared.data.tests/bin/debug/net10.0/sillar.shared.data.tests.dll" id="caa8aa0b-9278-f000-d530-0dfc20e6c31a">
+      <Execution id="60ea0954-0036-4b4d-97ef-fb6a737809d4" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Shared.Data.Tests/bin/Debug/net10.0/Sillar.Shared.Data.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Shared.Data.Tests.ReplicationStampingTests" name="Al_modificar_sube_la_version_y_el_origen_no_se_toca" />
+    </UnitTest>
+    <UnitTest name="Sillar.Shared.Data.Tests.ReplicationStampingTests.Una_fila_sin_cambios_no_se_sella" storage="/home/jp777/sillar-qa-m04/backend/sillar.shared.data.tests/bin/debug/net10.0/sillar.shared.data.tests.dll" id="ff4b224b-2467-9463-48f0-00aead996a12">
+      <Execution id="b309791a-d798-46ac-a51c-c40b8e6f809d" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Shared.Data.Tests/bin/Debug/net10.0/Sillar.Shared.Data.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Shared.Data.Tests.ReplicationStampingTests" name="Una_fila_sin_cambios_no_se_sella" />
+    </UnitTest>
+    <UnitTest name="Sillar.Shared.Data.Tests.ReplicationMappingTests.Las_cuatro_columnas_llevan_el_nombre_en_snake_case_del_esquema" storage="/home/jp777/sillar-qa-m04/backend/sillar.shared.data.tests/bin/debug/net10.0/sillar.shared.data.tests.dll" id="e3dd07f0-d67a-b183-0af0-2425ca9b20e8">
+      <Execution id="e6b490f1-5ca6-467e-83b4-42939da56d5e" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Shared.Data.Tests/bin/Debug/net10.0/Sillar.Shared.Data.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Shared.Data.Tests.ReplicationMappingTests" name="Las_cuatro_columnas_llevan_el_nombre_en_snake_case_del_esquema" />
+    </UnitTest>
+    <UnitTest name="Sillar.Shared.Data.Tests.ReplicationMappingTests.La_fecha_de_alta_la_pone_la_base_y_solo_al_insertar" storage="/home/jp777/sillar-qa-m04/backend/sillar.shared.data.tests/bin/debug/net10.0/sillar.shared.data.tests.dll" id="dd95d9dd-949a-5ee8-5d32-648889ca117e">
+      <Execution id="9ac8e5b7-3f89-4727-93b5-28d1da4253ba" />
+      <TestMethod codeBase="/home/JP777/sillar-qa-m04/backend/Sillar.Shared.Data.Tests/bin/Debug/net10.0/Sillar.Shared.Data.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="Sillar.Shared.Data.Tests.ReplicationMappingTests" name="La_fecha_de_alta_la_pone_la_base_y_solo_al_insertar" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="647cd645-b2c2-998d-5950-5da898006ede" executionId="70b58e8b-2485-4660-9593-c569910e78cf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ff4b224b-2467-9463-48f0-00aead996a12" executionId="b309791a-d798-46ac-a51c-c40b8e6f809d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2209d786-bb67-2c85-785f-78718f03f49b" executionId="8ba4be20-0ca6-4164-998f-ec6ebd3dd353" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e3dd07f0-d67a-b183-0af0-2425ca9b20e8" executionId="e6b490f1-5ca6-467e-83b4-42939da56d5e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="efe5b489-d545-df20-ac21-4f5faf5feff8" executionId="55d1a444-d4e1-44c5-911e-49b92d5bde81" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="21b1edcf-650e-ac41-3389-4d315742f193" executionId="3da5f257-f5bb-408d-ae42-65f33edd718e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c69e8174-3e5b-6448-9ad1-110e2e2c692a" executionId="9ee8a9ba-aec4-42cc-8eea-37b9d0311710" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="caa8aa0b-9278-f000-d530-0dfc20e6c31a" executionId="60ea0954-0036-4b4d-97ef-fb6a737809d4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dd95d9dd-949a-5ee8-5d32-648889ca117e" executionId="9ac8e5b7-3f89-4727-93b5-28d1da4253ba" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="02e5331b-49db-fef2-345b-7b83f7bb9614" executionId="d31cd13f-5f93-49d2-be00-99f16dd2725c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4ffee362-88b1-07f7-fabb-03a58ea6f985" executionId="30ffb300-acf4-468a-bc4d-2ab7fcde6fbc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="11" executed="11" passed="11" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.10)
+[xUnit.net 00:00:00.38]   Discovering: Sillar.Shared.Data.Tests
+[xUnit.net 00:00:00.83]   Discovered:  Sillar.Shared.Data.Tests
+[xUnit.net 00:00:01.24]   Starting:    Sillar.Shared.Data.Tests
+[xUnit.net 00:00:02.73]   Finished:    Sillar.Shared.Data.Tests (ID = '1171ed2c8df3325bff92196f8945624b50554ea5fff2f2b58859aac205386b06')
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

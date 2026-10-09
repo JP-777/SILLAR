@@ -1,0 +1,17 @@
+# FRONTEND FUERA DE LA PUERTA (no es evidencia canónica) · 92ec272a958c575c7a04b30d36cd4064a46b7a78 · cambios 0 · 2026-10-08 22:21:31 -0500
+== (cd frontend && node --test tests/trackingModulo.test.mjs)
+ℹ tests 7
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+   rc=0
+== (cd frontend && node --test tests/b2bModulo.test.mjs)
+ℹ tests 16
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+   rc=0
