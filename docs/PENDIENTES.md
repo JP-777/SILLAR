@@ -1,6 +1,6 @@
 # Pendientes
 
-**Última modificación parcial:** 2026-10-09 — America/Lima (entradas 31–33). **Base verificada de estas entradas:** `db07c22b3d66ba2d1ac29ed9a9168715c5a968af`.
+**Última modificación parcial:** 2026-10-09 — America/Lima (entradas 31–34). **Bases verificadas:** entradas 31–33 sobre `db07c22b3d66ba2d1ac29ed9a9168715c5a968af`; entrada 34 sobre `4a3fd1ef12fc2226bad185f003acea9168b9a4c9`.
 
 **Creación:** 25 de agosto de 2026, 21:04:02 -05:00 — America/Lima (`1d3f78874cae9a57659166495bb84151b0797db4`)
 **Última revisión general anterior:** 7 de octubre de 2026 — America/Lima
@@ -630,6 +630,33 @@ delta documental/test separado y sin alterar las aserciones.
 
 **No hacer ahora.** No abrir una corrección cosmética sobre el SHA funcional ya
 certificado ni repetir la puerta canónica únicamente por renombrar métodos.
+
+---
+
+## 34 · Restaurabilidad integral de M05b ServiceOrders
+
+**Hecho.** La paridad estática del arnés acredita los nueve módulos
+reales en binario, migrate, seed y puerta. Las pruebas PostgreSQL de
+M05b acreditan su seed y configuración, mientras [M06-CICLO] acredita
+la reconstrucción de Tracking conservando ServiceOrders. No se ha
+ejecutado una comparación destructiva integral de M05b entre
+POST /api/setup y migrate()+seed().
+
+**Comprobación pendiente.** En una base PostgreSQL exclusivamente
+efímera, comparar ambos caminos por schema, tablas, historial de
+migraciones, claves foráneas aplicables y configuración del seed.
+Acreditar también que el arnés detecta una restauración incompleta,
+sin declarar PASS por mera existencia de schema.
+
+**Disparador.** Cuando una prueba destructiva necesite reconstruir
+M05b, o antes de la primera instalación real; lo que ocurra primero.
+
+**Responsable.** Integración y QA independiente, con el dueño del
+módulo para las correcciones que efectivamente se demuestren.
+
+**No hacer ahora.** No bloquear M08, no destruir datos de desarrollo
+o producción, no atribuir a [M06-CICLO] una cobertura que no ejecutó
+y no repetir una puerta completa sin una razón técnica acreditada.
 
 ---
 
