@@ -11,6 +11,8 @@ import { catalogPublicRoutes, catalogRoutes } from '../modules/catalog/routes';
 import { cmsRoutes } from '../modules/cms/routes';
 import { coreRoutes } from '../modules/core/routes';
 import { crmAdminRoutes, crmPublicRoutes } from '../modules/crm/routes';
+import { RequireCustomerAuth } from '../modules/crm/session';
+import { portalPublicRoutes } from '../modules/portal/routes';
 import { servicesAdminRoutes, servicesPublicRoutes } from '../modules/services/routes';
 import { trackingRoutes } from '../modules/tracking/routes';
 
@@ -45,6 +47,13 @@ export function AppRoutes() {
 
         {/* M04 también pertenece a esta superficie pública. */}
         {has('crm') && crmPublicRoutes}
+
+        {/* M08: rutas privadas del cliente, con la guarda existente M04. */}
+        {has('portal') && (
+          <Route element={<RequireCustomerAuth />}>
+            {portalPublicRoutes}
+          </Route>
+        )}
       </Route>
 
       <Route path="/login" element={<LoginPage />} />

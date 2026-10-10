@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { catalogHome } from '../modules/catalog/routes';
 import { cmsHome } from '../modules/cms/cmsHome';
 import { crmHome } from '../modules/crm/routes';
+import { portalHome } from '../modules/portal/routes';
 import { servicesHome } from '../modules/services/routes';
 
 /**
@@ -36,7 +37,7 @@ export interface HomeSection {
  * armazón. Por eso no hay ningún campo `order` — con uno, dos módulos pueden
  * pelearse por el mismo hueco y nadie lo ve hasta que se instalan juntos.
  */
-export const HOME_SECTIONS: readonly HomeSection[] = [cmsHome, catalogHome, servicesHome, crmHome];
+export const HOME_SECTIONS: readonly HomeSection[] = [cmsHome, catalogHome, servicesHome, crmHome, portalHome];
 
 /** Las secciones de los módulos activos, en el orden del array. */
 export function visibleHomeSections(isActive: (code: string) => boolean): HomeSection[] {
