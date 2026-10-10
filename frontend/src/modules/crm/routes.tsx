@@ -19,6 +19,9 @@ import { AdminContactMessagesPage } from './pages/AdminContactMessagesPage';
 import { AdminContactMessageDetailPage } from './pages/AdminContactMessageDetailPage';
 import { RequireCustomerAuth, useCustomerSession } from './session';
 
+// Superficie publica de M04 para los puntos de composicion.
+export { RequireCustomerAuth };
+
 export const crmNavigation: ModuleNavigation = {
   moduleCode: 'crm',
   group: 'Clientes',
