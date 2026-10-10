@@ -116,10 +116,9 @@ test('M08 UI — P2 cubre carga, vacío y error recuperable', async ({ page }) =
   await prepareBoot(page);
   let release: (() => void) | undefined;
   const waiting = new Promise<void>((resolve) => { release = resolve; });
-  let attempt = 0;
+  let phase: 'empty' | 'error' = 'empty';
   await page.route('**/api/portal/overview*', async (route) => {
-    attempt += 1;
-    if (attempt === 1) {
+    if (phase === 'empty') {
       await waiting;
       await route.fulfill({ json: overview(CUSTOMER_A.fullName, [], []) });
       return;
@@ -132,6 +131,7 @@ test('M08 UI — P2 cubre carga, vacío y error recuperable', async ({ page }) =
   await expect(page.getByText('Cargando tus pedidos')).toBeVisible();
   release?.();
   await expect(page.getByText('Todavía no tienes pedidos')).toBeVisible();
+  phase = 'error';
   await page.reload();
   await expect(page.getByText('No pudimos cargar tus pedidos. Reintenta.')).toBeVisible();
 });
@@ -227,7 +227,8 @@ test('M08 UI — cambiar de cliente invalida el contenido de A', async ({ page }
 
   await page.goto('/mi-portal');
   await expect(page.getByText('PEDIDO-ALFA')).toBeVisible();
-  await page.getByRole('link', { name: 'Mi cuenta' }).click();
+  const portalNavigation = page.getByRole('navigation', { name: 'Navegación de Mi portal' });
+  await portalNavigation.getByRole('link', { name: 'Mi cuenta', exact: true }).click();
   await page.getByRole('button', { name: 'Cerrar sesión' }).click();
   await page.goto('/entrar');
   await page.getByLabel('Correo').fill(CUSTOMER_B.email);
