@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sillar.Modules.Tracking.Application;
+using Sillar.Modules.Tracking.Contracts;
 using Sillar.Modules.Tracking.Data;
 using Sillar.Modules.Tracking.Endpoints;
 using Sillar.Shared.Data.Modularity;
@@ -67,6 +68,7 @@ public sealed class TrackingModule : IModule, IModuleMigrations
                 TrackingDbContext.MigrationsHistoryTable));
 
         services.AddScoped<TrackingApplicationService>();
+        services.AddScoped<ICustomerTrackingProgress, CustomerTrackingProgressService>();
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints)

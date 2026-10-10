@@ -57,6 +57,7 @@ public sealed class ServiceOrdersModule : IModule, IModuleMigrations
         services.AddScoped<ServiceOrderApplicationService>();
         services.AddScoped<IServiceOrderTrackingSource>(
             provider => provider.GetRequiredService<ServiceOrderApplicationService>());
+        services.AddScoped<ICustomerServiceOrderReader, CustomerServiceOrderReader>();
         services.AddScoped<IServiceOrderTransitions, ServiceOrderTransitionService>();
     }
 
