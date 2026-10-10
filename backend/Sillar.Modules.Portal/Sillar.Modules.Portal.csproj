@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Crm.Contracts\Sillar.Modules.Crm.Contracts.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Sales.Contracts\Sillar.Modules.Sales.Contracts.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Tracking.Contracts\Sillar.Modules.Tracking.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Sillar.Modules.Portal.Tests" />
+  </ItemGroup>
+</Project>
