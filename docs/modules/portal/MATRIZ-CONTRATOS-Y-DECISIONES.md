@@ -1,7 +1,7 @@
 # M08 — Matriz de fuentes, contratos y decisiones · paquete para JP / Claude A
 
-**Estado:** D1–D6 RATIFICADAS por JP el 09/10/2026; contratos aprobados para implementación focal, aún no integrados. **Base consultada:** `4a3fd1ef12fc2226bad185f003acea9168b9a4c9` (`main`, 2026-10-09).
-**Regla:** «Existe en código», «documentado» y «propuesto» no son la misma cosa. No tomar una firma propuesta como disponible en DI.
+**Estado vigente 10/10/2026:** D1–D6 ratificadas; contratos M05b/M06 publicados en `963e0f1` y QA focal interna PASS. QA independiente y merge PENDIENTES. **Base histórica:** `4a3fd1ef12fc2226bad185f003acea9168b9a4c9` (`main`, 09/10/2026).
+**Regla:** «Existe en `main`», «existe en rama `963e0f1`», «documentado» y «propuesto» son estados distintos. No asumir contratos de una rama como disponibles en `main`.
 
 ## 1. Qué existe y a quién pertenece
 
@@ -16,10 +16,12 @@
 | `backend/Sillar.Modules.Sales/Endpoints/PedidosDelClienteEndpoints.cs` | `/api/sales/my-orders` y `/{orderCode}`; detalle filtra dueño dentro de consulta EF | Detalle propio o lectura delegada | EXISTE |
 | `backend/Sillar.Modules.Sales.Contracts/OrderStatus.cs` | Siete estados técnicos; frase visible en UI | No inventar estados ni afirmar stock reservado | EXISTE |
 | `backend/Sillar.Modules.ServiceOrders/Domain/ServiceOrder.cs` | `CustomerId` es `Guid?`; permite NULL | Una orden sin vínculo NO es propia por coincidencia de contacto | EXISTE |
-| `backend/Sillar.Modules.ServiceOrders.Contracts/ServiceOrderContracts.cs` | `IServiceOrderTrackingSource` lee por orden sin filtro de dueño; estados M05b; transición de dueño | **No** convertirlo en endpoint cliente | EXISTE pero INSUFICIENTE |
+| `backend/Sillar.Modules.ServiceOrders.Contracts/ServiceOrderContracts.cs` | `IServiceOrderTrackingSource` lee por orden sin filtro de dueño; interfaz interna/admin | **No** convertirlo en endpoint cliente | EXISTE, NO APTO PARA PORTAL |
+| `backend/Sillar.Modules.ServiceOrders.Contracts/ICustomerServiceOrderReader.cs` | Publicado en `963e0f1`; filtra por `CustomerId` en SQL, lista y detalle | M06, solo servidor confiable; nunca HTTP anónimo | EXISTE EN RAMA, NO EN MAIN |
+| `backend/Sillar.Modules.Tracking.Contracts/ICustomerTrackingProgress.cs` | Publicado en `963e0f1`; DTO sin notas, prioridades, plazos internos ni personal | M08 bajo sesión autenticada M04 | EXISTE EN RAMA, NO EN MAIN |
 | `backend/Sillar.Modules.Tracking/Endpoints/TrackingEndpoints.cs` | Siete rutas `/api/admin/tracking`, política de personal | Nunca llamarlas desde Portal | EXISTE solo ADMIN |
-| `docs/modules/tracking/SPEC.md` §5.2 y §6.5 | Notas solo internas; contrato apto para M08 queda por definir | Solicitar proyección sanitaria nueva al dueño de M06 | COMPROMISO DOCUMENTAL, SIN CÓDIGO |
-| `backend/Sillar.Modules.Tracking.Contracts/` | No aparece en árbol de `main` verificado | No asumir proyecto ni firma | **NO EXISTE** |
+| `docs/modules/tracking/SPEC.md` §5.2 y §6.5 | Compromiso histórico de vista pública | Contrastar con `ICustomerTrackingProgress` materializado en `963e0f1` | MATERIALIZADO EN RAMA |
+| `backend/Sillar.Modules.Tracking.Contracts/` | Existe en rama contractual `963e0f1` y consta en `backend/Sillar.sln` | Consumir sobre el SHA contractual, no suponer presencia en `main` | EXISTE EN RAMA; NO EN MAIN |
 | `frontend/src/modules/sales/` | No aparece en árbol de `main` verificado | No poner enlaces a rutas UI inventadas | **NO EXISTE** |
 | `frontend/src/modules/portal/`, `backend/Sillar.Modules.Portal/` | No aparecen en árbol de `main` verificado | Nuevo trabajo exclusivo de M08 | **NO EXISTEN** |
 | `docs/ARQUITECTURA_MODULAR.md` §4 | Prevé `portal.users` y `customer_profiles`, pese a autenticación real M04 | Elevar discrepancia D1; no duplicar silenciosamente | DOCUMENTACIÓN HISTÓRICA DESACTUALIZABLE |
@@ -60,7 +62,7 @@
 
 **R1 — Orden sin cliente vinculado.** M05b permite contacto capturado sin `CustomerId`. No mostrar por coincidencia de correo (puede haberse reutilizado), teléfono (compartido) o nombre (no único). Si se quiere vinculación posterior, pedir flujo separado con prueba fuerte de titularidad, auditoría e idempotencia.
 
-**R2 — Filtración por proveedor.** `IServiceOrderTrackingSource.GetAsync(serviceOrderId)` **no** filtra por `customerId`; convertirlo en ruta pública es una fuga. M06 tampoco dispone hoy de contrato público apto para cliente. Bloquea la parte de trabajos hasta publicar ambos contratos.
+**R2 — Filtración por proveedor.** `IServiceOrderTrackingSource.GetAsync(serviceOrderId)` **no** filtra por `customerId`; convertirlo en ruta pública sería una fuga. M06 **sí dispone** de `ICustomerTrackingProgress` en rama `963e0f1`, pero no existe aún API M08 autenticada. Prohibido exponer trabajos hasta verificar sesión M04, propiedad M05b y ausencia de campos internos.
 
 **R3 — Dos cookies.** CORE y M04 separan administradores y clientes; no usar `ICurrentAdmin` para autenticar clientela. El trío administrativo solo aplica a actos de personal; leer un portal no requiere inventar actor administrativo.
 
@@ -76,6 +78,6 @@
 
 - `main` funcional integrado: `4a3fd1ef12fc2226bad185f003acea9168b9a4c9`.
 - QA M05b+M06 cerrada: 6/6, 782 backend, 180 e2e. La focal destructiva integral de M05b sigue pendiente (registrada en rama `docs/pendiente-restaurabilidad-m05b-20261009`, no integrada).
-- M08 Paso 1: D1–D6 y contratos aprobados por JP, **focal técnica pendiente de validación**; no hay código M08 ni migraciones.
+- M08 Paso 1: D1–D6 ratificadas, contratos `963e0f1` publicados, focal M05b 47/47, M06 35/35 y VERDE→ROJO→VERDE acreditadas internamente; QA independiente y puerta canónica pendientes; sin API/UI M08 ni migraciones.
 - Agente A: ejecutor principal. Chat 2: costuras e integración; JP: producto/ratificación; QA: independiente.
 - Prioridad absoluta al volver A: respetar D1–D6 ya ratificadas, verificar los contratos M05b/M06 integrados y después implementar Portal sin tocar módulos ajenos directamente.

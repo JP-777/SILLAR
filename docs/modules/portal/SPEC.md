@@ -1,15 +1,17 @@
 # SILLAR — M08 Portal del Cliente · SPEC de Paso 1
 
-**Estado:** D1–D6 RATIFICADAS POR JP el 09/10/2026. Paso 1 sujeto a revisión contractual de M05b/M06 y contraste de las pruebas; no hay implementación integrada de M08.
+**Estado vigente 10/10/2026:** D1–D6 ratificadas; contratos M05b/M06 publicados en rama `963e0f1`, con 82/82 regresiones focales PASS y ensayo VERDE→ROJO→VERDE acreditado internamente. **Pendientes:** QA independiente, puerta canónica, merge a `main` e implementación de M08.
 **Fecha:** 2026-10-09 · America/Lima. **Base verificada:** `main` `4a3fd1ef12fc2226bad185f003acea9168b9a4c9`.
 **Preparación:** Chat 2 (Integración). **Ejecución prevista:** Agente A, cuando vuelva a disponer de capacidad.
 **Ámbito:** SILLAR WEB, no SILLAR ERP. La preparación de contratos M05b/M06 es una candidata separada; no implica código incorporado a main, ni migraciones ni API de Portal.
+
+> **Actualización del 10/10/2026:** `ICustomerServiceOrderReader` y `ICustomerTrackingProgress` están materializados en `963e0f1d12b131c4296cd836c88c3334fc22288e`, no en `main` `4a3fd1e`. Su publicación no crea endpoints HTTP públicos. M08 debe exigir `crm:customer` y tomar `CustomerId` de `ICurrentCustomer`, nunca del navegador. Este avance habilita preparación/desarrollo en rama aislada, **no** QA independiente, integración ni exposición del Portal. Consultar acta 03.
 
 ## 0. Autoridad, evidencia y decisiones
 
 **Ya ratificado por JP/colíder:** M08 Portal del Cliente; M04 como dependencia dura; M03 y M06 como proveedores blandos; M08 muestra pedidos y trabajos cuando estén disponibles, y conserva un portal funcional con solo M04; atribuciones administrativas desde `ICurrentAdmin` mediante nombre visible + identificador local + nodo de la cuenta; clasificación ADR-016/018 antes de primera migración; §9 con estados; ciclo de montaje/desmontaje en etapa 6; paridad del arnés desde la SPEC; M08 no lee notas internas de M06.
 
-**Constatado en el código de esta base:**
+**Fotografía histórica de `main` `4a3fd1e` (09/10/2026):** lo siguiente describe la base ANTES del commit contractual; las referencias a contratos inexistentes son históricas:
 
 - M04 registra `ICurrentCustomer`, la política `crm:customer`, el filtro CSRF de cliente, rutas `/api/customer/auth/*`, `/api/customer/profile` y `/mi-cuenta`. Es el único dueño de credenciales y sesión de cliente. `ICurrentAdmin` es una población diferente.
 - M03 expone `ICustomerOrderHistory.ObtenerPedidosDeAsync(Guid customerId, int limit, CancellationToken)` y `CustomerOrderSummary`, así como `/api/sales/my-orders` y `/api/sales/my-orders/{orderCode}` con pertenencia verificada en la consulta. En este árbol no existe `frontend/src/modules/sales`: **no presuponer un enlace UI de M03 que no esté implementado**.
@@ -46,8 +48,8 @@ La secuencia de valor es: entrar con M04 → ver un resumen seguro → ir a pedi
 | CORE | Plataforma | Activación, host, auditoría administrativa, `ICurrentAdmin` si hay operaciones de personal | M08 no inicia |
 | M04 CRM | **DURA** | `ICurrentCustomer`, `CustomerAuthorization.PolicyName`, sesión, perfil y cuenta | M08 no se activa |
 | M03 Sales | **BLANDA** | `ICustomerOrderHistory` y API propia de detalles autorizados | Tarjeta «Pedidos no disponible», sin fallo de host |
-| M06 Tracking | **BLANDA** | Proveedor de vista de avance *apta para cliente*, todavía no materializado | Tarjeta «Seguimiento de trabajos no disponible»; no consultar `/api/admin/tracking` |
-| M05b ServiceOrders | **INDIRECTA por M06** | Identidad autoritativa de orden y pertenencia al cliente; contrato nuevo mínimo por ratificar | No convertirla en dependencia dura de M08 sin decisión de JP |
+| M06 Tracking | **BLANDA** | `ICustomerTrackingProgress` materializado en rama `963e0f1`, todavía no en `main` | Tarjeta «Seguimiento de trabajos no disponible»; no consultar `/api/admin/tracking` |
+| M05b ServiceOrders | **INDIRECTA por M06** | `ICustomerServiceOrderReader` publicado en rama `963e0f1`; propiedad filtrada en SQL | No convertirla en dependencia dura de M08 sin decisión de JP |
 
 **Regla de composición:** preguntar por el contrato realmente disponible en DI, no solo por un indicador de activación que pudiera no corresponder al host. M06 tiene dependencia dura de M05b; M08 no debe forzar la instalación de ninguno de los dos. La desactivación de M08 no apaga M04, M03 ni M06.
 
@@ -90,7 +92,7 @@ Si JP requiere persistir preferencias nuevas en `portal`, D1 deja de ser válido
 7. El portal v1 es **solo lectura**. Si posteriormente contiene escrituras, exigir filtro CSRF de M04 *por la sesión de cliente*, y auditoría/triple administrativa donde exista actor administrativo; jamás simular `ICurrentAdmin` con `ICurrentCustomer`.
 8. No hacer endpoint que devuelva un inventario global y después filtre en el frontend. No poner nombres personales, tokens o cookies en logs de error.
 
-## 6. Fronteras de contratos — firmas RATIFICADAS para implementación, todavía no integradas
+## 6. Fronteras de contratos — materializadas en rama `963e0f1`, NO integradas en `main`
 
 ### 6.1 M03 — interfaz REAL, suficiente para tarjetas
 
@@ -217,7 +219,7 @@ M08 enlaza la cuenta real M04 (`/mi-cuenta`), registro/entrada ya implementados.
 
 D1–D6 se ratificaron el 09/10/2026; para cierre funcional futuro exigir:
 
-- [ ] Contratos nuevos de pertenencia a trabajos aprobados y publicados por dueños M05b/M06 antes del consumidor.
+- [x] Contratos M05b/M06 publicados en rama `963e0f1`; pruebas focales internas PASS. **[ ]** QA independiente, puerta canónica y merge a `main` pendientes.
 - [ ] Solo M04 autentica cuentas; GET del portal exige la política `crm:customer`, no acepta identidad suministrada.
 - [ ] Matriz completa §3 verde en PostgreSQL real y E2E, sin proveedores activos/inactivos omitidos.
 - [ ] Negativos cliente A/B, `CustomerId=NULL`, enumeración por código y no filtrado en navegador.

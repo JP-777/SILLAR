@@ -1,11 +1,11 @@
 # M08 Portal — Plan de ejecución y entrega a Claude A
 
-**Estado:** D1–D6 RATIFICADAS POR JP EL 09/10/2026; plan preparado para contratistas y Agente A. No es autorización de integración de SHA funcional. **Base:** `4a3fd1ef12fc2226bad185f003acea9168b9a4c9`.
+**Estado vigente 10/10/2026:** D1–D6 ratificadas; contratos M05b/M06 publicados en rama `963e0f1`; QA focal interna PASS. QA independiente, puerta canónica, integración `main` y desarrollo Portal pendientes. **Base histórica:** `4a3fd1e`. No autoriza merge.
 **Responsable propuesto:** Agente A. **Coordinador de integración:** Chat 2. **Ratificación de producto:** JP, con colíder.
 
 ## 0. Qué recibe A y qué no debe reinterpretar
 
-Paquete de lectura obligatoria antes de escribir: `docs/modules/portal/SPEC.md`, `MATRIZ-CONTRATOS-Y-DECISIONES.md`, `docs/ANTES-DE-EMPEZAR-UN-MODULO.md`, `docs/DIVISION-DE-TRABAJO.md`, `docs/ROADMAP_MODULAR.md`, `docs/PROTOCOLO-DISENO.md`, ADR-016/018/019, SPEC de M04/M03/M05b/M06, y contratos concretos de CRM/Sales/ServiceOrders. Para M06 no existe todavía `Tracking.Contracts`, y para M08 tampoco existen proyectos/pantallas.
+Paquete de lectura obligatoria antes de escribir: `docs/modules/portal/SPEC.md`, `MATRIZ-CONTRATOS-Y-DECISIONES.md`, `docs/ANTES-DE-EMPEZAR-UN-MODULO.md`, `docs/DIVISION-DE-TRABAJO.md`, `docs/ROADMAP_MODULAR.md`, `docs/PROTOCOLO-DISENO.md`, ADR-016/018/019, SPEC de M04/M03/M05b/M06, y contratos concretos de CRM/Sales/ServiceOrders. `Tracking.Contracts` ya existe en `963e0f1` (**no** en `main` histórico), pero M08 todavía no tiene proyectos/pantallas en este corte.
 
 **Prohibiciones de diseño vigentes después de ratificar D1–D6:** ningún DDL, endpoint público de trabajos, copia de auth de CRM, FK a `core.admin_users`, dependencia a DbContext ajeno o nueva biblioteca UI. No asumir `/mis-pedidos` frontend de M03 solo porque está documentada: confirmar árbol real.
 
@@ -14,8 +14,8 @@ Paquete de lectura obligatoria antes de escribir: `docs/modules/portal/SPEC.md`,
 | Puerta | Trabajo | Dueño | Salida y barrera |
 |---|---|---|---|
 | P1.1 | JP ratifica D1–D6 | JP, facilitado por Chat 2 | **HECHO 09/10/2026**, ver SPEC §0/§11 |
-| P1.2 | M05b define lectura de órdenes **filtrada por cliente** | Dueño M05b, revisión de Chat 2 | Contracts y prueba PostgreSQL A/B/NULL antes de API M06 cliente |
-| P1.3 | M06 define proyección pública de avance | Dueño M06, revisión de Chat 2 | Contrato seguro con lista+detalle; cero notas y autor; revalida pertenencia |
+| P1.2 | Lectura M05b filtrada por cliente | Integración / M05b | PUBLICADO EN RAMA `963e0f1`; PG real A/B/NULL y 47/47 PASS, QA independiente pendiente |
+| P1.3 | Proyección pública de avance | Integración / M06 | PUBLICADO EN RAMA `963e0f1`; 35/35 PASS, DTO restringido, QA independiente pendiente |
 | P1.4 | Paso 1 SPEC y §9 ratificados | Chat 2 con JP | Paso 1 cerrado explícitamente, no solo borrador firmado por A |
 | P2 | Datos y clasificación replicable | A, Chat 2 verifica ADR y paridad | Si D1 sin schema, probar esa decisión en la infraestructura modular; si hay DDL, DATOS/ER/migraciones/seed/drop |
 | P3 | API y composición | A solo en `Sillar.Modules.Portal*` | Política CRM, backend filtra propiedad en proveedor; combinaciones M03/M06; docs Swagger si hay DTO |
@@ -23,18 +23,18 @@ Paquete de lectura obligatoria antes de escribir: `docs/modules/portal/SPEC.md`,
 | P4 | UI React | A solo en `frontend/src/modules/portal/*` | Componentes/tokens existentes, sin duplicar perfil/cuentas, manejo de 401/404/ausencia |
 | P5 | QA focal, ciclo, cierre | A aporta pruebas; QA independiente certifica; Chat 2 integra | `[M08-CICLO]` dentro de etapa 6, paridad y sabotajes, 6/6 sin omitidas |
 
-P1.2 y P1.3 son la **ruta crítica** de los trabajos: el diseño de interfaces puede preparar estados y campos permitidos, pero el backend público no debe simular contratos inexistentes. No bloquear toda la página de perfil/pedidos por ello; sí bloquear la exposición de trabajos.
+P1.2 y P1.3 ya están materializados en la rama `963e0f1`, pero no en `main`. M08 puede desarrollarse y probarse **sobre esa base de rama**, sin exponer rutas HTTP públicas hasta implementar la política M04 y verificar propiedad.
 
 ## 2. Orden sugerido de lotes para A (sin paralelismo sobre ficheros compartidos)
 
 ### Lote A0 — Inventario reproducible (cero modificaciones)
 
-- `git fetch`; fijar SHA de base y crear rama propia tras las decisiones ratificadas de JP, sin asumir que los contratos candidatos ya están integrados.
+- `git fetch`; crear rama de implementación M08 aislada **basada en `963e0f1`** o incorporando ese commit. No asumir contratos en `main` hasta su merge autorizado.
 - Abrir firmas concretas `ICurrentCustomer`, `ICustomerOrderHistory`, `ICustomerServiceOrderReader` ratificada y `ICustomerTrackingProgress` ratificada.
 - Documentar el orden de carga de módulos, rutas de autenticación y montaje de frontend realmente existentes.
 - **D1 ratificada:** v1 sin schema propio ni DDL; no compete a A agregar tablas de identidad/perfil.
 
-### Lote A1 — Contratos y pruebas de seguridad por dueño
+### Lote A1 — Contratos publicados y pruebas de seguridad por dueño (auditar, no duplicar)
 
 - M05b: contrato nuevo `ICustomerServiceOrderReader`, `ListForCustomerAsync(customerId,limit,ct)` y `GetForCustomerAsync(customerId,visibleCode,ct)`, filtros en SQL por propietario, nulos invisibles. Verificación por dueño y PostgreSQL real.
 - M06: contrato nuevo `ICustomerTrackingProgress` con `ListForCustomerAsync(customerId,limit,ct)` y `GetForCustomerAsync(customerId,visibleCode,ct)`; M06 revalida M05b y proyecta únicamente estado autoritativo, fechas públicas y líneas seguras, sin ninguna nota, plazo interno, prioridad, personal o `Guid` visible.
@@ -92,4 +92,4 @@ A reportará en una sola entrega: SHA base; rama y SHA candidato; decisiones rat
 
 ## 6. Pausa y transición hacia los cuatro agentes
 
-Cuando los documentos M08 estén listos y ratificados, Chat 2 notificará expresamente «PAQUETE M08 LISTO PARA A», junto con los SHA, los contratos disponibles y las decisiones no cerradas (si existen). **Solo después**, por orden de JP, empezará la planificación independiente de los siguientes módulos y el reparto de cuatro agentes, basado en los once casos del registro. Esa planificación no se improvisa dentro de la SPEC de Portal.
+Cuando la preparación contractual y documental M08 esté lista para desarrollo aislado, Chat 2 entregará SHAs y barreras pendientes. Durante el fin de semana, JP podrá encargar M08 a Codex en un territorio propio. La ausencia del colíder no equivale a certificación. Después de agotar M08, se planificarán módulos nuevos y al final la jornada automática.
