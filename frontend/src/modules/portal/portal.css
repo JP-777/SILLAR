@@ -1,0 +1,243 @@
+.portal-page {
+  width: min(1040px, calc(100% - (2 * var(--s5))));
+  margin-inline: auto;
+  padding-block: var(--s5) var(--s8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+}
+
+.portal-nav {
+  display: flex;
+  gap: var(--s1);
+  overflow-x: auto;
+  padding: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--bg-raised);
+}
+
+.portal-nav__link {
+  flex: 0 0 auto;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--s4);
+  border-radius: var(--r-md);
+  color: var(--text-muted);
+  font-weight: 560;
+}
+
+.portal-nav__link:hover {
+  background: var(--bg-sunken);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.portal-nav__link--active {
+  background: var(--selected-bg);
+  color: var(--selected);
+}
+
+.portal-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+}
+
+.portal-header p {
+  max-width: 66ch;
+  color: var(--text-muted);
+}
+
+.portal-back-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.portal-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s5);
+  align-items: start;
+}
+
+.portal-profile,
+.portal-detail-grid,
+.portal-record__facts {
+  margin: 0;
+}
+
+.portal-profile {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s4);
+  margin-bottom: var(--s4);
+}
+
+.portal-profile div,
+.portal-detail-grid div,
+.portal-record__facts div {
+  min-width: 0;
+}
+
+.portal-profile dt,
+.portal-detail-grid dt,
+.portal-record__facts dt {
+  color: var(--text-subtle);
+  font-size: 13px;
+}
+
+.portal-profile dd,
+.portal-detail-grid dd,
+.portal-record__facts dd {
+  margin: var(--s1) 0 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.portal-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  margin-bottom: var(--s4);
+}
+
+.portal-list--page {
+  margin: 0;
+}
+
+.portal-record {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-raised);
+}
+
+.portal-record__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+
+.portal-record__facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s3);
+}
+
+.portal-action-link {
+  width: fit-content;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+.portal-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+}
+
+.portal-loading {
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s4);
+  padding: var(--s6);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--bg-raised);
+}
+
+.portal-loading__placeholder {
+  width: min(100%, 440px);
+  height: 18px;
+  border-radius: var(--r-sm);
+  background: var(--bg-sunken);
+}
+
+.portal-loading__placeholder--short {
+  width: min(70%, 300px);
+}
+
+.portal-detail-status {
+  margin-bottom: var(--s4);
+}
+
+.portal-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s4);
+}
+
+.portal-lines {
+  display: flex;
+  flex-direction: column;
+}
+
+.portal-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--s4);
+  padding-block: var(--s4);
+  border-bottom: 1px solid var(--border);
+}
+
+.portal-line:first-child {
+  padding-top: 0;
+}
+
+.portal-line:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.portal-line h3 {
+  margin-bottom: var(--s1);
+}
+
+.portal-line p {
+  color: var(--text-muted);
+}
+
+.portal-line strong {
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .portal-page {
+    width: min(100% - (2 * var(--s4)), 1040px);
+    padding-block: var(--s4) var(--s7);
+  }
+
+  .portal-overview-grid,
+  .portal-profile,
+  .portal-detail-grid,
+  .portal-record__facts {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-record__heading,
+  .portal-line {
+    flex-direction: column;
+  }
+
+  .portal-nav {
+    margin-inline: calc(-1 * var(--s4));
+    padding-inline: var(--s4);
+    border-inline: 0;
+    border-radius: 0;
+  }
+}
