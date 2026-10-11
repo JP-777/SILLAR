@@ -215,25 +215,93 @@ test('M08 UI — un 401 retira el contenido privado y vuelve al acceso', async (
 });
 
 test('M08 UI — cambiar de cliente invalida el contenido de A', async ({ page }) => {
-  let current = CUSTOMER_A;
+  let current: typeof CUSTOMER_A | typeof CUSTOMER_B | null = CUSTOMER_A;
   await prepareBoot(page, { customer: CUSTOMER_A });
-  await page.route('**/api/portal/overview*', (route) =>
-    route.fulfill({ json: overview(current.fullName, [{ ...ORDER, orderCode: current === CUSTOMER_A ? 'PEDIDO-ALFA' : 'PEDIDO-BETA' }], []) }));
-  await page.route('**/api/customer/auth/logout', (route) => route.fulfill({ status: 204 }));
+
+  await page.unroute('**/api/customer/auth/me');
+  await page.route('**/api/customer/auth/me', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify(current),
+    }));
+
+  await page.route('**/api/customer/profile', (route) => {
+    if (current === null) {
+      return route.fulfill({
+        status: 401,
+        contentType: 'application/problem+json',
+        body: '{}',
+      });
+    }
+
+    return route.fulfill({
+      json: {
+        ...current,
+        phone: current === CUSTOMER_A ? '999111111' : '999222222',
+        documentType: null,
+        documentNumber: null,
+        addresses: [],
+      },
+    });
+  });
+
+  await page.route('**/api/portal/overview*', (route) => {
+    if (current === null) {
+      return route.fulfill({
+        status: 401,
+        contentType: 'application/problem+json',
+        body: '{}',
+      });
+    }
+
+    return route.fulfill({
+      json: overview(
+        current.fullName,
+        [{
+          ...ORDER,
+          orderCode: current === CUSTOMER_A ? 'PEDIDO-ALFA' : 'PEDIDO-BETA',
+        }],
+        [],
+      ),
+    });
+  });
+
+  await page.route('**/api/customer/auth/logout', async (route) => {
+    current = null;
+    await route.fulfill({ status: 204 });
+  });
+
   await page.route('**/api/customer/auth/login', async (route) => {
     current = CUSTOMER_B;
-    await route.fulfill({ json: { customer: CUSTOMER_B, csrfToken: 'token-beta' } });
+    await route.fulfill({
+      json: {
+        customer: CUSTOMER_B,
+        csrfToken: 'token-beta',
+      },
+    });
   });
 
   await page.goto('/mi-portal');
   await expect(page.getByText('PEDIDO-ALFA')).toBeVisible();
-  const portalNavigation = page.getByRole('navigation', { name: 'Navegación de Mi portal' });
+
+  const portalNavigation = page.getByRole(
+    'navigation',
+    { name: 'Navegación de Mi portal' },
+  );
+
   await portalNavigation.getByRole('link', { name: 'Mi cuenta', exact: true }).click();
+  await expect(page.getByLabel('Nombre completo')).toHaveValue(CUSTOMER_A.fullName);
+
   await page.getByRole('button', { name: 'Cerrar sesión' }).click();
   await page.goto('/entrar');
+
   await page.getByLabel('Correo').fill(CUSTOMER_B.email);
   await page.getByLabel('Contraseña').fill('clave-de-prueba');
   await page.getByRole('button', { name: 'Entrar' }).click();
+
+  await expect(page.getByLabel('Nombre completo')).toHaveValue(CUSTOMER_B.fullName);
+  await expect(page.getByLabel('Nombre completo')).not.toHaveValue(CUSTOMER_A.fullName);
+
   await page.getByRole('link', { name: 'Volver a la tienda' }).click();
   await page.getByRole('link', { name: 'Ir a Mi portal' }).click();
 
