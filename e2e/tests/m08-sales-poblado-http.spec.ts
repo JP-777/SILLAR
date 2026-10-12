@@ -202,10 +202,32 @@ async function ownOr404(page: Page, own: string, alien: string): Promise<void> {
   expect(stable404(foreignRaw), 'ajeno e inexistente deben ser indistinguibles, excepto traceId')
     .toEqual(stable404(absentRaw));
 }
+// M08_QA_RESTORE_6DE6
+const M08_QA_DISABLE_ORDER = ['portal', 'tracking', 'service_orders', 'services', 'sales'] as const;
+const M08_QA_ENABLE_ORDER = ['sales', 'services', 'service_orders', 'tracking', 'portal'] as const;
+
+async function restoreM08ModuleState(page: Page, before: readonly string[]): Promise<void> {
+  const wanted = new Set(before);
+  for (const code of M08_QA_DISABLE_ORDER) {
+    const active = await capacidadesActivas(page);
+    if (active.includes(code) && !wanted.has(code)) await cambiarModulo(page, code, 'Desactivar');
+  }
+  for (const code of M08_QA_ENABLE_ORDER) {
+    const active = await capacidadesActivas(page);
+    if (wanted.has(code) && !active.includes(code)) await cambiarModulo(page, code, 'Activar');
+  }
+  expect(
+    [...(await capacidadesActivas(page))].sort(),
+    'M08 dejó el grafo distinto de como lo encontró',
+  ).toEqual([...before].sort());
+}
+
+
 
 test('[M08-SALES-POBLADO] A/B reales por API y PostgreSQL; propiedad y privacidad', async ({ page, browser }: { page: Page; browser: Browser }) => {
   test.setTimeout(18 * 60_000);
   const before = await capacidadesActivas(page);
+  try {
   expect(before).toContain('crm');
   expect(before).toContain('catalog');
   expect(before).not.toContain('portal');
@@ -289,5 +311,9 @@ test('[M08-SALES-POBLADO] A/B reales por API y PostgreSQL; propiedad y privacida
       }
     }
     expect([...(await capacidadesActivas(page))].sort()).toEqual([...before].sort());
+  }
+
+  } finally {
+    await restoreM08ModuleState(page, before);
   }
 });

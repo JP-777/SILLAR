@@ -200,10 +200,32 @@ async function workStatus(page: Page, code: string, expected: number): Promise<v
   expect(response.status(),`work ${code}: ${body}`).toBe(expected);
   if(expected===200) privateDataAbsent(body);
 }
+// M08_QA_RESTORE_6DE6
+const M08_QA_DISABLE_ORDER = ['portal', 'tracking', 'service_orders', 'services', 'sales'] as const;
+const M08_QA_ENABLE_ORDER = ['sales', 'services', 'service_orders', 'tracking', 'portal'] as const;
+
+async function restoreM08ModuleState(page: Page, before: readonly string[]): Promise<void> {
+  const wanted = new Set(before);
+  for (const code of M08_QA_DISABLE_ORDER) {
+    const active = await capacidadesActivas(page);
+    if (active.includes(code) && !wanted.has(code)) await cambiarModulo(page, code, 'Desactivar');
+  }
+  for (const code of M08_QA_ENABLE_ORDER) {
+    const active = await capacidadesActivas(page);
+    if (wanted.has(code) && !active.includes(code)) await cambiarModulo(page, code, 'Activar');
+  }
+  expect(
+    [...(await capacidadesActivas(page))].sort(),
+    'M08 dejó el grafo distinto de como lo encontró',
+  ).toEqual([...before].sort());
+}
+
+
 
 test('[M08-PRECICLO-API] composición OFF/ON, migrate+seed y preservación de CRM/M05b/M06', async ({ page, browser }) => {
   test.setTimeout(25 * 60_000);
   const before=[...(await capacidadesActivas(page))].sort();
+  try {
   expect(before).toContain('crm');
   for(const code of ['portal','sales','tracking','service_orders','services']) expect(before).not.toContain(code);
   await portalSchemaAusente();
@@ -306,4 +328,8 @@ test('[M08-PRECICLO-API] composición OFF/ON, migrate+seed y preservación de CR
     }
   }
   expect([...(await capacidadesActivas(page))].sort()).toEqual(before);
+
+  } finally {
+    await restoreM08ModuleState(page, before);
+  }
 });

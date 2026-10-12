@@ -56,10 +56,32 @@ async function overview(page: Page): Promise<{ response: PortalOverview; raw: st
   }
   return { response, raw };
 }
+// M08_QA_RESTORE_6DE6
+const M08_QA_DISABLE_ORDER = ['portal', 'tracking', 'service_orders', 'services', 'sales'] as const;
+const M08_QA_ENABLE_ORDER = ['sales', 'services', 'service_orders', 'tracking', 'portal'] as const;
+
+async function restoreM08ModuleState(page: Page, before: readonly string[]): Promise<void> {
+  const wanted = new Set(before);
+  for (const code of M08_QA_DISABLE_ORDER) {
+    const active = await capacidadesActivas(page);
+    if (active.includes(code) && !wanted.has(code)) await cambiarModulo(page, code, 'Desactivar');
+  }
+  for (const code of M08_QA_ENABLE_ORDER) {
+    const active = await capacidadesActivas(page);
+    if (wanted.has(code) && !active.includes(code)) await cambiarModulo(page, code, 'Activar');
+  }
+  expect(
+    [...(await capacidadesActivas(page))].sort(),
+    'M08 dejó el grafo distinto de como lo encontró',
+  ).toEqual([...before].sort());
+}
+
+
 
 test('[M08-HTTP] activación, sesiones A/B, autorización, providers, desactivación', async ({ page, browser }) => {
   test.setTimeout(12 * 60_000);
   const activeAtStart = await capacidadesActivas(page);
+  try {
   expect(activeAtStart).toContain('crm');
   expect(activeAtStart).toContain('catalog');
   expect(activeAtStart).not.toContain('portal');
@@ -126,4 +148,8 @@ test('[M08-HTTP] activación, sesiones A/B, autorización, providers, desactivac
   expect((await page.request.get('/api/portal/overview')).status()).toBe(404);
   expect((await page.request.get('/api/customer/profile')).status()).toBe(200);
   console.log('[M08-HTTP] PASS: cookie admin != cliente, A/B, ON/OFF, absent/empty, 404/503');
+
+  } finally {
+    await restoreM08ModuleState(page, activeAtStart);
+  }
 });

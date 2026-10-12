@@ -127,10 +127,32 @@ function privateDataAbsent(raw: string): void {
     expect(raw, `valor privado expuesto: ${marker}`).not.toContain(marker);
   }
 }
+// M08_QA_RESTORE_6DE6
+const M08_QA_DISABLE_ORDER = ['portal', 'tracking', 'service_orders', 'services', 'sales'] as const;
+const M08_QA_ENABLE_ORDER = ['sales', 'services', 'service_orders', 'tracking', 'portal'] as const;
+
+async function restoreM08ModuleState(page: Page, before: readonly string[]): Promise<void> {
+  const wanted = new Set(before);
+  for (const code of M08_QA_DISABLE_ORDER) {
+    const active = await capacidadesActivas(page);
+    if (active.includes(code) && !wanted.has(code)) await cambiarModulo(page, code, 'Desactivar');
+  }
+  for (const code of M08_QA_ENABLE_ORDER) {
+    const active = await capacidadesActivas(page);
+    if (wanted.has(code) && !active.includes(code)) await cambiarModulo(page, code, 'Activar');
+  }
+  expect(
+    [...(await capacidadesActivas(page))].sort(),
+    'M08 dejó el grafo distinto de como lo encontró',
+  ).toEqual([...before].sort());
+}
+
+
 
 test('[M08-HTTP-07B] órdenes A/B/NULL reales, propiedad, 404 y datos privados', async ({ page, browser }) => {
   test.setTimeout(18 * 60_000);
   const before = await capacidadesActivas(page);
+  try {
   expect(before).toContain('crm');
   expect(before).not.toContain('portal');
   expect(before).not.toContain('tracking');
@@ -237,5 +259,9 @@ test('[M08-HTTP-07B] órdenes A/B/NULL reales, propiedad, 404 y datos privados',
   } finally {
     await ctxA.close();
     await ctxB.close();
+  }
+
+  } finally {
+    await restoreM08ModuleState(page, before);
   }
 });
