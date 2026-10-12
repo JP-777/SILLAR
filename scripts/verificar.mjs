@@ -159,6 +159,12 @@ function correr(comando, args, opciones = {}) {
     shell: process.platform === 'win32',
     env: construirEnv(opciones.env),
     input: opciones.input,
+    // `dotnet test --logger console;verbosity=normal` puede superar el buffer
+    // predeterminado de spawnSync en una solución grande. Si eso ocurre Node
+    // mata al hijo con ENOBUFS y la puerta lo ve como código 1 aunque no haya
+    // una prueba roja. Mantener un límite explícito conserva la salida completa
+    // sin cambiar el comando, los tests, analizadores ni la política de skips.
+    maxBuffer: opciones.maxBuffer ?? 64 * 1024 * 1024,
   });
 
   return {
