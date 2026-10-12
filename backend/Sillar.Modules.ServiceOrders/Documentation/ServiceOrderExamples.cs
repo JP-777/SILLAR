@@ -53,6 +53,25 @@ public sealed class ServiceOrderExamples : ISchemaExamples
             }
             """,
 
+        [typeof(CreateServiceOrderLineRequest)] = """
+            {
+              "serviceId": 4,
+              "requestedDetails": "Impresión a color en tamaño A3.",
+              "quantity": 2.000,
+              "agreedUnitPrice": 18.50
+            }
+            """,
+
+        [typeof(UpdateServiceOrderLineRequest)] = """
+            {
+              "serviceOrderItemId": "019a01d8-ce33-78ab-86ba-b108be476c55",
+              "serviceId": null,
+              "requestedDetails": "Impresión a color en tamaño A3, papel de 200 g.",
+              "quantity": 2.000,
+              "agreedUnitPrice": 19.00
+            }
+            """,
+
         [typeof(ServiceOrderConcurrencyRequest)] = """
             {
               "expectedUpdatedAt": "2026-10-07T19:15:00Z"
