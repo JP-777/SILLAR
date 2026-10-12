@@ -55,7 +55,7 @@
  */
 
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { closeSync, existsSync, mkdtempSync, openSync, readFileSync, rmSync } from 'node:fs';
 import { tomarCerrojo } from './cerrojo.mjs';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -153,23 +153,50 @@ function construirEnv(extra = {}) {
 
 /** Ejecuta y devuelve código de salida y salida completa. */
 function correr(comando, args, opciones = {}) {
-  const resultado = spawnSync(comando, args, {
-    cwd: opciones.cwd ?? RAIZ,
-    encoding: 'utf8',
-    shell: process.platform === 'win32',
-    env: construirEnv(opciones.env),
-    input: opciones.input,
-    // `dotnet test --logger console;verbosity=normal` puede superar el buffer
-    // predeterminado de spawnSync en una solución grande. Si eso ocurre Node
-    // mata al hijo con ENOBUFS y la puerta lo ve como código 1 aunque no haya
-    // una prueba roja. Mantener un límite explícito conserva la salida completa
-    // sin cambiar el comando, los tests, analizadores ni la política de skips.
-    maxBuffer: opciones.maxBuffer ?? 64 * 1024 * 1024,
-  });
+  // No se captura stdout/stderr con pipes de spawnSync: Node impone un
+  // maxBuffer y mata al hijo con ENOBUFS cuando una etapa verbosa lo supera.
+  // Se escribe primero a archivos temporales y se leen al terminar. Así se
+  // conserva la salida completa para diagnósticos/skips sin cambiar el comando
+  // ejecutado ni imponer un techo artificial a la cantidad de evidencia.
+  const temporal = mkdtempSync(path.join(os.tmpdir(), 'sillar-verificar-cmd-'));
+  const rutaStdout = path.join(temporal, 'stdout.log');
+  const rutaStderr = path.join(temporal, 'stderr.log');
+  const fdStdout = openSync(rutaStdout, 'w');
+  const fdStderr = openSync(rutaStderr, 'w');
+
+  let resultado;
+  try {
+    resultado = spawnSync(comando, args, {
+      cwd: opciones.cwd ?? RAIZ,
+      shell: process.platform === 'win32',
+      env: construirEnv(opciones.env),
+      input: opciones.input,
+      stdio: ['pipe', fdStdout, fdStderr],
+    });
+  } finally {
+    closeSync(fdStdout);
+    closeSync(fdStderr);
+  }
+
+  let stdout = '';
+  let stderr = '';
+  try {
+    stdout = readFileSync(rutaStdout, 'utf8');
+    stderr = readFileSync(rutaStderr, 'utf8');
+  } finally {
+    rmSync(temporal, { recursive: true, force: true });
+  }
+
+  const diagnostico = [
+    resultado.error
+      ? `[runner] spawn error: ${resultado.error.code ?? resultado.error.name}: ${resultado.error.message}`
+      : null,
+    resultado.signal ? `[runner] señal de terminación: ${resultado.signal}` : null,
+  ].filter(Boolean).join('\n');
 
   return {
     codigo: resultado.status ?? 1,
-    salida: `${resultado.stdout ?? ''}${resultado.stderr ?? ''}`,
+    salida: `${stdout}${stderr}${diagnostico ? `\n${diagnostico}\n` : ''}`,
     fallóAlLanzar: resultado.error != null,
   };
 }
