@@ -141,7 +141,9 @@ public sealed class EndpointContractTests
         var required = new[]
         {
             typeof(CreateServiceOrderRequest),
+            typeof(CreateServiceOrderLineRequest),
             typeof(UpdateServiceOrderRequest),
+            typeof(UpdateServiceOrderLineRequest),
             typeof(ServiceOrderConcurrencyRequest),
             typeof(ServiceOrderTransitionRequest)
         };
