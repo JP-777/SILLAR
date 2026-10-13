@@ -65,6 +65,9 @@ export async function cambiarModulo(
 ): Promise<void> {
   await page.goto('/admin/modulos');
 
+  // El outage real incluye la vuelta de API, proxy y SPA. Mantener el
+  // colector pausado hasta que las tres capas estén listas evita contabilizar
+  // como errores los fallos transitorios de reconexión.
   await duringExpectedOutage(page, async () => {
     await page.locator(`#modulo-${codigo}`).getByRole('switch').click();
     await page
@@ -75,33 +78,28 @@ export async function cambiarModulo(
     const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
     await expect(overlay).toBeVisible();
     await expect(overlay).toBeHidden({ timeout: 90_000 });
+
+    await expect.poll(async () => {
+      try { return (await page.request.get('/api/capabilities')).status(); }
+      catch { return 0; }
+    }, { message: 'la API no volvió a servir tras cambiar un módulo', timeout: 90_000 }).toBe(200);
+
+    await expect.poll(async () => {
+      try { return (await page.request.get('/')).status(); }
+      catch { return 0; }
+    }, { message: 'el servidor web no volvió a servir tras cambiar un módulo', timeout: 90_000 }).toBe(200);
+
+    await expect.poll(async () => {
+      try {
+        const r = await page.goto('/admin/modulos', { waitUntil: 'domcontentloaded', timeout: 15_000 });
+        if (!r?.ok()) return false;
+        return await page.locator(`#modulo-${codigo}`).isVisible();
+      } catch { return false; }
+    }, {
+      message: `la SPA no volvió a montar tras ${accion.toLowerCase()} ${codigo}`,
+      timeout: 90_000,
+    }).toBe(true);
   });
-
-  // **Y se espera a que la API vuelva a servir de verdad antes de devolver el
-  // control.** Que el diálogo se cierre dice que el panel dejó de esperar, no
-  // que el proceso esté sirviendo: con dos cambios de módulo seguidos —los que
-  // hace falta encadenar desde que M07 depende duro de M01 y M04— la navegación
-  // siguiente llegaba a un proxy que todavía reconectaba y la SPA no montaba
-  // nada. El síntoma era «React no montó nada», que no dice de qué es.
-  await expect
-    .poll(async () => (await page.request.get('/api/capabilities')).status(), {
-      message: 'la API no volvió a servir tras cambiar un módulo',
-      timeout: 90_000,
-    })
-    .toBe(200);
-
-  // **Y al servidor web también, que es la otra mitad.** Las pruebas navegan
-  // contra Vite, no contra la API: su proxy reenvía `/api` y además sirve el
-  // paquete de la SPA. Cuando el contenedor se reinicia, ese proxy puede
-  // devolver 500 con cuerpo vacío —«socket hang up»— y entonces la aplicación
-  // no monta nada, que es el `nada-montado` de la guarda de `base.ts`. Esperar
-  // solo a la API dejaba fuera justo ese hueco.
-  await expect
-    .poll(async () => (await page.request.get('/')).status(), {
-      message: 'el servidor web no volvió a servir tras cambiar un módulo',
-      timeout: 90_000,
-    })
-    .toBe(200);
 }
 
 /**
