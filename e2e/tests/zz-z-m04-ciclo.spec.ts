@@ -303,6 +303,28 @@ async function foto(page: Page, testInfo: TestInfo, nombre: string) {
   });
 }
 
+
+test.afterEach(async ({ page }, testInfo) => {
+  if (testInfo.status === testInfo.expectedStatus) return;
+
+  // Si el ciclo aborta después de desmontar M04/M07, reconstruye el escenario
+  // global para que el rojo no contamine los tests posteriores.
+  await migrate();
+  await seed();
+
+  let activas = await capacidades(page.request);
+  if (!activas.includes('crm')) {
+    await cambiarModuloPorCodigo(page, 'crm', 'Activar');
+    activas = await capacidades(page.request);
+  }
+  if (!activas.includes('b2b')) {
+    await cambiarModuloPorCodigo(page, 'b2b', 'Activar');
+    activas = await capacidades(page.request);
+  }
+
+  expect(activas).toEqual(expect.arrayContaining(['crm', 'b2b']));
+});
+
 test('[M04-CICLO] desactivar, desinstalar, reinstalar y activar M04 sin romper CORE, M01 ni M02', async ({
   page,
 }, testInfo) => {
