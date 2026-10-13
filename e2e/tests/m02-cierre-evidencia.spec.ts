@@ -9,8 +9,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { APIRequestContext, Locator, Page, Request } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
-import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
-import { sinB2B } from '../fixtures/grafoDeModulos.js';
+import { expect, test } from '../fixtures/base.js';
+import { cambiarModulo as cambiarModuloPorCodigo, sinB2B } from '../fixtures/grafoDeModulos.js';
 
 const SELLO = Date.now();
 const DESTACADOS = '/admin/contenido/productos-destacados';
@@ -206,15 +206,7 @@ function bannerCard(page: Page, name: string) {
 }
 
 async function modulo(page: Page, code: string, action: 'Activar' | 'Desactivar') {
-  await page.goto('/admin/modulos');
-  await duringExpectedOutage(page, async () => {
-    await page.locator(`#modulo-${code}`).getByRole('switch').click();
-    await page.getByRole('alertdialog')
-      .getByRole('button', { name: new RegExp(`^${action}`) }).click();
-    const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
-    await expect(overlay).toBeVisible();
-    await expect(overlay).toBeHidden({ timeout: 90_000 });
-  });
+  await cambiarModuloPorCodigo(page, code, action);
 }
 
 // Limpieza explícita después de cada prueba: sin esto los datos sembrados
