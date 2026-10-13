@@ -2170,16 +2170,54 @@ const etapas = [
         console.log(color.rojo('  [FORCE_FAIL] Fallo deliberado solicitado antes de dotnet test.'));
         return { codigo: 1, salida: 'SILLAR_VERIFY_FORCE_FAIL=1: fallo deliberado para probar la limpieza de la base efímera.', fallóAlLanzar: false };
       }
-      return correr('dotnet', [
-        'test', 'backend/Sillar.sln', '--nologo', '--no-build',
-        '-m:1',
-        '--logger', 'console;verbosity=normal',
-      ], {
-        env: {
-          ConnectionStrings__Default: CADENA_EFÍMERA,
-          SILLAR_VERIFY_DATABASE: NOMBRE_BASE,
-        },
-      });
+      const listado = correr('dotnet', ['sln', 'backend/Sillar.sln', 'list']);
+      if (listado.codigo !== 0) {
+        return listado;
+      }
+
+      const proyectos = listado.salida
+        .split(/\r?\n/)
+        .map((linea) => linea.trim().replaceAll('\\', '/'))
+        .filter((linea) => linea.endsWith('.Tests.csproj'))
+        .map((relativa) => relativa.startsWith('backend/')
+          ? relativa
+          : path.join('backend', relativa));
+
+      if (proyectos.length === 0) {
+        return {
+          codigo: 1,
+          salida: 'No se descubrieron proyectos *.Tests.csproj en backend/Sillar.sln.\n',
+          fallóAlLanzar: false,
+        };
+      }
+
+      let salida = `--- proyectos backend (${proyectos.length}) ---\n`
+        + `${proyectos.join('\n')}\n`;
+
+      for (const proyecto of proyectos) {
+        const resultado = correr('dotnet', [
+          'test', proyecto, '--nologo', '--no-build',
+          '-m:1',
+          '--logger', 'console;verbosity=normal',
+        ], {
+          env: {
+            ConnectionStrings__Default: CADENA_EFÍMERA,
+            SILLAR_VERIFY_DATABASE: NOMBRE_BASE,
+          },
+        });
+
+        salida += `\n--- ${proyecto} ---\n${resultado.salida}`;
+
+        if (resultado.codigo !== 0 || resultado.fallóAlLanzar) {
+          return {
+            codigo: resultado.codigo,
+            salida,
+            fallóAlLanzar: resultado.fallóAlLanzar,
+          };
+        }
+      }
+
+      return { codigo: 0, salida, fallóAlLanzar: false };
     },
     // Además de pasar, la puerta canónica exige cero pruebas omitidas.
     revisar: (salida) => {
