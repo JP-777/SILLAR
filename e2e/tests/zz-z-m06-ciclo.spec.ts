@@ -63,12 +63,13 @@ async function csrf(api: APIRequestContext): Promise<Record<string, string>> {
   return { 'X-CSRF-Token': data.csrfToken };
 }
 
-async function configurarSerieM05b(api: APIRequestContext): Promise<void> {
+async function asegurarSerieM05bConfigurada(api: APIRequestContext): Promise<boolean> {
   const list = await api.get('/api/admin/settings');
   expect(list.ok(), `listar configuración: ${list.status()} ${await list.text()}`).toBe(true);
 
   const settings = (await list.json()) as {
     key: string;
+    value: string;
     isPublic: boolean;
     needsSetup: boolean;
   }[];
@@ -76,20 +77,39 @@ async function configurarSerieM05b(api: APIRequestContext): Promise<void> {
   const series = settings.find((setting) => setting.key === 'service_orders.series_label');
   expect(series, 'el seed de M05b no registró service_orders.series_label').toBeDefined();
   expect(series?.isPublic, 'la etiqueta de serie de M05b no debe ser pública').toBe(false);
-  expect(series?.needsSetup, 'una instalación nueva debe pedir la etiqueta del nodo').toBe(true);
+
+  if (!series!.needsSetup) {
+    expect(series!.value.trim(), 'la serie configurada no puede quedar vacía').not.toBe('');
+    expect(series!.value, 'needsSetup=false no puede convivir con el marcador pendiente')
+      .not.toBe('PENDIENTE_DEFINIR');
+    return false;
+  }
+
+  expect(series!.value, 'needsSetup=true debe corresponder al marcador canónico del seed')
+    .toBe('PENDIENTE_DEFINIR');
 
   const update = await api.put('/api/admin/settings/service_orders.series_label', {
     headers: await csrf(api),
     data: { value: 'S', isPublic: null },
   });
-  expect(
-    update.ok(),
-    `configurar serie M05b: ${update.status()} ${await update.text()}`,
-  ).toBe(true);
+  expect(update.ok(), `configurar serie M05b: ${update.status()} ${await update.text()}`).toBe(true);
 
   const configured = (await update.json()) as { needsSetup: boolean; value: string };
   expect(configured.needsSetup).toBe(false);
   expect(configured.value).toBe('S');
+  return true;
+}
+
+async function restaurarSerieM05bPendiente(api: APIRequestContext): Promise<void> {
+  const update = await api.put('/api/admin/settings/service_orders.series_label', {
+    headers: await csrf(api),
+    data: { value: 'PENDIENTE_DEFINIR', isPublic: null },
+  });
+  expect(update.ok(), `restaurar serie M05b: ${update.status()} ${await update.text()}`).toBe(true);
+
+  const restored = (await update.json()) as { needsSetup: boolean; value: string };
+  expect(restored.needsSetup).toBe(true);
+  expect(restored.value).toBe('PENDIENTE_DEFINIR');
 }
 
 async function activarCadena(page: Page): Promise<void> {
@@ -284,9 +304,10 @@ test('[M06-CICLO] desactivar, desmontar, reinstalar y reactivar M06 sin tocar M0
   expect(iniciales, 'el arnés debe dejar M05b inactivo antes del ciclo M06').not.toContain('service_orders');
   expect(iniciales, 'el arnés debe dejar M06 inactivo antes del ciclo M06').not.toContain('tracking');
 
-  await configurarSerieM05b(page.request);
+  let restaurarSerie = false;
 
   try {
+    restaurarSerie = await asegurarSerieM05bConfigurada(page.request);
     // 1 · Construir el estado inicial exigido por la SPEC: M05b+M06 activos y
     //     M06 con prioridad, plazo y nota reales sembrados por API.
     await activarCadena(page);
@@ -440,8 +461,15 @@ test('[M06-CICLO] desactivar, desmontar, reinstalar y reactivar M06 sin tocar M0
     expect(await psql('SELECT count(*) FROM tracking.order_tracking')).toBe('1');
   } finally {
     // Se deja el grafo como lo dejó global-setup/M05a-CICLO: los tres módulos
-    // migrados pero inactivos. La limpieza no borra datos ajenos.
-    await restaurarActivacion(page, iniciales);
+    // migrados pero inactivos. Si esta prueba configuró la serie, también
+    // devuelve esa clave al marcador del seed.
+    try {
+      await restaurarActivacion(page, iniciales);
+    } finally {
+      if (restaurarSerie) {
+        await restaurarSerieM05bPendiente(page.request);
+      }
+    }
   }
 
   expect([...(await capacidadesActivas(page))].sort()).toEqual(iniciales);
