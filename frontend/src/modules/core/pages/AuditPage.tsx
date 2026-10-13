@@ -96,7 +96,7 @@ export function AuditPage() {
     {
       key: 'summary',
       header: 'Resumen',
-      render: (entry) => entry.summary ?? <span style={subtle}>—</span>,
+      render: (entry) => <Resumen entry={entry} />,
     },
   ];
 
@@ -285,6 +285,60 @@ function Entidad({
       )}
     </div>
   );
+}
+
+/**
+ * Presenta los eventos de correo sin poner el destinatario delante del lector.
+ *
+ * El registro original no se toca: `email_send` conserva su `summary` íntegro
+ * en el API y lo ofrece aquí bajo un detalle desplegable. El tratamiento no
+ * busca UUID ni casos particulares; se aplica a cualquier destinatario.
+ */
+function Resumen({ entry }: { entry: AuditEntry }) {
+  if (!entry.summary) {
+    return <span style={subtle}>—</span>;
+  }
+
+  if (entry.action !== 'email_send') {
+    return entry.summary;
+  }
+
+  return (
+    <div style={{ fontSize: '12.5px' }}>
+      <div>{resumenVisibleDeCorreo(entry.summary)}</div>
+      <details>
+        <summary style={{ cursor: 'pointer' }}>Ver texto original</summary>
+        <div style={{ marginTop: 'var(--s2)' }}>
+          <div style={subtle}>Texto original</div>
+          <div style={{ wordBreak: 'break-word' }}>{entry.summary}</div>
+        </div>
+      </details>
+    </div>
+  );
+}
+
+function resumenVisibleDeCorreo(summary: string): string {
+  const prefix = "Correo '";
+  const recipientSeparator = "' a '";
+  const resultSeparator = "': ";
+
+  if (!summary.startsWith(prefix)) {
+    return 'Evento de correo.';
+  }
+
+  const templateEnd = summary.indexOf(recipientSeparator, prefix.length);
+  const resultStart = summary.lastIndexOf(resultSeparator);
+
+  if (templateEnd < 0 || resultStart <= templateEnd + recipientSeparator.length) {
+    return 'Evento de correo.';
+  }
+
+  const template = summary.slice(prefix.length, templateEnd);
+  const result = summary.slice(resultStart + resultSeparator.length);
+
+  return template && result
+    ? `Correo '${template}': ${result}`
+    : 'Evento de correo.';
 }
 
 /**
