@@ -96,7 +96,7 @@ export function AuditPage() {
     {
       key: 'summary',
       header: 'Resumen',
-      render: (entry) => <Resumen entry={entry} />,
+      render: (entry) => <Resumen entry={entry} labels={entityLabels} />,
     },
   ];
 
@@ -288,13 +288,30 @@ function Entidad({
 }
 
 /**
- * Presenta los eventos de correo sin poner el destinatario delante del lector.
+ * Presenta un evento de correo sin poner el destinatario delante del lector.
  *
- * El registro original no se toca: `email_send` conserva su `summary` íntegro
- * en el API y lo ofrece aquí bajo un detalle desplegable. El tratamiento no
- * busca UUID ni casos particulares; se aplica a cualquier destinatario.
+ * **El registro original no se toca.** `email_send` conserva su `summary`
+ * íntegro en `core.audit_log` y en el API, y esta celda lo ofrece completo bajo
+ * «Ver texto original».
+ *
+ * **Lo que cambia es de dónde sale el texto visible: de aquí, no del dato.**
+ * Ni la clase ni el desenlace se copian del resumen. La clase se busca en
+ * `CLASES_DE_CORREO`; el desenlace, en `MOTIVOS_DE_CORREO`. Lo que no esté en
+ * una de las dos listas no se recorta ni se resume — no sale.
+ *
+ * **Por qué no basta con limpiar el resumen.** `SmtpEmailSender` lo compone con
+ * el destinatario dentro (`backend/Sillar.Core/Email/SmtpEmailSender.cs:101` y
+ * `:128`) y, cuando falla, detrás va `exception.Message` (`:107`): texto libre
+ * de un servidor ajeno. Cualquier regla que recorte ese texto acaba enseñando
+ * el trozo que no previó. Componer desde listas cerradas no tiene ese borde.
  */
-function Resumen({ entry }: { entry: AuditEntry }) {
+function Resumen({
+  entry,
+  labels,
+}: {
+  entry: AuditEntry;
+  labels: AuditEntityLabels;
+}) {
   if (!entry.summary) {
     return <span style={subtle}>—</span>;
   }
@@ -305,7 +322,7 @@ function Resumen({ entry }: { entry: AuditEntry }) {
 
   return (
     <div style={{ fontSize: '12.5px' }}>
-      <div>{resumenVisibleDeCorreo(entry.summary)}</div>
+      <div>{resumenVisibleDeCorreo(entry, labels)}</div>
       <details>
         <summary style={{ cursor: 'pointer' }}>Ver texto original</summary>
         <div style={{ marginTop: 'var(--s2)' }}>
@@ -317,28 +334,148 @@ function Resumen({ entry }: { entry: AuditEntry }) {
   );
 }
 
-function resumenVisibleDeCorreo(summary: string): string {
-  const prefix = "Correo '";
-  const recipientSeparator = "' a '";
-  const resultSeparator = "': ";
+/**
+ * Las clases de correo que el producto emite, y cómo se llaman en pantalla.
+ *
+ * **`OutgoingEmail.Kind` es un `string` sin más**
+ * (`backend/Sillar.Core.Contracts/Email/IEmailSender.cs:8`): ni enumeración, ni
+ * `CHECK`, ni constantes compartidas. Cualquier módulo puede pasar cualquier
+ * cosa, y eso llega a `entity_id` tal cual (`SmtpEmailSender.cs:99` y `:126`).
+ * Así que **el valor no se muestra: se busca**. Una clase que no esté aquí no
+ * aparece en la celda, y la fila se presenta sin ella.
+ *
+ * Las cuatro de hoy, con su origen: `smtp_test`
+ * (`Sillar.Core/Endpoints/SettingsEndpoints.cs:150`), y `email_verification`,
+ * `password_reset` e `invitation`
+ * (`Sillar.Modules.Crm/Authentication/CustomerEmailComposer.cs:25`, `:48`, `:70`).
+ *
+ * De paso deja de verse un identificador en inglés donde debía ir español.
+ */
+const CLASES_DE_CORREO = new Map<string, string>([
+  ['smtp_test', 'Correo de prueba'],
+  ['email_verification', 'Verificación de correo'],
+  ['password_reset', 'Restablecer contraseña'],
+  ['invitation', 'Invitación de cuenta'],
+]);
 
-  if (!summary.startsWith(prefix)) {
-    return 'Evento de correo.';
+/**
+ * Cómo se nombra una fila cuya clase de correo no está en la lista.
+ *
+ * **No lleva una etiqueta escrita aquí.** La fila ya trae su `entityType`, y la
+ * palabra con la que se nombra en español es propiedad del vocabulario de
+ * auditoría —el tipo del correo lo aporta CORE, que está siempre activo—, así
+ * que esta celda la pide igual que la columna «Entidad». Escribirla a mano era
+ * recentralizar vocabulario, y la puerta lo paró: `test:audit-vocabulary`
+ * cuenta los literales de etiqueta que este archivo puede contener, y para
+ * «Correo» el cupo es cero.
+ *
+ * **Y degrada como degrada la plataforma**, no de otra manera: si un tipo no
+ * está registrado, `auditEntityLabel` devuelve su código técnico
+ * (`frontend/tests/auditEntityVocabulary.test.mjs:122-133`). Inventar aquí una
+ * degradación distinta sería tener dos comportamientos para lo mismo.
+ */
+function claseDesconocidaDe(entry: AuditEntry, labels: AuditEntityLabels): string {
+  return entry.entityType ? auditEntityLabel(entry.entityType, labels) : 'Evento';
+}
+
+/**
+ * Los motivos que esta pantalla sabe nombrar, y la frase con la que los nombra.
+ *
+ * **Son los cuatro que redacta SILLAR** antes de hablar con el servidor
+ * (`backend/Sillar.Core/Email/SmtpEmailSender.cs:26-56`): los únicos que el
+ * administrador puede arreglar, y los únicos cuyo texto está bajo control del
+ * producto. Cualquier otro motivo viene de MailKit y no se nombra.
+ *
+ * Si alguien cambia la redacción en C# sin tocar esta lista, el motivo deja de
+ * reconocerse y la celda cae en la frase genérica: **se pierde un diagnóstico,
+ * no se expone un correo.** La barrera falla cerrada.
+ */
+const MOTIVOS_DE_CORREO: readonly { readonly marca: string; readonly frase: string }[] = [
+  { marca: 'Falta configurar smtp_server.', frase: 'falta configurar el servidor SMTP.' },
+  { marca: 'smtp_port no contiene un puerto válido.', frase: 'el puerto SMTP no es válido.' },
+  { marca: 'Falta configurar smtp_from.', frase: 'falta configurar el remitente.' },
+  { marca: 'Falta la variable de entorno', frase: 'falta la contraseña SMTP en el entorno.' },
+];
+
+/**
+ * Qué se dice cuando el motivo no es ninguno de los cuatro.
+ *
+ * Dice además dónde está el texto de verdad, que es el sitio al que se manda a
+ * quien necesite leerlo: el detalle desplegable de esta misma fila.
+ */
+const MOTIVO_NO_RECONOCIDO = 'falló — abre el detalle para ver qué dijo el servidor.';
+
+/** Y cuando el resumen no tiene la forma que escribe `SmtpEmailSender`. */
+const RESUMEN_IRREGULAR = 'Evento de correo.';
+
+function resumenVisibleDeCorreo(entry: AuditEntry, labels: AuditEntityLabels): string {
+  const desenlace = desenlaceDeCorreo(entry.summary ?? '');
+
+  if (desenlace === null) {
+    return RESUMEN_IRREGULAR;
   }
 
-  const templateEnd = summary.indexOf(recipientSeparator, prefix.length);
-  const resultStart = summary.lastIndexOf(resultSeparator);
+  const claseDesconocida = claseDesconocidaDe(entry, labels);
+  const clase = CLASES_DE_CORREO.get(entry.entityId?.trim() ?? '') ?? claseDesconocida;
+  const visible = `${clase}: ${desenlace}`;
 
-  if (templateEnd < 0 || resultStart <= templateEnd + recipientSeparator.length) {
-    return 'Evento de correo.';
+  // **Barrera final, y no mira cómo se clasificó.** Con la composición de
+  // arriba no puede dispararse: todo lo que entra en `visible` sale de las dos
+  // listas de este archivo, y ninguna lleva arroba. Se queda porque el día que
+  // alguien vuelva a interpolar un dato aquí, esto es lo que lo detiene — y
+  // porque el sabotaje lo demuestra: con la clasificación rota, fue el guardia
+  // el que impidió la fuga.
+  return visible.includes('@')
+    ? `${claseDesconocida}: ${MOTIVO_NO_RECONOCIDO}`
+    : visible;
+}
+
+/**
+ * El desenlace, o `null` si el resumen no tiene la forma que escribe el envío.
+ *
+ * **Se reconoce la estructura completa, no un trozo del final.** La forma es
+ * `Correo '<clase>' a '<destinatario>': <desenlace>`, y el desenlace empieza
+ * tras el primer `': ` que sigue al destinatario. Un envío logrado es el que
+ * tiene ahí `enviado.` **y nada más detrás**: así, un error cuyo texto libre
+ * termine en «': enviado.» no puede hacerse pasar por un envío logrado.
+ */
+function desenlaceDeCorreo(summary: string): string | null {
+  const inicio = "Correo '";
+  const entreClaseYDestinatario = "' a '";
+  const trasDestinatario = "': ";
+
+  if (!summary.startsWith(inicio)) {
+    return null;
   }
 
-  const template = summary.slice(prefix.length, templateEnd);
-  const result = summary.slice(resultStart + resultSeparator.length);
+  const finClase = summary.indexOf(entreClaseYDestinatario, inicio.length);
 
-  return template && result
-    ? `Correo '${template}': ${result}`
-    : 'Evento de correo.';
+  if (finClase < 0) {
+    return null;
+  }
+
+  const empiezaDestinatario = finClase + entreClaseYDestinatario.length;
+  const finDestinatario = summary.indexOf(trasDestinatario, empiezaDestinatario);
+
+  if (finDestinatario < 0) {
+    return null;
+  }
+
+  const resto = summary.slice(finDestinatario + trasDestinatario.length);
+
+  if (resto === 'enviado.') {
+    return 'enviado.';
+  }
+
+  if (!resto.startsWith('falló. ')) {
+    return null;
+  }
+
+  const motivo = resto.slice('falló. '.length);
+  const reconocido = MOTIVOS_DE_CORREO.find((m) => motivo.startsWith(m.marca));
+
+  // Ni `motivo` ni `resto` vuelven de esta función por ningún camino.
+  return reconocido ? `falló — ${reconocido.frase}` : MOTIVO_NO_RECONOCIDO;
 }
 
 /**
