@@ -1,6 +1,6 @@
 # Pendientes
 
-**Última modificación parcial:** 2026-10-15 — America/Lima (entradas 27 y 34). **Base de esta actualización:** tree M08 certificado en contenido `6de2517370b0e5c257e4926a57260ecd090edaad`, padre `44e3b1f0fc6b1fcd392f19e493ef4af6af958c31`. La certificación no autoriza por sí sola integración a `main`.
+**Última modificación parcial:** 2026-10-15 — America/Lima (entradas 25, 27, 34 y 35). **Procedencia verificada:** §25/JP-01 decidida en `1a07bb0c715e57bcb3ead52c083f739e0f372a25` (04/10) y recuperada sin cambios desde `196b9c6deb206bc2ed91662f3517347eef65dc10`; §27 y §34 desde el cierre M08, tree `6de2517370b0e5c257e4926a57260ecd090edaad` (15/10); §35 desde `6b4b5d140ca8fe6f1ea6a00ccbf00335de5ce714` (restaurabilidad M05b, renumerada desde §34). Las entradas 31–33 mantienen su procedencia original en `db07c22b3d66ba2d1ac29ed9a9168715c5a968af`.
 
 **Creación:** 25 de agosto de 2026, 21:04:02 -05:00 — America/Lima (`1d3f78874cae9a57659166495bb84151b0797db4`)
 **Última revisión general anterior:** 7 de octubre de 2026 — America/Lima
@@ -414,23 +414,25 @@ guarda de activación.
 
 ---
 
-## 25 · Pregunta de producto para JP — ¿sigue vigente «M11 no antes que M09»?
+## 25 · ~~¿Sigue vigente «M11 no antes que M09»?~~ — **RESUELTA por JP el 04/10/2026**
 
-**Esto es una pregunta, no una regla.** M09 Inventario fue movido a **SILLAR ERP**
-(`ROADMAP_MODULAR.md:122`), mientras M11 Pagos permanece en SILLAR WEB como la pasarela de pago
-en línea (`ROADMAP_MODULAR.md:119`).
+M09 Inventario fue movido a **SILLAR ERP**, mientras M11 Pagos permanece en **SILLAR WEB** como
+pasarela de pago en línea. La duda era si la condición histórica de orden debía sobrevivir a esa
+separación de productos.
 
-Si se mantiene literalmente «M11 no antes que M09», SILLAR WEB no tendría pagos en línea hasta
-que exista el inventario del ERP. Ese efecto necesita una decisión explícita de producto; no se
-deduce del roadmap.
+**Decisión formal de JP: no. M11 no espera a M09.**
 
-**Pregunta para JP:** ¿M11 debe seguir condicionado a que M09 exista primero, ahora que M09
-pertenece al ERP?
+- M09 **no es dependencia dura** de M11.
+- M09 **no es dependencia blanda** de M11.
+- M09 **no es requisito previo de construcción** de M11 v1.
+- M11 continúa dentro de SILLAR WEB según su roadmap.
+- No se añade `inventory` a `HardDependencies` ni a `SoftDependencies`.
+- Si aparece en el futuro un caso real en el que M11 necesite inventario, se especificará entonces
+  como una integración nueva; esta decisión no la anticipa.
 
-**Disparador.** Antes de redactar o cerrar las decisiones previas de M11.
-
-**No convertir en regla.** Hasta que JP responda, no se modifica el roadmap, no se reordena M11 y
-no se escribe «M11 no antes que M09» como restricción en ningún otro documento.
+**Consecuencia documental.** La frase histórica «M11 no antes que M09» deja de ser una condición
+vigente. No se reinterpreta ninguna decisión distinta: M09 sigue perteneciendo al ERP y M11 sigue
+siendo la pasarela de SILLAR WEB.
 
 ---
 
@@ -663,6 +665,35 @@ certificado ni repetir la puerta canónica únicamente por renombrar métodos.
 **No hacer ahora:** no añadir `retries`, no aumentar `workers`, no partir la suite ni silenciar aserciones para conseguir un verde retrospectivo; no ejecutar una tercera canónica sobre `6de25173…` sin autorización nueva y expresa.
 
 **Responsable:** Infra QA. **Estado:** ABIERTO; tratamiento previo a M10/M11/M12 pendiente de decisión JP.
+
+---
+
+## 35 · Restaurabilidad integral de M05b ServiceOrders
+
+**Procedencia:** sección §34 de `docs/pendiente-restaurabilidad-m05b-20261009`, commit `6b4b5d140ca8fe6f1ea6a00ccbf00335de5ce714`; renumerada para no colisionar con §34 Infra QA de M08.
+
+**Hecho.** La paridad estática del arnés acredita los nueve módulos
+reales en binario, migrate, seed y puerta. Las pruebas PostgreSQL de
+M05b acreditan su seed y configuración, mientras [M06-CICLO] acredita
+la reconstrucción de Tracking conservando ServiceOrders. No se ha
+ejecutado una comparación destructiva integral de M05b entre
+POST /api/setup y migrate()+seed().
+
+**Comprobación pendiente.** En una base PostgreSQL exclusivamente
+efímera, comparar ambos caminos por schema, tablas, historial de
+migraciones, claves foráneas aplicables y configuración del seed.
+Acreditar también que el arnés detecta una restauración incompleta,
+sin declarar PASS por mera existencia de schema.
+
+**Disparador.** Cuando una prueba destructiva necesite reconstruir
+M05b, o antes de la primera instalación real; lo que ocurra primero.
+
+**Responsable.** Integración y QA independiente, con el dueño del
+módulo para las correcciones que efectivamente se demuestren.
+
+**No hacer ahora.** No bloquear M08, no destruir datos de desarrollo
+o producción, no atribuir a [M06-CICLO] una cobertura que no ejecutó
+y no repetir una puerta completa sin una razón técnica acreditada.
 
 ---
 
