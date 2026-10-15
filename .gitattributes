@@ -9,6 +9,7 @@
 *.ps1  text eol=crlf
 
 # Binarios: nunca tocar
+*.b64 binary
 *.png  binary
 *.jpg  binary
 *.webp binary

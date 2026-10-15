@@ -1,6 +1,6 @@
 # Pendientes
 
-**Última modificación parcial:** 2026-10-09 — America/Lima (entradas 31–33). **Base verificada de estas entradas:** `db07c22b3d66ba2d1ac29ed9a9168715c5a968af`.
+**Última modificación parcial:** 2026-10-15 — America/Lima (entradas 27 y 34). **Base de esta actualización:** tree M08 certificado en contenido `6de2517370b0e5c257e4926a57260ecd090edaad`, padre `44e3b1f0fc6b1fcd392f19e493ef4af6af958c31`. La certificación no autoriza por sí sola integración a `main`.
 
 **Creación:** 25 de agosto de 2026, 21:04:02 -05:00 — America/Lima (`1d3f78874cae9a57659166495bb84151b0797db4`)
 **Última revisión general anterior:** 7 de octubre de 2026 — America/Lima
@@ -458,22 +458,26 @@ en esta unidad.
 
 ---
 
-## 27 · M02 — posible inestabilidad E2E bajo presión de memoria (RIESGO RESIDUAL)
+## 27 · M02 — posible inestabilidad E2E bajo presión de memoria (RIESGO RESIDUAL · DISPARADOR CUMPLIDO)
 
-**Creación:** 27/09/2026, America/Lima. **Última revisión de esta entrada:** 2026-09-27 11:40:43 -0500 (America/Lima).
-**Código verificado:** `2e6c72151a7046aad8269acbe2e5e4bff8f452cf`. **Evidencia publicada:** `docs/modules/cms/evidencias/QA-B-INDICE-20260927.md` (commit documental `2191150`).
+**Creación:** 27/09/2026, America/Lima. **Última revisión de esta entrada:** 2026-10-15, America/Lima.
+**Código verificado al abrirla:** `2e6c72151a7046aad8269acbe2e5e4bff8f452cf`. **Evidencia histórica:** `docs/modules/cms/evidencias/QA-B-INDICE-20260927.md` (commit documental `2191150`).
 
-**Observado y limitado:** La primera puerta local del 27/09/2026, 01:13–01:40, tuvo 157 E2E aprobadas y 2 fallidas: `catalogo.spec.ts:209` y `[M02-C32]`. Sus originales desaparecieron al reiniciarse la sesión; solo sobreviven los hashes registrados por Claude B. Una segunda puerta se interrumpió por agotamiento de memoria. No reconstruir ni reinterpretar dichos registros.
+**Observado y limitado el 27/09:** La primera puerta local tuvo 157 E2E aprobadas y 2 fallidas: la prueba que entonces se registró como `catalogo.spec.ts:209` y `[M02-C32]`. Sus originales desaparecieron al reiniciarse la sesión; solo sobreviven los hashes registrados por Claude B. Una segunda puerta se interrumpió por agotamiento de memoria. Ese número de línea se conserva únicamente como referencia histórica: **no es el identificador durable del disparador**.
 
-**Revalidación posterior:** Con memoria liberada y monitorizada, la puerta completa sobre el mismo SHA finalizó 6/6 y Playwright 159/159, sin fallos, inestables ni omisiones; C21, C32 y el ciclo obligatorio aprobados. Registros auténticos disponibles en la ruta de evidencias indicada.
+**Identificador durable del disparador:** la prueba cuyo nombre es `Con M01 desactivado no queda entrada de menú, ni ruta viva, ni hueco en el inicio`, en `e2e/tests/catalogo.spec.ts`, o `[M02-C32]`. La medición del colíder del 15/10 comprobó que esa prueba está en la línea 210 tanto en `origin/main` como en `origin/qa/m08-repair-6de6-20261012`; §27 la había citado como línea 209 sobre `2e6c7215`. El desplazamiento ocurrió antes del `main` actual, **no** por los trece commits de reparación de M08. Desde esta revisión el disparador se nombra por el nombre de prueba, que sobrevive al movimiento de líneas.
 
-**Hipótesis, NO demostrada:** Los dos fallos anteriores pudieron depender de presión de memoria o de la carga del equipo; durante la puerta roja no se midió la memoria. Una ejecución posterior verde no demuestra que no exista un defecto intermitente.
+**Revalidación posterior histórica:** Con memoria liberada y monitorizada, la puerta completa sobre el mismo SHA del 27/09 finalizó 6/6 y Playwright 159/159, sin fallos, inestables ni omisiones; C21, C32 y el ciclo obligatorio aprobaron. Esa ejecución verde no demuestra que no exista un defecto intermitente.
 
-**Disparador obligatorio:** Si vuelve a fallar `catalogo.spec.ts:209` **o** `[M02-C32]`, conservar de inmediato los registros, trazas, DOM y mediciones de memoria fuera del scratchpad; abrir diagnóstico reproducible y no atribuir automáticamente el fallo al entorno.
+**Disparador cumplido el 14/10/2026:** La segunda y última canónica autorizada de M08 sobre el tree `6de2517370b0e5c257e4926a57260ecd090edaad` volvió a fallar en `Con M01 desactivado no queda entrada de menú, ni ruta viva, ni hueco en el inicio`; agotó su `test.setTimeout(180_000)` porque la SPA no volvió a montar tras activar B2B. Se conservaron logs, trazas, `error-context`/DOM diagnóstico y 217 muestras de memoria/Chromium/FD fuera del scratchpad.
 
-**Propuesta separada para el líder técnico, NO implementada ni aprobada:** Evaluar incorporar a `scripts/verificar.mjs` un vigía que registre memoria y, ante un umbral de seguridad acordado, interrumpa ordenadamente la puerta preservando artefactos. El vigía empleado por B en la QA fue externo a la puerta: no presentarlo como una protección existente en `main`.
+**Capacidad medida, sin cierre automático por entorno:** durante la etapa 6 la memoria disponible llegó a 111304 kB con swap 0; cerca del artefacto de esta prueba había 377756 kB disponibles. Esa presión explica que una ejecución pueda agotar timeouts, pero §27 prohíbe usarla para declarar resuelto el riesgo o negar un defecto intermitente. **Queda obligatorio un diagnóstico reproducible propio de esta prueba**, con memoria medida y límite declarado; no es una nueva canónica de M08.
 
-**Responsable de seguimiento:** Integración y líder técnico. **Estado:** ABIERTO hasta que se cumpla el disparador o se formalice una decisión de tratamiento.
+**Evidencia del disparo:** `/var/tmp/sillar-m08-a15-tree6de-second-final-canonical-20261014-152625.tar.gz`, SHA-256 `cc670b69ab9d1a77e1ba1e77a2cc39cf4dc0842774551e83b095f4e45434a401`. El cierre durable del candidato y la receta por tree están en `docs/integracion/CIERRE-M08-CERTIFICADO-EN-CONTENIDO-20261015.md`.
+
+**Vigía de memoria, todavía no implementado:** sigue vigente la propuesta de incorporar a `scripts/verificar.mjs` un vigía que registre memoria y, ante un umbral de seguridad acordado, interrumpa ordenadamente la puerta preservando artefactos. El vigía externo usado en QA no debe presentarse como protección de `main`.
+
+**Responsable de seguimiento:** Infra QA; Integración conserva el expediente y escala cualquier decisión de política por la jerarquía normal. **Estado:** DISPARADO — diagnóstico reproducible pendiente.
 
 ---
 
@@ -630,6 +634,35 @@ delta documental/test separado y sin alterar las aserciones.
 
 **No hacer ahora.** No abrir una corrección cosmética sobre el SHA funcional ya
 certificado ni repetir la puerta canónica únicamente por renombrar métodos.
+
+---
+
+## 34 · Infra QA — fiabilidad transversal de la puerta (RIESGO TRANSVERSAL · DECISIÓN JP PENDIENTE)
+
+**Creación:** 15/10/2026, America/Lima. **Origen:** cierre de M08 sobre el tree `6de2517370b0e5c257e4926a57260ecd090edaad`.
+
+**Hecho.** Dos canónicas sobre el mismo contenido devolvieron conjuntos distintos de rojos en la etapa E2E, mientras las etapas 1–5 fueron verdes en ambas. La segunda canónica midió `MemAvailable=111304 kB` con swap 0 en su mínimo y, en otro momento, un renderer Chromium con 4128 descriptores abiertos y 4273 FD Chromium totales. La puerta actual no permite convertir cualquier rojo de etapa 6 en una lectura estable del producto bajo la capacidad de esta máquina.
+
+**Lo que este pendiente NO decide.** No rechaza M08, no fabrica un 6/6 verde, no autoriza integración a `main` y no declara que todos los rojos sean «del entorno». §27 conserva por separado la obligación específica de diagnosticar la prueba de catálogo que volvió a fallar.
+
+**Pendientes de Infra QA, en orden:**
+
+1. Habilitar swap en el equipo de QA y fijar qué puede correr en paralelo durante la etapa 6.
+2. Implementar el vigía de memoria de §27: umbral acordado, parada ordenada y preservación de artefactos.
+3. Medir el límite real `Max open files` de los procesos renderer Chromium.
+4. Evitar que las specs de ciclo hereden el navegador de las ~190 pruebas anteriores; la implementación concreta corresponde al dueño del arnés.
+5. Ejecutar el diagnóstico reproducible de `Con M01 desactivado no queda entrada de menú, ni ruta viva, ni hueco en el inicio` exigido por §27; es una focal, no una canónica.
+6. Inventariar `ERR_INSUFFICIENT_RESOURCES` como señal probable de recursos, sin convertirla en prueba de entorno: también puede existir un bucle de peticiones.
+7. Alinear las firmas de saturación del verificador con los estados actuales del diagnóstico de arranque, incluido `nada-montado`.
+8. Guardar la URL/recurso en los errores de consola del fixture; hoy el collector conserva el mensaje pero pierde ese discriminador.
+9. Conservar en el resumen de la puerta las cifras de carga, FD y el `N passed` de etapa 6.
+10. Incorporar `e2e/unit/` a una barrera canónica: `e2e/package.json` declara `test:unit`; la comprobación independiente ejecutó 8 pruebas verdes, pero ninguna de las seis etapas actuales de `scripts/verificar.mjs` invoca ese comando.
+
+**Disparador de decisión:** antes de abrir M10, M11 y M12, JP debe decidir el tratamiento de esta fiabilidad transversal. El colíder recomienda resolverla antes de abrir los tres frentes; **esa recomendación no se registra aquí como decisión ya tomada por JP**.
+
+**No hacer ahora:** no añadir `retries`, no aumentar `workers`, no partir la suite ni silenciar aserciones para conseguir un verde retrospectivo; no ejecutar una tercera canónica sobre `6de25173…` sin autorización nueva y expresa.
+
+**Responsable:** Infra QA. **Estado:** ABIERTO; tratamiento previo a M10/M11/M12 pendiente de decisión JP.
 
 ---
 
