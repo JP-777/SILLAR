@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Núcleo puro de M11. No registra endpoints, persistencia ni proveedor. -->
+
+</Project>
