@@ -13,13 +13,22 @@ type ViewState =
   | { kind: 'ready'; data: OrderIndicatorsView; previous: { start: string; end: string; data: OrderIndicatorsView | null } | null }
   | { kind: 'error'; failure: Failure };
 
-/** Período explícito: jamás se deduce de la zona del navegador. */
+/**
+ * Período explícito: jamás se deduce de la zona del navegador.
+ * `datetime-local` entrega `HH:mm` o, según el navegador, `HH:mm:ss`; antes se
+ * añadían siempre `:00` y la segunda forma acababa en una fecha inválida.
+ */
 function asInstant(value: string, zone: TimeZone): string {
-  return new Date(`${value}:00${zone === 'America/Lima' ? '-05:00' : 'Z'}`).toISOString();
+  const withSeconds = /T\d{2}:\d{2}$/.test(value) ? `${value}:00` : value;
+  return new Date(`${withSeconds}${zone === 'America/Lima' ? '-05:00' : 'Z'}`).toISOString();
 }
 
 function showDate(value: string, zone: TimeZone): string {
   return new Date(value).toLocaleString('es-PE', { timeZone: zone, dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function showCount(value: number | null): string {
+  return value === null ? '—' : value.toLocaleString('es-PE');
 }
 
 /** Rangos de días calendario completos, con el huso elegido por el usuario. */
@@ -75,13 +84,14 @@ export function ReportsPage() {
   function invalidateConsultation() {
     requestVersion.current += 1;
     setState({ kind: 'idle' });
+    // El aviso de entrada describía el período anterior; con otro período ya no aplica.
+    setInputError(null);
   }
 
   function chooseQuickPeriod(period: QuickPeriod) {
     const range = quickPeriodRange(period, zone, new Date());
     // D4: invalidar sincrónicamente cualquier respuesta de filtros anteriores.
     invalidateConsultation();
-    setInputError(null);
     setStart(range.start);
     setEnd(range.end);
   }
@@ -181,7 +191,7 @@ export function ReportsPage() {
             <span><input type="checkbox" checked={comparePrevious} onChange={(e) => {
               setComparePrevious(e.target.checked);
               invalidateConsultation();
-            }} /> Comparar I01 con el período anterior de igual duración</span>
+            }} /> Comparar los pedidos creados con el período anterior de igual duración</span>
           </label>
           <button className="ui-button" type="submit" disabled={state.kind === 'loading'}>Consultar período</button>
         </form>
@@ -192,7 +202,7 @@ export function ReportsPage() {
         {data?.status === 'source_unavailable' && (
           <section className="rp-panel" role="status">
             <h2>Fuente de pedidos no disponible</h2>
-            <p>M03 no está activo en esta instalación. No es correcto presentar los indicadores como cero.</p>
+            <p>El módulo de ventas no está activo en esta instalación, así que estos indicadores no se pueden medir. Actívalo para ver los pedidos.</p>
           </section>
         )}
         {data && data.status !== 'source_unavailable' && (
@@ -200,13 +210,13 @@ export function ReportsPage() {
             <p className="rp-note">Observado: {data.observedAtUtc ? showDate(data.observedAtUtc, zone) : 'Sin instante informado'} · Zona: {zone}</p>
             {data.status === 'empty' && <p role="status">No se crearon pedidos en este período. Los recuentos son cero.</p>}
             <div className="rp-kpis">
-              <section className="rp-panel"><h2>I01 · Pedidos creados</h2><strong>{data.i01CreatedOrders}</strong></section>
-              <section className="rp-panel"><h2>I04 · Actualmente vencidos</h2><strong>{data.i04CurrentlyExpiredOrders}</strong></section>
-              <section className="rp-panel"><h2>Actividad</h2><p>Activos: <strong>{data.activeOrders}</strong></p><p>Inactivos: <strong>{data.inactiveOrders}</strong></p></section>
+              <section className="rp-panel"><h2>Pedidos creados</h2><strong>{showCount(data.i01CreatedOrders)}</strong></section>
+              <section className="rp-panel"><h2>Actualmente vencidos</h2><strong>{showCount(data.i04CurrentlyExpiredOrders)}</strong></section>
+              <section className="rp-panel"><h2>Vigencia del registro</h2><p>Activos: <strong>{showCount(data.activeOrders)}</strong></p><p>Dados de baja: <strong>{showCount(data.inactiveOrders)}</strong></p></section>
             </div>
             {previous && (
               <section className="rp-panel">
-                <h2>I01 · Comparación con el período anterior</h2>
+                <h2>Pedidos creados · comparación con el período anterior</h2>
                 <p className="rp-note">Anterior: [{showDate(previous.start, zone)}, {showDate(previous.end, zone)}). Ambos períodos tienen igual duración.</p>
                 {delta === null ? (
                   <p role="status">La comparación no está disponible; los indicadores del período consultado siguen siendo válidos.</p>
@@ -222,11 +232,11 @@ export function ReportsPage() {
               </section>
             )}
             <section className="rp-panel">
-              <h2>I03 · Distribución por estado actual</h2>
+              <h2>Distribución por estado actual</h2>
               <table className="rp-table">
                 <thead><tr><th scope="col">Estado</th><th scope="col">Pedidos</th></tr></thead>
                 <tbody>{orderStates.map((status) => (
-                  <tr key={status.code}><th scope="row">{status.label}</th><td>{statusCounts.get(status.code) ?? 0}</td></tr>
+                  <tr key={status.code}><th scope="row">{status.label}</th><td>{(statusCounts.get(status.code) ?? 0).toLocaleString('es-PE')}</td></tr>
                 ))}</tbody>
               </table>
             </section>

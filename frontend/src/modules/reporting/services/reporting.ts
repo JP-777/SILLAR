@@ -5,7 +5,8 @@ export const orderStates = [
   { code: 'pending_payment', label: 'Pendiente de pago' },
   { code: 'payment_to_verify', label: 'Pago por verificar' },
   { code: 'preparing', label: 'En preparación' },
-  { code: 'ready_for_pickup', label: 'Listo para recojo' },
+  // Igual que M03 (SPEC §9.0) y Portal: el cliente y el personal ven la misma frase.
+  { code: 'ready_for_pickup', label: 'Listo para recoger' },
   { code: 'delivered', label: 'Entregado' },
   { code: 'expired', label: 'Vencido' },
   { code: 'cancelled', label: 'Cancelado' },
