@@ -22,6 +22,39 @@ function showDate(value: string, zone: TimeZone): string {
   return new Date(value).toLocaleString('es-PE', { timeZone: zone, dateStyle: 'medium', timeStyle: 'short' });
 }
 
+/** Rangos de días calendario completos, con el huso elegido por el usuario. */
+type QuickPeriod = 'today' | 'last7' | 'thisMonth';
+
+function quickPeriodRange(period: QuickPeriod, zone: TimeZone, now: Date): { start: string; end: string } {
+  // Los dos únicos husos permitidos son UTC y Lima (UTC-05, sin horario de verano).
+  // El desplazamiento se aplica al reloj antes de tomar año/mes/día UTC, evitando
+  // depender de la zona horaria del navegador o del sistema operativo.
+  const offsetMs = zone === 'America/Lima' ? -5 * 60 * 60 * 1000 : 0;
+  const localDay = new Date(now.getTime() + offsetMs);
+  const year = localDay.getUTCFullYear();
+  const month = localDay.getUTCMonth();
+  const day = localDay.getUTCDate();
+  const midnight = Date.UTC(year, month, day);
+  const oneDay = 24 * 60 * 60 * 1000;
+  let first: Date;
+  let last: Date;
+
+  if (period === 'today') {
+    first = new Date(midnight);
+    last = new Date(midnight + oneDay);
+  } else if (period === 'last7') {
+    // Siete días calendario: hoy más los seis anteriores. Fin exclusivo mañana.
+    first = new Date(midnight - 6 * oneDay);
+    last = new Date(midnight + oneDay);
+  } else {
+    first = new Date(Date.UTC(year, month, 1));
+    last = new Date(Date.UTC(year, month + 1, 1));
+  }
+
+  const localInput = (instant: Date) => `${instant.toISOString().slice(0, 10)}T00:00`;
+  return { start: localInput(first), end: localInput(last) };
+}
+
 /** M10 D3: cohorte de pedidos con filtros [inicio,fin), sin totales monetarios. */
 export function ReportsPage() {
   const [start, setStart] = useState('');
@@ -41,6 +74,15 @@ export function ReportsPage() {
   function invalidateConsultation() {
     requestVersion.current += 1;
     setState({ kind: 'idle' });
+  }
+
+  function chooseQuickPeriod(period: QuickPeriod) {
+    const range = quickPeriodRange(period, zone, new Date());
+    // D4: invalidar sincrónicamente cualquier respuesta de filtros anteriores.
+    invalidateConsultation();
+    setInputError(null);
+    setStart(range.start);
+    setEnd(range.end);
   }
 
   async function consultar(event: FormEvent<HTMLFormElement>) {
@@ -81,6 +123,12 @@ export function ReportsPage() {
     <PageContainer title="Reportes de pedidos" description="Pedidos creados en el intervalo elegido, según su estado actual. Incluye pedidos dados de baja.">
       <div className="rp-stack">
         <form className="rp-filters" onSubmit={(e) => void consultar(e)}>
+          <div className="rp-presets" role="group" aria-label="Períodos rápidos">
+            <span className="rp-presets__label">Períodos rápidos (días calendario)</span>
+            <button className="ui-button" type="button" onClick={() => chooseQuickPeriod('today')}>Hoy</button>
+            <button className="ui-button" type="button" onClick={() => chooseQuickPeriod('last7')}>Últimos 7 días</button>
+            <button className="ui-button" type="button" onClick={() => chooseQuickPeriod('thisMonth')}>Este mes</button>
+          </div>
           <label className="rp-field">
             Inicio (incluido)
             <input className="ui-input" type="datetime-local" value={start} onChange={(e) => { setStart(e.target.value); invalidateConsultation(); }} required />
