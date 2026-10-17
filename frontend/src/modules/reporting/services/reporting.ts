@@ -1,30 +1,15 @@
 import { http } from '../../../shared/http/client';
+import type { OrderIndicatorsView } from './orderIndicators';
+import { verifyOrderIndicators } from './verifyOrderIndicators';
 
-/** Los siete estados admitidos por M03, siempre estados actuales. */
-export const orderStates = [
-  { code: 'pending_payment', label: 'Pendiente de pago' },
-  { code: 'payment_to_verify', label: 'Pago por verificar' },
-  { code: 'preparing', label: 'En preparación' },
-  // Igual que M03 (SPEC §9.0) y Portal: el cliente y el personal ven la misma frase.
-  { code: 'ready_for_pickup', label: 'Listo para recoger' },
-  { code: 'delivered', label: 'Entregado' },
-  { code: 'expired', label: 'Vencido' },
-  { code: 'cancelled', label: 'Cancelado' },
-] as const;
+export { orderStates, type OrderIndicatorsView } from './orderIndicators';
+export { InconsistentIndicatorsError } from './verifyOrderIndicators';
 
-export interface OrderIndicatorsView {
-  status: 'source_unavailable' | 'empty' | 'with_data';
-  startInclusive: string;
-  endExclusive: string;
-  observedAtUtc: string | null;
-  i01CreatedOrders: number | null;
-  i03CurrentStatusCounts: { status: string; count: number }[] | null;
-  i04CurrentlyExpiredOrders: number | null;
-  activeOrders: number | null;
-  inactiveOrders: number | null;
-}
-
-/** Solo contrato administrativo M10; el frontend nunca consulta M03 directamente. */
-export function loadOrderIndicators(start: string, end: string): Promise<OrderIndicatorsView> {
-  return http.get<OrderIndicatorsView>('/admin/reporting/orders', { query: { start, end } });
+/**
+ * Solo contrato administrativo M10; el frontend nunca consulta M03 directamente.
+ * D8: la respuesta se valida aquí, antes de que ninguna pantalla la publique.
+ */
+export async function loadOrderIndicators(start: string, end: string): Promise<OrderIndicatorsView> {
+  const data = await http.get<OrderIndicatorsView>('/admin/reporting/orders', { query: { start, end } });
+  return verifyOrderIndicators(data, { start, end });
 }

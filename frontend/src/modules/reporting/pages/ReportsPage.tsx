@@ -3,7 +3,12 @@ import { PageContainer } from '../../../layout/PageContainer';
 import { ForbiddenPage } from '../../../platform/ForbiddenPage';
 import { describe, type Failure } from '../../../shared/errors/messages';
 import { FailureAlert } from '../../../shared/ui/patterns';
-import { loadOrderIndicators, orderStates, type OrderIndicatorsView } from '../services/reporting';
+import {
+  InconsistentIndicatorsError,
+  loadOrderIndicators,
+  orderStates,
+  type OrderIndicatorsView,
+} from '../services/reporting';
 import '../reporting.css';
 
 type TimeZone = 'America/Lima' | 'UTC';
@@ -144,7 +149,12 @@ export function ReportsPage() {
       }
     } catch (error) {
       if (requestVersion.current === currentRequest) {
-        setState({ kind: 'error', failure: describe(error, 'consultar los indicadores de pedidos') });
+        // D8: una respuesta incoherente es un error con su propia frase, no el
+        // genérico de describe() ni «fuente no disponible». No se dibuja ninguna cifra.
+        const failure: Failure = error instanceof InconsistentIndicatorsError
+          ? { kind: 'inline', message: error.message, fieldErrors: null, blockedBy: null }
+          : describe(error, 'consultar los indicadores de pedidos');
+        setState({ kind: 'error', failure });
       }
     }
   }
