@@ -10,7 +10,7 @@ type TimeZone = 'America/Lima' | 'UTC';
 type ViewState =
   | { kind: 'idle' }
   | { kind: 'loading' }
-  | { kind: 'ready'; data: OrderIndicatorsView }
+  | { kind: 'ready'; data: OrderIndicatorsView; previous: { start: string; end: string; data: OrderIndicatorsView | null } | null }
   | { kind: 'error'; failure: Failure };
 
 /** Período explícito: jamás se deduce de la zona del navegador. */
@@ -62,6 +62,7 @@ export function ReportsPage() {
   const [zone, setZone] = useState<TimeZone>('America/Lima');
   const [state, setState] = useState<ViewState>({ kind: 'idle' });
   const [inputError, setInputError] = useState<string | null>(null);
+  const [comparePrevious, setComparePrevious] = useState(false);
 
   // Cada modificación del período o de la zona invalida toda petición anterior.
   // Es síncrono: un resultado viejo nunca puede pisar la consulta vigente.
@@ -92,18 +93,44 @@ export function ReportsPage() {
       setInputError('Indica fecha y hora de inicio y fin antes de consultar.');
       return;
     }
-    const first = asInstant(start, zone);
-    const last = asInstant(end, zone);
-    if (new Date(last).getTime() <= new Date(first).getTime()) {
+    let first: string;
+    let last: string;
+    try {
+      first = asInstant(start, zone);
+      last = asInstant(end, zone);
+    } catch {
+      setInputError('Revisa las fechas indicadas antes de consultar.');
+      return;
+    }
+    const startMs = Date.parse(first);
+    const endMs = Date.parse(last);
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
       setInputError('El fin debe ser posterior al inicio. El fin no se incluye.');
       return;
     }
+    // D6: la comparación usa una cohorte consecutiva de igual duración.
+    // No se comparan estados como si fueran históricos ni se consulta dinero.
+    const previousStartMs = startMs - (endMs - startMs);
+    if (comparePrevious && !Number.isFinite(previousStartMs)) {
+      setInputError('El período anterior queda fuera del intervalo de fechas válido.');
+      return;
+    }
+    const previousStart = comparePrevious ? new Date(previousStartMs).toISOString() : null;
     setInputError(null);
     setState({ kind: 'loading' });
     try {
-      const data = await loadOrderIndicators(first, last);
+      // Una falla en la comparación NO oculta los indicadores principales.
+      const previousPromise = previousStart
+        ? loadOrderIndicators(previousStart, first).catch(() => null)
+        : Promise.resolve(null);
+      const [data, previousData] = await Promise.all([
+        loadOrderIndicators(first, last),
+        previousPromise,
+      ]);
       if (requestVersion.current === currentRequest) {
-        setState({ kind: 'ready', data });
+        setState({ kind: 'ready', data, previous: previousStart
+          ? { start: previousStart, end: first, data: previousData }
+          : null });
       }
     } catch (error) {
       if (requestVersion.current === currentRequest) {
@@ -117,6 +144,11 @@ export function ReportsPage() {
   }
 
   const data = state.kind === 'ready' ? state.data : null;
+  const previous = state.kind === 'ready' ? state.previous : null;
+  const previousCount = previous?.data?.i01CreatedOrders ?? null;
+  const currentCount = data?.i01CreatedOrders ?? null;
+  const delta = currentCount !== null && previousCount !== null
+    ? currentCount - previousCount : null;
   const statusCounts = new Map(data?.i03CurrentStatusCounts?.map((s) => [s.status, s.count]) ?? []);
 
   return (
@@ -144,6 +176,13 @@ export function ReportsPage() {
               <option value="UTC">UTC (UTC+00:00)</option>
             </select>
           </label>
+          <label className="rp-field">
+            <span>Comparación opcional</span>
+            <span><input type="checkbox" checked={comparePrevious} onChange={(e) => {
+              setComparePrevious(e.target.checked);
+              invalidateConsultation();
+            }} /> Comparar I01 con el período anterior de igual duración</span>
+          </label>
           <button className="ui-button" type="submit" disabled={state.kind === 'loading'}>Consultar período</button>
         </form>
         {inputError && <p className="rp-warning" role="alert">{inputError}</p>}
@@ -165,6 +204,23 @@ export function ReportsPage() {
               <section className="rp-panel"><h2>I04 · Actualmente vencidos</h2><strong>{data.i04CurrentlyExpiredOrders}</strong></section>
               <section className="rp-panel"><h2>Actividad</h2><p>Activos: <strong>{data.activeOrders}</strong></p><p>Inactivos: <strong>{data.inactiveOrders}</strong></p></section>
             </div>
+            {previous && (
+              <section className="rp-panel">
+                <h2>I01 · Comparación con el período anterior</h2>
+                <p className="rp-note">Anterior: [{showDate(previous.start, zone)}, {showDate(previous.end, zone)}). Ambos períodos tienen igual duración.</p>
+                {delta === null ? (
+                  <p role="status">La comparación no está disponible; los indicadores del período consultado siguen siendo válidos.</p>
+                ) : (
+                  <>
+                    <p>Pedidos creados antes: <strong>{previousCount?.toLocaleString('es-PE')}</strong></p>
+                    <p>Diferencia: <strong>{delta > 0 ? '+' : ''}{delta.toLocaleString('es-PE')}</strong> pedidos</p>
+                    <p className="rp-note">{previousCount === 0
+                      ? 'Sin variación porcentual calculable porque el período anterior tuvo cero pedidos.'
+                      : `Variación: ${delta > 0 ? '+' : ''}${((delta / previousCount!) * 100).toLocaleString('es-PE', { maximumFractionDigits: 1 })} %`}</p>
+                  </>
+                )}
+              </section>
+            )}
             <section className="rp-panel">
               <h2>I03 · Distribución por estado actual</h2>
               <table className="rp-table">
