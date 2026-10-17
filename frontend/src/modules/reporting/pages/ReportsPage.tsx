@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { PageContainer } from '../../../layout/PageContainer';
 import { ForbiddenPage } from '../../../platform/ForbiddenPage';
 import { describe, type Failure } from '../../../shared/errors/messages';
@@ -30,8 +30,22 @@ export function ReportsPage() {
   const [state, setState] = useState<ViewState>({ kind: 'idle' });
   const [inputError, setInputError] = useState<string | null>(null);
 
+  // Cada modificación del período o de la zona invalida toda petición anterior.
+  // Es síncrono: un resultado viejo nunca puede pisar la consulta vigente.
+  const requestVersion = useRef(0);
+
+  useEffect(() => () => {
+    requestVersion.current += 1;
+  }, []);
+
+  function invalidateConsultation() {
+    requestVersion.current += 1;
+    setState({ kind: 'idle' });
+  }
+
   async function consultar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const currentRequest = ++requestVersion.current;
     if (!start || !end) {
       setInputError('Indica fecha y hora de inicio y fin antes de consultar.');
       return;
@@ -45,9 +59,14 @@ export function ReportsPage() {
     setInputError(null);
     setState({ kind: 'loading' });
     try {
-      setState({ kind: 'ready', data: await loadOrderIndicators(first, last) });
+      const data = await loadOrderIndicators(first, last);
+      if (requestVersion.current === currentRequest) {
+        setState({ kind: 'ready', data });
+      }
     } catch (error) {
-      setState({ kind: 'error', failure: describe(error, 'consultar los indicadores de pedidos') });
+      if (requestVersion.current === currentRequest) {
+        setState({ kind: 'error', failure: describe(error, 'consultar los indicadores de pedidos') });
+      }
     }
   }
 
@@ -64,15 +83,15 @@ export function ReportsPage() {
         <form className="rp-filters" onSubmit={(e) => void consultar(e)}>
           <label className="rp-field">
             Inicio (incluido)
-            <input className="ui-input" type="datetime-local" value={start} onChange={(e) => { setStart(e.target.value); setState({ kind: 'idle' }); }} required />
+            <input className="ui-input" type="datetime-local" value={start} onChange={(e) => { setStart(e.target.value); invalidateConsultation(); }} required />
           </label>
           <label className="rp-field">
             Fin (excluido)
-            <input className="ui-input" type="datetime-local" value={end} onChange={(e) => { setEnd(e.target.value); setState({ kind: 'idle' }); }} required />
+            <input className="ui-input" type="datetime-local" value={end} onChange={(e) => { setEnd(e.target.value); invalidateConsultation(); }} required />
           </label>
           <label className="rp-field">
             Zona horaria
-            <select className="ui-input" value={zone} onChange={(e) => { setZone(e.target.value as TimeZone); setState({ kind: 'idle' }); }}>
+            <select className="ui-input" value={zone} onChange={(e) => { setZone(e.target.value as TimeZone); invalidateConsultation(); }}>
               <option value="America/Lima">Perú · America/Lima (UTC−05:00)</option>
               <option value="UTC">UTC (UTC+00:00)</option>
             </select>
