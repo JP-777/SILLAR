@@ -37,7 +37,7 @@ function strictInstant(input: string): Instant | null {
   const hour = Number(m[4]);
   const minute = Number(m[5]);
   const second = Number(m[6]);
-  if (month < 1 || month > 12 || hour > 23 || minute > 59 || second > 59) return null;
+  if (year < 1 || year > 9999 || month < 1 || month > 12 || hour > 23 || minute > 59 || second > 59) return null;
   const lengths = [31, isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   if (day < 1 || day > lengths[month - 1]) return null;
   let offsetMinutes = 0;

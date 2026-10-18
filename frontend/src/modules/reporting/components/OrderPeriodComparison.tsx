@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { Failure } from '../../../shared/errors/messages';
 import { FailureAlert } from '../../../shared/ui/patterns';
 import { explainComparison, type CohortRelation } from '../services/explainComparison';
+import { assessReportComparison, type ReportComparisonSnapshot } from '../services/reportComparisonGate';
 import { asInstant, showCount, showDate, type ReportZone } from '../services/period';
 import {
   describeReportFailure,
@@ -205,6 +206,23 @@ export function OrderPeriodComparison({ baseline, zone, initialPeriod = null, on
   // recalcula de A y B mostrados, así que nunca describe una respuesta obsoleta.
   const explanation = comparison === null ? null : explainComparison(baseline, comparison);
   const interpretable = explanation !== null && explanation.relation !== 'invalid';
+  // D14: la compuerta decide si se puede restar B − A. A y B solo llegan aquí
+  // tras loadOrderIndicators, que ya aplicó verifyOrderIndicators (D8): por eso
+  // `validated` es cierto, no porque la compuerta lo compruebe.
+  const snapshotOf = (report: OrderIndicatorsView, pick: (row: typeof counts[number]) => number | null): ReportComparisonSnapshot => ({
+    window: report,
+    state: report.status,
+    validated: true,
+    metrics: Object.fromEntries(counts.map((row) => [row.code, pick(row)])),
+  });
+  const gate = comparison === null ? null : assessReportComparison(
+    snapshotOf(baseline, (row) => row.a),
+    snapshotOf(comparison, (row) => row.b),
+  );
+  const mayShowDifferences = gate?.decision === 'comparable';
+  // Motivos propios de la compuerta; las notas de relación ya se muestran arriba.
+  const withheldReasons = gate === null || mayShowDifferences
+    ? [] : gate.reasons.filter((reason) => !gate.explanation.notes.includes(reason));
 
   return (
     <section className="rp-compare" aria-labelledby="rp-compare-heading">
@@ -267,22 +285,35 @@ export function OrderPeriodComparison({ baseline, zone, initialPeriod = null, on
           </p>
           <p className="rp-compare__note">
             Cada porcentaje se calcula sobre los pedidos creados de su propia cohorte; una cohorte
-            sin pedidos no tiene porcentajes. La diferencia de participación va en puntos
-            porcentuales (pp) y compara dos fotografías, no un cambio de un mismo grupo en el tiempo.
+            sin pedidos no tiene porcentajes.
+            {mayShowDifferences && ' La diferencia de participación va en puntos porcentuales (pp) y compara dos fotografías, no un cambio de un mismo grupo en el tiempo.'}
           </p>
+          {!mayShowDifferences && (
+            <div className="rp-compare__withheld" role="status">
+              <p><strong>No se muestran diferencias entre A y B.</strong> Las cifras de cada cohorte sí son válidas por separado.</p>
+              {withheldReasons.length > 0 && (
+                <ul className="rp-compare__notes">
+                  {withheldReasons.map((reason) => <li key={reason}>{reason}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
           <div className="rp-compare__scroll">
             <table className="rp-compare__table">
-              <caption>Recuentos y participación de cada cohorte; diferencias B − A. No indica transiciones entre estados.</caption>
+              <caption>{mayShowDifferences
+                ? 'Recuentos y participación de cada cohorte; diferencias B − A. No indica transiciones entre estados.'
+                : 'Recuentos y participación de cada cohorte, por separado. Sin diferencias entre cohortes.'}</caption>
               <thead><tr><th scope="col">Indicador</th><th scope="col">A · Principal</th>
-                <th scope="col">B · Comparación</th><th scope="col">Diferencia B − A</th>
+                <th scope="col">B · Comparación</th>
+                {mayShowDifferences && <th scope="col">Diferencia B − A</th>}
                 <th scope="col">% de A</th><th scope="col">% de B</th>
-                <th scope="col">Diferencia de participación</th></tr></thead>
+                {mayShowDifferences && <th scope="col">Diferencia de participación</th>}</tr></thead>
               <tbody>{rows.map((row) => (
                 <tr key={row.code}><th scope="row">{row.label}</th>
                   <td>{showCount(row.a)}</td><td>{showCount(row.b)}</td>
-                  <td>{difference(row.a, row.b)}</td>
+                  {mayShowDifferences && <td>{difference(row.a, row.b)}</td>}
                   <td>{showShare(row.shareA)}</td><td>{showShare(row.shareB)}</td>
-                  <td>{showPoints(row.shareA, row.shareB)}</td></tr>
+                  {mayShowDifferences && <td>{showPoints(row.shareA, row.shareB)}</td>}</tr>
               ))}</tbody>
             </table>
           </div>
