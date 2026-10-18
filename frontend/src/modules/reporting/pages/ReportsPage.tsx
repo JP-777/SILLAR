@@ -3,10 +3,10 @@ import { PageContainer } from '../../../layout/PageContainer';
 import { ForbiddenPage } from '../../../platform/ForbiddenPage';
 import { describe, type Failure } from '../../../shared/errors/messages';
 import { FailureAlert } from '../../../shared/ui/patterns';
+import { OrderDistribution } from '../components/OrderDistribution';
 import {
   InconsistentIndicatorsError,
   loadOrderIndicators,
-  orderStates,
   type OrderIndicatorsView,
 } from '../services/reporting';
 import '../reporting.css';
@@ -169,7 +169,20 @@ export function ReportsPage() {
   const currentCount = data?.i01CreatedOrders ?? null;
   const delta = currentCount !== null && previousCount !== null
     ? currentCount - previousCount : null;
-  const statusCounts = new Map(data?.i03CurrentStatusCounts?.map((s) => [s.status, s.count]) ?? []);
+  // D9: solo una cohorte validada por D8 y con pedidos dibuja distribuciones.
+  // Los nulos no se rellenan con cero: si falta un recuento, no se dibuja.
+  const distribution = data?.status === 'with_data'
+    && data.i01CreatedOrders !== null
+    && data.i03CurrentStatusCounts !== null
+    && data.activeOrders !== null
+    && data.inactiveOrders !== null
+    ? {
+      createdOrders: data.i01CreatedOrders,
+      currentStatusCounts: data.i03CurrentStatusCounts,
+      activeOrders: data.activeOrders,
+      inactiveOrders: data.inactiveOrders,
+    }
+    : null;
 
   return (
     <PageContainer title="Reportes de pedidos" description="Pedidos creados en el intervalo elegido, según su estado actual. Incluye pedidos dados de baja.">
@@ -222,7 +235,6 @@ export function ReportsPage() {
             <div className="rp-kpis">
               <section className="rp-panel"><h2>Pedidos creados</h2><strong>{showCount(data.i01CreatedOrders)}</strong></section>
               <section className="rp-panel"><h2>Actualmente vencidos</h2><strong>{showCount(data.i04CurrentlyExpiredOrders)}</strong></section>
-              <section className="rp-panel"><h2>Vigencia del registro</h2><p>Activos: <strong>{showCount(data.activeOrders)}</strong></p><p>Dados de baja: <strong>{showCount(data.inactiveOrders)}</strong></p></section>
             </div>
             {previous && (
               <section className="rp-panel">
@@ -241,15 +253,7 @@ export function ReportsPage() {
                 )}
               </section>
             )}
-            <section className="rp-panel">
-              <h2>Distribución por estado actual</h2>
-              <table className="rp-table">
-                <thead><tr><th scope="col">Estado</th><th scope="col">Pedidos</th></tr></thead>
-                <tbody>{orderStates.map((status) => (
-                  <tr key={status.code}><th scope="row">{status.label}</th><td>{(statusCounts.get(status.code) ?? 0).toLocaleString('es-PE')}</td></tr>
-                ))}</tbody>
-              </table>
-            </section>
+            {distribution && <OrderDistribution {...distribution} />}
             <p className="rp-note">Cohorte: [{showDate(data.startInclusive, zone)}, {showDate(data.endExclusive, zone)}). Los vencidos son los que tienen estado actual «Vencido»; no es una evaluación histórica del plazo.</p>
           </>
         )}

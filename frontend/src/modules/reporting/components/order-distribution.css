@@ -1,0 +1,10 @@
+/* M10 D9 — solo tokens de diseño compartidos. */
+.rp-dist { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,19rem),1fr)); gap: var(--s5); margin-block: var(--s5); }
+.rp-dist section { min-width: 0; padding: var(--s4); background: var(--bg-raised); border: 1px solid var(--border); border-radius: var(--r-md); }
+.rp-dist h2 { font-size: 1.05rem; margin: 0 0 var(--s3); }
+.rp-dist__hint { color: var(--text-muted); font-size: .875rem; margin: 0 0 var(--s3); }
+.rp-dist__list { display: grid; gap: var(--s3); padding: 0; margin: 0; list-style: none; }
+.rp-dist__line { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s1); font-size: .875rem; }
+.rp-dist__line strong { font-variant-numeric: tabular-nums; }
+.rp-dist__track { height: .55rem; overflow: hidden; background: var(--bg-sunken); border-radius: var(--r-sm); }
+.rp-dist__fill { height: 100%; background: var(--primary); }
