@@ -12,3 +12,8 @@
 .rp-compare__table th, .rp-compare__table td { padding: var(--s2) var(--s3); border-bottom: 1px solid var(--border); }
 .rp-compare__table thead th { text-align: left; }
 .rp-compare__table td { text-align: right; font-variant-numeric: tabular-nums; }
+/* D13: relación entre cohortes, con los mismos tokens. */
+.rp-compare__context { display: grid; gap: var(--s2); padding: var(--s3); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--bg-sunken); }
+.rp-compare__context h3 { margin: 0; font-size: 1rem; }
+.rp-compare__context p { margin: 0; }
+.rp-compare__notes { margin: 0; padding-left: var(--s4); color: var(--text-muted); font-size: .875rem; }

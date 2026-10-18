@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { Failure } from '../../../shared/errors/messages';
 import { FailureAlert } from '../../../shared/ui/patterns';
+import { explainComparison, type CohortRelation } from '../services/explainComparison';
 import { asInstant, showCount, showDate, type ReportZone } from '../services/period';
 import {
   describeReportFailure,
@@ -76,6 +77,30 @@ function contextOf(baseline: OrderIndicatorsView, zone: ReportZone): string {
       .sort((x, y) => x.status.localeCompare(y.status))
       .map((entry) => [entry.status, entry.count]),
   ]);
+}
+
+/** D13: nombre visible de la relación entre las dos ventanas de creación. */
+const RELATION_LABEL: Record<CohortRelation, string> = {
+  identical: 'Misma cohorte: A y B tienen exactamente el mismo período.',
+  overlapping: 'Cohortes solapadas: comparten pedidos, así que no son grupos independientes.',
+  adjacent: 'Cohortes contiguas: B empieza donde termina A, o al revés, sin pedidos en común.',
+  disjoint: 'Cohortes separadas: hay un hueco entre los dos períodos y no comparten pedidos.',
+  invalid: 'No se pudo interpretar la relación entre los períodos.',
+};
+
+/** Duración legible del solape: días, horas y minutos, sin redondear a cero. */
+function showDuration(totalMinutes: number): string {
+  const minutes = Math.round(totalMinutes);
+  if (minutes === 0) return totalMinutes > 0 ? 'menos de un minuto' : '0 minutos';
+  const days = Math.floor(minutes / 1440);
+  const hours = Math.floor((minutes % 1440) / 60);
+  const rest = minutes % 60;
+  const parts = [
+    days ? `${days.toLocaleString('es-PE')} ${days === 1 ? 'día' : 'días'}` : '',
+    hours ? `${hours} ${hours === 1 ? 'hora' : 'horas'}` : '',
+    rest ? `${rest} ${rest === 1 ? 'minuto' : 'minutos'}` : '',
+  ].filter(Boolean);
+  return parts.join(' y ');
 }
 
 /**
@@ -176,6 +201,10 @@ export function OrderPeriodComparison({ baseline, zone, initialPeriod = null, on
     const shareB = own && comparison ? share(row.b, comparison.i01CreatedOrders) : null;
     return { ...row, shareA, shareB };
   });
+  // D13: cómo se relacionan las dos ventanas y sus observaciones. Puro: se
+  // recalcula de A y B mostrados, así que nunca describe una respuesta obsoleta.
+  const explanation = comparison === null ? null : explainComparison(baseline, comparison);
+  const interpretable = explanation !== null && explanation.relation !== 'invalid';
 
   return (
     <section className="rp-compare" aria-labelledby="rp-compare-heading">
@@ -209,7 +238,26 @@ export function OrderPeriodComparison({ baseline, zone, initialPeriod = null, on
       {shown.kind === 'error' && shown.failure.kind !== 'silent' && (
         <FailureAlert failure={shown.failure} />
       )}
-      {comparison && (
+      {explanation && (
+        <section className="rp-compare__context" aria-labelledby="rp-compare-context-heading">
+          <h3 id="rp-compare-context-heading">Relación entre las cohortes</h3>
+          <p><strong>{RELATION_LABEL[explanation.relation]}</strong></p>
+          {explanation.overlapMinutes !== null && explanation.relation !== 'disjoint'
+            && explanation.relation !== 'adjacent' && (
+            <p>Tiempo en común: {showDuration(explanation.overlapMinutes)}.</p>
+          )}
+          <ul className="rp-compare__notes">
+            {explanation.notes.map((note) => <li key={note}>{note}</li>)}
+          </ul>
+        </section>
+      )}
+      {comparison && !interpretable && (
+        <p role="alert" className="rp-compare__error">
+          Los períodos recibidos no permiten comparar las cohortes, así que no se muestran diferencias.
+          Vuelve a consultar la comparación.
+        </p>
+      )}
+      {comparison && interpretable && (
         <>
           <p className="rp-compare__note">
             A: [{showDate(baseline.startInclusive, zone)}, {showDate(baseline.endExclusive, zone)}),
