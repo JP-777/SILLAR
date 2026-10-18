@@ -1,3 +1,4 @@
+import { OrderCreationWindowPanel } from './OrderCreationWindowPanel';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { Failure } from '../../../shared/errors/messages';
 import { FailureAlert } from '../../../shared/ui/patterns';
@@ -277,6 +278,7 @@ export function OrderPeriodComparison({ baseline, zone, initialPeriod = null, on
       )}
       {comparison && interpretable && (
         <>
+          <OrderCreationWindowPanel baseline={baseline} compared={comparison} />
           <p className="rp-compare__note">
             A: [{showDate(baseline.startInclusive, zone)}, {showDate(baseline.endExclusive, zone)}),
             observada {baseline.observedAtUtc ? showDate(baseline.observedAtUtc, zone) : 'sin instante informado'}.
