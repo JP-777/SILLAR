@@ -7,7 +7,7 @@
 .rp-compare__error { color: var(--danger); }
 .rp-compare__scroll { width: 100%; overflow-x: auto; }
 /* Tabla propia: .rp-table se retiró en D9 y la comparación quedaba sin estilos. */
-.rp-compare__table { min-width: 620px; width: 100%; border-collapse: collapse; }
+.rp-compare__table { min-width: 760px; width: 100%; border-collapse: collapse; }
 .rp-compare__table caption { caption-side: top; text-align: left; color: var(--text-muted); font-size: .875rem; padding-bottom: var(--s2); }
 .rp-compare__table th, .rp-compare__table td { padding: var(--s2) var(--s3); border-bottom: 1px solid var(--border); }
 .rp-compare__table thead th { text-align: left; }
