@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useLocation } from 'react-router-dom';
 import { PageContainer } from '../../../layout/PageContainer';
 import { ForbiddenPage } from '../../../platform/ForbiddenPage';
 import { type Failure } from '../../../shared/errors/messages';
@@ -6,6 +7,7 @@ import { FailureAlert } from '../../../shared/ui/patterns';
 import { OrderDistribution } from '../components/OrderDistribution';
 import { OrderPeriodComparison } from '../components/OrderPeriodComparison';
 import { asInstant, showCount, showDate, type ReportZone } from '../services/period';
+import { decodeReportLink, encodeReportLink, type ReportLinkRead } from '../services/reportLinks';
 import {
   describeReportFailure,
   loadOrderIndicators,
@@ -55,12 +57,60 @@ function quickPeriodRange(period: QuickPeriod, zone: TimeZone, now: Date): { sta
 
 /** M10 D3: cohorte de pedidos con filtros [inicio,fin), sin totales monetarios. */
 export function ReportsPage() {
-  const [start, setStart] = useState('');
-  const [end, setEnd] = useState('');
-  const [zone, setZone] = useState<TimeZone>('America/Lima');
+  // D12: la URL solo aporta filtros. `key` hace que cualquier cambio de URL
+  // (otro enlace, el menú, atrás/adelante) desmonte la vista: su limpieza D4
+  // anula toda respuesta en vuelo y nada consultado antes sigue en pantalla.
+  const { search } = useLocation();
+  return <ReportsView key={search} link={decodeReportLink(search)} />;
+}
+
+type ShareState =
+  | { kind: 'none' }
+  | { kind: 'copied' }
+  | { kind: 'manual'; url: string }
+  | { kind: 'incomplete'; message: string };
+
+function ReportsView({ link }: { link: ReportLinkRead }) {
+  const fromLink = link.kind === 'valid' ? link.filters : null;
+  // Estado inicial desde el enlace; ninguna consulta hasta que el usuario la pida.
+  const [start, setStart] = useState(fromLink?.primary.startLocal ?? '');
+  const [end, setEnd] = useState(fromLink?.primary.endLocal ?? '');
+  const [zone, setZone] = useState<TimeZone>(fromLink?.zone ?? 'America/Lima');
   const [state, setState] = useState<ViewState>({ kind: 'idle' });
   const [inputError, setInputError] = useState<string | null>(null);
   const [comparePrevious, setComparePrevious] = useState(false);
+  // Límites B del enlace o los que el usuario escribe en la comparación (D10/D11).
+  const [comparisonInput, setComparisonInput] = useState({
+    start: fromLink?.comparison?.startLocal ?? '',
+    end: fromLink?.comparison?.endLocal ?? '',
+  });
+  const [share, setShare] = useState<ShareState>({ kind: 'none' });
+
+  async function copyShareLink() {
+    const hasB = comparisonInput.start !== '' || comparisonInput.end !== '';
+    const path = encodeReportLink({
+      zone,
+      primary: { startLocal: start, endLocal: end },
+      comparison: hasB ? { startLocal: comparisonInput.start, endLocal: comparisonInput.end } : null,
+    });
+    if (path === null) {
+      setShare({
+        kind: 'incomplete',
+        message: hasB
+          ? 'Para compartir, completa un período válido y unas fechas de comparación válidas, o borra las de la comparación.'
+          : 'Para compartir, indica un período válido: el fin debe ser posterior al inicio.',
+      });
+      return;
+    }
+    const url = `${window.location.origin}${path}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShare({ kind: 'copied' });
+    } catch {
+      // Sin permiso de portapapeles: el enlace queda visible para copiarlo a mano.
+      setShare({ kind: 'manual', url });
+    }
+  }
 
   // Cada modificación del período o de la zona invalida toda petición anterior.
   // Es síncrono: un resultado viejo nunca puede pisar la consulta vigente.
@@ -75,6 +125,8 @@ export function ReportsPage() {
     setState({ kind: 'idle' });
     // El aviso de entrada describía el período anterior; con otro período ya no aplica.
     setInputError(null);
+    // D12: un enlace copiado antes ya no describe los filtros vigentes.
+    setShare({ kind: 'none' });
   }
 
   function chooseQuickPeriod(period: QuickPeriod) {
@@ -198,9 +250,24 @@ export function ReportsPage() {
             }} /> Comparar los pedidos creados con el período anterior de igual duración</span>
           </label>
           <button className="ui-button" type="submit" disabled={state.kind === 'loading'}>Consultar período</button>
+          <button className="ui-button" type="button" onClick={() => void copyShareLink()}>Copiar enlace a estos filtros</button>
         </form>
+        {link.kind === 'invalid' && (
+          <p className="rp-warning" role="alert">{link.message} No se aplicó ningún filtro del enlace; indica el período a mano.</p>
+        )}
+        {fromLink && state.kind === 'idle' && (
+          <p className="rp-note" role="status">Filtros cargados desde un enlace. Revísalos y pulsa «Consultar período» para ver los indicadores.</p>
+        )}
+        {share.kind === 'copied' && <p className="rp-note" role="status">Enlace copiado. Guarda solo las fechas y la zona; quien lo abra necesita acceso de administración.</p>}
+        {share.kind === 'manual' && (
+          <label className="rp-field">
+            No se pudo copiar automáticamente. Copia este enlace:
+            <input className="ui-input" type="text" readOnly value={share.url} onFocus={(e) => e.currentTarget.select()} />
+          </label>
+        )}
+        {share.kind === 'incomplete' && <p className="rp-warning" role="alert">{share.message}</p>}
         {inputError && <p className="rp-warning" role="alert">{inputError}</p>}
-        {state.kind === 'idle' && <p className="rp-note">Selecciona un período y consulta sus indicadores. No se asigna uno por defecto.</p>}
+        {state.kind === 'idle' && !fromLink && <p className="rp-note">Selecciona un período y consulta sus indicadores. No se asigna uno por defecto.</p>}
         {state.kind === 'loading' && <p role="status">Consultando indicadores…</p>}
         {state.kind === 'error' && state.failure.kind !== 'silent' && <FailureAlert failure={state.failure} />}
         {data?.status === 'source_unavailable' && (
@@ -242,6 +309,12 @@ export function ReportsPage() {
               key={`${data.startInclusive}|${data.endExclusive}|${data.observedAtUtc}|${zone}`}
               baseline={data}
               zone={zone}
+              // D12: B del enlace o lo último escrito; solo rellena, no consulta.
+              initialPeriod={comparisonInput}
+              onPeriodInput={(bStart, bEnd) => {
+                setComparisonInput({ start: bStart, end: bEnd });
+                setShare({ kind: 'none' });
+              }}
             />
             <p className="rp-note">Cohorte: [{showDate(data.startInclusive, zone)}, {showDate(data.endExclusive, zone)}). Los vencidos son los que tienen estado actual «Vencido»; no es una evaluación histórica del plazo.</p>
           </>

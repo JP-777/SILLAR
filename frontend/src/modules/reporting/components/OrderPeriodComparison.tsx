@@ -25,6 +25,13 @@ interface Props {
   /** Cohorte principal, ya validada por D8 y nunca source_unavailable. */
   readonly baseline: OrderIndicatorsView;
   readonly zone: ReportZone;
+  /**
+   * D12: límites B traídos por un enlace compartido. Solo rellenan el formulario
+   * al montarse; no consultan nada hasta que el usuario pulse «Comparar cohortes».
+   */
+  readonly initialPeriod?: { readonly start: string; readonly end: string } | null;
+  /** D12: avisa a la página de lo que el usuario escribe, para poder compartirlo. */
+  readonly onPeriodInput?: (start: string, end: string) => void;
 }
 
 function difference(first: number | null, second: number | null): string {
@@ -78,9 +85,9 @@ function contextOf(baseline: OrderIndicatorsView, zone: ReportZone): string {
  * histórica. Ningún importe o cliente atraviesa esta superficie. Ambas
  * respuestas pasan por la validación de D8 dentro de `loadOrderIndicators`.
  */
-export function OrderPeriodComparison({ baseline, zone }: Props) {
-  const [start, setStart] = useState('');
-  const [end, setEnd] = useState('');
+export function OrderPeriodComparison({ baseline, zone, initialPeriod = null, onPeriodInput }: Props) {
+  const [start, setStart] = useState(initialPeriod?.start ?? '');
+  const [end, setEnd] = useState(initialPeriod?.end ?? '');
   const [inputError, setInputError] = useState<string | null>(null);
   const [state, setState] = useState<ComparisonState>({ kind: 'idle' });
   // D4: cada cambio de los límites y el desmontaje anulan las peticiones en vuelo.
@@ -182,12 +189,12 @@ export function OrderPeriodComparison({ baseline, zone }: Props) {
         <label>
           Inicio de la comparación (incluido)
           <input className="ui-input" type="datetime-local" required value={start}
-            onChange={(event) => { setStart(event.target.value); invalidate(); }} />
+            onChange={(event) => { setStart(event.target.value); invalidate(); onPeriodInput?.(event.target.value, end); }} />
         </label>
         <label>
           Fin de la comparación (excluido)
           <input className="ui-input" type="datetime-local" required value={end}
-            onChange={(event) => { setEnd(event.target.value); invalidate(); }} />
+            onChange={(event) => { setEnd(event.target.value); invalidate(); onPeriodInput?.(start, event.target.value); }} />
         </label>
         <button className="ui-button" type="submit" disabled={shown.kind === 'loading'}>
           Comparar cohortes
