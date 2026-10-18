@@ -25,6 +25,10 @@ export interface ComparableMetric {
 }
 export interface ReportComparisonDecision {
   readonly decision: 'comparable' | 'withheld';
+  /** Las diferencias son aritmética descriptiva, nunca sincronización. */
+  readonly differenceBasis: 'independent_snapshots' | 'none';
+  readonly observationNotice: string | null;
+  readonly provesSameSnapshot: false;
   readonly explanation: ComparisonExplanation;
   readonly reasons: readonly string[];
   readonly metrics: readonly ComparableMetric[];
@@ -41,7 +45,7 @@ export function assessReportComparison(
   compared: ReportComparisonSnapshot,
 ): ReportComparisonDecision {
   const explanation = explainComparison(baseline.window, compared.window);
-  const reasons: string[] = [...explanation.notes];
+  const reasons: string[] = []; // Las notas de D13 son informativas.
   if (!baseline.validated || !compared.validated) {
     reasons.push('Ambos informes deben pasar la verificación D8 antes de calcular diferencias.');
   }
@@ -53,8 +57,11 @@ export function assessReportComparison(
       explanation.relation === 'overlapping') {
     reasons.push('No comparar matemáticamente períodos inválidos, idénticos o solapados.');
   }
-  if (explanation.observationRelation !== 'same_instant') {
-    reasons.push('Las fotografías no tienen un instante de observación común acreditado.');
+  // Dos GET independientes nunca acreditan una lectura atómica, aunque
+  // coincidan sus timestamps. La resta descriptiva exige instantes trazables.
+  if (explanation.observationRelation === 'missing' ||
+      explanation.observationRelation === 'invalid') {
+    reasons.push('Ambas observaciones deben existir y ser instantes ISO válidos.');
   }
   const aKeys = Object.keys(baseline.metrics).sort();
   const bKeys = Object.keys(compared.metrics).sort();
@@ -69,7 +76,7 @@ export function assessReportComparison(
       break;
     }
   }
-  const decision = reasons.length === explanation.notes.length ? 'comparable' : 'withheld';
+  const decision = reasons.length === 0 ? 'comparable' : 'withheld';
   // En períodos disjuntos/contiguos la explicación puede contener observaciones
   // informativas, pero todas las prohibiciones anteriores mantienen los deltas ocultos.
   const metrics: ComparableMetric[] = decision === 'withheld' ? [] : aKeys.map((code) => {
@@ -81,5 +88,10 @@ export function assessReportComparison(
       absoluteDifference: delta, relativeDifferencePct: ratio };
   });
   return { decision, explanation, reasons, metrics,
+    differenceBasis: decision === 'comparable' ? 'independent_snapshots' : 'none',
+    observationNotice: decision === 'comparable'
+      ? 'B − A es una resta descriptiva entre lecturas independientes; no son fotografías sincronizadas ni transiciones históricas.'
+      : null,
+    provesSameSnapshot: false,
     isHistoricalTransition: false, mayAddCohortTotals: false };
 }

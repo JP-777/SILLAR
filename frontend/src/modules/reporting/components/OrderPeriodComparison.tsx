@@ -288,6 +288,14 @@ export function OrderPeriodComparison({ baseline, zone, initialPeriod = null, on
             sin pedidos no tiene porcentajes.
             {mayShowDifferences && ' La diferencia de participación va en puntos porcentuales (pp) y compara dos fotografías, no un cambio de un mismo grupo en el tiempo.'}
           </p>
+          {mayShowDifferences && gate?.observationNotice && (
+            <p className="rp-compare__note" role="note">
+              <strong>Resta descriptiva B − A entre consultas independientes.</strong>{' '}
+              {gate.observationNotice}{' '}
+              A observada: {baseline.observedAtUtc ? showDate(baseline.observedAtUtc, zone) : 'sin instante'};{' '}
+              B observada: {comparison.observedAtUtc ? showDate(comparison.observedAtUtc, zone) : 'sin instante'}.
+            </p>
+          )}
           {!mayShowDifferences && (
             <div className="rp-compare__withheld" role="status">
               <p><strong>No se muestran diferencias entre A y B.</strong> Las cifras de cada cohorte sí son válidas por separado.</p>
@@ -301,13 +309,13 @@ export function OrderPeriodComparison({ baseline, zone, initialPeriod = null, on
           <div className="rp-compare__scroll">
             <table className="rp-compare__table">
               <caption>{mayShowDifferences
-                ? 'Recuentos y participación de cada cohorte; diferencias B − A. No indica transiciones entre estados.'
+                ? 'Recuentos por cohorte y resta descriptiva B − A entre consultas independientes; no son transiciones históricas.'
                 : 'Recuentos y participación de cada cohorte, por separado. Sin diferencias entre cohortes.'}</caption>
               <thead><tr><th scope="col">Indicador</th><th scope="col">A · Principal</th>
                 <th scope="col">B · Comparación</th>
-                {mayShowDifferences && <th scope="col">Diferencia B − A</th>}
+                {mayShowDifferences && <th scope="col">Resta descriptiva B − A</th>}
                 <th scope="col">% de A</th><th scope="col">% de B</th>
-                {mayShowDifferences && <th scope="col">Diferencia de participación</th>}</tr></thead>
+                {mayShowDifferences && <th scope="col">Diferencia descriptiva de participación</th>}</tr></thead>
               <tbody>{rows.map((row) => (
                 <tr key={row.code}><th scope="row">{row.label}</th>
                   <td>{showCount(row.a)}</td><td>{showCount(row.b)}</td>
