@@ -1,40 +1,24 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { PageContainer } from '../../../layout/PageContainer';
 import { ForbiddenPage } from '../../../platform/ForbiddenPage';
-import { describe, type Failure } from '../../../shared/errors/messages';
+import { type Failure } from '../../../shared/errors/messages';
 import { FailureAlert } from '../../../shared/ui/patterns';
 import { OrderDistribution } from '../components/OrderDistribution';
+import { OrderPeriodComparison } from '../components/OrderPeriodComparison';
+import { asInstant, showCount, showDate, type ReportZone } from '../services/period';
 import {
-  InconsistentIndicatorsError,
+  describeReportFailure,
   loadOrderIndicators,
   type OrderIndicatorsView,
 } from '../services/reporting';
 import '../reporting.css';
 
-type TimeZone = 'America/Lima' | 'UTC';
+type TimeZone = ReportZone;
 type ViewState =
   | { kind: 'idle' }
   | { kind: 'loading' }
   | { kind: 'ready'; data: OrderIndicatorsView; previous: { start: string; end: string; data: OrderIndicatorsView | null } | null }
   | { kind: 'error'; failure: Failure };
-
-/**
- * Período explícito: jamás se deduce de la zona del navegador.
- * `datetime-local` entrega `HH:mm` o, según el navegador, `HH:mm:ss`; antes se
- * añadían siempre `:00` y la segunda forma acababa en una fecha inválida.
- */
-function asInstant(value: string, zone: TimeZone): string {
-  const withSeconds = /T\d{2}:\d{2}$/.test(value) ? `${value}:00` : value;
-  return new Date(`${withSeconds}${zone === 'America/Lima' ? '-05:00' : 'Z'}`).toISOString();
-}
-
-function showDate(value: string, zone: TimeZone): string {
-  return new Date(value).toLocaleString('es-PE', { timeZone: zone, dateStyle: 'medium', timeStyle: 'short' });
-}
-
-function showCount(value: number | null): string {
-  return value === null ? '—' : value.toLocaleString('es-PE');
-}
 
 /** Rangos de días calendario completos, con el huso elegido por el usuario. */
 type QuickPeriod = 'today' | 'last7' | 'thisMonth';
@@ -151,10 +135,7 @@ export function ReportsPage() {
       if (requestVersion.current === currentRequest) {
         // D8: una respuesta incoherente es un error con su propia frase, no el
         // genérico de describe() ni «fuente no disponible». No se dibuja ninguna cifra.
-        const failure: Failure = error instanceof InconsistentIndicatorsError
-          ? { kind: 'inline', message: error.message, fieldErrors: null, blockedBy: null }
-          : describe(error, 'consultar los indicadores de pedidos');
-        setState({ kind: 'error', failure });
+        setState({ kind: 'error', failure: describeReportFailure(error, 'consultar los indicadores de pedidos') });
       }
     }
   }
@@ -254,6 +235,14 @@ export function ReportsPage() {
               </section>
             )}
             {distribution && <OrderDistribution {...distribution} />}
+            {/* D10: la clave cambia con período, observación y zona, así que un
+                cambio de la consulta principal desmonta la comparación y anula
+                sus peticiones en vuelo (D4). Solo se monta con cohorte válida. */}
+            <OrderPeriodComparison
+              key={`${data.startInclusive}|${data.endExclusive}|${data.observedAtUtc}|${zone}`}
+              baseline={data}
+              zone={zone}
+            />
             <p className="rp-note">Cohorte: [{showDate(data.startInclusive, zone)}, {showDate(data.endExclusive, zone)}). Los vencidos son los que tienen estado actual «Vencido»; no es una evaluación histórica del plazo.</p>
           </>
         )}
