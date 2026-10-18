@@ -1,4 +1,6 @@
 /** D16 — solo I01 se normaliza por duración; jamás I03/I04. */
+import { compareCohortStatusMix, type StatusMixResult } from '../services/cohortStatusMix';
+import { CohortStatusMixPanel } from './CohortStatusMixPanel';
 import { orderStates, type OrderIndicatorsView } from '../services/reporting';
 import { assessReportComparison, type ReportComparisonSnapshot } from '../services/reportComparisonGate';
 import { compareCreationWindowRates } from '../services/creationWindowRate';
@@ -34,10 +36,13 @@ function snapshot(data: OrderIndicatorsView): ReportComparisonSnapshot {
 export function OrderCreationWindowPanel({ baseline, compared }: Props) {
   // A y B ya pasaron D8 en loadOrderIndicators; no duplicar validaciones.
   let result;
+  let mix: StatusMixResult;
   try {
     const a = snapshot(baseline);
     const b = snapshot(compared);
-    result = compareCreationWindowRates(a, b, assessReportComparison(a, b));
+    const gate = assessReportComparison(a, b);
+    result = compareCreationWindowRates(a, b, gate);
+    mix = compareCohortStatusMix(a, b, gate, orderStates);
   } catch {
     return null;
   }
@@ -69,6 +74,7 @@ export function OrderCreationWindowPanel({ baseline, compared }: Props) {
         Esta normalización no se aplica a los indicadores de estado actual ni vencimiento: describen la situación observada de cada cohorte.
         Ambos informes conservan instantes de observación independientes.
       </p>
+      <CohortStatusMixPanel result={mix} />
     </section>
   );
 }
