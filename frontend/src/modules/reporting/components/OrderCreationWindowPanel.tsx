@@ -1,6 +1,8 @@
 /** D16 — solo I01 se normaliza por duración; jamás I03/I04. */
 import { compareCohortStatusMix, type StatusMixResult } from '../services/cohortStatusMix';
 import { CohortStatusMixPanel } from './CohortStatusMixPanel';
+import { compareCohortActivityMix, type ActivityMixResult } from '../services/cohortActivityMix';
+import { CohortActivityMixPanel } from './CohortActivityMixPanel';
 import { orderStates, type OrderIndicatorsView } from '../services/reporting';
 import { assessReportComparison, type ReportComparisonSnapshot } from '../services/reportComparisonGate';
 import { compareCreationWindowRates } from '../services/creationWindowRate';
@@ -37,12 +39,14 @@ export function OrderCreationWindowPanel({ baseline, compared }: Props) {
   // A y B ya pasaron D8 en loadOrderIndicators; no duplicar validaciones.
   let result;
   let mix: StatusMixResult;
+  let activity: ActivityMixResult;
   try {
     const a = snapshot(baseline);
     const b = snapshot(compared);
     const gate = assessReportComparison(a, b);
     result = compareCreationWindowRates(a, b, gate);
     mix = compareCohortStatusMix(a, b, gate, orderStates);
+    activity = compareCohortActivityMix(a, b, gate);
   } catch {
     return null;
   }
@@ -75,6 +79,7 @@ export function OrderCreationWindowPanel({ baseline, compared }: Props) {
         Ambos informes conservan instantes de observación independientes.
       </p>
       <CohortStatusMixPanel result={mix} />
+      <CohortActivityMixPanel result={activity} />
     </section>
   );
 }
