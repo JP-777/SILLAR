@@ -4,6 +4,7 @@ import type { Failure } from '../../../shared/errors/messages';
 import { FailureAlert } from '../../../shared/ui/patterns';
 import { explainComparison, type CohortRelation } from '../services/explainComparison';
 import { assessReportComparison, type ReportComparisonSnapshot } from '../services/reportComparisonGate';
+import { previousEqualWindow } from '../services/previousEqualWindow';
 import { asInstant, showCount, showDate, type ReportZone } from '../services/period';
 import {
   describeReportFailure,
@@ -135,6 +136,20 @@ export function OrderPeriodComparison({ baseline, zone, initialPeriod = null, on
     setInputError(null);
   }
 
+  function choosePreviousEqualWindow() {
+    const suggested = previousEqualWindow(baseline.startInclusive, baseline.endExclusive, zone);
+    // Invalida cualquier GET anterior o pendiente antes de cambiar filtros B.
+    invalidate();
+    if (suggested.kind === 'unavailable') {
+      setInputError(suggested.reason);
+      return;
+    }
+    setStart(suggested.startLocal);
+    setEnd(suggested.endLocal);
+    // D12: actualizar el enlace compartible al rellenar ambos filtros.
+    onPeriodInput?.(suggested.startLocal, suggested.endLocal);
+  }
+
   async function compare(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const current = ++generation.current;
@@ -244,6 +259,13 @@ export function OrderPeriodComparison({ baseline, zone, initialPeriod = null, on
           <input className="ui-input" type="datetime-local" required value={end}
             onChange={(event) => { setEnd(event.target.value); invalidate(); onPeriodInput?.(start, event.target.value); }} />
         </label>
+        <button className="ui-button" type="button" onClick={choosePreviousEqualWindow}>
+          Seleccionar período anterior equivalente
+        </button>
+        <p className="rp-compare__note">
+          Solo rellena la ventana B contigua anterior de duración equivalente; no ejecuta consultas.
+          Cada respuesta posterior es una fotografía independiente, nunca transición histórica.
+        </p>
         <button className="ui-button" type="submit" disabled={shown.kind === 'loading'}>
           Comparar cohortes
         </button>
