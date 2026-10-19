@@ -58,11 +58,14 @@ public static class ProviderSettlementAnalysisIntegrity
         ValidateReconciliation(
             analysis.EvidenceInventory,
             analysis.EvidenceReconciliation);
-        var trace = ValidateTraceCoverage(analysis.Trace, inventory);
         var conflicts = ValidateConflictCoverage(
             analysis.ConflictReport,
             inventory,
             analysis.EvidenceReconciliation);
+        var trace = ValidateTraceCoverage(
+            analysis.Trace,
+            inventory,
+            conflicts);
 
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         AppendString(hash, CurrentFormat);
@@ -155,7 +158,8 @@ public static class ProviderSettlementAnalysisIntegrity
 
     private static ProviderSettlementAnalysisTraceItem[] ValidateTraceCoverage(
         IReadOnlyList<ProviderSettlementAnalysisTraceItem> source,
-        IReadOnlyCollection<ProviderEvidenceInventoryItem> inventory)
+        IReadOnlyCollection<ProviderEvidenceInventoryItem> inventory,
+        IReadOnlyCollection<ProviderEvidenceConflictCase> conflicts)
     {
         var trace = source.ToArray();
         if (trace.Any(item => item is null
@@ -164,7 +168,13 @@ public static class ProviderSettlementAnalysisIntegrity
                 || item.Identity.Settlement is null
                 || item.IncomingOccurrences <= 0
                 || item.EvidenceObservations is null
-                || item.ConflictKinds is null))
+                || item.ConflictKinds is null
+                || !Enum.IsDefined(item.IntakeDisposition)
+                || !Enum.IsDefined(item.EvidenceDisposition)
+                || !Enum.IsDefined(item.SettlementRisk)
+                || !Enum.IsDefined(item.ReviewLane)
+                || !Enum.IsDefined(item.HoldReason)
+                || !Enum.IsDefined(item.AuditSeverity)))
         {
             throw new ArgumentException(
                 "La traza integrada contiene elementos inválidos.",
@@ -200,11 +210,59 @@ public static class ProviderSettlementAnalysisIntegrity
         {
             if (item.EvidenceObservations.Any(observation =>
                     observation is null
-                    || observation.Identity != item.Identity)
-                || item.ConflictKinds.Any(kind => !Enum.IsDefined(kind)))
+                    || observation.Identity != item.Identity
+                    || !Enum.IsDefined(observation.Verdict)
+                    || (observation.Verdict ==
+                            ProviderEvidenceVerdict.AttestedByVerifier
+                        && string.IsNullOrWhiteSpace(
+                            observation.AttestationReference))
+                    || (observation.Verdict !=
+                            ProviderEvidenceVerdict.AttestedByVerifier
+                        && observation.AttestationReference is not null))
+                || item.ConflictKinds.Any(kind => !Enum.IsDefined(kind))
+                || item.ConflictKinds.Distinct().Count() !=
+                    item.ConflictKinds.Count)
             {
                 throw new ArgumentException(
                     "La traza contiene evidencia o conflictos ajenos a su identidad.",
+                    nameof(source));
+            }
+
+            var expectedConflicts = conflicts
+                .Where(conflict => ConflictAppliesToTrace(conflict, item))
+                .Select(conflict => conflict.Kind)
+                .Distinct()
+                .OrderBy(kind => kind)
+                .ToArray();
+            var suppliedConflicts = item.ConflictKinds
+                .OrderBy(kind => kind)
+                .ToArray();
+
+            if (!suppliedConflicts.SequenceEqual(expectedConflicts))
+            {
+                throw new ArgumentException(
+                    "La traza no refleja exactamente sus conflictos conciliados.",
+                    nameof(source));
+            }
+
+            if ((suppliedConflicts.Length > 0
+                    && item.ReviewLane != ProviderSettlementReviewLane.Hold)
+                || (suppliedConflicts.Contains(
+                        ProviderEvidenceConflictKind
+                            .CrossProviderSettlementIdentityUnresolved)
+                    && item.HoldReason !=
+                        ProviderSettlementReviewHoldReason
+                            .CrossProviderIdentityUnresolved)
+                || (item.ReviewLane == ProviderSettlementReviewLane.Hold
+                    && item.HoldReason ==
+                        ProviderSettlementReviewHoldReason.None)
+                || (item.ReviewLane != ProviderSettlementReviewLane.Hold
+                    && item.HoldReason !=
+                        ProviderSettlementReviewHoldReason.None)
+                || item.AuditSeverity != ExpectedSeverity(item.ReviewLane))
+            {
+                throw new ArgumentException(
+                    "La traza contiene una clasificación P7-P8 incoherente.",
                     nameof(source));
             }
         }
@@ -218,6 +276,56 @@ public static class ProviderSettlementAnalysisIntegrity
                 StringComparer.Ordinal)
             .ToArray();
     }
+
+    private static bool ConflictAppliesToTrace(
+        ProviderEvidenceConflictCase conflict,
+        ProviderSettlementAnalysisTraceItem trace)
+    {
+        var settlementConflict = conflict.Kind ==
+            ProviderEvidenceConflictKind
+                .CrossProviderSettlementIdentityUnresolved;
+        var identityMatches = settlementConflict
+            ? StringComparer.Ordinal.Equals(
+                conflict.IdentityValue,
+                trace.Identity.Settlement.Value)
+            : StringComparer.Ordinal.Equals(
+                    conflict.Provider,
+                    trace.Identity.Reception.Provider)
+                && StringComparer.Ordinal.Equals(
+                    conflict.IdentityValue,
+                    trace.Identity.Reception.ProviderEventId);
+
+        return identityMatches && conflict.Evidence.Any(evidence =>
+            evidence.Population == ProviderEvidencePopulation.Incoming
+            && StringComparer.Ordinal.Equals(
+                evidence.Provider,
+                trace.Identity.Reception.Provider)
+            && StringComparer.Ordinal.Equals(
+                evidence.ProviderEventId,
+                trace.Identity.Reception.ProviderEventId)
+            && StringComparer.Ordinal.Equals(
+                evidence.ExternalSettlementId,
+                trace.Identity.Settlement.Value));
+    }
+
+    private static ProviderReviewAuditSeverity ExpectedSeverity(
+        ProviderSettlementReviewLane lane)
+        => lane switch
+        {
+            ProviderSettlementReviewLane.Hold =>
+                ProviderReviewAuditSeverity.Hold,
+            ProviderSettlementReviewLane.RejectedEvidence
+                or ProviderSettlementReviewLane.AwaitIndependentEvidence =>
+                ProviderReviewAuditSeverity.NeedsEvidence,
+            ProviderSettlementReviewLane.PreviouslyKnown =>
+                ProviderReviewAuditSeverity.PreviouslyKnown,
+            ProviderSettlementReviewLane.RequiresSeparateDurableGate =>
+                ProviderReviewAuditSeverity.SeparateDurableReview,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(lane),
+                lane,
+                "La traza contiene un carril P7 desconocido.")
+        };
 
     private static ProviderEvidenceConflictCase[] ValidateConflictCoverage(
         ProviderEvidenceConflictReportResult report,

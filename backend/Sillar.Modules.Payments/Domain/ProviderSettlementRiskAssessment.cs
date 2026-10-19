@@ -93,7 +93,41 @@ public static class ProviderSettlementRiskAssessment
         ArgumentNullException.ThrowIfNull(reviewed);
         ArgumentNullException.ThrowIfNull(reviewed.Items);
 
-        var entries = reviewed.Items
+        var reviewedItems = reviewed.Items.ToArray();
+        if (reviewedItems.Any(item => item is null))
+        {
+            throw new ArgumentException(
+                "El plan P5 contiene un elemento nulo.",
+                nameof(reviewed));
+        }
+
+        if (reviewedItems
+            .Select(item => item.Identity)
+            .Distinct()
+            .Count() != reviewedItems.Length)
+        {
+            throw new ArgumentException(
+                "El plan P5 repite una identidad externa.",
+                nameof(reviewed));
+        }
+
+        var expectedCandidates = reviewedItems.Count(item =>
+            item.Disposition ==
+                ProviderEvidenceReviewDisposition.CandidateForDurableInboxReview);
+        var expectedHolds = reviewedItems.Any(item => item.Disposition is
+            ProviderEvidenceReviewDisposition.HoldReplayConflict
+                or ProviderEvidenceReviewDisposition.HoldInconsistentEvidence
+                or ProviderEvidenceReviewDisposition.RejectUntrustedEvidence);
+
+        if (reviewed.CandidatesForDurableInboxReview != expectedCandidates
+            || reviewed.HasAnyHolds != expectedHolds)
+        {
+            throw new ArgumentException(
+                "Los contadores P5 no coinciden con sus elementos.",
+                nameof(reviewed));
+        }
+
+        var entries = reviewedItems
             .Select(Project)
             .ToArray();
         var collisions = entries
