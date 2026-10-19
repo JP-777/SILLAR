@@ -1,8 +1,10 @@
-/** D16 — solo I01 se normaliza por duración; jamás I03/I04. */
-import { compareCohortStatusMix, type StatusMixResult } from '../services/cohortStatusMix';
-import { CohortStatusMixPanel } from './CohortStatusMixPanel';
-import { compareCohortActivityMix, type ActivityMixResult } from '../services/cohortActivityMix';
-import { CohortActivityMixPanel } from './CohortActivityMixPanel';
+/**
+ * D16 — solo los pedidos creados se normalizan por duración; jamás estados ni vencidos.
+ *
+ * D21: este panel ya no monta los paneles de composición de D17/D18. Repetían los
+ * recuentos, porcentajes y puntos porcentuales por estado y vigencia que la tabla
+ * principal de OrderPeriodComparison ya muestra, con la misma compuerta.
+ */
 import { orderStates, type OrderIndicatorsView } from '../services/reporting';
 import { assessReportComparison, type ReportComparisonSnapshot } from '../services/reportComparisonGate';
 import { compareCreationWindowRates } from '../services/creationWindowRate';
@@ -38,15 +40,10 @@ function snapshot(data: OrderIndicatorsView): ReportComparisonSnapshot {
 export function OrderCreationWindowPanel({ baseline, compared }: Props) {
   // A y B ya pasaron D8 en loadOrderIndicators; no duplicar validaciones.
   let result;
-  let mix: StatusMixResult;
-  let activity: ActivityMixResult;
   try {
     const a = snapshot(baseline);
     const b = snapshot(compared);
-    const gate = assessReportComparison(a, b);
-    result = compareCreationWindowRates(a, b, gate);
-    mix = compareCohortStatusMix(a, b, gate, orderStates);
-    activity = compareCohortActivityMix(a, b, gate);
+    result = compareCreationWindowRates(a, b, assessReportComparison(a, b));
   } catch {
     return null;
   }
@@ -54,13 +51,16 @@ export function OrderCreationWindowPanel({ baseline, compared }: Props) {
   return (
     <section className="rp-compare__rates" aria-labelledby="rp-creation-rate-heading">
       <h3 id="rp-creation-rate-heading">Pedidos creados por duración de ventana</h3>
-      <p className="rp-compare__note">{result.coverageNotice}</p>
+      <p className="rp-compare__note">
+        Promedio de pedidos creados por cada 24 horas de cada período. Sirve para comparar períodos
+        de distinta duración; no es una tendencia, una velocidad instantánea ni una observación sincronizada.
+      </p>
       <div className="rp-compare__scroll">
         <table className="rp-compare__table">
           <caption>Normalización aritmética de pedidos creados; no compara transiciones históricas.</caption>
-          <thead><tr><th scope="col">Medida</th><th scope="col">A</th><th scope="col">B</th><th scope="col">B−A</th></tr></thead>
+          <thead><tr><th scope="col">Medida</th><th scope="col">A</th><th scope="col">B</th><th scope="col">B − A</th></tr></thead>
           <tbody>
-            <tr><th scope="row">Ventana (días de 24 h)</th>
+            <tr><th scope="row">Duración del período (días de 24 h)</th>
               <td>{FORMAT.format(result.windowADays)}</td>
               <td>{FORMAT.format(result.windowBDays)}</td><td>—</td></tr>
             <tr><th scope="row">Pedidos creados</th>
@@ -75,11 +75,9 @@ export function OrderCreationWindowPanel({ baseline, compared }: Props) {
         </table>
       </div>
       <p className="rp-compare__note">
-        Esta normalización no se aplica a los indicadores de estado actual ni vencimiento: describen la situación observada de cada cohorte.
-        Ambos informes conservan instantes de observación independientes.
+        No se aplica a los estados actuales ni a los vencidos: describen la situación observada de cada
+        cohorte, no un ritmo. Cada informe conserva su propio instante de observación.
       </p>
-      <CohortStatusMixPanel result={mix} />
-      <CohortActivityMixPanel result={activity} />
     </section>
   );
 }

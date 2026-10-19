@@ -5,7 +5,6 @@ import { FailureAlert } from '../../../shared/ui/patterns';
 import { explainComparison, type CohortRelation } from '../services/explainComparison';
 import { assessReportComparison, type ReportComparisonSnapshot } from '../services/reportComparisonGate';
 import { previousEqualWindow } from '../services/previousEqualWindow';
-import { ComparisonFilterSharePanel } from './ComparisonFilterSharePanel';
 import { asInstant, showCount, showDate, type ReportZone } from '../services/period';
 import {
   describeReportFailure,
@@ -271,8 +270,8 @@ export function OrderPeriodComparison({ baseline, zone, initialPeriod = null, on
           Comparar cohortes
         </button>
       </form>
-      <ComparisonFilterSharePanel baseline={baseline} zone={zone}
-        comparisonStartLocal={start} comparisonEndLocal={end} />
+      {/* D21: el enlace con A, B y zona lo genera «Copiar enlace a estos filtros»
+          de la página (D12), que recibe B por onPeriodInput. El panel D20 lo duplicaba. */}
       <p className="rp-compare__note">Zona aplicada: {zone}, la misma de la consulta principal.</p>
       {inputError && <p role="alert" className="rp-compare__error">{inputError}</p>}
       {shown.kind === 'loading' && <p role="status">Consultando la segunda cohorte…</p>}

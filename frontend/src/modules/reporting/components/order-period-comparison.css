@@ -20,3 +20,6 @@
 /* D14: aviso cuando la compuerta retiene las diferencias B − A. */
 .rp-compare__withheld { display: grid; gap: var(--s2); padding: var(--s3); border: 1px solid var(--border); border-radius: var(--r-md); }
 .rp-compare__withheld p { margin: 0; }
+/* D21: el panel D16 de pedidos por duración no tenía estilos propios. */
+.rp-compare__rates { display: grid; gap: var(--s2); padding: var(--s3); border: 1px solid var(--border); border-radius: var(--r-md); }
+.rp-compare__rates h3 { margin: 0; font-size: 1rem; }
