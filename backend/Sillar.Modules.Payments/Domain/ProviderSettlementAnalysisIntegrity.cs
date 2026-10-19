@@ -41,8 +41,20 @@ public static class ProviderSettlementAnalysisIntegrity
             analysis.EvidenceReconciliation.Settlements);
         ArgumentNullException.ThrowIfNull(analysis.ConflictReport);
         ArgumentNullException.ThrowIfNull(analysis.ConflictReport.Cases);
+        ArgumentNullException.ThrowIfNull(analysis.IntakePlan);
+        ArgumentNullException.ThrowIfNull(analysis.IntakePlan.Items);
+        ArgumentNullException.ThrowIfNull(analysis.EvidenceReview);
+        ArgumentNullException.ThrowIfNull(analysis.EvidenceReview.Items);
+        ArgumentNullException.ThrowIfNull(analysis.RiskSummary);
+        ArgumentNullException.ThrowIfNull(analysis.RiskSummary.Groups);
+        ArgumentNullException.ThrowIfNull(analysis.ReviewPlan);
+        ArgumentNullException.ThrowIfNull(analysis.ReviewPlan.Items);
+        ArgumentNullException.ThrowIfNull(
+            analysis.ReviewPlan.CrossProviderSettlementIds);
         ArgumentNullException.ThrowIfNull(analysis.Trace);
         ArgumentNullException.ThrowIfNull(analysis.Audit);
+        ArgumentNullException.ThrowIfNull(analysis.Audit.Rows);
+        ArgumentNullException.ThrowIfNull(analysis.Audit.ByProvider);
         ArgumentNullException.ThrowIfNull(analysis.Fingerprint);
 
         var reviewFingerprint =
@@ -66,6 +78,7 @@ public static class ProviderSettlementAnalysisIntegrity
             analysis.Trace,
             inventory,
             conflicts);
+        ValidateStageCoherence(analysis, trace, conflicts);
 
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         AppendString(hash, CurrentFormat);
@@ -276,6 +289,272 @@ public static class ProviderSettlementAnalysisIntegrity
                 StringComparer.Ordinal)
             .ToArray();
     }
+
+    private static void ValidateStageCoherence(
+        ProviderSettlementAnalysisResult analysis,
+        IReadOnlyCollection<ProviderSettlementAnalysisTraceItem> trace,
+        IReadOnlyCollection<ProviderEvidenceConflictCase> conflicts)
+    {
+        var intakeItems = analysis.IntakePlan.Items.ToArray();
+        var reviewedItems = analysis.EvidenceReview.Items.ToArray();
+
+        if (intakeItems.Any(item => item is null)
+            || reviewedItems.Any(item => item is null))
+        {
+            throw new ArgumentException(
+                "Las etapas P4-P5 contienen elementos nulos.",
+                nameof(analysis));
+        }
+
+        var intakeByIdentity = UniqueByIdentity(
+            intakeItems,
+            item => item.Identity,
+            "P4");
+        var reviewedByIdentity = UniqueByIdentity(
+            reviewedItems,
+            item => item.Identity,
+            "P5");
+
+        if (intakeByIdentity.Count != trace.Count
+            || reviewedByIdentity.Count != trace.Count)
+        {
+            throw new ArgumentException(
+                "Las etapas P4-P5 no cubren exactamente la traza integrada.",
+                nameof(analysis));
+        }
+
+        var observations = reviewedItems
+            .SelectMany(item => item.Observations
+                ?? throw new ArgumentException(
+                    "P5 contiene una colección de observaciones nula.",
+                    nameof(analysis)))
+            .ToArray();
+        var expectedReview = ProviderEvidenceReview.Review(
+            analysis.IntakePlan,
+            observations);
+        if (!EquivalentEvidenceReview(expectedReview, analysis.EvidenceReview))
+        {
+            throw new ArgumentException(
+                "P5 no corresponde a P4 y sus observaciones preservadas.",
+                nameof(analysis));
+        }
+
+        var expectedRisk = ProviderSettlementRiskAssessment.Summarize(
+            analysis.EvidenceReview);
+        var expectedReviewPlan = ProviderSettlementReviewQueue.Create(
+            analysis.RiskSummary);
+        if (!EquivalentRiskSummary(expectedRisk, analysis.RiskSummary))
+        {
+            throw new ArgumentException(
+                "P6 no corresponde al plan de evidencia P5.",
+                nameof(analysis));
+        }
+
+        var crossProviderIncomingSettlements = conflicts
+            .Where(item => item.Kind == ProviderEvidenceConflictKind
+                    .CrossProviderSettlementIdentityUnresolved
+                && item.Evidence.Any(evidence => evidence.Population ==
+                    ProviderEvidencePopulation.Incoming))
+            .Select(item => item.IdentityValue)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        expectedReviewPlan =
+            ProviderSettlementReviewQueue.PreserveCrossProviderHolds(
+                expectedReviewPlan,
+                crossProviderIncomingSettlements);
+        var expectedAudit = ProviderSettlementReviewAudit.Summarize(
+            analysis.ReviewPlan);
+
+        if (!EquivalentReviewPlan(expectedReviewPlan, analysis.ReviewPlan))
+        {
+            throw new ArgumentException(
+                "P7 no corresponde al riesgo P6 y los conflictos conciliados.",
+                nameof(analysis));
+        }
+
+        if (!EquivalentAudit(expectedAudit, analysis.Audit))
+        {
+            throw new ArgumentException(
+                "P8 no corresponde a la cola de revisión P7.",
+                nameof(analysis));
+        }
+
+        var riskBySettlement = analysis.RiskSummary.Groups.ToDictionary(
+            item => new SettlementIdentity(
+                item.Provider,
+                item.ExternalSettlementId));
+        var reviewBySettlement = analysis.ReviewPlan.Items.ToDictionary(
+            item => new SettlementIdentity(
+                item.Provider,
+                item.ExternalSettlementId));
+        var auditBySettlement = analysis.Audit.Rows.ToDictionary(
+            item => new SettlementIdentity(
+                item.Provider,
+                item.ExternalSettlementId));
+
+        foreach (var item in trace)
+        {
+            if (!intakeByIdentity.TryGetValue(item.Identity, out var intake)
+                || !reviewedByIdentity.TryGetValue(
+                    item.Identity,
+                    out var reviewed))
+            {
+                throw new ArgumentException(
+                    "Una identidad de la traza no existe en P4-P5.",
+                    nameof(analysis));
+            }
+
+            var settlement = new SettlementIdentity(
+                item.Identity.Reception.Provider,
+                item.Identity.Settlement.Value);
+            if (!riskBySettlement.TryGetValue(settlement, out var risk)
+                || !reviewBySettlement.TryGetValue(settlement, out var review)
+                || !auditBySettlement.TryGetValue(settlement, out var audit))
+            {
+                throw new ArgumentException(
+                    "Una identidad de la traza no tiene proyección P6-P8.",
+                    nameof(analysis));
+            }
+
+            if (item.IncomingOccurrences != intake.Occurrences
+                || item.IncomingOccurrences != reviewed.Occurrences
+                || item.IntakeDisposition != intake.Disposition
+                || item.EvidenceDisposition != reviewed.Disposition
+                || !StringComparer.Ordinal.Equals(
+                    item.AttestationReference,
+                    reviewed.AttestationReference)
+                || !EquivalentObservations(
+                    item.EvidenceObservations,
+                    reviewed.Observations)
+                || item.SettlementRisk != risk.Risk
+                || item.ReviewLane != review.Lane
+                || item.HoldReason != review.HoldReason
+                || item.AuditSeverity != audit.Severity)
+            {
+                throw new ArgumentException(
+                    "La traza no reproduce exactamente sus etapas P4-P8.",
+                    nameof(analysis));
+            }
+        }
+    }
+
+    private static Dictionary<PaymentIdempotencyKeys, T> UniqueByIdentity<T>(
+        IReadOnlyCollection<T> items,
+        Func<T, PaymentIdempotencyKeys> identity,
+        string stage)
+    {
+        if (items.Any(item => identity(item) is null)
+            || items.Select(identity).Distinct().Count() != items.Count)
+        {
+            throw new ArgumentException(
+                $"{stage} contiene una identidad nula o duplicada.",
+                nameof(items));
+        }
+
+        return items.ToDictionary(identity);
+    }
+
+    private static bool EquivalentEvidenceReview(
+        ProviderEvidenceReviewPlan expected,
+        ProviderEvidenceReviewPlan supplied)
+    {
+        if (expected.CandidatesForDurableInboxReview !=
+                supplied.CandidatesForDurableInboxReview
+            || expected.HasAnyHolds != supplied.HasAnyHolds
+            || expected.Items.Count != supplied.Items.Count)
+        {
+            return false;
+        }
+
+        var suppliedByIdentity = supplied.Items.ToDictionary(
+            item => item.Identity);
+        return expected.Items.All(item =>
+            suppliedByIdentity.TryGetValue(item.Identity, out var value)
+            && item.Occurrences == value.Occurrences
+            && item.Disposition == value.Disposition
+            && StringComparer.Ordinal.Equals(
+                item.AttestationReference,
+                value.AttestationReference)
+            && EquivalentObservations(item.Observations, value.Observations));
+    }
+
+    private static bool EquivalentObservations(
+        IReadOnlyCollection<ProviderEvidenceObservation> expected,
+        IReadOnlyCollection<ProviderEvidenceObservation> supplied)
+    {
+        var expectedOrdered = expected
+            .OrderBy(item => item.Verdict)
+            .ThenBy(
+                item => item.AttestationReference ?? string.Empty,
+                StringComparer.Ordinal);
+        var suppliedOrdered = supplied
+            .OrderBy(item => item.Verdict)
+            .ThenBy(
+                item => item.AttestationReference ?? string.Empty,
+                StringComparer.Ordinal);
+        return expectedOrdered.SequenceEqual(suppliedOrdered);
+    }
+
+    private static bool EquivalentRiskSummary(
+        ProviderSettlementRiskSummary expected,
+        ProviderSettlementRiskSummary supplied)
+        => expected.IdentityScope == supplied.IdentityScope
+            && expected.CandidateGroups == supplied.CandidateGroups
+            && expected.HeldGroups == supplied.HeldGroups
+            && expected.Groups
+                .OrderBy(item => item.Provider, StringComparer.Ordinal)
+                .ThenBy(item => item.ExternalSettlementId,
+                    StringComparer.Ordinal)
+                .SequenceEqual(supplied.Groups
+                    .OrderBy(item => item.Provider, StringComparer.Ordinal)
+                    .ThenBy(item => item.ExternalSettlementId,
+                        StringComparer.Ordinal));
+
+    private static bool EquivalentReviewPlan(
+        ProviderSettlementReviewPlan expected,
+        ProviderSettlementReviewPlan supplied)
+        => expected.HoldCount == supplied.HoldCount
+            && expected.EvidenceAttentionCount ==
+                supplied.EvidenceAttentionCount
+            && expected.KnownCount == supplied.KnownCount
+            && expected.SeparateDurableGateReviewCount ==
+                supplied.SeparateDurableGateReviewCount
+            && expected.CrossProviderSettlementIds
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .SequenceEqual(supplied.CrossProviderSettlementIds
+                    .OrderBy(value => value, StringComparer.Ordinal))
+            && expected.Items
+                .OrderBy(item => item.Provider, StringComparer.Ordinal)
+                .ThenBy(item => item.ExternalSettlementId,
+                    StringComparer.Ordinal)
+                .SequenceEqual(supplied.Items
+                    .OrderBy(item => item.Provider, StringComparer.Ordinal)
+                    .ThenBy(item => item.ExternalSettlementId,
+                        StringComparer.Ordinal));
+
+    private static bool EquivalentAudit(
+        ProviderReviewAuditResult expected,
+        ProviderReviewAuditResult supplied)
+        => expected.TotalGroups == supplied.TotalGroups
+            && expected.HeldGroups == supplied.HeldGroups
+            && expected.CrossProviderIdentityHolds ==
+                supplied.CrossProviderIdentityHolds
+            && expected.EvidenceGroups == supplied.EvidenceGroups
+            && expected.KnownGroups == supplied.KnownGroups
+            && expected.SeparateDurableReviewGroups ==
+                supplied.SeparateDurableReviewGroups
+            && expected.Rows
+                .OrderBy(item => item.Provider, StringComparer.Ordinal)
+                .ThenBy(item => item.ExternalSettlementId,
+                    StringComparer.Ordinal)
+                .SequenceEqual(supplied.Rows
+                    .OrderBy(item => item.Provider, StringComparer.Ordinal)
+                    .ThenBy(item => item.ExternalSettlementId,
+                        StringComparer.Ordinal))
+            && expected.ByProvider
+                .OrderBy(item => item.Provider, StringComparer.Ordinal)
+                .SequenceEqual(supplied.ByProvider
+                    .OrderBy(item => item.Provider, StringComparer.Ordinal));
 
     private static bool ConflictAppliesToTrace(
         ProviderEvidenceConflictCase conflict,
@@ -611,6 +890,10 @@ public static class ProviderSettlementAnalysisIntegrity
     private sealed record EventSettlementIdentity(
         string Provider,
         string ProviderEventId,
+        string ExternalSettlementId);
+
+    private sealed record SettlementIdentity(
+        string Provider,
         string ExternalSettlementId);
 
     private sealed record ConflictIdentity(
