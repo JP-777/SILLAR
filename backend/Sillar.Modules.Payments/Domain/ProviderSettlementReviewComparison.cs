@@ -18,7 +18,8 @@ public enum ProviderSettlementReviewChangeDimension
     EventIdentities = 4,
     IncomingOccurrences = 8,
     Evidence = 16,
-    Conflicts = 32
+    Conflicts = 32,
+    EvidenceInventory = 64
 }
 
 /// <summary>Cambio exacto de un expediente proveedor/liquidación.</summary>
@@ -70,8 +71,12 @@ public static class ProviderSettlementReviewComparison
             item => new SettlementIdentity(
                 item.Provider,
                 item.ExternalSettlementId));
+        var beforeInventory = InventoryBySettlement(earlier);
+        var afterInventory = InventoryBySettlement(later);
         var keys = beforeCases.Keys
             .Concat(afterCases.Keys)
+            .Concat(beforeInventory.Keys)
+            .Concat(afterInventory.Keys)
             .Distinct()
             .OrderBy(key => key.Provider, StringComparer.Ordinal)
             .ThenBy(key => key.ExternalSettlementId, StringComparer.Ordinal);
@@ -81,6 +86,28 @@ public static class ProviderSettlementReviewComparison
         {
             beforeCases.TryGetValue(key, out var previous);
             afterCases.TryGetValue(key, out var current);
+            beforeInventory.TryGetValue(key, out var previousInventory);
+            afterInventory.TryGetValue(key, out var currentInventory);
+            previousInventory ??= [];
+            currentInventory ??= [];
+            var inventoryChanged = !previousInventory.SequenceEqual(
+                currentInventory);
+
+            if (previous is null && current is null)
+            {
+                if (inventoryChanged)
+                {
+                    changes.Add(new ProviderSettlementReviewDelta(
+                        key.Provider,
+                        key.ExternalSettlementId,
+                        ProviderSettlementReviewDeltaKind.Changed,
+                        ProviderSettlementReviewChangeDimension.EvidenceInventory,
+                        null,
+                        null));
+                }
+
+                continue;
+            }
 
             if (previous is null)
             {
@@ -88,7 +115,9 @@ public static class ProviderSettlementReviewComparison
                     key.Provider,
                     key.ExternalSettlementId,
                     ProviderSettlementReviewDeltaKind.Added,
-                    ProviderSettlementReviewChangeDimension.None,
+                    inventoryChanged
+                        ? ProviderSettlementReviewChangeDimension.EvidenceInventory
+                        : ProviderSettlementReviewChangeDimension.None,
                     null,
                     current));
                 continue;
@@ -100,13 +129,21 @@ public static class ProviderSettlementReviewComparison
                     key.Provider,
                     key.ExternalSettlementId,
                     ProviderSettlementReviewDeltaKind.Removed,
-                    ProviderSettlementReviewChangeDimension.None,
+                    inventoryChanged
+                        ? ProviderSettlementReviewChangeDimension.EvidenceInventory
+                        : ProviderSettlementReviewChangeDimension.None,
                     previous,
                     null));
                 continue;
             }
 
             var dimensions = GetChangedDimensions(previous, current);
+            if (inventoryChanged)
+            {
+                dimensions |=
+                    ProviderSettlementReviewChangeDimension.EvidenceInventory;
+            }
+
             if (dimensions != ProviderSettlementReviewChangeDimension.None)
             {
                 changes.Add(new ProviderSettlementReviewDelta(
@@ -180,6 +217,27 @@ public static class ProviderSettlementReviewComparison
         return dimensions;
     }
 
+    private static IReadOnlyDictionary<SettlementIdentity, InventorySnapshot[]>
+        InventoryBySettlement(ProviderSettlementAnalysisResult analysis)
+        => analysis.EvidenceInventory.Items
+            .GroupBy(item => new SettlementIdentity(
+                item.Provider,
+                item.ExternalSettlementId))
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .OrderBy(item => item.Population)
+                    .ThenBy(item => item.ProviderEventId, StringComparer.Ordinal)
+                    .ThenBy(item => item.BodySha256, StringComparer.Ordinal)
+                    .ThenBy(item => item.VerifiedAt.UtcTicks)
+                    .Select(item => new InventorySnapshot(
+                        item.Population,
+                        item.ProviderEventId,
+                        item.BodySha256,
+                        item.VerifiedAt.UtcTicks,
+                        item.Occurrences))
+                    .ToArray());
+
     private static IEnumerable<string> EventIdentitySequence(
         ProviderSettlementReviewCase item)
         => item.Events
@@ -237,4 +295,11 @@ public static class ProviderSettlementReviewComparison
     private sealed record ConflictSnapshot(
         string ProviderEventId,
         ProviderEvidenceConflictKind Kind);
+
+    private sealed record InventorySnapshot(
+        ProviderEvidencePopulation Population,
+        string ProviderEventId,
+        string BodySha256,
+        long VerifiedAtUtcTicks,
+        int Occurrences);
 }
