@@ -17,6 +17,7 @@ public sealed record ProviderSettlementReviewCase(
     int EventIdentities,
     long IncomingOccurrences,
     IReadOnlyList<ProviderEvidenceConflictKind> ConflictKinds,
+    IReadOnlyList<ProviderEvidenceInventoryItem> SettlementEvidence,
     IReadOnlyList<ProviderSettlementAnalysisTraceItem> Events)
 {
     public bool RequiresIndependentAuthentication => true;
@@ -81,6 +82,20 @@ public static class ProviderSettlementReviewCasebook
                 item.Identity.Reception.Provider,
                 item.Identity.Settlement.Value))
             .ToDictionary(group => group.Key, group => group.ToArray());
+        var evidenceBySettlement = analysis.EvidenceInventory.Items
+            .GroupBy(
+                item => item.ExternalSettlementId,
+                StringComparer.Ordinal)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .OrderBy(item => item.Population)
+                    .ThenBy(item => item.Provider, StringComparer.Ordinal)
+                    .ThenBy(item => item.ProviderEventId, StringComparer.Ordinal)
+                    .ThenBy(item => item.BodySha256, StringComparer.Ordinal)
+                    .ThenBy(item => item.VerifiedAt.UtcTicks)
+                    .ToArray(),
+                StringComparer.Ordinal);
 
         if (risks.Count != reviews.Count
             || risks.Count != audits.Count
@@ -117,8 +132,30 @@ public static class ProviderSettlementReviewCasebook
                 .OrderBy(kind => kind)
                 .ToArray();
 
+            if (!evidenceBySettlement.TryGetValue(
+                    identity.ExternalSettlementId,
+                    out var settlementEvidence))
+            {
+                throw new ArgumentException(
+                    "Un expediente carece de evidencia en el inventario.",
+                    nameof(analysis));
+            }
+
+            var providerIncomingOccurrences = checked(settlementEvidence
+                .Where(item => item.Population ==
+                        ProviderEvidencePopulation.Incoming
+                    && StringComparer.Ordinal.Equals(
+                        item.Provider,
+                        identity.Provider))
+                .Sum(item => (long)item.Occurrences));
+            var distinctProviders = settlementEvidence
+                .Select(item => item.Provider)
+                .Distinct(StringComparer.Ordinal)
+                .Count();
+
             if (eventIdentities != risk.EventIdentities
                 || occurrences != risk.IncomingOccurrences
+                || providerIncomingOccurrences != risk.IncomingOccurrences
                 || events.Any(item => item.SettlementRisk != risk.Risk
                     || item.ReviewLane != review.Lane
                     || item.HoldReason != review.HoldReason
@@ -126,6 +163,15 @@ public static class ProviderSettlementReviewCasebook
             {
                 throw new ArgumentException(
                     "La traza no coincide con su agregado P6–P8.",
+                    nameof(analysis));
+            }
+
+            if ((distinctProviders > 1) !=
+                (review.HoldReason ==
+                    ProviderSettlementReviewHoldReason.CrossProviderIdentityUnresolved))
+            {
+                throw new ArgumentException(
+                    "El expediente no refleja su evidencia interproveedor.",
                     nameof(analysis));
             }
 
@@ -157,6 +203,7 @@ public static class ProviderSettlementReviewCasebook
                 eventIdentities,
                 occurrences,
                 Array.AsReadOnly(conflictKinds),
+                Array.AsReadOnly(settlementEvidence),
                 Array.AsReadOnly(events)));
         }
 

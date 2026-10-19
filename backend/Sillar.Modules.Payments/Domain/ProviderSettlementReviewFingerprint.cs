@@ -181,14 +181,9 @@ public static class ProviderSettlementReviewFingerprint
                 nameof(rows));
         }
 
-        if (rows.Any(row => row.OriginalHoldReason ==
-                    ProviderSettlementReviewHoldReason.CrossProviderIdentityUnresolved
-                && !collidedSettlements.Contains(row.ExternalSettlementId)))
-        {
-            throw new ArgumentException(
-                "P8 atribuyó una colisión interproveedor inexistente.",
-                nameof(rows));
-        }
+        // Una colisión también puede involucrar evidencia histórica de otro
+        // proveedor que no genera una segunda fila entrante en P8. Esta
+        // proyección no puede reconstruir por sí sola esa fila histórica.
     }
 
     private static void ValidateProviderSummaries(

@@ -56,6 +56,7 @@ public static class ProviderSettlementReviewAudit
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(plan.Items);
+        ArgumentNullException.ThrowIfNull(plan.CrossProviderSettlementIds);
         var source = plan.Items.ToArray();
         if (source.Any(x => x is null ||
                             string.IsNullOrWhiteSpace(x.Provider) ||
@@ -69,9 +70,28 @@ public static class ProviderSettlementReviewAudit
         if (duplicatePair)
             throw new ArgumentException("P7 contiene identidades compuestas duplicadas.", nameof(plan));
 
-        var collidedIds = source.GroupBy(x => x.ExternalSettlementId, StringComparer.Ordinal)
+        var inBatchCollisions = source.GroupBy(x => x.ExternalSettlementId, StringComparer.Ordinal)
             .Where(g => g.Select(x => x.Provider).Distinct(StringComparer.Ordinal).Skip(1).Any())
             .Select(g => g.Key).ToHashSet(StringComparer.Ordinal);
+        var declaredCollisions = plan.CrossProviderSettlementIds.ToArray();
+        var availableSettlements = source
+            .Select(item => item.ExternalSettlementId)
+            .ToHashSet(StringComparer.Ordinal);
+
+        if (declaredCollisions.Any(string.IsNullOrWhiteSpace)
+            || declaredCollisions.Distinct(StringComparer.Ordinal).Count() !=
+                declaredCollisions.Length
+            || declaredCollisions.Any(value =>
+                !availableSettlements.Contains(value))
+            || inBatchCollisions.Any(value =>
+                !declaredCollisions.Contains(value, StringComparer.Ordinal)))
+        {
+            throw new ArgumentException(
+                "P7 contiene una declaración interproveedor incoherente.",
+                nameof(plan));
+        }
+
+        var collidedIds = declaredCollisions.ToHashSet(StringComparer.Ordinal);
 
         // Regla no delegable: ninguna clasificación posterior puede soltar HOLD
         // interproveedor, ni omitir la razón explícita de HOLD en una colisión.

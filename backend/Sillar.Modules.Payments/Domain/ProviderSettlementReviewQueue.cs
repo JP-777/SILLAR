@@ -39,7 +39,8 @@ public sealed record ProviderSettlementReviewPlan(
     int HoldCount,
     int EvidenceAttentionCount,
     int KnownCount,
-    int SeparateDurableGateReviewCount);
+    int SeparateDurableGateReviewCount,
+    IReadOnlyList<string> CrossProviderSettlementIds);
 
 /// <summary>
 /// Clasifica el resumen real P6 en carriles de revisión informativos.
@@ -146,7 +147,73 @@ public static class ProviderSettlementReviewQueue
             result.Count(item =>
                 item.Lane == ProviderSettlementReviewLane.PreviouslyKnown),
             result.Count(item =>
-                item.Lane == ProviderSettlementReviewLane.RequiresSeparateDurableGate));
+                item.Lane == ProviderSettlementReviewLane.RequiresSeparateDurableGate),
+            crossProviderSettlements
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .ToArray());
+    }
+
+    /// <summary>
+    /// Conserva colisiones interproveedor detectadas contra evidencia histórica
+    /// que no aparece como un segundo grupo dentro del resumen P6 entrante.
+    /// </summary>
+    public static ProviderSettlementReviewPlan PreserveCrossProviderHolds(
+        ProviderSettlementReviewPlan plan,
+        IEnumerable<string> externalSettlementIds)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(plan.Items);
+        ArgumentNullException.ThrowIfNull(plan.CrossProviderSettlementIds);
+        ArgumentNullException.ThrowIfNull(externalSettlementIds);
+
+        var items = plan.Items.ToArray();
+        var additions = externalSettlementIds.ToArray();
+        if (additions.Any(string.IsNullOrWhiteSpace))
+        {
+            throw new ArgumentException(
+                "Una identidad interproveedor no puede estar vacía.",
+                nameof(externalSettlementIds));
+        }
+
+        var availableSettlements = items
+            .Select(item => item.ExternalSettlementId)
+            .ToHashSet(StringComparer.Ordinal);
+        if (additions.Any(value => !availableSettlements.Contains(value)))
+        {
+            throw new ArgumentException(
+                "Una colisión interproveedor no pertenece al lote entrante.",
+                nameof(externalSettlementIds));
+        }
+
+        var collisions = plan.CrossProviderSettlementIds
+            .Concat(additions)
+            .ToHashSet(StringComparer.Ordinal);
+        var updated = items
+            .Select(item => collisions.Contains(item.ExternalSettlementId)
+                ? item with
+                {
+                    Lane = ProviderSettlementReviewLane.Hold,
+                    HoldReason = ProviderSettlementReviewHoldReason
+                        .CrossProviderIdentityUnresolved
+                }
+                : item)
+            .OrderBy(item => item.Lane)
+            .ThenBy(item => item.Provider, StringComparer.Ordinal)
+            .ThenBy(item => item.ExternalSettlementId, StringComparer.Ordinal)
+            .ToArray();
+
+        return new ProviderSettlementReviewPlan(
+            updated,
+            updated.Count(item =>
+                item.Lane == ProviderSettlementReviewLane.Hold),
+            updated.Count(item => item.Lane is
+                ProviderSettlementReviewLane.RejectedEvidence
+                    or ProviderSettlementReviewLane.AwaitIndependentEvidence),
+            updated.Count(item =>
+                item.Lane == ProviderSettlementReviewLane.PreviouslyKnown),
+            updated.Count(item => item.Lane ==
+                ProviderSettlementReviewLane.RequiresSeparateDurableGate),
+            collisions.OrderBy(value => value, StringComparer.Ordinal).ToArray());
     }
 
     private static ProviderSettlementReviewItem Classify(

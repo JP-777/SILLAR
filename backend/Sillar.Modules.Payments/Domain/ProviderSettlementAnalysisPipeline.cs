@@ -88,6 +88,17 @@ public static class ProviderSettlementAnalysisPipeline
         var riskSummary = ProviderSettlementRiskAssessment.Summarize(
             evidenceReview);
         var reviewPlan = ProviderSettlementReviewQueue.Create(riskSummary);
+        var crossProviderIncomingSettlements = conflictReport.Cases
+            .Where(item => item.Kind == ProviderEvidenceConflictKind
+                .CrossProviderSettlementIdentityUnresolved
+                && item.Evidence.Any(evidenceItem => evidenceItem.Population ==
+                    ProviderEvidencePopulation.Incoming))
+            .Select(item => item.IdentityValue)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        reviewPlan = ProviderSettlementReviewQueue.PreserveCrossProviderHolds(
+            reviewPlan,
+            crossProviderIncomingSettlements);
         var audit = ProviderSettlementReviewAudit.Summarize(reviewPlan);
         var fingerprint = ProviderSettlementReviewFingerprint.Create(audit);
         var trace = BuildTrace(
