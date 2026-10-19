@@ -54,7 +54,12 @@ public static class ProviderReplayBatchAnalyzer
             .Select(group => new UniqueIncomingEvidence(
                 group.Key,
                 group.First(),
-                group.Count()))
+                group.Count(),
+                group
+                    .Select(evidence => evidence.BodySha256)
+                    .Distinct(StringComparer.Ordinal)
+                    .Skip(1)
+                    .Any()))
             .OrderBy(
                 item => item.Identity.Reception.Provider,
                 StringComparer.Ordinal)
@@ -96,6 +101,14 @@ public static class ProviderReplayBatchAnalyzer
                 current.Representative,
                 comparisons);
 
+            // El agrupamiento por claves de idempotencia no puede ocultar que
+            // una misma identidad llegó con cuerpos autenticados diferentes.
+            // El conflicto prevalece incluso si también hubo copias exactas.
+            if (current.HasContradictoryBodyEvidence)
+            {
+                decision = ProviderReplayDecision.ConflictingEvent;
+            }
+
             results.Add(new ProviderReplayBatchItem(
                 current.Identity,
                 current.Occurrences,
@@ -112,5 +125,6 @@ public static class ProviderReplayBatchAnalyzer
     private sealed record UniqueIncomingEvidence(
         PaymentIdempotencyKeys Identity,
         VerifiedExternalPaymentEvidence Representative,
-        int Occurrences);
+        int Occurrences,
+        bool HasContradictoryBodyEvidence);
 }

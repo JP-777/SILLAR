@@ -68,12 +68,19 @@ public static class ProviderReplayClassifier
 
             if (sameEvent)
             {
-                if (sameSettlement)
+                var sameBodyEvidence = StringComparer.Ordinal.Equals(
+                    previous.BodySha256,
+                    incoming.BodySha256);
+
+                if (sameSettlement && sameBodyEvidence)
                 {
                     duplicateEvent = true;
                 }
                 else
                 {
+                    // Reutilizar la misma identidad de recepción con otra
+                    // liquidación o con evidencia corporal distinta no es una
+                    // reentrega equivalente y debe fallar cerrado.
                     conflictingEvent = true;
                 }
             }
