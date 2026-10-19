@@ -78,9 +78,25 @@ public static class ProviderEvidenceReview
 
         var arrivals = incoming.ToArray();
         var history = known.ToArray();
-        var observations = evidence.ToArray();
         var basePlan = ProviderIntakePlanner.CreatePlan(arrivals, history);
-        var identities = basePlan.Items
+
+        return Review(basePlan, evidence);
+    }
+
+    /// <summary>
+    /// Revisa una instantánea P4 ya materializada, después de validar que sus
+    /// grupos y contadores conservan las reglas fail-closed del planificador.
+    /// </summary>
+    public static ProviderEvidenceReviewPlan Review(
+        ProviderIntakePlan basePlan,
+        IEnumerable<ProviderEvidenceObservation> evidence)
+    {
+        ArgumentNullException.ThrowIfNull(basePlan);
+        ArgumentNullException.ThrowIfNull(evidence);
+
+        var planItems = ValidateBasePlan(basePlan);
+        var observations = evidence.ToArray();
+        var identities = planItems
             .Select(item => item.Identity)
             .ToHashSet();
 
@@ -134,9 +150,9 @@ public static class ProviderEvidenceReview
                         observation => observation.AttestationReference ?? string.Empty,
                         StringComparer.Ordinal)
                     .ToArray());
-        var results = new List<ProviderEvidenceReviewItem>(basePlan.Items.Count);
+        var results = new List<ProviderEvidenceReviewItem>(planItems.Length);
 
-        foreach (var item in basePlan.Items)
+        foreach (var item in planItems)
         {
             observationsByIdentity.TryGetValue(item.Identity, out var itemObservations);
             itemObservations ??= [];
@@ -210,4 +226,82 @@ public static class ProviderEvidenceReview
                     or ProviderEvidenceReviewDisposition.HoldInconsistentEvidence
                     or ProviderEvidenceReviewDisposition.RejectUntrustedEvidence));
     }
+
+    private static ProviderIntakePlanItem[] ValidateBasePlan(
+        ProviderIntakePlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(plan.Items);
+        var items = plan.Items.ToArray();
+
+        if (items.Any(item => item is null
+                || item.Identity is null
+                || item.Identity.Reception is null
+                || item.Identity.Settlement is null
+                || string.IsNullOrWhiteSpace(item.Identity.Reception.Provider)
+                || string.IsNullOrWhiteSpace(
+                    item.Identity.Reception.ProviderEventId)
+                || string.IsNullOrWhiteSpace(item.Identity.Settlement.Value)
+                || item.Occurrences <= 0
+                || !Enum.IsDefined(item.Disposition)))
+        {
+            throw new ArgumentException(
+                "El plan P4 contiene una identidad o disposición inválida.",
+                nameof(plan));
+        }
+
+        if (items
+            .Select(item => item.Identity)
+            .Distinct()
+            .Count() != items.Length)
+        {
+            throw new ArgumentException(
+                "El plan P4 repite una identidad externa.",
+                nameof(plan));
+        }
+
+        var held = items.Count(item =>
+            item.Disposition == ProviderIntakeDisposition.HoldForConflict);
+        var candidates = items.Count(item => item.Disposition ==
+            ProviderIntakeDisposition.CandidateRequiringIndependentAuthentication);
+
+        if (plan.HasConflicts != (held > 0)
+            || plan.CandidatesAwaitingAuthentication != candidates)
+        {
+            throw new ArgumentException(
+                "Los contadores P4 no coinciden con sus elementos.",
+                nameof(plan));
+        }
+
+        foreach (var group in items.GroupBy(item => new ProviderSettlementGroup(
+                     item.Identity.Reception.Provider,
+                     item.Identity.Settlement.Value)))
+        {
+            var groupItems = group.ToArray();
+            var groupHeld = groupItems.Count(item =>
+                item.Disposition == ProviderIntakeDisposition.HoldForConflict);
+            var groupCandidates = groupItems.Count(item => item.Disposition ==
+                ProviderIntakeDisposition.CandidateRequiringIndependentAuthentication);
+            var relatedCandidates = groupItems.Count(item => item.Disposition ==
+                ProviderIntakeDisposition.RelatesToCandidateInBatch);
+
+            if ((groupHeld > 0 && groupHeld != groupItems.Length)
+                || groupCandidates > 1
+                || (groupCandidates == 1
+                    && groupItems.Any(item => item.Disposition is not
+                        ProviderIntakeDisposition.CandidateRequiringIndependentAuthentication
+                        and not ProviderIntakeDisposition.RelatesToCandidateInBatch))
+                || (groupCandidates == 0 && relatedCandidates > 0))
+            {
+                throw new ArgumentException(
+                    "Un grupo P4 no conserva su clasificación determinista.",
+                    nameof(plan));
+            }
+        }
+
+        return items;
+    }
+
+    private sealed record ProviderSettlementGroup(
+        string Provider,
+        string ExternalSettlementId);
 }
