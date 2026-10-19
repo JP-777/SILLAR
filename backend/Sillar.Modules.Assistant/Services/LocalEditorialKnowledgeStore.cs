@@ -56,7 +56,8 @@ public sealed class LocalEditorialKnowledgeStore : ILocalKnowledgeAuthority
                 !Authorized(actor) || actor.InstallationId != article.InstallationId ||
                 !string.Equals(actor.WriterNode, article.WriterNode, StringComparison.Ordinal))
                 return EditorialResult.Forbidden;
-            if (!IsAllowedPublicUri(article.InstallationId, draft?.PublicUri)) return EditorialResult.Invalid;
+            if (draft is null || !IsAllowedPublicUri(article.InstallationId, draft.PublicUri))
+                return EditorialResult.Invalid;
             return article.SaveDraft(actor, draft, expectedVersion);
         }
     }
@@ -80,6 +81,26 @@ public sealed class LocalEditorialKnowledgeStore : ILocalKnowledgeAuthority
             return _articles.TryGetValue(articleId, out var article)
                 ? article.Withdraw(actor, revisionId, expectedVersion)
                 : EditorialResult.Forbidden;
+        }
+    }
+
+    /// <summary>
+    /// Lectura de un solo artículo, únicamente para un actor cuya autoridad sobre
+    /// ESTE artículo ya se validó en la frontera CORE. No exponer como GET público.
+    /// </summary>
+    public EditorialArticleLookup Inspect(EditorialPrincipal? actor, Guid articleId)
+    {
+        if (actor is null || !Authorized(actor) || articleId == Guid.Empty)
+            return new(EditorialLookupStatus.Forbidden, null);
+        lock (_gate)
+        {
+            if (!_articles.TryGetValue(articleId, out var article) ||
+                article.InstallationId != actor.InstallationId ||
+                !string.Equals(article.WriterNode, actor.WriterNode, StringComparison.Ordinal))
+                return new(EditorialLookupStatus.NotFound, null);
+            return new(EditorialLookupStatus.Found,
+                new EditorialArticleSnapshot(article.Id, article.InstallationId,
+                    article.WriterNode, article.Version, article.Draft, article.Published));
         }
     }
 
