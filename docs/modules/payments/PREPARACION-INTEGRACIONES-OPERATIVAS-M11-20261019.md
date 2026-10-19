@@ -208,4 +208,3 @@ Ninguno de estos puntos tiene un valor por defecto en esta propuesta.
 - aplicar pagos, cambiar estados de pedido o escribir `sales.*`;
 - relajar `HOLD` interproveedor;
 - ejecutar QA/E2E o declarar idempotencia acreditada.
-

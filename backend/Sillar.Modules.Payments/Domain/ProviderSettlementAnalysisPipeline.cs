@@ -109,7 +109,7 @@ public static class ProviderSettlementAnalysisPipeline
             audit,
             conflictReport);
 
-        return new ProviderSettlementAnalysisResult(
+        var result = new ProviderSettlementAnalysisResult(
             evidenceInventory,
             evidenceReconciliation,
             conflictReport,
@@ -120,6 +120,13 @@ public static class ProviderSettlementAnalysisPipeline
             audit,
             fingerprint,
             trace);
+
+        // La canalización no devuelve una instantánea que sus propias reglas
+        // integrales rechazarían. Esta comprobación sigue siendo pura: no
+        // autentica, persiste ni aplica liquidaciones.
+        _ = ProviderSettlementAnalysisIntegrity.Create(result);
+
+        return result;
     }
 
     private static IReadOnlyList<ProviderSettlementAnalysisTraceItem> BuildTrace(
