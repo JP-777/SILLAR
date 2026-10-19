@@ -85,6 +85,8 @@ public static class ProviderSettlementReviewAudit
         if (source.Any(x => x.Lane != ProviderSettlementReviewLane.Hold &&
                             x.HoldReason != ProviderSettlementReviewHoldReason.None))
             throw new ArgumentException("Motivo de HOLD asociado a un carril que no está retenido.", nameof(plan));
+        if (source.Any(x => !HasCoherentClassification(x, collidedIds)))
+            throw new ArgumentException("Un riesgo P6 no coincide con su clasificación P7.", nameof(plan));
 
         int held = source.Count(x => x.Lane == ProviderSettlementReviewLane.Hold);
         int evidence = source.Count(x => x.Lane is ProviderSettlementReviewLane.RejectedEvidence or
@@ -126,5 +128,41 @@ public static class ProviderSettlementReviewAudit
         return new ProviderReviewAuditResult(rows, providers, source.Length, held,
             source.Count(x => collidedIds.Contains(x.ExternalSettlementId)),
             evidence, known, separate);
+    }
+
+    private static bool HasCoherentClassification(
+        ProviderSettlementReviewItem item,
+        IReadOnlySet<string> collidedIds)
+    {
+        var expected = collidedIds.Contains(item.ExternalSettlementId)
+            ? (ProviderSettlementReviewLane.Hold,
+                ProviderSettlementReviewHoldReason.CrossProviderIdentityUnresolved)
+            : item.SourceRisk switch
+            {
+                ProviderSettlementRisk.HoldReplayConflict
+                    or ProviderSettlementRisk.HoldEvidenceConflict
+                    or ProviderSettlementRisk.HoldIdentityScopeUnresolved
+                    or ProviderSettlementRisk.HoldMixedKnownAndCandidate
+                    or ProviderSettlementRisk.HoldMultipleCandidates
+                    or ProviderSettlementRisk.HoldOrphanRelatedEvent =>
+                    (ProviderSettlementReviewLane.Hold,
+                        ProviderSettlementReviewHoldReason.ConflictOrOtherHold),
+                ProviderSettlementRisk.RejectUntrustedEvidence =>
+                    (ProviderSettlementReviewLane.RejectedEvidence,
+                        ProviderSettlementReviewHoldReason.None),
+                ProviderSettlementRisk.AwaitIndependentVerification =>
+                    (ProviderSettlementReviewLane.AwaitIndependentEvidence,
+                        ProviderSettlementReviewHoldReason.None),
+                ProviderSettlementRisk.PreviouslyKnownOrReceived =>
+                    (ProviderSettlementReviewLane.PreviouslyKnown,
+                        ProviderSettlementReviewHoldReason.None),
+                ProviderSettlementRisk.CandidateForIndependentDurableGate =>
+                    (ProviderSettlementReviewLane.RequiresSeparateDurableGate,
+                        ProviderSettlementReviewHoldReason.None),
+                _ => (ProviderSettlementReviewLane.Hold,
+                    ProviderSettlementReviewHoldReason.UnknownSourceRisk)
+            };
+
+        return item.Lane == expected.Item1 && item.HoldReason == expected.Item2;
     }
 }
