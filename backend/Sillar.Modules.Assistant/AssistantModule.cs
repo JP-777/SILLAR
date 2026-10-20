@@ -7,15 +7,25 @@ using Sillar.Modules.Assistant.Data;
 using Sillar.Modules.Assistant.Data.Repositories;
 using Sillar.Modules.Assistant.Endpoints;
 using Sillar.Shared.Modularity;
+using Sillar.Shared.Data.Modularity;
 
 namespace Sillar.Modules.Assistant;
 
 /// <summary>
 /// M12 — Asistente y conocimiento editorial. Preparado para el descubrimiento modular.
-/// No registra migraciones, no monta la administración editorial y no se añade al host.
+/// Declara sus migraciones propias de assistant. No monta administración editorial ni integra el host.
 /// </summary>
-public sealed class AssistantModule : IModule
+public sealed class AssistantModule : IModule, IModuleMigrations
 {
+    private static readonly MigracionesDeContexto<AssistantDbContext> Migraciones = new(
+        cs => new AssistantDbContext(PersistenciaDeModulo.Opciones<AssistantDbContext>(
+            cs, AssistantDbContext.Schema, AssistantDbContext.MigrationsHistoryTable)),
+        AssistantDbContext.MigrationsHistoryTable);
+    public string MigrationsHistoryTable => Migraciones.MigrationsHistoryTable;
+    public IReadOnlyList<string> KnownMigrations(string connectionString) => Migraciones.KnownMigrations(connectionString);
+    public Task<IReadOnlyList<string>> AppliedMigrationsAsync(string connectionString, CancellationToken ct) => Migraciones.AppliedMigrationsAsync(connectionString, ct);
+    public Task ApplyMigrationsAsync(string connectionString, CancellationToken ct) => Migraciones.ApplyMigrationsAsync(connectionString, ct);
+
     public const string ModuleCode = "assistant";
     public string Code => ModuleCode;
     public string? Schema => AssistantDbContext.Schema;
