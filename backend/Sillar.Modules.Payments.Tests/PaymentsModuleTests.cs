@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sillar.Modules.Payments.Application.Contracts;
 using Sillar.Modules.Payments.Domain;
+using Sillar.Modules.Payments.Infrastructure.Persistence;
 using Sillar.Shared.Modularity;
 
 namespace Sillar.Modules.Payments.Tests;
@@ -79,7 +80,45 @@ public sealed class PaymentsModuleTests
         Assert.DoesNotContain(
             services,
             descriptor => descriptor.ServiceType == typeof(IProviderEvidenceVerifier)
-                || descriptor.ServiceType == typeof(IProviderReceptionLedger)
                 || descriptor.ServiceType == typeof(IProviderCommercialEffectPort));
+    }
+
+    [Fact]
+    public void Registro_reutiliza_un_repositorio_scoped_para_recepcion_e_inbox()
+    {
+        var services = new ServiceCollection();
+        new PaymentsModule().RegisterServices(services, Configuration());
+
+        using var provider = services.BuildServiceProvider();
+        using var scope = provider.CreateScope();
+        var receptionLedger = scope.ServiceProvider
+            .GetRequiredService<IProviderReceptionLedger>();
+        var inboxRepository = scope.ServiceProvider
+            .GetRequiredService<IProviderInboxRepository>();
+
+        Assert.Same(receptionLedger, inboxRepository);
+        Assert.IsType<EfProviderInboxRepository>(receptionLedger);
+    }
+
+    [Fact]
+    public void Servicios_operativos_quedan_condicionados_a_puertos_no_registrados()
+    {
+        var services = new ServiceCollection();
+        new PaymentsModule().RegisterServices(services, Configuration());
+
+        Assert.Contains(
+            services,
+            descriptor => descriptor.ServiceType ==
+                typeof(IProviderReceptionService));
+        Assert.Contains(
+            services,
+            descriptor => descriptor.ServiceType ==
+                typeof(IProviderInboxProcessingService));
+        Assert.DoesNotContain(
+            services,
+            descriptor => descriptor.ServiceType ==
+                typeof(IProviderEvidenceVerifier)
+                || descriptor.ServiceType ==
+                    typeof(IProviderCommercialEffectPort));
     }
 }

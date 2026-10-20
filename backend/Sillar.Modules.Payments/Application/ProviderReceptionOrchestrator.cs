@@ -11,8 +11,9 @@ namespace Sillar.Modules.Payments.Application;
 internal sealed class ProviderReceptionOrchestrator(
     IProviderEvidenceVerifier verifier,
     IProviderReceptionLedger ledger)
+    : IProviderReceptionService
 {
-    internal async ValueTask<ProviderReceptionResult> ReceiveAsync(
+    public async ValueTask<ProviderReceptionResult> ReceiveAsync(
         ProviderReceptionRequest request,
         CancellationToken cancellationToken = default)
     {

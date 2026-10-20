@@ -60,6 +60,16 @@ public sealed class PaymentsModule : IModule
             ProviderSettlementAnalysisService>();
         services.AddScoped<ProviderReceptionOrchestrator>();
         services.AddScoped<ProviderCommercialRecoveryService>();
+        services.AddScoped<ProviderInboxProcessor>();
+        services.AddScoped<EfProviderInboxRepository>();
+        services.AddScoped<IProviderReceptionLedger>(provider =>
+            provider.GetRequiredService<EfProviderInboxRepository>());
+        services.AddScoped<IProviderInboxRepository>(provider =>
+            provider.GetRequiredService<EfProviderInboxRepository>());
+        services.AddScoped<IProviderReceptionService>(provider =>
+            provider.GetRequiredService<ProviderReceptionOrchestrator>());
+        services.AddScoped<IProviderInboxProcessingService>(provider =>
+            provider.GetRequiredService<ProviderInboxProcessor>());
     }
 
     /// <summary>

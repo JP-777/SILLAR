@@ -126,6 +126,13 @@ internal interface IProviderEvidenceVerifier
         CancellationToken cancellationToken);
 }
 
+internal interface IProviderReceptionService
+{
+    ValueTask<ProviderReceptionResult> ReceiveAsync(
+        ProviderReceptionRequest request,
+        CancellationToken cancellationToken = default);
+}
+
 internal enum ProviderReceptionState
 {
     Rejected,

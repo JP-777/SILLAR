@@ -2,23 +2,6 @@ using Sillar.Modules.Payments.Application.Contracts;
 
 namespace Sillar.Modules.Payments.Application;
 
-internal enum ProviderInboxProcessOutcome
-{
-    Accredited,
-    Rejected,
-    Indeterminate,
-    NotFound,
-    NotReady,
-    Contended,
-    ConfirmationNotPersisted
-}
-
-internal sealed record ProviderInboxProcessResult(
-    ProviderInboxProcessOutcome Outcome,
-    Guid? LeaseToken,
-    int? AttemptNumber,
-    string? Detail);
-
 /// <summary>
 /// Coordina un único intento del inbox. El resultado sólo se presenta como
 /// acreditado cuando el puerto lo confirma y el repositorio conserva esa
@@ -27,8 +10,9 @@ internal sealed record ProviderInboxProcessResult(
 internal sealed class ProviderInboxProcessor(
     IProviderInboxRepository repository,
     IProviderCommercialEffectPort commercialPort)
+    : IProviderInboxProcessingService
 {
-    internal async ValueTask<ProviderInboxProcessResult> ProcessAsync(
+    public async ValueTask<ProviderInboxProcessResult> ProcessAsync(
         Guid inboxEventId,
         DateTimeOffset attemptedAt,
         TimeSpan leaseDuration,
@@ -116,7 +100,7 @@ internal sealed class ProviderInboxProcessor(
             result.Reason ?? result.Reference);
     }
 
-    internal ValueTask<bool> TryReleaseAfterReviewAsync(
+    public ValueTask<bool> TryReleaseAfterReviewAsync(
         Guid inboxEventId,
         long expectedRevision,
         DateTimeOffset reviewedAt,
@@ -127,7 +111,7 @@ internal sealed class ProviderInboxProcessor(
             reviewedAt,
             cancellationToken);
 
-    internal ValueTask<bool> TryRecoverExpiredLeaseAsync(
+    public ValueTask<bool> TryRecoverExpiredLeaseAsync(
         Guid inboxEventId,
         DateTimeOffset recoveredAt,
         TimeSpan retryDelay,
