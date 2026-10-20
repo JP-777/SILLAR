@@ -58,6 +58,8 @@ public sealed class PaymentsModule : IModule
         services.AddScoped<
             IProviderSettlementAnalysisService,
             ProviderSettlementAnalysisService>();
+        services.AddScoped<ProviderReceptionOrchestrator>();
+        services.AddScoped<ProviderCommercialRecoveryService>();
     }
 
     /// <summary>
