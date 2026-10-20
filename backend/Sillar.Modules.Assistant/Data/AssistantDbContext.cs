@@ -4,8 +4,8 @@ using Sillar.Modules.Assistant.Data.Entities;
 namespace Sillar.Modules.Assistant.Data;
 
 /// <summary>
-/// Modelo físico PREPARATORIO de M12: sin registro en API, proveedor de conexión,
-/// migraciones ni escritura en base real. El artículo y sus revisiones son privados.
+/// Modelo físico M12 con migración propia de assistant. El host solo lo registra
+/// al activar el módulo y disponer de identidad confiable. No aplicar a bases existentes aquí.
 /// </summary>
 public sealed class AssistantDbContext(DbContextOptions<AssistantDbContext> options) : DbContext(options)
 {

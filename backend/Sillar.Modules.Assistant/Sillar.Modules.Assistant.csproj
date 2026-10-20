@@ -8,5 +8,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Sillar.Core.Contracts\Sillar.Core.Contracts.csproj" />
     <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
+    <ProjectReference Include="..\Sillar.Shared.Data\Sillar.Shared.Data.csproj" />
   </ItemGroup>
 </Project>
