@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- D2: capa consumidora de M10. No instala schema, endpoint ni UI. -->
+  <!-- M10: solo lectura. Sin schema ni migraciones; lee M03 únicamente por Sales.Contracts. -->
   <ItemGroup>
     <ProjectReference Include="..\Sillar.Modules.Sales.Contracts\Sillar.Modules.Sales.Contracts.csproj" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
