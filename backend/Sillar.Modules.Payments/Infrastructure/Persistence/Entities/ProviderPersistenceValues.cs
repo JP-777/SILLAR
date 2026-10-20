@@ -11,6 +11,26 @@ internal static class ProviderVerificationStates
         [Received, Authenticated, Rejected, Indeterminate];
 }
 
+internal static class ProviderReceptionStates
+{
+    internal const string Received = "received";
+    internal const string Rejected = "rejected";
+    internal const string Indeterminate = "indeterminate";
+    internal const string Held = "held";
+    internal const string Duplicate = "duplicate";
+    internal const string PendingDurableReview = "pending_durable_review";
+
+    internal static readonly string[] All =
+    [
+        Received,
+        Rejected,
+        Indeterminate,
+        Held,
+        Duplicate,
+        PendingDurableReview
+    ];
+}
+
 internal static class ProviderInboxStates
 {
     internal const string PendingReview = "pending_review";

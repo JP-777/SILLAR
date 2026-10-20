@@ -34,6 +34,9 @@ internal sealed class ProviderInboxEventConfiguration
                 "ck_payment_inbox_attempt_count",
                 "attempt_count >= 0");
             table.HasCheckConstraint(
+                "ck_payment_inbox_revision",
+                "revision > 0");
+            table.HasCheckConstraint(
                 "ck_payment_inbox_lease",
                 "(processing_state = 'processing' AND lease_token IS NOT NULL " +
                 "AND lease_until IS NOT NULL) OR " +
@@ -82,6 +85,8 @@ internal sealed class ProviderInboxEventConfiguration
             .HasColumnName("last_failure_code").HasMaxLength(256);
         builder.Property(item => item.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Property(item => item.UpdatedAt).HasColumnName("updated_at").IsRequired();
+        builder.Property(item => item.Revision)
+            .HasColumnName("revision").IsConcurrencyToken().IsRequired();
 
         builder.HasIndex(item => new { item.Provider, item.ProviderEventId })
             .IsUnique()

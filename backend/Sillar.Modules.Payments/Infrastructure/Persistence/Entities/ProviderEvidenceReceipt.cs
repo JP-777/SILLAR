@@ -14,20 +14,31 @@ internal sealed class ProviderEvidenceReceipt
     internal string BodySha256 { get; private set; } = null!;
     internal DateTimeOffset ReceivedAt { get; private set; }
     internal string VerificationState { get; private set; } = null!;
+    internal string ReceptionState { get; private set; } = null!;
     internal DateTimeOffset? VerifiedAt { get; private set; }
     internal string? AttestationReference { get; private set; }
     internal string? RejectionReason { get; private set; }
+    internal string? AnalysisSha256 { get; private set; }
     internal Guid? InboxEventId { get; private set; }
 
     internal static ProviderEvidenceReceipt Receive(
+        Guid receiptId,
         string? provider,
         string? providerEventId,
         string? externalSettlementId,
         string? bodySha256,
         DateTimeOffset receivedAt)
-        => new()
+    {
+        if (receiptId == Guid.Empty)
         {
-            ReceiptId = Guid.CreateVersion7(),
+            throw new ArgumentException(
+                "La recepción exige identidad local.",
+                nameof(receiptId));
+        }
+
+        return new()
+        {
+            ReceiptId = receiptId,
             Provider = ProviderPersistenceGuard.OpaqueRequired(
                 provider, nameof(provider)),
             ProviderEventId = ProviderPersistenceGuard.OpaqueRequired(
@@ -38,13 +49,17 @@ internal sealed class ProviderEvidenceReceipt
                 bodySha256, nameof(bodySha256)),
             ReceivedAt = ProviderPersistenceGuard.RequiredInstant(
                 receivedAt, nameof(receivedAt)),
-            VerificationState = ProviderVerificationStates.Received
+            VerificationState = ProviderVerificationStates.Received,
+            ReceptionState = ProviderReceptionStates.Received
         };
+    }
 
     internal void MarkAuthenticated(
         Guid inboxEventId,
         DateTimeOffset verifiedAt,
-        string? attestationReference)
+        string? attestationReference,
+        string receptionState,
+        string? analysisSha256)
     {
         EnsureReceived();
         if (inboxEventId == Guid.Empty)
@@ -54,18 +69,29 @@ internal sealed class ProviderEvidenceReceipt
                 nameof(inboxEventId));
         }
 
+        if (receptionState is not ProviderReceptionStates.Held
+            and not ProviderReceptionStates.Duplicate
+            and not ProviderReceptionStates.PendingDurableReview)
+        {
+            throw new ArgumentOutOfRangeException(nameof(receptionState));
+        }
+
         VerificationState = ProviderVerificationStates.Authenticated;
+        ReceptionState = receptionState;
         InboxEventId = inboxEventId;
         VerifiedAt = ProviderPersistenceGuard.RequiredInstant(
             verifiedAt, nameof(verifiedAt));
         AttestationReference = ProviderPersistenceGuard.OpaqueRequired(
             attestationReference, nameof(attestationReference));
+        AnalysisSha256 = ProviderPersistenceGuard.Sha256(
+            analysisSha256, nameof(analysisSha256));
     }
 
     internal void MarkRejected(string? reason)
     {
         EnsureReceived();
         VerificationState = ProviderVerificationStates.Rejected;
+        ReceptionState = ProviderReceptionStates.Rejected;
         RejectionReason = ProviderPersistenceGuard.OpaqueRequired(
             reason, nameof(reason));
     }
@@ -74,6 +100,7 @@ internal sealed class ProviderEvidenceReceipt
     {
         EnsureReceived();
         VerificationState = ProviderVerificationStates.Indeterminate;
+        ReceptionState = ProviderReceptionStates.Indeterminate;
         RejectionReason = ProviderPersistenceGuard.OpaqueRequired(
             reason, nameof(reason));
     }

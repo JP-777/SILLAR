@@ -27,12 +27,19 @@ internal sealed class ProviderEvidenceReceiptConfiguration
                 "ck_payment_receipts_verification_state",
                 "verification_state IN ('received','authenticated','rejected','indeterminate')");
             table.HasCheckConstraint(
+                "ck_payment_receipts_reception_state",
+                "reception_state IN ('received','rejected','indeterminate','held'," +
+                "'duplicate','pending_durable_review')");
+            table.HasCheckConstraint(
                 "ck_payment_receipts_authentication",
                 "(verification_state = 'authenticated' AND verified_at IS NOT NULL " +
                 "AND attestation_reference IS NOT NULL AND btrim(attestation_reference) <> '' " +
-                "AND inbox_event_id IS NOT NULL AND rejection_reason IS NULL) OR " +
+                "AND inbox_event_id IS NOT NULL AND analysis_sha256 IS NOT NULL " +
+                "AND reception_state IN ('held','duplicate','pending_durable_review') " +
+                "AND rejection_reason IS NULL) OR " +
                 "(verification_state <> 'authenticated' AND verified_at IS NULL " +
-                "AND attestation_reference IS NULL AND inbox_event_id IS NULL)");
+                "AND attestation_reference IS NULL AND inbox_event_id IS NULL " +
+                "AND analysis_sha256 IS NULL)");
             table.HasCheckConstraint(
                 "ck_payment_receipts_resolution_reason",
                 "(verification_state IN ('rejected','indeterminate') " +
@@ -56,11 +63,15 @@ internal sealed class ProviderEvidenceReceiptConfiguration
             .HasColumnName("received_at").IsRequired();
         builder.Property(item => item.VerificationState)
             .HasColumnName("verification_state").HasMaxLength(32).IsRequired();
+        builder.Property(item => item.ReceptionState)
+            .HasColumnName("reception_state").HasMaxLength(32).IsRequired();
         builder.Property(item => item.VerifiedAt).HasColumnName("verified_at");
         builder.Property(item => item.AttestationReference)
             .HasColumnName("attestation_reference").HasMaxLength(512);
         builder.Property(item => item.RejectionReason)
             .HasColumnName("rejection_reason").HasMaxLength(512);
+        builder.Property(item => item.AnalysisSha256)
+            .HasColumnName("analysis_sha256").HasMaxLength(64).IsFixedLength();
         builder.Property(item => item.InboxEventId).HasColumnName("inbox_event_id");
 
         builder.HasIndex(item => new

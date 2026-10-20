@@ -26,6 +26,7 @@ internal sealed class ProviderInboxEvent
     internal string? LastFailureCode { get; private set; }
     internal DateTimeOffset CreatedAt { get; private set; }
     internal DateTimeOffset UpdatedAt { get; private set; }
+    internal long Revision { get; private set; }
 
     internal static ProviderInboxEvent Create(
         VerifiedExternalPaymentEvidence evidence,
@@ -46,7 +47,8 @@ internal sealed class ProviderInboxEvent
             ProcessingState = ProviderInboxStates.PendingReview,
             CommercialEffectState = ProviderCommercialEffectStates.NotRequested,
             CreatedAt = instant,
-            UpdatedAt = instant
+            UpdatedAt = instant,
+            Revision = 1
         };
     }
 
@@ -139,6 +141,31 @@ internal sealed class ProviderInboxEvent
         Touch(changedAt);
     }
 
+    internal void MarkRejected(
+        Guid leaseToken,
+        string? failureCode,
+        DateTimeOffset changedAt)
+    {
+        EnsureLease(leaseToken);
+        ProcessingState = ProviderInboxStates.Rejected;
+        CommercialEffectState = ProviderCommercialEffectStates.NotRequested;
+        CommercialEffectReference = null;
+        LastFailureCode = ProviderPersistenceGuard.OpaqueRequired(
+            failureCode, nameof(failureCode));
+        NextAttemptAt = null;
+        ClearLease();
+        Touch(changedAt);
+    }
+
+    internal bool CanBeClaimedAt(DateTimeOffset instant)
+        => ProcessingState == ProviderInboxStates.Ready
+            || (ProcessingState == ProviderInboxStates.Indeterminate
+                && NextAttemptAt <= instant);
+
+    internal bool HasExpiredLeaseAt(DateTimeOffset instant)
+        => ProcessingState == ProviderInboxStates.Processing
+            && LeaseUntil <= instant;
+
     private void EnsureLease(Guid leaseToken)
     {
         if (ProcessingState != ProviderInboxStates.Processing
@@ -157,6 +184,9 @@ internal sealed class ProviderInboxEvent
     }
 
     private void Touch(DateTimeOffset changedAt)
-        => UpdatedAt = ProviderPersistenceGuard.RequiredInstant(
+    {
+        UpdatedAt = ProviderPersistenceGuard.RequiredInstant(
             changedAt, nameof(changedAt));
+        Revision = checked(Revision + 1);
+    }
 }

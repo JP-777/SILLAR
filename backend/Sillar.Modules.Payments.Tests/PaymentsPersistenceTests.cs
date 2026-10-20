@@ -97,6 +97,7 @@ public sealed class PaymentsPersistenceTests
     public void Recepcion_conserva_identidades_opacas_y_no_puede_reclasificarse()
     {
         var receipt = ProviderEvidenceReceipt.Receive(
+            Guid.CreateVersion7(),
             " provider ",
             " event ",
             " settlement ",
@@ -107,7 +108,9 @@ public sealed class PaymentsPersistenceTests
         receipt.MarkAuthenticated(
             inboxId,
             PaymentTestData.VerifiedAt.AddSeconds(1),
-            " attestation ");
+            " attestation ",
+            ProviderReceptionStates.PendingDurableReview,
+            new string('B', 64));
 
         Assert.Equal(" provider ", receipt.Provider);
         Assert.Equal(" event ", receipt.ProviderEventId);
@@ -115,8 +118,34 @@ public sealed class PaymentsPersistenceTests
         Assert.Equal(new string('a', 64), receipt.BodySha256);
         Assert.Equal(ProviderVerificationStates.Authenticated, receipt.VerificationState);
         Assert.Equal(" attestation ", receipt.AttestationReference);
+        Assert.Equal(
+            ProviderReceptionStates.PendingDurableReview,
+            receipt.ReceptionState);
+        Assert.Equal(new string('b', 64), receipt.AnalysisSha256);
         Assert.Throws<InvalidOperationException>(() =>
             receipt.MarkRejected("late-rejection"));
+    }
+
+    [Fact]
+    public void Revision_del_inbox_es_token_de_concurrencia_y_avanza_con_transiciones()
+    {
+        using var context = Context();
+        var entityType = context.Model.FindEntityType(typeof(ProviderInboxEvent))!;
+        var revision = entityType.FindProperty(nameof(ProviderInboxEvent.Revision))!;
+        var now = PaymentTestData.VerifiedAt;
+        var inbox = ProviderInboxEvent.Create(PaymentTestData.Evidence(), now);
+
+        Assert.True(revision.IsConcurrencyToken);
+        Assert.Equal(1, inbox.Revision);
+
+        inbox.MarkReady(now.AddSeconds(1));
+        Assert.Equal(2, inbox.Revision);
+
+        inbox.BeginAttempt(
+            Guid.CreateVersion7(),
+            now.AddMinutes(1),
+            now.AddSeconds(2));
+        Assert.Equal(3, inbox.Revision);
     }
 
     [Fact]
