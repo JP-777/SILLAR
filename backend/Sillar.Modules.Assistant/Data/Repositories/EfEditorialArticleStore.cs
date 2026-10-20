@@ -29,8 +29,18 @@ public sealed class EfEditorialArticleStore(
             Version = 0,
             CreatedAt = clock.GetUtcNow()
         });
-        await db.SaveChangesAsync(ct);
-        return EditorialResult.Saved;
+        try
+        {
+            await db.SaveChangesAsync(ct);
+            return EditorialResult.Saved;
+        }
+        catch (DbUpdateException ex) when (EditorialDatabaseConflict.IsArticlePrimaryKeyCollision(ex))
+        {
+            // Al perder la carrera de inserción, no conservar una entidad Added rastreada.
+            // Otras violaciones de unicidad, conexión o integridad se propagan intactas.
+            db.ChangeTracker.Clear();
+            return EditorialResult.Conflict;
+        }
     }
 
     public async Task<EditorialResult> SaveDraftAsync(
