@@ -12,6 +12,7 @@ internal sealed class EditorialRevisionConfiguration : IEntityTypeConfiguration<
         {
             table.HasCheckConstraint("ck_assistant_revision_question", "btrim(question) <> ''");
             table.HasCheckConstraint("ck_assistant_revision_answer", "btrim(answer) <> ''");
+            table.HasCheckConstraint("ck_assistant_revision_key", "btrim(question_key) <> ''");
             table.HasCheckConstraint("ck_assistant_revision_title", "btrim(title) <> ''");
             table.HasCheckConstraint("ck_assistant_publicacion_par",
                 "(published_at IS NULL AND published_article_version IS NULL) OR " +
@@ -22,6 +23,8 @@ internal sealed class EditorialRevisionConfiguration : IEntityTypeConfiguration<
         builder.Property(x => x.InstallationId).HasColumnName("installation_id").IsRequired();
         builder.Property(x => x.ArticleId).HasColumnName("article_id").IsRequired();
         builder.Property(x => x.Question).HasColumnName("question").HasMaxLength(500).IsRequired();
+        builder.Property(x => x.QuestionKey).HasColumnName("question_key")
+            .HasMaxLength(500).UseCollation("C").IsRequired();
         builder.Property(x => x.Answer).HasColumnName("answer").HasMaxLength(10000).IsRequired();
         builder.Property(x => x.Title).HasColumnName("title").HasMaxLength(200).IsRequired();
         builder.Property(x => x.PublicUrl).HasColumnName("public_url").HasMaxLength(2048).IsRequired();
@@ -33,5 +36,7 @@ internal sealed class EditorialRevisionConfiguration : IEntityTypeConfiguration<
             .HasPrincipalKey(x => new { x.InstallationId, x.Id })
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(x => new { x.InstallationId, x.ArticleId });
+        builder.HasIndex(x => new { x.InstallationId, x.QuestionKey })
+            .HasDatabaseName("idx_assistant_faq_question_key");
     }
 }

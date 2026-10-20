@@ -10,6 +10,8 @@ public sealed class EditorialRevisionRow
     public Guid ArticleId { get; set; }
     public Guid InstallationId { get; set; }
     public required string Question { get; set; }
+    /// <summary>Clave exacta normalizada para la búsqueda FAQ; no contiene el texto del usuario.</summary>
+    public string QuestionKey { get; set; } = string.Empty;
     public required string Answer { get; set; }
     public required string Title { get; set; }
     public required string PublicUrl { get; set; }
