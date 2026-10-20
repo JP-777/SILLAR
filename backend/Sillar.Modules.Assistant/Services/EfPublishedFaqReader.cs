@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Sillar.Modules.Assistant.Data;
 using Sillar.Modules.Assistant.Data.Repositories;
@@ -23,6 +24,13 @@ public sealed class EfPublishedFaqReader(
 {
     private const int MaxCandidates = 20;
 
+    /// <summary>
+    /// Una sola fotografia transaccional PostgreSQL para candidatos y revalidacion.
+    /// Esto evita lecturas mixtas en una solicitud; no acredita revocacion instantanea
+    /// despues de finalizar la transaccion ni reemplaza pruebas fisicas de PostgreSQL.
+    /// </summary>
+    public static IsolationLevel RequiredReadIsolation => IsolationLevel.RepeatableRead;
+
     public async Task<FaqResult> AnswerAsync(Guid installationId, string? question,
         DateTimeOffset now, CancellationToken ct)
     {
@@ -34,6 +42,12 @@ public sealed class EfPublishedFaqReader(
         if (key.Length == 0) return FaqResult.Abstain(FaqOutcome.Insufficient);
         try
         {
+            // Todas las consultas EF de esta solicitud (incluido el repositorio editorial
+            // scoped que comparte este DbContext) observan la misma fotografia PostgreSQL.
+            // Si no puede abrirse la transaccion, fallar cerrado: nunca degradar a ReadCommitted.
+            await using var snapshot = await db.Database.BeginTransactionAsync(
+                RequiredReadIsolation, ct);
+
             // Igualdad bajo colación binaria explícita: nunca usar core.es_ci para identidad.
             var candidates = await (
                 from article in db.Articles.AsNoTracking()
@@ -66,6 +80,10 @@ public sealed class EfPublishedFaqReader(
                 last.Publication != selected)
                 return FaqResult.Abstain(FaqOutcome.Unavailable);
 
+            // La evidencia se verifico dentro de una unica fotografia consistente.
+            // Una publicacion retirada DESPUES de este snapshot exige una nueva solicitud;
+            // no anunciar una garantia de revocacion instantanea al momento de enviar HTTP.
+            await snapshot.CommitAsync(ct);
             return new FaqResult(FaqOutcome.Answered, selected.Answer, selected.ArticleId,
                 selected.RevisionId, selected.Title, selected.PublicUri.AbsoluteUri);
         }
