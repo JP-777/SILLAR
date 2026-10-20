@@ -13,6 +13,9 @@ internal sealed class EditorialRevisionConfiguration : IEntityTypeConfiguration<
             table.HasCheckConstraint("ck_assistant_revision_question", "btrim(question) <> ''");
             table.HasCheckConstraint("ck_assistant_revision_answer", "btrim(answer) <> ''");
             table.HasCheckConstraint("ck_assistant_revision_title", "btrim(title) <> ''");
+            table.HasCheckConstraint("ck_assistant_publicacion_par",
+                "(published_at IS NULL AND published_article_version IS NULL) OR " +
+                "(published_at IS NOT NULL AND published_article_version > 0)");
         });
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).HasColumnName("id").ValueGeneratedNever();
@@ -24,6 +27,7 @@ internal sealed class EditorialRevisionConfiguration : IEntityTypeConfiguration<
         builder.Property(x => x.PublicUrl).HasColumnName("public_url").HasMaxLength(2048).IsRequired();
         builder.Property(x => x.CreatedAt).HasColumnName("created_at").HasColumnType("timestamptz");
         builder.Property(x => x.PublishedAt).HasColumnName("published_at").HasColumnType("timestamptz");
+        builder.Property(x => x.PublishedArticleVersion).HasColumnName("published_article_version");
         builder.HasOne<EditorialArticleRow>().WithMany()
             .HasForeignKey(x => new { x.InstallationId, x.ArticleId })
             .HasPrincipalKey(x => new { x.InstallationId, x.Id })

@@ -15,4 +15,6 @@ public sealed class EditorialRevisionRow
     public required string PublicUrl { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? PublishedAt { get; set; }
+    /// <summary>Versión congelada cuando se publicó; editar otro borrador no la modifica.</summary>
+    public long? PublishedArticleVersion { get; set; }
 }
