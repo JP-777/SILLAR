@@ -9,6 +9,15 @@ namespace Sillar.Modules.Payments.Tests;
 /// <summary>Construcción y composición aislada del módulo M11.</summary>
 public sealed class PaymentsModuleTests
 {
+    private static IConfiguration Configuration()
+        => new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:Default"] =
+                    "Host=localhost;Database=sillar_tests;Username=sillar;Password=sillar"
+            })
+            .Build();
+
     [Fact]
     public void Manifiesto_declara_core_y_sales_como_dependencias_duras()
     {
@@ -25,7 +34,7 @@ public sealed class PaymentsModuleTests
     public void Registro_expone_la_frontera_interna_de_analisis()
     {
         var services = new ServiceCollection();
-        var configuration = new ConfigurationBuilder().Build();
+        var configuration = Configuration();
 
         new PaymentsModule().RegisterServices(services, configuration);
 
@@ -52,7 +61,7 @@ public sealed class PaymentsModuleTests
 
         new PaymentsModule().RegisterServices(
             services,
-            new ConfigurationBuilder().Build());
+            Configuration());
 
         Assert.DoesNotContain(
             services,

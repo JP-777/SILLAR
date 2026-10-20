@@ -3,6 +3,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sillar.Modules.Payments.Application;
 using Sillar.Modules.Payments.Application.Contracts;
+using Sillar.Modules.Payments.Infrastructure.Persistence;
+using Sillar.Shared.Data.Modularity;
 using Sillar.Shared.Modularity;
 
 namespace Sillar.Modules.Payments;
@@ -15,6 +17,8 @@ namespace Sillar.Modules.Payments;
 public sealed class PaymentsModule : IModule
 {
     public const string ModuleCode = "payments";
+
+    public const string ConnectionStringName = "Default";
 
     public string Code => ModuleCode;
 
@@ -38,6 +42,18 @@ public sealed class PaymentsModule : IModule
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
+
+        var connectionString =
+            configuration.GetConnectionString(ConnectionStringName)
+            ?? throw new InvalidOperationException(
+                $"Falta la cadena de conexión '{ConnectionStringName}'.");
+
+        services.AddDbContext<PaymentsDbContext>(options =>
+            PersistenciaDeModulo.Configurar(
+                options,
+                connectionString,
+                PaymentsDbContext.Schema,
+                PaymentsDbContext.MigrationsHistoryTable));
 
         services.AddScoped<
             IProviderSettlementAnalysisService,
