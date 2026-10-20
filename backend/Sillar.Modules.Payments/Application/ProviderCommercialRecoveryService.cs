@@ -4,7 +4,7 @@ namespace Sillar.Modules.Payments.Application;
 
 /// <summary>
 /// Modela reintentos controlados sin afirmar efecto comercial hasta recibir una
-/// acreditación explícita del puerto simulado/futuro.
+/// aplicación explícita del puerto simulado/futuro.
 /// </summary>
 internal sealed class ProviderCommercialRecoveryService(
     IProviderCommercialEffectPort port)
@@ -24,8 +24,10 @@ internal sealed class ProviderCommercialRecoveryService(
                 "El intento exige instante y demora de reintento positiva.");
         }
 
-        if (current.State is ProviderCommercialRecoveryState.Accredited
-            or ProviderCommercialRecoveryState.Rejected)
+        if (current.State is ProviderCommercialRecoveryState.Applied
+            or ProviderCommercialRecoveryState.AlreadyApplied
+            or ProviderCommercialRecoveryState.Conflict
+            or ProviderCommercialRecoveryState.DecisionRequired)
         {
             throw new InvalidOperationException(
                 "Un resultado terminal no puede reintentarse.");
@@ -48,19 +50,37 @@ internal sealed class ProviderCommercialRecoveryService(
         var attempts = checked(current.Attempts + 1);
         return result.Outcome switch
         {
-            ProviderCommercialEffectOutcome.Accredited => new(
-                ProviderCommercialRecoveryState.Accredited,
+            ProviderCommercialEffectOutcome.Applied => new(
+                ProviderCommercialRecoveryState.Applied,
                 attempts,
                 result.Reference,
                 null,
                 attemptedAt,
-                null),
-            ProviderCommercialEffectOutcome.Rejected => new(
-                ProviderCommercialRecoveryState.Rejected,
+                null,
+                result.OrderWasExpired),
+            ProviderCommercialEffectOutcome.AlreadyApplied => new(
+                ProviderCommercialRecoveryState.AlreadyApplied,
+                attempts,
+                result.Reference,
+                null,
+                attemptedAt,
+                null,
+                result.OrderWasExpired),
+            ProviderCommercialEffectOutcome.Conflict => new(
+                ProviderCommercialRecoveryState.Conflict,
                 attempts,
                 null,
                 result.Reason,
                 attemptedAt,
+                null,
+                null),
+            ProviderCommercialEffectOutcome.DecisionRequired => new(
+                ProviderCommercialRecoveryState.DecisionRequired,
+                attempts,
+                null,
+                result.Reason,
+                attemptedAt,
+                null,
                 null),
             ProviderCommercialEffectOutcome.Indeterminate => new(
                 ProviderCommercialRecoveryState.Indeterminate,
@@ -68,7 +88,8 @@ internal sealed class ProviderCommercialRecoveryService(
                 null,
                 result.Reason,
                 attemptedAt,
-                attemptedAt.Add(retryDelay)),
+                attemptedAt.Add(retryDelay),
+                null),
             _ => throw new InvalidOperationException(
                 "El resultado comercial no tiene transición.")
         };

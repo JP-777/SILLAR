@@ -35,36 +35,44 @@ internal static class ProviderInboxStates
 {
     internal const string PendingReview = "pending_review";
     internal const string Held = "held";
-    internal const string Rejected = "rejected";
     internal const string Ready = "ready";
     internal const string Processing = "processing";
     internal const string Indeterminate = "indeterminate";
     internal const string Completed = "completed";
 
     internal static readonly string[] All =
-        [PendingReview, Held, Rejected, Ready, Processing, Indeterminate, Completed];
+        [PendingReview, Held, Ready, Processing, Indeterminate, Completed];
 }
 
 internal static class ProviderCommercialEffectStates
 {
     internal const string NotRequested = "not_requested";
     internal const string Indeterminate = "indeterminate";
-    internal const string Rejected = "rejected";
-    internal const string Accredited = "accredited";
+    internal const string Conflict = "conflict";
+    internal const string DecisionRequired = "decision_required";
+    internal const string Applied = "applied";
+    internal const string AlreadyApplied = "already_applied";
 
     internal static readonly string[] All =
-        [NotRequested, Indeterminate, Rejected, Accredited];
+    [
+        NotRequested,
+        Indeterminate,
+        Conflict,
+        DecisionRequired,
+        Applied,
+        AlreadyApplied
+    ];
 }
 
 internal static class ProviderAttemptOutcomes
 {
     internal const string Running = "running";
     internal const string Succeeded = "succeeded";
-    internal const string Failed = "failed";
+    internal const string Held = "held";
     internal const string Indeterminate = "indeterminate";
 
     internal static readonly string[] All =
-        [Running, Succeeded, Failed, Indeterminate];
+        [Running, Succeeded, Held, Indeterminate];
 }
 
 internal static class ProviderPersistenceGuard

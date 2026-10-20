@@ -191,7 +191,9 @@ public sealed class ProviderOrchestrationTests
     {
         var port = new SequencedCommercialPort(
             ProviderCommercialEffectResult.Indeterminate("response_lost"),
-            ProviderCommercialEffectResult.Accredited("commercial-ref-001"));
+            ProviderCommercialEffectResult.Applied(
+                "commercial-ref-001",
+                false));
         var service = new ProviderCommercialRecoveryService(port);
         var evidence = PaymentTestData.Evidence();
         var candidate = ProviderCommercialEffectCandidate.From(
@@ -209,7 +211,7 @@ public sealed class ProviderOrchestrationTests
         Assert.Equal(
             ProviderCommercialRecoveryState.Indeterminate,
             uncertain.State);
-        Assert.Null(uncertain.AccreditedReference);
+        Assert.Null(uncertain.CommercialReference);
         Assert.Equal(now.AddMinutes(1), uncertain.NextAttemptAt);
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
@@ -220,7 +222,7 @@ public sealed class ProviderOrchestrationTests
                 TimeSpan.FromMinutes(2),
                 CancellationToken));
 
-        var accredited = await service.AttemptAsync(
+        var applied = await service.AttemptAsync(
             candidate,
             uncertain,
             now.AddMinutes(1),
@@ -228,36 +230,40 @@ public sealed class ProviderOrchestrationTests
             CancellationToken);
 
         Assert.Equal(
-            ProviderCommercialRecoveryState.Accredited,
-            accredited.State);
-        Assert.Equal("commercial-ref-001", accredited.AccreditedReference);
-        Assert.Equal(2, accredited.Attempts);
-        Assert.Null(accredited.NextAttemptAt);
+            ProviderCommercialRecoveryState.Applied,
+            applied.State);
+        Assert.Equal("commercial-ref-001", applied.CommercialReference);
+        Assert.False(applied.OrderWasExpired);
+        Assert.Equal(2, applied.Attempts);
+        Assert.Null(applied.NextAttemptAt);
     }
 
     [Fact]
-    public async Task Rechazo_comercial_es_terminal_y_no_se_reintenta()
+    public async Task Decision_pendiente_es_terminal_y_no_se_reintenta()
     {
         var service = new ProviderCommercialRecoveryService(
             new SequencedCommercialPort(
-                ProviderCommercialEffectResult.Rejected("not_payable")));
+                ProviderCommercialEffectResult.DecisionRequired(
+                    "expired_order_policy_pending")));
         var candidate = ProviderCommercialEffectCandidate.From(
             Guid.CreateVersion7(),
             PaymentTestData.Evidence());
-        var rejected = await service.AttemptAsync(
+        var held = await service.AttemptAsync(
             candidate,
             ProviderCommercialRecoverySnapshot.Initial,
             PaymentTestData.VerifiedAt,
             TimeSpan.FromMinutes(1),
             CancellationToken);
 
-        Assert.Equal(ProviderCommercialRecoveryState.Rejected, rejected.State);
-        Assert.Null(rejected.AccreditedReference);
-        Assert.Equal("not_payable", rejected.LastReason);
+        Assert.Equal(
+            ProviderCommercialRecoveryState.DecisionRequired,
+            held.State);
+        Assert.Null(held.CommercialReference);
+        Assert.Equal("expired_order_policy_pending", held.LastReason);
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await service.AttemptAsync(
                 candidate,
-                rejected,
+                held,
                 PaymentTestData.VerifiedAt.AddMinutes(1),
                 TimeSpan.FromMinutes(1),
                 CancellationToken));

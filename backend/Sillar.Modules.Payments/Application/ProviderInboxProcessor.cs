@@ -59,14 +59,26 @@ internal sealed class ProviderInboxProcessor(
 
         var completion = result.Outcome switch
         {
-            ProviderCommercialEffectOutcome.Accredited =>
-                ProviderInboxCompletion.Accredited(
+            ProviderCommercialEffectOutcome.Applied =>
+                ProviderInboxCompletion.Applied(
                     inboxEventId,
                     leaseToken,
                     attemptedAt,
                     result.Reference),
-            ProviderCommercialEffectOutcome.Rejected =>
-                ProviderInboxCompletion.Rejected(
+            ProviderCommercialEffectOutcome.AlreadyApplied =>
+                ProviderInboxCompletion.AlreadyApplied(
+                    inboxEventId,
+                    leaseToken,
+                    attemptedAt,
+                    result.Reference),
+            ProviderCommercialEffectOutcome.Conflict =>
+                ProviderInboxCompletion.Conflict(
+                    inboxEventId,
+                    leaseToken,
+                    attemptedAt,
+                    result.Reason),
+            ProviderCommercialEffectOutcome.DecisionRequired =>
+                ProviderInboxCompletion.DecisionRequired(
                     inboxEventId,
                     leaseToken,
                     attemptedAt,
@@ -97,7 +109,8 @@ internal sealed class ProviderInboxProcessor(
             MapCommercialOutcome(result.Outcome),
             leaseToken,
             claimed.AttemptCount,
-            result.Reason ?? result.Reference);
+            result.Reason ?? result.Reference,
+            result.OrderWasExpired);
     }
 
     public ValueTask<bool> TryReleaseAfterReviewAsync(
@@ -148,10 +161,14 @@ internal sealed class ProviderInboxProcessor(
         ProviderCommercialEffectOutcome outcome)
         => outcome switch
         {
-            ProviderCommercialEffectOutcome.Accredited =>
-                ProviderInboxProcessOutcome.Accredited,
-            ProviderCommercialEffectOutcome.Rejected =>
-                ProviderInboxProcessOutcome.Rejected,
+            ProviderCommercialEffectOutcome.Applied =>
+                ProviderInboxProcessOutcome.Applied,
+            ProviderCommercialEffectOutcome.AlreadyApplied =>
+                ProviderInboxProcessOutcome.AlreadyApplied,
+            ProviderCommercialEffectOutcome.Conflict =>
+                ProviderInboxProcessOutcome.Conflict,
+            ProviderCommercialEffectOutcome.DecisionRequired =>
+                ProviderInboxProcessOutcome.DecisionRequired,
             ProviderCommercialEffectOutcome.Indeterminate =>
                 ProviderInboxProcessOutcome.Indeterminate,
             _ => throw new InvalidOperationException(

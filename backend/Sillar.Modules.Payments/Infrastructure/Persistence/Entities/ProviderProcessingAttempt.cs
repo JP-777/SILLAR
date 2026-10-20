@@ -51,7 +51,7 @@ internal sealed class ProviderProcessingAttempt
         }
 
         if (outcome is not ProviderAttemptOutcomes.Succeeded
-            and not ProviderAttemptOutcomes.Failed
+            and not ProviderAttemptOutcomes.Held
             and not ProviderAttemptOutcomes.Indeterminate)
         {
             throw new ArgumentOutOfRangeException(nameof(outcome));

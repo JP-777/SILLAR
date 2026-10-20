@@ -16,14 +16,15 @@ internal sealed class ProviderProcessingAttemptConfiguration
                 "attempt_number > 0");
             table.HasCheckConstraint(
                 "ck_payment_attempt_outcome",
-                "outcome IN ('running','succeeded','failed','indeterminate')");
+                "outcome IN ('running','succeeded','held','indeterminate')");
             table.HasCheckConstraint(
                 "ck_payment_attempt_completion",
                 "(outcome = 'running' AND completed_at IS NULL " +
                 "AND failure_code IS NULL) OR " +
                 "(outcome = 'succeeded' AND completed_at IS NOT NULL " +
                 "AND failure_code IS NULL) OR " +
-                "(outcome IN ('failed','indeterminate') AND completed_at IS NOT NULL " +
+                "(outcome IN ('held','indeterminate') " +
+                "AND completed_at IS NOT NULL " +
                 "AND failure_code IS NOT NULL AND btrim(failure_code) <> '')");
             table.HasCheckConstraint(
                 "ck_payment_attempt_times",

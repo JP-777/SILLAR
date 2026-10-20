@@ -153,7 +153,7 @@ public sealed class PaymentsPersistenceTests
         Assert.Contains(
             inbox.GetCheckConstraints(),
             check => check.Name == "ck_payment_inbox_commercial_reference"
-                && check.Sql.Contains("accredited", StringComparison.Ordinal));
+                && check.Sql.Contains("already_applied", StringComparison.Ordinal));
         Assert.Contains(
             receipt.GetCheckConstraints(),
             check => check.Name == "ck_payment_receipts_state_alignment"
@@ -172,9 +172,9 @@ public sealed class PaymentsPersistenceTests
                     StringComparison.Ordinal));
         Assert.Contains(
             inbox.GetCheckConstraints(),
-            check => check.Name == "ck_payment_inbox_rejection"
+            check => check.Name == "ck_payment_inbox_commercial_hold"
                 && check.Sql.Contains(
-                    "commercial_effect_state = 'rejected'",
+                    "'conflict','decision_required'",
                     StringComparison.Ordinal));
     }
 
@@ -279,8 +279,9 @@ public sealed class PaymentsPersistenceTests
         inbox.BeginAttempt(lease, now.AddMinutes(1), now.AddSeconds(2));
 
         Assert.Throws<InvalidOperationException>(() =>
-            inbox.MarkCommercialEffectAccredited(
+            inbox.MarkCommercialEffectApplied(
                 Guid.CreateVersion7(),
+                ProviderCommercialEffectStates.Applied,
                 "commercial-ref",
                 now.AddSeconds(3)));
 
@@ -295,6 +296,31 @@ public sealed class PaymentsPersistenceTests
             ProviderCommercialEffectStates.Indeterminate,
             inbox.CommercialEffectState);
         Assert.Null(inbox.CommercialEffectReference);
+    }
+
+    [Theory]
+    [InlineData(ProviderCommercialEffectStates.Applied)]
+    [InlineData(ProviderCommercialEffectStates.AlreadyApplied)]
+    public void Resultado_aplicado_conserva_su_semantica_exacta(
+        string effectState)
+    {
+        var now = PaymentTestData.VerifiedAt;
+        var inbox = ProviderInboxEvent.Create(PaymentTestData.Evidence(), now);
+        var lease = Guid.CreateVersion7();
+        inbox.MarkReady(now.AddSeconds(1));
+        inbox.BeginAttempt(lease, now.AddMinutes(1), now.AddSeconds(2));
+
+        inbox.MarkCommercialEffectApplied(
+            lease,
+            effectState,
+            "commercial-reference",
+            now.AddSeconds(3));
+
+        Assert.Equal(ProviderInboxStates.Completed, inbox.ProcessingState);
+        Assert.Equal(effectState, inbox.CommercialEffectState);
+        Assert.Equal("commercial-reference", inbox.CommercialEffectReference);
+        Assert.Null(inbox.LastFailureCode);
+        Assert.Null(inbox.LeaseToken);
     }
 
     [Fact]
@@ -370,8 +396,11 @@ public sealed class PaymentsPersistenceTests
         Assert.Null(inbox.CommercialEffectReference);
     }
 
-    [Fact]
-    public void Rechazo_comercial_es_distinto_de_no_haber_solicitado_efecto()
+    [Theory]
+    [InlineData(ProviderCommercialEffectStates.Conflict)]
+    [InlineData(ProviderCommercialEffectStates.DecisionRequired)]
+    public void Resultado_comercial_no_aplicado_queda_en_hold_sin_reintento(
+        string effectState)
     {
         var now = PaymentTestData.VerifiedAt;
         var inbox = ProviderInboxEvent.Create(PaymentTestData.Evidence(), now);
@@ -379,14 +408,19 @@ public sealed class PaymentsPersistenceTests
         inbox.MarkReady(now.AddSeconds(1));
         inbox.BeginAttempt(lease, now.AddMinutes(1), now.AddSeconds(2));
 
-        inbox.MarkRejected(lease, "commercial_rejection", now.AddSeconds(3));
+        inbox.MarkCommercialHold(
+            lease,
+            effectState,
+            "commercial_authority_required",
+            now.AddSeconds(3));
 
-        Assert.Equal(ProviderInboxStates.Rejected, inbox.ProcessingState);
-        Assert.Equal(
-            ProviderCommercialEffectStates.Rejected,
-            inbox.CommercialEffectState);
+        Assert.Equal(ProviderInboxStates.Held, inbox.ProcessingState);
+        Assert.Equal(effectState, inbox.CommercialEffectState);
+        Assert.Equal("commercial_authority_required", inbox.HoldReason);
+        Assert.Equal("commercial_authority_required", inbox.LastFailureCode);
         Assert.Null(inbox.CommercialEffectReference);
-        Assert.Equal("commercial_rejection", inbox.LastFailureCode);
+        Assert.Null(inbox.NextAttemptAt);
+        Assert.Null(inbox.LeaseToken);
     }
 
     [Fact]

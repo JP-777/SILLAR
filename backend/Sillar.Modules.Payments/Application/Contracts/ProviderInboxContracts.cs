@@ -6,7 +6,6 @@ internal enum ProviderInboxProcessingState
 {
     PendingReview,
     Held,
-    Rejected,
     Ready,
     Processing,
     Indeterminate,
@@ -17,8 +16,10 @@ internal enum ProviderInboxCommercialState
 {
     NotRequested,
     Indeterminate,
-    Rejected,
-    Accredited
+    Conflict,
+    DecisionRequired,
+    Applied,
+    AlreadyApplied
 }
 
 internal sealed record ProviderInboxStatus(
@@ -69,8 +70,10 @@ internal sealed record ProviderInboxClaim(
 
 internal enum ProviderInboxCompletionOutcome
 {
-    Accredited,
-    Rejected,
+    Applied,
+    AlreadyApplied,
+    Conflict,
+    DecisionRequired,
     Indeterminate
 }
 
@@ -102,7 +105,7 @@ internal sealed record ProviderInboxCompletion
     internal string? Reference { get; }
     internal string? Reason { get; }
 
-    internal static ProviderInboxCompletion Accredited(
+    internal static ProviderInboxCompletion Applied(
         Guid inboxEventId,
         Guid leaseToken,
         DateTimeOffset completedAt,
@@ -110,13 +113,27 @@ internal sealed record ProviderInboxCompletion
         => Create(
             inboxEventId,
             leaseToken,
-            ProviderInboxCompletionOutcome.Accredited,
+            ProviderInboxCompletionOutcome.Applied,
             completedAt,
             null,
             reference,
             null);
 
-    internal static ProviderInboxCompletion Rejected(
+    internal static ProviderInboxCompletion AlreadyApplied(
+        Guid inboxEventId,
+        Guid leaseToken,
+        DateTimeOffset completedAt,
+        string? reference)
+        => Create(
+            inboxEventId,
+            leaseToken,
+            ProviderInboxCompletionOutcome.AlreadyApplied,
+            completedAt,
+            null,
+            reference,
+            null);
+
+    internal static ProviderInboxCompletion Conflict(
         Guid inboxEventId,
         Guid leaseToken,
         DateTimeOffset completedAt,
@@ -124,7 +141,21 @@ internal sealed record ProviderInboxCompletion
         => Create(
             inboxEventId,
             leaseToken,
-            ProviderInboxCompletionOutcome.Rejected,
+            ProviderInboxCompletionOutcome.Conflict,
+            completedAt,
+            null,
+            null,
+            reason);
+
+    internal static ProviderInboxCompletion DecisionRequired(
+        Guid inboxEventId,
+        Guid leaseToken,
+        DateTimeOffset completedAt,
+        string? reason)
+        => Create(
+            inboxEventId,
+            leaseToken,
+            ProviderInboxCompletionOutcome.DecisionRequired,
             completedAt,
             null,
             null,
@@ -162,7 +193,8 @@ internal sealed record ProviderInboxCompletion
                 "La finalización exige inbox, lease e instante.");
         }
 
-        if (outcome == ProviderInboxCompletionOutcome.Accredited)
+        if (outcome is ProviderInboxCompletionOutcome.Applied
+            or ProviderInboxCompletionOutcome.AlreadyApplied)
         {
             if (string.IsNullOrWhiteSpace(reference)
                 || retryAt is not null

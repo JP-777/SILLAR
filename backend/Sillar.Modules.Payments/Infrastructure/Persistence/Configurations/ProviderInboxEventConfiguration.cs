@@ -25,12 +25,13 @@ internal sealed class ProviderInboxEventConfiguration
                 "body_sha256 COLLATE \"C\" ~ '^[0-9a-f]{64}$'");
             table.HasCheckConstraint(
                 "ck_payment_inbox_processing_state",
-                "processing_state IN ('pending_review','held','rejected','ready'," +
+                "processing_state IN ('pending_review','held','ready'," +
                 "'processing','indeterminate','completed')");
             table.HasCheckConstraint(
                 "ck_payment_inbox_commercial_effect_state",
                 "commercial_effect_state IN " +
-                "('not_requested','indeterminate','rejected','accredited')");
+                "('not_requested','indeterminate','conflict'," +
+                "'decision_required','applied','already_applied')");
             table.HasCheckConstraint(
                 "ck_payment_inbox_attempt_count",
                 "attempt_count >= 0");
@@ -55,19 +56,18 @@ internal sealed class ProviderInboxEventConfiguration
                 "AND btrim(last_failure_code) <> '') OR " +
                 "(processing_state <> 'indeterminate' AND next_attempt_at IS NULL)");
             table.HasCheckConstraint(
-                "ck_payment_inbox_rejection",
-                "(processing_state = 'rejected' " +
-                "AND commercial_effect_state = 'rejected' " +
+                "ck_payment_inbox_commercial_hold",
+                "(commercial_effect_state IN ('conflict','decision_required') " +
+                "AND processing_state = 'held' " +
                 "AND last_failure_code IS NOT NULL " +
                 "AND btrim(last_failure_code) <> '') OR " +
-                "(processing_state <> 'rejected' " +
-                "AND commercial_effect_state <> 'rejected')");
+                "commercial_effect_state NOT IN ('conflict','decision_required')");
             table.HasCheckConstraint(
-                "ck_payment_inbox_accreditation",
+                "ck_payment_inbox_application",
                 "(processing_state = 'completed' " +
-                "AND commercial_effect_state = 'accredited') OR " +
+                "AND commercial_effect_state IN ('applied','already_applied')) OR " +
                 "(processing_state <> 'completed' " +
-                "AND (commercial_effect_state <> 'accredited' " +
+                "AND (commercial_effect_state NOT IN ('applied','already_applied') " +
                 "OR processing_state = 'held'))");
             table.HasCheckConstraint(
                 "ck_payment_inbox_hold_reason",
@@ -76,10 +76,10 @@ internal sealed class ProviderInboxEventConfiguration
                 "(processing_state <> 'held' AND hold_reason IS NULL)");
             table.HasCheckConstraint(
                 "ck_payment_inbox_commercial_reference",
-                "(commercial_effect_state = 'accredited' " +
+                "(commercial_effect_state IN ('applied','already_applied') " +
                 "AND commercial_effect_reference IS NOT NULL " +
                 "AND btrim(commercial_effect_reference) <> '') OR " +
-                "(commercial_effect_state <> 'accredited' " +
+                "(commercial_effect_state NOT IN ('applied','already_applied') " +
                 "AND commercial_effect_reference IS NULL)");
         });
 

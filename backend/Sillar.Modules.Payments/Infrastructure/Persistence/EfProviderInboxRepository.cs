@@ -230,9 +230,10 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
 
         switch (completion.Outcome)
         {
-            case ProviderInboxCompletionOutcome.Accredited:
-                entity.MarkCommercialEffectAccredited(
+            case ProviderInboxCompletionOutcome.Applied:
+                entity.MarkCommercialEffectApplied(
                     completion.LeaseToken,
+                    ProviderCommercialEffectStates.Applied,
                     completion.Reference,
                     completion.CompletedAt);
                 attempt.Complete(
@@ -240,13 +241,36 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
                     completion.CompletedAt,
                     null);
                 break;
-            case ProviderInboxCompletionOutcome.Rejected:
-                entity.MarkRejected(
+            case ProviderInboxCompletionOutcome.AlreadyApplied:
+                entity.MarkCommercialEffectApplied(
                     completion.LeaseToken,
+                    ProviderCommercialEffectStates.AlreadyApplied,
+                    completion.Reference,
+                    completion.CompletedAt);
+                attempt.Complete(
+                    ProviderAttemptOutcomes.Succeeded,
+                    completion.CompletedAt,
+                    null);
+                break;
+            case ProviderInboxCompletionOutcome.Conflict:
+                entity.MarkCommercialHold(
+                    completion.LeaseToken,
+                    ProviderCommercialEffectStates.Conflict,
                     completion.Reason,
                     completion.CompletedAt);
                 attempt.Complete(
-                    ProviderAttemptOutcomes.Failed,
+                    ProviderAttemptOutcomes.Held,
+                    completion.CompletedAt,
+                    completion.Reason);
+                break;
+            case ProviderInboxCompletionOutcome.DecisionRequired:
+                entity.MarkCommercialHold(
+                    completion.LeaseToken,
+                    ProviderCommercialEffectStates.DecisionRequired,
+                    completion.Reason,
+                    completion.CompletedAt);
+                attempt.Complete(
+                    ProviderAttemptOutcomes.Held,
                     completion.CompletedAt,
                     completion.Reason);
                 break;
@@ -477,7 +501,6 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
             ProviderInboxStates.PendingReview =>
                 ProviderInboxProcessingState.PendingReview,
             ProviderInboxStates.Held => ProviderInboxProcessingState.Held,
-            ProviderInboxStates.Rejected => ProviderInboxProcessingState.Rejected,
             ProviderInboxStates.Ready => ProviderInboxProcessingState.Ready,
             ProviderInboxStates.Processing => ProviderInboxProcessingState.Processing,
             ProviderInboxStates.Indeterminate =>
@@ -494,10 +517,14 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
                 ProviderInboxCommercialState.NotRequested,
             ProviderCommercialEffectStates.Indeterminate =>
                 ProviderInboxCommercialState.Indeterminate,
-            ProviderCommercialEffectStates.Rejected =>
-                ProviderInboxCommercialState.Rejected,
-            ProviderCommercialEffectStates.Accredited =>
-                ProviderInboxCommercialState.Accredited,
+            ProviderCommercialEffectStates.Conflict =>
+                ProviderInboxCommercialState.Conflict,
+            ProviderCommercialEffectStates.DecisionRequired =>
+                ProviderInboxCommercialState.DecisionRequired,
+            ProviderCommercialEffectStates.Applied =>
+                ProviderInboxCommercialState.Applied,
+            ProviderCommercialEffectStates.AlreadyApplied =>
+                ProviderInboxCommercialState.AlreadyApplied,
             _ => throw new InvalidOperationException(
                 "El inbox contiene un estado comercial desconocido.")
         };

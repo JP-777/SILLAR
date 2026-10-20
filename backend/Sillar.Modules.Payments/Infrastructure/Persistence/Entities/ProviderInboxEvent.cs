@@ -148,15 +148,24 @@ internal sealed class ProviderInboxEvent
         Touch(changedAt);
     }
 
-    internal void MarkCommercialEffectAccredited(
+    internal void MarkCommercialEffectApplied(
         Guid leaseToken,
+        string effectState,
         string? reference,
         DateTimeOffset changedAt)
     {
         ValidateChangeInstant(changedAt);
         EnsureLease(leaseToken);
+        if (effectState is not ProviderCommercialEffectStates.Applied
+            and not ProviderCommercialEffectStates.AlreadyApplied)
+        {
+            throw new ArgumentException(
+                "La confirmación exige Applied o AlreadyApplied.",
+                nameof(effectState));
+        }
+
         ProcessingState = ProviderInboxStates.Completed;
-        CommercialEffectState = ProviderCommercialEffectStates.Accredited;
+        CommercialEffectState = effectState;
         CommercialEffectReference = ProviderPersistenceGuard.OpaqueRequired(
             reference, nameof(reference));
         LastFailureCode = null;
@@ -165,18 +174,28 @@ internal sealed class ProviderInboxEvent
         Touch(changedAt);
     }
 
-    internal void MarkRejected(
+    internal void MarkCommercialHold(
         Guid leaseToken,
-        string? failureCode,
+        string effectState,
+        string? reason,
         DateTimeOffset changedAt)
     {
         ValidateChangeInstant(changedAt);
         EnsureLease(leaseToken);
-        ProcessingState = ProviderInboxStates.Rejected;
-        CommercialEffectState = ProviderCommercialEffectStates.Rejected;
+        if (effectState is not ProviderCommercialEffectStates.Conflict
+            and not ProviderCommercialEffectStates.DecisionRequired)
+        {
+            throw new ArgumentException(
+                "El HOLD comercial exige conflicto o decisión pendiente.",
+                nameof(effectState));
+        }
+
+        ProcessingState = ProviderInboxStates.Held;
+        CommercialEffectState = effectState;
         CommercialEffectReference = null;
         LastFailureCode = ProviderPersistenceGuard.OpaqueRequired(
-            failureCode, nameof(failureCode));
+            reason, nameof(reason));
+        HoldReason = reason;
         NextAttemptAt = null;
         ClearLease();
         Touch(changedAt);

@@ -6,11 +6,44 @@ namespace Sillar.Modules.Payments.Tests;
 public sealed class ProviderInboxProcessorTests
 {
     [Fact]
+    public void Cinco_resultados_comerciales_no_comparten_semantica()
+    {
+        var applied = ProviderCommercialEffectResult.Applied("ref-a", false);
+        var replay = ProviderCommercialEffectResult.AlreadyApplied("ref-a", true);
+        var conflict = ProviderCommercialEffectResult.Conflict("divergent_facts");
+        var decision = ProviderCommercialEffectResult.DecisionRequired(
+            "commercial_policy_pending");
+        var uncertain = ProviderCommercialEffectResult.Indeterminate(
+            "response_lost");
+
+        Assert.Equal(ProviderCommercialEffectOutcome.Applied, applied.Outcome);
+        Assert.False(applied.OrderWasExpired);
+        Assert.Equal(
+            ProviderCommercialEffectOutcome.AlreadyApplied,
+            replay.Outcome);
+        Assert.True(replay.OrderWasExpired);
+        Assert.Equal(ProviderCommercialEffectOutcome.Conflict, conflict.Outcome);
+        Assert.Equal(
+            ProviderCommercialEffectOutcome.DecisionRequired,
+            decision.Outcome);
+        Assert.Equal(
+            ProviderCommercialEffectOutcome.Indeterminate,
+            uncertain.Outcome);
+        Assert.All(
+            [conflict, decision, uncertain],
+            result => Assert.Null(result.Reference));
+        Assert.Throws<ArgumentException>(() =>
+            ProviderCommercialEffectResult.Applied(" ", false));
+        Assert.Throws<ArgumentException>(() =>
+            ProviderCommercialEffectResult.Conflict(null));
+    }
+
+    [Fact]
     public async Task Dos_procesadores_solo_obtienen_un_lease_y_un_intento_comercial()
     {
         var repository = new MemoryInboxRepository(ReadyStatus());
         var port = new SequencedPort(
-            ProviderCommercialEffectResult.Accredited("simulated-reference"));
+            ProviderCommercialEffectResult.Applied("simulated-reference", false));
         var processor = new ProviderInboxProcessor(repository, port);
         var now = PaymentTestData.VerifiedAt.AddMinutes(1);
 
@@ -30,7 +63,7 @@ public sealed class ProviderInboxProcessorTests
 
         Assert.Single(
             attempts,
-            item => item.Outcome == ProviderInboxProcessOutcome.Accredited);
+            item => item.Outcome == ProviderInboxProcessOutcome.Applied);
         Assert.Single(
             attempts,
             item => item.Outcome == ProviderInboxProcessOutcome.NotReady);
@@ -47,7 +80,7 @@ public sealed class ProviderInboxProcessorTests
         var repository = new MemoryInboxRepository(ReadyStatus());
         var port = new SequencedPort(
             ProviderCommercialEffectResult.Indeterminate("timeout"),
-            ProviderCommercialEffectResult.Accredited("simulated-reference"));
+            ProviderCommercialEffectResult.Applied("simulated-reference", false));
         var processor = new ProviderInboxProcessor(repository, port);
         var now = PaymentTestData.VerifiedAt.AddMinutes(1);
 
@@ -72,21 +105,21 @@ public sealed class ProviderInboxProcessorTests
 
         Assert.Equal(ProviderInboxProcessOutcome.Indeterminate, first.Outcome);
         Assert.Equal(ProviderInboxProcessOutcome.NotReady, early.Outcome);
-        Assert.Equal(ProviderInboxProcessOutcome.Accredited, retry.Outcome);
+        Assert.Equal(ProviderInboxProcessOutcome.Applied, retry.Outcome);
         Assert.Equal(2, port.Calls);
         Assert.Equal(2, repository.Status.AttemptCount);
     }
 
     [Fact]
-    public async Task Rechazo_comercial_es_terminal_y_distinto_de_incertidumbre()
+    public async Task Conflicto_comercial_queda_en_hold_y_es_terminal()
     {
         var repository = new MemoryInboxRepository(ReadyStatus());
         var port = new SequencedPort(
-            ProviderCommercialEffectResult.Rejected("candidate_invalid"));
+            ProviderCommercialEffectResult.Conflict("candidate_divergent"));
         var processor = new ProviderInboxProcessor(repository, port);
         var now = PaymentTestData.VerifiedAt.AddMinutes(1);
 
-        var rejected = await processor.ProcessAsync(
+        var conflict = await processor.ProcessAsync(
             repository.Status.InboxEventId,
             now,
             TimeSpan.FromMinutes(1),
@@ -99,14 +132,43 @@ public sealed class ProviderInboxProcessorTests
             TimeSpan.FromMinutes(2),
             CancellationToken);
 
-        Assert.Equal(ProviderInboxProcessOutcome.Rejected, rejected.Outcome);
+        Assert.Equal(ProviderInboxProcessOutcome.Conflict, conflict.Outcome);
         Assert.Equal(ProviderInboxProcessOutcome.NotReady, replay.Outcome);
         Assert.Equal(
-            ProviderInboxCommercialState.Rejected,
+            ProviderInboxCommercialState.Conflict,
             repository.Status.CommercialState);
-        Assert.Equal("candidate_invalid", repository.Status.LastFailureCode);
+        Assert.Equal("candidate_divergent", repository.Status.LastFailureCode);
         Assert.Null(repository.Status.NextAttemptAt);
         Assert.Equal(1, port.Calls);
+    }
+
+    [Fact]
+    public async Task Decision_requerida_queda_en_hold_y_no_simula_aplicacion()
+    {
+        var repository = new MemoryInboxRepository(ReadyStatus());
+        var port = new SequencedPort(
+            ProviderCommercialEffectResult.DecisionRequired(
+                "expired_order_policy_pending"));
+        var processor = new ProviderInboxProcessor(repository, port);
+
+        var result = await processor.ProcessAsync(
+            repository.Status.InboxEventId,
+            PaymentTestData.VerifiedAt.AddMinutes(1),
+            TimeSpan.FromMinutes(1),
+            TimeSpan.FromMinutes(2),
+            CancellationToken);
+
+        Assert.Equal(
+            ProviderInboxProcessOutcome.DecisionRequired,
+            result.Outcome);
+        Assert.Equal(
+            ProviderInboxProcessingState.Held,
+            repository.Status.ProcessingState);
+        Assert.Equal(
+            ProviderInboxCommercialState.DecisionRequired,
+            repository.Status.CommercialState);
+        Assert.Null(repository.Status.CommercialEffectReference);
+        Assert.Null(repository.Status.NextAttemptAt);
     }
 
     [Fact]
@@ -119,7 +181,7 @@ public sealed class ProviderInboxProcessorTests
         var processor = new ProviderInboxProcessor(
             repository,
             new SequencedPort(
-                ProviderCommercialEffectResult.Accredited("unpersisted")));
+                ProviderCommercialEffectResult.Applied("unpersisted", false)));
 
         var result = await processor.ProcessAsync(
             repository.Status.InboxEventId,
@@ -132,7 +194,7 @@ public sealed class ProviderInboxProcessorTests
             ProviderInboxProcessOutcome.ConfirmationNotPersisted,
             result.Outcome);
         Assert.NotEqual(
-            ProviderInboxCommercialState.Accredited,
+            ProviderInboxCommercialState.Applied,
             repository.Status.CommercialState);
     }
 
@@ -196,7 +258,7 @@ public sealed class ProviderInboxProcessorTests
             TimeSpan.FromMinutes(2),
             CancellationToken));
 
-        var lateConfirmation = ProviderInboxCompletion.Accredited(
+        var lateConfirmation = ProviderInboxCompletion.Applied(
             repository.Status.InboxEventId,
             expiredLease,
             now.AddMinutes(1).AddSeconds(1),
@@ -205,11 +267,13 @@ public sealed class ProviderInboxProcessorTests
             lateConfirmation,
             CancellationToken));
         Assert.NotEqual(
-            ProviderInboxCommercialState.Accredited,
+            ProviderInboxCommercialState.Applied,
             repository.Status.CommercialState);
 
         var retryPort = new SequencedPort(
-            ProviderCommercialEffectResult.Accredited("new-confirmation"));
+            ProviderCommercialEffectResult.AlreadyApplied(
+                "new-confirmation",
+                true));
         var retrying = new ProviderInboxProcessor(repository, retryPort);
         var retry = await retrying.ProcessAsync(
             repository.Status.InboxEventId,
@@ -218,7 +282,8 @@ public sealed class ProviderInboxProcessorTests
             TimeSpan.FromMinutes(2),
             CancellationToken);
 
-        Assert.Equal(ProviderInboxProcessOutcome.Accredited, retry.Outcome);
+        Assert.Equal(ProviderInboxProcessOutcome.AlreadyApplied, retry.Outcome);
+        Assert.True(retry.OrderWasExpired);
         Assert.NotEqual(expiredLease, retry.LeaseToken);
         Assert.Equal("new-confirmation", repository.Status.CommercialEffectReference);
         Assert.Equal(2, repository.Status.AttemptCount);
@@ -264,7 +329,7 @@ public sealed class ProviderInboxProcessorTests
         };
         var repository = new MemoryInboxRepository(held);
         var port = new SequencedPort(
-            ProviderCommercialEffectResult.Accredited("must-not-run"));
+            ProviderCommercialEffectResult.Applied("must-not-run", false));
         var processor = new ProviderInboxProcessor(repository, port);
 
         var released = await processor.TryReleaseAfterReviewAsync(
@@ -429,20 +494,43 @@ public sealed class ProviderInboxProcessorTests
 
                 Status = completion.Outcome switch
                 {
-                    ProviderInboxCompletionOutcome.Accredited => Status with
+                    ProviderInboxCompletionOutcome.Applied => Status with
                     {
                         ProcessingState = ProviderInboxProcessingState.Completed,
-                        CommercialState = ProviderInboxCommercialState.Accredited,
+                        CommercialState = ProviderInboxCommercialState.Applied,
                         CommercialEffectReference = completion.Reference,
                         LastFailureCode = null,
                         LeaseToken = null,
                         LeaseUntil = null,
                         Revision = Status.Revision + 1
                     },
-                    ProviderInboxCompletionOutcome.Rejected => Status with
+                    ProviderInboxCompletionOutcome.AlreadyApplied => Status with
                     {
-                        ProcessingState = ProviderInboxProcessingState.Rejected,
-                        CommercialState = ProviderInboxCommercialState.Rejected,
+                        ProcessingState = ProviderInboxProcessingState.Completed,
+                        CommercialState =
+                            ProviderInboxCommercialState.AlreadyApplied,
+                        CommercialEffectReference = completion.Reference,
+                        LastFailureCode = null,
+                        LeaseToken = null,
+                        LeaseUntil = null,
+                        Revision = Status.Revision + 1
+                    },
+                    ProviderInboxCompletionOutcome.Conflict => Status with
+                    {
+                        ProcessingState = ProviderInboxProcessingState.Held,
+                        CommercialState = ProviderInboxCommercialState.Conflict,
+                        HoldReason = completion.Reason,
+                        LastFailureCode = completion.Reason,
+                        LeaseToken = null,
+                        LeaseUntil = null,
+                        Revision = Status.Revision + 1
+                    },
+                    ProviderInboxCompletionOutcome.DecisionRequired => Status with
+                    {
+                        ProcessingState = ProviderInboxProcessingState.Held,
+                        CommercialState =
+                            ProviderInboxCommercialState.DecisionRequired,
+                        HoldReason = completion.Reason,
                         LastFailureCode = completion.Reason,
                         LeaseToken = null,
                         LeaseUntil = null,
@@ -520,12 +608,12 @@ public sealed class ProviderInboxProcessorTests
             _attempts[index] = current with
             {
                 CompletedAt = completion.CompletedAt,
-                Outcome = completion.Outcome ==
-                    ProviderInboxCompletionOutcome.Accredited
+                Outcome = completion.Outcome is ProviderInboxCompletionOutcome.Applied
+                        or ProviderInboxCompletionOutcome.AlreadyApplied
                         ? "succeeded"
-                        : completion.Outcome ==
-                            ProviderInboxCompletionOutcome.Rejected
-                            ? "failed"
+                        : completion.Outcome is ProviderInboxCompletionOutcome.Conflict
+                            or ProviderInboxCompletionOutcome.DecisionRequired
+                            ? "held"
                             : "indeterminate",
                 FailureCode = completion.Reason
             };

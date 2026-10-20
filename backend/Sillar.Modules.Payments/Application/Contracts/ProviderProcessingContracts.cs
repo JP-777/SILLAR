@@ -2,8 +2,10 @@ namespace Sillar.Modules.Payments.Application.Contracts;
 
 internal enum ProviderInboxProcessOutcome
 {
-    Accredited,
-    Rejected,
+    Applied,
+    AlreadyApplied,
+    Conflict,
+    DecisionRequired,
     Indeterminate,
     NotFound,
     NotReady,
@@ -15,7 +17,8 @@ internal sealed record ProviderInboxProcessResult(
     ProviderInboxProcessOutcome Outcome,
     Guid? LeaseToken,
     int? AttemptNumber,
-    string? Detail);
+    string? Detail,
+    bool? OrderWasExpired = null);
 
 internal interface IProviderInboxProcessingService
 {

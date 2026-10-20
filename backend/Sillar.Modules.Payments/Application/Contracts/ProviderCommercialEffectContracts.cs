@@ -4,7 +4,8 @@ namespace Sillar.Modules.Payments.Application.Contracts;
 
 /// <summary>
 /// Candidato técnico para un puerto comercial futuro. No es el contrato M03 y
-/// no contiene todavía pedido, importe o moneda.
+/// deliberadamente no autoriza una aplicación: los hechos monetarios y la
+/// autoridad escritora deberán formar parte del contrato ratificado de M03.
 /// </summary>
 internal sealed record ProviderCommercialEffectCandidate(
     Guid InboxEventId,
@@ -26,8 +27,10 @@ internal sealed record ProviderCommercialEffectCandidate(
 
 internal enum ProviderCommercialEffectOutcome
 {
-    Accredited,
-    Rejected,
+    Applied,
+    AlreadyApplied,
+    Conflict,
+    DecisionRequired,
     Indeterminate
 }
 
@@ -36,18 +39,53 @@ internal sealed record ProviderCommercialEffectResult
     private ProviderCommercialEffectResult(
         ProviderCommercialEffectOutcome outcome,
         string? reference,
-        string? reason)
+        string? reason,
+        bool? orderWasExpired)
     {
         Outcome = outcome;
         Reference = reference;
         Reason = reason;
+        OrderWasExpired = orderWasExpired;
     }
 
     internal ProviderCommercialEffectOutcome Outcome { get; }
     internal string? Reference { get; }
     internal string? Reason { get; }
+    internal bool? OrderWasExpired { get; }
 
-    internal static ProviderCommercialEffectResult Accredited(string? reference)
+    internal static ProviderCommercialEffectResult Applied(
+        string? reference,
+        bool orderWasExpired)
+        => Successful(
+            ProviderCommercialEffectOutcome.Applied,
+            reference,
+            orderWasExpired);
+
+    internal static ProviderCommercialEffectResult AlreadyApplied(
+        string? reference,
+        bool orderWasExpired)
+        => Successful(
+            ProviderCommercialEffectOutcome.AlreadyApplied,
+            reference,
+            orderWasExpired);
+
+    internal static ProviderCommercialEffectResult Conflict(string? reason)
+        => WithoutApplication(ProviderCommercialEffectOutcome.Conflict, reason);
+
+    internal static ProviderCommercialEffectResult DecisionRequired(string? reason)
+        => WithoutApplication(
+            ProviderCommercialEffectOutcome.DecisionRequired,
+            reason);
+
+    internal static ProviderCommercialEffectResult Indeterminate(string? reason)
+        => WithoutApplication(
+            ProviderCommercialEffectOutcome.Indeterminate,
+            reason);
+
+    private static ProviderCommercialEffectResult Successful(
+        ProviderCommercialEffectOutcome outcome,
+        string? reference,
+        bool orderWasExpired)
     {
         if (string.IsNullOrWhiteSpace(reference))
         {
@@ -56,18 +94,10 @@ internal sealed record ProviderCommercialEffectResult
                 nameof(reference));
         }
 
-        return new(ProviderCommercialEffectOutcome.Accredited, reference, null);
+        return new(outcome, reference, null, orderWasExpired);
     }
 
-    internal static ProviderCommercialEffectResult Rejected(string? reason)
-        => WithoutAccreditation(ProviderCommercialEffectOutcome.Rejected, reason);
-
-    internal static ProviderCommercialEffectResult Indeterminate(string? reason)
-        => WithoutAccreditation(
-            ProviderCommercialEffectOutcome.Indeterminate,
-            reason);
-
-    private static ProviderCommercialEffectResult WithoutAccreditation(
+    private static ProviderCommercialEffectResult WithoutApplication(
         ProviderCommercialEffectOutcome outcome,
         string? reason)
     {
@@ -78,7 +108,7 @@ internal sealed record ProviderCommercialEffectResult
                 nameof(reason));
         }
 
-        return new(outcome, null, reason);
+        return new(outcome, null, reason, null);
     }
 }
 
@@ -97,22 +127,26 @@ internal enum ProviderCommercialRecoveryState
 {
     Pending,
     Indeterminate,
-    Accredited,
-    Rejected
+    Applied,
+    AlreadyApplied,
+    Conflict,
+    DecisionRequired
 }
 
 internal sealed record ProviderCommercialRecoverySnapshot(
     ProviderCommercialRecoveryState State,
     int Attempts,
-    string? AccreditedReference,
+    string? CommercialReference,
     string? LastReason,
     DateTimeOffset? LastAttemptAt,
-    DateTimeOffset? NextAttemptAt)
+    DateTimeOffset? NextAttemptAt,
+    bool? OrderWasExpired)
 {
     internal static ProviderCommercialRecoverySnapshot Initial
         => new(
             ProviderCommercialRecoveryState.Pending,
             0,
+            null,
             null,
             null,
             null,
