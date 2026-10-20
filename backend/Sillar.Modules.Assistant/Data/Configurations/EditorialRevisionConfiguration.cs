@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Sillar.Modules.Assistant.Data.Entities;
+using Sillar.Modules.Assistant.Data.Repositories;
 
 namespace Sillar.Modules.Assistant.Data.Configurations;
 
@@ -18,7 +19,7 @@ internal sealed class EditorialRevisionConfiguration : IEntityTypeConfiguration<
                 "(published_at IS NULL AND published_article_version IS NULL) OR " +
                 "(published_at IS NOT NULL AND published_article_version > 0)");
         });
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.Id).HasName(EditorialDatabaseConflict.RevisionPrimaryKeyConstraintName);
         builder.Property(x => x.Id).HasColumnName("id").ValueGeneratedNever();
         builder.Property(x => x.InstallationId).HasColumnName("installation_id").IsRequired();
         builder.Property(x => x.ArticleId).HasColumnName("article_id").IsRequired();

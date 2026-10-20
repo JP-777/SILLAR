@@ -204,6 +204,16 @@ public sealed class EfEditorialArticleStore(
             db.ChangeTracker.Clear();
             return EditorialResult.Conflict;
         }
+        catch (DbUpdateException ex) when (
+            success == EditorialResult.Saved &&
+            EditorialDatabaseConflict.IsRevisionPrimaryKeyCollision(ex))
+        {
+            // Dos guardados pueden superar AnyAsync antes de la inserción.
+            // Solo la PK física de revisiones es un conflicto; NO ocultar FKs,
+            // checks, otras unicidades, fallos de conexión ni errores generales.
+            db.ChangeTracker.Clear();
+            return EditorialResult.Conflict;
+        }
     }
 
     private static KnowledgeRead Missing() =>
