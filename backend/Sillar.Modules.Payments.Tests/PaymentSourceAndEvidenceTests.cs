@@ -47,7 +47,7 @@ public sealed class PaymentSourceAndEvidenceTests
     }
 
     [Fact]
-    public void Evidencia_normaliza_identidades_y_hash_sin_conservar_body()
+    public void Evidencia_conserva_identidades_opacas_y_normaliza_solo_el_hash()
     {
         var evidence = VerifiedExternalPaymentEvidence.FromVerifiedWebhook(
             " provider-a ",
@@ -56,9 +56,9 @@ public sealed class PaymentSourceAndEvidenceTests
             new string('A', 64),
             PaymentTestData.VerifiedAt);
 
-        Assert.Equal("provider-a", evidence.Provider);
-        Assert.Equal("event-001", evidence.ProviderEventId);
-        Assert.Equal("settlement-001", evidence.ExternalSettlementId);
+        Assert.Equal(" provider-a ", evidence.Provider);
+        Assert.Equal(" event-001 ", evidence.ProviderEventId);
+        Assert.Equal(" settlement-001 ", evidence.ExternalSettlementId);
         Assert.Equal(new string('a', 64), evidence.BodySha256);
         Assert.DoesNotContain(
             evidence.GetType().GetProperties(),
@@ -103,5 +103,21 @@ public sealed class PaymentSourceAndEvidenceTests
         Assert.Equal("provider-a", first.Reception.Provider);
         Assert.Equal("event-001", first.Reception.ProviderEventId);
         Assert.Equal("settlement-001", first.Settlement.Value);
+    }
+
+    [Fact]
+    public void Claves_opacas_no_colapsan_con_sus_variantes_recortadas()
+    {
+        var exact = PaymentIdempotencyKeys.From(PaymentTestData.Evidence(
+            provider: " provider-a ",
+            eventId: " event-001 ",
+            settlementId: " settlement-001 "));
+        var trimmed = PaymentIdempotencyKeys.From(PaymentTestData.Evidence());
+
+        Assert.NotEqual(exact.Reception, trimmed.Reception);
+        Assert.NotEqual(exact.Settlement, trimmed.Settlement);
+        Assert.Equal(" provider-a ", exact.Reception.Provider);
+        Assert.Equal(" event-001 ", exact.Reception.ProviderEventId);
+        Assert.Equal(" settlement-001 ", exact.Settlement.Value);
     }
 }

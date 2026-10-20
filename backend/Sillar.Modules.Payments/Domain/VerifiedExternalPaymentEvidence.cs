@@ -90,6 +90,9 @@ public sealed record VerifiedExternalPaymentEvidence
                 parameterName);
         }
 
-        return value.Trim();
+        // Los identificadores del proveedor son opacos. Validar que exista un
+        // valor no autoriza a reescribirlo: incluso espacios periféricos pueden
+        // formar parte de la identidad contractual y deben cotejarse tal cual.
+        return value;
     }
 }

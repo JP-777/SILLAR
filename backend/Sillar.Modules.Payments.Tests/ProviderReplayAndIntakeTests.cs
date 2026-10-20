@@ -60,6 +60,32 @@ public sealed class ProviderReplayAndIntakeTests
     }
 
     [Fact]
+    public void Evento_opaco_con_espacios_no_es_el_evento_recortado()
+    {
+        var incoming = PaymentTestData.Evidence(eventId: " event-001 ");
+        var previous = PaymentTestData.Evidence(eventId: "event-001");
+
+        Assert.Equal(
+            ProviderReplayDecision.RelatedSettlement,
+            ProviderReplayClassifier.Classify(incoming, [previous]));
+    }
+
+    [Fact]
+    public void Liquidacion_opaca_con_espacios_no_es_la_liquidacion_recortada()
+    {
+        var incoming = PaymentTestData.Evidence(
+            eventId: "event-002",
+            settlementId: " settlement-001 ");
+        var previous = PaymentTestData.Evidence(
+            eventId: "event-001",
+            settlementId: "settlement-001");
+
+        Assert.Equal(
+            ProviderReplayDecision.NewEvent,
+            ProviderReplayClassifier.Classify(incoming, [previous]));
+    }
+
+    [Fact]
     public void Conflicto_posterior_prevalece_sobre_duplicado_temprano()
     {
         var incoming = PaymentTestData.Evidence();
