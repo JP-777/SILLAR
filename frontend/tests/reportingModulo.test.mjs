@@ -206,3 +206,75 @@ test('18 · los anuncios de estado salen de regiones persistentes, no de nodos q
     assert.match(texto, /aria-busy=\{/, ruta);
   }
 });
+
+// 6 · Generador CSV (puro; no expuesto hasta la auditoría de exportación de CORE)
+
+const { buildOrderIndicatorsCsv, csvCell, CSV_MIME_TYPE } = await import('../src/modules/reporting/services/orderIndicatorsCsv.ts');
+const lineas = (csv) => csv.content.replace(/^﻿/, '').split('\r\n').filter((l) => l !== '');
+
+test('19 · el CSV de una cohorte lleva BOM, CRLF, cabecera en español y las once filas de la vista', () => {
+  const csv = buildOrderIndicatorsCsv({ zone: 'America/Lima', baseline: respuesta() });
+  assert.equal(csv.kind, 'ready');
+  assert.equal(csv.mimeType, CSV_MIME_TYPE);
+  assert.ok(csv.content.startsWith('﻿'));
+  assert.ok(csv.content.endsWith('\r\n'));
+  assert.doesNotMatch(csv.content.replace(/\r\n/g, ''), /\n/);
+  const filas = lineas(csv);
+  assert.equal(filas[0], 'Cohorte,Inicio (incluido),Fin (excluido),Zona horaria,Observado,Indicador,Pedidos');
+  assert.equal(filas.length, 1 + 11);
+  assert.equal(filas[1], 'A,2026-10-01 00:00,2026-10-08 00:00,America/Lima,2026-10-19 10:00,Pedidos creados,5');
+  assert.ok(filas.includes('A,2026-10-01 00:00,2026-10-08 00:00,America/Lima,2026-10-19 10:00,Estado actual: Vencido,2'));
+  assert.equal(csv.fileName, 'reportes-pedidos-202610010000-202610080000.csv');
+});
+
+test('20 · sin fuente o con datos incoherentes no hay archivo, nunca uno con ceros', () => {
+  const ausente = respuesta({ status: 'source_unavailable', observedAtUtc: null, i01CreatedOrders: null,
+    i03CurrentStatusCounts: null, i04CurrentlyExpiredOrders: null, activeOrders: null, inactiveOrders: null });
+  assert.equal(buildOrderIndicatorsCsv({ zone: 'UTC', baseline: ausente }).kind, 'unavailable');
+  assert.equal(buildOrderIndicatorsCsv({ zone: 'UTC', baseline: respuesta({ inactiveOrders: 2 }) }).kind, 'unavailable');
+  assert.equal(buildOrderIndicatorsCsv({ zone: 'UTC', baseline: respuesta(), comparison: respuesta({ i04CurrentlyExpiredOrders: 9 }) }).kind, 'unavailable');
+});
+
+test('21 · una celda de texto que empieza por = + - @ o tabulador se neutraliza; los números no', () => {
+  assert.equal(csvCell('=HYPERLINK("x")'), `"'=HYPERLINK(""x"")"`);
+  assert.equal(csvCell('+1'), "'+1");
+  assert.equal(csvCell('-2'), "'-2");
+  assert.equal(csvCell('@SUMA'), "'@SUMA");
+  assert.equal(csvCell('\tx'), "'\tx");
+  assert.equal(csvCell(-3), '-3');
+  assert.equal(csvCell('a,b'), '"a,b"');
+  assert.equal(csvCell('línea\r\notra'), '"línea\r\notra"');
+  assert.throws(() => csvCell(1.5), RangeError);
+});
+
+test('22 · con B contigua se añaden sus filas y la resta descriptiva en el orden de la vista', () => {
+  const B = respuesta({ startInclusive: '2026-10-08T05:00:00+00:00', endExclusive: '2026-10-15T05:00:00+00:00',
+    observedAtUtc: '2026-10-19T15:00:02+00:00', i01CreatedOrders: 7, activeOrders: 6,
+    i03CurrentStatusCounts: ESTADOS.map((status) => ({ status, count: status === 'pending_payment' ? 5 : status === 'expired' ? 2 : 0 })) });
+  const filas = lineas(buildOrderIndicatorsCsv({ zone: 'America/Lima', baseline: respuesta(), comparison: B }));
+  assert.equal(filas.filter((f) => f.startsWith('B,')).length, 11);
+  const restas = filas.filter((f) => f.startsWith('B − A'));
+  assert.equal(restas.length, 11);
+  assert.equal(restas[0], 'B − A (resta descriptiva),,,America/Lima,,Pedidos creados,2');
+  assert.equal(restas[1], 'B − A (resta descriptiva),,,America/Lima,,Actualmente vencidos,0');
+});
+
+test('23 · con B solapada se exportan ambas cohortes pero ninguna resta', () => {
+  const B = respuesta({ startInclusive: '2026-10-07T05:00:00+00:00', endExclusive: '2026-10-14T05:00:00+00:00' });
+  const filas = lineas(buildOrderIndicatorsCsv({ zone: 'UTC', baseline: respuesta(), comparison: B }));
+  assert.equal(filas.filter((f) => f.startsWith('B,')).length, 11);
+  assert.equal(filas.filter((f) => f.startsWith('B − A')).length, 0);
+});
+
+test('24 · el CSV no lleva códigos internos, valores técnicos de estado ni importes', () => {
+  const csv = buildOrderIndicatorsCsv({ zone: 'UTC', baseline: respuesta() }).content;
+  assert.doesNotMatch(csv, /\b(I0[1-7]|M03|D\d{1,2})\b/);
+  assert.doesNotMatch(csv, /pending_payment|ready_for_pickup|expired|cancelled/);
+  assert.doesNotMatch(csv, /S\/|\bPEN\b|importe|ingresos/i);
+});
+
+test('25 · el generador no está expuesto: ninguna pantalla lo importa (D-M10-05)', () => {
+  for (const archivo of archivos().filter((a) => a.endsWith('.tsx'))) {
+    assert.doesNotMatch(codigo(readFileSync(archivo, 'utf8')), /orderIndicatorsCsv/, archivo);
+  }
+});
