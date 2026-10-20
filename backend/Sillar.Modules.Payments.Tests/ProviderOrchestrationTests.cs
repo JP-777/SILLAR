@@ -52,6 +52,28 @@ public sealed class ProviderOrchestrationTests
     }
 
     [Fact]
+    public async Task Carrera_con_evidencia_contradictoria_prevalece_y_queda_en_hold()
+    {
+        var ledger = new RacingLedger(conflictingBody: true);
+        var orchestrator = new ProviderReceptionOrchestrator(
+            AuthenticatedVerifier(),
+            ledger);
+
+        var result = await orchestrator.ReceiveAsync(
+            Request("same-body"),
+            CancellationToken);
+
+        Assert.Equal(ProviderReceptionState.Held, result.Record.State);
+        var trace = Assert.Single(result.Analysis!.Trace);
+        Assert.True(trace.IsHeld);
+        Assert.Contains(
+            ProviderEvidenceConflictKind.ReceptionHasContradictoryBodies,
+            trace.ConflictKinds);
+        Assert.Equal(2, ledger.LoadCalls);
+        Assert.Single(ledger.Records);
+    }
+
+    [Fact]
     public async Task Mismo_evento_con_otro_body_queda_en_hold()
     {
         var ledger = new MemoryLedger();
@@ -296,7 +318,8 @@ public sealed class ProviderOrchestrationTests
         }
     }
 
-    private sealed class RacingLedger : IProviderReceptionLedger
+    private sealed class RacingLedger(bool conflictingBody = false)
+        : IProviderReceptionLedger
     {
         private readonly List<VerifiedExternalPaymentEvidence> _known = [];
         private bool _raced;
@@ -319,7 +342,15 @@ public sealed class ProviderOrchestrationTests
             if (!_raced)
             {
                 _raced = true;
-                _known.Add(record.VerifiedEvidence!);
+                var evidence = record.VerifiedEvidence!;
+                _known.Add(conflictingBody
+                    ? VerifiedExternalPaymentEvidence.FromVerifiedWebhook(
+                        evidence.Provider,
+                        evidence.ProviderEventId,
+                        evidence.ExternalSettlementId,
+                        new string('f', 64),
+                        evidence.VerifiedAt)
+                    : evidence);
                 throw new ProviderInboxConcurrencyException(
                     "simulated_unique_race",
                     new InvalidOperationException());

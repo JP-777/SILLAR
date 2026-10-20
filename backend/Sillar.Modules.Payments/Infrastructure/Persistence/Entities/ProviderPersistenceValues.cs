@@ -49,10 +49,11 @@ internal static class ProviderCommercialEffectStates
 {
     internal const string NotRequested = "not_requested";
     internal const string Indeterminate = "indeterminate";
+    internal const string Rejected = "rejected";
     internal const string Accredited = "accredited";
 
     internal static readonly string[] All =
-        [NotRequested, Indeterminate, Accredited];
+        [NotRequested, Indeterminate, Rejected, Accredited];
 }
 
 internal static class ProviderAttemptOutcomes

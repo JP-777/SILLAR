@@ -29,7 +29,8 @@ internal sealed class ProviderInboxEventConfiguration
                 "'processing','indeterminate','completed')");
             table.HasCheckConstraint(
                 "ck_payment_inbox_commercial_effect_state",
-                "commercial_effect_state IN ('not_requested','indeterminate','accredited')");
+                "commercial_effect_state IN " +
+                "('not_requested','indeterminate','rejected','accredited')");
             table.HasCheckConstraint(
                 "ck_payment_inbox_attempt_count",
                 "attempt_count >= 0");
@@ -37,11 +38,37 @@ internal sealed class ProviderInboxEventConfiguration
                 "ck_payment_inbox_revision",
                 "revision > 0");
             table.HasCheckConstraint(
+                "ck_payment_inbox_timestamps",
+                "updated_at >= created_at");
+            table.HasCheckConstraint(
                 "ck_payment_inbox_lease",
                 "(processing_state = 'processing' AND lease_token IS NOT NULL " +
-                "AND lease_until IS NOT NULL) OR " +
+                "AND lease_until IS NOT NULL AND lease_until > updated_at) OR " +
                 "(processing_state <> 'processing' AND lease_token IS NULL " +
                 "AND lease_until IS NULL)");
+            table.HasCheckConstraint(
+                "ck_payment_inbox_retry",
+                "(processing_state = 'indeterminate' " +
+                "AND commercial_effect_state = 'indeterminate' " +
+                "AND next_attempt_at IS NOT NULL AND next_attempt_at > updated_at " +
+                "AND last_failure_code IS NOT NULL " +
+                "AND btrim(last_failure_code) <> '') OR " +
+                "(processing_state <> 'indeterminate' AND next_attempt_at IS NULL)");
+            table.HasCheckConstraint(
+                "ck_payment_inbox_rejection",
+                "(processing_state = 'rejected' " +
+                "AND commercial_effect_state = 'rejected' " +
+                "AND last_failure_code IS NOT NULL " +
+                "AND btrim(last_failure_code) <> '') OR " +
+                "(processing_state <> 'rejected' " +
+                "AND commercial_effect_state <> 'rejected')");
+            table.HasCheckConstraint(
+                "ck_payment_inbox_accreditation",
+                "(processing_state = 'completed' " +
+                "AND commercial_effect_state = 'accredited') OR " +
+                "(processing_state <> 'completed' " +
+                "AND (commercial_effect_state <> 'accredited' " +
+                "OR processing_state = 'held'))");
             table.HasCheckConstraint(
                 "ck_payment_inbox_hold_reason",
                 "(processing_state = 'held' AND hold_reason IS NOT NULL " +

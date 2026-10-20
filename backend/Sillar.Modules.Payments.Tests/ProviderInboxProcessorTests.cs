@@ -78,6 +78,38 @@ public sealed class ProviderInboxProcessorTests
     }
 
     [Fact]
+    public async Task Rechazo_comercial_es_terminal_y_distinto_de_incertidumbre()
+    {
+        var repository = new MemoryInboxRepository(ReadyStatus());
+        var port = new SequencedPort(
+            ProviderCommercialEffectResult.Rejected("candidate_invalid"));
+        var processor = new ProviderInboxProcessor(repository, port);
+        var now = PaymentTestData.VerifiedAt.AddMinutes(1);
+
+        var rejected = await processor.ProcessAsync(
+            repository.Status.InboxEventId,
+            now,
+            TimeSpan.FromMinutes(1),
+            TimeSpan.FromMinutes(2),
+            CancellationToken);
+        var replay = await processor.ProcessAsync(
+            repository.Status.InboxEventId,
+            now.AddMinutes(3),
+            TimeSpan.FromMinutes(1),
+            TimeSpan.FromMinutes(2),
+            CancellationToken);
+
+        Assert.Equal(ProviderInboxProcessOutcome.Rejected, rejected.Outcome);
+        Assert.Equal(ProviderInboxProcessOutcome.NotReady, replay.Outcome);
+        Assert.Equal(
+            ProviderInboxCommercialState.Rejected,
+            repository.Status.CommercialState);
+        Assert.Equal("candidate_invalid", repository.Status.LastFailureCode);
+        Assert.Null(repository.Status.NextAttemptAt);
+        Assert.Equal(1, port.Calls);
+    }
+
+    [Fact]
     public async Task Confirmacion_no_persistida_nunca_se_reporta_como_acreditada()
     {
         var repository = new MemoryInboxRepository(ReadyStatus())
@@ -141,6 +173,85 @@ public sealed class ProviderInboxProcessorTests
             ProviderInboxCommercialState.Indeterminate,
             repository.Status.CommercialState);
         Assert.Null(repository.Status.CommercialEffectReference);
+    }
+
+    [Fact]
+    public async Task Lease_vencido_no_acepta_confirmacion_tardia_y_exige_nuevo_intento()
+    {
+        var repository = new MemoryInboxRepository(ReadyStatus());
+        var crashing = new ProviderInboxProcessor(repository, new ThrowingPort());
+        var now = PaymentTestData.VerifiedAt.AddMinutes(1);
+
+        await Assert.ThrowsAsync<SimulatedCrashException>(async () =>
+            await crashing.ProcessAsync(
+                repository.Status.InboxEventId,
+                now,
+                TimeSpan.FromMinutes(1),
+                TimeSpan.FromMinutes(2),
+                CancellationToken));
+        var expiredLease = repository.Status.LeaseToken!.Value;
+        Assert.True(await crashing.TryRecoverExpiredLeaseAsync(
+            repository.Status.InboxEventId,
+            now.AddMinutes(1),
+            TimeSpan.FromMinutes(2),
+            CancellationToken));
+
+        var lateConfirmation = ProviderInboxCompletion.Accredited(
+            repository.Status.InboxEventId,
+            expiredLease,
+            now.AddMinutes(1).AddSeconds(1),
+            "late-confirmation");
+        Assert.False(await repository.TryCompleteAsync(
+            lateConfirmation,
+            CancellationToken));
+        Assert.NotEqual(
+            ProviderInboxCommercialState.Accredited,
+            repository.Status.CommercialState);
+
+        var retryPort = new SequencedPort(
+            ProviderCommercialEffectResult.Accredited("new-confirmation"));
+        var retrying = new ProviderInboxProcessor(repository, retryPort);
+        var retry = await retrying.ProcessAsync(
+            repository.Status.InboxEventId,
+            now.AddMinutes(3),
+            TimeSpan.FromMinutes(1),
+            TimeSpan.FromMinutes(2),
+            CancellationToken);
+
+        Assert.Equal(ProviderInboxProcessOutcome.Accredited, retry.Outcome);
+        Assert.NotEqual(expiredLease, retry.LeaseToken);
+        Assert.Equal("new-confirmation", repository.Status.CommercialEffectReference);
+        Assert.Equal(2, repository.Status.AttemptCount);
+    }
+
+    [Fact]
+    public async Task Revision_optimista_solo_libera_una_vez_la_revision_observada()
+    {
+        var pending = ReadyStatus() with
+        {
+            ProcessingState = ProviderInboxProcessingState.PendingReview
+        };
+        var repository = new MemoryInboxRepository(pending);
+        var processor = new ProviderInboxProcessor(
+            repository,
+            new SequencedPort());
+        var now = PaymentTestData.VerifiedAt.AddMinutes(1);
+
+        var first = await processor.TryReleaseAfterReviewAsync(
+            pending.InboxEventId,
+            pending.Revision,
+            now,
+            CancellationToken);
+        var stale = await processor.TryReleaseAfterReviewAsync(
+            pending.InboxEventId,
+            pending.Revision,
+            now,
+            CancellationToken);
+
+        Assert.True(first);
+        Assert.False(stale);
+        Assert.Equal(ProviderInboxProcessingState.Ready, repository.Status.ProcessingState);
+        Assert.Equal(pending.Revision + 1, repository.Status.Revision);
     }
 
     [Fact]
@@ -233,9 +344,8 @@ public sealed class ProviderInboxProcessorTests
             {
                 if (inboxEventId != Status.InboxEventId
                     || expectedRevision != Status.Revision
-                    || Status.ProcessingState is ProviderInboxProcessingState.Held
-                        or ProviderInboxProcessingState.Rejected
-                        or ProviderInboxProcessingState.Completed)
+                    || Status.ProcessingState !=
+                        ProviderInboxProcessingState.PendingReview)
                 {
                     return ValueTask.FromResult(false);
                 }
@@ -332,7 +442,7 @@ public sealed class ProviderInboxProcessorTests
                     ProviderInboxCompletionOutcome.Rejected => Status with
                     {
                         ProcessingState = ProviderInboxProcessingState.Rejected,
-                        CommercialState = ProviderInboxCommercialState.NotRequested,
+                        CommercialState = ProviderInboxCommercialState.Rejected,
                         LastFailureCode = completion.Reason,
                         LeaseToken = null,
                         LeaseUntil = null,

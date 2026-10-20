@@ -54,21 +54,42 @@ internal sealed class ProviderInboxEvent
 
     internal void Hold(string? reason, DateTimeOffset changedAt)
     {
+        if (ProcessingState == ProviderInboxStates.Processing)
+        {
+            throw new InvalidOperationException(
+                "Un HOLD durante procesamiento exige cerrar el intento activo.");
+        }
+
+        HoldCore(reason, changedAt);
+    }
+
+    internal void HoldActiveAttempt(
+        Guid leaseToken,
+        string? reason,
+        DateTimeOffset changedAt)
+    {
+        EnsureLease(leaseToken);
+        HoldCore(reason, changedAt);
+    }
+
+    private void HoldCore(string? reason, DateTimeOffset changedAt)
+    {
+        ValidateChangeInstant(changedAt);
         ProcessingState = ProviderInboxStates.Held;
         HoldReason = ProviderPersistenceGuard.OpaqueRequired(
             reason, nameof(reason));
+        NextAttemptAt = null;
         ClearLease();
         Touch(changedAt);
     }
 
     internal void MarkReady(DateTimeOffset changedAt)
     {
-        if (ProcessingState is ProviderInboxStates.Held
-            or ProviderInboxStates.Rejected
-            or ProviderInboxStates.Completed)
+        ValidateChangeInstant(changedAt);
+        if (ProcessingState != ProviderInboxStates.PendingReview)
         {
             throw new InvalidOperationException(
-                "Un evento terminal o retenido no puede habilitarse automáticamente.");
+                "Sólo un evento pendiente de revisión puede habilitarse.");
         }
 
         ProcessingState = ProviderInboxStates.Ready;
@@ -82,6 +103,7 @@ internal sealed class ProviderInboxEvent
         DateTimeOffset leaseUntil,
         DateTimeOffset changedAt)
     {
+        ValidateChangeInstant(changedAt);
         if (ProcessingState is not ProviderInboxStates.Ready
             and not ProviderInboxStates.Indeterminate)
         {
@@ -108,6 +130,7 @@ internal sealed class ProviderInboxEvent
         DateTimeOffset retryAt,
         DateTimeOffset changedAt)
     {
+        ValidateChangeInstant(changedAt);
         EnsureLease(leaseToken);
         if (retryAt <= changedAt)
         {
@@ -130,6 +153,7 @@ internal sealed class ProviderInboxEvent
         string? reference,
         DateTimeOffset changedAt)
     {
+        ValidateChangeInstant(changedAt);
         EnsureLease(leaseToken);
         ProcessingState = ProviderInboxStates.Completed;
         CommercialEffectState = ProviderCommercialEffectStates.Accredited;
@@ -146,9 +170,10 @@ internal sealed class ProviderInboxEvent
         string? failureCode,
         DateTimeOffset changedAt)
     {
+        ValidateChangeInstant(changedAt);
         EnsureLease(leaseToken);
         ProcessingState = ProviderInboxStates.Rejected;
-        CommercialEffectState = ProviderCommercialEffectStates.NotRequested;
+        CommercialEffectState = ProviderCommercialEffectStates.Rejected;
         CommercialEffectReference = null;
         LastFailureCode = ProviderPersistenceGuard.OpaqueRequired(
             failureCode, nameof(failureCode));
@@ -185,8 +210,19 @@ internal sealed class ProviderInboxEvent
 
     private void Touch(DateTimeOffset changedAt)
     {
-        UpdatedAt = ProviderPersistenceGuard.RequiredInstant(
-            changedAt, nameof(changedAt));
+        ValidateChangeInstant(changedAt);
+        UpdatedAt = changedAt;
         Revision = checked(Revision + 1);
+    }
+
+    private void ValidateChangeInstant(DateTimeOffset changedAt)
+    {
+        ProviderPersistenceGuard.RequiredInstant(changedAt, nameof(changedAt));
+        if (changedAt < UpdatedAt)
+        {
+            throw new ArgumentException(
+                "Una transición no puede retroceder el reloj del inbox.",
+                nameof(changedAt));
+        }
     }
 }

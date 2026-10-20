@@ -49,6 +49,10 @@ internal sealed class ProviderProcessingAttemptConfiguration
             .HasDatabaseName("uq_payment_attempt_inbox_number");
         builder.HasIndex(item => item.Outcome)
             .HasDatabaseName("idx_payment_attempt_outcome");
+        builder.HasIndex(item => item.InboxEventId)
+            .IsUnique()
+            .HasFilter("outcome = 'running'")
+            .HasDatabaseName("uq_payment_attempt_running_inbox");
         builder.HasOne<ProviderInboxEvent>()
             .WithMany()
             .HasForeignKey(item => item.InboxEventId)

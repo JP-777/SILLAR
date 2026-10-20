@@ -73,6 +73,13 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
         {
             await database.SaveChangesAsync(cancellationToken);
         }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            database.ChangeTracker.Clear();
+            throw new ProviderInboxConcurrencyException(
+                "El inbox cambió durante la conservación de la recepción.",
+                exception);
+        }
         catch (DbUpdateException exception) when (
             database.Database.CurrentTransaction is null
             && IsProviderEventUniquenessViolation(exception))
@@ -143,9 +150,7 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
             cancellationToken);
         if (entity is null
             || entity.Revision != expectedRevision
-            || entity.ProcessingState is ProviderInboxStates.Held
-                or ProviderInboxStates.Rejected
-                or ProviderInboxStates.Completed)
+            || entity.ProcessingState != ProviderInboxStates.PendingReview)
         {
             return false;
         }
@@ -350,7 +355,10 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
         }
         else if (record.State == ProviderReceptionState.Held)
         {
-            inbox.Hold("evidence_conflict", record.ReceivedAt);
+            await HoldForConflictAsync(
+                inbox,
+                record.ReceivedAt,
+                cancellationToken);
         }
 
         receipt.MarkAuthenticated(
@@ -359,6 +367,38 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
             record.AttestationReference,
             ToPersistenceState(record.State),
             record.AnalysisSha256);
+    }
+
+    private async ValueTask HoldForConflictAsync(
+        ProviderInboxEvent inbox,
+        DateTimeOffset receivedAt,
+        CancellationToken cancellationToken)
+    {
+        var changedAt = receivedAt < inbox.UpdatedAt
+            ? inbox.UpdatedAt
+            : receivedAt;
+        if (inbox.ProcessingState == ProviderInboxStates.Processing)
+        {
+            var activeLease = inbox.LeaseToken!.Value;
+            var attempt = await database.ProcessingAttempts.SingleOrDefaultAsync(
+                item => item.InboxEventId == inbox.InboxEventId
+                    && item.LeaseToken == activeLease
+                    && item.Outcome == ProviderAttemptOutcomes.Running,
+                cancellationToken)
+                ?? throw new InvalidOperationException(
+                    "Un inbox en proceso carece de intento activo.");
+            attempt.Complete(
+                ProviderAttemptOutcomes.Indeterminate,
+                changedAt,
+                "evidence_conflict_during_processing");
+            inbox.HoldActiveAttempt(
+                activeLease,
+                "evidence_conflict",
+                changedAt);
+            return;
+        }
+
+        inbox.Hold("evidence_conflict", changedAt);
     }
 
     private async ValueTask<bool> TrySaveAsync(
@@ -374,6 +414,13 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
             database.ChangeTracker.Clear();
             return false;
         }
+        catch (DbUpdateException exception) when (
+            database.Database.CurrentTransaction is null
+            && IsAttemptConcurrencyViolation(exception))
+        {
+            database.ChangeTracker.Clear();
+            return false;
+        }
     }
 
     private static bool IsProviderEventUniquenessViolation(
@@ -382,6 +429,15 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
         {
             SqlState: PostgresErrorCodes.UniqueViolation,
             ConstraintName: "uq_payment_inbox_provider_event"
+        };
+
+    private static bool IsAttemptConcurrencyViolation(
+        DbUpdateException exception)
+        => exception.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: "uq_payment_attempt_inbox_number"
+                or "uq_payment_attempt_running_inbox"
         };
 
     private static string ToPersistenceState(ProviderReceptionState state)
@@ -438,6 +494,8 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
                 ProviderInboxCommercialState.NotRequested,
             ProviderCommercialEffectStates.Indeterminate =>
                 ProviderInboxCommercialState.Indeterminate,
+            ProviderCommercialEffectStates.Rejected =>
+                ProviderInboxCommercialState.Rejected,
             ProviderCommercialEffectStates.Accredited =>
                 ProviderInboxCommercialState.Accredited,
             _ => throw new InvalidOperationException(

@@ -17,6 +17,7 @@ internal enum ProviderInboxCommercialState
 {
     NotRequested,
     Indeterminate,
+    Rejected,
     Accredited
 }
 

@@ -31,6 +31,18 @@ internal sealed class ProviderEvidenceReceiptConfiguration
                 "reception_state IN ('received','rejected','indeterminate','held'," +
                 "'duplicate','pending_durable_review')");
             table.HasCheckConstraint(
+                "ck_payment_receipts_state_alignment",
+                "(verification_state = 'received' AND reception_state = 'received') OR " +
+                "(verification_state = 'rejected' AND reception_state = 'rejected') OR " +
+                "(verification_state = 'indeterminate' " +
+                "AND reception_state = 'indeterminate') OR " +
+                "(verification_state = 'authenticated' " +
+                "AND reception_state IN ('held','duplicate','pending_durable_review'))");
+            table.HasCheckConstraint(
+                "ck_payment_receipts_analysis_sha256",
+                "analysis_sha256 IS NULL OR analysis_sha256 COLLATE \"C\" " +
+                "~ '^[0-9a-f]{64}$'");
+            table.HasCheckConstraint(
                 "ck_payment_receipts_authentication",
                 "(verification_state = 'authenticated' AND verified_at IS NOT NULL " +
                 "AND attestation_reference IS NOT NULL AND btrim(attestation_reference) <> '' " +

@@ -154,6 +154,46 @@ public sealed class PaymentsPersistenceTests
             inbox.GetCheckConstraints(),
             check => check.Name == "ck_payment_inbox_commercial_reference"
                 && check.Sql.Contains("accredited", StringComparison.Ordinal));
+        Assert.Contains(
+            receipt.GetCheckConstraints(),
+            check => check.Name == "ck_payment_receipts_state_alignment"
+                && check.Sql.Contains(
+                    "verification_state = 'authenticated'",
+                    StringComparison.Ordinal));
+        Assert.Contains(
+            receipt.GetCheckConstraints(),
+            check => check.Name == "ck_payment_receipts_analysis_sha256"
+                && check.Sql.Contains("COLLATE \"C\"", StringComparison.Ordinal));
+        Assert.Contains(
+            inbox.GetCheckConstraints(),
+            check => check.Name == "ck_payment_inbox_retry"
+                && check.Sql.Contains(
+                    "next_attempt_at > updated_at",
+                    StringComparison.Ordinal));
+        Assert.Contains(
+            inbox.GetCheckConstraints(),
+            check => check.Name == "ck_payment_inbox_rejection"
+                && check.Sql.Contains(
+                    "commercial_effect_state = 'rejected'",
+                    StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Modelo_impide_mas_de_un_intento_running_por_inbox()
+    {
+        using var context = Context();
+        var attempt = context.GetService<IDesignTimeModel>().Model
+            .FindEntityType(typeof(ProviderProcessingAttempt))!;
+        var running = Assert.Single(attempt.GetIndexes(), index =>
+            index.Properties.Select(property => property.Name)
+                .SequenceEqual([nameof(ProviderProcessingAttempt.InboxEventId)])
+            && index.GetFilter() is not null);
+
+        Assert.True(running.IsUnique);
+        Assert.Equal("outcome = 'running'", running.GetFilter());
+        Assert.Equal(
+            "uq_payment_attempt_running_inbox",
+            running.GetDatabaseName());
     }
 
     [Fact]
@@ -255,6 +295,112 @@ public sealed class PaymentsPersistenceTests
             ProviderCommercialEffectStates.Indeterminate,
             inbox.CommercialEffectState);
         Assert.Null(inbox.CommercialEffectReference);
+    }
+
+    [Fact]
+    public void Revision_manual_no_puede_liberar_un_evento_en_proceso()
+    {
+        var now = PaymentTestData.VerifiedAt;
+        var inbox = ProviderInboxEvent.Create(PaymentTestData.Evidence(), now);
+        var lease = Guid.CreateVersion7();
+        inbox.MarkReady(now.AddSeconds(1));
+        inbox.BeginAttempt(lease, now.AddMinutes(1), now.AddSeconds(2));
+
+        Assert.Throws<InvalidOperationException>(() =>
+            inbox.MarkReady(now.AddSeconds(3)));
+
+        Assert.Equal(ProviderInboxStates.Processing, inbox.ProcessingState);
+        Assert.Equal(lease, inbox.LeaseToken);
+        Assert.Equal(now.AddMinutes(1), inbox.LeaseUntil);
+    }
+
+    [Fact]
+    public void Hold_de_intento_activo_exige_el_lease_correcto()
+    {
+        var now = PaymentTestData.VerifiedAt;
+        var inbox = ProviderInboxEvent.Create(PaymentTestData.Evidence(), now);
+        var lease = Guid.CreateVersion7();
+        inbox.MarkReady(now.AddSeconds(1));
+        inbox.BeginAttempt(lease, now.AddMinutes(1), now.AddSeconds(2));
+
+        Assert.Throws<InvalidOperationException>(() =>
+            inbox.Hold("late_conflict", now.AddSeconds(3)));
+        Assert.Throws<InvalidOperationException>(() =>
+            inbox.HoldActiveAttempt(
+                Guid.CreateVersion7(),
+                "late_conflict",
+                now.AddSeconds(3)));
+
+        Assert.Equal(ProviderInboxStates.Processing, inbox.ProcessingState);
+        Assert.Equal(lease, inbox.LeaseToken);
+        Assert.Equal(3, inbox.Revision);
+
+        inbox.HoldActiveAttempt(
+            lease,
+            "late_conflict",
+            now.AddSeconds(3));
+
+        Assert.Equal(ProviderInboxStates.Held, inbox.ProcessingState);
+        Assert.Null(inbox.LeaseToken);
+        Assert.Equal(4, inbox.Revision);
+    }
+
+    [Fact]
+    public void Hold_elimina_reintento_programado_sin_acreditar_efecto()
+    {
+        var now = PaymentTestData.VerifiedAt;
+        var inbox = ProviderInboxEvent.Create(PaymentTestData.Evidence(), now);
+        var lease = Guid.CreateVersion7();
+        inbox.MarkReady(now.AddSeconds(1));
+        inbox.BeginAttempt(lease, now.AddMinutes(1), now.AddSeconds(2));
+        inbox.MarkIndeterminate(
+            lease,
+            "temporary_failure",
+            now.AddMinutes(2),
+            now.AddSeconds(3));
+
+        inbox.Hold("identity_conflict", now.AddSeconds(4));
+
+        Assert.Equal(ProviderInboxStates.Held, inbox.ProcessingState);
+        Assert.Null(inbox.NextAttemptAt);
+        Assert.Null(inbox.LeaseToken);
+        Assert.Equal(
+            ProviderCommercialEffectStates.Indeterminate,
+            inbox.CommercialEffectState);
+        Assert.Null(inbox.CommercialEffectReference);
+    }
+
+    [Fact]
+    public void Rechazo_comercial_es_distinto_de_no_haber_solicitado_efecto()
+    {
+        var now = PaymentTestData.VerifiedAt;
+        var inbox = ProviderInboxEvent.Create(PaymentTestData.Evidence(), now);
+        var lease = Guid.CreateVersion7();
+        inbox.MarkReady(now.AddSeconds(1));
+        inbox.BeginAttempt(lease, now.AddMinutes(1), now.AddSeconds(2));
+
+        inbox.MarkRejected(lease, "commercial_rejection", now.AddSeconds(3));
+
+        Assert.Equal(ProviderInboxStates.Rejected, inbox.ProcessingState);
+        Assert.Equal(
+            ProviderCommercialEffectStates.Rejected,
+            inbox.CommercialEffectState);
+        Assert.Null(inbox.CommercialEffectReference);
+        Assert.Equal("commercial_rejection", inbox.LastFailureCode);
+    }
+
+    [Fact]
+    public void Transicion_con_instante_anterior_no_muta_el_inbox()
+    {
+        var now = PaymentTestData.VerifiedAt;
+        var inbox = ProviderInboxEvent.Create(PaymentTestData.Evidence(), now);
+
+        Assert.Throws<ArgumentException>(() =>
+            inbox.MarkReady(now.AddTicks(-1)));
+
+        Assert.Equal(ProviderInboxStates.PendingReview, inbox.ProcessingState);
+        Assert.Equal(now, inbox.UpdatedAt);
+        Assert.Equal(1, inbox.Revision);
     }
 
     [Fact]
