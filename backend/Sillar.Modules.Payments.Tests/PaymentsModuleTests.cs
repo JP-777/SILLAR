@@ -76,5 +76,10 @@ public sealed class PaymentsModuleTests
                 && descriptor.ServiceType.Name.Contains(
                     "Client",
                     StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            services,
+            descriptor => descriptor.ServiceType == typeof(IProviderEvidenceVerifier)
+                || descriptor.ServiceType == typeof(IProviderReceptionLedger)
+                || descriptor.ServiceType == typeof(IProviderCommercialEffectPort));
     }
 }
