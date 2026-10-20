@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Sillar.Modules.Assistant.Data.Entities;
+using Sillar.Modules.Assistant.Data.Repositories;
 
 namespace Sillar.Modules.Assistant.Data.Configurations;
 
@@ -14,7 +15,7 @@ internal sealed class EditorialArticleConfiguration : IEntityTypeConfiguration<E
             table.HasCheckConstraint("ck_assistant_writer_no_vacio", "btrim(writer_node) <> ''");
             table.HasCheckConstraint("ck_assistant_instalacion_no_vacia", "installation_id <> '00000000-0000-0000-0000-000000000000'::uuid");
         });
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.Id).HasName(EditorialDatabaseConflict.ArticlePrimaryKeyConstraintName);
         builder.HasAlternateKey(x => new { x.InstallationId, x.Id });
         builder.Property(x => x.Id).HasColumnName("id").ValueGeneratedNever();
         builder.Property(x => x.InstallationId).HasColumnName("installation_id").IsRequired();
