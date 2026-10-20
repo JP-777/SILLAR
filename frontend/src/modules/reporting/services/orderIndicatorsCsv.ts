@@ -1,5 +1,5 @@
 import { orderStates, type OrderIndicatorsView } from './orderIndicators.ts';
-import type { ReportZone } from './period.ts';
+import { isReportZone, type ReportZone } from './period.ts';
 import { assessReportComparison, type ReportComparisonSnapshot } from './reportComparisonGate.ts';
 import { InconsistentIndicatorsError, verifyOrderIndicators } from './verifyOrderIndicators.ts';
 
@@ -121,7 +121,7 @@ function cohortRows(name: string, view: OrderIndicatorsView, zone: ReportZone): 
 }
 
 export function buildOrderIndicatorsCsv(input: OrderIndicatorsCsvInput): OrderIndicatorsCsv {
-  if (input.zone !== 'America/Lima' && input.zone !== 'UTC') {
+  if (!isReportZone(input.zone)) {
     return { kind: 'unavailable', reason: 'Zona horaria no admitida.' };
   }
   const baseline = verified(input.baseline);

@@ -1,4 +1,4 @@
-import { asInstant, type ReportZone } from './period.ts';
+import { asInstant, isReportZone, type ReportZone } from './period.ts';
 
 /**
  * M10 D12 — Enlaces reproducibles para filtros de reportes.
@@ -28,10 +28,6 @@ export type ReportLinkRead =
 
 const KEYS = ['rp_v', 'rp_z', 'rp_a_i', 'rp_a_f', 'rp_b_i', 'rp_b_f'] as const;
 
-function isZone(value: string | null): value is ReportZone {
-  return value === 'America/Lima' || value === 'UTC';
-}
-
 function instantOrNull(value: string, zone: ReportZone): number | null {
   try {
     return Date.parse(asInstant(value, zone));
@@ -48,7 +44,7 @@ function validPeriod(period: ReportLinkPeriod, zone: ReportZone): boolean {
 
 /** Verifica intervalos [inicio,fin) sin consultar datos. */
 export function validReportLink(filters: ReportLinkFilters): boolean {
-  if (!isZone(filters.zone)) return false;
+  if (!isReportZone(filters.zone)) return false;
   return validPeriod(filters.primary, filters.zone)
     && (filters.comparison === null || validPeriod(filters.comparison, filters.zone));
 }
@@ -87,7 +83,7 @@ export function decodeReportLink(search: string): ReportLinkRead {
     return { kind: 'invalid', message: 'Versión de enlace de reportes no admitida.' };
   }
   const zone = params.get('rp_z');
-  if (!isZone(zone)) {
+  if (!isReportZone(zone)) {
     return { kind: 'invalid', message: 'Zona horaria no válida en el enlace.' };
   }
   const primary = { startLocal: params.get('rp_a_i') ?? '', endLocal: params.get('rp_a_f') ?? '' };

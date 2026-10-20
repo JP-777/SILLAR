@@ -358,3 +358,47 @@ test('33 · una cohorte vacía real se exporta con ceros verdaderos y su zona en
   assert.ok(lima[1].startsWith('A,2026-10-01 00:00,2026-10-08 00:00,America/Lima,'));
   assert.ok(utc[1].startsWith('A,2026-10-01 05:00,2026-10-08 05:00,UTC,'));
 });
+
+// 9 · Zona IANA de la instalación
+
+const { INSTALLATION_ZONE, REPORT_ZONES, isReportZone } = await import('../src/modules/reporting/services/period.ts');
+
+test('34 · las fechas siguen el reloj IANA de la zona: la hora saltada o repetida se rechaza', () => {
+  // Perú tuvo horario de verano en 1994: el 1 de enero saltó de 00:00 a 01:00
+  // y el 1 de abril volvió de 00:00 a 23:00. Un desplazamiento fijo de −05:00
+  // habría consultado una hora que no existió o una de las dos que se repitieron.
+  assert.throws(() => asInstant('1994-01-01T00:30', 'America/Lima'), /no existe/);
+  assert.throws(() => asInstant('1994-03-31T23:30', 'America/Lima'), /se repite/);
+  assert.equal(asInstant('1994-01-01T01:30', 'America/Lima'), '1994-01-01T05:30:00.000Z');
+  assert.equal(asInstant('1994-02-15T10:00', 'America/Lima'), '1994-02-15T14:00:00.000Z');
+  assert.equal(asInstant('1994-03-31T22:30', 'America/Lima'), '1994-04-01T02:30:00.000Z');
+  // El período anterior tampoco se propone si cae en la hora repetida.
+  assert.equal(previousEqualWindow('1994-04-01T05:00:00Z', '1994-04-01T07:00:00Z', 'America/Lima').kind, 'unavailable');
+});
+
+test('35 · el calendario de la consulta acaba en el año 9999 también en UTC', () => {
+  assert.equal(asInstant('9999-12-31T18:59', 'America/Lima'), '9999-12-31T23:59:00.000Z');
+  assert.throws(() => asInstant('9999-12-31T19:00', 'America/Lima'), RangeError);
+  assert.equal(asInstant('0001-01-01T00:00', 'UTC'), '0001-01-01T00:00:00.000Z');
+});
+
+test('36 · la zona de la instalación es la del negocio y una zona no admitida no convierte nada', () => {
+  const ventas = fuente('../backend/Sillar.Shared.Data/Numbering/TransactionalSeriesAllocator.cs');
+  assert.match(ventas, new RegExp(`BusinessTimeZone = "${INSTALLATION_ZONE}"`));
+  assert.equal(REPORT_ZONES[0], INSTALLATION_ZONE);
+  assert.ok(REPORT_ZONES.every((zona) => new Intl.DateTimeFormat('en-US', { timeZone: zona }).resolvedOptions().timeZone === zona));
+  for (const ajena of ['Europe/Madrid', 'america/lima', '-05:00', '', null]) {
+    assert.equal(isReportZone(ajena), false, String(ajena));
+  }
+  assert.throws(() => asInstant('2026-10-17T10:00', 'Europe/Madrid'), RangeError);
+  assert.equal(buildOrderIndicatorsCsv({ zone: 'Europe/Madrid', baseline: respuesta() }).kind, 'unavailable');
+  assert.equal(previousEqualWindow('2026-10-08T05:00:00Z', '2026-10-15T05:00:00Z', 'Europe/Madrid').kind, 'unavailable');
+});
+
+test('37 · ningún servicio convierte fechas con un desplazamiento escrito a mano', () => {
+  for (const archivo of archivos().filter((ruta) => /\.(ts|tsx)$/.test(ruta))) {
+    const texto = codigo(readFileSync(archivo, 'utf8'));
+    assert.doesNotMatch(texto, /['"`][+-]0?5:00['"`]|-300\b|-5 \* 60|ZONE_OFFSET/, archivo);
+  }
+});
+

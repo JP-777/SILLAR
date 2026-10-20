@@ -6,7 +6,7 @@
  * Los campos datetime-local de M10 tienen precisión de minuto; si la fuente tiene
  * segundos/subsegundos, no truncamos silenciosamente y se omite la sugerencia.
  */
-export type ReportZone = 'America/Lima' | 'UTC';
+import { asInstant, isReportZone, wallClock, type ReportZone } from './period.ts';
 export type PreviousEqualWindow =
   | { readonly kind: 'ready'; readonly startLocal: string; readonly endLocal: string;
       readonly durationMinutes: number; readonly previousStartUtc: string; readonly previousEndUtc: string }
@@ -37,33 +37,26 @@ function readMinutePrecisionInstant(value: string): number | null {
   return Number.isFinite(epochMs) ? epochMs : null;
 }
 
-const pad2 = (n: number) => String(n).padStart(2, '0');
+/**
+ * El instante como lo escribiría el formulario en la zona, o null si no se puede
+ * escribir exactamente: segundos sueltos, fuera de 1..9999, o una hora que la
+ * zona salta o repite. La ida y vuelta usa la misma regla que la consulta.
+ */
 function toLocalExact(ms: number, zone: ReportZone): string | null {
   if (!Number.isFinite(ms) || ms % 60_000 !== 0) return null;
-  const offsetMinutes = zone === 'America/Lima' ? -300 : 0;
-  const d = new Date(ms + offsetMinutes * 60_000);
-  if (Number.isNaN(d.getTime())) return null;
-  const y = d.getUTCFullYear();
-  if (y < 1 || y > 9999) return null;
-  const display = `${String(y).padStart(4, '0')}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}T${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`;
-  // El formulario ya interpreta America/Lima como -05:00. No inventar otra regla
-  // para un período histórico si el huso real difiere de ese offset.
-  const marker = zone === 'UTC' ? 'Z' : '-05:00';
-  if (readMinutePrecisionInstant(`${display}:00${marker}`) !== ms) return null;
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: zone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit',
-  });
-  const parts = Object.fromEntries(formatter.formatToParts(new Date(ms)).map((p) => [p.type, p.value]));
-  if (Number(parts.year) !== y || Number(parts.month) !== d.getUTCMonth() + 1 ||
-      Number(parts.day) !== d.getUTCDate() || Number(parts.hour) !== d.getUTCHours() ||
-      Number(parts.minute) !== d.getUTCMinutes()) return null;
-  return display;
+  const wall = wallClock(ms, zone);
+  if (!wall.endsWith(':00') || wall.startsWith('0000')) return null;
+  const display = wall.slice(0, 16);
+  try {
+    return Date.parse(asInstant(display, zone)) === ms ? display : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Previous window [A.start - (A.end-A.start), A.start), with the same elapsed minutes. */
 export function previousEqualWindow(startInclusive: string, endExclusive: string, zone: ReportZone): PreviousEqualWindow {
-  if (zone !== 'UTC' && zone !== 'America/Lima') {
+  if (!isReportZone(zone)) {
     return { kind: 'unavailable', reason: 'Zona horaria no compatible.' };
   }
   const start = readMinutePrecisionInstant(startInclusive);

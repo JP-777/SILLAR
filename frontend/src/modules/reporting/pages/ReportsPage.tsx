@@ -6,7 +6,7 @@ import { type Failure } from '../../../shared/errors/messages';
 import { FailureAlert } from '../../../shared/ui/patterns';
 import { OrderDistribution } from '../components/OrderDistribution';
 import { OrderPeriodComparison } from '../components/OrderPeriodComparison';
-import { asInstant, quickPeriodRange, showCount, showDate, type QuickPeriod, type ReportZone } from '../services/period';
+import { asInstant, INSTALLATION_ZONE, isReportZone, quickPeriodRange, showCount, showDate, type QuickPeriod, type ReportZone } from '../services/period';
 import { decodeReportLink, encodeReportLink, type ReportLinkRead } from '../services/reportLinks';
 import {
   describeReportFailure,
@@ -42,7 +42,7 @@ function ReportsView({ link }: { link: ReportLinkRead }) {
   // Estado inicial desde el enlace; ninguna consulta hasta que el usuario la pida.
   const [start, setStart] = useState(fromLink?.primary.startLocal ?? '');
   const [end, setEnd] = useState(fromLink?.primary.endLocal ?? '');
-  const [zone, setZone] = useState<TimeZone>(fromLink?.zone ?? 'America/Lima');
+  const [zone, setZone] = useState<TimeZone>(fromLink?.zone ?? INSTALLATION_ZONE);
   const [state, setState] = useState<ViewState>({ kind: 'idle' });
   const [inputError, setInputError] = useState<string | null>(null);
   const [comparePrevious, setComparePrevious] = useState(false);
@@ -223,7 +223,7 @@ function ReportsView({ link }: { link: ReportLinkRead }) {
           </label>
           <label className="rp-field">
             Zona horaria
-            <select className="ui-input" value={zone} onChange={(e) => { setZone(e.target.value as TimeZone); invalidateConsultation(); }}>
+            <select className="ui-input" value={zone} onChange={(e) => { if (!isReportZone(e.target.value)) return; setZone(e.target.value); invalidateConsultation(); }}>
               <option value="America/Lima">Perú · America/Lima (UTC−05:00)</option>
               <option value="UTC">UTC (UTC+00:00)</option>
             </select>
