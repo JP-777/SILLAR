@@ -53,8 +53,6 @@ internal sealed class ProviderReceptionOrchestrator(
             request.ExternalSettlementId,
             bodySha256,
             verification.VerifiedAt!.Value);
-        var known = await ledger.LoadKnownVerifiedEvidenceAsync(
-            cancellationToken);
         var observations = new[]
         {
             new ProviderEvidenceObservation(
@@ -62,31 +60,49 @@ internal sealed class ProviderReceptionOrchestrator(
                 ProviderEvidenceVerdict.AttestedByVerifier,
                 verification.AttestationReference)
         };
-        var analysis = ProviderSettlementAnalysisPipeline.Analyze(
-            [evidence],
-            known,
-            observations);
-        var trace = analysis.Trace.Single();
-        var state = trace.ReviewLane switch
+        for (var persistenceAttempt = 0; persistenceAttempt < 2;
+             persistenceAttempt++)
         {
-            ProviderSettlementReviewLane.Hold => ProviderReceptionState.Held,
-            ProviderSettlementReviewLane.PreviouslyKnown =>
-                ProviderReceptionState.Duplicate,
-            ProviderSettlementReviewLane.RequiresSeparateDurableGate =>
-                ProviderReceptionState.PendingDurableReview,
-            _ => ProviderReceptionState.Indeterminate
-        };
-        var integrity = ProviderSettlementAnalysisIntegrity.Create(analysis);
-        var authenticated = CreateRecord(
-            request,
-            bodySha256,
-            verification,
-            state,
-            evidence,
-            integrity.ContentSha256);
+            var known = await ledger.LoadKnownVerifiedEvidenceAsync(
+                cancellationToken);
+            var analysis = ProviderSettlementAnalysisPipeline.Analyze(
+                [evidence],
+                known,
+                observations);
+            var trace = analysis.Trace.Single();
+            var state = trace.ReviewLane switch
+            {
+                ProviderSettlementReviewLane.Hold => ProviderReceptionState.Held,
+                ProviderSettlementReviewLane.PreviouslyKnown =>
+                    ProviderReceptionState.Duplicate,
+                ProviderSettlementReviewLane.RequiresSeparateDurableGate =>
+                    ProviderReceptionState.PendingDurableReview,
+                _ => ProviderReceptionState.Indeterminate
+            };
+            var integrity = ProviderSettlementAnalysisIntegrity.Create(analysis);
+            var authenticated = CreateRecord(
+                request,
+                bodySha256,
+                verification,
+                state,
+                evidence,
+                integrity.ContentSha256);
 
-        await ledger.RecordAsync(authenticated, cancellationToken);
-        return new(authenticated, analysis);
+            try
+            {
+                await ledger.RecordAsync(authenticated, cancellationToken);
+                return new(authenticated, analysis);
+            }
+            catch (ProviderInboxConcurrencyException)
+                when (persistenceAttempt == 0)
+            {
+                // La restricción durable decidió la carrera. Se relee toda la
+                // evidencia y se vuelve a clasificar una sola vez.
+            }
+        }
+
+        throw new InvalidOperationException(
+            "La recepción no pudo estabilizar su identidad concurrente.");
     }
 
     private static ProviderReceptionRecord CreateRecord(

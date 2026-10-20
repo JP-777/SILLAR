@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Sillar.Modules.Payments.Application.Contracts;
 using Sillar.Modules.Payments.Domain;
 using Sillar.Modules.Payments.Infrastructure.Persistence.Entities;
@@ -59,7 +60,19 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
         }
 
         database.EvidenceReceipts.Add(receipt);
-        await database.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await database.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (
+            database.Database.CurrentTransaction is null
+            && IsProviderEventUniquenessViolation(exception))
+        {
+            database.ChangeTracker.Clear();
+            throw new ProviderInboxConcurrencyException(
+                "Otra recepción creó la misma identidad durante el análisis.",
+                exception);
+        }
     }
 
     public async ValueTask<ProviderInboxStatus?> GetStatusAsync(
@@ -342,6 +355,14 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
             return false;
         }
     }
+
+    private static bool IsProviderEventUniquenessViolation(
+        DbUpdateException exception)
+        => exception.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: "uq_payment_inbox_provider_event"
+        };
 
     private static string ToPersistenceState(ProviderReceptionState state)
         => state switch

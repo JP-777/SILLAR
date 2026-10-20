@@ -33,6 +33,25 @@ public sealed class ProviderOrchestrationTests
     }
 
     [Fact]
+    public async Task Carrera_de_unicidad_relee_y_reclasifica_como_replay()
+    {
+        var ledger = new RacingLedger();
+        var verifier = AuthenticatedVerifier();
+        var orchestrator = new ProviderReceptionOrchestrator(verifier, ledger);
+
+        var result = await orchestrator.ReceiveAsync(
+            Request("same-body"),
+            CancellationToken);
+
+        Assert.Equal(ProviderReceptionState.Duplicate, result.Record.State);
+        Assert.Equal(2, ledger.LoadCalls);
+        Assert.Single(ledger.Records);
+        Assert.Equal(
+            ProviderSettlementReviewLane.PreviouslyKnown,
+            Assert.Single(result.Analysis!.Trace).ReviewLane);
+    }
+
+    [Fact]
     public async Task Mismo_evento_con_otro_body_queda_en_hold()
     {
         var ledger = new MemoryLedger();
@@ -273,6 +292,40 @@ public sealed class ProviderOrchestrationTests
                 _known.Add(record.VerifiedEvidence);
             }
 
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    private sealed class RacingLedger : IProviderReceptionLedger
+    {
+        private readonly List<VerifiedExternalPaymentEvidence> _known = [];
+        private bool _raced;
+
+        internal List<ProviderReceptionRecord> Records { get; } = [];
+        internal int LoadCalls { get; private set; }
+
+        public ValueTask<IReadOnlyList<VerifiedExternalPaymentEvidence>>
+            LoadKnownVerifiedEvidenceAsync(CancellationToken cancellationToken)
+        {
+            LoadCalls++;
+            return ValueTask.FromResult<IReadOnlyList<
+                VerifiedExternalPaymentEvidence>>(_known.ToArray());
+        }
+
+        public ValueTask RecordAsync(
+            ProviderReceptionRecord record,
+            CancellationToken cancellationToken)
+        {
+            if (!_raced)
+            {
+                _raced = true;
+                _known.Add(record.VerifiedEvidence!);
+                throw new ProviderInboxConcurrencyException(
+                    "simulated_unique_race",
+                    new InvalidOperationException());
+            }
+
+            Records.Add(record);
             return ValueTask.CompletedTask;
         }
     }
