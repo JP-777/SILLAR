@@ -1,4 +1,4 @@
-import { orderStates, type OrderIndicatorsView } from './orderIndicators';
+import { orderStates, type OrderIndicatorsView } from './orderIndicators.ts';
 
 /**
  * Los indicadores llegaron, pero no cuadran entre sí o no son del período pedido.

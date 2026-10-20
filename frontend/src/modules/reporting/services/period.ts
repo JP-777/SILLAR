@@ -24,6 +24,8 @@ export function asInstant(value: string, zone: ReportZone): string {
   const parts = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})(?::(\d{2}))?$/.exec(value);
   if (!parts) throw new RangeError('Fecha y hora con formato inesperado.');
   const [, minutes, seconds = '00'] = parts;
+  // Mismo rango que explainComparison (D14) y que DateTimeOffset de .NET: año 1..9999.
+  if (minutes.startsWith('0000')) throw new RangeError('El año 0000 no existe en el calendario de la consulta.');
   const offsetHours = ZONE_OFFSET_HOURS[zone];
   const offset = offsetHours === 0 ? 'Z' : `-${String(-offsetHours).padStart(2, '0')}:00`;
   const parsed = new Date(`${minutes}:${seconds}${offset}`);

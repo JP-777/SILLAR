@@ -4,7 +4,7 @@
  * Debe alimentarse EXCLUSIVAMENTE de respuestas que el llamador haya pasado
  * previamente por verifyOrderIndicators (D8). `validated` no sustituye esa llamada.
  */
-import { explainComparison, type CohortWindow, type ComparisonExplanation } from './explainComparison';
+import { explainComparison, type CohortWindow, type ComparisonExplanation } from './explainComparison.ts';
 
 export type ReportingDataState = 'with_data' | 'empty' | 'source_unavailable' | 'error';
 export interface ReportComparisonSnapshot {
@@ -47,7 +47,7 @@ export function assessReportComparison(
   const explanation = explainComparison(baseline.window, compared.window);
   const reasons: string[] = []; // Las notas de D13 son informativas.
   if (!baseline.validated || !compared.validated) {
-    reasons.push('Ambos informes deben pasar la verificación D8 antes de calcular diferencias.');
+    reasons.push('Ambos informes deben pasar la verificación de coherencia antes de calcular diferencias.');
   }
   if (!(baseline.state === 'with_data' || baseline.state === 'empty') ||
       !(compared.state === 'with_data' || compared.state === 'empty')) {

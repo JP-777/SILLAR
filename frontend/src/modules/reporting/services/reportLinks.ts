@@ -1,4 +1,4 @@
-import { asInstant, type ReportZone } from './period';
+import { asInstant, type ReportZone } from './period.ts';
 
 /**
  * M10 D12 — Enlaces reproducibles para filtros de reportes.
