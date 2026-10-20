@@ -52,11 +52,20 @@ internal sealed class ProviderEvidenceReceiptConfiguration
             .HasName("pk_provider_evidence_receipts");
         builder.Property(item => item.ReceiptId).HasColumnName("receipt_id");
         builder.Property(item => item.Provider)
-            .HasColumnName("provider").HasMaxLength(128).IsRequired();
+            .HasColumnName("provider")
+            .HasMaxLength(128)
+            .UseCollation(PaymentsDbContext.OpaqueIdentifierCollation)
+            .IsRequired();
         builder.Property(item => item.ProviderEventId)
-            .HasColumnName("provider_event_id").HasMaxLength(512).IsRequired();
+            .HasColumnName("provider_event_id")
+            .HasMaxLength(512)
+            .UseCollation(PaymentsDbContext.OpaqueIdentifierCollation)
+            .IsRequired();
         builder.Property(item => item.ExternalSettlementId)
-            .HasColumnName("external_settlement_id").HasMaxLength(512).IsRequired();
+            .HasColumnName("external_settlement_id")
+            .HasMaxLength(512)
+            .UseCollation(PaymentsDbContext.OpaqueIdentifierCollation)
+            .IsRequired();
         builder.Property(item => item.BodySha256)
             .HasColumnName("body_sha256").HasMaxLength(64).IsFixedLength().IsRequired();
         builder.Property(item => item.ReceivedAt)
@@ -67,7 +76,9 @@ internal sealed class ProviderEvidenceReceiptConfiguration
             .HasColumnName("reception_state").HasMaxLength(32).IsRequired();
         builder.Property(item => item.VerifiedAt).HasColumnName("verified_at");
         builder.Property(item => item.AttestationReference)
-            .HasColumnName("attestation_reference").HasMaxLength(512);
+            .HasColumnName("attestation_reference")
+            .HasMaxLength(512)
+            .UseCollation(PaymentsDbContext.OpaqueIdentifierCollation);
         builder.Property(item => item.RejectionReason)
             .HasColumnName("rejection_reason").HasMaxLength(512);
         builder.Property(item => item.AnalysisSha256)

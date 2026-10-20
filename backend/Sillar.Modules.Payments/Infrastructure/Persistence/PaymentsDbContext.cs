@@ -10,6 +10,12 @@ public sealed class PaymentsDbContext(
     public const string Schema = "payments";
     public const string MigrationsHistoryTable = "__migrations";
 
+    /// <summary>
+    /// Colación determinista y sensible a cada byte para identificadores
+    /// externos opacos. Evita heredar una colación cultural o case-insensitive.
+    /// </summary>
+    public const string OpaqueIdentifierCollation = "C";
+
     internal DbSet<ProviderEvidenceReceipt> EvidenceReceipts
         => Set<ProviderEvidenceReceipt>();
 

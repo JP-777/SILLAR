@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Sillar.Modules.Payments.Domain;
 using Sillar.Modules.Payments.Infrastructure.Persistence;
 using Sillar.Modules.Payments.Infrastructure.Persistence.Entities;
 
@@ -34,7 +35,8 @@ public sealed class PaymentsPersistenceTests
     public void Inbox_deduplica_por_proveedor_y_evento_pero_no_libera_liquidaciones_cruzadas()
     {
         using var context = Context();
-        var entity = context.Model.FindEntityType(typeof(ProviderInboxEvent))!;
+        var entity = context.GetService<IDesignTimeModel>().Model
+            .FindEntityType(typeof(ProviderInboxEvent))!;
         var indexes = entity.GetIndexes().ToArray();
         var eventIdentity = Assert.Single(indexes, index =>
             index.Properties.Select(property => property.Name)
@@ -51,6 +53,67 @@ public sealed class PaymentsPersistenceTests
         Assert.Equal(
             "uq_payment_inbox_provider_event",
             eventIdentity.GetDatabaseName());
+        Assert.All(
+            eventIdentity.Properties,
+            property => Assert.Equal(
+                PaymentsDbContext.OpaqueIdentifierCollation,
+                property.GetCollation()));
+    }
+
+    [Fact]
+    public void Identificadores_externos_declaran_colacion_determinista_explicita()
+    {
+        using var context = Context();
+        var model = context.GetService<IDesignTimeModel>().Model;
+        var inbox = model.FindEntityType(typeof(ProviderInboxEvent))!;
+        var receipt = model.FindEntityType(typeof(ProviderEvidenceReceipt))!;
+
+        AssertOpaqueCollation(
+            inbox,
+            nameof(ProviderInboxEvent.Provider),
+            nameof(ProviderInboxEvent.ProviderEventId),
+            nameof(ProviderInboxEvent.ExternalSettlementId),
+            nameof(ProviderInboxEvent.CommercialEffectReference));
+        AssertOpaqueCollation(
+            receipt,
+            nameof(ProviderEvidenceReceipt.Provider),
+            nameof(ProviderEvidenceReceipt.ProviderEventId),
+            nameof(ProviderEvidenceReceipt.ExternalSettlementId),
+            nameof(ProviderEvidenceReceipt.AttestationReference));
+    }
+
+    [Theory]
+    [InlineData("Provider-A", "Event-ABC", "Settlement-XYZ")]
+    [InlineData("provider-a", "event-abc", "settlement-xyz")]
+    [InlineData(" provider:#/Á ", " event:?&=ñ ", " settlement:+%@ü ")]
+    public void Persistencia_conserva_identidades_opacas_sin_normalizarlas(
+        string provider,
+        string providerEventId,
+        string externalSettlementId)
+    {
+        var evidence = VerifiedExternalPaymentEvidence.FromVerifiedWebhook(
+            provider,
+            providerEventId,
+            externalSettlementId,
+            new string('a', 64),
+            PaymentTestData.VerifiedAt);
+        var inbox = ProviderInboxEvent.Create(
+            evidence,
+            PaymentTestData.VerifiedAt);
+        var receipt = ProviderEvidenceReceipt.Receive(
+            Guid.CreateVersion7(),
+            provider,
+            providerEventId,
+            externalSettlementId,
+            new string('b', 64),
+            PaymentTestData.VerifiedAt);
+
+        Assert.Equal(provider, inbox.Provider);
+        Assert.Equal(providerEventId, inbox.ProviderEventId);
+        Assert.Equal(externalSettlementId, inbox.ExternalSettlementId);
+        Assert.Equal(provider, receipt.Provider);
+        Assert.Equal(providerEventId, receipt.ProviderEventId);
+        Assert.Equal(externalSettlementId, receipt.ExternalSettlementId);
     }
 
     [Fact]
@@ -230,5 +293,16 @@ public sealed class PaymentsPersistenceTests
                 "Host=localhost;Database=sillar_tests;Username=sillar;Password=sillar")
             .Options;
         return new PaymentsDbContext(options);
+    }
+
+    private static void AssertOpaqueCollation(
+        IEntityType entity,
+        params string[] propertyNames)
+    {
+        Assert.All(
+            propertyNames,
+            propertyName => Assert.Equal(
+                PaymentsDbContext.OpaqueIdentifierCollation,
+                entity.FindProperty(propertyName)!.GetCollation()));
     }
 }

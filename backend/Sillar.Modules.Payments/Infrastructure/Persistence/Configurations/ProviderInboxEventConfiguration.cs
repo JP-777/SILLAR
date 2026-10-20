@@ -60,11 +60,20 @@ internal sealed class ProviderInboxEventConfiguration
             .HasName("pk_provider_inbox_events");
         builder.Property(item => item.InboxEventId).HasColumnName("inbox_event_id");
         builder.Property(item => item.Provider)
-            .HasColumnName("provider").HasMaxLength(128).IsRequired();
+            .HasColumnName("provider")
+            .HasMaxLength(128)
+            .UseCollation(PaymentsDbContext.OpaqueIdentifierCollation)
+            .IsRequired();
         builder.Property(item => item.ProviderEventId)
-            .HasColumnName("provider_event_id").HasMaxLength(512).IsRequired();
+            .HasColumnName("provider_event_id")
+            .HasMaxLength(512)
+            .UseCollation(PaymentsDbContext.OpaqueIdentifierCollation)
+            .IsRequired();
         builder.Property(item => item.ExternalSettlementId)
-            .HasColumnName("external_settlement_id").HasMaxLength(512).IsRequired();
+            .HasColumnName("external_settlement_id")
+            .HasMaxLength(512)
+            .UseCollation(PaymentsDbContext.OpaqueIdentifierCollation)
+            .IsRequired();
         builder.Property(item => item.BodySha256)
             .HasColumnName("body_sha256").HasMaxLength(64).IsFixedLength().IsRequired();
         builder.Property(item => item.VerifiedAt).HasColumnName("verified_at").IsRequired();
@@ -80,7 +89,9 @@ internal sealed class ProviderInboxEventConfiguration
         builder.Property(item => item.CommercialEffectState)
             .HasColumnName("commercial_effect_state").HasMaxLength(32).IsRequired();
         builder.Property(item => item.CommercialEffectReference)
-            .HasColumnName("commercial_effect_reference").HasMaxLength(512);
+            .HasColumnName("commercial_effect_reference")
+            .HasMaxLength(512)
+            .UseCollation(PaymentsDbContext.OpaqueIdentifierCollation);
         builder.Property(item => item.LastFailureCode)
             .HasColumnName("last_failure_code").HasMaxLength(256);
         builder.Property(item => item.CreatedAt).HasColumnName("created_at").IsRequired();
