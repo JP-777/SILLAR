@@ -166,6 +166,10 @@ internal interface IProviderReceptionLedger
         CancellationToken cancellationToken);
 }
 
+internal sealed class ProviderInboxConcurrencyException(
+    string message,
+    Exception innerException) : Exception(message, innerException);
+
 internal sealed record ProviderReceptionResult(
     ProviderReceptionRecord Record,
     ProviderSettlementAnalysisResult? Analysis);
