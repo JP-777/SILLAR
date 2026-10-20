@@ -7,5 +7,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Sillar.Core.Contracts\Sillar.Core.Contracts.csproj" />
+    <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
   </ItemGroup>
 </Project>
