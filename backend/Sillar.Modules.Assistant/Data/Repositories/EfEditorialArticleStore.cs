@@ -54,6 +54,7 @@ public sealed class EfEditorialArticleStore(
             InstallationId = article.InstallationId,
             ArticleId = article.Id,
             Question = draft.Question,
+            QuestionKey = FaqService.Normalize(draft.Question),
             Answer = draft.Answer,
             Title = draft.Title,
             PublicUrl = draft.PublicUri.AbsoluteUri,
