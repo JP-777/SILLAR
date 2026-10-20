@@ -43,7 +43,9 @@ public sealed class LocalAssistantQuotaStore
 
     private sealed class State(LocalQuotaConfiguration configuration)
     {
-        public LocalQuotaConfiguration Configuration { get; } = configuration;
+        public LocalQuotaConfiguration Configuration { get; set; } = configuration;
+        public long PolicyVersion;
+        public List<LocalQuotaPolicyChange> PolicyChanges { get; } = [];
         public long Consumed;
         public long Reserved;
         public int Running;
@@ -72,6 +74,81 @@ public sealed class LocalAssistantQuotaStore
         if (_states.Count == 0)
             throw new ArgumentException("Se requiere al menos una instalación.", nameof(configurations));
     }
+
+    /// <summary>
+    /// Cambio atomico de modalidad/cupo, exclusivo del super_admin de la misma
+    /// instalacion. No reinicia consumo ni cancela reservas. Si hay trabajos en
+    /// vuelo, incluyendo despachos de resultado incierto, no permite cambiar.
+    /// Version esperada impide dos administraciones concurrentes silenciosas.
+    /// </summary>
+    public QuotaPolicyUpdateOutcome UpdatePolicy(TrustedQuotaAdministrator? actor,
+        LocalQuotaConfiguration? next, long expectedVersion, DateTimeOffset now)
+    {
+        if (!TrustedSuperAdmin(actor)) return QuotaPolicyUpdateOutcome.Forbidden;
+        if (next is null || next.InstallationId != actor!.InstallationId ||
+            !ValidConfiguration(next) || expectedVersion < 0)
+            return QuotaPolicyUpdateOutcome.Invalid;
+        lock (_gate)
+        {
+            if (!_states.TryGetValue(actor.InstallationId, out var state))
+                return QuotaPolicyUpdateOutcome.NotFound;
+            if (expectedVersion != state.PolicyVersion || state.PolicyVersion == long.MaxValue)
+                return QuotaPolicyUpdateOutcome.Conflict;
+            if (state.Configuration == next) return QuotaPolicyUpdateOutcome.Unchanged;
+            if (state.Running != 0 || state.Reserved != 0)
+                return QuotaPolicyUpdateOutcome.InFlight;
+            if (next.LimitUnits < state.Consumed ||
+                (next.Mode != state.Configuration.Mode && state.Consumed != 0))
+                // Las unidades locales y externas no son intercambiables:
+                // cambiar motor con consumo exige una epoca presupuestaria aparte.
+                return QuotaPolicyUpdateOutcome.Conflict;
+
+            var before = state.Configuration;
+            state.Configuration = next;
+            state.PolicyVersion++;
+            state.PolicyChanges.Add(new LocalQuotaPolicyChange(
+                actor.InstallationId, actor.AuditActorKey,
+                state.PolicyVersion - 1, state.PolicyVersion, before, next,
+                now.ToUniversalTime()));
+            return QuotaPolicyUpdateOutcome.Updated;
+        }
+    }
+
+    /// <summary>Solo autoridad super_admin puede consultar el modo y limite.</summary>
+    public LocalQuotaPolicySnapshot? ReadPolicy(TrustedQuotaAdministrator? actor)
+    {
+        if (!TrustedSuperAdmin(actor)) return null;
+        lock (_gate)
+        {
+            return _states.TryGetValue(actor!.InstallationId, out var state)
+                ? new(state.Configuration, state.PolicyVersion) : null;
+        }
+    }
+
+    /// <summary>Copia limitada de cambios, nunca una lista mutable compartida.</summary>
+    public IReadOnlyList<LocalQuotaPolicyChange> ReadPolicyChanges(
+        TrustedQuotaAdministrator? actor, int maxResults = 50)
+    {
+        if (!TrustedSuperAdmin(actor) || maxResults is < 1 or > 100) return [];
+        lock (_gate)
+        {
+            return _states.TryGetValue(actor!.InstallationId, out var state)
+                ? state.PolicyChanges.AsEnumerable().Reverse().Take(maxResults).ToArray()
+                : [];
+        }
+    }
+
+    private static bool TrustedSuperAdmin(TrustedQuotaAdministrator? actor) =>
+        actor is not null && actor.InstallationId != Guid.Empty &&
+        actor.HasScopeAuthority && actor.Role == EditorialRoles.SuperAdmin &&
+        !string.IsNullOrWhiteSpace(actor.AuditActorKey) &&
+        actor.AuditActorKey.Length <= 128 &&
+        !actor.AuditActorKey.Any(char.IsControl);
+
+    private static bool ValidConfiguration(LocalQuotaConfiguration config) =>
+        config.InstallationId != Guid.Empty && Enum.IsDefined(config.Mode) &&
+        config.LimitUnits >= 0 && config.ConcurrencyLimit >= 0 &&
+        (config.Mode != AssistantMode.Faq || !config.EngineConfigured);
 
     public QuotaReservation TryReserve(Guid installationId, long worstCaseUnits)
     {
