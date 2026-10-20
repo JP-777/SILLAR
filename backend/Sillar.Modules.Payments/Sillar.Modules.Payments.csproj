@@ -2,4 +2,13 @@
 
   <!-- Núcleo puro de M11. No registra endpoints, persistencia ni proveedor. -->
 
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Shared\Sillar.Shared.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Sales.Contracts\Sillar.Modules.Sales.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Sillar.Modules.Payments.Tests" />
+  </ItemGroup>
+
 </Project>
