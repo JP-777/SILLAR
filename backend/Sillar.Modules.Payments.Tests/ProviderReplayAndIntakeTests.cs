@@ -159,4 +159,123 @@ public sealed class ProviderReplayAndIntakeTests
         Assert.Throws<ArgumentNullException>(() =>
             ProviderReplayBatchAnalyzer.Analyze([incoming, null!], []));
     }
+
+    [Fact]
+    public void Lote_optimizado_conserva_la_clasificacion_de_referencia()
+    {
+        var incoming = Enumerable.Range(0, 240)
+            .Select(index => PaymentTestData.Evidence(
+                provider: $"provider-{index % 5}",
+                eventId: $"event-{index % 120:D3}",
+                settlementId: $"settlement-{index % 80:D3}",
+                hashDigit: "0123456789abcdef"[index % 16]))
+            .ToList();
+        incoming.AddRange(incoming.Take(20));
+        incoming.AddRange(incoming.Take(10).Select(item =>
+            PaymentTestData.Evidence(
+                item.Provider,
+                item.ProviderEventId,
+                item.ExternalSettlementId,
+                item.BodySha256[0] == 'f' ? 'e' : 'f')));
+        var known = Enumerable.Range(0, 90)
+            .Select(index => PaymentTestData.Evidence(
+                provider: $"provider-{index % 4}",
+                eventId: $"event-{index % 70:D3}",
+                settlementId: $"settlement-{index % 60:D3}",
+                hashDigit: "fedcba9876543210"[index % 16]))
+            .ToArray();
+
+        var expected = AnalyzeByReference(incoming, known);
+        var actual = ProviderReplayBatchAnalyzer.Analyze(incoming, known);
+
+        Assert.Equal(expected.Items, actual.Items);
+        Assert.Equal(expected.HasConflicts, actual.HasConflicts);
+    }
+
+    [Fact]
+    public void Lote_de_volumen_es_reproducible_en_orden_inverso()
+    {
+        var incoming = Enumerable.Range(0, 4096)
+            .Select(index => PaymentTestData.Evidence(
+                eventId: $"event-{index:D5}",
+                settlementId: $"settlement-{index:D5}",
+                hashDigit: "0123456789abcdef"[index % 16]))
+            .ToArray();
+        var known = incoming
+            .Where((_, index) => index % 4 == 0)
+            .Take(512)
+            .ToArray();
+
+        var forward = ProviderReplayBatchAnalyzer.Analyze(incoming, known);
+        var reversed = ProviderReplayBatchAnalyzer.Analyze(
+            incoming.Reverse(),
+            known.Reverse());
+
+        Assert.Equal(4096, forward.Items.Count);
+        Assert.Equal(forward.Items, reversed.Items);
+        Assert.False(forward.HasConflicts);
+        Assert.Equal(
+            512,
+            forward.Items.Count(item =>
+                item.Decision == ProviderReplayDecision.DuplicateEvent));
+        Assert.Equal(
+            3584,
+            forward.Items.Count(item =>
+                item.Decision == ProviderReplayDecision.NewEvent));
+    }
+
+    private static ProviderReplayBatchResult AnalyzeByReference(
+        IEnumerable<VerifiedExternalPaymentEvidence> incoming,
+        IEnumerable<VerifiedExternalPaymentEvidence> known)
+    {
+        var history = known.ToArray();
+        var unique = incoming
+            .GroupBy(PaymentIdempotencyKeys.From)
+            .Select(group => new
+            {
+                Identity = group.Key,
+                Representative = group.First(),
+                Occurrences = group.Count(),
+                ContradictoryBody = group
+                    .Select(item => item.BodySha256)
+                    .Distinct(StringComparer.Ordinal)
+                    .Skip(1)
+                    .Any()
+            })
+            .OrderBy(item => item.Identity.Reception.Provider, StringComparer.Ordinal)
+            .ThenBy(item => item.Identity.Reception.ProviderEventId, StringComparer.Ordinal)
+            .ThenBy(item => item.Identity.Settlement.Value, StringComparer.Ordinal)
+            .ToArray();
+        var result = new List<ProviderReplayBatchItem>(unique.Length);
+
+        for (var index = 0; index < unique.Length; index++)
+        {
+            var current = unique[index];
+            var comparisons = history
+                .Concat(unique
+                    .Where((_, otherIndex) => otherIndex != index)
+                    .Select(item => item.Representative))
+                .ToList();
+            if (current.Occurrences > 1)
+            {
+                comparisons.Add(current.Representative);
+            }
+
+            var decision = current.ContradictoryBody
+                ? ProviderReplayDecision.ConflictingEvent
+                : ProviderReplayClassifier.Classify(
+                    current.Representative,
+                    comparisons);
+            result.Add(new(
+                current.Identity,
+                current.Occurrences,
+                decision));
+        }
+
+        return new(
+            result,
+            result.Any(item => item.Decision is
+                ProviderReplayDecision.ConflictingEvent
+                    or ProviderReplayDecision.ConflictingSettlement));
+    }
 }

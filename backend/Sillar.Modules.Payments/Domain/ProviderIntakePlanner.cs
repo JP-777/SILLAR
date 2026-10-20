@@ -64,6 +64,11 @@ public static class ProviderIntakePlanner
         var knownIdentities = history
             .Select(PaymentIdempotencyKeys.From)
             .ToHashSet();
+        var knownSettlements = knownIdentities
+            .Select(identity => new ProviderSettlementGroup(
+                identity.Reception.Provider,
+                identity.Settlement.Value))
+            .ToHashSet();
         var result = new List<ProviderIntakePlanItem>(batch.Items.Count);
 
         var groups = batch.Items
@@ -81,13 +86,7 @@ public static class ProviderIntakePlanner
                     StringComparer.Ordinal)
                 .ToArray();
             var groupHasConflict = ordered.Any(item => IsConflict(item.Decision));
-            var knownSettlement = knownIdentities.Any(identity =>
-                StringComparer.Ordinal.Equals(
-                    identity.Reception.Provider,
-                    group.Key.Provider)
-                && StringComparer.Ordinal.Equals(
-                    identity.Settlement.Value,
-                    group.Key.ExternalSettlementId));
+            var knownSettlement = knownSettlements.Contains(group.Key);
             var candidateChosen = false;
 
             foreach (var entry in ordered)

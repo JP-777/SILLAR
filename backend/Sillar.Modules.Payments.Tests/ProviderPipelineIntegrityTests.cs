@@ -198,6 +198,46 @@ public sealed class ProviderPipelineIntegrityTests
             ProviderSettlementAnalysisPipeline.Analyze([evidence, null!], [], []));
     }
 
+    [Fact]
+    public void Pipeline_con_volumen_conserva_todos_los_holds_interproveedor()
+    {
+        var incoming = Enumerable.Range(0, 512)
+            .SelectMany(index => new[]
+            {
+                PaymentTestData.Evidence(
+                    provider: "provider-a",
+                    eventId: $"event-a-{index:D4}",
+                    settlementId: $"settlement-{index:D4}",
+                    hashDigit: 'a'),
+                PaymentTestData.Evidence(
+                    provider: "provider-b",
+                    eventId: $"event-b-{index:D4}",
+                    settlementId: $"settlement-{index:D4}",
+                    hashDigit: 'b')
+            })
+            .ToArray();
+        var observations = incoming
+            .Select((item, index) =>
+                PaymentTestData.Attested(item, $"ref-{index:D4}"))
+            .ToArray();
+
+        var result = ProviderSettlementAnalysisPipeline.Analyze(
+            incoming,
+            [],
+            observations);
+
+        Assert.Equal(1024, result.Trace.Count);
+        Assert.Equal(512, result.ConflictReport.Cases.Count);
+        Assert.Equal(512, result.ReviewPlan.CrossProviderSettlementIds.Count);
+        Assert.All(result.Trace, item =>
+        {
+            Assert.True(item.IsHeld);
+            Assert.Equal(
+                ProviderSettlementReviewHoldReason.CrossProviderIdentityUnresolved,
+                item.HoldReason);
+        });
+    }
+
     private static ProviderReviewAuditRow AuditRow(
         string provider,
         string settlement,

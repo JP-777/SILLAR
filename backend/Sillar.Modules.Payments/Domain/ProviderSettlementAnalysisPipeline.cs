@@ -151,6 +151,7 @@ public static class ProviderSettlementAnalysisPipeline
             item => new SettlementIdentity(
                 item.Provider,
                 item.ExternalSettlementId));
+        var conflictsByIncomingIdentity = IndexConflictKinds(conflictReport);
         var trace = new List<ProviderSettlementAnalysisTraceItem>(
             evidenceReview.Items.Count);
 
@@ -178,9 +179,16 @@ public static class ProviderSettlementAnalysisPipeline
                     "Una identidad P5 carece de proyección completa P6–P8.");
             }
 
-            var conflictKinds = GetConflictKinds(
-                reviewed.Identity,
-                conflictReport);
+            var incomingIdentity = new IncomingIdentity(
+                reviewed.Identity.Reception.Provider,
+                reviewed.Identity.Reception.ProviderEventId,
+                reviewed.Identity.Settlement.Value);
+            if (!conflictsByIncomingIdentity.TryGetValue(
+                    incomingIdentity,
+                    out var conflictKinds))
+            {
+                conflictKinds = [];
+            }
 
             if (conflictKinds.Count > 0
                 && review.Lane != ProviderSettlementReviewLane.Hold)
@@ -233,51 +241,46 @@ public static class ProviderSettlementAnalysisPipeline
         return Array.AsReadOnly(ordered);
     }
 
-    private static IReadOnlyList<ProviderEvidenceConflictKind> GetConflictKinds(
-        PaymentIdempotencyKeys identity,
+    private static IReadOnlyDictionary<
+        IncomingIdentity,
+        IReadOnlyList<ProviderEvidenceConflictKind>> IndexConflictKinds(
         ProviderEvidenceConflictReportResult report)
     {
-        var kinds = report.Cases
-            .Where(conflict => AppliesToIncomingIdentity(conflict, identity))
-            .Select(conflict => conflict.Kind)
-            .Distinct()
-            .OrderBy(kind => kind)
-            .ToArray();
+        var mutable = new Dictionary<
+            IncomingIdentity,
+            HashSet<ProviderEvidenceConflictKind>>();
 
-        return Array.AsReadOnly(kinds);
-    }
+        foreach (var conflict in report.Cases)
+        {
+            foreach (var evidence in conflict.Evidence.Where(item =>
+                         item.Population == ProviderEvidencePopulation.Incoming))
+            {
+                var identity = new IncomingIdentity(
+                    evidence.Provider,
+                    evidence.ProviderEventId,
+                    evidence.ExternalSettlementId);
+                if (!mutable.TryGetValue(identity, out var kinds))
+                {
+                    kinds = [];
+                    mutable.Add(identity, kinds);
+                }
 
-    private static bool AppliesToIncomingIdentity(
-        ProviderEvidenceConflictCase conflict,
-        PaymentIdempotencyKeys identity)
-    {
-        var isSettlementConflict = conflict.Kind ==
-            ProviderEvidenceConflictKind.CrossProviderSettlementIdentityUnresolved;
-        var identityMatches = isSettlementConflict
-            ? StringComparer.Ordinal.Equals(
-                conflict.IdentityValue,
-                identity.Settlement.Value)
-            : StringComparer.Ordinal.Equals(
-                    conflict.Provider,
-                    identity.Reception.Provider)
-                && StringComparer.Ordinal.Equals(
-                    conflict.IdentityValue,
-                    identity.Reception.ProviderEventId);
+                kinds.Add(conflict.Kind);
+            }
+        }
 
-        return identityMatches && conflict.Evidence.Any(item =>
-            item.Population == ProviderEvidencePopulation.Incoming
-            && StringComparer.Ordinal.Equals(
-                item.Provider,
-                identity.Reception.Provider)
-            && StringComparer.Ordinal.Equals(
-                item.ProviderEventId,
-                identity.Reception.ProviderEventId)
-            && StringComparer.Ordinal.Equals(
-                item.ExternalSettlementId,
-                identity.Settlement.Value));
+        return mutable.ToDictionary(
+            pair => pair.Key,
+            pair => (IReadOnlyList<ProviderEvidenceConflictKind>)
+                Array.AsReadOnly(pair.Value.OrderBy(kind => kind).ToArray()));
     }
 
     private sealed record SettlementIdentity(
         string Provider,
+        string ExternalSettlementId);
+
+    private sealed record IncomingIdentity(
+        string Provider,
+        string ProviderEventId,
         string ExternalSettlementId);
 }

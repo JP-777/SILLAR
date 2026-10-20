@@ -71,43 +71,62 @@ public static class ProviderReplayBatchAnalyzer
                 StringComparer.Ordinal)
             .ToArray();
 
+        // Agregar una sola vez evita reconstruir y recorrer todas las
+        // comparaciones por cada identidad. Las cardinalidades siguientes son
+        // suficientes para conservar la precedencia P2 en tiempo lineal medio.
+        var receptionFacts = new Dictionary<
+            ReceptionIdentity,
+            HashSet<ReceptionFact>>();
+        var settlementProviders = new Dictionary<string, HashSet<string>>(
+            StringComparer.Ordinal);
+        var settlementEvents = new Dictionary<
+            ProviderSettlementIdentity,
+            HashSet<string>>();
+        var knownExactEvidence = new HashSet<ExactEvidenceIdentity>();
+
+        foreach (var evidence in knownEvidence)
+        {
+            Index(evidence, receptionFacts, settlementProviders, settlementEvents);
+            knownExactEvidence.Add(ExactEvidenceIdentity.From(evidence));
+        }
+
+        foreach (var item in uniqueIncoming)
+        {
+            Index(
+                item.Representative,
+                receptionFacts,
+                settlementProviders,
+                settlementEvents);
+        }
+
         var results = new List<ProviderReplayBatchItem>(uniqueIncoming.Length);
 
-        for (var index = 0; index < uniqueIncoming.Length; index++)
+        foreach (var current in uniqueIncoming)
         {
-            var current = uniqueIncoming[index];
-            var comparisons = new List<VerifiedExternalPaymentEvidence>(
-                knownEvidence.Length + uniqueIncoming.Length);
+            var evidence = current.Representative;
+            var reception = new ReceptionIdentity(
+                evidence.Provider,
+                evidence.ProviderEventId);
+            var settlement = new ProviderSettlementIdentity(
+                evidence.Provider,
+                evidence.ExternalSettlementId);
+            var conflictingEvent = current.HasContradictoryBodyEvidence
+                || receptionFacts[reception].Count > 1;
+            var conflictingSettlement =
+                settlementProviders[evidence.ExternalSettlementId].Count > 1;
+            var duplicateEvent = current.Occurrences > 1
+                || knownExactEvidence.Contains(ExactEvidenceIdentity.From(evidence));
+            var relatedSettlement = settlementEvents[settlement].Count > 1;
 
-            comparisons.AddRange(knownEvidence);
-
-            for (var otherIndex = 0; otherIndex < uniqueIncoming.Length; otherIndex++)
-            {
-                if (otherIndex != index)
-                {
-                    comparisons.Add(uniqueIncoming[otherIndex].Representative);
-                }
-            }
-
-            // Una repetición exacta dentro del lote es un duplicado semántico.
-            // Se añade sólo una copia: la multiplicidad completa ya se informa y
-            // P2 examinará además todos los conflictos antes de decidir.
-            if (current.Occurrences > 1)
-            {
-                comparisons.Add(current.Representative);
-            }
-
-            var decision = ProviderReplayClassifier.Classify(
-                current.Representative,
-                comparisons);
-
-            // El agrupamiento por claves de idempotencia no puede ocultar que
-            // una misma identidad llegó con cuerpos autenticados diferentes.
-            // El conflicto prevalece incluso si también hubo copias exactas.
-            if (current.HasContradictoryBodyEvidence)
-            {
-                decision = ProviderReplayDecision.ConflictingEvent;
-            }
+            var decision = conflictingEvent
+                ? ProviderReplayDecision.ConflictingEvent
+                : conflictingSettlement
+                    ? ProviderReplayDecision.ConflictingSettlement
+                    : duplicateEvent
+                        ? ProviderReplayDecision.DuplicateEvent
+                        : relatedSettlement
+                            ? ProviderReplayDecision.RelatedSettlement
+                            : ProviderReplayDecision.NewEvent;
 
             results.Add(new ProviderReplayBatchItem(
                 current.Identity,
@@ -127,4 +146,72 @@ public static class ProviderReplayBatchAnalyzer
         VerifiedExternalPaymentEvidence Representative,
         int Occurrences,
         bool HasContradictoryBodyEvidence);
+
+    private static void Index(
+        VerifiedExternalPaymentEvidence evidence,
+        IDictionary<ReceptionIdentity, HashSet<ReceptionFact>> receptionFacts,
+        IDictionary<string, HashSet<string>> settlementProviders,
+        IDictionary<ProviderSettlementIdentity, HashSet<string>> settlementEvents)
+    {
+        var reception = new ReceptionIdentity(
+            evidence.Provider,
+            evidence.ProviderEventId);
+        if (!receptionFacts.TryGetValue(reception, out var facts))
+        {
+            facts = [];
+            receptionFacts.Add(reception, facts);
+        }
+
+        facts.Add(new ReceptionFact(
+            evidence.ExternalSettlementId,
+            evidence.BodySha256));
+
+        if (!settlementProviders.TryGetValue(
+                evidence.ExternalSettlementId,
+                out var providers))
+        {
+            providers = new HashSet<string>(StringComparer.Ordinal);
+            settlementProviders.Add(evidence.ExternalSettlementId, providers);
+        }
+
+        providers.Add(evidence.Provider);
+
+        var settlement = new ProviderSettlementIdentity(
+            evidence.Provider,
+            evidence.ExternalSettlementId);
+        if (!settlementEvents.TryGetValue(settlement, out var events))
+        {
+            events = new HashSet<string>(StringComparer.Ordinal);
+            settlementEvents.Add(settlement, events);
+        }
+
+        events.Add(evidence.ProviderEventId);
+    }
+
+    private sealed record ReceptionIdentity(
+        string Provider,
+        string ProviderEventId);
+
+    private sealed record ReceptionFact(
+        string ExternalSettlementId,
+        string BodySha256);
+
+    private sealed record ProviderSettlementIdentity(
+        string Provider,
+        string ExternalSettlementId);
+
+    private sealed record ExactEvidenceIdentity(
+        string Provider,
+        string ProviderEventId,
+        string ExternalSettlementId,
+        string BodySha256)
+    {
+        internal static ExactEvidenceIdentity From(
+            VerifiedExternalPaymentEvidence evidence)
+            => new(
+                evidence.Provider,
+                evidence.ProviderEventId,
+                evidence.ExternalSettlementId,
+                evidence.BodySha256);
+    }
 }
