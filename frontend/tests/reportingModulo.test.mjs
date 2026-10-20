@@ -220,10 +220,10 @@ test('19 · el CSV de una cohorte lleva BOM, CRLF, cabecera en español y las on
   assert.ok(csv.content.endsWith('\r\n'));
   assert.doesNotMatch(csv.content.replace(/\r\n/g, ''), /\n/);
   const filas = lineas(csv);
-  assert.equal(filas[0], 'Cohorte,Inicio (incluido),Fin (excluido),Zona horaria,Observado,Indicador,Pedidos');
+  assert.equal(filas[0], 'Cohorte,Inicio (incluido),Fin (excluido),Zona horaria,Observado,Fuente,Indicador,Pedidos');
   assert.equal(filas.length, 1 + 11);
-  assert.equal(filas[1], 'A,2026-10-01 00:00,2026-10-08 00:00,America/Lima,2026-10-19 10:00,Pedidos creados,5');
-  assert.ok(filas.includes('A,2026-10-01 00:00,2026-10-08 00:00,America/Lima,2026-10-19 10:00,Estado actual: Vencido,2'));
+  assert.equal(filas[1], 'A,2026-10-01 00:00,2026-10-08 00:00,America/Lima,2026-10-19 10:00,Módulo de ventas,Pedidos creados,5');
+  assert.ok(filas.includes('A,2026-10-01 00:00,2026-10-08 00:00,America/Lima,2026-10-19 10:00,Módulo de ventas,Estado actual: Vencido,2'));
   assert.equal(csv.fileName, 'reportes-pedidos-202610010000-202610080000.csv');
 });
 
@@ -255,8 +255,8 @@ test('22 · con B contigua se añaden sus filas y la resta descriptiva en el ord
   assert.equal(filas.filter((f) => f.startsWith('B,')).length, 11);
   const restas = filas.filter((f) => f.startsWith('B − A'));
   assert.equal(restas.length, 11);
-  assert.equal(restas[0], 'B − A (resta descriptiva),,,America/Lima,,Pedidos creados,2');
-  assert.equal(restas[1], 'B − A (resta descriptiva),,,America/Lima,,Actualmente vencidos,0');
+  assert.equal(restas[0], 'B − A (resta descriptiva),,,America/Lima,,Cálculo de reportes,Pedidos creados,2');
+  assert.equal(restas[1], 'B − A (resta descriptiva),,,America/Lima,,Cálculo de reportes,Actualmente vencidos,0');
 });
 
 test('23 · con B solapada se exportan ambas cohortes pero ninguna resta', () => {
@@ -402,3 +402,16 @@ test('37 · ningún servicio convierte fechas con un desplazamiento escrito a ma
   }
 });
 
+test('38 · cada fila del CSV dice de dónde sale la cifra y cuándo se observó', () => {
+  const b = respuesta({ startInclusive: '2026-10-08T05:00:00+00:00', endExclusive: '2026-10-15T05:00:00+00:00' });
+  const filas = lineas(buildOrderIndicatorsCsv({ zone: 'UTC', baseline: respuesta(), comparison: b })).slice(1).map((fila) => fila.split(','));
+  for (const celdas of filas) {
+    if (celdas[0] === 'B − A (resta descriptiva)') {
+      assert.equal(celdas[5], 'Cálculo de reportes');
+    } else {
+      assert.equal(celdas[5], 'Módulo de ventas');
+      assert.equal(celdas[4], '2026-10-19 15:00');
+    }
+  }
+  assert.ok(filas.some((celdas) => celdas[5] === 'Cálculo de reportes'));
+});

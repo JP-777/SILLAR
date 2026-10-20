@@ -23,6 +23,8 @@ import { InconsistentIndicatorsError, verifyOrderIndicators } from './verifyOrde
  *   comillas según RFC 4180. Toda celda de texto que empiece por = + - @,
  *   tabulador o retorno se neutraliza con un apóstrofo; los números se escriben
  *   como números.
+ * - Cada fila dice cuándo se observó y de dónde sale la cifra: frescura y
+ *   procedencia viajan con el archivo, no se quedan en la pantalla.
  * - Sin identificadores, códigos de pedido, clientes ni importes.
  */
 
@@ -40,7 +42,10 @@ export type OrderIndicatorsCsv =
 export const CSV_MIME_TYPE = 'text/csv;charset=utf-8';
 const BOM = '﻿';
 const EOL = '\r\n';
-const HEADER = ['Cohorte', 'Inicio (incluido)', 'Fin (excluido)', 'Zona horaria', 'Observado', 'Indicador', 'Pedidos'];
+const HEADER = ['Cohorte', 'Inicio (incluido)', 'Fin (excluido)', 'Zona horaria', 'Observado', 'Fuente', 'Indicador', 'Pedidos'];
+/** Procedencia de cada cifra: lo leído de ventas y lo que calcula este módulo. */
+const SOURCE_SALES = 'Módulo de ventas';
+const SOURCE_REPORTS = 'Cálculo de reportes';
 
 type Cell = string | number;
 
@@ -117,7 +122,7 @@ function cohortRows(name: string, view: OrderIndicatorsView, zone: ReportZone): 
   const observed = view.observedAtUtc ? localStamp(view.observedAtUtc, zone) : '';
   return measures(view)
     .filter((measure) => measure.value !== null)
-    .map((measure) => row([name, start, end, zone, observed, measure.label, measure.value as number]));
+    .map((measure) => row([name, start, end, zone, observed, SOURCE_SALES, measure.label, measure.value as number]));
 }
 
 export function buildOrderIndicatorsCsv(input: OrderIndicatorsCsvInput): OrderIndicatorsCsv {
@@ -141,7 +146,7 @@ export function buildOrderIndicatorsCsv(input: OrderIndicatorsCsvInput): OrderIn
       for (const { label } of measures(baseline)) {
         const difference = byLabel.get(label);
         if (difference === undefined || difference === null) continue;
-        lines.push(row(['B − A (resta descriptiva)', '', '', input.zone, '', label, difference]));
+        lines.push(row(['B − A (resta descriptiva)', '', '', input.zone, '', SOURCE_REPORTS, label, difference]));
       }
     }
   }
