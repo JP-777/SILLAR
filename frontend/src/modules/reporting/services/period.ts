@@ -43,3 +43,36 @@ export function showDate(value: string, zone: ReportZone): string {
 export function showCount(value: number | null): string {
   return value === null ? '—' : value.toLocaleString('es-PE');
 }
+
+/** Rangos de días calendario completos, con el huso elegido por el usuario. */
+export type QuickPeriod = 'today' | 'last7' | 'thisMonth';
+
+export function quickPeriodRange(period: QuickPeriod, zone: ReportZone, now: Date): { start: string; end: string } {
+  // Los dos únicos husos permitidos son UTC y Lima (UTC-05, sin horario de verano).
+  // El desplazamiento se aplica al reloj antes de tomar año/mes/día UTC, evitando
+  // depender de la zona horaria del navegador o del sistema operativo.
+  const offsetMs = zone === 'America/Lima' ? -5 * 60 * 60 * 1000 : 0;
+  const localDay = new Date(now.getTime() + offsetMs);
+  const year = localDay.getUTCFullYear();
+  const month = localDay.getUTCMonth();
+  const day = localDay.getUTCDate();
+  const midnight = Date.UTC(year, month, day);
+  const oneDay = 24 * 60 * 60 * 1000;
+  let first: Date;
+  let last: Date;
+
+  if (period === 'today') {
+    first = new Date(midnight);
+    last = new Date(midnight + oneDay);
+  } else if (period === 'last7') {
+    // Siete días calendario: hoy más los seis anteriores. Fin exclusivo mañana.
+    first = new Date(midnight - 6 * oneDay);
+    last = new Date(midnight + oneDay);
+  } else {
+    first = new Date(Date.UTC(year, month, 1));
+    last = new Date(Date.UTC(year, month + 1, 1));
+  }
+
+  const localInput = (instant: Date) => `${instant.toISOString().slice(0, 10)}T00:00`;
+  return { start: localInput(first), end: localInput(last) };
+}

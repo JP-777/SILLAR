@@ -6,7 +6,7 @@ import { type Failure } from '../../../shared/errors/messages';
 import { FailureAlert } from '../../../shared/ui/patterns';
 import { OrderDistribution } from '../components/OrderDistribution';
 import { OrderPeriodComparison } from '../components/OrderPeriodComparison';
-import { asInstant, showCount, showDate, type ReportZone } from '../services/period';
+import { asInstant, quickPeriodRange, showCount, showDate, type QuickPeriod, type ReportZone } from '../services/period';
 import { decodeReportLink, encodeReportLink, type ReportLinkRead } from '../services/reportLinks';
 import {
   describeReportFailure,
@@ -21,39 +21,6 @@ type ViewState =
   | { kind: 'loading' }
   | { kind: 'ready'; data: OrderIndicatorsView; previous: { start: string; end: string; data: OrderIndicatorsView | null } | null }
   | { kind: 'error'; failure: Failure };
-
-/** Rangos de días calendario completos, con el huso elegido por el usuario. */
-type QuickPeriod = 'today' | 'last7' | 'thisMonth';
-
-function quickPeriodRange(period: QuickPeriod, zone: TimeZone, now: Date): { start: string; end: string } {
-  // Los dos únicos husos permitidos son UTC y Lima (UTC-05, sin horario de verano).
-  // El desplazamiento se aplica al reloj antes de tomar año/mes/día UTC, evitando
-  // depender de la zona horaria del navegador o del sistema operativo.
-  const offsetMs = zone === 'America/Lima' ? -5 * 60 * 60 * 1000 : 0;
-  const localDay = new Date(now.getTime() + offsetMs);
-  const year = localDay.getUTCFullYear();
-  const month = localDay.getUTCMonth();
-  const day = localDay.getUTCDate();
-  const midnight = Date.UTC(year, month, day);
-  const oneDay = 24 * 60 * 60 * 1000;
-  let first: Date;
-  let last: Date;
-
-  if (period === 'today') {
-    first = new Date(midnight);
-    last = new Date(midnight + oneDay);
-  } else if (period === 'last7') {
-    // Siete días calendario: hoy más los seis anteriores. Fin exclusivo mañana.
-    first = new Date(midnight - 6 * oneDay);
-    last = new Date(midnight + oneDay);
-  } else {
-    first = new Date(Date.UTC(year, month, 1));
-    last = new Date(Date.UTC(year, month + 1, 1));
-  }
-
-  const localInput = (instant: Date) => `${instant.toISOString().slice(0, 10)}T00:00`;
-  return { start: localInput(first), end: localInput(last) };
-}
 
 /** M10 D3: cohorte de pedidos con filtros [inicio,fin), sin totales monetarios. */
 export function ReportsPage() {

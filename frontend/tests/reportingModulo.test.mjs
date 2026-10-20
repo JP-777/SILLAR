@@ -273,8 +273,88 @@ test('24 · el CSV no lleva códigos internos, valores técnicos de estado ni im
   assert.doesNotMatch(csv, /S\/|\bPEN\b|importe|ingresos/i);
 });
 
-test('25 · el generador no está expuesto: ninguna pantalla lo importa (D-M10-05)', () => {
+test('25 · ni el generador ni la exportación preparada están expuestos: ninguna pantalla los importa (D-M10-05)', () => {
   for (const archivo of archivos().filter((a) => a.endsWith('.tsx'))) {
-    assert.doesNotMatch(codigo(readFileSync(archivo, 'utf8')), /orderIndicatorsCsv/, archivo);
+    assert.doesNotMatch(codigo(readFileSync(archivo, 'utf8')), /orderIndicatorsCsv|reportExport/, archivo);
   }
+});
+
+// 7 · Exportación preparada: solo con auditoría registrada (D-M10-05)
+
+const { prepareOrderIndicatorsExport, exportAuditPort } = await import('../src/modules/reporting/services/reportExport.ts');
+const auditoria = (falla = false) => {
+  const registros = [];
+  return { registros, port: { async recordExport(entry) { if (falla) throw new Error('caída'); registros.push(entry); } } };
+};
+
+test('26 · hoy no hay puerto de auditoría: la exportación queda bloqueada y no hay archivo', async () => {
+  assert.equal(exportAuditPort, null);
+  const resultado = await prepareOrderIndicatorsExport({ zone: 'UTC', baseline: respuesta() });
+  assert.equal(resultado.kind, 'blocked');
+  assert.equal('content' in resultado, false);
+});
+
+test('27 · con auditoría, primero se registra el hecho agregado y después se entrega el archivo', async () => {
+  const { registros, port } = auditoria();
+  const B = respuesta({ startInclusive: '2026-10-08T05:00:00+00:00', endExclusive: '2026-10-15T05:00:00+00:00' });
+  const resultado = await prepareOrderIndicatorsExport({ zone: 'America/Lima', baseline: respuesta(), comparison: B }, port);
+  assert.equal(resultado.kind, 'ready');
+  assert.equal(registros.length, 1);
+  assert.deepEqual(registros[0], {
+    report: 'pedidos', startInclusive: '2026-10-01T05:00:00+00:00', endExclusive: '2026-10-08T05:00:00+00:00',
+    zone: 'America/Lima', includesComparison: true, dataRows: 33, fileName: resultado.fileName,
+  });
+});
+
+test('28 · si la auditoría falla no se genera el archivo', async () => {
+  const resultado = await prepareOrderIndicatorsExport({ zone: 'UTC', baseline: respuesta() }, auditoria(true).port);
+  assert.equal(resultado.kind, 'audit_failed');
+  assert.equal('content' in resultado, false);
+});
+
+test('29 · con datos incoherentes o sin fuente no se exporta ni se audita nada', async () => {
+  const { registros, port } = auditoria();
+  assert.equal((await prepareOrderIndicatorsExport({ zone: 'UTC', baseline: respuesta({ activeOrders: 9 }) }, port)).kind, 'unavailable');
+  const ausente = respuesta({ status: 'source_unavailable', observedAtUtc: null, i01CreatedOrders: null,
+    i03CurrentStatusCounts: null, i04CurrentlyExpiredOrders: null, activeOrders: null, inactiveOrders: null });
+  assert.equal((await prepareOrderIndicatorsExport({ zone: 'UTC', baseline: ausente }, port)).kind, 'unavailable');
+  assert.equal(registros.length, 0);
+});
+
+// 8 · Combinaciones reales de filtros y zonas
+
+const { quickPeriodRange } = await import('../src/modules/reporting/services/period.ts');
+
+test('30 · los períodos rápidos usan el día de la zona elegida, no el del navegador', () => {
+  const madrugadaUtc = new Date('2026-10-20T03:00:00Z'); // en Lima aún es 19 de octubre
+  assert.deepEqual(quickPeriodRange('today', 'America/Lima', madrugadaUtc), { start: '2026-10-19T00:00', end: '2026-10-20T00:00' });
+  assert.deepEqual(quickPeriodRange('today', 'UTC', madrugadaUtc), { start: '2026-10-20T00:00', end: '2026-10-21T00:00' });
+  assert.deepEqual(quickPeriodRange('last7', 'America/Lima', madrugadaUtc), { start: '2026-10-13T00:00', end: '2026-10-20T00:00' });
+});
+
+test('31 · «este mes» respeta el cambio de mes y de año en la zona elegida', () => {
+  const finDeMesEnLima = new Date('2026-11-01T03:00:00Z'); // 31/10 en Lima, 1/11 en UTC
+  assert.deepEqual(quickPeriodRange('thisMonth', 'America/Lima', finDeMesEnLima), { start: '2026-10-01T00:00', end: '2026-11-01T00:00' });
+  assert.deepEqual(quickPeriodRange('thisMonth', 'UTC', finDeMesEnLima), { start: '2026-11-01T00:00', end: '2026-12-01T00:00' });
+  assert.deepEqual(quickPeriodRange('thisMonth', 'UTC', new Date('2026-12-15T12:00:00Z')), { start: '2026-12-01T00:00', end: '2027-01-01T00:00' });
+});
+
+test('32 · un período rápido produce siempre un intervalo válido para la consulta', () => {
+  for (const zona of ['America/Lima', 'UTC']) {
+    for (const periodo of ['today', 'last7', 'thisMonth']) {
+      const { start, end } = quickPeriodRange(periodo, zona, new Date('2026-02-28T23:30:00Z'));
+      assert.ok(Date.parse(asInstant(end, zona)) > Date.parse(asInstant(start, zona)), `${zona} ${periodo}`);
+    }
+  }
+});
+
+test('33 · una cohorte vacía real se exporta con ceros verdaderos y su zona en las fechas', () => {
+  const vacia = respuesta({ status: 'empty', i01CreatedOrders: 0, i04CurrentlyExpiredOrders: 0, activeOrders: 0, inactiveOrders: 0,
+    i03CurrentStatusCounts: ESTADOS.map((status) => ({ status, count: 0 })) });
+  const lima = lineas(buildOrderIndicatorsCsv({ zone: 'America/Lima', baseline: vacia }));
+  const utc = lineas(buildOrderIndicatorsCsv({ zone: 'UTC', baseline: vacia }));
+  assert.equal(lima.length, 12);
+  assert.ok(lima.slice(1).every((fila) => fila.endsWith(',0')));
+  assert.ok(lima[1].startsWith('A,2026-10-01 00:00,2026-10-08 00:00,America/Lima,'));
+  assert.ok(utc[1].startsWith('A,2026-10-01 05:00,2026-10-08 05:00,UTC,'));
 });
