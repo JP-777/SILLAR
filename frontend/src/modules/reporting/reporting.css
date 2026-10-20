@@ -12,3 +12,10 @@
 /* Períodos rápidos D5: visibles en escritorio y móvil sin CSS de otro módulo. */
 .rp-presets { display: flex; flex: 1 1 100%; flex-wrap: wrap; gap: var(--s2); align-items: center; }
 .rp-presets__label { margin-right: var(--s2); color: var(--text-muted); font-weight: 600; }
+
+/* Ciclo 3 · responsive: en móvil cada campo y cada acción ocupan su línea. */
+@media (max-width: 640px) {
+  .rp-field { min-width: 0; flex: 1 1 100%; }
+  .rp-filters > .ui-button { flex: 1 1 100%; }
+  .rp-panel > strong { font-size: 1.6rem; }
+}

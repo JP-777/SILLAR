@@ -217,9 +217,28 @@ function ReportsView({ link }: { link: ReportLinkRead }) {
     }
     : null;
 
+  // Ciclo 3 · accesibilidad: un único anuncio por estado, leído desde una región
+  // que existe desde el primer render y queda fuera del nodo con aria-busy (el
+  // mismo patrón que Table en shared/ui/patterns.tsx; evita la técnica de fallo
+  // F103 de WCAG). Los errores siguen saliendo por role="alert".
+  const announcement = state.kind === 'loading'
+    ? 'Consultando indicadores.'
+    : data?.status === 'source_unavailable'
+      ? 'Fuente de pedidos no disponible: el módulo de ventas no está activo.'
+      : data?.status === 'empty'
+        ? 'No se crearon pedidos en el período consultado.'
+        : data?.status === 'with_data'
+          ? `Indicadores consultados: ${showCount(data.i01CreatedOrders)} pedidos creados.`
+          : fromLink && state.kind === 'idle'
+            ? 'Filtros cargados desde un enlace. Pulsa «Consultar período» para ver los indicadores.'
+            : '';
+  const shareAnnouncement = share.kind === 'copied' ? 'Enlace copiado.' : '';
+
   return (
     <PageContainer title="Reportes de pedidos" description="Pedidos creados en el intervalo elegido, según su estado actual. Incluye pedidos dados de baja.">
       <div className="rp-stack">
+        <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</div>
+        <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">{shareAnnouncement}</div>
         <form className="rp-filters" onSubmit={(e) => void consultar(e)}>
           <div className="rp-presets" role="group" aria-label="Períodos rápidos">
             <span className="rp-presets__label">Períodos rápidos (días calendario)</span>
@@ -256,9 +275,9 @@ function ReportsView({ link }: { link: ReportLinkRead }) {
           <p className="rp-warning" role="alert">{link.message} No se aplicó ningún filtro del enlace; indica el período a mano.</p>
         )}
         {fromLink && state.kind === 'idle' && (
-          <p className="rp-note" role="status">Filtros cargados desde un enlace. Revísalos y pulsa «Consultar período» para ver los indicadores.</p>
+          <p className="rp-note">Filtros cargados desde un enlace. Revísalos y pulsa «Consultar período» para ver los indicadores.</p>
         )}
-        {share.kind === 'copied' && <p className="rp-note" role="status">Enlace copiado. Guarda solo las fechas y la zona; quien lo abra necesita acceso de administración.</p>}
+        {share.kind === 'copied' && <p className="rp-note">Enlace copiado. Guarda solo las fechas y la zona; quien lo abra necesita acceso de administración.</p>}
         {share.kind === 'manual' && (
           <label className="rp-field">
             No se pudo copiar automáticamente. Copia este enlace:
@@ -268,10 +287,11 @@ function ReportsView({ link }: { link: ReportLinkRead }) {
         {share.kind === 'incomplete' && <p className="rp-warning" role="alert">{share.message}</p>}
         {inputError && <p className="rp-warning" role="alert">{inputError}</p>}
         {state.kind === 'idle' && !fromLink && <p className="rp-note">Selecciona un período y consulta sus indicadores. No se asigna uno por defecto.</p>}
-        {state.kind === 'loading' && <p role="status">Consultando indicadores…</p>}
         {state.kind === 'error' && state.failure.kind !== 'silent' && <FailureAlert failure={state.failure} />}
+        <div className="rp-stack" aria-busy={state.kind === 'loading'}>
+        {state.kind === 'loading' && <p className="rp-note">Consultando indicadores…</p>}
         {data?.status === 'source_unavailable' && (
-          <section className="rp-panel" role="status">
+          <section className="rp-panel">
             <h2>Fuente de pedidos no disponible</h2>
             <p>El módulo de ventas no está activo en esta instalación, así que estos indicadores no se pueden medir. Actívalo para ver los pedidos.</p>
           </section>
@@ -279,7 +299,7 @@ function ReportsView({ link }: { link: ReportLinkRead }) {
         {data && data.status !== 'source_unavailable' && (
           <>
             <p className="rp-note">Observado: {data.observedAtUtc ? showDate(data.observedAtUtc, zone) : 'Sin instante informado'} · Zona: {zone}</p>
-            {data.status === 'empty' && <p role="status">No se crearon pedidos en este período. Los recuentos son cero.</p>}
+            {data.status === 'empty' && <p>No se crearon pedidos en este período. Los recuentos son cero.</p>}
             <div className="rp-kpis">
               <section className="rp-panel"><h2>Pedidos creados</h2><strong>{showCount(data.i01CreatedOrders)}</strong></section>
               <section className="rp-panel"><h2>Actualmente vencidos</h2><strong>{showCount(data.i04CurrentlyExpiredOrders)}</strong></section>
@@ -319,6 +339,7 @@ function ReportsView({ link }: { link: ReportLinkRead }) {
             <p className="rp-note">Cohorte: [{showDate(data.startInclusive, zone)}, {showDate(data.endExclusive, zone)}). Los vencidos son los que tienen estado actual «Vencido»; no es una evaluación histórica del plazo.</p>
           </>
         )}
+        </div>
       </div>
     </PageContainer>
   );

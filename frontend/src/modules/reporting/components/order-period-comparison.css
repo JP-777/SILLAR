@@ -23,3 +23,12 @@
 /* D21: el panel D16 de pedidos por duración no tenía estilos propios. */
 .rp-compare__rates { display: grid; gap: var(--s2); padding: var(--s3); border: 1px solid var(--border); border-radius: var(--r-md); }
 .rp-compare__rates h3 { margin: 0; font-size: 1rem; }
+/* Ciclo 3: el contenedor con aria-busy conserva el espaciado de la tarjeta. */
+.rp-compare__results { display: flex; flex-direction: column; gap: var(--s3); min-width: 0; }
+/* La nota del período anterior ocupa su propia línea, no se comprime entre botones. */
+.rp-compare__filters .rp-compare__note { flex: 1 1 100%; }
+/* En pantallas estrechas los campos de fecha usan todo el ancho disponible. */
+@media (max-width: 640px) {
+  .rp-compare__filters label { flex: 1 1 100%; }
+  .rp-compare__filters .ui-button { flex: 1 1 auto; }
+}

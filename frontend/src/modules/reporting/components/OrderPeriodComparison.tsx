@@ -240,9 +240,24 @@ export function OrderPeriodComparison({ baseline, zone, initialPeriod = null, on
   const withheldReasons = gate === null || mayShowDifferences
     ? [] : gate.reasons.filter((reason) => !gate.explanation.notes.includes(reason));
 
+  // Ciclo 3 · accesibilidad: región persistente, fuera del nodo con aria-busy
+  // (patrón de Table en shared/ui/patterns.tsx). Los errores van por role="alert".
+  const announcement = shown.kind === 'loading'
+    ? 'Consultando la segunda cohorte.'
+    : shown.kind === 'unavailable'
+      ? 'El módulo de ventas no está activo; no se pueden calcular diferencias.'
+      : comparison && !interpretable
+        ? ''
+        : comparison
+          ? mayShowDifferences
+            ? 'Comparación consultada. Se muestran las diferencias descriptivas entre A y B.'
+            : 'Comparación consultada. Las diferencias entre A y B no se muestran; las cifras de cada cohorte sí.'
+          : '';
+
   return (
     <section className="rp-compare" aria-labelledby="rp-compare-heading">
       <h2 id="rp-compare-heading">Comparar con otra cohorte</h2>
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</div>
       <p className="rp-compare__note">
         Compara los pedidos creados en dos intervalos [inicio, fin). Cada cohorte muestra el estado
         que sus pedidos tienen ahora, observado en su propio instante; no es un historial de cambios
@@ -274,12 +289,13 @@ export function OrderPeriodComparison({ baseline, zone, initialPeriod = null, on
           de la página (D12), que recibe B por onPeriodInput. El panel D20 lo duplicaba. */}
       <p className="rp-compare__note">Zona aplicada: {zone}, la misma de la consulta principal.</p>
       {inputError && <p role="alert" className="rp-compare__error">{inputError}</p>}
-      {shown.kind === 'loading' && <p role="status">Consultando la segunda cohorte…</p>}
-      {shown.kind === 'unavailable' && (
-        <p role="status">El módulo de ventas no está activo, así que no se pueden calcular diferencias.</p>
-      )}
       {shown.kind === 'error' && shown.failure.kind !== 'silent' && (
         <FailureAlert failure={shown.failure} />
+      )}
+      <div className="rp-compare__results" aria-busy={shown.kind === 'loading'}>
+      {shown.kind === 'loading' && <p className="rp-compare__note">Consultando la segunda cohorte…</p>}
+      {shown.kind === 'unavailable' && (
+        <p>El módulo de ventas no está activo, así que no se pueden calcular diferencias.</p>
       )}
       {explanation && (
         <section className="rp-compare__context" aria-labelledby="rp-compare-context-heading">
@@ -323,7 +339,7 @@ export function OrderPeriodComparison({ baseline, zone, initialPeriod = null, on
             </p>
           )}
           {!mayShowDifferences && (
-            <div className="rp-compare__withheld" role="status">
+            <div className="rp-compare__withheld">
               <p><strong>No se muestran diferencias entre A y B.</strong> Las cifras de cada cohorte sí son válidas por separado.</p>
               {withheldReasons.length > 0 && (
                 <ul className="rp-compare__notes">
@@ -353,6 +369,7 @@ export function OrderPeriodComparison({ baseline, zone, initialPeriod = null, on
           </div>
         </>
       )}
+      </div>
     </section>
   );
 }
