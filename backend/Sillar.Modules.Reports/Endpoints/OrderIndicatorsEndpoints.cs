@@ -29,7 +29,10 @@ public static class OrderIndicatorsEndpoints
             .WithSummary("Indicadores I01, I03 e I04 de la cohorte de pedidos entre inicio incluido y fin excluido.")
             .WithDescription("start y end son instantes ISO 8601 con Z o desplazamiento explícito. Mantiene los inactivos; no informa montos ni información personal.")
             .Produces<OrderIndicatorsView>(StatusCodes.Status200OK)
-            .ProducesValidationProblem(StatusCodes.Status400BadRequest);
+            .ProducesValidationProblem(StatusCodes.Status400BadRequest)
+            // Sin sesión de administración, 401; con rol editor, 403 (D-M10-05).
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden);
 
         return endpoints;
     }
