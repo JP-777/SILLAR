@@ -198,7 +198,8 @@ public sealed class ProviderOrchestrationTests
         var evidence = PaymentTestData.Evidence();
         var candidate = ProviderCommercialEffectCandidate.From(
             Guid.CreateVersion7(),
-            evidence);
+            evidence,
+            PaymentTestData.Facts(evidence));
         var now = PaymentTestData.VerifiedAt;
 
         var uncertain = await service.AttemptAsync(
@@ -247,7 +248,8 @@ public sealed class ProviderOrchestrationTests
                     "expired_order_policy_pending")));
         var candidate = ProviderCommercialEffectCandidate.From(
             Guid.CreateVersion7(),
-            PaymentTestData.Evidence());
+            PaymentTestData.Evidence(),
+            PaymentTestData.Facts());
         var held = await service.AttemptAsync(
             candidate,
             ProviderCommercialRecoverySnapshot.Initial,

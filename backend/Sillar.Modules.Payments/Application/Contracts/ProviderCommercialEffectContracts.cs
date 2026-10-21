@@ -9,11 +9,13 @@ namespace Sillar.Modules.Payments.Application.Contracts;
 /// </summary>
 internal sealed record ProviderCommercialEffectCandidate(
     Guid InboxEventId,
-    PaymentIdempotencyKeys Identity)
+    PaymentIdempotencyKeys Identity,
+    ProviderSettlementFacts Facts)
 {
     internal static ProviderCommercialEffectCandidate From(
         Guid inboxEventId,
-        VerifiedExternalPaymentEvidence evidence)
+        VerifiedExternalPaymentEvidence evidence,
+        ProviderSettlementFacts facts)
     {
         if (inboxEventId == Guid.Empty)
         {
@@ -21,7 +23,24 @@ internal sealed record ProviderCommercialEffectCandidate(
         }
 
         ArgumentNullException.ThrowIfNull(evidence);
-        return new(inboxEventId, PaymentIdempotencyKeys.From(evidence));
+        ArgumentNullException.ThrowIfNull(facts);
+        if (ProviderEventIdempotencyKey.From(evidence)
+                != ProviderEventIdempotencyKey.From(facts.Evidence)
+            || ExternalSettlementIdempotencyKey.From(evidence)
+                != ExternalSettlementIdempotencyKey.From(facts.Evidence)
+            || !StringComparer.Ordinal.Equals(
+                evidence.BodySha256,
+                facts.Evidence.BodySha256))
+        {
+            throw new ArgumentException(
+                "Los hechos no corresponden a la evidencia reclamada.",
+                nameof(facts));
+        }
+
+        return new(
+            inboxEventId,
+            PaymentIdempotencyKeys.From(evidence),
+            facts);
     }
 }
 
@@ -40,18 +59,21 @@ internal sealed record ProviderCommercialEffectResult
         ProviderCommercialEffectOutcome outcome,
         string? reference,
         string? reason,
-        bool? orderWasExpired)
+        bool? orderWasExpired,
+        ProviderSettlementFacts? confirmedFacts)
     {
         Outcome = outcome;
         Reference = reference;
         Reason = reason;
         OrderWasExpired = orderWasExpired;
+        ConfirmedFacts = confirmedFacts;
     }
 
     internal ProviderCommercialEffectOutcome Outcome { get; }
     internal string? Reference { get; }
     internal string? Reason { get; }
     internal bool? OrderWasExpired { get; }
+    internal ProviderSettlementFacts? ConfirmedFacts { get; }
 
     internal static ProviderCommercialEffectResult Applied(
         string? reference,
@@ -59,15 +81,18 @@ internal sealed record ProviderCommercialEffectResult
         => Successful(
             ProviderCommercialEffectOutcome.Applied,
             reference,
-            orderWasExpired);
+            orderWasExpired,
+            null);
 
     internal static ProviderCommercialEffectResult AlreadyApplied(
         string? reference,
-        bool orderWasExpired)
+        bool orderWasExpired,
+        ProviderSettlementFacts confirmedFacts)
         => Successful(
             ProviderCommercialEffectOutcome.AlreadyApplied,
             reference,
-            orderWasExpired);
+            orderWasExpired,
+            confirmedFacts);
 
     internal static ProviderCommercialEffectResult Conflict(string? reason)
         => WithoutApplication(ProviderCommercialEffectOutcome.Conflict, reason);
@@ -85,7 +110,8 @@ internal sealed record ProviderCommercialEffectResult
     private static ProviderCommercialEffectResult Successful(
         ProviderCommercialEffectOutcome outcome,
         string? reference,
-        bool orderWasExpired)
+        bool orderWasExpired,
+        ProviderSettlementFacts? confirmedFacts)
     {
         if (string.IsNullOrWhiteSpace(reference))
         {
@@ -94,7 +120,18 @@ internal sealed record ProviderCommercialEffectResult
                 nameof(reference));
         }
 
-        return new(outcome, reference, null, orderWasExpired);
+        if (outcome == ProviderCommercialEffectOutcome.AlreadyApplied
+            && confirmedFacts is null)
+        {
+            throw new ArgumentNullException(nameof(confirmedFacts));
+        }
+
+        return new(
+            outcome,
+            reference,
+            null,
+            orderWasExpired,
+            confirmedFacts);
     }
 
     private static ProviderCommercialEffectResult WithoutApplication(
@@ -108,7 +145,7 @@ internal sealed record ProviderCommercialEffectResult
                 nameof(reason));
         }
 
-        return new(outcome, null, reason, null);
+        return new(outcome, null, reason, null, null);
     }
 }
 

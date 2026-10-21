@@ -1,4 +1,5 @@
 using Sillar.Modules.Payments.Application.Contracts;
+using Sillar.Modules.Payments.Domain;
 
 namespace Sillar.Modules.Payments.Application;
 
@@ -9,6 +10,7 @@ namespace Sillar.Modules.Payments.Application;
 /// </summary>
 internal sealed class ProviderInboxProcessor(
     IProviderInboxRepository repository,
+    IProviderSettlementFactsSource factsSource,
     IProviderCommercialEffectPort commercialPort)
     : IProviderInboxProcessingService
 {
@@ -45,9 +47,23 @@ internal sealed class ProviderInboxProcessor(
         }
 
         var claimed = claim.Status!;
+        var facts = await factsSource.LoadCandidateFactsAsync(
+            claimed.InboxEventId,
+            cancellationToken);
+        if (facts is null)
+        {
+            return await CompleteWithoutCommercialCallAsync(
+                claimed,
+                leaseToken,
+                attemptedAt,
+                "verified_settlement_facts_missing",
+                cancellationToken);
+        }
+
         var candidate = ProviderCommercialEffectCandidate.From(
             claimed.InboxEventId,
-            claimed.Evidence);
+            claimed.Evidence,
+            facts);
         var result = await commercialPort.TryApplyAsync(
             candidate,
             cancellationToken);
@@ -55,6 +71,16 @@ internal sealed class ProviderInboxProcessor(
         {
             throw new InvalidOperationException(
                 "El puerto comercial devolvió un resultado inválido.");
+        }
+
+        if (result.Outcome == ProviderCommercialEffectOutcome.AlreadyApplied
+            && ProviderSettlementFactClassifier.Classify(
+                candidate.Facts,
+                [result.ConfirmedFacts!])
+                != ProviderSettlementFactDecision.Duplicate)
+        {
+            result = ProviderCommercialEffectResult.Conflict(
+                "already_applied_facts_divergent");
         }
 
         var completion = result.Outcome switch
@@ -156,6 +182,35 @@ internal sealed class ProviderInboxProcessor(
             _ => throw new InvalidOperationException(
                 "Un claim adquirido debe continuar el procesamiento.")
         };
+
+    private async ValueTask<ProviderInboxProcessResult>
+        CompleteWithoutCommercialCallAsync(
+            ProviderInboxStatus claimed,
+            Guid leaseToken,
+            DateTimeOffset completedAt,
+            string reason,
+            CancellationToken cancellationToken)
+    {
+        var completion = ProviderInboxCompletion.DecisionRequired(
+            claimed.InboxEventId,
+            leaseToken,
+            completedAt,
+            reason);
+        if (!await repository.TryCompleteAsync(completion, cancellationToken))
+        {
+            return new(
+                ProviderInboxProcessOutcome.ConfirmationNotPersisted,
+                leaseToken,
+                claimed.AttemptCount,
+                "lease_or_concurrency_conflict");
+        }
+
+        return new(
+            ProviderInboxProcessOutcome.DecisionRequired,
+            leaseToken,
+            claimed.AttemptCount,
+            reason);
+    }
 
     private static ProviderInboxProcessOutcome MapCommercialOutcome(
         ProviderCommercialEffectOutcome outcome)
