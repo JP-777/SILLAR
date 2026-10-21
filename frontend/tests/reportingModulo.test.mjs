@@ -282,9 +282,10 @@ test('25 · ni el generador ni la exportación preparada están expuestos: ningu
 // 7 · Exportación preparada: solo con auditoría registrada (D-M10-05)
 
 const { prepareOrderIndicatorsExport, exportAuditPort } = await import('../src/modules/reporting/services/reportExport.ts');
-const auditoria = (falla = false) => {
+/** Puerto falso: registra lo que recibe y responde lo que diga `decidir`. */
+const auditoria = (decidir = () => 'recorded') => {
   const registros = [];
-  return { registros, port: { async recordExport(entry) { if (falla) throw new Error('caída'); registros.push(entry); } } };
+  return { registros, port: { async recordExport(entry) { registros.push(entry); return decidir(entry); } } };
 };
 
 test('26 · hoy no hay puerto de auditoría: la exportación queda bloqueada y no hay archivo', async () => {
@@ -307,7 +308,7 @@ test('27 · con auditoría, primero se registra el hecho agregado y después se 
 });
 
 test('28 · si la auditoría falla no se genera el archivo', async () => {
-  const resultado = await prepareOrderIndicatorsExport({ zone: 'UTC', baseline: respuesta() }, auditoria(true).port);
+  const resultado = await prepareOrderIndicatorsExport({ zone: 'UTC', baseline: respuesta() }, auditoria(() => { throw new Error('caída'); }).port);
   assert.equal(resultado.kind, 'audit_failed');
   assert.equal('content' in resultado, false);
 });
@@ -414,4 +415,49 @@ test('38 · cada fila del CSV dice de dónde sale la cifra y cuándo se observó
     }
   }
   assert.ok(filas.some((celdas) => celdas[5] === 'Cálculo de reportes'));
+});
+
+// 10 · Estados del panel, auditoría que niega y zona por instalación
+
+test('39 · sin la confirmación exacta de la auditoría no sale ningún byte', async () => {
+  const pedir = (port) => prepareOrderIndicatorsExport({ zone: 'UTC', baseline: respuesta() }, port);
+  const casos = [
+    ['ausente', null, 'blocked'],
+    ['falla', auditoria(() => { throw new Error('caída'); }).port, 'audit_failed'],
+    ['rechazo asíncrono', auditoria(() => Promise.reject(new Error('no'))).port, 'audit_failed'],
+    ['niega', auditoria(() => 'denied').port, 'audit_denied'],
+    ['sin respuesta', auditoria(() => undefined).port, 'audit_failed'],
+    ['respuesta parecida', auditoria(() => 'Recorded').port, 'audit_failed'],
+    ['objeto', auditoria(() => ({ recorded: true })).port, 'audit_failed'],
+    ['verdadero', auditoria(() => true).port, 'audit_failed'],
+  ];
+  for (const [nombre, port, esperado] of casos) {
+    const resultado = await pedir(port);
+    assert.equal(resultado.kind, esperado, nombre);
+    assert.equal('content' in resultado, false, nombre);
+    assert.equal('fileName' in resultado, false, nombre);
+    assert.doesNotMatch(JSON.stringify(resultado), /Pedidos creados|\uFEFF|﻿/, nombre);
+  }
+});
+
+test('40 · la auditoría recibe un registro congelado y sin cifras', async () => {
+  const { registros, port } = auditoria((entry) => {
+    assert.throws(() => { entry.dataRows = 0; }, TypeError);
+    return 'recorded';
+  });
+  const resultado = await prepareOrderIndicatorsExport({ zone: 'UTC', baseline: respuesta() }, port);
+  assert.equal(resultado.kind, 'ready');
+  assert.ok(Object.isFrozen(registros[0]));
+  assert.deepEqual(Object.keys(registros[0]).sort(),
+    ['dataRows', 'endExclusive', 'fileName', 'includesComparison', 'report', 'startInclusive', 'zone']);
+});
+
+test('41 · se neutraliza la fórmula escondida tras espacios o con signos de ancho completo', () => {
+  for (const peligrosa of [' =1+1', '  +1', '\u00A0-1', '\u3000@x', '＝1+1', '＋1', '－1', '＠x', ' ＝x', '\n=1', '\r=1']) {
+    const celda = csvCell(peligrosa);
+    assert.match(celda, /^"?'/, JSON.stringify(peligrosa));
+  }
+  for (const inocente of [' a', 'Pedidos creados', 'B − A (resta descriptiva)', '2026-10-01 00:00', 'America/Lima']) {
+    assert.ok(!csvCell(inocente).includes("'"), inocente);
+  }
 });

@@ -11,7 +11,8 @@ import type { ReportZone } from './period.ts';
  *
  * - sin puerto de auditoría no hay archivo: la exportación queda bloqueada;
  * - con puerto, primero se registra la exportación y solo después se entrega
- *   el archivo; si el registro falla, tampoco hay archivo (cerrado por defecto);
+ *   el archivo; si el registro falla, se niega o responde otra cosa que la
+ *   confirmación, tampoco hay archivo (cerrado por defecto);
  * - lo que se audita es el hecho, nunca el contenido: informe, período, zona,
  *   si incluye comparación y cuántas filas. Sin datos personales.
  *
@@ -32,11 +33,17 @@ export interface OrderIndicatorsExportAudit {
 
 /**
  * Lo que M10 necesita para poder exportar. Lo implementará una llamada al
- * endpoint de M10 que escriba la auditoría con la acción de CORE. Debe
- * resolverse solo cuando el registro quedó escrito.
+ * endpoint de M10 que escriba la auditoría con la acción de CORE.
+ *
+ * Responde `'recorded'` solo cuando el registro quedó escrito, y `'denied'`
+ * cuando la auditoría se niega a registrarlo. Cualquier otra respuesta —un
+ * `undefined`, un objeto, un texto parecido— se trata como fallo: el archivo
+ * solo sale con la confirmación exacta (cerrado por defecto).
  */
+export type ExportAuditDecision = 'recorded' | 'denied';
+
 export interface ExportAuditPort {
-  recordExport(entry: OrderIndicatorsExportAudit): Promise<void>;
+  recordExport(entry: OrderIndicatorsExportAudit): Promise<ExportAuditDecision>;
 }
 
 /**
@@ -50,6 +57,7 @@ export type OrderIndicatorsExport =
   | { readonly kind: 'ready'; readonly fileName: string; readonly mimeType: string; readonly content: string }
   | { readonly kind: 'blocked'; readonly reason: string }
   | { readonly kind: 'unavailable'; readonly reason: string }
+  | { readonly kind: 'audit_denied'; readonly reason: string }
   | { readonly kind: 'audit_failed'; readonly reason: string };
 
 export interface OrderIndicatorsExportRequest {
@@ -73,17 +81,29 @@ export async function prepareOrderIndicatorsExport(
   if (csv.kind !== 'ready') return csv;
 
   const dataRows = csv.content.split('\r\n').filter((line) => line !== '').length - 1;
+  // Congelada: el puerto no puede cambiar lo que se registra antes de responder.
+  const entry: OrderIndicatorsExportAudit = Object.freeze({
+    report: 'pedidos',
+    startInclusive: request.baseline.startInclusive,
+    endExclusive: request.baseline.endExclusive,
+    zone: request.zone,
+    includesComparison: Boolean(request.comparison),
+    dataRows,
+    fileName: csv.fileName,
+  });
+  let decision: unknown;
   try {
-    await audit.recordExport({
-      report: 'pedidos',
-      startInclusive: request.baseline.startInclusive,
-      endExclusive: request.baseline.endExclusive,
-      zone: request.zone,
-      includesComparison: Boolean(request.comparison),
-      dataRows,
-      fileName: csv.fileName,
-    });
+    decision = await audit.recordExport(entry);
   } catch {
+    decision = undefined;
+  }
+  if (decision === 'denied') {
+    return {
+      kind: 'audit_denied',
+      reason: 'La auditoría no autorizó registrar esta exportación, así que no se generó el archivo.',
+    };
+  }
+  if (decision !== 'recorded') {
     return {
       kind: 'audit_failed',
       reason: 'No se pudo registrar la exportación en la auditoría, así que no se generó el archivo. Vuelve a intentarlo.',

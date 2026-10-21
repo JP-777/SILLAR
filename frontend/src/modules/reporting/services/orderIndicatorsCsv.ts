@@ -20,9 +20,9 @@ import { InconsistentIndicatorsError, verifyOrderIndicators } from './verifyOrde
  *   autoriza. La compuerta se calcula aquí, sobre las mismas A y B que se
  *   escriben: una decisión recibida de fuera podría ser de otra pareja.
  * - UTF-8 con BOM (Excel en español lo abre bien), separador coma, CRLF y
- *   comillas según RFC 4180. Toda celda de texto que empiece por = + - @,
- *   tabulador o retorno se neutraliza con un apóstrofo; los números se escriben
- *   como números.
+ *   comillas según RFC 4180. Toda celda de texto que empiece por = + - @ (o
+ *   sus formas de ancho completo, también tras espacios), tabulador o salto se
+ *   neutraliza con un apóstrofo; los números se escriben como números.
  * - Cada fila dice cuándo se observó y de dónde sale la cifra: frescura y
  *   procedencia viajan con el archivo, no se quedan en la pantalla.
  * - Sin identificadores, códigos de pedido, clientes ni importes.
@@ -49,13 +49,17 @@ const SOURCE_REPORTS = 'Cálculo de reportes';
 
 type Cell = string | number;
 
+const FORMULA_START = /^[\s\u00A0\u3000]*[=+\-@\uFF1D\uFF0B\uFF0D\uFF20]|^[\t\r\n]/;
+
 /** Neutraliza la inyección de fórmulas y aplica las comillas de RFC 4180. */
 export function csvCell(value: Cell): string {
   if (typeof value === 'number') {
     if (!Number.isSafeInteger(value)) throw new RangeError('Solo se exportan recuentos enteros exactos.');
     return String(value);
   }
-  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  // También con espacios delante y con las formas de ancho completo (＝＋－＠),
+  // que algunas hojas de cálculo leen igual que las normales.
+  const safe = FORMULA_START.test(value) ? `'${value}` : value;
   return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 }
 
