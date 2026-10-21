@@ -4,6 +4,7 @@ import { cmsNavigation } from '../modules/cms/routes';
 import { coreNavigation } from '../modules/core/routes';
 import { crmNavigation } from '../modules/crm/routes';
 import { servicesNavigation } from '../modules/services/routes';
+import { serviceOrdersNavigation } from '../modules/service-orders/routes';
 import { trackingNavigation } from '../modules/tracking/routes';
 import type { Role } from '../session/SessionProvider';
 
@@ -53,6 +54,7 @@ export const MODULE_NAVIGATION: readonly ModuleNavigation[] = [
   catalogNavigation,
   cmsNavigation,
   servicesNavigation,
+  serviceOrdersNavigation,
   crmNavigation,
   b2bNavigation,
   trackingNavigation,
