@@ -70,10 +70,9 @@ public sealed class DurableAssistantQuotaPolicyStore(
     public static bool ValidPolicy(DurableQuotaPolicyChange? policy)
     {
         if (policy is null) return false;
-        var mode = (short)policy.Mode;
-        return mode is >= 0 and <= 2
+        return Enum.IsDefined(policy.Mode)
             && policy.LimitUnits >= 0 && policy.ConcurrencyLimit >= 0
-            && (mode != 0 || !policy.EngineConfigured);
+            && (policy.Mode != AssistantMode.Faq || !policy.EngineConfigured);
     }
 
     /// <summary>Evita sobreventa al reducir topes con consumo y reservas vivos.</summary>
