@@ -27,4 +27,14 @@ internal static class PaymentTestData
             PaymentIdempotencyKeys.From(evidence),
             ProviderEvidenceVerdict.AttestedByVerifier,
             reference);
+
+    internal static ProviderSettlementFacts Facts(
+        VerifiedExternalPaymentEvidence? evidence = null,
+        decimal amount = 125m,
+        string currencyCode = "PEN")
+        => ProviderSettlementFacts.Create(
+            evidence ?? Evidence(),
+            amount,
+            currencyCode,
+            VerifiedAt.AddMinutes(1));
 }

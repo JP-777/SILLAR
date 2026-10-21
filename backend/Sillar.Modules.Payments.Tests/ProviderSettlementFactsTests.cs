@@ -72,6 +72,31 @@ public sealed class ProviderSettlementFactsTests
     }
 
     [Fact]
+    public void Payload_divergente_posterior_prevalece_sobre_duplicado()
+    {
+        var incoming = Facts();
+        var duplicate = Facts(verifiedAtOffset: 1);
+        var divergentPayload = Facts(hashDigit: 'b');
+
+        Assert.Equal(
+            ProviderSettlementFactDecision.Conflict,
+            ProviderSettlementFactClassifier.Classify(
+                incoming,
+                [duplicate, divergentPayload]));
+    }
+
+    [Fact]
+    public void Misma_liquidacion_en_otro_evento_no_se_declara_duplicado()
+    {
+        var known = Facts(eventId: "event-001");
+        var incoming = Facts(eventId: "event-002");
+
+        Assert.Equal(
+            ProviderSettlementFactDecision.DecisionRequired,
+            ProviderSettlementFactClassifier.Classify(incoming, [known]));
+    }
+
+    [Fact]
     public void Misma_liquidacion_en_otro_proveedor_requiere_decision()
     {
         var known = Facts(provider: "provider-a");
@@ -98,13 +123,14 @@ public sealed class ProviderSettlementFactsTests
         string settlementId = "settlement-001",
         decimal amount = 125m,
         string? currencyCode = "PEN",
+        char hashDigit = 'a',
         int verifiedAtOffset = 0)
     {
         var evidence = VerifiedExternalPaymentEvidence.FromVerifiedWebhook(
             provider,
             eventId,
             settlementId,
-            new string('a', 64),
+            new string(hashDigit, 64),
             PaymentTestData.VerifiedAt.AddSeconds(verifiedAtOffset));
         return ProviderSettlementFacts.Create(
             evidence,

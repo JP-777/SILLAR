@@ -21,7 +21,8 @@ public sealed class PaymentsPersistenceTests
             [
                 "provider_evidence_receipts",
                 "provider_inbox_events",
-                "provider_processing_attempts"
+                "provider_processing_attempts",
+                "provider_settlement_fact_observations"
             ],
             model.GetEntityTypes()
                 .Select(type => type.GetTableName())
@@ -67,6 +68,8 @@ public sealed class PaymentsPersistenceTests
         var model = context.GetService<IDesignTimeModel>().Model;
         var inbox = model.FindEntityType(typeof(ProviderInboxEvent))!;
         var receipt = model.FindEntityType(typeof(ProviderEvidenceReceipt))!;
+        var settlementFacts = model.FindEntityType(
+            typeof(ProviderSettlementFactObservation))!;
 
         AssertOpaqueCollation(
             inbox,
@@ -80,6 +83,81 @@ public sealed class PaymentsPersistenceTests
             nameof(ProviderEvidenceReceipt.ProviderEventId),
             nameof(ProviderEvidenceReceipt.ExternalSettlementId),
             nameof(ProviderEvidenceReceipt.AttestationReference));
+        AssertOpaqueCollation(
+            settlementFacts,
+            nameof(ProviderSettlementFactObservation.Provider),
+            nameof(ProviderSettlementFactObservation.ProviderEventId),
+            nameof(ProviderSettlementFactObservation.ExternalSettlementId),
+            nameof(ProviderSettlementFactObservation.CurrencyCode));
+    }
+
+    [Fact]
+    public void Hechos_monetarios_son_append_only_y_pertenecen_a_una_recepcion()
+    {
+        using var context = Context();
+        var entity = context.GetService<IDesignTimeModel>().Model
+            .FindEntityType(typeof(ProviderSettlementFactObservation))!;
+        var foreignKey = Assert.Single(entity.GetForeignKeys());
+
+        Assert.Equal(
+            nameof(ProviderSettlementFactObservation.ReceiptId),
+            Assert.Single(entity.FindPrimaryKey()!.Properties).Name);
+        Assert.Equal(typeof(ProviderEvidenceReceipt), foreignKey.PrincipalEntityType.ClrType);
+        Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
+        Assert.All(
+            entity.GetProperties(),
+            property => Assert.Equal(
+                PropertySaveBehavior.Throw,
+                property.GetAfterSaveBehavior()));
+        Assert.Contains(
+            entity.GetCheckConstraints(),
+            check => check.Name == "ck_payment_settlement_fact_amount"
+                && check.Sql.Contains("gross_amount > 0", StringComparison.Ordinal));
+        Assert.Contains(
+            entity.GetCheckConstraints(),
+            check => check.Name == "ck_payment_settlement_fact_currency"
+                && check.Sql.Contains("COLLATE \"C\"", StringComparison.Ordinal));
+        Assert.Contains(
+            entity.GetCheckConstraints(),
+            check => check.Name == "ck_payment_settlement_fact_classification"
+                && check.Sql.Contains("decision_required", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(ProviderSettlementFactDecision.New, "new")]
+    [InlineData(ProviderSettlementFactDecision.Duplicate, "duplicate")]
+    [InlineData(ProviderSettlementFactDecision.Conflict, "conflict")]
+    [InlineData(
+        ProviderSettlementFactDecision.DecisionRequired,
+        "decision_required")]
+    public void Observacion_conserva_hechos_y_clasificacion_sin_normalizar(
+        ProviderSettlementFactDecision decision,
+        string persistedDecision)
+    {
+        var evidence = PaymentTestData.Evidence(
+            provider: " Provider:# ",
+            eventId: " Event/? ",
+            settlementId: " Settlement+% ");
+        var facts = ProviderSettlementFacts.Create(
+            evidence,
+            125.375m,
+            "PEN",
+            PaymentTestData.VerifiedAt.AddMinutes(1));
+
+        var observation = ProviderSettlementFactObservation.Create(
+            Guid.CreateVersion7(),
+            facts,
+            decision,
+            PaymentTestData.VerifiedAt.AddMinutes(2));
+        var restored = observation.ToDomain();
+
+        Assert.Equal(" Provider:# ", restored.Evidence.Provider);
+        Assert.Equal(" Event/? ", restored.Evidence.ProviderEventId);
+        Assert.Equal(" Settlement+% ", restored.Evidence.ExternalSettlementId);
+        Assert.Equal(125.375m, restored.GrossAmount);
+        Assert.Equal("PEN", restored.Currency.Value);
+        Assert.Equal(persistedDecision, observation.Classification);
+        Assert.True(observation.HasSameFacts(facts));
     }
 
     [Theory]

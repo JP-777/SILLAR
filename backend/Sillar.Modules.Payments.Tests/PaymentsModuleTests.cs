@@ -95,8 +95,14 @@ public sealed class PaymentsModuleTests
             .GetRequiredService<IProviderReceptionLedger>();
         var inboxRepository = scope.ServiceProvider
             .GetRequiredService<IProviderInboxRepository>();
+        var settlementFactRepository = scope.ServiceProvider
+            .GetRequiredService<IProviderSettlementFactRepository>();
+        var settlementFactsSource = scope.ServiceProvider
+            .GetRequiredService<IProviderSettlementFactsSource>();
 
         Assert.Same(receptionLedger, inboxRepository);
+        Assert.Same(inboxRepository, settlementFactRepository);
+        Assert.Same(settlementFactRepository, settlementFactsSource);
         Assert.IsType<EfProviderInboxRepository>(receptionLedger);
     }
 

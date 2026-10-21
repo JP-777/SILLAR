@@ -210,6 +210,9 @@ internal sealed class ProviderInboxEvent
         => ProcessingState == ProviderInboxStates.Processing
             && LeaseUntil <= instant;
 
+    internal void RegisterSettlementFactObservation(DateTimeOffset changedAt)
+        => Touch(changedAt);
+
     private void EnsureLease(Guid leaseToken)
     {
         if (ProcessingState != ProviderInboxStates.Processing

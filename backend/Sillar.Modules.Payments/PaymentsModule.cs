@@ -66,6 +66,10 @@ public sealed class PaymentsModule : IModule
             provider.GetRequiredService<EfProviderInboxRepository>());
         services.AddScoped<IProviderInboxRepository>(provider =>
             provider.GetRequiredService<EfProviderInboxRepository>());
+        services.AddScoped<IProviderSettlementFactRepository>(provider =>
+            provider.GetRequiredService<EfProviderInboxRepository>());
+        services.AddScoped<IProviderSettlementFactsSource>(provider =>
+            provider.GetRequiredService<EfProviderInboxRepository>());
         services.AddScoped<IProviderReceptionService>(provider =>
             provider.GetRequiredService<ProviderReceptionOrchestrator>());
         services.AddScoped<IProviderInboxProcessingService>(provider =>

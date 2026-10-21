@@ -75,6 +75,17 @@ internal static class ProviderAttemptOutcomes
         [Running, Succeeded, Held, Indeterminate];
 }
 
+internal static class ProviderSettlementFactClassifications
+{
+    internal const string New = "new";
+    internal const string Duplicate = "duplicate";
+    internal const string Conflict = "conflict";
+    internal const string DecisionRequired = "decision_required";
+
+    internal static readonly string[] All =
+        [New, Duplicate, Conflict, DecisionRequired];
+}
+
 internal static class ProviderPersistenceGuard
 {
     internal static string OpaqueRequired(string? value, string parameterName)

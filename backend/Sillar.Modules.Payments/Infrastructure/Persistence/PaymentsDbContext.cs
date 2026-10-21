@@ -25,6 +25,9 @@ public sealed class PaymentsDbContext(
     internal DbSet<ProviderProcessingAttempt> ProcessingAttempts
         => Set<ProviderProcessingAttempt>();
 
+    internal DbSet<ProviderSettlementFactObservation> SettlementFactObservations
+        => Set<ProviderSettlementFactObservation>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

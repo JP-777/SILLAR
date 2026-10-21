@@ -11,7 +11,9 @@ namespace Sillar.Modules.Payments.Infrastructure.Persistence;
 /// un único <c>SaveChangesAsync</c>; puede participar en una transacción externa.
 /// </summary>
 internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
-    : IProviderReceptionLedger, IProviderInboxRepository
+    : IProviderReceptionLedger,
+      IProviderInboxRepository,
+      IProviderSettlementFactRepository
 {
     public async ValueTask<IReadOnlyList<VerifiedExternalPaymentEvidence>>
         LoadKnownVerifiedEvidenceAsync(CancellationToken cancellationToken)
@@ -29,6 +31,149 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
             .ToArrayAsync(cancellationToken);
         return Array.AsReadOnly(
             persisted.Select(item => item.ToDomain()).ToArray());
+    }
+
+    public async ValueTask<ProviderSettlementFacts?> LoadCandidateFactsAsync(
+        Guid inboxEventId,
+        CancellationToken cancellationToken)
+    {
+        if (inboxEventId == Guid.Empty)
+        {
+            return null;
+        }
+
+        var observations = await (
+                from facts in database.SettlementFactObservations.AsNoTracking()
+                join receipt in database.EvidenceReceipts.AsNoTracking()
+                    on facts.ReceiptId equals receipt.ReceiptId
+                where receipt.InboxEventId == inboxEventId
+                select facts)
+            .ToArrayAsync(cancellationToken);
+        if (observations.Length == 0)
+        {
+            return null;
+        }
+
+        var candidate = observations[0].ToDomain();
+        var classification = ProviderSettlementFactClassifier.Classify(
+            candidate,
+            observations.Select(item => item.ToDomain()));
+        if (classification != ProviderSettlementFactDecision.Duplicate)
+        {
+            throw new InvalidOperationException(
+                "Un inbox con hechos monetarios divergentes no puede procesarse.");
+        }
+
+        return candidate;
+    }
+
+    public async ValueTask<ProviderSettlementFactDecision>
+        RecordSettlementFactsAsync(
+            Guid receiptId,
+            ProviderSettlementFacts facts,
+            DateTimeOffset recordedAt,
+            CancellationToken cancellationToken)
+    {
+        if (receiptId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Los hechos monetarios exigen recepción.",
+                nameof(receiptId));
+        }
+
+        ArgumentNullException.ThrowIfNull(facts);
+        ProviderPersistenceGuard.RequiredInstant(recordedAt, nameof(recordedAt));
+
+        var receipt = await database.EvidenceReceipts.SingleOrDefaultAsync(
+            item => item.ReceiptId == receiptId,
+            cancellationToken)
+            ?? throw new InvalidOperationException(
+                "La recepción de los hechos monetarios no existe.");
+        EnsureFactsBelongToAuthenticatedReceipt(receipt, facts);
+        if (recordedAt < receipt.ReceivedAt)
+        {
+            throw new ArgumentException(
+                "Los hechos no pueden preceder a su recepción.",
+                nameof(recordedAt));
+        }
+
+        var existing = await database.SettlementFactObservations
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                item => item.ReceiptId == receiptId,
+                cancellationToken);
+        if (existing is not null)
+        {
+            if (!existing.HasSameFacts(facts))
+            {
+                throw new InvalidOperationException(
+                    "Una recepción no puede cambiar sus hechos monetarios.");
+            }
+
+            return ProviderSettlementFactDecision.Duplicate;
+        }
+
+        var knownRows = await database.SettlementFactObservations
+            .AsNoTracking()
+            .ToArrayAsync(cancellationToken);
+        var classification = ProviderSettlementFactClassifier.Classify(
+            facts,
+            knownRows.Select(item => item.ToDomain()));
+        var inbox = await database.InboxEvents.SingleAsync(
+            item => item.InboxEventId == receipt.InboxEventId,
+            cancellationToken);
+        var changedAt = recordedAt < inbox.UpdatedAt
+            ? inbox.UpdatedAt
+            : recordedAt;
+
+        database.SettlementFactObservations.Add(
+            ProviderSettlementFactObservation.Create(
+                receiptId,
+                facts,
+                classification,
+                recordedAt));
+
+        if (classification is ProviderSettlementFactDecision.Conflict
+            or ProviderSettlementFactDecision.DecisionRequired)
+        {
+            var reason = classification == ProviderSettlementFactDecision.Conflict
+                ? "settlement_facts_conflict"
+                : "settlement_facts_decision_required";
+            await HoldForReviewAsync(
+                inbox,
+                changedAt,
+                reason,
+                cancellationToken);
+        }
+        else
+        {
+            // Serializa observaciones de la misma recepción/inbox mediante el
+            // token optimista. No afirma atomicidad interproveedor ni con M03.
+            inbox.RegisterSettlementFactObservation(changedAt);
+        }
+
+        try
+        {
+            await database.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            database.ChangeTracker.Clear();
+            throw new ProviderInboxConcurrencyException(
+                "El inbox cambió durante la conservación de hechos monetarios.",
+                exception);
+        }
+        catch (DbUpdateException exception) when (
+            database.Database.CurrentTransaction is null
+            && IsSettlementFactReceiptUniquenessViolation(exception))
+        {
+            database.ChangeTracker.Clear();
+            throw new ProviderInboxConcurrencyException(
+                "Otra operación conservó hechos para la misma recepción.",
+                exception);
+        }
+
+        return classification;
     }
 
     public async ValueTask RecordAsync(
@@ -151,6 +296,18 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
         if (entity is null
             || entity.Revision != expectedRevision
             || entity.ProcessingState != ProviderInboxStates.PendingReview)
+        {
+            return false;
+        }
+
+        var hasSettlementFacts = await (
+                from facts in database.SettlementFactObservations.AsNoTracking()
+                join receipt in database.EvidenceReceipts.AsNoTracking()
+                    on facts.ReceiptId equals receipt.ReceiptId
+                where receipt.InboxEventId == inboxEventId
+                select facts.ReceiptId)
+            .AnyAsync(cancellationToken);
+        if (!hasSettlementFacts)
         {
             return false;
         }
@@ -379,9 +536,10 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
         }
         else if (record.State == ProviderReceptionState.Held)
         {
-            await HoldForConflictAsync(
+            await HoldForReviewAsync(
                 inbox,
                 record.ReceivedAt,
+                "evidence_conflict",
                 cancellationToken);
         }
 
@@ -393,9 +551,10 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
             record.AnalysisSha256);
     }
 
-    private async ValueTask HoldForConflictAsync(
+    private async ValueTask HoldForReviewAsync(
         ProviderInboxEvent inbox,
         DateTimeOffset receivedAt,
+        string reason,
         CancellationToken cancellationToken)
     {
         var changedAt = receivedAt < inbox.UpdatedAt
@@ -412,17 +571,17 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
                 ?? throw new InvalidOperationException(
                     "Un inbox en proceso carece de intento activo.");
             attempt.Complete(
-                ProviderAttemptOutcomes.Indeterminate,
+                ProviderAttemptOutcomes.Held,
                 changedAt,
-                "evidence_conflict_during_processing");
+                $"{reason}_during_processing");
             inbox.HoldActiveAttempt(
                 activeLease,
-                "evidence_conflict",
+                reason,
                 changedAt);
             return;
         }
 
-        inbox.Hold("evidence_conflict", changedAt);
+        inbox.Hold(reason, changedAt);
     }
 
     private async ValueTask<bool> TrySaveAsync(
@@ -463,6 +622,44 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
             ConstraintName: "uq_payment_attempt_inbox_number"
                 or "uq_payment_attempt_running_inbox"
         };
+
+    private static bool IsSettlementFactReceiptUniquenessViolation(
+        DbUpdateException exception)
+        => exception.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: "pk_provider_settlement_fact_observations"
+        };
+
+    private static void EnsureFactsBelongToAuthenticatedReceipt(
+        ProviderEvidenceReceipt receipt,
+        ProviderSettlementFacts facts)
+    {
+        if (receipt.VerificationState != ProviderVerificationStates.Authenticated
+            || receipt.InboxEventId is null)
+        {
+            throw new InvalidOperationException(
+                "Sólo una recepción autenticada puede aportar hechos monetarios.");
+        }
+
+        if (!StringComparer.Ordinal.Equals(
+                receipt.Provider,
+                facts.Evidence.Provider)
+            || !StringComparer.Ordinal.Equals(
+                receipt.ProviderEventId,
+                facts.Evidence.ProviderEventId)
+            || !StringComparer.Ordinal.Equals(
+                receipt.ExternalSettlementId,
+                facts.Evidence.ExternalSettlementId)
+            || !StringComparer.Ordinal.Equals(
+                receipt.BodySha256,
+                facts.Evidence.BodySha256)
+            || receipt.VerifiedAt != facts.Evidence.VerifiedAt)
+        {
+            throw new InvalidOperationException(
+                "Los hechos monetarios no corresponden a la recepción autenticada.");
+        }
+    }
 
     private static string ToPersistenceState(ProviderReceptionState state)
         => state switch
