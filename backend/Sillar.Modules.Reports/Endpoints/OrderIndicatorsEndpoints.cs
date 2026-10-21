@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Logging;
 using Sillar.Core.Contracts;
 using Sillar.Modules.Reports.Orders;
 
@@ -30,6 +31,8 @@ public static class OrderIndicatorsEndpoints
             .WithDescription("start y end son instantes ISO 8601 con Z o desplazamiento explícito. Mantiene los inactivos; no informa montos ni información personal.")
             .Produces<OrderIndicatorsView>(StatusCodes.Status200OK)
             .ProducesValidationProblem(StatusCodes.Status400BadRequest)
+            // Ventas está activo pero falló: no hay cifra, ni cero ni fuente ausente.
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
             // Sin sesión de administración, 401; con rol editor, 403 (D-M10-05).
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden);
@@ -41,6 +44,7 @@ public static class OrderIndicatorsEndpoints
     private static async Task<IResult> ReadOrders(
         HttpRequest request,
         IOrderIndicatorsReport report,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         var startText = request.Query["start"].ToString();
@@ -61,8 +65,23 @@ public static class OrderIndicatorsEndpoints
             });
         }
 
-        // Un fallo real del lector no se convierte en 0 ni en fuente ausente.
-        var data = await report.ReadAsync(start, end, cancellationToken);
+        // Un fallo real del lector no se convierte en 0 ni en fuente ausente: es
+        // un 503 con su propia frase, y el detalle técnico va solo al registro.
+        OrderIndicatorsResult data;
+        try
+        {
+            data = await report.ReadAsync(start, end, cancellationToken);
+        }
+        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            loggerFactory.CreateLogger(typeof(OrderIndicatorsEndpoints)).LogError(
+                exception, "La lectura agregada de pedidos falló para [{Start}, {End}).", start, end);
+            return Results.Problem(
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                title: "El módulo de ventas no respondió, así que no se muestra ninguna cifra.",
+                detail: "Esto no significa cero pedidos. Vuelve a consultar en unos minutos; si se repite, revisa el registro del servidor.");
+        }
+
         var status = data.SourceStatus == OrderIndicatorsSourceStatus.SourceUnavailable
             ? "source_unavailable"
             : data.I01CreatedOrders == 0 ? "empty" : "with_data";

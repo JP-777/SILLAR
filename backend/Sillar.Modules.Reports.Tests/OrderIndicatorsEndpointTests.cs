@@ -87,11 +87,31 @@ public sealed class OrderIndicatorsEndpointTests
     }
 
     [Fact]
-    public async Task Un_fallo_de_ventas_no_se_convierte_en_respuesta_valida()
+    public async Task Un_fallo_de_ventas_responde_503_explicado_sin_ninguna_cifra()
     {
-        var app = Aplicacion(new LectorFijo(creados: 3) { Falla = true });
+        var (codigo, cuerpo) = await Consultar(Aplicacion(new LectorFijo(creados: 3) { Falla = true }), Inicio, Fin);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => Consultar(app, Inicio, Fin));
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, codigo);
+        Assert.Contains("ventas no respondió", cuerpo.GetProperty("title").GetString());
+        Assert.Contains("no significa cero", cuerpo.GetProperty("detail").GetString());
+        // ProblemDetails, no la vista: ni «empty», ni ceros, ni fuente ausente.
+        Assert.Equal(503, cuerpo.GetProperty("status").GetInt32());
+        foreach (var campo in new[] { "startInclusive", "observedAtUtc", "i01CreatedOrders", "i03CurrentStatusCounts", "i04CurrentlyExpiredOrders" })
+        {
+            Assert.False(cuerpo.TryGetProperty(campo, out _), campo);
+        }
+        // El texto técnico de la excepción va al registro, no a la respuesta.
+        Assert.DoesNotContain("Ventas no respondió.", cuerpo.GetRawText());
+    }
+
+    [Fact]
+    public async Task Una_consulta_cancelada_no_se_disfraza_de_fallo_de_ventas()
+    {
+        using var cancelada = new CancellationTokenSource();
+        cancelada.Cancel();
+        var app = Aplicacion(new LectorFijo(creados: 3));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Consultar(app, Inicio, Fin, cancelada.Token));
     }
 
     private static WebApplication Aplicacion(IOrderAggregateReader? lector)
@@ -109,11 +129,12 @@ public sealed class OrderIndicatorsEndpointTests
     private static IReadOnlyList<RouteEndpoint> Endpoints(WebApplication app) =>
         [.. ((IEndpointRouteBuilder)app).DataSources.SelectMany(d => d.Endpoints).OfType<RouteEndpoint>()];
 
-    private static async Task<(int Codigo, JsonElement Cuerpo)> Consultar(WebApplication app, string inicio, string fin)
+    private static async Task<(int Codigo, JsonElement Cuerpo)> Consultar(
+        WebApplication app, string inicio, string fin, CancellationToken abortada = default)
     {
         var ruta = Assert.Single(Endpoints(app));
         await using var scope = app.Services.CreateAsyncScope();
-        var contexto = new DefaultHttpContext { RequestServices = scope.ServiceProvider };
+        var contexto = new DefaultHttpContext { RequestServices = scope.ServiceProvider, RequestAborted = abortada };
         contexto.Request.Method = "GET";
         contexto.Request.Path = Ruta;
         contexto.Request.QueryString = QueryString.Create(new Dictionary<string, string?> { ["start"] = inicio, ["end"] = fin });
@@ -135,6 +156,7 @@ public sealed class OrderIndicatorsEndpointTests
         {
             Llamadas++;
             if (Falla) throw new InvalidOperationException("Ventas no respondió.");
+            cancellationToken.ThrowIfCancellationRequested();
             var porEstado = OrderStatus.All
                 .Select(status => new OrderStatusCount(status, status == OrderStatus.PendingPayment ? creados : 0))
                 .ToArray();
