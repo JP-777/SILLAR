@@ -461,3 +461,69 @@ test('41 · se neutraliza la fórmula escondida tras espacios o con signos de an
     assert.ok(!csvCell(inocente).includes("'"), inocente);
   }
 });
+
+const { assessFreshness, describeAge, STALE_AFTER_MINUTES } = await import('../src/modules/reporting/services/freshness.ts');
+
+test('42 · la antigüedad de lo observado distingue al día, desactualizado y desconocido', () => {
+  const observado = Date.parse('2026-10-19T15:00:00Z');
+  const tras = (min) => observado + min * 60_000;
+  assert.equal(STALE_AFTER_MINUTES, 15);
+  assert.deepEqual(assessFreshness('2026-10-19T15:00:00Z', tras(0)), { kind: 'fresh', minutes: 0 });
+  assert.deepEqual(assessFreshness('2026-10-19T15:00:00Z', tras(14.99)), { kind: 'fresh', minutes: 14 });
+  assert.deepEqual(assessFreshness('2026-10-19T15:00:00Z', tras(15)), { kind: 'stale', minutes: 15 });
+  assert.deepEqual(assessFreshness('2026-10-19T15:00:00.1234567+00:00', tras(125)), { kind: 'stale', minutes: 124 });
+  // Reloj del equipo algo adelantado al del servidor: se tolera hasta 2 min.
+  assert.deepEqual(assessFreshness('2026-10-19T15:00:00Z', tras(-1.5)), { kind: 'fresh', minutes: 0 });
+  assert.equal(assessFreshness('2026-10-19T15:00:00Z', tras(-3)).kind, 'unknown');
+  assert.equal(assessFreshness(null, tras(0)).kind, 'unknown');
+  assert.equal(assessFreshness('no es fecha', tras(0)).kind, 'unknown');
+  assert.equal(describeAge(0), 'hace menos de un minuto');
+  assert.equal(describeAge(15), 'hace 15 min');
+  assert.equal(describeAge(120), 'hace 2 h');
+  assert.equal(describeAge(125), 'hace 2 h 5 min');
+});
+
+const { ApiError } = await import('../src/shared/http/errors.ts');
+const { isSourceFailure } = await import('../src/modules/reporting/services/sourceFailure.ts');
+
+test('43 · ventas fallando es un 503 explicado; ni un 500 ni un 503 sin cuerpo pasan por él', () => {
+  assert.equal(isSourceFailure(new ApiError('Unexpected', 503, 'El módulo de ventas no respondió…', 'Esto no significa cero pedidos.', null, null, true)), true);
+  assert.equal(isSourceFailure(new ApiError('Unexpected', 503, 'Servicio no disponible', null, null, null, false)), false);
+  assert.equal(isSourceFailure(new ApiError('Unexpected', 500, 'Internal Server Error', null, null, null, true)), false);
+  assert.equal(isSourceFailure(new Error('503')), false);
+  // La pantalla enseña la frase del servidor y ninguna cifra (sin estado «ready»).
+  const servicio = codigo(fuente('src/modules/reporting/services/reporting.ts'));
+  assert.match(servicio, /isSourceFailure\(error\)\) \{\s*return \{ kind: 'inline', message: error\.displayMessage/);
+});
+
+test('44 · el panel dice cuándo se observó y avisa cuando los recuentos se han quedado viejos', () => {
+  const pagina = codigo(fuente('src/modules/reporting/pages/ReportsPage.tsx'));
+  assert.match(pagina, /assessFreshness\(data\.observedAtUtc, now\)/);
+  assert.match(pagina, /freshness\?\.kind === 'stale' && \(/);
+  assert.match(pagina, /freshness\?\.kind === 'unknown' && /);
+  // Sin consulta automática: el reloj solo vuelve a pintar, no llama a la red.
+  assert.match(pagina, /setInterval\(\(\) => setNow\(Date\.now\(\)\), 60_000\)/);
+  assert.doesNotMatch(pagina, /setInterval\([^)]*loadOrderIndicators/);
+});
+
+const zonas = await import('../src/modules/reporting/services/installationZone.ts');
+
+test('45 · la zona de la instalación solo la publica CORE; sin ella, la del negocio', () => {
+  assert.equal(zonas.installationZoneSource, null);
+  assert.deepEqual(zonas.resolveInstallationZone(null).zone, 'America/Lima');
+  assert.equal(zonas.resolveInstallationZone(null).origin, 'business_default');
+  assert.deepEqual(zonas.resolveInstallationZone({ zone: 'America/Bogota' }), { zone: 'America/Bogota', origin: 'installation' });
+  for (const mala of ['-05:00', 'america/lima', 'America/Lima ', 'Marte/Olimpo', '', null, 5, '../etc', 'America/Lima?rp_z=UTC']) {
+    const resuelta = zonas.resolveInstallationZone({ zone: mala });
+    assert.equal(resuelta.origin, 'business_default', String(mala));
+    assert.equal(resuelta.zone, 'America/Lima', String(mala));
+  }
+  assert.equal(INSTALLATION_ZONE, zonas.BUSINESS_DEFAULT_ZONE);
+  // La URL elige entre las admitidas; nunca añade una.
+  assert.deepEqual([...REPORT_ZONES], ['America/Lima', 'UTC']);
+  assert.equal(decodeReportLink('?rp_v=1&rp_z=America%2FBogota&rp_a_i=2026-10-01T00:00&rp_a_f=2026-10-02T00:00').kind, 'invalid');
+  // Y ninguna pantalla decide la zona por su cuenta: se elige de la lista.
+  const pagina = codigo(fuente('src/modules/reporting/pages/ReportsPage.tsx'));
+  assert.match(pagina, /REPORT_ZONES\.map\(/);
+  assert.doesNotMatch(pagina, /Intl\.DateTimeFormat\(\)\.resolvedOptions|getTimezoneOffset/);
+});

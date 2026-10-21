@@ -6,21 +6,38 @@
  * a rechazar `HH:mm:ss`.
  */
 
+import { resolveInstallationZone } from './installationZone.ts';
+
 /**
- * Zonas IANA que admite la pantalla. La de la instalación va primero.
- *
- * CORE no publica todavía una zona por instalación; mientras tanto la del
- * negocio es la misma con la que ventas numera sus pedidos
- * (`TransactionalSeriesAllocator.BusinessTimeZone`). Toda conversión pasa por
- * el reloj IANA de la zona, nunca por un desplazamiento fijo escrito aquí:
- * añadir una zona es añadir su identificador a esta lista.
+ * Zona IANA, ya comprobada contra `REPORT_ZONES`. Es un texto porque la de la
+ * instalación la decidirá CORE; por eso toda entrada pasa por `isReportZone`.
  */
-export const REPORT_ZONES = ['America/Lima', 'UTC'] as const;
-export type ReportZone = (typeof REPORT_ZONES)[number];
-export const INSTALLATION_ZONE: ReportZone = REPORT_ZONES[0];
+export type ReportZone = string;
+
+/**
+ * Zonas que admite la pantalla: la de la instalación primero y UTC.
+ *
+ * Toda conversión pasa por el reloj IANA de la zona, nunca por un
+ * desplazamiento fijo escrito aquí. La zona de la instalación sale de
+ * `installationZone.ts`, no de la URL ni del navegador.
+ */
+export const INSTALLATION = resolveInstallationZone();
+export const INSTALLATION_ZONE: ReportZone = INSTALLATION.zone;
+export const REPORT_ZONES: readonly ReportZone[] = [...new Set([INSTALLATION_ZONE, 'UTC'])];
 
 export function isReportZone(value: unknown): value is ReportZone {
-  return typeof value === 'string' && (REPORT_ZONES as readonly string[]).includes(value);
+  return typeof value === 'string' && REPORT_ZONES.includes(value);
+}
+
+/** Nombre de la zona para un selector, con su desplazamiento de hoy. */
+export function zoneLabel(zone: ReportZone, now: Date): string {
+  if (zone === 'UTC') return 'UTC (UTC+00:00)';
+  const offset = new Intl.DateTimeFormat('en-US', { timeZone: zone, timeZoneName: 'longOffset' })
+    .formatToParts(now).find((part) => part.type === 'timeZoneName')?.value.replace('GMT', 'UTC').replace('-', '−') ?? '';
+  const origin = zone === INSTALLATION_ZONE
+    ? INSTALLATION.origin === 'installation' ? 'Zona de la instalación' : 'Zona del negocio'
+    : 'Zona';
+  return `${origin} · ${zone} (${offset === 'UTC' ? 'UTC+00:00' : offset})`;
 }
 
 const formatters = new Map<ReportZone, Intl.DateTimeFormat>();

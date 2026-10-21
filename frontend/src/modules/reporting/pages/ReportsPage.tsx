@@ -6,7 +6,8 @@ import { type Failure } from '../../../shared/errors/messages';
 import { FailureAlert } from '../../../shared/ui/patterns';
 import { OrderDistribution } from '../components/OrderDistribution';
 import { OrderPeriodComparison } from '../components/OrderPeriodComparison';
-import { asInstant, INSTALLATION_ZONE, isReportZone, quickPeriodRange, showCount, showDate, type QuickPeriod, type ReportZone } from '../services/period';
+import { assessFreshness, describeAge, STALE_AFTER_MINUTES } from '../services/freshness';
+import { asInstant, INSTALLATION_ZONE, isReportZone, quickPeriodRange, REPORT_ZONES, showCount, showDate, zoneLabel, type QuickPeriod, type ReportZone } from '../services/period';
 import { decodeReportLink, encodeReportLink, type ReportLinkRead } from '../services/reportLinks';
 import {
   describeReportFailure,
@@ -87,6 +88,15 @@ function ReportsView({ link }: { link: ReportLinkRead }) {
     requestVersion.current += 1;
   }, []);
 
+  // La antigüedad de lo observado se recalcula cada minuto mientras se ve:
+  // la pantalla no vuelve a consultar sola, pero dice cuándo dejó de estar al día.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (state.kind !== 'ready') return undefined;
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, [state]);
+
   function invalidateConsultation() {
     requestVersion.current += 1;
     setState({ kind: 'idle' });
@@ -146,6 +156,7 @@ function ReportsView({ link }: { link: ReportLinkRead }) {
         previousPromise,
       ]);
       if (requestVersion.current === currentRequest) {
+        setNow(Date.now());
         setState({ kind: 'ready', data, previous: previousStart
           ? { start: previousStart, end: first, data: previousData }
           : null });
@@ -171,6 +182,7 @@ function ReportsView({ link }: { link: ReportLinkRead }) {
     ? currentCount - previousCount : null;
   // D9: solo una cohorte validada por D8 y con pedidos dibuja distribuciones.
   // Los nulos no se rellenan con cero: si falta un recuento, no se dibuja.
+  const freshness = data && data.status !== 'source_unavailable' ? assessFreshness(data.observedAtUtc, now) : null;
   const distribution = data?.status === 'with_data'
     && data.i01CreatedOrders !== null
     && data.i03CurrentStatusCounts !== null
@@ -193,9 +205,9 @@ function ReportsView({ link }: { link: ReportLinkRead }) {
     : data?.status === 'source_unavailable'
       ? 'Fuente de pedidos no disponible: el módulo de ventas no está activo.'
       : data?.status === 'empty'
-        ? 'No se crearon pedidos en el período consultado.'
+        ? `No se crearon pedidos en el período consultado.${freshness?.kind === 'stale' ? ' Pueden estar desactualizados.' : ''}`
         : data?.status === 'with_data'
-          ? `Indicadores consultados: ${showCount(data.i01CreatedOrders)} pedidos creados.`
+          ? `Indicadores consultados: ${showCount(data.i01CreatedOrders)} pedidos creados.${freshness?.kind === 'stale' ? ' Pueden estar desactualizados.' : ''}`
           : fromLink && state.kind === 'idle'
             ? 'Filtros cargados desde un enlace. Pulsa «Consultar período» para ver los indicadores.'
             : '';
@@ -224,8 +236,7 @@ function ReportsView({ link }: { link: ReportLinkRead }) {
           <label className="rp-field">
             Zona horaria
             <select className="ui-input" value={zone} onChange={(e) => { if (!isReportZone(e.target.value)) return; setZone(e.target.value); invalidateConsultation(); }}>
-              <option value="America/Lima">Perú · America/Lima (UTC−05:00)</option>
-              <option value="UTC">UTC (UTC+00:00)</option>
+              {REPORT_ZONES.map((option) => <option key={option} value={option}>{zoneLabel(option, new Date())}</option>)}
             </select>
           </label>
           <label className="rp-field">
@@ -265,7 +276,17 @@ function ReportsView({ link }: { link: ReportLinkRead }) {
         )}
         {data && data.status !== 'source_unavailable' && (
           <>
-            <p className="rp-note">Observado: {data.observedAtUtc ? showDate(data.observedAtUtc, zone) : 'Sin instante informado'} · Zona: {zone}</p>
+            <p className="rp-note">
+              Observado: {data.observedAtUtc ? showDate(data.observedAtUtc, zone) : 'Sin instante informado'}
+              {freshness && freshness.kind !== 'unknown' && ` (${describeAge(freshness.minutes)})`} · Zona: {zone}
+            </p>
+            {freshness?.kind === 'stale' && (
+              <p className="rp-warning">
+                Estos recuentos se observaron {describeAge(freshness.minutes)} y pueden haber cambiado: los estados son los de ese momento.
+                Vuelve a pulsar «Consultar período» para verlos al día. Se avisa a partir de {STALE_AFTER_MINUTES} minutos.
+              </p>
+            )}
+            {freshness?.kind === 'unknown' && <p className="rp-warning">{freshness.reason}</p>}
             {data.status === 'empty' && <p>No se crearon pedidos en este período. Los recuentos son cero.</p>}
             <div className="rp-kpis">
               <section className="rp-panel"><h2>Pedidos creados</h2><strong>{showCount(data.i01CreatedOrders)}</strong></section>
