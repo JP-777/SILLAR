@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -112,6 +113,27 @@ public sealed class OrderIndicatorsEndpointTests
         var app = Aplicacion(new LectorFijo(creados: 3));
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Consultar(app, Inicio, Fin, cancelada.Token));
+    }
+
+    /// <summary>
+    /// D-M10-05: la exportación se audita con una acción propia de CORE, y esa
+    /// acción no existe (el CHECK de <c>core.audit_log</c> sale de
+    /// <see cref="Sillar.Core.Contracts.AuditAction.All"/>). Hasta entonces
+    /// M10 no escribe auditoría: ninguna exportación con una acción prestada.
+    /// </summary>
+    [Fact]
+    public void Reportes_no_escribe_auditoria_mientras_CORE_no_tenga_accion_de_exportacion()
+    {
+        const BindingFlags todo = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance
+            | BindingFlags.Static | BindingFlags.DeclaredOnly;
+        var usos = typeof(ReportsModule).Assembly.GetTypes().SelectMany(tipo =>
+            tipo.GetFields(todo).Select(f => (tipo, f.Name, f.FieldType))
+                .Concat(tipo.GetMethods(todo).Cast<MethodBase>().Concat(tipo.GetConstructors(todo))
+                    .SelectMany(m => m.GetParameters().Select(p => (tipo, m.Name, p.ParameterType)))))
+            .Where(uso => uso.Item3 == typeof(Sillar.Core.Contracts.IAuditWriter))
+            .Select(uso => $"{uso.tipo.FullName}.{uso.Name}");
+
+        Assert.Empty(usos);
     }
 
     private static WebApplication Aplicacion(IOrderAggregateReader? lector)

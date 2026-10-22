@@ -305,6 +305,7 @@ test('27 · con auditoría, primero se registra el hecho agregado y después se 
   assert.deepEqual(registros[0], {
     report: 'pedidos', startInclusive: '2026-10-01T05:00:00+00:00', endExclusive: '2026-10-08T05:00:00+00:00',
     zone: 'America/Lima', includesComparison: true, dataRows: 33, fileName: resultado.fileName,
+    comparisonStartInclusive: '2026-10-08T05:00:00+00:00', comparisonEndExclusive: '2026-10-15T05:00:00+00:00',
   });
 });
 
@@ -441,7 +442,7 @@ test('39 · sin la confirmación exacta de la auditoría no sale ningún byte', 
   }
 });
 
-test('40 · la auditoría recibe un registro congelado y sin cifras', async () => {
+test('40 · la auditoría recibe un registro congelado y sin cifras, sin comparación con sus límites nulos', async () => {
   const { registros, port } = auditoria((entry) => {
     assert.throws(() => { entry.dataRows = 0; }, TypeError);
     return 'recorded';
@@ -449,8 +450,10 @@ test('40 · la auditoría recibe un registro congelado y sin cifras', async () =
   const resultado = await prepareOrderIndicatorsExport({ zone: 'UTC', baseline: respuesta() }, port);
   assert.equal(resultado.kind, 'ready');
   assert.ok(Object.isFrozen(registros[0]));
+  assert.equal(registros[0].comparisonStartInclusive, null);
+  assert.equal(registros[0].comparisonEndExclusive, null);
   assert.deepEqual(Object.keys(registros[0]).sort(),
-    ['dataRows', 'endExclusive', 'fileName', 'includesComparison', 'report', 'startInclusive', 'zone']);
+    ['comparisonEndExclusive', 'comparisonStartInclusive', 'dataRows', 'endExclusive', 'fileName', 'includesComparison', 'report', 'startInclusive', 'zone']);
 });
 
 test('41 · se neutraliza la fórmula escondida tras espacios o con signos de ancho completo', () => {
@@ -582,4 +585,20 @@ test('47 · con la zona publicada inválida, ningún período, enlace, comparaci
       anterior: 'unavailable', csv: 'unavailable',
     }, zona);
   }
+});
+
+test('48 · una auditoría que no contesta a tiempo no deja pasar el archivo, aunque confirme tarde', async () => {
+  const { EXPORT_AUDIT_TIMEOUT_MS } = await import('../src/modules/reporting/services/reportExport.ts');
+  assert.ok(EXPORT_AUDIT_TIMEOUT_MS > 0 && EXPORT_AUDIT_TIMEOUT_MS <= 30_000);
+  let confirmar;
+  const muda = { recordExport: () => new Promise((resolve) => { confirmar = resolve; }) };
+  const resultado = await prepareOrderIndicatorsExport({ zone: 'UTC', baseline: respuesta() }, muda, 20);
+  assert.equal(resultado.kind, 'audit_failed');
+  assert.equal('content' in resultado, false);
+  confirmar('recorded');
+  await new Promise((r) => setImmediate(r));
+  assert.equal(resultado.kind, 'audit_failed');
+  // La que contesta dentro del plazo sigue entregando.
+  const lenta = { recordExport: () => new Promise((resolve) => setTimeout(resolve, 5, 'recorded')) };
+  assert.equal((await prepareOrderIndicatorsExport({ zone: 'UTC', baseline: respuesta() }, lenta, 200)).kind, 'ready');
 });

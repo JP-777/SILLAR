@@ -13,8 +13,16 @@ import type { ReportZone } from './period.ts';
  * - con puerto, primero se registra la exportación y solo después se entrega
  *   el archivo; si el registro falla, se niega o responde otra cosa que la
  *   confirmación, tampoco hay archivo (cerrado por defecto);
- * - lo que se audita es el hecho, nunca el contenido: informe, período, zona,
- *   si incluye comparación y cuántas filas. Sin datos personales.
+ * - lo que se audita es el hecho, nunca el contenido: informe, los dos
+ *   períodos que van en el archivo, zona y cuántas filas. Sin datos personales;
+ * - una auditoría que no contesta a tiempo es un fallo: no hay archivo. Si el
+ *   registro llega tarde queda un registro sin archivo, nunca al revés.
+ *
+ * Esta barrera vive en el navegador, que ya tiene los datos: sirve para que la
+ * pantalla no entregue nada sin confirmación, pero no es la garantía. La
+ * garantía es un endpoint de M10 que escriba con `IAuditWriter.WriteAsync` y
+ * solo después devuelva el archivo; falta la acción de exportación en
+ * `AuditAction` y en el CHECK de `core.audit_log`.
  *
  * Esta función no descarga nada ni la importa ninguna pantalla. Entregar el
  * archivo al navegador y mostrar el botón son pasos posteriores a la costura.
@@ -27,6 +35,9 @@ export interface OrderIndicatorsExportAudit {
   readonly endExclusive: string;
   readonly zone: ReportZone;
   readonly includesComparison: boolean;
+  /** Período de la comparación que también va en el archivo; null si no hay. */
+  readonly comparisonStartInclusive: string | null;
+  readonly comparisonEndExclusive: string | null;
   readonly dataRows: number;
   readonly fileName: string;
 }
@@ -53,6 +64,9 @@ export interface ExportAuditPort {
  */
 export const exportAuditPort: ExportAuditPort | null = null;
 
+/** Lo que se espera a la auditoría antes de darla por fallida. */
+export const EXPORT_AUDIT_TIMEOUT_MS = 15_000;
+
 export type OrderIndicatorsExport =
   | { readonly kind: 'ready'; readonly fileName: string; readonly mimeType: string; readonly content: string }
   | { readonly kind: 'blocked'; readonly reason: string }
@@ -69,6 +83,7 @@ export interface OrderIndicatorsExportRequest {
 export async function prepareOrderIndicatorsExport(
   request: OrderIndicatorsExportRequest,
   audit: ExportAuditPort | null = exportAuditPort,
+  timeoutMs: number = EXPORT_AUDIT_TIMEOUT_MS,
 ): Promise<OrderIndicatorsExport> {
   if (audit === null) {
     return {
@@ -88,14 +103,22 @@ export async function prepareOrderIndicatorsExport(
     endExclusive: request.baseline.endExclusive,
     zone: request.zone,
     includesComparison: Boolean(request.comparison),
+    comparisonStartInclusive: request.comparison?.startInclusive ?? null,
+    comparisonEndExclusive: request.comparison?.endExclusive ?? null,
     dataRows,
     fileName: csv.fileName,
   });
   let decision: unknown;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    decision = await audit.recordExport(entry);
+    decision = await Promise.race([
+      audit.recordExport(entry),
+      new Promise((resolve) => { timer = setTimeout(resolve, timeoutMs, undefined); }),
+    ]);
   } catch {
     decision = undefined;
+  } finally {
+    clearTimeout(timer);
   }
   if (decision === 'denied') {
     return {
