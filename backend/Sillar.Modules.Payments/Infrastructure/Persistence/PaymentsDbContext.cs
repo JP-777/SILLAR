@@ -28,6 +28,10 @@ public sealed class PaymentsDbContext(
     internal DbSet<ProviderSettlementFactObservation> SettlementFactObservations
         => Set<ProviderSettlementFactObservation>();
 
+    internal DbSet<ProviderSettlementConcurrencyFence>
+        SettlementConcurrencyFences
+        => Set<ProviderSettlementConcurrencyFence>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

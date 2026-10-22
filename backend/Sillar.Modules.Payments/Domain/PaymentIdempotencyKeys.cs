@@ -5,9 +5,9 @@ namespace Sillar.Modules.Payments.Domain;
 /// </summary>
 /// <remarks>
 /// El valor representa la clave conceptual <c>(provider, provider_event_id)</c>.
-/// Su igualdad por valor no coordina concurrencia, no persiste nada y no promete
-/// procesamiento exactly-once. Esas garantías requerirán una barrera durable y
-/// transaccional que todavía no está autorizada.
+/// Su igualdad por valor no coordina concurrencia ni promete procesamiento
+/// exactly-once. La infraestructura M11 añade una valla candidata para hechos
+/// de liquidación, pero la atomicidad comercial continúa fuera de este valor.
 /// </remarks>
 public sealed record ProviderEventIdempotencyKey
 {
@@ -37,8 +37,9 @@ public sealed record ProviderEventIdempotencyKey
 /// </summary>
 /// <remarks>
 /// Este valor sólo transporta <c>external_settlement_id</c>. No implementa ni
-/// atribuye a M11 la unicidad comercial, la atomicidad o la escritura del pago;
-/// esas responsabilidades permanecen fuera de este proyecto puro.
+/// atribuye a M11 la unicidad comercial, la atomicidad o la escritura del pago.
+/// La valla técnica que comparte su literal únicamente serializa observaciones
+/// conservadoras; la autoridad sobre la identidad comercial permanece en M03.
 /// </remarks>
 public sealed record ExternalSettlementIdempotencyKey
 {

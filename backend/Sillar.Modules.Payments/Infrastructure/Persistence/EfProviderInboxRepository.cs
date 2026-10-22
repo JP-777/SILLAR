@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
 using Sillar.Modules.Payments.Application.Contracts;
 using Sillar.Modules.Payments.Domain;
@@ -74,6 +75,35 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
             DateTimeOffset recordedAt,
             CancellationToken cancellationToken)
     {
+        const int maxOwnedTransactionAttempts = 3;
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return await RecordSettlementFactsOnceAsync(
+                    receiptId,
+                    facts,
+                    recordedAt,
+                    cancellationToken);
+            }
+            catch (ProviderInboxConcurrencyException) when (
+                attempt < maxOwnedTransactionAttempts
+                && database.Database.CurrentTransaction is null)
+            {
+                // La transacción propia ya fue revertida. Releer bajo una nueva
+                // valla convierte la carrera en Duplicate/Conflict/HOLD según
+                // los hechos durables que ganó la ronda anterior.
+            }
+        }
+    }
+
+    private async ValueTask<ProviderSettlementFactDecision>
+        RecordSettlementFactsOnceAsync(
+            Guid receiptId,
+            ProviderSettlementFacts facts,
+            DateTimeOffset recordedAt,
+            CancellationToken cancellationToken)
+    {
         if (receiptId == Guid.Empty)
         {
             throw new ArgumentException(
@@ -84,96 +114,139 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
         ArgumentNullException.ThrowIfNull(facts);
         ProviderPersistenceGuard.RequiredInstant(recordedAt, nameof(recordedAt));
 
-        var receipt = await database.EvidenceReceipts.SingleOrDefaultAsync(
-            item => item.ReceiptId == receiptId,
-            cancellationToken)
-            ?? throw new InvalidOperationException(
-                "La recepción de los hechos monetarios no existe.");
-        EnsureFactsBelongToAuthenticatedReceipt(receipt, facts);
-        if (recordedAt < receipt.ReceivedAt)
-        {
-            throw new ArgumentException(
-                "Los hechos no pueden preceder a su recepción.",
-                nameof(recordedAt));
-        }
-
-        var existing = await database.SettlementFactObservations
-            .AsNoTracking()
-            .SingleOrDefaultAsync(
-                item => item.ReceiptId == receiptId,
-                cancellationToken);
-        if (existing is not null)
-        {
-            if (!existing.HasSameFacts(facts))
-            {
-                throw new InvalidOperationException(
-                    "Una recepción no puede cambiar sus hechos monetarios.");
-            }
-
-            return ProviderSettlementFactDecision.Duplicate;
-        }
-
-        var knownRows = await database.SettlementFactObservations
-            .AsNoTracking()
-            .ToArrayAsync(cancellationToken);
-        var classification = ProviderSettlementFactClassifier.Classify(
-            facts,
-            knownRows.Select(item => item.ToDomain()));
-        var inbox = await database.InboxEvents.SingleAsync(
-            item => item.InboxEventId == receipt.InboxEventId,
-            cancellationToken);
-        var changedAt = recordedAt < inbox.UpdatedAt
-            ? inbox.UpdatedAt
-            : recordedAt;
-
-        database.SettlementFactObservations.Add(
-            ProviderSettlementFactObservation.Create(
-                receiptId,
-                facts,
-                classification,
-                recordedAt));
-
-        if (classification is ProviderSettlementFactDecision.Conflict
-            or ProviderSettlementFactDecision.DecisionRequired)
-        {
-            var reason = classification == ProviderSettlementFactDecision.Conflict
-                ? "settlement_facts_conflict"
-                : "settlement_facts_decision_required";
-            await HoldForReviewAsync(
-                inbox,
-                changedAt,
-                reason,
-                cancellationToken);
-        }
-        else
-        {
-            // Serializa observaciones de la misma recepción/inbox mediante el
-            // token optimista. No afirma atomicidad interproveedor ni con M03.
-            inbox.RegisterSettlementFactObservation(changedAt);
-        }
-
+        IDbContextTransaction? ownedTransaction = null;
         try
         {
+            if (database.Database.CurrentTransaction is null)
+            {
+                ownedTransaction = await database.Database.BeginTransactionAsync(
+                    cancellationToken);
+            }
+
+            var fence = await AcquireSettlementFenceAsync(
+                facts.Evidence.ExternalSettlementId,
+                recordedAt,
+                cancellationToken);
+
+            // Toda lectura que decide New/Duplicate/HOLD ocurre después de
+            // tomar la valla transaccional. Dos inboxes con el mismo literal
+            // de liquidación no pueden clasificar simultáneamente un snapshot
+            // anterior. La valla no equivale a identidad comercial M03.
+            var receipt = await database.EvidenceReceipts.SingleOrDefaultAsync(
+                item => item.ReceiptId == receiptId,
+                cancellationToken)
+                ?? throw new InvalidOperationException(
+                    "La recepción de los hechos monetarios no existe.");
+            EnsureFactsBelongToAuthenticatedReceipt(receipt, facts);
+            if (recordedAt < receipt.ReceivedAt)
+            {
+                throw new ArgumentException(
+                    "Los hechos no pueden preceder a su recepción.",
+                    nameof(recordedAt));
+            }
+
+            var existing = await database.SettlementFactObservations
+                .AsNoTracking()
+                .SingleOrDefaultAsync(
+                    item => item.ReceiptId == receiptId,
+                    cancellationToken);
+            if (existing is not null)
+            {
+                if (!existing.HasSameFacts(facts))
+                {
+                    throw new InvalidOperationException(
+                        "Una recepción no puede cambiar sus hechos monetarios.");
+                }
+
+                if (ownedTransaction is not null)
+                {
+                    await ownedTransaction.CommitAsync(cancellationToken);
+                }
+
+                return ProviderSettlementFactDecision.Duplicate;
+            }
+
+            // El clasificador sólo observa la misma identidad de evento o el
+            // mismo literal de liquidación. Este predicado es equivalente al
+            // recorrido global y evita cargar hechos no relacionados.
+            var knownRows = await database.SettlementFactObservations
+                .AsNoTracking()
+                .Where(item =>
+                    (item.Provider == facts.Evidence.Provider
+                        && item.ProviderEventId ==
+                            facts.Evidence.ProviderEventId)
+                    || item.ExternalSettlementId ==
+                        facts.Evidence.ExternalSettlementId)
+                .ToArrayAsync(cancellationToken);
+            var classification = ProviderSettlementFactClassifier.Classify(
+                facts,
+                knownRows.Select(item => item.ToDomain()));
+            var inbox = await database.InboxEvents.SingleAsync(
+                item => item.InboxEventId == receipt.InboxEventId,
+                cancellationToken);
+            var changedAt = recordedAt < inbox.UpdatedAt
+                ? inbox.UpdatedAt
+                : recordedAt;
+
+            database.SettlementFactObservations.Add(
+                ProviderSettlementFactObservation.Create(
+                    receiptId,
+                    facts,
+                    classification,
+                    recordedAt));
+
+            if (classification is ProviderSettlementFactDecision.Conflict
+                or ProviderSettlementFactDecision.DecisionRequired)
+            {
+                var reason = classification ==
+                    ProviderSettlementFactDecision.Conflict
+                    ? "settlement_facts_conflict"
+                    : "settlement_facts_decision_required";
+                await HoldAffectedInboxesAsync(
+                    inbox,
+                    knownRows.Select(item => item.ReceiptId).ToArray(),
+                    changedAt,
+                    reason,
+                    cancellationToken);
+            }
+            else
+            {
+                inbox.RegisterSettlementFactObservation(changedAt);
+            }
+
+            fence.RegisterObservation(
+                facts.Evidence.ExternalSettlementId,
+                recordedAt);
             await database.SaveChangesAsync(cancellationToken);
+            if (ownedTransaction is not null)
+            {
+                await ownedTransaction.CommitAsync(cancellationToken);
+            }
+
+            return classification;
         }
         catch (DbUpdateConcurrencyException exception)
         {
             database.ChangeTracker.Clear();
             throw new ProviderInboxConcurrencyException(
-                "El inbox cambió durante la conservación de hechos monetarios.",
+                "El alcance de liquidación cambió durante la conservación de hechos.",
                 exception);
         }
         catch (DbUpdateException exception) when (
-            database.Database.CurrentTransaction is null
-            && IsSettlementFactReceiptUniquenessViolation(exception))
+            IsSettlementFactReceiptUniquenessViolation(exception))
         {
             database.ChangeTracker.Clear();
             throw new ProviderInboxConcurrencyException(
                 "Otra operación conservó hechos para la misma recepción.",
                 exception);
         }
-
-        return classification;
+        finally
+        {
+            if (ownedTransaction is not null)
+            {
+                await ownedTransaction.DisposeAsync();
+            }
+        }
     }
 
     public async ValueTask RecordAsync(
@@ -550,6 +623,116 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
             ToPersistenceState(record.State),
             record.AnalysisSha256);
     }
+
+    private async ValueTask<ProviderSettlementConcurrencyFence>
+        AcquireSettlementFenceAsync(
+            string externalSettlementId,
+            DateTimeOffset acquiredAt,
+            CancellationToken cancellationToken)
+    {
+        if (database.Database.CurrentTransaction is null)
+        {
+            throw new InvalidOperationException(
+                "La valla de liquidación exige una transacción activa.");
+        }
+
+        var candidate = ProviderSettlementConcurrencyFence.Create(
+            externalSettlementId,
+            acquiredAt);
+
+        // El upsert sólo materializa una fila técnica. FOR UPDATE mantiene la
+        // exclusión hasta el commit de la observación y de todos los HOLD.
+        // No se ejecuta SQL sobre sales.* ni se declara unicidad comercial.
+        await database.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO payments.provider_settlement_concurrency_fences
+                (fence_sha256, external_settlement_id, revision,
+                 created_at, updated_at)
+            VALUES
+                ({candidate.FenceSha256}, {candidate.ExternalSettlementId},
+                 {candidate.Revision}, {candidate.CreatedAt},
+                 {candidate.UpdatedAt})
+            ON CONFLICT (fence_sha256) DO NOTHING
+            """, cancellationToken);
+
+        var fences = await database.SettlementConcurrencyFences
+            .FromSqlInterpolated($"""
+                SELECT fence_sha256, external_settlement_id, revision,
+                       created_at, updated_at
+                FROM payments.provider_settlement_concurrency_fences
+                WHERE fence_sha256 = {candidate.FenceSha256}
+                FOR UPDATE
+                """)
+            .AsTracking()
+            .ToArrayAsync(cancellationToken);
+        var fence = AssertSingleSettlementFence(fences);
+        if (!StringComparer.Ordinal.Equals(
+                fence.ExternalSettlementId,
+                externalSettlementId))
+        {
+            throw new InvalidOperationException(
+                "La clave de coordinación colisionó con otra identidad opaca.");
+        }
+
+        return fence;
+    }
+
+    private async ValueTask HoldAffectedInboxesAsync(
+        ProviderInboxEvent incomingInbox,
+        IReadOnlyCollection<Guid> knownReceiptIds,
+        DateTimeOffset changedAt,
+        string reason,
+        CancellationToken cancellationToken)
+    {
+        await HoldForReviewAsync(
+            incomingInbox,
+            changedAt,
+            reason,
+            cancellationToken);
+        if (knownReceiptIds.Count == 0)
+        {
+            return;
+        }
+
+        var relatedInboxIds = await database.EvidenceReceipts
+            .AsNoTracking()
+            .Where(item => knownReceiptIds.Contains(item.ReceiptId)
+                && item.InboxEventId != null
+                && item.InboxEventId != incomingInbox.InboxEventId)
+            .Select(item => item.InboxEventId!.Value)
+            .Distinct()
+            .ToArrayAsync(cancellationToken);
+        if (relatedInboxIds.Length == 0)
+        {
+            return;
+        }
+
+        var relatedInboxes = await database.InboxEvents
+            .Where(item => relatedInboxIds.Contains(item.InboxEventId))
+            .ToArrayAsync(cancellationToken);
+        foreach (var relatedInbox in relatedInboxes)
+        {
+            // Un efecto ya confirmado no se reescribe retroactivamente. La
+            // observación entrante queda en HOLD y la resolución corresponde
+            // a la futura autoridad comercial M03.
+            if (relatedInbox.ProcessingState == ProviderInboxStates.Completed)
+            {
+                continue;
+            }
+
+            await HoldForReviewAsync(
+                relatedInbox,
+                changedAt,
+                reason,
+                cancellationToken);
+        }
+    }
+
+    private static ProviderSettlementConcurrencyFence AssertSingleSettlementFence(
+        IReadOnlyList<ProviderSettlementConcurrencyFence> fences)
+        => fences.Count == 1
+            ? fences[0]
+            : throw new InvalidOperationException(
+                "La valla de liquidación no pudo materializarse de forma única.");
 
     private async ValueTask HoldForReviewAsync(
         ProviderInboxEvent inbox,

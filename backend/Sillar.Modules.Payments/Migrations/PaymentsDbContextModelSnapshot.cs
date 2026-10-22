@@ -342,6 +342,53 @@ namespace Sillar.Modules.Payments.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Sillar.Modules.Payments.Infrastructure.Persistence.Entities.ProviderSettlementConcurrencyFence", b =>
+                {
+                    b.Property<string>("FenceSha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("character(64)")
+                        .HasColumnName("fence_sha256")
+                        .IsFixedLength()
+                        .UseCollation("C");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ExternalSettlementId")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("external_settlement_id")
+                        .UseCollation("C");
+
+                    b.Property<long>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("revision");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("FenceSha256")
+                        .HasName("pk_provider_settlement_concurrency_fences");
+
+                    b.HasIndex("ExternalSettlementId")
+                        .HasDatabaseName("idx_payment_settlement_fence_identity");
+
+                    b.ToTable("provider_settlement_concurrency_fences", "payments", t =>
+                        {
+                            t.HasCheckConstraint("ck_payment_settlement_fence_identity", "btrim(external_settlement_id) <> ''");
+
+                            t.HasCheckConstraint("ck_payment_settlement_fence_revision", "revision > 0");
+
+                            t.HasCheckConstraint("ck_payment_settlement_fence_sha256", "fence_sha256 COLLATE \"C\" ~ '^[0-9a-f]{64}$'");
+
+                            t.HasCheckConstraint("ck_payment_settlement_fence_timestamps", "updated_at >= created_at");
+                        });
+                });
+
             modelBuilder.Entity("Sillar.Modules.Payments.Infrastructure.Persistence.Entities.ProviderSettlementFactObservation", b =>
                 {
                     b.Property<Guid>("ReceiptId")

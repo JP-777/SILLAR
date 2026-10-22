@@ -22,6 +22,7 @@ public sealed class PaymentsPersistenceTests
                 "provider_evidence_receipts",
                 "provider_inbox_events",
                 "provider_processing_attempts",
+                "provider_settlement_concurrency_fences",
                 "provider_settlement_fact_observations"
             ],
             model.GetEntityTypes()
@@ -121,6 +122,65 @@ public sealed class PaymentsPersistenceTests
             entity.GetCheckConstraints(),
             check => check.Name == "ck_payment_settlement_fact_classification"
                 && check.Sql.Contains("decision_required", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Valla_serializa_por_hash_exacto_sin_hacer_unica_la_liquidacion()
+    {
+        using var context = Context();
+        var entity = context.GetService<IDesignTimeModel>().Model
+            .FindEntityType(typeof(ProviderSettlementConcurrencyFence))!;
+        var primaryKey = entity.FindPrimaryKey()!;
+        var settlementIndex = Assert.Single(entity.GetIndexes());
+
+        Assert.Equal(
+            nameof(ProviderSettlementConcurrencyFence.FenceSha256),
+            Assert.Single(primaryKey.Properties).Name);
+        Assert.Equal(
+            nameof(ProviderSettlementConcurrencyFence.ExternalSettlementId),
+            Assert.Single(settlementIndex.Properties).Name);
+        Assert.False(settlementIndex.IsUnique);
+        Assert.Equal(
+            PaymentsDbContext.OpaqueIdentifierCollation,
+            entity.FindProperty(
+                nameof(ProviderSettlementConcurrencyFence.FenceSha256))!
+                .GetCollation());
+        Assert.Equal(
+            PaymentsDbContext.OpaqueIdentifierCollation,
+            entity.FindProperty(
+                nameof(ProviderSettlementConcurrencyFence.ExternalSettlementId))!
+                .GetCollation());
+        Assert.True(entity.FindProperty(
+            nameof(ProviderSettlementConcurrencyFence.Revision))!
+            .IsConcurrencyToken);
+        Assert.DoesNotContain(
+            entity.GetIndexes(),
+            index => index.IsUnique
+                && index.Properties.Any(property => property.Name ==
+                    nameof(ProviderSettlementConcurrencyFence.ExternalSettlementId)));
+    }
+
+    [Theory]
+    [InlineData("Settlement-A", "settlement-a")]
+    [InlineData(" settlement ", "settlement")]
+    [InlineData("settlement:+%@ü", "settlement:+%@u")]
+    public void Valla_conserva_identidad_exacta_en_su_clave_tecnica(
+        string left,
+        string right)
+    {
+        var instant = PaymentTestData.VerifiedAt;
+        var fence = ProviderSettlementConcurrencyFence.Create(left, instant);
+
+        Assert.Equal(left, fence.ExternalSettlementId);
+        Assert.Equal(64, fence.FenceSha256.Length);
+        Assert.NotEqual(
+            ProviderSettlementConcurrencyFence.CreateFenceSha256(left),
+            ProviderSettlementConcurrencyFence.CreateFenceSha256(right));
+
+        fence.RegisterObservation(left, instant.AddSeconds(1));
+        Assert.Equal(2, fence.Revision);
+        Assert.Throws<InvalidOperationException>(() =>
+            fence.RegisterObservation(right, instant.AddSeconds(2)));
     }
 
     [Theory]
