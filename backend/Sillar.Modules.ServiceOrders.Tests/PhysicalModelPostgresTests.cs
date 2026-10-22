@@ -28,7 +28,7 @@ public sealed class PhysicalModelPostgresTests
                  WHERE table_schema = 'service_orders' AND table_name <> '__migrations'
                 """);
             Assert.Equal(ExpectedTables, tables.Split(','));
-            Assert.Equal(2L, await EphemeralDatabase.ScalarAsync<long>(connection,
+            Assert.Equal(3L, await EphemeralDatabase.ScalarAsync<long>(connection,
                 "SELECT count(*) FROM service_orders.__migrations"));
 
             await EphemeralDatabase.ExecuteAsync(connection, EphemeralDatabase.Script("01_schema.sql"));
