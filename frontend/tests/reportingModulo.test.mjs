@@ -3,6 +3,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import { asInstant, showCount } from '../src/modules/reporting/services/period.ts';
 import {
   InconsistentIndicatorsError,
@@ -362,7 +363,7 @@ test('33 · una cohorte vacía real se exporta con ceros verdaderos y su zona en
 
 // 9 · Zona IANA de la instalación
 
-const { INSTALLATION_ZONE, REPORT_ZONES, isReportZone } = await import('../src/modules/reporting/services/period.ts');
+const { INSTALLATION_ZONE, REPORT_ZONES, isReportZone, reportZonesFor } = await import('../src/modules/reporting/services/period.ts');
 
 test('34 · las fechas siguen el reloj IANA de la zona: la hora saltada o repetida se rechaza', () => {
   // Perú tuvo horario de verano en 1994: el 1 de enero saltó de 00:00 a 01:00
@@ -508,16 +509,11 @@ test('44 · el panel dice cuándo se observó y avisa cuando los recuentos se ha
 
 const zonas = await import('../src/modules/reporting/services/installationZone.ts');
 
-test('45 · la zona de la instalación solo la publica CORE; sin ella, la del negocio', () => {
+test('45 · la zona de la instalación solo la publica CORE; sin fuente, la del negocio', () => {
   assert.equal(zonas.installationZoneSource, null);
   assert.deepEqual(zonas.resolveInstallationZone(null).zone, 'America/Lima');
   assert.equal(zonas.resolveInstallationZone(null).origin, 'business_default');
   assert.deepEqual(zonas.resolveInstallationZone({ zone: 'America/Bogota' }), { zone: 'America/Bogota', origin: 'installation' });
-  for (const mala of ['-05:00', 'america/lima', 'America/Lima ', 'Marte/Olimpo', '', null, 5, '../etc', 'America/Lima?rp_z=UTC']) {
-    const resuelta = zonas.resolveInstallationZone({ zone: mala });
-    assert.equal(resuelta.origin, 'business_default', String(mala));
-    assert.equal(resuelta.zone, 'America/Lima', String(mala));
-  }
   assert.equal(INSTALLATION_ZONE, zonas.BUSINESS_DEFAULT_ZONE);
   // La URL elige entre las admitidas; nunca añade una.
   assert.deepEqual([...REPORT_ZONES], ['America/Lima', 'UTC']);
@@ -526,4 +522,64 @@ test('45 · la zona de la instalación solo la publica CORE; sin ella, la del ne
   const pagina = codigo(fuente('src/modules/reporting/pages/ReportsPage.tsx'));
   assert.match(pagina, /REPORT_ZONES\.map\(/);
   assert.doesNotMatch(pagina, /Intl\.DateTimeFormat\(\)\.resolvedOptions|getTimezoneOffset/);
+});
+
+const ZONAS_PUBLICADAS_MALAS = ['-05:00', 'america/lima', 'America/Lima ', 'Marte/Olimpo', '', null, 5, '../etc', 'America/Lima?rp_z=UTC', { zone: 'America/Lima' }];
+
+test('46 · una zona publicada pero inválida no cae en la del negocio: bloquea los reportes', () => {
+  // Fuente ausente y fuente mala son dos estados distintos.
+  assert.equal(zonas.resolveInstallationZone(null).origin, 'business_default');
+  for (const mala of ZONAS_PUBLICADAS_MALAS) {
+    const resuelta = zonas.resolveInstallationZone({ zone: mala });
+    assert.equal(resuelta.origin, 'unavailable', String(mala));
+    assert.equal(resuelta.zone, null, String(mala));
+    assert.match(resuelta.reason, /no es válida/);
+  }
+  // Sin zona no queda ninguna, tampoco UTC.
+  assert.deepEqual(reportZonesFor(zonas.resolveInstallationZone({ zone: 'Marte/Olimpo' })), []);
+  assert.deepEqual([...reportZonesFor(zonas.resolveInstallationZone(null))], ['America/Lima', 'UTC']);
+  // La pantalla no monta el formulario sin zona y no la sustituye por ninguna.
+  const pagina = codigo(fuente('src/modules/reporting/pages/ReportsPage.tsx'));
+  assert.match(pagina, /if \(INSTALLATION\.zone === null\) \{[\s\S]*?role="alert">\{INSTALLATION\.reason\}<\/p>[\s\S]*?\}\s*return <ReportsView/);
+  assert.doesNotMatch(pagina, /INSTALLATION_ZONE|BUSINESS_DEFAULT_ZONE|'America\/Lima'/);
+  // La exportación real sigue sin conectar.
+  assert.match(codigo(fuente('src/modules/reporting/services/reportExport.ts')), /exportAuditPort[^=;]*= null;/);
+});
+
+test('47 · con la zona publicada inválida, ningún período, enlace, comparación ni CSV se forma', () => {
+  // Los servicios reales, con la fuente de zona sustituida en un proceso aparte:
+  // la lista de zonas se fija al cargar el módulo.
+  const servicios = (nombre) => new URL(`../src/modules/reporting/services/${nombre}`, import.meta.url).href;
+  const guion = `
+    import { mock } from 'node:test';
+    const real = await import(${JSON.stringify(servicios('installationZone.ts'))});
+    mock.module(${JSON.stringify(servicios('installationZone.ts'))}, { namedExports: {
+      ...real, resolveInstallationZone: (fuente = { zone: process.env.ZONA }) => real.resolveInstallationZone(fuente),
+    } });
+    const p = await import(${JSON.stringify(servicios('period.ts'))});
+    const l = await import(${JSON.stringify(servicios('reportLinks.ts'))});
+    const w = await import(${JSON.stringify(servicios('previousEqualWindow.ts'))});
+    const c = await import(${JSON.stringify(servicios('orderIndicatorsCsv.ts'))});
+    const lanza = (f) => { try { f(); return 'sin error'; } catch (e) { return e.constructor.name; } };
+    console.log(JSON.stringify({
+      origen: p.INSTALLATION.origin, zona: p.INSTALLATION_ZONE, zonas: p.REPORT_ZONES,
+      admitidas: ['America/Lima', 'UTC', process.env.ZONA].map(p.isReportZone),
+      lima: lanza(() => p.asInstant('2026-10-17T10:00', 'America/Lima')),
+      utc: lanza(() => p.asInstant('2026-10-17T10:00', 'UTC')),
+      enlace: l.decodeReportLink('?rp_v=1&rp_z=America%2FLima&rp_a_i=2026-10-01T00:00&rp_a_f=2026-10-02T00:00').kind,
+      compartir: l.encodeReportLink({ zone: 'UTC', primary: { startLocal: '2026-10-01T00:00', endLocal: '2026-10-02T00:00' }, comparison: null }),
+      anterior: w.previousEqualWindow('2026-10-01T05:00:00.000Z', '2026-10-02T05:00:00.000Z', 'America/Lima').kind,
+      csv: c.buildOrderIndicatorsCsv({ zone: 'America/Lima', baseline: null }).kind,
+    }));`;
+  for (const zona of ['Marte/Olimpo', 'america/lima', '-05:00']) {
+    const salida = spawnSync(process.execPath, ['--experimental-test-module-mocks', '--no-warnings', '--input-type=module', '-e', guion], {
+      env: { ...process.env, ZONA: zona }, encoding: 'utf8',
+    });
+    assert.equal(salida.status, 0, salida.stderr);
+    assert.deepEqual(JSON.parse(salida.stdout), {
+      origen: 'unavailable', zona: null, zonas: [], admitidas: [false, false, false],
+      lima: 'RangeError', utc: 'RangeError', enlace: 'invalid', compartir: null,
+      anterior: 'unavailable', csv: 'unavailable',
+    }, zona);
+  }
 });

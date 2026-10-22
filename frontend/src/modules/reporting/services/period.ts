@@ -6,7 +6,7 @@
  * a rechazar `HH:mm:ss`.
  */
 
-import { resolveInstallationZone } from './installationZone.ts';
+import { resolveInstallationZone, type InstallationZone } from './installationZone.ts';
 
 /**
  * Zona IANA, ya comprobada contra `REPORT_ZONES`. Es un texto porque la de la
@@ -22,8 +22,20 @@ export type ReportZone = string;
  * `installationZone.ts`, no de la URL ni del navegador.
  */
 export const INSTALLATION = resolveInstallationZone();
-export const INSTALLATION_ZONE: ReportZone = INSTALLATION.zone;
-export const REPORT_ZONES: readonly ReportZone[] = [...new Set([INSTALLATION_ZONE, 'UTC'])];
+/** null cuando la instalación publica una zona inválida: no hay reportes. */
+export const INSTALLATION_ZONE: ReportZone | null = INSTALLATION.zone;
+
+/**
+ * Sin zona acreditada la lista queda vacía, también sin UTC: un período en UTC
+ * cortaría los días en otra hora que el negocio y parecería correcto. Con la
+ * lista vacía, `isReportZone` rechaza todo y nada forma un período, un enlace
+ * ni un CSV.
+ */
+export function reportZonesFor(installation: InstallationZone): readonly ReportZone[] {
+  return installation.zone === null ? [] : [...new Set([installation.zone, 'UTC'])];
+}
+
+export const REPORT_ZONES: readonly ReportZone[] = reportZonesFor(INSTALLATION);
 
 export function isReportZone(value: unknown): value is ReportZone {
   return typeof value === 'string' && REPORT_ZONES.includes(value);

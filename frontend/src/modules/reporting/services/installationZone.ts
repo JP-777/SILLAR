@@ -6,6 +6,11 @@
  * vale null y, sin él, la zona es la del negocio, la misma con la que ventas
  * numera sus pedidos (`TransactionalSeriesAllocator.BusinessTimeZone`).
  *
+ * Ese respaldo vale **solo** mientras no hay fuente. Si la fuente existe y
+ * publica algo que no es una zona IANA canónica, no hay zona: sustituirla por
+ * la del negocio daría períodos, consultas y CSV con horas equivocadas sin
+ * que nadie lo note. Los reportes quedan bloqueados hasta que se corrija.
+ *
  * Lo que llega por la URL, por un formulario o por el navegador **nunca** es
  * autoridad: como mucho elige entre las zonas que esta función admite.
  */
@@ -26,7 +31,8 @@ export const installationZoneSource: InstallationZoneSource | null = null;
 
 export type InstallationZone =
   | { readonly zone: string; readonly origin: 'installation' }
-  | { readonly zone: string; readonly origin: 'business_default'; readonly reason: string };
+  | { readonly zone: string; readonly origin: 'business_default'; readonly reason: string }
+  | { readonly zone: null; readonly origin: 'unavailable'; readonly reason: string };
 
 /**
  * Identificador IANA tal como lo escribe la base de zonas, o null.
@@ -50,7 +56,11 @@ export function resolveInstallationZone(source: InstallationZoneSource | null = 
   }
   const zone = canonicalIanaZone(source.zone);
   if (zone === null) {
-    return { zone: BUSINESS_DEFAULT_ZONE, origin: 'business_default', reason: 'La zona publicada por la instalación no es un identificador IANA válido.' };
+    return {
+      zone: null,
+      origin: 'unavailable',
+      reason: 'La zona horaria configurada en la instalación no es válida, así que no se puede consultar ni preparar ningún período. Pide a quien administra la instalación que la corrija.',
+    };
   }
   return { zone, origin: 'installation' };
 }

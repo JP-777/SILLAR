@@ -7,7 +7,7 @@ import { FailureAlert } from '../../../shared/ui/patterns';
 import { OrderDistribution } from '../components/OrderDistribution';
 import { OrderPeriodComparison } from '../components/OrderPeriodComparison';
 import { assessFreshness, describeAge, STALE_AFTER_MINUTES } from '../services/freshness';
-import { asInstant, INSTALLATION_ZONE, isReportZone, quickPeriodRange, REPORT_ZONES, showCount, showDate, zoneLabel, type QuickPeriod, type ReportZone } from '../services/period';
+import { asInstant, INSTALLATION, isReportZone, quickPeriodRange, REPORT_ZONES, showCount, showDate, zoneLabel, type QuickPeriod, type ReportZone } from '../services/period';
 import { decodeReportLink, encodeReportLink, type ReportLinkRead } from '../services/reportLinks';
 import {
   describeReportFailure,
@@ -29,7 +29,15 @@ export function ReportsPage() {
   // (otro enlace, el menú, atrás/adelante) desmonte la vista: su limpieza D4
   // anula toda respuesta en vuelo y nada consultado antes sigue en pantalla.
   const { search } = useLocation();
-  return <ReportsView key={search} link={decodeReportLink(search)} />;
+  // Zona publicada pero inválida: ni formulario, ni enlace, ni CSV.
+  if (INSTALLATION.zone === null) {
+    return (
+      <PageContainer title="Reportes de pedidos" description="Pedidos creados en el intervalo elegido, según su estado actual. Incluye pedidos dados de baja.">
+        <p className="rp-warning" role="alert">{INSTALLATION.reason}</p>
+      </PageContainer>
+    );
+  }
+  return <ReportsView key={search} link={decodeReportLink(search)} installationZone={INSTALLATION.zone} />;
 }
 
 type ShareState =
@@ -38,12 +46,12 @@ type ShareState =
   | { kind: 'manual'; url: string }
   | { kind: 'incomplete'; message: string };
 
-function ReportsView({ link }: { link: ReportLinkRead }) {
+function ReportsView({ link, installationZone }: { link: ReportLinkRead; installationZone: ReportZone }) {
   const fromLink = link.kind === 'valid' ? link.filters : null;
   // Estado inicial desde el enlace; ninguna consulta hasta que el usuario la pida.
   const [start, setStart] = useState(fromLink?.primary.startLocal ?? '');
   const [end, setEnd] = useState(fromLink?.primary.endLocal ?? '');
-  const [zone, setZone] = useState<TimeZone>(fromLink?.zone ?? INSTALLATION_ZONE);
+  const [zone, setZone] = useState<TimeZone>(fromLink?.zone ?? installationZone);
   const [state, setState] = useState<ViewState>({ kind: 'idle' });
   const [inputError, setInputError] = useState<string | null>(null);
   const [comparePrevious, setComparePrevious] = useState(false);
