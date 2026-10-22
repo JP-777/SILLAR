@@ -36,7 +36,21 @@ public sealed class DurableAssistantQuotaLedger(
     private bool Trusted(out Guid id)
     {
         id = Guid.Empty;
-        return installationScope.TryGetEnabledInstallation(out id) && id != Guid.Empty;
+        try
+        {
+            if (!installationScope.TryGetEnabledInstallation(out id) || id == Guid.Empty)
+            {
+                id = Guid.Empty;
+                return false;
+            }
+            return true;
+        }
+        catch
+        {
+            // CORE/Host indisponible o fallando: DENY sin tocar PostgreSQL.
+            id = Guid.Empty;
+            return false;
+        }
     }
 
     public async Task<DurableQuotaResult> TryReserveAsync(
