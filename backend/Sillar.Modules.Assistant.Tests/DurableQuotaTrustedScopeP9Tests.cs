@@ -38,7 +38,7 @@ public sealed class DurableQuotaTrustedScopeP9Tests
         using var db = NoDatabase();
         var scope = new InstallationScope(Installation, throws: true);
         var ledger = new DurableAssistantQuotaLedger(db, scope);
-        var result = await ledger.TryReserveAsync(10, "reserva-p9-01");
+        var result = await ledger.TryReserveAsync(10, "reserva-p9-01", TestContext.Current.CancellationToken);
         Assert.Equal(DurableQuotaOutcome.Denied, result.Outcome);
         Assert.Equal(1, scope.Calls);
     }
@@ -48,7 +48,7 @@ public sealed class DurableQuotaTrustedScopeP9Tests
     {
         using var db = NoDatabase();
         var ledger = new DurableAssistantQuotaLedger(db, new InstallationScope(Installation, throws: true));
-        Assert.Equal(DurableQuotaOutcome.Denied, (await ledger.MarkDispatchedAsync(Lease)).Outcome);
+        Assert.Equal(DurableQuotaOutcome.Denied, (await ledger.MarkDispatchedAsync(Lease, TestContext.Current.CancellationToken)).Outcome);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public sealed class DurableQuotaTrustedScopeP9Tests
     {
         using var db = NoDatabase();
         var ledger = new DurableAssistantQuotaLedger(db, new InstallationScope(Installation, throws: true));
-        Assert.Equal(DurableQuotaOutcome.Denied, (await ledger.MarkUncertainAsync(Lease)).Outcome);
+        Assert.Equal(DurableQuotaOutcome.Denied, (await ledger.MarkUncertainAsync(Lease, TestContext.Current.CancellationToken)).Outcome);
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public sealed class DurableQuotaTrustedScopeP9Tests
     {
         using var db = NoDatabase();
         var ledger = new DurableAssistantQuotaLedger(db, new InstallationScope(Installation, throws: true));
-        Assert.Equal(DurableQuotaOutcome.Denied, (await ledger.CompleteAsync(Lease, 4)).Outcome);
+        Assert.Equal(DurableQuotaOutcome.Denied, (await ledger.CompleteAsync(Lease, 4, TestContext.Current.CancellationToken)).Outcome);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public sealed class DurableQuotaTrustedScopeP9Tests
     {
         using var db = NoDatabase();
         var ledger = new DurableAssistantQuotaLedger(db, new InstallationScope(Installation, throws: true));
-        Assert.Equal(DurableQuotaOutcome.Denied, (await ledger.CancelBeforeDispatchAsync(Lease)).Outcome);
+        Assert.Equal(DurableQuotaOutcome.Denied, (await ledger.CancelBeforeDispatchAsync(Lease, TestContext.Current.CancellationToken)).Outcome);
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public sealed class DurableQuotaTrustedScopeP9Tests
     {
         using var db = NoDatabase();
         var ledger = new DurableAssistantQuotaLedger(db, new InstallationScope(Installation, throws: true));
-        Assert.Empty(await ledger.ListOutstandingAsync());
+        Assert.Empty(await ledger.ListOutstandingAsync(ct: TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public sealed class DurableQuotaTrustedScopeP9Tests
     {
         using var db = NoDatabase();
         var ledger = new DurableAssistantQuotaLedger(db, new InstallationScope(Guid.Empty));
-        Assert.Equal(DurableQuotaOutcome.Denied, (await ledger.TryReserveAsync(10, "reserva-p9-02")).Outcome);
+        Assert.Equal(DurableQuotaOutcome.Denied, (await ledger.TryReserveAsync(10, "reserva-p9-02", TestContext.Current.CancellationToken)).Outcome);
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public sealed class DurableQuotaTrustedScopeP9Tests
     {
         using var db = NoDatabase();
         var ledger = new DurableAssistantQuotaLedger(db, new InstallationScope(Installation, allow: false));
-        Assert.Equal(DurableQuotaOutcome.Denied, (await ledger.TryReserveAsync(10, "reserva-p9-03")).Outcome);
+        Assert.Equal(DurableQuotaOutcome.Denied, (await ledger.TryReserveAsync(10, "reserva-p9-03", TestContext.Current.CancellationToken)).Outcome);
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public sealed class DurableQuotaTrustedScopeP9Tests
     {
         using var db = NoDatabase();
         var ledger = new DurableAssistantQuotaLedger(db, new InstallationScope(Installation, allow: false));
-        Assert.Equal(DurableQuotaOutcome.Denied, (await ledger.MarkDispatchedAsync(Lease)).Outcome);
+        Assert.Equal(DurableQuotaOutcome.Denied, (await ledger.MarkDispatchedAsync(Lease, TestContext.Current.CancellationToken)).Outcome);
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public sealed class DurableQuotaTrustedScopeP9Tests
     {
         using var db = NoDatabase();
         var ledger = new DurableAssistantQuotaLedger(db, new InstallationScope(Guid.Empty));
-        Assert.Empty(await ledger.ListOutstandingAsync());
+        Assert.Empty(await ledger.ListOutstandingAsync(ct: TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -120,6 +120,6 @@ public sealed class DurableQuotaTrustedScopeP9Tests
     {
         using var db = NoDatabase();
         var ledger = new DurableAssistantQuotaLedger(db, new InstallationScope(Installation, allow: false));
-        Assert.Empty(await ledger.ListOutstandingAsync());
+        Assert.Empty(await ledger.ListOutstandingAsync(ct: TestContext.Current.CancellationToken));
     }
 }
