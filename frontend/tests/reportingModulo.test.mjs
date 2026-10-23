@@ -511,12 +511,14 @@ test('44 · el panel dice cuándo se observó y avisa cuando los recuentos se ha
 });
 
 const zonas = await import('../src/modules/reporting/services/installationZone.ts');
+/** Lo que CORE publicaría para una zona verificada, en la forma que consume M10. */
+const verificada = (zona) => ({ kind: 'verified', original: zona, canonical: zona });
 
 test('45 · la zona de la instalación solo la publica CORE; sin fuente, la del negocio', () => {
-  assert.equal(zonas.installationZoneSource, null);
+  assert.equal(zonas.installationZoneObservation, null);
   assert.deepEqual(zonas.resolveInstallationZone(null).zone, 'America/Lima');
   assert.equal(zonas.resolveInstallationZone(null).origin, 'business_default');
-  assert.deepEqual(zonas.resolveInstallationZone({ zone: 'America/Bogota' }), { zone: 'America/Bogota', origin: 'installation' });
+  assert.deepEqual(zonas.resolveInstallationZone(verificada('America/Bogota')), { zone: 'America/Bogota', origin: 'installation', original: 'America/Bogota', alias: false });
   assert.equal(INSTALLATION_ZONE, zonas.BUSINESS_DEFAULT_ZONE);
   // La URL elige entre las admitidas; nunca añade una.
   assert.deepEqual([...REPORT_ZONES], ['America/Lima', 'UTC']);
@@ -533,13 +535,13 @@ test('46 · una zona publicada pero inválida no cae en la del negocio: bloquea 
   // Fuente ausente y fuente mala son dos estados distintos.
   assert.equal(zonas.resolveInstallationZone(null).origin, 'business_default');
   for (const mala of ZONAS_PUBLICADAS_MALAS) {
-    const resuelta = zonas.resolveInstallationZone({ zone: mala });
+    const resuelta = zonas.resolveInstallationZone(verificada(mala));
     assert.equal(resuelta.origin, 'unavailable', String(mala));
     assert.equal(resuelta.zone, null, String(mala));
-    assert.match(resuelta.reason, /no es válida/);
+    assert.match(resuelta.reason, /no es válida|no reconoce/);
   }
   // Sin zona no queda ninguna, tampoco UTC.
-  assert.deepEqual(reportZonesFor(zonas.resolveInstallationZone({ zone: 'Marte/Olimpo' })), []);
+  assert.deepEqual(reportZonesFor(zonas.resolveInstallationZone(verificada('Marte/Olimpo'))), []);
   assert.deepEqual([...reportZonesFor(zonas.resolveInstallationZone(null))], ['America/Lima', 'UTC']);
   // La pantalla no monta el formulario sin zona y no la sustituye por ninguna.
   const pagina = codigo(fuente('src/modules/reporting/pages/ReportsPage.tsx'));
@@ -557,7 +559,7 @@ test('47 · con la zona publicada inválida, ningún período, enlace, comparaci
     import { mock } from 'node:test';
     const real = await import(${JSON.stringify(servicios('installationZone.ts'))});
     mock.module(${JSON.stringify(servicios('installationZone.ts'))}, { namedExports: {
-      ...real, resolveInstallationZone: (fuente = { zone: process.env.ZONA }) => real.resolveInstallationZone(fuente),
+      ...real, resolveInstallationZone: (fuente = { kind: 'verified', original: process.env.ZONA, canonical: process.env.ZONA }) => real.resolveInstallationZone(fuente),
     } });
     const p = await import(${JSON.stringify(servicios('period.ts'))});
     const l = await import(${JSON.stringify(servicios('reportLinks.ts'))});
@@ -606,13 +608,13 @@ test('48 · una auditoría que no contesta a tiempo no deja pasar el archivo, au
 test('49 · una zona IANA vigente que el motor renombra vale de punta a punta; otra grafía, no', () => {
   // ICU contesta con nombres antiguos; el vigente no puede quedar bloqueado.
   for (const vigente of ['America/Argentina/Buenos_Aires', 'Asia/Kolkata', 'Europe/Kyiv', 'America/Nuuk', 'Asia/Kathmandu', 'Etc/UTC']) {
-    assert.deepEqual(zonas.resolveInstallationZone({ zone: vigente }), { zone: vigente, origin: 'installation' }, vigente);
+    assert.deepEqual(zonas.resolveInstallationZone(verificada(vigente)), { zone: vigente, origin: 'installation', original: vigente, alias: false }, vigente);
   }
   // Todas las que conoce el motor siguen valiendo con su propio nombre.
   assert.deepEqual(Intl.supportedValuesOf('timeZone').filter((zona) => zonas.canonicalIanaZone(zona) !== zona), []);
   // Cambiar mayúsculas no es otra zona: bloquea, también en nombres renombrados.
   for (const grafia of ['AMERICA/LIMA', 'America/LIMA', 'America/LIma', 'AmErica/Lima', 'America/BogotA', 'asia/kolkata', 'ASIA/KOLKATA', 'Asia/KOLKATA', 'utc', 'Etc/utc', '+05:30']) {
-    assert.equal(zonas.resolveInstallationZone({ zone: grafia }).origin, 'unavailable', grafia);
+    assert.equal(zonas.resolveInstallationZone(verificada(grafia)).origin, 'unavailable', grafia);
   }
   // Período, enlace, comparación y CSV usan la misma zona publicada, tal cual.
   const servicios = (nombre) => new URL(`../src/modules/reporting/services/${nombre}`, import.meta.url).href;
@@ -620,7 +622,7 @@ test('49 · una zona IANA vigente que el motor renombra vale de punta a punta; o
     import { mock } from 'node:test';
     const real = await import(${JSON.stringify(servicios('installationZone.ts'))});
     mock.module(${JSON.stringify(servicios('installationZone.ts'))}, { namedExports: {
-      ...real, resolveInstallationZone: (fuente = { zone: process.env.ZONA }) => real.resolveInstallationZone(fuente),
+      ...real, resolveInstallationZone: (fuente = { kind: 'verified', original: process.env.ZONA, canonical: process.env.ZONA }) => real.resolveInstallationZone(fuente),
     } });
     const p = await import(${JSON.stringify(servicios('period.ts'))});
     const l = await import(${JSON.stringify(servicios('reportLinks.ts'))});
@@ -650,4 +652,55 @@ test('49 · una zona IANA vigente que el motor renombra vale de punta a punta; o
   assert.equal(visto.csv, 'ready');
   assert.deepEqual(visto.fila.map((celda) => celda.replace(/^"|"$/g, '')), ['2026-10-01 00:00', '2026-10-02 00:00', 'America/Argentina/Buenos_Aires']);
   assert.equal(visto.csvLima, 'unavailable');
+});
+
+const { readZoneObservation, consumeZoneObservation } = await import('../src/modules/reporting/services/zoneObservation.ts');
+
+test('50 · solo una observación verificada habilita la zona; conserva el original y distingue el alias', () => {
+  const consumir = (entrada) => consumeZoneObservation(readZoneObservation(entrada));
+  // Verificada: la zona es la canónica y el original viaja intacto.
+  assert.deepEqual(consumir(verificada('America/Lima')), { kind: 'enabled', zone: 'America/Lima', original: 'America/Lima', alias: false });
+  assert.deepEqual(consumir({ kind: 'verified', original: 'Asia/Calcutta', canonical: 'Asia/Kolkata' }),
+    { kind: 'enabled', zone: 'Asia/Kolkata', original: 'Asia/Calcutta', alias: true });
+  // Lo que el motor resuelve no es autoridad, ni siquiera para la zona del negocio.
+  for (const [original, runtimeId] of [['Asia/Kolkata', 'Asia/Calcutta'], ['America/Lima', 'America/Lima']]) {
+    const bloqueada = consumir({ kind: 'runtime_resolved', original, runtimeId });
+    assert.equal(bloqueada.kind, 'blocked');
+    assert.equal(bloqueada.cause, 'not_authoritative');
+    assert.equal(bloqueada.original, original);
+  }
+  const causa = (entrada) => consumir(entrada).cause;
+  assert.equal(causa({ kind: 'absent' }), 'absent');
+  assert.equal(consumir({ kind: 'invalid', original: ' lima ' }).original, ' lima ');
+  // Verificada, pero el canónico no sirve aquí o no cuadra con el original.
+  assert.equal(causa(verificada('-05:00')), 'invalid');
+  assert.equal(causa(verificada('America/LIma')), 'invalid');
+  assert.equal(causa(verificada('Marte/Olimpo')), 'unsupported');
+  assert.equal(causa({ kind: 'verified', original: 'America/Lima', canonical: 'Europe/Madrid' }), 'inconsistent');
+  // Lo que no tiene exactamente la forma candidata es inválido, nunca una zona.
+  for (const rara of [null, undefined, 'America/Lima', 5, [], ['verified'], {}, { zone: 'America/Lima' },
+    { kind: 'Verified', original: 'America/Lima', canonical: 'America/Lima' },
+    { kind: 'verified', original: 'America/Lima' }, { kind: 'verified', original: '', canonical: 'America/Lima' },
+    { kind: 'verified', original: 'America/Lima', canonical: 5 }, { kind: 'runtime_resolved', original: 'America/Lima' }]) {
+    assert.equal(causa(rara), 'invalid', JSON.stringify(rara));
+  }
+});
+
+test('51 · ausente, inválida o sin verificar bloquean: ni Lima ni la clave candidata de CORE', () => {
+  for (const entrada of [{ kind: 'absent' }, { kind: 'invalid', original: 'x' },
+    { kind: 'runtime_resolved', original: 'America/Lima', runtimeId: 'America/Lima' }, { zone: 'America/Lima' }]) {
+    const resuelta = zonas.resolveInstallationZone(entrada);
+    assert.equal(resuelta.origin, 'unavailable', JSON.stringify(entrada));
+    assert.equal(resuelta.zone, null);
+    assert.ok(resuelta.reason.length > 0);
+    assert.deepEqual(reportZonesFor(resuelta), []);
+  }
+  // El respaldo del negocio solo existe con la costura sin conectar.
+  assert.equal(zonas.installationZoneObservation, null);
+  assert.equal(zonas.resolveInstallationZone().origin, 'business_default');
+  const consumidor = codigo(fuente('src/modules/reporting/services/zoneObservation.ts'));
+  assert.doesNotMatch(consumidor, /America\/Lima|BUSINESS_DEFAULT_ZONE/);
+  for (const archivo of archivos()) {
+    assert.doesNotMatch(codigo(readFileSync(archivo, 'utf8')), /timezone_iana/, archivo);
+  }
 });
