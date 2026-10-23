@@ -67,13 +67,16 @@ public sealed class AssistantHostEvidenceResolver(
                 AssistantHostDenialReason.AuthorityDenied);
         }
 
-        if (observation.InstallationId is not { } installationId
-            || installationId == Guid.Empty)
+        if (observation.InstallationIdentity == AssistantInstallationIdentityEvidence.Missing)
         {
             return AssistantHostEvidenceSnapshot.Denied(
                 AssistantHostDenialReason.InstallationIdentityInvalid);
         }
 
-        return AssistantHostEvidenceSnapshot.Allowed(installationId);
+        // CORE puede haber observado una clave interna, pero JP todavía no ha
+        // atestado una identidad consumible por M12. Nunca se renombra esa clave
+        // como InstallationId ni se produce evidencia positiva en FASE A.
+        return AssistantHostEvidenceSnapshot.Denied(
+            AssistantHostDenialReason.InstallationIdentityUnattested);
     }
 }

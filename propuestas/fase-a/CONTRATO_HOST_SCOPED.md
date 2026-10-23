@@ -3,7 +3,9 @@
 ## Firma CORE candidata recibible
 
 `IAssistantAccessAuthority.EvaluateCurrentInstallationAsync(CancellationToken)`
-→ `Task<AssistantAccessDecision>` con `Outcome`, `Reason`, `InstallationKey?`, `Source`, `ObservedAt`.
+→ `Task<AssistantAccessDecision>` con `Outcome`, `Reason`, `InstallationKey?`, `Source`,
+`ObservedAt`, `ValidUntil` y hechos de licencia/activación. Los tipos exactos de
+los tres últimos elementos continúan en conciliación.
 
 En FASE A el productor CORE **nunca retorna Allowed**; puede retornar `Denied` o `PendingDecision`. Host **no** debe derivar `IsAssistantLicensed = true` a partir de `LicensedUntil == null` ni `IsInstallationConfigured = true` a partir de un Guid no vacío: son hechos diferentes. `InstallationKey` NO es credencial ni UUID público ratificado.
 
@@ -16,7 +18,7 @@ datos del cliente para fabricar una autorización.
 
 Interfaz actual M12: `ITrustedAssistantHostEvidence` getters booleanos síncronos + `Guid? InstallationId`; `ITrustedAssistantQuotaPolicyWriter.CanWritePolicy(Guid)` síncrono. **No** hacer E/S dentro de los getters.
 
-Patrón propuesto para revisión de Chat 3: un resolvedor scoped asíncrono ejecuta CORE **antes** de crear una fotografía inmutable; el adaptador scoped expone getters únicamente sobre esa fotografía. Un scope sin resolución, con error o con decisión pendiente devuelve false/Guid null. Aun con `Allowed` futuro, CAS debe seguir negado hasta autorizar política granular y protocolo de revocación.
+Patrón propuesto para revisión de Chat 3: un resolvedor scoped asíncrono ejecuta CORE **antes** de crear una fotografía inmutable; el adaptador scoped expone getters únicamente sobre esa fotografía. Un scope sin resolución, con error o con decisión pendiente devuelve false/Guid null. Aun con `Allowed` futuro, Host no produce evidencia positiva hasta que JP ateste una identidad para M12, y CAS sigue negado hasta autorizar política granular y protocolo de revocación.
 
 No se coloca código compilable consumidor de CORE en esta worktree: el contrato nuevo aún no forma parte de su base sin integración. HOST debe trabajar solo en su espacio propio y registrar divergencias; NO copiar archivos CORE a HOST ni editar M12/Program.cs, no registrar el adaptador DI ni crear endpoints.
 
@@ -38,15 +40,42 @@ Task<AssistantAccessDecision> EvaluateCurrentInstallationAsync(
 
 El adaptador futuro necesita que `AssistantAccessDecision` conserve un resultado
 semántico (`Allowed`, `Denied`, `PendingDecision`) y una identidad interna nullable.
-Solo `Allowed` con identidad no vacía puede producir una foto positiva. Cualquier
-otro resultado, incoherencia, excepción o cancelación produce la foto denegada.
+Ningún resultado produce hoy una foto positiva: `InstallationKey` observada se
+reduce a `InternalKeyObservedButUnattested`, sin transportar el GUID. Cualquier
+resultado, incoherencia, excepción o cancelación termina en foto denegada.
 `Reason` y `Source` sirven para diagnóstico interno; no son autoridad adicional.
 
-Queda por conciliar si el `InstallationId` nombrado por M12 es exactamente el
-`InstallationKey` interno de CORE. La forma candidata solo lo mantiene dentro del
-proceso; no lo registra ni lo expone por HTTP. Si M12 pretende publicarlo, usarlo
-como credencial o darle otro significado, la traducción queda bloqueada por
-ADR-012 y hace falta una identidad distinta ratificada.
+`InstallationId` de M12 permanece siempre `null`: Host no convierte
+`InstallationKey` de CORE ni siquiera como identidad interna de M12. Hace falta
+que JP ratifique una identidad atestada y su semántica; si fuese pública, además
+debe ser distinta por ADR-012. La proyección actual solo conserva el hecho
+categórico de que CORE observó una clave, nunca el GUID.
+
+La costura tipada ya compilable es:
+
+```csharp
+new TypedAssistantAuthorityProbe<AssistantAccessDecision>(
+    authority.EvaluateCurrentInstallationAsync,
+    ProjectDecision,
+    timeProvider);
+
+AssistantAuthorityObservation ProjectDecision(
+    AssistantAccessDecision decision,
+    DateTimeOffset evaluatedAt);
+```
+
+Solo falta escribir `ProjectDecision` cuando el DTO CORE sea definitivo. No usa
+reflexión, `dynamic` ni una copia local de `AssistantAccessDecision`.
+
+Firmas/semánticas todavía requeridas de Claude D y Chat 2:
+
+- tipo y nulabilidad exactos de `ValidUntil`, más si el límite es inclusivo;
+- tipo exacto de los hechos de licencia y activación y si son individualmente
+  autoritativos o únicamente explicativos del `Outcome`;
+- invariantes entre `Outcome`, `Reason`, hechos, `ObservedAt` y `ValidUntil`;
+- identidad atestada por JP para M12, diferente de un simple renombrado de
+  `InstallationKey`;
+- tratamiento de `Source` vacío/desconocido y desfase de reloj admisible.
 
 **Consumidores M12 observados, pendientes de ratificación:**
 

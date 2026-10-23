@@ -7,6 +7,7 @@ public enum AssistantHostDenialReason
     AuthorityDenied,
     PendingDecision,
     InstallationIdentityInvalid,
+    InstallationIdentityUnattested,
     AuthorityUnavailable,
     AuthorityCancelled
 }
@@ -21,37 +22,23 @@ public enum AssistantHostDenialReason
 /// </remarks>
 public sealed record AssistantHostEvidenceSnapshot
 {
-    private AssistantHostEvidenceSnapshot(
-        bool isInstallationConfigured,
-        bool isAssistantActive,
-        bool isAssistantLicensed,
-        Guid? installationId,
-        AssistantHostDenialReason? denialReason)
-    {
-        IsInstallationConfigured = isInstallationConfigured;
-        IsAssistantActive = isAssistantActive;
-        IsAssistantLicensed = isAssistantLicensed;
-        InstallationId = installationId;
-        DenialReason = denialReason;
-    }
+    private AssistantHostEvidenceSnapshot(AssistantHostDenialReason denialReason)
+        => DenialReason = denialReason;
 
-    public bool IsInstallationConfigured { get; }
+    public bool IsInstallationConfigured => false;
 
-    public bool IsAssistantActive { get; }
+    public bool IsAssistantActive => false;
 
-    public bool IsAssistantLicensed { get; }
+    public bool IsAssistantLicensed => false;
 
-    public Guid? InstallationId { get; }
+    public Guid? InstallationId => null;
 
     /// <summary>
     /// Diagnóstico interno. No debe exponerse como prueba de licencia ni como
     /// protocolo hacia clientes.
     /// </summary>
-    public AssistantHostDenialReason? DenialReason { get; }
+    public AssistantHostDenialReason DenialReason { get; }
 
     public static AssistantHostEvidenceSnapshot Denied(AssistantHostDenialReason reason)
-        => new(false, false, false, null, reason);
-
-    internal static AssistantHostEvidenceSnapshot Allowed(Guid installationId)
-        => new(true, true, true, installationId, null);
+        => new(reason);
 }

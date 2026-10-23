@@ -13,12 +13,22 @@ public enum AssistantAuthorityVerdict
 }
 
 /// <summary>
-/// Proyección interna de una evaluación autoritativa. El identificador solo es
-/// admisible cuando el veredicto es <see cref="AssistantAuthorityVerdict.Allowed"/>.
+/// Evidencia de identidad que el Host puede conservar antes de que JP ratifique
+/// qué identidad consume M12. Nunca contiene ni renombra la clave interna.
+/// </summary>
+public enum AssistantInstallationIdentityEvidence
+{
+    Missing,
+    InternalKeyObservedButUnattested
+}
+
+/// <summary>
+/// Proyección interna y deliberadamente reducida de una decisión autoritativa.
+/// No copia el DTO de CORE ni transporta su <c>InstallationKey</c>.
 /// </summary>
 public sealed record AssistantAuthorityObservation(
     AssistantAuthorityVerdict Verdict,
-    Guid? InstallationId);
+    AssistantInstallationIdentityEvidence InstallationIdentity);
 
 /// <summary>
 /// Punto de composición asíncrono del Host. Nunca recibe identidad, licencia ni

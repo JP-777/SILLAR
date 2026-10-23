@@ -32,7 +32,7 @@ public sealed class AssistantHostEvidenceTests
             Interlocked.Increment(ref calls);
             return ValueTask.FromResult(new AssistantAuthorityObservation(
                 AssistantAuthorityVerdict.Denied,
-                null));
+                AssistantInstallationIdentityEvidence.Missing));
         });
 
         using var provider = services.BuildServiceProvider();
@@ -53,9 +53,10 @@ public sealed class AssistantHostEvidenceTests
         AssistantAuthorityVerdict verdict,
         AssistantHostDenialReason expectedReason)
     {
-        var installationId = Guid.NewGuid();
         await using var provider = Provider(_ =>
-            ValueTask.FromResult(new AssistantAuthorityObservation(verdict, installationId)));
+            ValueTask.FromResult(new AssistantAuthorityObservation(
+                verdict,
+                AssistantInstallationIdentityEvidence.InternalKeyObservedButUnattested)));
         await using var scope = provider.CreateAsyncScope();
 
         var resolver = scope.ServiceProvider.GetRequiredService<AssistantHostEvidenceResolver>();
@@ -65,14 +66,13 @@ public sealed class AssistantHostEvidenceTests
         AssertDenied(scope.ServiceProvider.GetRequiredService<AssistantHostEvidenceAdapter>());
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("00000000-0000-0000-0000-000000000000")]
-    public async Task Identidad_ausente_o_vacia_se_deniega(string? rawId)
+    [Fact]
+    public async Task Identidad_ausente_se_deniega()
     {
-        var installationId = rawId is null ? (Guid?)null : Guid.Parse(rawId);
         await using var provider = Provider(_ => ValueTask.FromResult(
-            new AssistantAuthorityObservation(AssistantAuthorityVerdict.Allowed, installationId)));
+            new AssistantAuthorityObservation(
+                AssistantAuthorityVerdict.Allowed,
+                AssistantInstallationIdentityEvidence.Missing)));
         await using var scope = provider.CreateAsyncScope();
 
         var snapshot = await scope.ServiceProvider
@@ -80,6 +80,22 @@ public sealed class AssistantHostEvidenceTests
             .ResolveAsync(TestContext.Current.CancellationToken);
 
         AssertDenied(snapshot, AssistantHostDenialReason.InstallationIdentityInvalid);
+    }
+
+    [Fact]
+    public async Task Clave_interna_observada_no_se_convierte_en_identidad_M12()
+    {
+        await using var provider = Provider(_ => ValueTask.FromResult(
+            new AssistantAuthorityObservation(
+                AssistantAuthorityVerdict.Allowed,
+                AssistantInstallationIdentityEvidence.InternalKeyObservedButUnattested)));
+        await using var scope = provider.CreateAsyncScope();
+
+        var snapshot = await scope.ServiceProvider
+            .GetRequiredService<AssistantHostEvidenceResolver>()
+            .ResolveAsync(TestContext.Current.CancellationToken);
+
+        AssertDenied(snapshot, AssistantHostDenialReason.InstallationIdentityUnattested);
     }
 
     [Fact]
@@ -115,7 +131,9 @@ public sealed class AssistantHostEvidenceTests
     {
         var services = new ServiceCollection();
         services.AddAssistantHostAuthorityProbe(_ => ValueTask.FromResult(
-            new AssistantAuthorityObservation(AssistantAuthorityVerdict.Denied, null)));
+            new AssistantAuthorityObservation(
+                AssistantAuthorityVerdict.Denied,
+                AssistantInstallationIdentityEvidence.Missing)));
         await using var provider = services.BuildServiceProvider();
         await using var first = provider.CreateAsyncScope();
         await using var second = provider.CreateAsyncScope();
@@ -141,7 +159,9 @@ public sealed class AssistantHostEvidenceTests
         {
             Interlocked.Increment(ref calls);
             await release.Task;
-            return new AssistantAuthorityObservation(AssistantAuthorityVerdict.Denied, null);
+            return new AssistantAuthorityObservation(
+                AssistantAuthorityVerdict.Denied,
+                AssistantInstallationIdentityEvidence.Missing);
         });
         await using var provider = services.BuildServiceProvider();
         await using var scope = provider.CreateAsyncScope();
