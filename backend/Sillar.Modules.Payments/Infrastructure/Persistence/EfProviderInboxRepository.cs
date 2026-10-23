@@ -19,19 +19,35 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
     public async ValueTask<IReadOnlyList<VerifiedExternalPaymentEvidence>>
         LoadKnownVerifiedEvidenceAsync(CancellationToken cancellationToken)
     {
-        var persisted = await database.InboxEvents
-            .AsNoTracking()
+        var persisted = await QueryAuthenticatedEvidenceHistory(database)
             .OrderBy(item => item.Provider)
             .ThenBy(item => item.ProviderEventId)
+            .ThenBy(item => item.ReceivedAt)
+            .ThenBy(item => item.ReceiptId)
             .Select(item => new PersistedEvidence(
                 item.Provider,
                 item.ProviderEventId,
                 item.ExternalSettlementId,
                 item.BodySha256,
-                item.VerifiedAt))
+                item.VerifiedAt!.Value))
             .ToArrayAsync(cancellationToken);
         return Array.AsReadOnly(
             persisted.Select(item => item.ToDomain()).ToArray());
+    }
+
+    /// <summary>
+    /// El historial de replay incluye cada recepción autenticada, también las
+    /// que dejaron el inbox en HOLD. Consultar sólo la fila canónica del inbox
+    /// ocultaría contradicciones durables en reclasificaciones posteriores.
+    /// </summary>
+    internal static IQueryable<ProviderEvidenceReceipt>
+        QueryAuthenticatedEvidenceHistory(PaymentsDbContext source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        return source.EvidenceReceipts
+            .AsNoTracking()
+            .Where(item => item.VerificationState ==
+                ProviderVerificationStates.Authenticated);
     }
 
     public async ValueTask<ProviderSettlementFacts?> LoadCandidateFactsAsync(

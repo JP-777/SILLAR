@@ -58,6 +58,17 @@ public sealed class ProviderSettlementFactsTests
     }
 
     [Fact]
+    public void Mismo_evento_con_liquidacion_distinta_es_conflicto()
+    {
+        var known = Facts(settlementId: "settlement-001");
+        var incompatible = Facts(settlementId: "settlement-002");
+
+        Assert.Equal(
+            ProviderSettlementFactDecision.Conflict,
+            ProviderSettlementFactClassifier.Classify(incompatible, [known]));
+    }
+
+    [Fact]
     public void Conflicto_posterior_prevalece_sobre_duplicado_temprano()
     {
         var incoming = Facts();

@@ -95,6 +95,35 @@ public sealed class ProviderOrchestrationTests
     }
 
     [Fact]
+    public async Task Replay_canonico_no_oculta_una_liquidacion_contradictoria_previa()
+    {
+        var ledger = new MemoryLedger();
+        var orchestrator = new ProviderReceptionOrchestrator(
+            AuthenticatedVerifier(),
+            ledger);
+
+        var first = await orchestrator.ReceiveAsync(
+            Request("same-body", "settlement-001"),
+            CancellationToken);
+        var contradictory = await orchestrator.ReceiveAsync(
+            Request("same-body", "settlement-002"),
+            CancellationToken);
+        var replay = await orchestrator.ReceiveAsync(
+            Request("same-body", "settlement-001"),
+            CancellationToken);
+
+        Assert.Equal(
+            ProviderReceptionState.PendingDurableReview,
+            first.Record.State);
+        Assert.Equal(ProviderReceptionState.Held, contradictory.Record.State);
+        Assert.Equal(ProviderReceptionState.Held, replay.Record.State);
+        Assert.Contains(
+            ProviderEvidenceConflictKind.ReceptionMapsToMultipleSettlements,
+            Assert.Single(replay.Analysis!.Trace).ConflictKinds);
+        Assert.Equal(3, ledger.Records.Count);
+    }
+
+    [Fact]
     public async Task Verificacion_rechazada_registra_hash_sin_crear_evidencia_autenticada()
     {
         var ledger = new MemoryLedger();
@@ -276,11 +305,13 @@ public sealed class ProviderOrchestrationTests
             PaymentTestData.VerifiedAt.AddSeconds(1),
             "simulated-attestation"));
 
-    private static ProviderReceptionRequest Request(string body)
+    private static ProviderReceptionRequest Request(
+        string body,
+        string settlementId = "settlement-001")
         => ProviderReceptionRequest.Create(
             "provider-a",
             "event-001",
-            "settlement-001",
+            settlementId,
             Encoding.UTF8.GetBytes(body),
             PaymentTestData.VerifiedAt);
 

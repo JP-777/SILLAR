@@ -63,6 +63,27 @@ public sealed class PaymentsPersistenceTests
     }
 
     [Fact]
+    public void Historial_de_replay_lee_recepciones_autenticadas_no_solo_el_inbox()
+    {
+        using var context = Context();
+
+        var sql = EfProviderInboxRepository
+            .QueryAuthenticatedEvidenceHistory(context)
+            .ToQueryString();
+
+        Assert.Contains(
+            "provider_evidence_receipts",
+            sql,
+            StringComparison.Ordinal);
+        Assert.Contains("verification_state", sql, StringComparison.Ordinal);
+        Assert.Contains("authenticated", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "provider_inbox_events",
+            sql,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Identificadores_externos_declaran_colacion_determinista_explicita()
     {
         using var context = Context();
