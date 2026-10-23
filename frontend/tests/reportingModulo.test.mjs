@@ -602,3 +602,52 @@ test('48 · una auditoría que no contesta a tiempo no deja pasar el archivo, au
   const lenta = { recordExport: () => new Promise((resolve) => setTimeout(resolve, 5, 'recorded')) };
   assert.equal((await prepareOrderIndicatorsExport({ zone: 'UTC', baseline: respuesta() }, lenta, 200)).kind, 'ready');
 });
+
+test('49 · una zona IANA vigente que el motor renombra vale de punta a punta; otra grafía, no', () => {
+  // ICU contesta con nombres antiguos; el vigente no puede quedar bloqueado.
+  for (const vigente of ['America/Argentina/Buenos_Aires', 'Asia/Kolkata', 'Europe/Kyiv', 'America/Nuuk', 'Asia/Kathmandu', 'Etc/UTC']) {
+    assert.deepEqual(zonas.resolveInstallationZone({ zone: vigente }), { zone: vigente, origin: 'installation' }, vigente);
+  }
+  // Todas las que conoce el motor siguen valiendo con su propio nombre.
+  assert.deepEqual(Intl.supportedValuesOf('timeZone').filter((zona) => zonas.canonicalIanaZone(zona) !== zona), []);
+  // Cambiar mayúsculas no es otra zona: bloquea, también en nombres renombrados.
+  for (const grafia of ['AMERICA/LIMA', 'America/LIMA', 'asia/kolkata', 'ASIA/KOLKATA', 'Asia/KOLKATA', 'utc', 'Etc/utc', '+05:30']) {
+    assert.equal(zonas.resolveInstallationZone({ zone: grafia }).origin, 'unavailable', grafia);
+  }
+  // Período, enlace, comparación y CSV usan la misma zona publicada, tal cual.
+  const servicios = (nombre) => new URL(`../src/modules/reporting/services/${nombre}`, import.meta.url).href;
+  const guion = `
+    import { mock } from 'node:test';
+    const real = await import(${JSON.stringify(servicios('installationZone.ts'))});
+    mock.module(${JSON.stringify(servicios('installationZone.ts'))}, { namedExports: {
+      ...real, resolveInstallationZone: (fuente = { zone: process.env.ZONA }) => real.resolveInstallationZone(fuente),
+    } });
+    const p = await import(${JSON.stringify(servicios('period.ts'))});
+    const l = await import(${JSON.stringify(servicios('reportLinks.ts'))});
+    const w = await import(${JSON.stringify(servicios('previousEqualWindow.ts'))});
+    const c = await import(${JSON.stringify(servicios('orderIndicatorsCsv.ts'))});
+    const Z = process.env.ZONA;
+    const vista = { ...JSON.parse(process.env.VISTA), startInclusive: p.asInstant('2026-10-01T00:00', Z), endExclusive: p.asInstant('2026-10-02T00:00', Z) };
+    const csv = c.buildOrderIndicatorsCsv({ zone: Z, baseline: vista });
+    console.log(JSON.stringify({
+      zonas: p.REPORT_ZONES, inicio: vista.startInclusive,
+      enlace: l.decodeReportLink('?rp_v=1&rp_z=' + encodeURIComponent(Z) + '&rp_a_i=2026-10-01T00:00&rp_a_f=2026-10-02T00:00').kind,
+      lima: l.decodeReportLink('?rp_v=1&rp_z=America%2FLima&rp_a_i=2026-10-01T00:00&rp_a_f=2026-10-02T00:00').kind,
+      anterior: w.previousEqualWindow(vista.startInclusive, vista.endExclusive, Z).kind,
+      csv: csv.kind, fila: csv.content?.split('\\r\\n')[1].split(',').slice(1, 4),
+      csvLima: c.buildOrderIndicatorsCsv({ zone: 'America/Lima', baseline: vista }).kind,
+    }));`;
+  const salida = spawnSync(process.execPath, ['--experimental-test-module-mocks', '--no-warnings', '--input-type=module', '-e', guion], {
+    env: { ...process.env, ZONA: 'America/Argentina/Buenos_Aires', VISTA: JSON.stringify(respuesta()) }, encoding: 'utf8',
+  });
+  assert.equal(salida.status, 0, salida.stderr);
+  const visto = JSON.parse(salida.stdout);
+  assert.deepEqual(visto.zonas, ['America/Argentina/Buenos_Aires', 'UTC']);
+  assert.equal(visto.inicio, '2026-10-01T03:00:00.000Z');
+  assert.equal(visto.enlace, 'valid');
+  assert.equal(visto.lima, 'invalid');
+  assert.equal(visto.anterior, 'ready');
+  assert.equal(visto.csv, 'ready');
+  assert.deepEqual(visto.fila.map((celda) => celda.replace(/^"|"$/g, '')), ['2026-10-01 00:00', '2026-10-02 00:00', 'America/Argentina/Buenos_Aires']);
+  assert.equal(visto.csvLima, 'unavailable');
+});
