@@ -37,17 +37,26 @@ export type InstallationZone =
 /**
  * Identificador IANA tal como lo escribe la base de zonas, o null.
  *
- * Rechaza desplazamientos sueltos (`-05:00`), mayúsculas cambiadas y alias que
- * el motor reescribe: si lo aceptáramos, la misma instalación tendría dos
- * nombres para su zona y un enlace podría pasar por ella.
+ * Vale si el motor de fechas lo reconoce y está bien escrito. Rechaza
+ * desplazamientos sueltos (`-05:00`), rutas, espacios y el mismo nombre con
+ * otras mayúsculas (`america/lima`, `AMERICA/LIMA`).
+ *
+ * No exige que el motor lo devuelva igual: ICU contesta con nombres antiguos
+ * (`America/Argentina/Buenos_Aires` → `America/Buenos_Aires`, `Asia/Kolkata` →
+ * `Asia/Calcutta`), y exigirlo bloqueaba como inválidas instalaciones con el
+ * nombre IANA vigente. Basta con que no sea solo un cambio de mayúsculas.
  */
+const IANA_SHAPE = /^(?!.*(?:^|\/)[A-Z]{4,}(?:\/|$))[A-Z][A-Za-z_]*(?:\/[A-Z][A-Za-z0-9_+-]*){0,2}$/;
+
 export function canonicalIanaZone(value: unknown): string | null {
-  if (typeof value !== 'string' || !/^[A-Za-z_]+(?:\/[A-Za-z0-9_+-]+){0,2}$/.test(value)) return null;
+  if (typeof value !== 'string' || !IANA_SHAPE.test(value)) return null;
+  let known: string;
   try {
-    return new Intl.DateTimeFormat('en-US', { timeZone: value }).resolvedOptions().timeZone === value ? value : null;
+    known = new Intl.DateTimeFormat('en-US', { timeZone: value }).resolvedOptions().timeZone;
   } catch {
     return null;
   }
+  return known === value || known.toLowerCase() !== value.toLowerCase() ? value : null;
 }
 
 export function resolveInstallationZone(source: InstallationZoneSource | null = installationZoneSource): InstallationZone {
