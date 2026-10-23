@@ -282,7 +282,12 @@ test('25 · ni el generador ni la exportación preparada están expuestos: ningu
 
 // 7 · Exportación preparada: solo con auditoría registrada (D-M10-05)
 
-const { prepareOrderIndicatorsExport, exportAuditPort } = await import('../src/modules/reporting/services/reportExport.ts');
+const { prepareOrderIndicatorsExport: exportarConZona, exportAuditPort } = await import('../src/modules/reporting/services/reportExport.ts');
+const { resolveInstallationZone } = await import('../src/modules/reporting/services/installationZone.ts');
+/** Instalación con zona verificada: estas pruebas tratan de la auditoría, no de la zona. */
+const INSTALACION_VERIFICADA = resolveInstallationZone({ kind: 'verified', original: 'America/Lima', canonical: 'America/Lima' });
+const prepareOrderIndicatorsExport = (pedido, puerto, plazo, instalacion = INSTALACION_VERIFICADA) =>
+  exportarConZona(pedido, puerto, plazo, instalacion);
 /** Puerto falso: registra lo que recibe y responde lo que diga `decidir`. */
 const auditoria = (decidir = () => 'recorded') => {
   const registros = [];
@@ -517,7 +522,7 @@ const verificada = (zona) => ({ kind: 'verified', original: zona, canonical: zon
 test('45 · la zona de la instalación solo la publica CORE; sin fuente, la del negocio', () => {
   assert.equal(zonas.installationZoneObservation, null);
   assert.deepEqual(zonas.resolveInstallationZone(null).zone, 'America/Lima');
-  assert.equal(zonas.resolveInstallationZone(null).origin, 'business_default');
+  assert.equal(zonas.resolveInstallationZone(null).origin, 'historical_fallback');
   assert.deepEqual(zonas.resolveInstallationZone(verificada('America/Bogota')), { zone: 'America/Bogota', origin: 'installation', original: 'America/Bogota', alias: false });
   assert.equal(INSTALLATION_ZONE, zonas.BUSINESS_DEFAULT_ZONE);
   // La URL elige entre las admitidas; nunca añade una.
@@ -533,7 +538,7 @@ const ZONAS_PUBLICADAS_MALAS = ['-05:00', 'america/lima', 'America/Lima ', 'Mart
 
 test('46 · una zona publicada pero inválida no cae en la del negocio: bloquea los reportes', () => {
   // Fuente ausente y fuente mala son dos estados distintos.
-  assert.equal(zonas.resolveInstallationZone(null).origin, 'business_default');
+  assert.equal(zonas.resolveInstallationZone(null).origin, 'historical_fallback');
   for (const mala of ZONAS_PUBLICADAS_MALAS) {
     const resuelta = zonas.resolveInstallationZone(verificada(mala));
     assert.equal(resuelta.origin, 'unavailable', String(mala));
@@ -697,10 +702,39 @@ test('51 · ausente, inválida o sin verificar bloquean: ni Lima ni la clave can
   }
   // El respaldo del negocio solo existe con la costura sin conectar.
   assert.equal(zonas.installationZoneObservation, null);
-  assert.equal(zonas.resolveInstallationZone().origin, 'business_default');
+  assert.equal(zonas.resolveInstallationZone().origin, 'historical_fallback');
   const consumidor = codigo(fuente('src/modules/reporting/services/zoneObservation.ts'));
   assert.doesNotMatch(consumidor, /America\/Lima|BUSINESS_DEFAULT_ZONE/);
   for (const archivo of archivos()) {
     assert.doesNotMatch(codigo(readFileSync(archivo, 'utf8')), /timezone_iana/, archivo);
   }
+});
+
+test('52 · sin conexión con CORE o con la zona ausente, nada nuevo que exija zona verificada se habilita', async () => {
+  const sinConexion = zonas.resolveInstallationZone(null);
+  const ausente = zonas.resolveInstallationZone({ kind: 'absent' });
+  const sinVerificar = zonas.resolveInstallationZone({ kind: 'runtime_resolved', original: 'America/Lima', runtimeId: 'America/Lima' });
+  // Sin conexión, Lima es un respaldo histórico: sirve a lo que ya existía, no prueba autoridad.
+  assert.equal(sinConexion.origin, 'historical_fallback');
+  assert.equal(sinConexion.zone, 'America/Lima');
+  assert.deepEqual([...reportZonesFor(sinConexion)], ['America/Lima', 'UTC']);
+  // Ninguno de los tres es una zona verificada; ausente y sin verificar, ni siquiera zona.
+  for (const instalacion of [sinConexion, ausente, sinVerificar]) {
+    assert.equal(zonas.verifiedInstallationZone(instalacion), null, instalacion.origin);
+  }
+  assert.equal(ausente.zone, null);
+  assert.equal(zonas.verifiedInstallationZone(INSTALACION_VERIFICADA), 'America/Lima');
+  // La exportación es nueva: con auditoría que confirma, sigue sin archivo y sin auditar.
+  for (const instalacion of [sinConexion, ausente, sinVerificar]) {
+    const { registros, port } = auditoria();
+    const resultado = await exportarConZona({ zone: 'America/Lima', baseline: respuesta() }, port, undefined, instalacion);
+    assert.equal(resultado.kind, 'blocked', instalacion.origin);
+    assert.match(resultado.reason, /zona horaria de la instalación tiene que estar verificada/);
+    assert.equal('content' in resultado, false);
+    assert.equal(registros.length, 0);
+  }
+  // Hoy la instalación es la del respaldo: la exportación por defecto tampoco tendría zona.
+  const { INSTALLATION } = await import('../src/modules/reporting/services/period.ts');
+  assert.equal(zonas.verifiedInstallationZone(INSTALLATION), null);
+  assert.equal((await exportarConZona({ zone: 'America/Lima', baseline: respuesta() }, auditoria().port)).kind, 'blocked');
 });

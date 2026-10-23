@@ -32,15 +32,25 @@ export const installationZoneObservation: unknown = null;
 
 export type InstallationZone =
   | { readonly zone: string; readonly origin: 'installation'; readonly original: string; readonly alias: boolean }
-  | { readonly zone: string; readonly origin: 'business_default'; readonly reason: string }
+  /** Respaldo HISTÓRICO con la costura sin conectar: no prueba autoridad. */
+  | { readonly zone: string; readonly origin: 'historical_fallback'; readonly reason: string }
   | { readonly zone: null; readonly origin: 'unavailable'; readonly original: string | null; readonly reason: string };
 
 export function resolveInstallationZone(observation: unknown = installationZoneObservation): InstallationZone {
   if (observation === null) {
-    return { zone: BUSINESS_DEFAULT_ZONE, origin: 'business_default', reason: 'La instalación todavía no publica su zona horaria.' };
+    return { zone: BUSINESS_DEFAULT_ZONE, origin: 'historical_fallback', reason: 'La instalación todavía no publica su zona horaria.' };
   }
   const consumed = consumeZoneObservation(readZoneObservation(observation));
   return consumed.kind === 'enabled'
     ? { zone: consumed.zone, origin: 'installation', original: consumed.original, alias: consumed.alias }
     : { zone: null, origin: 'unavailable', original: consumed.original, reason: consumed.reason };
+}
+
+/**
+ * La zona solo si viene de una observación verificada; null con la costura sin
+ * conectar (respaldo histórico), ausente, inválida o sin verificar. Lo nuevo
+ * que necesite la zona de la instalación se habilita con esto, no con `zone`.
+ */
+export function verifiedInstallationZone(installation: InstallationZone): string | null {
+  return installation.origin === 'installation' ? installation.zone : null;
 }

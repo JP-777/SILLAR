@@ -1,6 +1,7 @@
 import type { OrderIndicatorsView } from './orderIndicators.ts';
 import { buildOrderIndicatorsCsv } from './orderIndicatorsCsv.ts';
-import type { ReportZone } from './period.ts';
+import { verifiedInstallationZone, type InstallationZone } from './installationZone.ts';
+import { INSTALLATION, type ReportZone } from './period.ts';
 
 /**
  * M10 — punto de ejecución de la exportación CSV, condicionado a la auditoría.
@@ -10,6 +11,8 @@ import type { ReportZone } from './period.ts';
  * `core.audit_log` se construye desde esa lista), así que aquí:
  *
  * - sin puerto de auditoría no hay archivo: la exportación queda bloqueada;
+ * - sin zona de la instalación verificada tampoco: ni el respaldo histórico de
+ *   Lima ni una zona ausente o sin verificar sirven para un archivo nuevo;
  * - con puerto, primero se registra la exportación y solo después se entrega
  *   el archivo; si el registro falla, se niega o responde otra cosa que la
  *   confirmación, tampoco hay archivo (cerrado por defecto);
@@ -84,11 +87,18 @@ export async function prepareOrderIndicatorsExport(
   request: OrderIndicatorsExportRequest,
   audit: ExportAuditPort | null = exportAuditPort,
   timeoutMs: number = EXPORT_AUDIT_TIMEOUT_MS,
+  installation: InstallationZone = INSTALLATION,
 ): Promise<OrderIndicatorsExport> {
   if (audit === null) {
     return {
       kind: 'blocked',
       reason: 'La exportación tiene que quedar registrada en la auditoría y esa capacidad todavía no está disponible.',
+    };
+  }
+  if (verifiedInstallationZone(installation) === null) {
+    return {
+      kind: 'blocked',
+      reason: 'Para exportar, la zona horaria de la instalación tiene que estar verificada, y todavía no lo está.',
     };
   }
 
