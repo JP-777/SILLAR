@@ -145,6 +145,50 @@ public sealed class FaqEfPublicoTests
         Assert.Equal(503, reply.StatusCode);
     }
 
+    [Fact]
+    public async Task FuenteQueDevuelveNuloFallaCerrado()
+    {
+        var reply = Assert.IsType<ProblemHttpResult>(await Run(new("¿Horario?"),
+            new Ambito(Instalacion), new Fuente { Result = null! }));
+        Assert.Equal(503, reply.StatusCode);
+    }
+
+    [Fact]
+    public async Task EstadoDesconocidoNoExponeContenidoDelProveedor()
+    {
+        var src = new Fuente { Result = new((FaqOutcome)999, "Contenido sin verificar",
+            null, null, "Fuente", "https://empresa.example") };
+        var reply = Assert.IsType<ProblemHttpResult>(await Run(new("¿Horario?"),
+            new Ambito(Instalacion), src));
+        Assert.Equal(503, reply.StatusCode);
+        Assert.Null(reply.ProblemDetails.Detail);
+    }
+
+    [Fact]
+    public async Task CancelacionSolicitadaSePropagaSinConvertirseEnRespuesta()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            AssistantFaqEndpoints.HandleFaqAsync(new("¿Horario?"), new Ambito(Instalacion),
+                new FuenteCancelada(), new Reloj(), cancellation.Token));
+    }
+
+    [Fact]
+    public async Task CancelacionAjenaALaPeticionProduce503()
+    {
+        var reply = Assert.IsType<ProblemHttpResult>(await AssistantFaqEndpoints.HandleFaqAsync(
+            new("¿Horario?"), new Ambito(Instalacion), new FuenteCancelada(),
+            new Reloj(), CancellationToken.None));
+        Assert.Equal(503, reply.StatusCode);
+    }
+
+    private sealed class FuenteCancelada : IAsyncPublishedFaqReader
+    {
+        public Task<FaqResult> AnswerAsync(Guid installationId, string? question,
+            DateTimeOffset now, CancellationToken ct) => throw new OperationCanceledException(ct);
+    }
+
     private static AssistantDbContext Modelo() => new(
         new DbContextOptionsBuilder<AssistantDbContext>()
             .UseNpgsql("Host=localhost;Database=metadata_only;Username=unused;Password=unused")
