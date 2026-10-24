@@ -95,7 +95,11 @@ public sealed class ServicesDbFixture
         }
         finally
         {
-            await EjecutarEnAsync(admin, $"DROP DATABASE IF EXISTS \"{nombre}\" WITH (FORCE)", ct);
+            // La cancelación de la prueba no debe impedir retirar su base propia.
+            await EjecutarEnAsync(
+                admin,
+                $"DROP DATABASE IF EXISTS \"{nombre}\" WITH (FORCE)",
+                CancellationToken.None);
         }
     }
 
