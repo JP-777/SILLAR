@@ -72,6 +72,9 @@ public static class AssistantFaqEndpoints
             return Results.Problem(title: "La fuente pública no está disponible para verificación.",
                 statusCode: StatusCodes.Status503ServiceUnavailable);
         }
+        if (answer is null)
+            return Results.Problem(title: "La fuente pública no está disponible para verificación.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
         if (answer.Outcome == FaqOutcome.Answered)
         {
             if (string.IsNullOrWhiteSpace(answer.Answer) ||
