@@ -88,9 +88,12 @@ public sealed class ServicesDbFixture
             Pooling = false,
         }.ConnectionString;
 
-        await EjecutarEnAsync(admin, $"CREATE DATABASE \"{nombre}\"", ct);
         try
         {
+            // CREATE también queda bajo el finally: si el servidor alcanza a
+            // crear la base pero el cliente recibe una cancelación, el nombre
+            // generado sigue retirándose de forma segura.
+            await EjecutarEnAsync(admin, $"CREATE DATABASE \"{nombre}\"", ct);
             await cuerpo(aislada);
         }
         finally
