@@ -21,7 +21,8 @@ public enum QuotaOperation
     AlreadyCompleted,
     Cancelled,
     AlreadyCancelled,
-    Conflict
+    Conflict,
+    Replay
 }
 
 public sealed record QuotaReservation(QuotaOperation Outcome, Guid? ReservationId, AssistantMode? Mode);
@@ -50,13 +51,15 @@ public sealed class LocalAssistantQuotaStore
         public long Reserved;
         public int Running;
         public Dictionary<Guid, Lease> Leases { get; } = new();
+        public Dictionary<string, Guid> IdempotencyKeys { get; } = new(StringComparer.Ordinal);
     }
 
     private enum LeasePhase { Reserved, Dispatched, Completed, Cancelled }
 
-    private sealed class Lease(long units)
+    private sealed class Lease(long units, AssistantMode mode)
     {
         public long Units { get; } = units;
+        public AssistantMode Mode { get; } = mode;
         public LeasePhase Phase { get; set; } = LeasePhase.Reserved;
         public long? ActualUnits { get; set; }
     }
@@ -151,12 +154,40 @@ public sealed class LocalAssistantQuotaStore
         (config.Mode != AssistantMode.Faq || !config.EngineConfigured);
 
     public QuotaReservation TryReserve(Guid installationId, long worstCaseUnits)
+        => TryReserveCore(installationId, worstCaseUnits, null);
+
+    /// <summary>
+    /// Reserva volátil idempotente por instalación y clave técnica del servidor.
+    /// Replay devuelve la reserva original sin admitir otro trabajo. La clave no
+    /// acredita identidad ni permiso; este almacén no se registra en producción.
+    /// Una reserva cancelada no se reutiliza y exige una nueva intención explícita.
+    /// </summary>
+    public QuotaReservation TryReserve(Guid installationId, long worstCaseUnits, string idempotencyKey)
+    {
+        if (!DurableAssistantQuotaLedger.ValidIdempotencyKey(idempotencyKey))
+            return new(QuotaOperation.Invalid, null, null);
+        return TryReserveCore(installationId, worstCaseUnits, idempotencyKey);
+    }
+
+    private QuotaReservation TryReserveCore(Guid installationId, long worstCaseUnits, string? idempotencyKey)
     {
         if (worstCaseUnits <= 0) return new(QuotaOperation.Invalid, null, null);
         lock (_gate)
         {
             if (!_states.TryGetValue(installationId, out var s))
                 return new(QuotaOperation.NotFound, null, null);
+            if (idempotencyKey is not null && s.IdempotencyKeys.TryGetValue(idempotencyKey, out var existingId))
+            {
+                var lease = s.Leases[existingId];
+                var outcome = lease.Units != worstCaseUnits ? QuotaOperation.Conflict : lease.Phase switch
+                {
+                    LeasePhase.Reserved => QuotaOperation.Replay,
+                    LeasePhase.Dispatched => QuotaOperation.AlreadyDispatched,
+                    LeasePhase.Completed => QuotaOperation.AlreadyCompleted,
+                    _ => QuotaOperation.Conflict
+                };
+                return new(outcome, existingId, lease.Mode);
+            }
             var c = s.Configuration;
             var decision = AssistantUsePolicy.Evaluate(installationId,
                 new ResourceBudgetSnapshot(installationId, c.Mode, c.EngineConfigured,
@@ -170,7 +201,8 @@ public sealed class LocalAssistantQuotaStore
                 return new(QuotaOperation.Invalid, null, null);
             if (s.Running == int.MaxValue) return new(QuotaOperation.FaqFallback, null, AssistantMode.Faq);
             var token = Guid.NewGuid();
-            s.Leases.Add(token, new Lease(worstCaseUnits));
+            s.Leases.Add(token, new Lease(worstCaseUnits, c.Mode));
+            if (idempotencyKey is not null) s.IdempotencyKeys.Add(idempotencyKey, token);
             s.Reserved += worstCaseUnits;
             s.Running++;
             return new(QuotaOperation.Reserved, token, c.Mode);
