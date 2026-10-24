@@ -24,6 +24,15 @@
 #      verificado. Si alguna falla, sale con 70 y M06_FOCAL=EVIDENCIA_INVALIDA, sin RUNNER_FIN.
 #      El rc real de Playwright solo se devuelve si todas están completas.
 #
+# Corrección del 24/10/2026, cierre:
+#   9. El estado final queda dentro de $EV, no solo en la terminal. m06-final.txt guarda
+#      M06_CICLO_RC, M06_FOCAL, RUNNER_EXIT, SHA256SUMS_SHA256 y, como última línea,
+#      RUNNER_FIN=1. Se sella con m06-final.sha256. Se escribe solo cuando SHA256SUMS.txt
+#      ya verifica, y se vuelve a comprobar antes de salir.
+#      Si algo falla, m06-final.txt dice M06_FOCAL=EVIDENCIA_INVALIDA y no lleva RUNNER_FIN.
+#      Para comprobarlo:  cd $EV && sha256sum -c m06-final.sha256 && sha256sum -c SHA256SUMS.txt
+#      y que SHA256SUMS_SHA256 sea el sha256 de SHA256SUMS.txt.
+#
 # Uso:  bash QA-M06-3068A55-RUNNER-FOCAL-V2-20261024.sh.txt  [WT] [EV]
 set -u
 
@@ -86,6 +95,10 @@ TEE_RC=${ESTADOS[1]:-1}
 
 falla_evidencia() {
   echo "EVIDENCIAS_INCOMPLETAS: $1" >&2
+  # El fallo también queda en el expediente. Si ni eso se puede escribir, la salida 70 basta.
+  rm -f -- "$EV/m06-final.sha256" "$EV/m06-final.tmp"
+  printf 'M06_CICLO_RC=%s\nM06_FOCAL=EVIDENCIA_INVALIDA\nRUNNER_EXIT=70\nMOTIVO=%s\n' "$RC" "$1" \
+    > "$EV/m06-final.txt" 2>/dev/null || true
   echo "RC_PLAYWRIGHT=$RC (no vale como resultado sin evidencias completas)" >&2
   echo "EVIDENCIAS=$EV"
   echo "M06_FOCAL=EVIDENCIA_INVALIDA"
@@ -110,7 +123,7 @@ cp -a "$INFORME" "$EV/" || falla_evidencia "no se pudo copiar playwright-report"
 (
   set -o pipefail
   cd "$EV" &&
-  find . -type f ! -name SHA256SUMS.txt \
+  find . -type f ! -name SHA256SUMS.txt ! -name 'm06-final.*' \
     -print0 | sort -z | xargs -0 -r sha256sum \
     > SHA256SUMS.txt
 ) || falla_evidencia "no se pudo generar SHA256SUMS.txt"
@@ -121,12 +134,27 @@ for f in m06-inicio.txt m06-ciclo.log m06-ciclo.rc git-status.txt playwright-rep
 done
 ( cd "$EV" && sha256sum --check --quiet --strict SHA256SUMS.txt ) || falla_evidencia "SHA256SUMS.txt no verifica"
 
-echo "EVIDENCIAS=$EV"
+if [[ "$RC" -eq 0 ]]; then FOCAL=PASS; else FOCAL=REVISAR; fi
+SUMS_SHA="$(sha256sum "$EV/SHA256SUMS.txt" | cut -d' ' -f1)" && [[ -n "$SUMS_SHA" ]] \
+  || falla_evidencia "no se pudo calcular el sha256 de SHA256SUMS.txt"
 
-if [[ "$RC" -eq 0 ]]; then
-  echo "M06_FOCAL=PASS"
-else
-  echo "M06_FOCAL=REVISAR"
-fi
-echo "RUNNER_FIN=1"
+printf 'M06_CICLO_RC=%s\nM06_FOCAL=%s\nRUNNER_EXIT=%s\nSHA256SUMS_SHA256=%s\nRUNNER_FIN=1\n' \
+  "$RC" "$FOCAL" "$RC" "$SUMS_SHA" > "$EV/m06-final.tmp" \
+  && mv -- "$EV/m06-final.tmp" "$EV/m06-final.txt" \
+  || falla_evidencia "no se pudo escribir m06-final.txt"
+( cd "$EV" && sha256sum m06-final.txt > m06-final.sha256 ) || falla_evidencia "no se pudo sellar m06-final.txt"
+
+# Comprobación de lo que quedó en disco, no de lo que se quiso escribir.
+( cd "$EV" && sha256sum --check --quiet --strict m06-final.sha256 \
+    && sha256sum --check --quiet --strict SHA256SUMS.txt ) \
+  || falla_evidencia "m06-final.txt o SHA256SUMS.txt no verifican tras el cierre"
+grep -qx "M06_CICLO_RC=$RC" "$EV/m06-final.txt" \
+  && grep -qx "M06_FOCAL=$FOCAL" "$EV/m06-final.txt" \
+  && grep -qx "RUNNER_EXIT=$RC" "$EV/m06-final.txt" \
+  && grep -qx "SHA256SUMS_SHA256=$(sha256sum "$EV/SHA256SUMS.txt" | cut -d' ' -f1)" "$EV/m06-final.txt" \
+  && [[ "$(tail -n 1 "$EV/m06-final.txt")" == "RUNNER_FIN=1" ]] \
+  || falla_evidencia "m06-final.txt no corresponde al resultado"
+
+echo "EVIDENCIAS=$EV"
+cat "$EV/m06-final.txt"
 exit "$RC"
