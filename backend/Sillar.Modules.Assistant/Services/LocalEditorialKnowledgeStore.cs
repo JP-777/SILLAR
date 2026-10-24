@@ -28,7 +28,8 @@ public sealed class LocalEditorialKnowledgeStore : ILocalKnowledgeAuthority
                     host.Contains('/') || host.Contains(':') || host.Contains('*') ||
                     Uri.CheckHostName(host) == UriHostNameType.Unknown)
                     throw new ArgumentException("Dominio público inválido.", nameof(allowedHosts));
-                set.Add(host);
+                // Igual que IsAllowedPublicUri: comparar la representación DNS IDN.
+                set.Add(new UriBuilder(Uri.UriSchemeHttps, host).Uri.IdnHost);
             }
             _hosts.Add(installation, set);
         }

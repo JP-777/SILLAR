@@ -26,7 +26,8 @@ public sealed class EditorialPersistencePolicy
                     host.Contains('/') || host.Contains(':') || host.Contains('*') ||
                     Uri.CheckHostName(host) == UriHostNameType.Unknown)
                     throw new ArgumentException("Dominio público no válido.", nameof(allowedHosts));
-                normalized.Add(host);
+                // La configuración y los enlaces deben comparar la misma forma IDN.
+                normalized.Add(new UriBuilder(Uri.UriSchemeHttps, host).Uri.IdnHost);
             }
             hostsByInstallation.Add(installationId, normalized);
         }
