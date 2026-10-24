@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# Runner focal de [M06-CICLO], v2 (24/10/2026). Sustituye al heredoc del 23/10/2026.
+#
+# Defecto de la v1: se lanzó como `bash <<'BASH' … BASH`, con el script entrando por stdin.
+# El arnés e2e lanza sus hijos con stdio 'inherit' (e2e/setup/shell.ts:42-46), y entre ellos está
+# `docker compose exec -T db psql -f …` (e2e/setup/docker.ts:167-168, :205-209). `-T` quita el TTY,
+# pero no el stdin. Así que un hijo podía leer, y descartar, el resto del script.
+# Bash llegaba a EOF justo después del pipeline `| tee`: no escribía M06_CICLO_RC, ni git-status,
+# ni SHA256SUMS. Y salía con 0, también cuando la prueba fallaba.
+#
+# Cambios de la v2:
+#   1. Se ejecuta desde un archivo (`bash <este archivo>`), nunca por stdin. Si llega por stdin, se niega.
+#   2. Playwright corre con `</dev/null`: ningún hijo hereda un stdin que se pueda consumir.
+#   3. El rc se escribe en un archivo propio (m06-ciclo.rc) en cuanto existe, antes de cualquier otro paso.
+#   4. La última línea es RUNNER_FIN: si no aparece, el runner no terminó.
+#   5. El directorio de evidencias tiene que ser nuevo: no sobrescribe nada histórico.
+#   6. Sale con el rc de la prueba, no con el de la última orden.
+#
+# Uso:  bash QA-M06-3068A55-RUNNER-FOCAL-V2-20261024.sh.txt  [WT] [EV]
+set -u
+
+if [[ ! -f "${BASH_SOURCE[0]:-}" ]]; then
+  echo "STOP: este runner se ejecuta desde un archivo, no por stdin ni heredoc" >&2
+  exit 2
+fi
+
+WT="${1:-$HOME/SILLAR_M05B_CICLO_ISOLATED_3068a558}"
+EV="${2:-$HOME/SILLAR_M06_EVIDENCIAS_$(date +%Y%m%d_%H%M%S)}"
+BASE="3068a5583f01aca9800ce100b7a6777b664b85ec"
+
+if [[ -e "$EV" ]]; then
+  echo "STOP: $EV ya existe; no se sobrescriben evidencias" >&2
+  exit 2
+fi
+mkdir -p "$EV"
+cd "$WT" || exit 1
+
+echo "===== PREFLIGHT M06 ====="
+
+if [[ "$(git rev-parse HEAD)" != "$BASE" ]]; then
+  echo "STOP: HEAD incorrecto"
+  exit 1
+fi
+
+git diff --check || exit 1
+
+if [[ ! -f e2e/tests/zz-z-m06-ciclo.spec.ts ]]; then
+  echo "STOP: Falta la prueba M06"
+  exit 1
+fi
+
+echo "===== M06 CICLO FÍSICO ====="
+
+(
+  cd "$WT/e2e" || exit 1
+  env -u E2E_KEEP_STACK pnpm exec playwright test \
+    tests/zz-z-m06-ciclo.spec.ts \
+    --project=chromium \
+    --workers=1 \
+    --retries=0
+) </dev/null 2>&1 | tee "$EV/m06-ciclo.log"
+
+RC=${PIPESTATUS[0]}
+echo "$RC" > "$EV/m06-ciclo.rc"
+echo "M06_CICLO_RC=$RC" | tee -a "$EV/m06-ciclo.log"
+
+git status --short > "$EV/git-status.txt"
+
+if [[ -d "$WT/e2e/playwright-report" ]]; then
+  cp -a "$WT/e2e/playwright-report" "$EV/"
+fi
+
+(
+  cd "$EV" &&
+  find . -type f ! -name SHA256SUMS.txt \
+    -print0 | sort -z | xargs -0 -r sha256sum \
+    > SHA256SUMS.txt
+)
+
+echo "EVIDENCIAS=$EV"
+
+if [[ "$RC" -eq 0 ]]; then
+  echo "M06_FOCAL=PASS"
+else
+  echo "M06_FOCAL=REVISAR"
+fi
+echo "RUNNER_FIN=1"
+exit "$RC"
