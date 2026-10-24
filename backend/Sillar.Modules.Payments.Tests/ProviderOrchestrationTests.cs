@@ -225,10 +225,8 @@ public sealed class ProviderOrchestrationTests
                 false));
         var service = new ProviderCommercialRecoveryService(port);
         var evidence = PaymentTestData.Evidence();
-        var candidate = ProviderCommercialEffectCandidate.From(
-            Guid.CreateVersion7(),
-            evidence,
-            PaymentTestData.Facts(evidence));
+        var candidate = PaymentTestData.CommercialCandidate(
+            evidence: evidence);
         var now = PaymentTestData.VerifiedAt;
 
         var uncertain = await service.AttemptAsync(
@@ -275,10 +273,7 @@ public sealed class ProviderOrchestrationTests
             new SequencedCommercialPort(
                 ProviderCommercialEffectResult.DecisionRequired(
                     "expired_order_policy_pending")));
-        var candidate = ProviderCommercialEffectCandidate.From(
-            Guid.CreateVersion7(),
-            PaymentTestData.Evidence(),
-            PaymentTestData.Facts());
+        var candidate = PaymentTestData.CommercialCandidate();
         var held = await service.AttemptAsync(
             candidate,
             ProviderCommercialRecoverySnapshot.Initial,

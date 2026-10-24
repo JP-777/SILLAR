@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Sillar.Modules.Payments.Application;
 using Sillar.Modules.Payments.Application.Contracts;
 using Sillar.Modules.Payments.Domain;
 using Sillar.Modules.Payments.Infrastructure.Persistence;
@@ -99,10 +100,13 @@ public sealed class PaymentsModuleTests
             .GetRequiredService<IProviderSettlementFactRepository>();
         var settlementFactsSource = scope.ServiceProvider
             .GetRequiredService<IProviderSettlementFactsSource>();
+        var evidenceReferenceSource = scope.ServiceProvider
+            .GetRequiredService<IProviderVerifiedEvidenceReferenceSource>();
 
         Assert.Same(receptionLedger, inboxRepository);
         Assert.Same(inboxRepository, settlementFactRepository);
         Assert.Same(settlementFactRepository, settlementFactsSource);
+        Assert.Same(settlementFactsSource, evidenceReferenceSource);
         Assert.IsType<EfProviderInboxRepository>(receptionLedger);
     }
 
@@ -126,5 +130,11 @@ public sealed class PaymentsModuleTests
                 typeof(IProviderEvidenceVerifier)
                 || descriptor.ServiceType ==
                     typeof(IProviderCommercialEffectPort));
+        Assert.Contains(
+            services,
+            descriptor => descriptor.ServiceType ==
+                typeof(IProviderAuthorizedOrderCorrelationSource)
+                && descriptor.ImplementationType == typeof(
+                    UnavailableProviderAuthorizedOrderCorrelationSource));
     }
 }

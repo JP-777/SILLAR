@@ -14,7 +14,8 @@ namespace Sillar.Modules.Payments.Infrastructure.Persistence;
 internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
     : IProviderReceptionLedger,
       IProviderInboxRepository,
-      IProviderSettlementFactRepository
+      IProviderSettlementFactRepository,
+      IProviderVerifiedEvidenceReferenceSource
 {
     public async ValueTask<IReadOnlyList<VerifiedExternalPaymentEvidence>>
         LoadKnownVerifiedEvidenceAsync(CancellationToken cancellationToken)
@@ -48,6 +49,60 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
             .AsNoTracking()
             .Where(item => item.VerificationState ==
                 ProviderVerificationStates.Authenticated);
+    }
+
+    public async ValueTask<IReadOnlyList<ProviderVerifiedEvidenceReference>>
+        LoadAsync(
+            Guid inboxEventId,
+            CancellationToken cancellationToken)
+    {
+        if (inboxEventId == Guid.Empty)
+        {
+            return [];
+        }
+
+        var persisted = await QueryVerifiedEvidenceReferences(
+                database,
+                inboxEventId)
+            .OrderBy(item => item.ReceivedAt)
+            .ThenBy(item => item.ReceiptId)
+            .Select(item => new PersistedVerifiedEvidenceReference(
+                item.ReceiptId,
+                item.Provider,
+                item.ProviderEventId,
+                item.ExternalSettlementId,
+                item.BodySha256,
+                item.VerifiedAt!.Value,
+                item.AttestationReference!))
+            .ToArrayAsync(cancellationToken);
+
+        return Array.AsReadOnly(
+            persisted.Select(item => item.ToContract()).ToArray());
+    }
+
+    /// <summary>
+    /// Proyección de sólo lectura. Una referencia sólo es elegible cuando la
+    /// recepción fue autenticada y quedó vinculada al inbox solicitado.
+    /// </summary>
+    internal static IQueryable<ProviderEvidenceReceipt>
+        QueryVerifiedEvidenceReferences(
+            PaymentsDbContext source,
+            Guid inboxEventId)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        if (inboxEventId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "La proyección exige inbox.",
+                nameof(inboxEventId));
+        }
+
+        return source.EvidenceReceipts
+            .AsNoTracking()
+            .Where(item => item.InboxEventId == inboxEventId
+                && item.VerificationState ==
+                    ProviderVerificationStates.Authenticated
+                && item.AttestationReference != null);
     }
 
     public async ValueTask<ProviderSettlementFacts?> LoadCandidateFactsAsync(
@@ -939,5 +994,29 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
                 ExternalSettlementId,
                 BodySha256,
                 VerifiedAt);
+    }
+
+    private sealed record PersistedVerifiedEvidenceReference(
+        Guid ReceiptId,
+        string Provider,
+        string ProviderEventId,
+        string ExternalSettlementId,
+        string BodySha256,
+        DateTimeOffset VerifiedAt,
+        string AttestationReference)
+    {
+        internal ProviderVerifiedEvidenceReference ToContract()
+        {
+            var evidence = VerifiedExternalPaymentEvidence.FromVerifiedWebhook(
+                Provider,
+                ProviderEventId,
+                ExternalSettlementId,
+                BodySha256,
+                VerifiedAt);
+            return ProviderVerifiedEvidenceReference.Create(
+                ReceiptId,
+                evidence,
+                AttestationReference);
+        }
     }
 }

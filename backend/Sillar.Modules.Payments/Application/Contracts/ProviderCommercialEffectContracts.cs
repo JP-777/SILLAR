@@ -10,12 +10,16 @@ namespace Sillar.Modules.Payments.Application.Contracts;
 internal sealed record ProviderCommercialEffectCandidate(
     Guid InboxEventId,
     PaymentIdempotencyKeys Identity,
-    ProviderSettlementFacts Facts)
+    ProviderSettlementFacts Facts,
+    ProviderAuthorizedOrderCorrelation OrderCorrelation,
+    ProviderVerifiedEvidenceReference VerifiedEvidenceReference)
 {
     internal static ProviderCommercialEffectCandidate From(
         Guid inboxEventId,
         VerifiedExternalPaymentEvidence evidence,
-        ProviderSettlementFacts facts)
+        ProviderSettlementFacts facts,
+        ProviderAuthorizedOrderCorrelation orderCorrelation,
+        ProviderVerifiedEvidenceReference verifiedEvidenceReference)
     {
         if (inboxEventId == Guid.Empty)
         {
@@ -24,6 +28,9 @@ internal sealed record ProviderCommercialEffectCandidate(
 
         ArgumentNullException.ThrowIfNull(evidence);
         ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(orderCorrelation);
+        ArgumentNullException.ThrowIfNull(verifiedEvidenceReference);
+        var identity = PaymentIdempotencyKeys.From(evidence);
         if (ProviderEventIdempotencyKey.From(evidence)
                 != ProviderEventIdempotencyKey.From(facts.Evidence)
             || ExternalSettlementIdempotencyKey.From(evidence)
@@ -37,10 +44,26 @@ internal sealed record ProviderCommercialEffectCandidate(
                 nameof(facts));
         }
 
+        if (orderCorrelation.Identity != identity)
+        {
+            throw new ArgumentException(
+                "La correlación de pedido no corresponde al candidato.",
+                nameof(orderCorrelation));
+        }
+
+        if (!verifiedEvidenceReference.Matches(evidence))
+        {
+            throw new ArgumentException(
+                "La referencia persistida no corresponde a la evidencia.",
+                nameof(verifiedEvidenceReference));
+        }
+
         return new(
             inboxEventId,
-            PaymentIdempotencyKeys.From(evidence),
-            facts);
+            identity,
+            facts,
+            orderCorrelation,
+            verifiedEvidenceReference);
     }
 }
 

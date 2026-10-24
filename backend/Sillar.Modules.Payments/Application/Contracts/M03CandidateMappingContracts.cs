@@ -42,6 +42,19 @@ internal sealed record M03CandidateIdentity(
     string? ExternalSettlementId);
 
 /// <summary>
+/// Proyección pura de la solicitud candidata publicada por M03. No implementa
+/// el puerto ni acredita que M03 haya aceptado o aplicado el efecto.
+/// </summary>
+internal sealed record M03CandidateRequestSnapshot(
+    string Provider,
+    string ProviderEventId,
+    string ExternalSettlementId,
+    Guid OrderId,
+    decimal Amount,
+    string Currency,
+    string VerifiedEvidenceReference);
+
+/// <summary>
 /// Respuesta mínima que la costura futura entregará al mapper puro. No es una
 /// copia del contrato M03 ni habilita su registro productivo.
 /// </summary>

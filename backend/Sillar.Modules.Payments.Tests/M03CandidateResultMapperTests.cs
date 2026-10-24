@@ -239,10 +239,7 @@ public sealed class M03CandidateResultMapperTests
             provider: "Provider-A ",
             eventId: " Event/01#A ",
             settlementId: " Settlement/01#A ");
-        return ProviderCommercialEffectCandidate.From(
-            Guid.CreateVersion7(),
-            evidence,
-            PaymentTestData.Facts(evidence));
+        return PaymentTestData.CommercialCandidate(evidence: evidence);
     }
 
     private static M03CandidateResultSnapshot Snapshot(

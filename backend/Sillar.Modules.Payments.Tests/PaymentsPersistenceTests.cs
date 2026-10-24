@@ -84,6 +84,24 @@ public sealed class PaymentsPersistenceTests
     }
 
     [Fact]
+    public void Referencias_tipadas_se_proyectan_solo_desde_evidencia_autenticada_del_inbox()
+    {
+        using var context = Context();
+        var inboxEventId = Guid.CreateVersion7();
+
+        var sql = EfProviderInboxRepository.QueryVerifiedEvidenceReferences(
+                context,
+                inboxEventId)
+            .ToQueryString();
+
+        Assert.Contains("provider_evidence_receipts", sql, StringComparison.Ordinal);
+        Assert.Contains("inbox_event_id", sql, StringComparison.Ordinal);
+        Assert.Contains("verification_state", sql, StringComparison.Ordinal);
+        Assert.Contains("authenticated", sql, StringComparison.Ordinal);
+        Assert.Contains("attestation_reference", sql, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Identificadores_externos_declaran_colacion_determinista_explicita()
     {
         using var context = Context();

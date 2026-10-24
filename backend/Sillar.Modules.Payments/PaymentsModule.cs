@@ -60,6 +60,12 @@ public sealed class PaymentsModule : IModule
             ProviderSettlementAnalysisService>();
         services.AddScoped<ProviderReceptionOrchestrator>();
         services.AddScoped<ProviderCommercialRecoveryService>();
+        services.AddScoped<ProviderCommercialCandidateSource>();
+        services.AddScoped<IProviderCommercialCandidateSource>(provider =>
+            provider.GetRequiredService<ProviderCommercialCandidateSource>());
+        services.AddScoped<
+            IProviderAuthorizedOrderCorrelationSource,
+            UnavailableProviderAuthorizedOrderCorrelationSource>();
         services.AddScoped<ProviderInboxProcessor>();
         services.AddScoped<EfProviderInboxRepository>();
         services.AddScoped<IProviderReceptionLedger>(provider =>
@@ -69,6 +75,8 @@ public sealed class PaymentsModule : IModule
         services.AddScoped<IProviderSettlementFactRepository>(provider =>
             provider.GetRequiredService<EfProviderInboxRepository>());
         services.AddScoped<IProviderSettlementFactsSource>(provider =>
+            provider.GetRequiredService<EfProviderInboxRepository>());
+        services.AddScoped<IProviderVerifiedEvidenceReferenceSource>(provider =>
             provider.GetRequiredService<EfProviderInboxRepository>());
         services.AddScoped<IProviderReceptionService>(provider =>
             provider.GetRequiredService<ProviderReceptionOrchestrator>());

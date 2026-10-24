@@ -10,7 +10,7 @@ namespace Sillar.Modules.Payments.Application;
 /// </summary>
 internal sealed class ProviderInboxProcessor(
     IProviderInboxRepository repository,
-    IProviderSettlementFactsSource factsSource,
+    IProviderCommercialCandidateSource candidateSource,
     IProviderCommercialEffectPort commercialPort)
     : IProviderInboxProcessingService
 {
@@ -47,23 +47,33 @@ internal sealed class ProviderInboxProcessor(
         }
 
         var claimed = claim.Status!;
-        var facts = await factsSource.LoadCandidateFactsAsync(
+        var preparation = await candidateSource.PrepareAsync(
             claimed.InboxEventId,
             cancellationToken);
-        if (facts is null)
+        if (preparation.Outcome !=
+            ProviderCommercialCandidatePreparationOutcome.Ready)
         {
             return await CompleteWithoutCommercialCallAsync(
                 claimed,
                 leaseToken,
                 attemptedAt,
-                "verified_settlement_facts_missing",
+                preparation.Reason!,
                 cancellationToken);
         }
 
-        var candidate = ProviderCommercialEffectCandidate.From(
-            claimed.InboxEventId,
-            claimed.Evidence,
-            facts);
+        var candidate = preparation.Candidate!;
+        if (candidate.InboxEventId != claimed.InboxEventId
+            || candidate.Identity != PaymentIdempotencyKeys.From(
+                claimed.Evidence))
+        {
+            return await CompleteWithoutCommercialCallAsync(
+                claimed,
+                leaseToken,
+                attemptedAt,
+                "commercial_candidate_identity_mismatch",
+                cancellationToken);
+        }
+
         var result = await commercialPort.TryApplyAsync(
             candidate,
             cancellationToken);

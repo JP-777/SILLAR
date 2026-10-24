@@ -1,3 +1,4 @@
+using Sillar.Modules.Payments.Application.Contracts;
 using Sillar.Modules.Payments.Domain;
 
 namespace Sillar.Modules.Payments.Tests;
@@ -6,6 +7,9 @@ internal static class PaymentTestData
 {
     internal static readonly DateTimeOffset VerifiedAt =
         new(2026, 10, 18, 12, 0, 0, TimeSpan.Zero);
+
+    internal static readonly Guid OrderId =
+        Guid.Parse("018f1f76-6e4d-7f8e-9a10-111213141516");
 
     internal static VerifiedExternalPaymentEvidence Evidence(
         string provider = "provider-a",
@@ -37,4 +41,28 @@ internal static class PaymentTestData
             amount,
             currencyCode,
             VerifiedAt.AddMinutes(1));
+
+    internal static ProviderCommercialEffectCandidate CommercialCandidate(
+        Guid? inboxEventId = null,
+        VerifiedExternalPaymentEvidence? evidence = null,
+        ProviderSettlementFacts? facts = null,
+        Guid? orderId = null,
+        string evidenceReference = "verifier-ref-001")
+    {
+        evidence ??= Evidence();
+        facts ??= Facts(evidence);
+        var identity = PaymentIdempotencyKeys.From(evidence);
+        return ProviderCommercialEffectCandidate.From(
+            inboxEventId ?? Guid.CreateVersion7(),
+            evidence,
+            facts,
+            ProviderAuthorizedOrderCorrelation.Create(
+                orderId ?? OrderId,
+                identity,
+                "authorized-order-correlation-001"),
+            ProviderVerifiedEvidenceReference.Create(
+                Guid.CreateVersion7(),
+                evidence,
+                evidenceReference));
+    }
 }

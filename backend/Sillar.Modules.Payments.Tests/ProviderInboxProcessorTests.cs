@@ -234,7 +234,9 @@ public sealed class ProviderInboxProcessorTests
             ProviderCommercialEffectResult.Applied("must-not-run", false));
         var processor = new ProviderInboxProcessor(
             repository,
-            new StaticFactsSource(null),
+            new StaticCandidateSource(
+                ProviderCommercialCandidatePreparation.DecisionRequired(
+                    "verified_settlement_facts_missing")),
             port);
 
         var result = await processor.ProcessAsync(
@@ -484,8 +486,13 @@ public sealed class ProviderInboxProcessorTests
         ProviderSettlementFacts? facts = null)
         => new(
             repository,
-            new StaticFactsSource(
-                facts ?? PaymentTestData.Facts(repository.Status.Evidence)),
+            new StaticCandidateSource(
+                ProviderCommercialCandidatePreparation.Ready(
+                    PaymentTestData.CommercialCandidate(
+                        inboxEventId: repository.Status.InboxEventId,
+                        evidence: repository.Status.Evidence,
+                        facts: facts ?? PaymentTestData.Facts(
+                            repository.Status.Evidence)))),
             port);
 
     private sealed class MemoryInboxRepository(ProviderInboxStatus status)
@@ -763,13 +770,14 @@ public sealed class ProviderInboxProcessorTests
         }
     }
 
-    private sealed class StaticFactsSource(ProviderSettlementFacts? facts)
-        : IProviderSettlementFactsSource
+    private sealed class StaticCandidateSource(
+        ProviderCommercialCandidatePreparation preparation)
+        : IProviderCommercialCandidateSource
     {
-        public ValueTask<ProviderSettlementFacts?> LoadCandidateFactsAsync(
+        public ValueTask<ProviderCommercialCandidatePreparation> PrepareAsync(
             Guid inboxEventId,
             CancellationToken cancellationToken)
-            => ValueTask.FromResult(facts);
+            => ValueTask.FromResult(preparation);
     }
 
     private sealed class ThrowingPort : IProviderCommercialEffectPort
