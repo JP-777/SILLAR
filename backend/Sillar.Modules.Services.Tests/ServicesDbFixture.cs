@@ -25,6 +25,8 @@ namespace Sillar.Modules.Services.Tests;
 /// </remarks>
 public sealed class ServicesDbFixture
 {
+    private static long ultimoTimestampDeBaseAislada;
+
     public string ConnectionString { get; }
 
     public ServicesDbFixture()
@@ -76,7 +78,7 @@ public sealed class ServicesDbFixture
     /// </remarks>
     public async Task ConBaseDeCicloAisladaAsync(Func<string, Task> cuerpo, CancellationToken ct)
     {
-        var nombre = $"sillar_services_ciclo_{Guid.NewGuid():N}"[..48];
+        var nombre = CrearNombreBaseDeCiclo();
         var admin = new NpgsqlConnectionStringBuilder(ConnectionString)
         {
             Database = "postgres",
@@ -103,6 +105,25 @@ public sealed class ServicesDbFixture
                 admin,
                 $"DROP DATABASE IF EXISTS \"{nombre}\" WITH (FORCE)",
                 CancellationToken.None);
+        }
+    }
+
+    private static string CrearNombreBaseDeCiclo()
+    {
+        var ahora = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        while (true)
+        {
+            var anterior = Volatile.Read(ref ultimoTimestampDeBaseAislada);
+            var timestamp = Math.Max(ahora, anterior + 1);
+
+            if (Interlocked.CompareExchange(ref ultimoTimestampDeBaseAislada, timestamp, anterior) == anterior)
+            {
+                // scripts/verificar.mjs reconoce este formato y solo retira
+                // bases con más de 12 horas; el PID separa procesos y el
+                // timestamp monotónico separa creaciones del mismo proceso.
+                return $"sillar_verify_{timestamp}_{Environment.ProcessId}";
+            }
         }
     }
 
