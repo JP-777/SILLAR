@@ -1,7 +1,7 @@
 import type { OrderIndicatorsView } from './orderIndicators.ts';
 import { buildOrderIndicatorsCsv } from './orderIndicatorsCsv.ts';
 import { verifiedInstallationZone, type InstallationZone } from './installationZone.ts';
-import { INSTALLATION, type ReportZone } from './period.ts';
+import { INSTALLATION, reportZonesFor, type ReportZone } from './period.ts';
 
 /**
  * M10 — punto de ejecución de la exportación CSV, condicionado a la auditoría.
@@ -13,6 +13,8 @@ import { INSTALLATION, type ReportZone } from './period.ts';
  * - sin puerto de auditoría no hay archivo: la exportación queda bloqueada;
  * - sin zona de la instalación verificada tampoco: ni el respaldo histórico de
  *   Lima ni una zona ausente o sin verificar sirven para un archivo nuevo;
+ * - la zona del archivo es la de esa misma instalación verificada, o UTC; no
+ *   la de una lista calculada antes, que podría ser de otra instalación;
  * - con puerto, primero se registra la exportación y solo después se entrega
  *   el archivo; si el registro falla, se niega o responde otra cosa que la
  *   confirmación, tampoco hay archivo (cerrado por defecto);
@@ -99,6 +101,12 @@ export async function prepareOrderIndicatorsExport(
     return {
       kind: 'blocked',
       reason: 'Para exportar, la zona horaria de la instalación tiene que estar verificada, y todavía no lo está.',
+    };
+  }
+  if (!reportZonesFor(installation).includes(request.zone)) {
+    return {
+      kind: 'blocked',
+      reason: 'La zona horaria pedida no es la de la instalación ni UTC, así que no se generó el archivo.',
     };
   }
 

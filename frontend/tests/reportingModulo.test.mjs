@@ -738,3 +738,22 @@ test('52 · sin conexión con CORE o con la zona ausente, nada nuevo que exija z
   assert.equal(zonas.verifiedInstallationZone(INSTALLATION), null);
   assert.equal((await exportarConZona({ zone: 'America/Lima', baseline: respuesta() }, auditoria().port)).kind, 'blocked');
 });
+
+test('53 · la zona del archivo es la de la instalación verificada que autoriza la exportación, o UTC', async () => {
+  // Verificada Bogotá: Lima sigue en la lista calculada al cargar, pero no es de esta instalación.
+  const bogota = zonas.resolveInstallationZone({ kind: 'verified', original: 'America/Bogota', canonical: 'America/Bogota' });
+  for (const zona of ['America/Lima', 'Europe/Madrid', 'america/bogota', '', null]) {
+    const { registros, port } = auditoria();
+    const resultado = await exportarConZona({ zone: zona, baseline: respuesta() }, port, undefined, bogota);
+    assert.equal(resultado.kind, 'blocked', String(zona));
+    assert.match(resultado.reason, /no es la de la instalación ni UTC/);
+    assert.equal('content' in resultado, false);
+    assert.equal(registros.length, 0);
+  }
+  // UTC sí pertenece a la instalación verificada, y lo auditado es esa zona.
+  const { registros, port } = auditoria();
+  const utc = await exportarConZona({ zone: 'UTC', baseline: respuesta() }, port, undefined, bogota);
+  assert.equal(utc.kind, 'ready');
+  assert.equal(registros.length, 1);
+  assert.equal(registros[0].zone, 'UTC');
+});
