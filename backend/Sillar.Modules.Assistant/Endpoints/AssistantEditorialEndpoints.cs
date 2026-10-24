@@ -61,8 +61,9 @@ public static class AssistantEditorialEndpoints
     }
 
     /// <summary>Crea una identidad de artículo en el servidor, nunca desde un parámetro del usuario.</summary>
-    public static async Task<IResult> Create(ITrustedEditorialAdminScope scope,
+    public static Task<IResult> Create(ITrustedEditorialAdminScope scope,
         IAssistantEditorialAdministration service, CancellationToken ct)
+        => ExecuteSafely(async () =>
     {
         if (!TryActor(scope, false, out var actor)) return Results.NotFound();
         var articleId = Guid.NewGuid();
@@ -71,11 +72,12 @@ public static class AssistantEditorialEndpoints
             return Results.Created($"/api/admin/assistant/articles/{articleId}",
                 new AssistantEditorialWriteReply("saved", articleId, null, 0));
         return Failure(result);
-    }
+    }, ct);
 
     /// <summary>Consulta una única instalación desde una identidad previamente autorizada.</summary>
-    public static async Task<IResult> Inspect(Guid articleId, ITrustedEditorialAdminScope scope,
+    public static Task<IResult> Inspect(Guid articleId, ITrustedEditorialAdminScope scope,
         IAssistantEditorialAdministration service, CancellationToken ct)
+        => ExecuteSafely(async () =>
     {
         if (!TryActor(scope, false, out var actor) || articleId == Guid.Empty)
             return Results.NotFound();
@@ -88,12 +90,13 @@ public static class AssistantEditorialEndpoints
             article.Published is { } p ? new AssistantEditorialPublishedReply(
                 p.RevisionId, p.Question, p.Answer, p.Title, p.PublicUri.AbsoluteUri,
                 p.ArticleVersion, p.PublishedAt) : null));
-    }
+    }, ct);
 
     /// <summary>Un borrador se versiona sin revelar escritor, rol o instalación en el body.</summary>
-    public static async Task<IResult> SaveDraft(Guid articleId, AssistantDraftRequest? request,
+    public static Task<IResult> SaveDraft(Guid articleId, AssistantDraftRequest? request,
         ITrustedEditorialAdminScope scope, IAssistantEditorialAdministration service,
         CancellationToken ct)
+        => ExecuteSafely(async () =>
     {
         if (!TryActor(scope, false, out var actor)) return Results.NotFound();
         if (articleId == Guid.Empty || !ValidDraftRequest(request, out var uri)) return BadRequest();
@@ -105,12 +108,13 @@ public static class AssistantEditorialEndpoints
             ? Results.Ok(new AssistantEditorialWriteReply("saved", articleId,
                 revisionId, request.ExpectedVersion + 1))
             : Failure(result);
-    }
+    }, ct);
 
     /// <summary>Publicación solo para admin/super_admin, además del filtro de autorización del host.</summary>
-    public static async Task<IResult> Publish(Guid articleId, AssistantPublicationRequest? request,
+    public static Task<IResult> Publish(Guid articleId, AssistantPublicationRequest? request,
         ITrustedEditorialAdminScope scope, IAssistantEditorialAdministration service,
         CancellationToken ct)
+        => ExecuteSafely(async () =>
     {
         if (!TryActor(scope, true, out var actor)) return Results.NotFound();
         if (articleId == Guid.Empty || !ValidPublicationRequest(request)) return BadRequest();
@@ -120,12 +124,13 @@ public static class AssistantEditorialEndpoints
             ? Results.Ok(new AssistantEditorialWriteReply("published", articleId,
                 request.RevisionId, request.ExpectedVersion + 1))
             : Failure(result);
-    }
+    }, ct);
 
     /// <summary>Retirada solo para admin/super_admin; nunca elimina la revisión histórica.</summary>
-    public static async Task<IResult> Withdraw(Guid articleId, AssistantPublicationRequest? request,
+    public static Task<IResult> Withdraw(Guid articleId, AssistantPublicationRequest? request,
         ITrustedEditorialAdminScope scope, IAssistantEditorialAdministration service,
         CancellationToken ct)
+        => ExecuteSafely(async () =>
     {
         if (!TryActor(scope, true, out var actor)) return Results.NotFound();
         if (articleId == Guid.Empty || !ValidPublicationRequest(request)) return BadRequest();
@@ -135,6 +140,24 @@ public static class AssistantEditorialEndpoints
             ? Results.Ok(new AssistantEditorialWriteReply("withdrawn", articleId,
                 request.RevisionId, request.ExpectedVersion + 1))
             : Failure(result);
+    }, ct);
+
+    // El proveedor puede incluir contenido editorial, preguntas o datos de conexión
+    // en cualquier excepción. No entregarlos a respuestas ni al manejador global.
+    // Un fallo de escritura deja resultado incierto: nunca informar éxito ni reintentar.
+    private static async Task<IResult> ExecuteSafely(Func<Task<IResult>> action, CancellationToken ct)
+    {
+        try { return await action(); }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // Preservar la cancelación sin mensaje, Data ni InnerException del proveedor.
+            throw new OperationCanceledException(ct);
+        }
+        catch
+        {
+            return Results.Problem(title: "No se confirmó la operación editorial.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
     }
 
     private static bool TryActor(ITrustedEditorialAdminScope scope, bool requireAdmin,

@@ -65,7 +65,8 @@ public static class AssistantFaqEndpoints
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            throw;
+            // Conservar cancelación sin propagar preguntas o secretos del proveedor.
+            throw new OperationCanceledException(ct);
         }
         catch
         {
