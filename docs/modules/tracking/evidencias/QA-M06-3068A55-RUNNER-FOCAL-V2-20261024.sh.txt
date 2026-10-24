@@ -16,6 +16,14 @@
 #   5. El directorio de evidencias tiene que ser nuevo: no sobrescribe nada histórico.
 #   6. Sale con el rc de la prueba, no con el de la última orden.
 #
+# Corrección del 24/10/2026, ronda 4:
+#   7. El preflight rechaza la worktree si tiene cambios rastreados o archivos sin seguimiento no
+#      ignorados. Lo comprueba antes de crear $EV y antes de cualquier e2e.
+#   8. Cada evidencia obligatoria se comprueba: m06-ciclo.log, m06-ciclo.rc, la línea
+#      M06_CICLO_RC, git-status.txt, un playwright-report de esta corrida y SHA256SUMS.txt
+#      verificado. Si alguna falla, sale con 70 y M06_FOCAL=EVIDENCIA_INVALIDA, sin RUNNER_FIN.
+#      El rc real de Playwright solo se devuelve si todas están completas.
+#
 # Uso:  bash QA-M06-3068A55-RUNNER-FOCAL-V2-20261024.sh.txt  [WT] [EV]
 set -u
 
@@ -32,7 +40,6 @@ if [[ -e "$EV" ]]; then
   echo "STOP: $EV ya existe; no se sobrescriben evidencias" >&2
   exit 2
 fi
-mkdir -p "$EV"
 cd "$WT" || exit 1
 
 echo "===== PREFLIGHT M06 ====="
@@ -49,6 +56,19 @@ if [[ ! -f e2e/tests/zz-z-m06-ciclo.spec.ts ]]; then
   exit 1
 fi
 
+if ! SUCIO="$(git status --porcelain --untracked-files=normal)"; then
+  echo "STOP: no se pudo leer git status"
+  exit 1
+fi
+if [[ -n "$SUCIO" ]]; then
+  echo "STOP: worktree con cambios o archivos sin seguimiento; el ciclo solo corre sobre un árbol limpio"
+  printf '%s\n' "$SUCIO"
+  exit 1
+fi
+
+mkdir -p -- "$(dirname -- "$EV")" && mkdir -- "$EV" || { echo "STOP: no se pudo crear $EV" >&2; exit 2; }
+date --iso-8601=seconds > "$EV/m06-inicio.txt" || { echo "STOP: no se pudo escribir m06-inicio.txt" >&2; exit 2; }
+
 echo "===== M06 CICLO FÍSICO ====="
 
 (
@@ -60,22 +80,46 @@ echo "===== M06 CICLO FÍSICO ====="
     --retries=0
 ) </dev/null 2>&1 | tee "$EV/m06-ciclo.log"
 
-RC=${PIPESTATUS[0]}
-echo "$RC" > "$EV/m06-ciclo.rc"
-echo "M06_CICLO_RC=$RC" | tee -a "$EV/m06-ciclo.log"
+ESTADOS=("${PIPESTATUS[@]}")
+RC=${ESTADOS[0]}
+TEE_RC=${ESTADOS[1]:-1}
 
-git status --short > "$EV/git-status.txt"
+falla_evidencia() {
+  echo "EVIDENCIAS_INCOMPLETAS: $1" >&2
+  echo "RC_PLAYWRIGHT=$RC (no vale como resultado sin evidencias completas)" >&2
+  echo "EVIDENCIAS=$EV"
+  echo "M06_FOCAL=EVIDENCIA_INVALIDA"
+  exit 70
+}
 
-if [[ -d "$WT/e2e/playwright-report" ]]; then
-  cp -a "$WT/e2e/playwright-report" "$EV/"
-fi
+[[ "$TEE_RC" -eq 0 ]] || falla_evidencia "tee no pudo escribir m06-ciclo.log (rc=$TEE_RC)"
+echo "$RC" > "$EV/m06-ciclo.rc" || falla_evidencia "no se pudo escribir m06-ciclo.rc"
+echo "M06_CICLO_RC=$RC" >> "$EV/m06-ciclo.log" || falla_evidencia "no se pudo anotar M06_CICLO_RC en m06-ciclo.log"
+echo "M06_CICLO_RC=$RC"
+[[ "$(cat "$EV/m06-ciclo.rc")" == "$RC" ]] || falla_evidencia "m06-ciclo.rc no contiene el rc"
+[[ "$(tail -n 1 "$EV/m06-ciclo.log")" == "M06_CICLO_RC=$RC" ]] || falla_evidencia "m06-ciclo.log no termina en M06_CICLO_RC"
+
+git status --short > "$EV/git-status.txt" || falla_evidencia "no se pudo escribir git-status.txt"
+
+# El reporte está en .gitignore: el preflight no lo ve, y uno viejo pasaría por bueno.
+INFORME="$WT/e2e/playwright-report"
+[[ -f "$INFORME/index.html" ]] || falla_evidencia "Playwright no dejó playwright-report/index.html"
+[[ -n "$(find "$INFORME/index.html" -newer "$EV/m06-inicio.txt")" ]] || falla_evidencia "playwright-report es anterior a esta corrida"
+cp -a "$INFORME" "$EV/" || falla_evidencia "no se pudo copiar playwright-report"
 
 (
+  set -o pipefail
   cd "$EV" &&
   find . -type f ! -name SHA256SUMS.txt \
     -print0 | sort -z | xargs -0 -r sha256sum \
     > SHA256SUMS.txt
-)
+) || falla_evidencia "no se pudo generar SHA256SUMS.txt"
+
+for f in m06-inicio.txt m06-ciclo.log m06-ciclo.rc git-status.txt playwright-report/index.html; do
+  awk -v f="./$f" '$2 == f { ok = 1 } END { exit !ok }' "$EV/SHA256SUMS.txt" \
+    || falla_evidencia "SHA256SUMS.txt no incluye $f"
+done
+( cd "$EV" && sha256sum --check --quiet --strict SHA256SUMS.txt ) || falla_evidencia "SHA256SUMS.txt no verifica"
 
 echo "EVIDENCIAS=$EV"
 
