@@ -11,6 +11,7 @@ public sealed class LocalEditorialKnowledgeStore : ILocalKnowledgeAuthority
 {
     private readonly object _gate = new();
     private readonly Dictionary<Guid, KnowledgeArticle> _articles = new();
+    private readonly HashSet<Guid> _revisionIds = new();
     private readonly Dictionary<Guid, HashSet<string>> _hosts = new();
 
     /// <summary>Exige dominios públicos permitidos por instalación, sin comodines ni valor implícito.</summary>
@@ -59,7 +60,10 @@ public sealed class LocalEditorialKnowledgeStore : ILocalKnowledgeAuthority
                 return EditorialResult.Forbidden;
             if (draft is null || !IsAllowedPublicUri(article.InstallationId, draft.PublicUri))
                 return EditorialResult.Invalid;
-            return article.SaveDraft(actor, draft, expectedVersion);
+            if (_revisionIds.Contains(draft.RevisionId)) return EditorialResult.Conflict;
+            var result = article.SaveDraft(actor, draft, expectedVersion);
+            if (result == EditorialResult.Saved) _revisionIds.Add(draft.RevisionId);
+            return result;
         }
     }
 

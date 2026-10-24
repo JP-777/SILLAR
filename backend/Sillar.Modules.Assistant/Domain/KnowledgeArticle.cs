@@ -6,6 +6,7 @@ namespace Sillar.Modules.Assistant.Domain;
 /// </summary>
 public sealed class KnowledgeArticle
 {
+    private readonly HashSet<Guid> _revisionIds = new();
     public Guid Id { get; }
     public Guid InstallationId { get; }
     public string WriterNode { get; }
@@ -27,6 +28,7 @@ public sealed class KnowledgeArticle
         if (!CanEdit(actor)) return EditorialResult.Forbidden;
         if (expectedVersion != Version) return EditorialResult.Conflict;
         if (draft is null || !ValidDraft(draft)) return EditorialResult.Invalid;
+        if (!_revisionIds.Add(draft.RevisionId)) return EditorialResult.Conflict;
         Draft = draft;
         Version++;
         return EditorialResult.Saved;
