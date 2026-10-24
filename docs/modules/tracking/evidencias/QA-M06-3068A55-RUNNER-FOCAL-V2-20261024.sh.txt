@@ -41,9 +41,9 @@ if [[ ! -f "${BASH_SOURCE[0]:-}" ]]; then
   exit 2
 fi
 
-WT="${1:-$HOME/SILLAR_M05B_CICLO_ISOLATED_3068a558}"
+WT="${1:-$HOME/SILLAR_M06_QA_DF2C947}"
 EV="${2:-$HOME/SILLAR_M06_EVIDENCIAS_$(date +%Y%m%d_%H%M%S)}"
-BASE="3068a5583f01aca9800ce100b7a6777b664b85ec"
+BASE="df2c94798a15c9c3354c90c0be86620c13599ed8"  # candidato M05b+D1, autorizado por Chat 3 (FASE B)
 
 if [[ -e "$EV" ]]; then
   echo "STOP: $EV ya existe; no se sobrescriben evidencias" >&2
