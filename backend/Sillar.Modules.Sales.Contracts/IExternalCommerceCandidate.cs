@@ -130,6 +130,12 @@ public static class CandidateSources
     /// una vez haya replicación esta base contendrá filas nacidas en otros nodos.
     /// </summary>
     public const string CurrentDatabase = "sales.current_database";
+
+    /// <summary>
+    /// Solo las reglas puras de M03. <b>No se leyó nada:</b> la respuesta se decidió
+    /// por la forma del dato, antes de ir a buscar.
+    /// </summary>
+    public const string RatifiedRules = "sales.ratified_rules";
 }
 
 /// <summary>
@@ -255,3 +261,102 @@ public enum ExternalSettlementReason
 public sealed record ExternalSettlementCandidateResult(
     ExternalSettlementOutcome Outcome, ExternalSettlementReason Reason,
     string? DurableEffectReference = null);
+
+/// <summary>
+/// Candidato de FASE A: correlacionar una liquidación externa con el pedido comercial.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>Existe porque la correlación auténtica existe, y es una sola:</b>
+/// <c>sales.orders.order_code</c>, único por <c>uq_orders_order_code</c>, guardado
+/// como <c>text</c> sin colación —por tanto comparado byte a byte— y compuesto por el
+/// formato ratificado de tres piezas. Resolver un código a un pedido no inventa nada:
+/// lee la única clave visible que M03 ya garantiza.
+/// </para>
+/// <para>
+/// <b>Lo que NO existe:</b> ninguna correlación entre la identidad de una liquidación
+/// de proveedor y un pedido. M03 no tiene columna de proveedor en ninguna tabla, y lo
+/// único parecido —la referencia de un pago manual— es texto libre, anulable y sin
+/// unicidad: <b>es lo que el cliente dictó, no un hecho verificado</b>. Deducir de ahí
+/// a qué pedido pertenece un cobro sería adivinar con cara de dato.
+/// </para>
+/// <para>
+/// <b>Está separado de la liquidación a propósito.</b> Correlacionar es identidad;
+/// liquidar es un hecho de pago. Fundirlos haría que resolver un código pareciera
+/// autorizar un cobro, y son dos preguntas con dos respuestas.
+/// </para>
+/// </remarks>
+public interface IOrderCorrelationCandidate
+{
+    /// <summary>
+    /// Resuelve a qué pedido se refiere una declaración, o dice por qué no puede.
+    /// </summary>
+    /// <remarks>
+    /// <b>No lanza por un código desconocido</b> —es una respuesta— pero <b>sí propaga
+    /// un fallo real</b> de la base o una cancelación. Tampoco juzga si el pedido puede
+    /// cobrarse: eso es <see cref="IPayableOrderCandidate"/>, y un pedido dado de baja
+    /// se sigue identificando.
+    /// </remarks>
+    Task<OrderCorrelationCandidate> ResolveAsync(
+        OrderCorrelationRequest request,
+        CancellationToken cancellationToken);
+}
+
+/// <summary>
+/// Lo que quien propone dice saber del pedido.
+/// </summary>
+/// <param name="DeclaredOrderCode">
+/// El código visible del pedido, tal como lo tiene quien llama. Es la vía auténtica.
+/// </param>
+/// <param name="DeclaredOrderId">
+/// El identificador, si quien llama ya lo obtuvo antes de M03. Si vienen los dos y no
+/// concuerdan, <b>M03 no elige uno</b>.
+/// </param>
+public sealed record OrderCorrelationRequest(string? DeclaredOrderCode, Guid? DeclaredOrderId)
+{
+    /// <summary>
+    /// La referencia que el proveedor o el cliente escribió, sin verificar.
+    /// </summary>
+    /// <remarks>
+    /// <b>Está aquí para ser rechazada, no para ser usada.</b> Tiene un sitio propio
+    /// precisamente para que nadie la pase como <see cref="DeclaredOrderCode"/> y la
+    /// convierta en autoritativa por el camino. M03 no correlaciona por este campo
+    /// mientras no exista una fuente que lo verifique.
+    /// </remarks>
+    public string? UnverifiedProviderReference { get; init; }
+}
+
+/// <summary>Qué puede responder M03 sobre a qué pedido se refiere una declaración.</summary>
+public enum OrderCorrelationOutcome
+{
+    /// <summary>
+    /// No se declaró nada autoritativo. <b>Es el hueco, no un error:</b> quien llama
+    /// solo trae una referencia sin verificar.
+    /// </summary>
+    NotAuthoritative,
+
+    /// <summary>La declaración no tiene la forma del código ratificado. No se leyó la base.</summary>
+    MalformedReference,
+
+    /// <summary>La forma es válida y no hay tal pedido en esta base.</summary>
+    UnknownReference,
+
+    /// <summary>
+    /// Vinieron código e identificador y señalan a pedidos distintos. <b>M03 no
+    /// desempata</b>: elegir uno en silencio es atribuir un cobro por sorteo.
+    /// </summary>
+    DivergentDeclaration,
+
+    /// <summary>Un pedido, identificado sin ambigüedad por la clave única.</summary>
+    Resolved,
+}
+
+/// <summary>
+/// A qué pedido se refiere, cuando se puede decir.
+/// </summary>
+/// <param name="Outcome">Qué pudo responder M03.</param>
+/// <param name="OrderId">El pedido, solo si <see cref="OrderCorrelationOutcome.Resolved"/>.</param>
+/// <param name="OrderCode">Su código visible, solo si se resolvió.</param>
+/// <param name="Source">De dónde salió la respuesta. Ver <see cref="CandidateSources"/>.</param>
+public sealed record OrderCorrelationCandidate(
+    OrderCorrelationOutcome Outcome, Guid? OrderId, string? OrderCode, string Source);

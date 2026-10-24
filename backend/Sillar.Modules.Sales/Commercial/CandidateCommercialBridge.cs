@@ -173,6 +173,55 @@ internal sealed class CandidateExternalSettlementApplicator(
 }
 
 /// <summary>
+/// Resuelve a qué pedido se refiere una declaración externa, leyendo la única
+/// correlación auténtica que M03 tiene.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>Aquí solo hay entrada y salida.</b> Qué merece una consulta y cómo se juzga lo
+/// que vuelve está en <see cref="OrderCorrelationPolicy"/>, que no toca la base.
+/// </para>
+/// <para>
+/// <b>La comparación la hace la base, y es exacta</b> porque <c>order_code</c> se
+/// declaró sin colación. No se usa <c>ILIKE</c> ni se normaliza en SQL: plegar
+/// mayúsculas ampliaría en silencio el conjunto de pedidos alcanzables por una
+/// declaración ajena.
+/// </para>
+/// </remarks>
+internal sealed class CandidateOrderCorrelationReader(SalesDbContext database) : IOrderCorrelationCandidate
+{
+    /// <inheritdoc />
+    public async Task<OrderCorrelationCandidate> ResolveAsync(
+        OrderCorrelationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var plan = OrderCorrelationPolicy.Planear(request);
+
+        if (!plan.DebeBuscar)
+        {
+            // Ni una consulta: la respuesta ya estaba decidida por la forma del dato.
+            return OrderCorrelationPolicy.Juzgar(plan, null);
+        }
+
+        // Proyección a la identidad y nada más. Lo que no se trae no puede influir.
+        var consulta = database.Orders.AsNoTracking();
+
+        consulta = plan.CanonicalOrderCode is { } codigo
+            ? consulta.Where(o => o.OrderCode == codigo)
+            : consulta.Where(o => o.OrderId == plan.DeclaredOrderId!.Value);
+
+        // SingleOrDefault y no First: order_code es único por uq_orders_order_code y
+        // order_id es la clave primaria. Si alguna vez vuelven dos filas, eso es una
+        // avería del esquema y debe doler, no quedar disimulada en la primera.
+        var fila = await consulta
+            .Select(o => new OrderIdentityRecord(o.OrderId, o.OrderCode))
+            .SingleOrDefaultAsync(cancellationToken);
+
+        return OrderCorrelationPolicy.Juzgar(plan, fila);
+    }
+}
+
+/// <summary>
 /// Registro opcional. <b>Deliberadamente no se llama desde <c>SalesModule</c>.</b>
 /// </summary>
 /// <remarks>
@@ -181,11 +230,12 @@ internal sealed class CandidateExternalSettlementApplicator(
 /// </remarks>
 public static class CandidateSalesCommercialRegistration
 {
-    /// <summary>Registra los dos candidatos y la memoria volátil de reintentos.</summary>
+    /// <summary>Registra los tres candidatos y la memoria volátil de reintentos.</summary>
     public static IServiceCollection AddCandidateSalesCommerce(this IServiceCollection services)
     {
         services.AddScoped<IPayableOrderCandidate, CandidatePayableOrderReader>();
         services.AddScoped<IExternalSettlementCandidate, CandidateExternalSettlementApplicator>();
+        services.AddScoped<IOrderCorrelationCandidate, CandidateOrderCorrelationReader>();
 
         // Singleton porque una memoria de reintentos por petición no reconocería
         // ninguno. Sigue siendo volátil, y eso no la convierte en durable.
