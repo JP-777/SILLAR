@@ -12,6 +12,14 @@ public sealed class FaqService(ILocalKnowledgeAuthority source)
 
     public FaqResult Answer(Guid installationId, string? question, DateTimeOffset now)
     {
+        // La fuente y sus colecciones son una frontera de confianza: también
+        // pueden fallar al enumerar o devolver evidencia incompleta.
+        try { return AnswerVerified(installationId, question, now); }
+        catch { return FaqResult.Abstain(FaqOutcome.Unavailable); }
+    }
+
+    private FaqResult AnswerVerified(Guid installationId, string? question, DateTimeOffset now)
+    {
         if (installationId == Guid.Empty || string.IsNullOrWhiteSpace(question) || question.Length > 500)
             return FaqResult.Abstain(FaqOutcome.Insufficient);
 
@@ -72,7 +80,7 @@ public sealed class FaqService(ILocalKnowledgeAuthority source)
             (read.ExpiresAt is { } until && until <= now)) return false;
         var p = read.Publication;
         return p.InstallationId == installationId && p.ArticleId == articleId &&
-            p.RevisionId != Guid.Empty && p.ArticleVersion > 0 &&
+            p.RevisionId != Guid.Empty && p.ArticleVersion > 0 && p.PublishedAt <= now &&
             !string.IsNullOrWhiteSpace(p.Title) && !string.IsNullOrWhiteSpace(p.Question) &&
             !string.IsNullOrWhiteSpace(p.Answer) &&
             p.PublicUri is { IsAbsoluteUri: true, Scheme: "https" } &&
