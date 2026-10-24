@@ -22,7 +22,8 @@ public enum QuotaOperation
     Cancelled,
     AlreadyCancelled,
     Conflict,
-    Replay
+    Replay,
+    Uncertain
 }
 
 public sealed record QuotaReservation(QuotaOperation Outcome, Guid? ReservationId, AssistantMode? Mode);
@@ -54,7 +55,7 @@ public sealed class LocalAssistantQuotaStore
         public Dictionary<string, Guid> IdempotencyKeys { get; } = new(StringComparer.Ordinal);
     }
 
-    private enum LeasePhase { Reserved, Dispatched, Completed, Cancelled }
+    private enum LeasePhase { Reserved, Dispatched, Completed, Cancelled, Uncertain }
 
     private sealed class Lease(long units, AssistantMode mode)
     {
@@ -184,6 +185,7 @@ public sealed class LocalAssistantQuotaStore
                     LeasePhase.Reserved => QuotaOperation.Replay,
                     LeasePhase.Dispatched => QuotaOperation.AlreadyDispatched,
                     LeasePhase.Completed => QuotaOperation.AlreadyCompleted,
+                    LeasePhase.Uncertain => QuotaOperation.Uncertain,
                     _ => QuotaOperation.Conflict
                 };
                 return new(outcome, existingId, lease.Mode);
@@ -217,9 +219,29 @@ public sealed class LocalAssistantQuotaStore
             if (!Find(installationId, reservationId, out _, out var lease))
                 return QuotaOperation.NotFound;
             if (lease!.Phase == LeasePhase.Dispatched) return QuotaOperation.AlreadyDispatched;
+            if (lease.Phase == LeasePhase.Uncertain) return QuotaOperation.Uncertain;
             if (lease.Phase != LeasePhase.Reserved) return QuotaOperation.Conflict;
             lease.Phase = LeasePhase.Dispatched;
             return QuotaOperation.Dispatched;
+        }
+    }
+
+    /// <summary>
+    /// Marca un despacho cuyo resultado no puede verificarse. Retiene cuota y
+    /// concurrencia, bloquea reenvío, cancelación y liquidación ordinaria. Igual
+    /// que el candidato durable, requiere un protocolo posterior de conciliación;
+    /// ni el timeout ni un reinicio de este almacén volátil acreditan coste cero.
+    /// </summary>
+    public QuotaOperation MarkUncertain(Guid installationId, Guid reservationId)
+    {
+        lock (_gate)
+        {
+            if (!Find(installationId, reservationId, out _, out var lease))
+                return QuotaOperation.NotFound;
+            if (lease!.Phase == LeasePhase.Uncertain) return QuotaOperation.Uncertain;
+            if (lease.Phase != LeasePhase.Dispatched) return QuotaOperation.Conflict;
+            lease.Phase = LeasePhase.Uncertain;
+            return QuotaOperation.Uncertain;
         }
     }
 
