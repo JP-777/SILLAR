@@ -55,19 +55,22 @@ public sealed class FaqService(ILocalKnowledgeAuthority source)
 
         if (selected is null) return FaqResult.Abstain(FaqOutcome.Insufficient);
 
-        // El índice y la primera lectura nunca autorizan citar. La última lectura es autoritativa.
-        KnowledgeRead last;
-        try { last = source.ReadCurrent(installationId, selected.ArticleId); }
-        catch { return FaqResult.Abstain(FaqOutcome.Unavailable); }
-        if (!Eligible(last, installationId, selected.ArticleId, now) ||
-            last.Publication != selected)
-            return FaqResult.Abstain(FaqOutcome.Unavailable);
         try
         {
             if (!source.IsAllowedPublicUri(installationId, selected.PublicUri))
                 return FaqResult.Abstain(FaqOutcome.Unavailable);
         }
         catch { return FaqResult.Abstain(FaqOutcome.Unavailable); }
+
+        // La política URL también consulta a la fuente: puede observar o provocar
+        // cambios editoriales. Revalidar DESPUÉS y no invocar más callbacks antes
+        // de construir la respuesta. No garantiza revocación posterior a esta lectura.
+        KnowledgeRead last;
+        try { last = source.ReadCurrent(installationId, selected.ArticleId); }
+        catch { return FaqResult.Abstain(FaqOutcome.Unavailable); }
+        if (!Eligible(last, installationId, selected.ArticleId, now) ||
+            last.Publication != selected)
+            return FaqResult.Abstain(FaqOutcome.Unavailable);
 
         return new FaqResult(FaqOutcome.Answered, selected.Answer, selected.ArticleId,
             selected.RevisionId, selected.Title, selected.PublicUri.AbsoluteUri);
