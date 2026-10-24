@@ -147,33 +147,90 @@ public sealed class ServicesPostgresTests(ServicesDbFixture fixture)
     // --- Desinstalación ---------------------------------------------------------
 
     [Fact]
-    public async Task El_99_drop_quita_services_dos_veces_sin_tocar_core_y_la_migracion_reinstala()
-    {
-        await fixture.PrepararAsync(Ct);
-        await fixture.CrearMedioAsync(Ct);
-        var medios = await fixture.EscalarAsync("SELECT count(*) FROM core.media_assets", Ct);
-        var tablasCore = await fixture.EscalarAsync("SELECT count(*) FROM information_schema.tables WHERE table_schema = 'core'", Ct);
-        var script = await File.ReadAllTextAsync(RutaDelDrop(), Ct);
+    public Task El_99_drop_rechaza_service_orders_y_tracking_presentes_aunque_la_metadata_no_los_registre()
+        => fixture.ConBaseDeCicloAisladaAsync(async cadena =>
+        {
+            await ServicesDbFixture.InstalarCadenaDeServiciosAsync(cadena, Ct);
+            var script = await File.ReadAllTextAsync(RutaDelDrop("services"), Ct);
 
-        await fixture.EjecutarAsync(script, Ct);
-        await fixture.EjecutarAsync(script, Ct); // idempotente
+            // Las migraciones crean los schemas reales, pero no registran el
+            // catálogo de módulos. La lista fija debe proteger también esta
+            // restauración parcial: no depende de FK, filas ni metadata completa.
+            Assert.Equal("0", await ServicesDbFixture.EscalarEnAsync(cadena, """
+                SELECT count(*) FROM core.modules
+                 WHERE code IN ('services', 'service_orders', 'tracking')
+                """, Ct));
+            Assert.Equal("0", await ServicesDbFixture.EscalarEnAsync(cadena,
+                "SELECT count(*) FROM service_orders.service_orders", Ct));
+            Assert.Equal("0", await ServicesDbFixture.EscalarEnAsync(cadena,
+                "SELECT count(*) FROM tracking.order_tracking", Ct));
 
-        Assert.Equal("0", await fixture.EscalarAsync("SELECT count(*) FROM pg_namespace WHERE nspname = 'services'", Ct));
-        Assert.Equal(medios, await fixture.EscalarAsync("SELECT count(*) FROM core.media_assets", Ct));
-        Assert.Equal(tablasCore, await fixture.EscalarAsync("SELECT count(*) FROM information_schema.tables WHERE table_schema = 'core'", Ct));
+            var error = await Assert.ThrowsAsync<PostgresException>(
+                () => ServicesDbFixture.EjecutarEnAsync(cadena, script, Ct));
 
-        await fixture.ReinstalarAsync(Ct);
-        Assert.Equal("1", await fixture.EscalarAsync("SELECT count(*) FROM pg_namespace WHERE nspname = 'services'", Ct));
-    }
+            Assert.Equal(PostgresErrorCodes.DependentObjectsStillExist, error.SqlState);
+            Assert.Contains("service_orders", error.MessageText);
+            Assert.Contains("tracking", error.MessageText);
+            Assert.Equal("3", await ServicesDbFixture.EscalarEnAsync(cadena, """
+                SELECT count(*) FROM pg_namespace
+                 WHERE nspname IN ('services', 'service_orders', 'tracking')
+                """, Ct));
+            Assert.Equal("1", await ServicesDbFixture.EscalarEnAsync(cadena, """
+                SELECT count(*) FROM information_schema.tables
+                 WHERE table_schema = 'services' AND table_name = 'service_entries'
+                """, Ct));
+        }, Ct);
 
-    private static string RutaDelDrop()
+    [Fact]
+    public Task Tras_retirar_legitimamente_M06_y_M05b_el_99_drop_quita_services_sin_tocar_core_y_reinstala()
+        => fixture.ConBaseDeCicloAisladaAsync(async cadena =>
+        {
+            await ServicesDbFixture.InstalarCadenaDeServiciosAsync(cadena, Ct);
+            await ServicesDbFixture.CrearMedioEnAsync(cadena, Ct);
+            var medios = await ServicesDbFixture.EscalarEnAsync(
+                cadena, "SELECT count(*) FROM core.media_assets", Ct);
+            var tablasCore = await ServicesDbFixture.EscalarEnAsync(
+                cadena, "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'core'", Ct);
+
+            // Dependientes retirados por sus operaciones autoritativas, en
+            // orden inverso. No se vacían tablas ni se borran schemas a mano.
+            await ServicesDbFixture.EjecutarEnAsync(
+                cadena, await File.ReadAllTextAsync(RutaDelDrop("tracking"), Ct), Ct);
+            await ServicesDbFixture.EjecutarEnAsync(
+                cadena, await File.ReadAllTextAsync(RutaDelDrop("service_orders"), Ct), Ct);
+            Assert.Equal("0", await ServicesDbFixture.EscalarEnAsync(cadena, """
+                SELECT count(*) FROM pg_namespace
+                 WHERE nspname IN ('service_orders', 'tracking')
+                """, Ct));
+            Assert.Equal("1", await ServicesDbFixture.EscalarEnAsync(cadena, """
+                SELECT count(*) FROM pg_namespace WHERE nspname = 'services'
+                """, Ct));
+
+            var script = await File.ReadAllTextAsync(RutaDelDrop("services"), Ct);
+            await ServicesDbFixture.EjecutarEnAsync(cadena, script, Ct);
+            await ServicesDbFixture.EjecutarEnAsync(cadena, script, Ct); // idempotente
+
+            Assert.Equal("0", await ServicesDbFixture.EscalarEnAsync(cadena,
+                "SELECT count(*) FROM pg_namespace WHERE nspname = 'services'", Ct));
+            Assert.Equal(medios, await ServicesDbFixture.EscalarEnAsync(cadena,
+                "SELECT count(*) FROM core.media_assets", Ct));
+            Assert.Equal(tablasCore, await ServicesDbFixture.EscalarEnAsync(cadena,
+                "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'core'", Ct));
+
+            await ServicesDbFixture.InstalarServicesAsync(cadena, Ct);
+            Assert.Equal("1", await ServicesDbFixture.EscalarEnAsync(cadena,
+                "SELECT count(*) FROM pg_namespace WHERE nspname = 'services'", Ct));
+        }, Ct);
+
+    private static string RutaDelDrop(string modulo)
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
         {
-            var candidato = Path.Combine(dir.FullName, "database", "modules", "services", "99_drop.sql");
+            var candidato = Path.Combine(dir.FullName, "database", "modules", modulo, "99_drop.sql");
             if (File.Exists(candidato)) return candidato;
         }
 
-        throw new FileNotFoundException("No se encontró database/modules/services/99_drop.sql subiendo desde el binario de pruebas.");
+        throw new FileNotFoundException(
+            $"No se encontró database/modules/{modulo}/99_drop.sql subiendo desde el binario de pruebas.");
     }
 }
