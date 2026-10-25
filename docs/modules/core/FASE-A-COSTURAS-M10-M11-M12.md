@@ -68,3 +68,34 @@ el sello de procedencia para la evidencia.
 
 No hay SPEC de M10 en `docs/modules/`. El origen de los datos de cada informe —qué eventos o qué
 lecturas— depende de él.
+
+---
+
+## Fase B — M10 (25/10/2026)
+
+Decisiones de JP: **America/Lima como zona inicial, sin considerarla verificada**, y **auditoría
+obligatoria de exportaciones, sin almacenar el contenido exportado**.
+
+| Costura | Contrato | Productor (opcional) |
+|---|---|---|
+| Zona horaria de la instalación | `IInstallationTimeZoneResolver` | `AddCandidateInstallationTimeZone()` |
+| Auditoría obligatoria de exportaciones | `IExportAudit` | `AddCandidateExportAudit()` |
+
+- **Zona:** sin valor guardado → America/Lima (`ApprovedInitial`). Con un valor que el runtime
+  resuelve → ese (`ConfiguredSetting`). Con un valor inválido → **sin zona**: no se cae a la inicial.
+  Siempre `Unverified`: no hay autoridad de verificación.
+- **Exportación:** se registra **antes** de entregar, y sin registro no se entrega. Metadatos
+  mínimos: autor (de `ICurrentAdmin`), `module_code`, tipo de exportación en `entity_type`,
+  identificador uuid v7 generado por CORE en `entity_id`, y un resumen compuesto por CORE con formato
+  y filas. Ningún campo de texto libre.
+
+### Bloqueos restantes
+
+- **Migración `CoreAuditExport` sin aplicar.** Hasta que se aplique, el CHECK `ck_audit_log_action`
+  rechaza `export` y toda exportación se rechaza como `AuditUnavailable`. La autorización física
+  vigente no cubre CORE.
+- **SPEC de CORE.** `docs/modules/core/SPEC.md:255` no lista `export`; falta la enmienda por
+  entrega, como se hizo con `email_send`.
+- **Clave de la zona** (`installation.timezone_iana`): nombre, quién la escribe y visibilidad siguen
+  pendientes. La zona inicial no necesita fila ni semilla.
+- **Registro en el host:** los productores son opcionales; integrarlos es la puerta de JP.
