@@ -7,10 +7,11 @@ import { FailureAlert } from '../../../shared/ui/patterns';
 import { OrderDistribution } from '../components/OrderDistribution';
 import { OrderPeriodComparison } from '../components/OrderPeriodComparison';
 import { assessFreshness, describeAge, STALE_AFTER_MINUTES } from '../services/freshness';
-import { asInstant, INSTALLATION, isReportZone, quickPeriodRange, REPORT_ZONES, showCount, showDate, zoneLabel, type QuickPeriod, type ReportZone } from '../services/period';
+import { adoptInstallationZone, asInstant, INSTALLATION, isReportZone, quickPeriodRange, REPORT_ZONES, showCount, showDate, zoneLabel, type QuickPeriod, type ReportZone } from '../services/period';
 import { decodeReportLink, encodeReportLink, type ReportLinkRead } from '../services/reportLinks';
 import {
   describeReportFailure,
+  loadInstallationZoneObservation,
   loadOrderIndicators,
   type OrderIndicatorsView,
 } from '../services/reporting';
@@ -29,7 +30,16 @@ export function ReportsPage() {
   // (otro enlace, el menú, atrás/adelante) desmonte la vista: su limpieza D4
   // anula toda respuesta en vuelo y nada consultado antes sigue en pantalla.
   const { search } = useLocation();
-  // Zona publicada pero inválida: ni formulario, ni enlace, ni CSV.
+  const zoneRead = useInstallationZoneFromCore();
+  // Hasta leer la zona de CORE no se forma ningún período ni se lee el enlace.
+  if (!zoneRead) {
+    return (
+      <PageContainer title="Reportes de pedidos" description="Pedidos creados en el intervalo elegido, según su estado actual. Incluye pedidos dados de baja.">
+        <p className="rp-note" role="status">Leyendo la zona horaria de la instalación…</p>
+      </PageContainer>
+    );
+  }
+  // Zona publicada pero inválida, o una lectura que falló: ni formulario, ni enlace, ni CSV.
   if (INSTALLATION.zone === null) {
     return (
       <PageContainer title="Reportes de pedidos" description="Pedidos creados en el intervalo elegido, según su estado actual. Incluye pedidos dados de baja.">
@@ -38,6 +48,25 @@ export function ReportsPage() {
     );
   }
   return <ReportsView key={search} link={decodeReportLink(search)} installationZone={INSTALLATION.zone} />;
+}
+
+/**
+ * Lee la zona de CORE y la adopta antes de que la vista se monte. La lectura
+ * no rechaza: si falla, devuelve una observación inválida y la pantalla queda
+ * bloqueada. Una respuesta que llega tras desmontar se descarta.
+ */
+function useInstallationZoneFromCore(): boolean {
+  const [read, setRead] = useState(false);
+  useEffect(() => {
+    let current = true;
+    void loadInstallationZoneObservation().then((observation) => {
+      if (!current) return;
+      adoptInstallationZone(observation);
+      setRead(true);
+    });
+    return () => { current = false; };
+  }, []);
+  return read;
 }
 
 type ShareState =

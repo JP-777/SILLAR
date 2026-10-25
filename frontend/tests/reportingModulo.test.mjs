@@ -826,3 +826,43 @@ test('56 · el puerto de auditoría por HTTP solo confirma con recorded y el ide
   assert.match(servicio, /'\/admin\/reporting\/installation-zone'/);
   assert.match(servicio, /'\/admin\/reporting\/orders\/export-audit'/);
 });
+
+test('57 · la pantalla adopta la zona de CORE antes de montarse: inicial sin verificar, o bloqueo si la lectura falla', async () => {
+  const periodo = await import('../src/modules/reporting/services/period.ts');
+  const { buildOrderIndicatorsCsv: csvVivo } = await import('../src/modules/reporting/services/orderIndicatorsCsv.ts');
+  const ahora = new Date('2026-10-24T12:00:00Z');
+  try {
+    // Inicial aprobada: Lima, rotulada sin verificar; consulta sí, exportación no.
+    periodo.adoptInstallationZone(costura.installationZoneFromResponse({ kind: 'approved_initial', original: null, canonical: null, runtimeId: null, zone: 'America/Lima' }));
+    assert.equal(periodo.INSTALLATION.origin, 'approved_initial');
+    assert.deepEqual([...periodo.REPORT_ZONES], ['America/Lima', 'UTC']);
+    assert.equal(periodo.zoneLabel('America/Lima', ahora), 'Zona inicial de la instalación, sin verificar · America/Lima (UTC−05:00)');
+    assert.equal(decodeReportLink('?rp_v=1&rp_z=America%2FLima&rp_a_i=2026-10-01T00:00&rp_a_f=2026-10-02T00:00').kind, 'valid');
+    const { registros, port } = auditoria();
+    assert.equal((await exportarConZona({ zone: 'America/Lima', baseline: respuesta() }, port)).kind, 'blocked');
+    assert.equal(registros.length, 0);
+
+    // Lectura fallida: sin zona, ni siquiera UTC; nada forma un período, un enlace ni un CSV.
+    periodo.adoptInstallationZone(await costura.readInstallationZone(async () => { throw new Error('red caída'); }));
+    assert.equal(periodo.INSTALLATION.zone, null);
+    assert.deepEqual([...periodo.REPORT_ZONES], []);
+    assert.throws(() => periodo.asInstant('2026-10-17T10:00', 'America/Lima'), RangeError);
+    assert.equal(decodeReportLink('?rp_v=1&rp_z=America%2FLima&rp_a_i=2026-10-01T00:00&rp_a_f=2026-10-02T00:00').kind, 'invalid');
+    assert.equal(csvVivo({ zone: 'UTC', baseline: respuesta() }).kind, 'unavailable');
+
+    // Verificada (hoy CORE no la produce): la lista adoptada es la que ven la exportación y el CSV.
+    periodo.adoptInstallationZone({ kind: 'verified', original: 'America/Bogota', canonical: 'America/Bogota' });
+    assert.equal(periodo.isReportZone('America/Lima'), false);
+    assert.equal((await exportarConZona({ zone: 'America/Bogota', baseline: respuesta() }, auditoria().port)).kind, 'ready');
+    // Sin puerto, que es lo que hay hoy, tampoco con la verificada.
+    assert.equal((await exportarConZona({ zone: 'America/Bogota', baseline: respuesta() })).kind, 'blocked');
+  } finally {
+    periodo.adoptInstallationZone(null);
+  }
+  assert.equal(periodo.INSTALLATION.origin, 'historical_fallback');
+
+  // La página lee y adopta antes de montar la vista, y descarta una respuesta tardía.
+  const pagina = codigo(fuente('src/modules/reporting/pages/ReportsPage.tsx'));
+  assert.match(pagina, /const zoneRead = useInstallationZoneFromCore\(\);\s*if \(!zoneRead\) \{[\s\S]*?role="status"[\s\S]*?\}\s*if \(INSTALLATION\.zone === null\)/);
+  assert.match(pagina, /loadInstallationZoneObservation\(\)\.then\(\(observation\) => \{\s*if \(!current\) return;\s*adoptInstallationZone\(observation\);/);
+});

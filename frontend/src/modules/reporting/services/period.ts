@@ -21,9 +21,9 @@ export type ReportZone = string;
  * desplazamiento fijo escrito aquí. La zona de la instalación sale de
  * `installationZone.ts`, no de la URL ni del navegador.
  */
-export const INSTALLATION = resolveInstallationZone();
+export let INSTALLATION: InstallationZone = resolveInstallationZone();
 /** null cuando la instalación publica una zona inválida: no hay reportes. */
-export const INSTALLATION_ZONE: ReportZone | null = INSTALLATION.zone;
+export let INSTALLATION_ZONE: ReportZone | null = INSTALLATION.zone;
 
 /**
  * Sin zona acreditada la lista queda vacía, también sin UTC: un período en UTC
@@ -35,7 +35,20 @@ export function reportZonesFor(installation: InstallationZone): readonly ReportZ
   return installation.zone === null ? [] : [...new Set([installation.zone, 'UTC'])];
 }
 
-export const REPORT_ZONES: readonly ReportZone[] = reportZonesFor(INSTALLATION);
+export let REPORT_ZONES: readonly ReportZone[] = reportZonesFor(INSTALLATION);
+
+/**
+ * Adopta la zona que publica CORE. La pantalla la llama con lo que devuelve
+ * `loadInstallationZoneObservation()` antes de montar la vista; hasta entonces
+ * no forma ningún período. Los tres valores de arriba son enlaces vivos: todo
+ * lo que los lee (períodos, enlaces, comparación, CSV, exportación) ve el nuevo.
+ */
+export function adoptInstallationZone(observation: unknown): InstallationZone {
+  INSTALLATION = resolveInstallationZone(observation);
+  INSTALLATION_ZONE = INSTALLATION.zone;
+  REPORT_ZONES = reportZonesFor(INSTALLATION);
+  return INSTALLATION;
+}
 
 export function isReportZone(value: unknown): value is ReportZone {
   return typeof value === 'string' && REPORT_ZONES.includes(value);
@@ -48,7 +61,7 @@ export function zoneLabel(zone: ReportZone, now: Date): string {
     .formatToParts(now).find((part) => part.type === 'timeZoneName')?.value.replace('GMT', 'UTC').replace('-', '−') ?? '';
   const origin = zone === INSTALLATION_ZONE
     ? INSTALLATION.origin === 'installation' ? 'Zona de la instalación'
-      : INSTALLATION.origin === 'approved_initial' ? 'Zona inicial de la instalación' : 'Zona del negocio'
+      : INSTALLATION.origin === 'approved_initial' ? 'Zona inicial de la instalación, sin verificar' : 'Zona del negocio'
     : 'Zona';
   return `${origin} · ${zone} (${offset === 'UTC' ? 'UTC+00:00' : offset})`;
 }
