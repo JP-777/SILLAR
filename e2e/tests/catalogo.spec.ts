@@ -210,7 +210,11 @@ test('El foco no se pierde y Escape cierra el panel sin guardar', async ({ page 
 test('Con M01 desactivado no queda entrada de menú, ni ruta viva, ni hueco en el inicio', async ({
   page,
 }) => {
-  test.setTimeout(180_000);
+  // Hay cuatro reinicios reales del host: B2B se desactiva y reactiva, y M01
+  // también. Cada fase conserva su límite específico de 90 s; los 60 s
+  // restantes cubren login, navegaciones y aserciones sin alargar ninguna
+  // guarda individual que deba fallar antes.
+  test.setTimeout(4 * 90_000 + 60_000);
 
   await loginAsE2eAdmin(page);
 
