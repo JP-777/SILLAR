@@ -905,3 +905,17 @@ test('58 · con el puerto HTTP real conectado solo en pruebas, ni 409, ni 503, n
   }
   assert.match(codigo(fuente('src/modules/reporting/services/reportExport.ts')), /exportAuditPort[^=;]*= null;/);
 });
+
+test('59 · «recorded» solo cuenta con un identificador uuid v7 de CORE; con otro no hay archivo', async () => {
+  const lima = zonas.resolveInstallationZone({ kind: 'verified', original: 'America/Lima', canonical: 'America/Lima' });
+  const exportar = (exportId) => exportarConZona({ zone: 'UTC', baseline: respuesta() },
+    costura.exportAuditPortOver(async () => ({ decision: 'recorded', exportId })), 1_000, lima);
+  for (const noVerificable of ['x', ' ', '00000000-0000-0000-0000-000000000000', '0199a6f0-0000-4000-8000-000000000001',
+    '0199A6F0-0000-7000-8000-000000000001', '0199a6f0-0000-7000-c000-000000000001', '{0199a6f0-0000-7000-8000-000000000001}',
+    '0199a6f0-0000-7000-8000-000000000001\n', 42]) {
+    const resultado = await exportar(noVerificable);
+    assert.equal(resultado.kind, 'audit_failed', JSON.stringify(noVerificable));
+    assert.equal('content' in resultado, false);
+  }
+  assert.equal((await exportar('0199a6f0-0000-7000-8000-000000000001')).kind, 'ready');
+});

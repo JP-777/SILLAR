@@ -137,10 +137,13 @@ public static class CoreSeamEndpoints
             new ExportAuditRequest(ReportsModule.ModuleCode, OrderIndicatorsExportKind, CsvFormat, body.DataRows),
             cancellationToken);
 
-        if (result is { IsRecorded: true, ExportId: { } exportId })
+        // Recorded solo cuenta con el identificador que promete CORE: uuid v7. Sin
+        // él no hay registro verificable, y un registro dudoso no es un registro.
+        if (result is { IsRecorded: true, ExportId: { Version: 7 } exportId })
         {
             return Results.Ok(new ExportAuditDecisionView("recorded", exportId));
         }
+        if (result.IsRecorded) return Unavailable();
         // Sin autor o con metadatos que CORE no admite: CORE se niega a registrarla.
         // Base caída o acción todavía no admitida por el CHECK: no está disponible.
         return result.Failure is ExportAuditFailure.ActorMissing or ExportAuditFailure.MetadataInvalid

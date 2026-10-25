@@ -121,6 +121,21 @@ public sealed class CoreSeamEndpointsTests
         Assert.Equal(new ExportAuditRequest("reporting", "order_indicators", "csv", 11), Assert.Single(auditoria.Pedidos));
     }
 
+    public static TheoryData<string> IdentificadoresNoVerificables =>
+        ["00000000-0000-0000-0000-000000000000", "0199a6f0-0000-4000-8000-000000000001"];
+
+    [Theory]
+    [MemberData(nameof(IdentificadoresNoVerificables))]
+    public async Task Un_registro_sin_identificador_uuid_v7_de_CORE_no_cuenta_como_recorded(string identificador)
+    {
+        var auditoria = new Auditoria(ExportAuditResult.Recorded(Guid.Parse(identificador)));
+
+        var (codigo, cuerpo) = await Llamar(Aplicacion(Zona.Verificada("America/Bogota"), auditoria), "POST", RutaAuditoria, new { zone = "UTC", dataRows = 11 });
+
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, codigo);
+        Assert.False(cuerpo.TryGetProperty("decision", out _));
+    }
+
     [Fact]
     public async Task Si_CORE_no_puede_escribir_la_auditoria_responde_503_y_no_recorded()
     {

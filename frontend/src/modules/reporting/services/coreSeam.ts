@@ -34,9 +34,12 @@ export interface ExportAuditCall {
   readonly dataRows: number;
 }
 
+/** Identificador de exportación de CORE: uuid v7, tal como lo escribe .NET. */
+const EXPORT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
 /**
  * Puerto de auditoría sobre `POST /admin/reporting/orders/export-audit`.
- * `recorded` solo con la confirmación y el identificador de CORE; `denied`
+ * `recorded` solo con la confirmación y un identificador uuid v7 de CORE; `denied`
  * cuando CORE se niega. Cualquier otra respuesta o un error del servidor
  * (zona sin verificar, auditoría no disponible) rechaza: no hay archivo.
  */
@@ -46,7 +49,7 @@ export function exportAuditPortOver(post: (call: ExportAuditCall) => Promise<unk
       const answer = await post({ zone: entry.zone, dataRows: entry.dataRows });
       if (typeof answer === 'object' && answer !== null) {
         const { decision, exportId } = answer as { decision?: unknown; exportId?: unknown };
-        if (decision === 'recorded' && typeof exportId === 'string' && exportId !== '') return 'recorded';
+        if (decision === 'recorded' && typeof exportId === 'string' && EXPORT_ID.test(exportId)) return 'recorded';
         if (decision === 'denied') return 'denied';
       }
       throw new Error('La auditoría respondió algo que no es una confirmación.');
