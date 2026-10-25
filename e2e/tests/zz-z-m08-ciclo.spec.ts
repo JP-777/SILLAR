@@ -8,10 +8,12 @@
 import { randomUUID } from 'node:crypto';
 import type { APIRequestContext, Page } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
-import { expect, test } from '../fixtures/base.js';
+import { expect, test } from '../fixtures/ciclo.js';
 import { cambiarModulo, capacidadesActivas } from '../fixtures/grafoDeModulos.js';
 import { psql } from '../setup/docker.js';
 import { migrate, seed } from '../setup/migrate.js';
+
+test.use({ aislamientoDeNavegador: import.meta.url });
 
 const PASSWORD = 'Q7!vZ2#pL9@xR4';
 const PORTAL_ROOT = '/mi-portal';

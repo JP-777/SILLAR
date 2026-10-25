@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import type { APIRequestContext, Page } from '@playwright/test';
-import { expect, test } from '../fixtures/base.js';
+import { expect, test } from '../fixtures/ciclo.js';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
 import { capacidadesActivas, cambiarModulo } from '../fixtures/grafoDeModulos.js';
+
+test.use({ aislamientoDeNavegador: import.meta.url });
 
 const PASSWORD = 'Nebula!Quartz-5827-Rivers';
 const SAME_ORIGIN = { 'Sec-Fetch-Site': 'same-origin' };

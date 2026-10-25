@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { APIRequestContext, Page } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
-import { expect, test } from '../fixtures/base.js';
+import { expect, test } from '../fixtures/ciclo.js';
 import {
   cambiarModulo,
   capacidadesActivas,
@@ -23,6 +23,8 @@ import {
 import { psql, psqlArchivo } from '../setup/docker.js';
 import { API_URL, ROOT } from '../setup/env.js';
 import { migrate, seed } from '../setup/migrate.js';
+
+test.use({ aislamientoDeNavegador: import.meta.url });
 
 const RUTA_PANEL = '/admin/seguimiento';
 const NOTA = `Seguimiento ciclo M06 ${Date.now()}`;
