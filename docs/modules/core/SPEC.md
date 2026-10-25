@@ -2,7 +2,7 @@
 
 - **Código:** `core`
 - **Schema:** `core`
-- **Versión:** 1.1.0 — nodo de las cuentas, autor de medios sin FK y `ICurrentAdmin` ampliado (`ENTREGA-05-NODO-Y-AUTORIA.md`)
+- **Versión:** 1.2.0 — zona horaria inicial y auditoría obligatoria de exportaciones (`ENTREGA-06-ZONA-Y-EXPORTACION.md`)
 - **Estado:** Aprobado
 - **Fase:** 0 y 1 — es lo primero que se construye
 
@@ -252,7 +252,7 @@ regla 4: `origin_node`, `row_version`, `created_at`, `updated_at`.
 | summary | varchar(300) | Sí | | Descripción legible |
 | ip_address | varchar(45) | Sí | | |
 
-**Acciones:** `create`, `update`, `delete`, `activate`, `deactivate`, `login`, `login_failed`, `logout`, `setup`.
+**Acciones:** `create`, `update`, `delete`, `activate`, `deactivate`, `login`, `login_failed`, `logout`, `setup`, `export`.
 **Índices:** `idx_audit_log_occurred_at`, `idx_audit_log_admin_user_id`, `idx_audit_log_module_code`.
 
 El correo se guarda como snapshot por la misma razón que el pedido guarda el nombre del producto: un registro de auditoría que pierde la identidad de quien actuó no sirve de nada.
@@ -433,6 +433,8 @@ Base vacía o instalación sin completar: el API solo expone `/api/setup*` y el 
 13. Al desinstalar un módulo, sus archivos **no se borran**: se marcan como huérfanos.
 14. Toda acción administrativa que modifica datos se registra en auditoría.
 15. Los registros de auditoría **no se editan ni se borran** desde el API.
+16. Toda exportación de datos se registra en auditoría con la acción `export` **antes** de entregarse; sin registro no se entrega. El registro **no guarda el contenido exportado**.
+17. La zona horaria inicial de la instalación es **America/Lima**. No se considera verificada: la verificación autoritativa de zonas queda pendiente.
 
 ---
 
