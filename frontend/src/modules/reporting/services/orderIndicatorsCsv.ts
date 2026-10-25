@@ -1,5 +1,5 @@
 import { orderStates, type OrderIndicatorsView } from './orderIndicators.ts';
-import { isReportZone, type ReportZone } from './period.ts';
+import { REPORT_ZONES, type ReportZone } from './period.ts';
 import { assessReportComparison, type ReportComparisonSnapshot } from './reportComparisonGate.ts';
 import { InconsistentIndicatorsError, verifyOrderIndicators } from './verifyOrderIndicators.ts';
 
@@ -129,8 +129,16 @@ function cohortRows(name: string, view: OrderIndicatorsView, zone: ReportZone): 
     .map((measure) => row([name, start, end, zone, observed, SOURCE_SALES, measure.label, measure.value as number]));
 }
 
-export function buildOrderIndicatorsCsv(input: OrderIndicatorsCsvInput): OrderIndicatorsCsv {
-  if (!isReportZone(input.zone)) {
+/**
+ * `zones` son las de la instalación que autoriza el archivo. Por defecto, las
+ * calculadas al cargar; la exportación pasa las de su instalación para que la
+ * zona que llegue de CORE después no choque con una lista vieja.
+ */
+export function buildOrderIndicatorsCsv(
+  input: OrderIndicatorsCsvInput,
+  zones: readonly ReportZone[] = REPORT_ZONES,
+): OrderIndicatorsCsv {
+  if (typeof input.zone !== 'string' || !zones.includes(input.zone)) {
     return { kind: 'unavailable', reason: 'Zona horaria no admitida.' };
   }
   const baseline = verified(input.baseline);

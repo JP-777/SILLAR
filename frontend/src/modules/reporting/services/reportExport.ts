@@ -103,14 +103,15 @@ export async function prepareOrderIndicatorsExport(
       reason: 'Para exportar, la zona horaria de la instalación tiene que estar verificada, y todavía no lo está.',
     };
   }
-  if (!reportZonesFor(installation).includes(request.zone)) {
+  const zones = reportZonesFor(installation);
+  if (!zones.includes(request.zone)) {
     return {
       kind: 'blocked',
       reason: 'La zona horaria pedida no es la de la instalación ni UTC, así que no se generó el archivo.',
     };
   }
 
-  const csv = buildOrderIndicatorsCsv(request);
+  const csv = buildOrderIndicatorsCsv(request, zones);
   if (csv.kind !== 'ready') return csv;
 
   const dataRows = csv.content.split('\r\n').filter((line) => line !== '').length - 1;

@@ -757,3 +757,20 @@ test('53 · la zona del archivo es la de la instalación verificada que autoriza
   assert.equal(registros.length, 1);
   assert.equal(registros[0].zone, 'UTC');
 });
+
+test('54 · con una zona verificada que no es la calculada al cargar, el archivo sale en esa zona y no en Lima', async () => {
+  const bogota = zonas.resolveInstallationZone({ kind: 'verified', original: 'America/Bogota', canonical: 'America/Bogota' });
+  // El generador por su cuenta sigue cerrado: Bogotá no está en la lista calculada al cargar.
+  assert.equal(buildOrderIndicatorsCsv({ zone: 'America/Bogota', baseline: respuesta() }).kind, 'unavailable');
+  assert.equal(buildOrderIndicatorsCsv({ zone: 'America/Lima', baseline: respuesta() }, ['America/Bogota', 'UTC']).kind, 'unavailable');
+  const { registros, port } = auditoria();
+  const resultado = await exportarConZona({ zone: 'America/Bogota', baseline: respuesta() }, port, undefined, bogota);
+  assert.equal(resultado.kind, 'ready');
+  const filas = resultado.content.replace(/^﻿/, '').split('\r\n').filter(Boolean).slice(1);
+  assert.ok(filas.length > 0);
+  for (const fila of filas) assert.equal(fila.split(',')[3], 'America/Bogota');
+  assert.equal(registros.length, 1);
+  assert.equal(registros[0].zone, 'America/Bogota');
+  // Sin puerto de auditoría, ni con la zona verificada sale archivo.
+  assert.equal((await exportarConZona({ zone: 'America/Bogota', baseline: respuesta() }, null, undefined, bogota)).kind, 'blocked');
+});
