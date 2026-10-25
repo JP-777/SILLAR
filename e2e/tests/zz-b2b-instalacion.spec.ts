@@ -1,9 +1,11 @@
 import type { Page } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
-import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
+import { duringExpectedOutage, expect, test } from '../fixtures/ciclo.js';
 import { psql, psqlArchivo } from '../setup/docker.js';
 import { FK_CRUZADAS_DE_B2B, fkCruzadasDeB2b } from '../fixtures/grafoDeModulos.js';
 import { migrate, seed } from '../setup/migrate.js';
+
+test.use({ aislamientoDeNavegador: import.meta.url });
 
 /**
  * **Instalar, desinstalar y reinstalar M07 — los dos niveles a la vez.**

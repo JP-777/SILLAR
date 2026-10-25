@@ -26,7 +26,7 @@
 import path from 'node:path';
 import type { APIRequestContext, Page, TestInfo } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
-import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
+import { duringExpectedOutage, expect, test } from '../fixtures/ciclo.js';
 import { psql, psqlArchivo } from '../setup/docker.js';
 import { CONNECTION_STRING, ROOT } from '../setup/env.js';
 import { run } from '../setup/shell.js';
@@ -36,6 +36,8 @@ import {
   cambiarModulo as cambiarModuloPorCodigo,
   fkCruzadasDeB2b,
 } from '../fixtures/grafoDeModulos.js';
+
+test.use({ aislamientoDeNavegador: import.meta.url });
 
 const sello = Date.now();
 const producto = `Producto ciclo M04 ${sello}`;
