@@ -129,7 +129,11 @@ public sealed class PaymentsModuleTests
             descriptor => descriptor.ServiceType ==
                 typeof(IProviderEvidenceVerifier)
                 || descriptor.ServiceType ==
-                    typeof(IProviderCommercialEffectPort));
+                    typeof(IProviderCommercialEffectPort)
+                || descriptor.ServiceType ==
+                    typeof(IProviderAuthenticatedOrderDeclarationSource)
+                || descriptor.ServiceType ==
+                    typeof(IM03OrderCorrelationCandidatePort));
         Assert.Contains(
             services,
             descriptor => descriptor.ServiceType ==

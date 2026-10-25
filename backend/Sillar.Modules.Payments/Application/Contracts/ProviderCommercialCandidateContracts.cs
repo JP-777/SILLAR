@@ -11,16 +11,19 @@ internal sealed record ProviderAuthorizedOrderCorrelation
     private ProviderAuthorizedOrderCorrelation(
         Guid orderId,
         PaymentIdempotencyKeys identity,
-        string authorityReference)
+        string authorityReference,
+        string? orderCode)
     {
         OrderId = orderId;
         Identity = identity;
         AuthorityReference = authorityReference;
+        OrderCode = orderCode;
     }
 
     internal Guid OrderId { get; }
     internal PaymentIdempotencyKeys Identity { get; }
     internal string AuthorityReference { get; }
+    internal string? OrderCode { get; }
 
     internal static ProviderAuthorizedOrderCorrelation Create(
         Guid orderId,
@@ -42,7 +45,28 @@ internal sealed record ProviderAuthorizedOrderCorrelation
                 nameof(authorityReference));
         }
 
-        return new(orderId, identity, authorityReference);
+        return new(orderId, identity, authorityReference, null);
+    }
+
+    internal static ProviderAuthorizedOrderCorrelation CreateResolvedOrder(
+        Guid orderId,
+        string? orderCode,
+        PaymentIdempotencyKeys identity,
+        string? authoritySource)
+    {
+        if (string.IsNullOrWhiteSpace(orderCode))
+        {
+            throw new ArgumentException(
+                "Una correlación resuelta exige código de pedido.",
+                nameof(orderCode));
+        }
+
+        var correlation = Create(orderId, identity, authoritySource);
+        return new(
+            correlation.OrderId,
+            correlation.Identity,
+            correlation.AuthorityReference,
+            orderCode);
     }
 }
 
