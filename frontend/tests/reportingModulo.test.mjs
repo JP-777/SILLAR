@@ -919,3 +919,39 @@ test('59 · «recorded» solo cuenta con un identificador uuid v7 de CORE; con o
   }
   assert.equal((await exportar('0199a6f0-0000-7000-8000-000000000001')).kind, 'ready');
 });
+
+test('60 · si la zona de la instalación cambia mientras la auditoría responde, no se entrega el archivo', async () => {
+  const periodo = await import('../src/modules/reporting/services/period.ts');
+  const ID = '0199a6f0-0000-7000-8000-000000000001';
+  /** Puerto que confirma cuando lo dice la prueba, como una respuesta HTTP tardía. */
+  const tardio = () => {
+    let confirmar;
+    const respuestaServidor = new Promise((resolver) => { confirmar = resolver; });
+    return { confirmar, port: costura.exportAuditPortOver(() => respuestaServidor) };
+  };
+  try {
+    for (const [nombre, cambiar] of [
+      ['lectura fallida', async () => periodo.adoptInstallationZone(await costura.readInstallationZone(async () => { throw new Error('red caída'); }))],
+      ['otra zona verificada', async () => periodo.adoptInstallationZone({ kind: 'verified', original: 'America/Lima', canonical: 'America/Lima' })],
+      ['zona inicial sin verificar', async () => periodo.adoptInstallationZone({ kind: 'approved_initial', zone: 'America/Bogota' })],
+    ]) {
+      periodo.adoptInstallationZone({ kind: 'verified', original: 'America/Bogota', canonical: 'America/Bogota' });
+      const { confirmar, port } = tardio();
+      // Sin instalación explícita: la que autoriza es la vigente al pedir el archivo.
+      const pendiente = exportarConZona({ zone: 'America/Bogota', baseline: respuesta() }, port, 5_000);
+      await cambiar();
+      confirmar({ decision: 'recorded', exportId: ID });
+      const resultado = await pendiente;
+      assert.equal(resultado.kind, 'blocked', nombre);
+      assert.equal('content' in resultado, false, nombre);
+    }
+    // Control: sin cambio de contexto, la misma respuesta tardía sí entrega.
+    periodo.adoptInstallationZone({ kind: 'verified', original: 'America/Bogota', canonical: 'America/Bogota' });
+    const { confirmar, port } = tardio();
+    const pendiente = exportarConZona({ zone: 'America/Bogota', baseline: respuesta() }, port, 5_000);
+    confirmar({ decision: 'recorded', exportId: ID });
+    assert.equal((await pendiente).kind, 'ready');
+  } finally {
+    periodo.adoptInstallationZone(null);
+  }
+});

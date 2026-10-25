@@ -21,7 +21,9 @@ import { INSTALLATION, reportZonesFor, type ReportZone } from './period.ts';
  * - lo que se audita es el hecho, nunca el contenido: informe, los dos
  *   períodos que van en el archivo, zona y cuántas filas. Sin datos personales;
  * - una auditoría que no contesta a tiempo es un fallo: no hay archivo. Si el
- *   registro llega tarde queda un registro sin archivo, nunca al revés.
+ *   registro llega tarde queda un registro sin archivo, nunca al revés;
+ * - si la pantalla adopta otra zona mientras la auditoría responde, tampoco:
+ *   el contexto que autorizó ya no es el vigente.
  *
  * Esta barrera vive en el navegador, que ya tiene los datos: sirve para que la
  * pantalla no entregue nada sin confirmación, pero no es la garantía. La
@@ -91,6 +93,9 @@ export async function prepareOrderIndicatorsExport(
   timeoutMs: number = EXPORT_AUDIT_TIMEOUT_MS,
   installation: InstallationZone = INSTALLATION,
 ): Promise<OrderIndicatorsExport> {
+  // Si autoriza la instalación vigente, tiene que seguir siéndolo al entregar:
+  // la pantalla puede adoptar otra zona mientras la auditoría responde.
+  const authorizedByCurrent = installation === INSTALLATION;
   if (audit === null) {
     return {
       kind: 'blocked',
@@ -149,6 +154,12 @@ export async function prepareOrderIndicatorsExport(
     return {
       kind: 'audit_failed',
       reason: 'No se pudo registrar la exportación en la auditoría, así que no se generó el archivo. Vuelve a intentarlo.',
+    };
+  }
+  if (authorizedByCurrent && installation !== INSTALLATION) {
+    return {
+      kind: 'blocked',
+      reason: 'La zona horaria de la instalación cambió mientras se registraba la exportación, así que no se entrega el archivo. Vuelve a intentarlo.',
     };
   }
   return csv;
