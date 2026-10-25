@@ -47,7 +47,8 @@ export function zoneLabel(zone: ReportZone, now: Date): string {
   const offset = new Intl.DateTimeFormat('en-US', { timeZone: zone, timeZoneName: 'longOffset' })
     .formatToParts(now).find((part) => part.type === 'timeZoneName')?.value.replace('GMT', 'UTC').replace('-', '−') ?? '';
   const origin = zone === INSTALLATION_ZONE
-    ? INSTALLATION.origin === 'installation' ? 'Zona de la instalación' : 'Zona del negocio'
+    ? INSTALLATION.origin === 'installation' ? 'Zona de la instalación'
+      : INSTALLATION.origin === 'approved_initial' ? 'Zona inicial de la instalación' : 'Zona del negocio'
     : 'Zona';
   return `${origin} · ${zone} (${offset === 'UTC' ? 'UTC+00:00' : offset})`;
 }

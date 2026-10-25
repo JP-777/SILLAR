@@ -23,14 +23,17 @@ public sealed class OrderIndicatorsEndpointTests
     private const string Fin = "2026-10-08T00:00:00-05:00";
 
     [Fact]
-    public void El_modulo_expone_una_sola_ruta_y_exige_el_rol_admin()
+    public void El_modulo_expone_sus_tres_rutas_y_todas_exigen_el_rol_admin()
     {
         var rutas = Endpoints(Aplicacion(lector: null));
 
-        var ruta = Assert.Single(rutas);
-        Assert.Equal(Ruta, ruta.RoutePattern.RawText);
-        Assert.Equal(["GET"], ruta.Metadata.GetMetadata<HttpMethodMetadata>()!.HttpMethods);
-        Assert.Equal(["admin"], ruta.Metadata.GetOrderedMetadata<IAuthorizeData>().Select(a => a.Policy));
+        Assert.Equal(
+            [("GET", Ruta), ("GET", "/api/admin/reporting/installation-zone"), ("POST", "/api/admin/reporting/orders/export-audit")],
+            rutas.Select(r => (Assert.Single(r.Metadata.GetMetadata<HttpMethodMetadata>()!.HttpMethods), r.RoutePattern.RawText)).ToArray());
+        foreach (var ruta in rutas)
+        {
+            Assert.Equal(["admin"], ruta.Metadata.GetOrderedMetadata<IAuthorizeData>().Select(a => a.Policy));
+        }
     }
 
     [Fact]
@@ -116,13 +119,13 @@ public sealed class OrderIndicatorsEndpointTests
     }
 
     /// <summary>
-    /// D-M10-05: la exportación se audita con una acción propia de CORE, y esa
-    /// acción no existe (el CHECK de <c>core.audit_log</c> sale de
-    /// <see cref="Sillar.Core.Contracts.AuditAction.All"/>). Hasta entonces
-    /// M10 no escribe auditoría: ninguna exportación con una acción prestada.
+    /// D-M10-05: la exportación se audita con la acción propia de CORE, y eso
+    /// solo lo hace <see cref="Sillar.Core.Contracts.IExportAudit"/>. M10 nunca
+    /// escribe en la auditoría directamente: ninguna exportación con una acción
+    /// prestada ni con un resumen compuesto aquí.
     /// </summary>
     [Fact]
-    public void Reportes_no_escribe_auditoria_mientras_CORE_no_tenga_accion_de_exportacion()
+    public void Reportes_no_escribe_en_la_auditoria_directamente_solo_por_la_auditoria_de_exportaciones()
     {
         const BindingFlags todo = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance
             | BindingFlags.Static | BindingFlags.DeclaredOnly;
@@ -154,7 +157,7 @@ public sealed class OrderIndicatorsEndpointTests
     private static async Task<(int Codigo, JsonElement Cuerpo)> Consultar(
         WebApplication app, string inicio, string fin, CancellationToken abortada = default)
     {
-        var ruta = Assert.Single(Endpoints(app));
+        var ruta = Endpoints(app).Single(r => r.RoutePattern.RawText == Ruta);
         await using var scope = app.Services.CreateAsyncScope();
         var contexto = new DefaultHttpContext { RequestServices = scope.ServiceProvider, RequestAborted = abortada };
         contexto.Request.Method = "GET";

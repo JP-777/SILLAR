@@ -774,3 +774,55 @@ test('54 · con una zona verificada que no es la calculada al cargar, el archivo
   // Sin puerto de auditoría, ni con la zona verificada sale archivo.
   assert.equal((await exportarConZona({ zone: 'America/Bogota', baseline: respuesta() }, null, undefined, bogota)).kind, 'blocked');
 });
+
+const costura = await import('../src/modules/reporting/services/coreSeam.ts');
+
+test('55 · la zona inicial aprobada de CORE sirve para consultar, pero no habilita la exportación', async () => {
+  // «Sin conexión» es el mismo null de hoy; una lectura que falla bloquea, no supone Lima.
+  assert.equal(costura.installationZoneFromResponse({ kind: 'unconnected', original: null }), null);
+  const fallida = zonas.resolveInstallationZone(await costura.readInstallationZone(async () => { throw new Error('503'); }));
+  assert.equal(fallida.origin, 'unavailable');
+  assert.equal(fallida.zone, null);
+  // La respuesta del servidor tal cual: inicial aprobada, con los campos de los demás estados nulos.
+  const inicial = zonas.resolveInstallationZone(costura.installationZoneFromResponse(
+    { kind: 'approved_initial', original: null, canonical: null, runtimeId: null, zone: 'America/Lima' }));
+  assert.deepEqual(inicial, { zone: 'America/Lima', origin: 'approved_initial' });
+  assert.deepEqual([...reportZonesFor(inicial)], ['America/Lima', 'UTC']);
+  assert.equal(zonas.verifiedInstallationZone(inicial), null);
+  const { registros, port } = auditoria();
+  const resultado = await exportarConZona({ zone: 'America/Lima', baseline: respuesta() }, port, undefined, inicial);
+  assert.equal(resultado.kind, 'blocked');
+  assert.equal(registros.length, 0);
+  // Mal escrita, desconocida o sin texto: la inicial bloquea como cualquier otra.
+  for (const zone of ['america/lima', 'Mars/Olympus_Mons', '-05:00', '', null]) {
+    assert.equal(zonas.resolveInstallationZone({ kind: 'approved_initial', zone }).zone, null, String(zone));
+  }
+});
+
+test('56 · el puerto de auditoría por HTTP solo confirma con recorded y el identificador de CORE', async () => {
+  const llamadas = [];
+  const puerto = (respuesta) => costura.exportAuditPortOver(async (call) => { llamadas.push(call); return respuesta(); });
+  const bogota = zonas.resolveInstallationZone({ kind: 'verified', original: 'America/Bogota', canonical: 'America/Bogota' });
+  const exportar = (respuestaServidor) => exportarConZona({ zone: 'UTC', baseline: respuesta() }, puerto(respuestaServidor), 1_000, bogota);
+
+  const listo = await exportar(() => ({ decision: 'recorded', exportId: '0199a6f0-0000-7000-8000-000000000001' }));
+  assert.equal(listo.kind, 'ready');
+  // A CORE solo viajan la zona y las filas: ni períodos, ni nombre de archivo, ni contenido.
+  assert.deepEqual(llamadas.at(-1), { zone: 'UTC', dataRows: 11 });
+  assert.equal((await exportar(() => ({ decision: 'denied', exportId: null }))).kind, 'audit_denied');
+  const casiConfirmaciones = [
+    () => ({ decision: 'recorded' }), () => ({ decision: 'recorded', exportId: '' }), () => ({ decision: 'Recorded', exportId: 'x' }),
+    () => 'recorded', () => null, () => { throw new Error('409 zona sin verificar'); }, () => { throw new Error('503 auditoría'); },
+  ];
+  for (const casi of casiConfirmaciones) {
+    const resultado = await exportar(casi);
+    assert.equal(resultado.kind, 'audit_failed', String(casi));
+    assert.equal('content' in resultado, false);
+  }
+  // Los adaptadores existen, pero los puntos de conexión siguen sin conectar.
+  assert.equal(exportAuditPort, null);
+  assert.equal(zonas.installationZoneObservation, null);
+  const servicio = codigo(fuente('src/modules/reporting/services/reporting.ts'));
+  assert.match(servicio, /'\/admin\/reporting\/installation-zone'/);
+  assert.match(servicio, /'\/admin\/reporting\/orders\/export-audit'/);
+});

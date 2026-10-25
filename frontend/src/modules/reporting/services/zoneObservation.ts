@@ -6,9 +6,12 @@
  * consumir, y el adaptador que traduzca lo que CORE publique a esta forma se
  * escribe en integración, no aquí.
  *
- * Cuatro estados, y solo uno habilita la zona:
+ * Cinco estados, y solo uno habilita la zona:
  *
  * - `absent`: la instalación no tiene zona configurada.
+ * - `approved_initial`: no hay zona configurada y CORE responde con la zona
+ *   inicial aprobada. Sirve a la consulta de siempre, pero no está verificada:
+ *   no habilita nada nuevo.
  * - `invalid`: tiene algo configurado que no es una zona.
  * - `runtime_resolved`: un motor de fechas la reconoció, pero nadie con
  *   autoridad la ha canonizado. ICU, por ejemplo, contesta `Asia/Calcutta` a
@@ -46,6 +49,7 @@ export function canonicalIanaZone(value: unknown): string | null {
 
 export type ZoneObservation =
   | { readonly kind: 'absent' }
+  | { readonly kind: 'approved_initial'; readonly zone: string }
   | { readonly kind: 'invalid'; readonly original: string | null }
   | { readonly kind: 'runtime_resolved'; readonly original: string; readonly runtimeId: string }
   | { readonly kind: 'verified'; readonly original: string; readonly canonical: string };
@@ -60,6 +64,8 @@ export type ConsumedZone =
     /** El original es un alias del canónico según la autoridad, no según el motor. */
     readonly alias: boolean;
   }
+  /** Zona inicial aprobada: utilizable para consultar, nunca verificada. */
+  | { readonly kind: 'initial'; readonly zone: string }
   | {
     readonly kind: 'blocked';
     readonly cause: 'absent' | 'invalid' | 'not_authoritative' | 'unsupported' | 'inconsistent';
@@ -77,6 +83,8 @@ export function readZoneObservation(input: unknown): ZoneObservation {
   switch (o.kind) {
     case 'absent':
       return { kind: 'absent' };
+    case 'approved_initial':
+      return text(o.zone) ? { kind: 'approved_initial', zone: o.zone } : { kind: 'invalid', original };
     case 'invalid':
       return { kind: 'invalid', original };
     case 'runtime_resolved':
@@ -93,6 +101,7 @@ export function readZoneObservation(input: unknown): ZoneObservation {
 }
 
 const FIX = 'Pide a quien administra la instalación que la configure.';
+const UNSUPPORTED = 'Este navegador no reconoce la zona horaria de la instalación, así que no puede calcular los períodos. Actualiza el navegador o usa otro.';
 
 /** Cómo llama este motor de fechas a la zona, o null si no la conoce. */
 function runtimeId(zone: string): string | null {
@@ -103,11 +112,24 @@ function runtimeId(zone: string): string | null {
   }
 }
 
-/** Solo una observación verificada, utilizable aquí y coherente habilita la zona. */
+/**
+ * Solo una observación verificada, utilizable aquí y coherente habilita la zona.
+ * La inicial aprobada se usa para consultar si está bien escrita y el motor la
+ * conoce; si no, bloquea igual que una configurada.
+ */
 export function consumeZoneObservation(observation: ZoneObservation): ConsumedZone {
   switch (observation.kind) {
     case 'absent':
       return { kind: 'blocked', cause: 'absent', original: null, reason: `La instalación no tiene configurada su zona horaria, así que no se puede consultar ni preparar ningún período. ${FIX}` };
+    case 'approved_initial': {
+      const { zone } = observation;
+      if (IANA_SHAPE.test(zone) && runtimeId(zone) === null) {
+        return { kind: 'blocked', cause: 'unsupported', original: zone, reason: UNSUPPORTED };
+      }
+      return canonicalIanaZone(zone) === zone
+        ? { kind: 'initial', zone }
+        : { kind: 'blocked', cause: 'invalid', original: zone, reason: `La zona horaria configurada en la instalación no es válida, así que no se puede consultar ni preparar ningún período. ${FIX}` };
+    }
     case 'invalid':
       return { kind: 'blocked', cause: 'invalid', original: observation.original, reason: `La zona horaria configurada en la instalación no es válida, así que no se puede consultar ni preparar ningún período. ${FIX}` };
     case 'runtime_resolved':
@@ -117,7 +139,7 @@ export function consumeZoneObservation(observation: ZoneObservation): ConsumedZo
       // Con forma IANA pero desconocida para este motor: la zona puede ser buena
       // y el navegador, viejo. Sin forma, o con otras mayúsculas: no es válida.
       if (IANA_SHAPE.test(canonical) && runtimeId(canonical) === null) {
-        return { kind: 'blocked', cause: 'unsupported', original, reason: 'Este navegador no reconoce la zona horaria de la instalación, así que no puede calcular los períodos. Actualiza el navegador o usa otro.' };
+        return { kind: 'blocked', cause: 'unsupported', original, reason: UNSUPPORTED };
       }
       if (canonicalIanaZone(canonical) !== canonical) {
         return { kind: 'blocked', cause: 'invalid', original, reason: `La zona horaria configurada en la instalación no es válida, así que no se puede consultar ni preparar ningún período. ${FIX}` };

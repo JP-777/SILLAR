@@ -2,6 +2,7 @@ import { http } from '../../../shared/http/client';
 import { describe, type Failure } from '../../../shared/errors/messages';
 import { isApiError } from '../../../shared/http/errors';
 import { isSourceFailure } from './sourceFailure';
+import { exportAuditPortOver, readInstallationZone } from './coreSeam';
 import type { OrderIndicatorsView } from './orderIndicators';
 import { InconsistentIndicatorsError, verifyOrderIndicators } from './verifyOrderIndicators';
 
@@ -34,3 +35,16 @@ export function describeReportFailure(error: unknown, context: string): Failure 
   }
   return describe(error, context);
 }
+
+/**
+ * Zona de la instalación según CORE, lista para el punto de conexión de
+ * `installationZone.ts`. Sin conectar: hay que leerla antes de montar la pantalla.
+ */
+export function loadInstallationZoneObservation(): Promise<unknown> {
+  return readInstallationZone(() => http.get<unknown>('/admin/reporting/installation-zone'));
+}
+
+/** Puerto de auditoría candidato. Sin conectar: `exportAuditPort` sigue en null. */
+export const httpExportAuditPort = exportAuditPortOver(
+  (call) => http.post<unknown>('/admin/reporting/orders/export-audit', call),
+);

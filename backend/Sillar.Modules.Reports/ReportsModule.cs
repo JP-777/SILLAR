@@ -43,5 +43,8 @@ public sealed class ReportsModule : IModule
 
     /// <inheritdoc />
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
-        => endpoints.MapOrderIndicatorsEndpoints();
+    {
+        endpoints.MapOrderIndicatorsEndpoints();
+        endpoints.MapCoreSeamEndpoints();
+    }
 }
