@@ -866,3 +866,42 @@ test('57 · la pantalla adopta la zona de CORE antes de montarse: inicial sin ve
   assert.match(pagina, /const zoneRead = useInstallationZoneFromCore\(\);\s*if \(!zoneRead\) \{[\s\S]*?role="status"[\s\S]*?\}\s*if \(INSTALLATION\.zone === null\)/);
   assert.match(pagina, /loadInstallationZoneObservation\(\)\.then\(\(observation\) => \{\s*if \(!current\) return;\s*adoptInstallationZone\(observation\);/);
 });
+
+test('58 · con el puerto HTTP real conectado solo en pruebas, ni 409, ni 503, ni denegada, ni red caída dan archivo', () => {
+  const composicion = resolve(frontend, 'tests/soporte/composicionAuditoriaHttp.mjs');
+  const correr = (ESCENARIO, INSTALACION, extra = { SILLAR_COMPOSICION_PRUEBAS: '1' }) => {
+    const salida = spawnSync(process.execPath, ['--no-warnings', composicion], {
+      env: { ...process.env, ESCENARIO, INSTALACION, ...extra }, encoding: 'utf8', timeout: 20_000,
+    });
+    return { status: salida.status, stderr: salida.stderr, datos: salida.status === 0 ? JSON.parse(salida.stdout) : null };
+  };
+  const PETICION = { url: '/api/admin/reporting/orders/export-audit', method: 'POST', csrf: 'token-de-prueba', body: { zone: 'America/Lima', dataRows: 6 } };
+
+  // Con la zona de prueba verificada, el puerto llega al servidor; solo «recorded» con identificador da archivo.
+  for (const [escenario, esperado] of [['conflicto', 'audit_failed'], ['no_disponible', 'audit_failed'], ['denegada', 'audit_denied'],
+    ['sin_identificador', 'audit_failed'], ['red_caida', 'audit_failed']]) {
+    const { status, stderr, datos } = correr(escenario, 'verificada_de_prueba');
+    assert.equal(status, 0, stderr);
+    assert.equal(datos.kind, esperado, escenario);
+    assert.equal(datos.conArchivo, false, escenario);
+    // A CORE solo van la zona y las filas, con el token CSRF.
+    assert.deepEqual(datos.peticiones, [PETICION], escenario);
+  }
+  const control = correr('registrada', 'verificada_de_prueba');
+  assert.equal(control.status, 0, control.stderr);
+  assert.deepEqual([control.datos.kind, control.datos.conArchivo], ['ready', true]);
+
+  // Sin zona verificada no sale ni la petición, aunque el servidor fuera a confirmar.
+  for (const instalacion of ['hoy', 'inicial', 'configurada']) {
+    const { status, stderr, datos } = correr('registrada', instalacion);
+    assert.equal(status, 0, stderr);
+    assert.deepEqual([datos.kind, datos.conArchivo, datos.peticiones.length], ['blocked', false, 0], instalacion);
+  }
+
+  // Opt-in: sin la variable no compone nada. Y la aplicación no la usa.
+  assert.equal(correr('registrada', 'verificada_de_prueba', { SILLAR_COMPOSICION_PRUEBAS: '' }).status, 2);
+  for (const archivo of archivos()) {
+    assert.doesNotMatch(readFileSync(archivo, 'utf8'), /composicionAuditoriaHttp|SILLAR_COMPOSICION_PRUEBAS|tests\/soporte/, archivo);
+  }
+  assert.match(codigo(fuente('src/modules/reporting/services/reportExport.ts')), /exportAuditPort[^=;]*= null;/);
+});
