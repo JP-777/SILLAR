@@ -8,7 +8,7 @@ using Sillar.Modules.Reports.Orders;
 namespace Sillar.Modules.Reports.Endpoints;
 
 /// <summary>
-/// Indicadores con importes: I02, valor de pedidos. Cada uno en su propia ruta,
+/// Indicadores con importes: I02, valor de pedidos, e I05–I07, cobros. Cada lector en su propia ruta,
 /// para que el fallo de un lector no apague a los demás.
 /// </summary>
 public static class MonetaryIndicatorsEndpoints
@@ -30,7 +30,35 @@ public static class MonetaryIndicatorsEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden);
 
+        admin.MapGet("/payments", ReadPayments)
+            .WithName("ReportingAdminPaymentIndicators")
+            .WithSummary("I05–I07: cobros registrados entre inicio incluido y fin excluido, por medio, origen, moneda y tardanza.")
+            .WithDescription("Cobros registrados, no ingresos. Sin capacidad acreditada por ventas, cada indicador sale not_measurable y nunca 0. Cada indicador trae su propio status: source_unavailable, not_measurable, empty, currency_not_accredited o with_data.")
+            .Produces<PaymentIndicatorsView>(StatusCodes.Status200OK)
+            .ProducesValidationProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden);
+
         return endpoints;
+    }
+
+    /// <summary>Lee I05–I07 del período [start, end).</summary>
+    private static async Task<IResult> ReadPayments(
+        HttpRequest request,
+        IServiceProvider services,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken)
+    {
+        if (!ReportPeriod.TryRead(request.Query["start"].ToString(), request.Query["end"].ToString(),
+                out var start, out var end, out var problem))
+        {
+            return problem!;
+        }
+
+        var report = new OrderPaymentReport(services);
+        return await Guarded(() => report.ReadAsync(start, end, cancellationToken),
+            loggerFactory, "cobros", start, end, cancellationToken);
     }
 
     /// <summary>Lee I02 de la cohorte [start, end).</summary>
