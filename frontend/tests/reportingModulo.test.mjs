@@ -15,6 +15,11 @@ import { assessReportComparison } from '../src/modules/reporting/services/report
 import { compareCreationWindowRates } from '../src/modules/reporting/services/creationWindowRate.ts';
 import { previousEqualWindow } from '../src/modules/reporting/services/previousEqualWindow.ts';
 import { reportingNavigation } from '../src/modules/reporting/navegacion.ts';
+import {
+  showAmount,
+  verifyOrderValue,
+  verifyPaymentIndicators,
+} from '../src/modules/reporting/services/monetaryIndicators.ts';
 
 /**
  * Focales de M10 Reportes en el frontend. La lógica que decide qué cifra se
@@ -953,5 +958,132 @@ test('60 · si la zona de la instalación cambia mientras la auditoría responde
     assert.equal((await pendiente).kind, 'ready');
   } finally {
     periodo.adoptInstallationZone(null);
+  }
+});
+
+// ── I02 e I05–I07 ─────────────────────────────────────────────────────────────
+
+const cohorteMonetaria = { start: '2026-09-01T05:00:00.000Z', end: '2026-10-01T05:00:00.000Z' };
+const periodoMonetario = {
+  startInclusive: '2026-09-01T05:00:00+00:00',
+  endExclusive: '2026-10-01T05:00:00+00:00',
+};
+const valor = (extra = {}) => ({
+  ...periodoMonetario,
+  status: 'with_data',
+  observedAtUtc: '2026-10-26T15:42:10+00:00',
+  createdCount: 57,
+  byCurrency: [
+    { currencyCode: 'PEN', count: 41, amount: '12840.50' },
+    { currencyCode: 'USD', count: 3, amount: '310.00' },
+  ],
+  withoutCurrencyCount: 13,
+  coverage: 'partial',
+  ...extra,
+});
+const sinMedir = (status) => ({
+  ...periodoMonetario,
+  observedAtUtc: null,
+  i05: { status, count: null, bySource: null },
+  i06: { status, byMethod: null, withoutCurrency: null, coverage: null },
+  i07: { status, count: null, amountStatus: status, amountByCurrency: null, withoutCurrencyCount: null },
+});
+const cobros = () => ({
+  ...periodoMonetario,
+  observedAtUtc: '2026-10-26T15:42:10+00:00',
+  i05: { status: 'with_data', count: 11, bySource: [{ source: 'staff', count: 8 }, { source: 'provider', count: 2 }, { source: 'unrecorded', count: 1 }] },
+  i06: {
+    status: 'with_data',
+    byMethod: [
+      { method: 'efectivo', source: 'staff', currencyCode: 'USD', count: 1, amount: '20.00' },
+      { method: 'yape', source: 'staff', currencyCode: 'PEN', count: 4, amount: '400.00' },
+      { method: 'yape', source: 'provider', currencyCode: 'PEN', count: 2, amount: '150' },
+      { method: 'yape', source: 'unrecorded', currencyCode: 'PEN', count: 1, amount: '35.5' },
+    ],
+    withoutCurrency: [{ method: 'efectivo', source: 'staff', count: 3 }],
+    coverage: 'partial',
+  },
+  i07: {
+    status: 'with_data', count: 5, amountStatus: 'with_data',
+    amountByCurrency: [{ currencyCode: 'PEN', count: 1, amount: '35.5' }, { currencyCode: 'USD', count: 1, amount: '20.00' }],
+    withoutCurrencyCount: 3,
+  },
+});
+
+test('61 · I02 acepta una cohorte PEN, USD y sin moneda, y rechaza lo que mezcle o no cuadre', () => {
+  assert.deepEqual(verifyOrderValue(valor(), cohorteMonetaria), valor());
+  const malas = [
+    valor({ withoutCurrencyCount: 12 }),
+    valor({ coverage: 'complete' }),
+    valor({ byCurrency: [{ currencyCode: 'PEN', count: 41, amount: '12840.50' }, { currencyCode: 'PEN', count: 3, amount: '310.00' }] }),
+    valor({ byCurrency: [{ currencyCode: 'PEN', count: 44, amount: 13150.5 }], withoutCurrencyCount: 13 }),
+    valor({ byCurrency: [{ currencyCode: 'pen', count: 44, amount: '1' }] }),
+    valor({ endExclusive: '2026-10-02T05:00:00+00:00' }),
+  ];
+  for (const mala of malas) {
+    assert.throws(() => verifyOrderValue(mala, cohorteMonetaria), InconsistentIndicatorsError);
+  }
+});
+
+test('62 · I02 no medible o sin fuente no admite ninguna cifra, ni siquiera un cero', () => {
+  for (const status of ['not_measurable', 'source_unavailable']) {
+    const vacia = valor({ status, observedAtUtc: null, createdCount: null, byCurrency: null, withoutCurrencyCount: null, coverage: null });
+    assert.equal(verifyOrderValue(vacia, cohorteMonetaria).status, status);
+    assert.throws(() => verifyOrderValue({ ...vacia, createdCount: 0 }, cohorteMonetaria), InconsistentIndicatorsError);
+  }
+  const sinMoneda = valor({ status: 'currency_not_accredited', createdCount: 13, byCurrency: null, withoutCurrencyCount: 13, coverage: 'none' });
+  assert.equal(verifyOrderValue(sinMoneda, cohorteMonetaria).status, 'currency_not_accredited');
+  assert.throws(() => verifyOrderValue({ ...sinMoneda, byCurrency: [] }, cohorteMonetaria), InconsistentIndicatorsError);
+});
+
+test('63 · I05–I07 separan origen, medio, moneda y tardanza, y sin capacidad no hay ningún cero', () => {
+  assert.deepEqual(verifyPaymentIndicators(cobros(), cohorteMonetaria), cobros());
+  for (const status of ['not_measurable', 'source_unavailable']) {
+    assert.equal(verifyPaymentIndicators(sinMedir(status), cohorteMonetaria).i05.status, status);
+    const conCero = sinMedir(status);
+    conCero.i05.count = 0;
+    assert.throws(() => verifyPaymentIndicators(conCero, cohorteMonetaria), InconsistentIndicatorsError);
+  }
+  // La capacidad es una sola: no puede haber un indicador medido y otro no.
+  const mezclada = sinMedir('not_measurable');
+  mezclada.i06.status = 'empty';
+  assert.throws(() => verifyPaymentIndicators(mezclada, cohorteMonetaria), InconsistentIndicatorsError);
+});
+
+test('64 · los cobros de I06 y los tardíos de I07 tienen que cuadrar con I05', () => {
+  const casos = [
+    (d) => { d.i06.withoutCurrency[0].count = 4; },
+    (d) => { d.i07.count = 12; },
+    (d) => { d.i07.amountByCurrency[0].count = 2; },
+    (d) => { d.i05.bySource[0].source = 'cliente'; },
+    (d) => { d.i06.byMethod[0].method = 'Tarjeta'; },
+    (d) => { d.i06.coverage = 'complete'; },
+    (d) => { d.i07.amountStatus = 'currency_not_accredited'; },
+  ];
+  for (const estropear of casos) {
+    const datos = cobros();
+    estropear(datos);
+    assert.throws(() => verifyPaymentIndicators(datos, cohorteMonetaria), InconsistentIndicatorsError);
+  }
+});
+
+test('65 · los importes se muestran sin pasar por coma flotante', () => {
+  assert.equal(showAmount('PEN', '12840.50'), 'PEN 12,840.50');
+  assert.equal(showAmount('USD', '310'), 'USD 310');
+  assert.equal(showAmount('PEN', '123456789012345678.01'), 'PEN 123,456,789,012,345,678.01');
+  assert.doesNotMatch(codigo(fuente('src/modules/reporting/services/monetaryIndicators.ts')), /parseFloat|Number\(\s*\w*\.?amount/);
+});
+
+test('66 · la pantalla monta los importes con la cohorte y dice «No medible», nunca un cero inventado', () => {
+  const pagina = codigo(fuente('src/modules/reporting/pages/ReportsPage.tsx'));
+  assert.match(pagina, /<MonetaryIndicators key=\{`\$\{data\.startInclusive\}\|\$\{data\.endExclusive\}`\}/);
+  const panel = codigo(fuente('src/modules/reporting/components/MonetaryIndicators.tsx'));
+  assert.match(panel, /No medible\./);
+  assert.match(panel, /No significa cero/);
+  assert.match(panel, /if \(current\) setValue/);
+  assert.match(panel, /return \(\) => \{ current = false; \}/);
+  // Antes de cualquier cifra, los estados sin medición devuelven su frase.
+  for (const indicador of ['i05', 'i06', 'i07']) {
+    assert.match(panel, new RegExp(`if \\(${indicador}\\.status === 'source_unavailable' \\|\\| ${indicador}\\.status === 'not_measurable'\\) return <Unmeasured`));
   }
 });

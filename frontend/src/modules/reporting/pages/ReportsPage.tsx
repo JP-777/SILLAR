@@ -4,6 +4,7 @@ import { PageContainer } from '../../../layout/PageContainer';
 import { ForbiddenPage } from '../../../platform/ForbiddenPage';
 import { type Failure } from '../../../shared/errors/messages';
 import { FailureAlert } from '../../../shared/ui/patterns';
+import { MonetaryIndicators } from '../components/MonetaryIndicators';
 import { OrderDistribution } from '../components/OrderDistribution';
 import { OrderPeriodComparison } from '../components/OrderPeriodComparison';
 import { assessFreshness, describeAge, STALE_AFTER_MINUTES } from '../services/freshness';
@@ -24,7 +25,7 @@ type ViewState =
   | { kind: 'ready'; data: OrderIndicatorsView; previous: { start: string; end: string; data: OrderIndicatorsView | null } | null }
   | { kind: 'error'; failure: Failure };
 
-/** M10 D3: cohorte de pedidos con filtros [inicio,fin), sin totales monetarios. */
+/** M10 D3: cohorte de pedidos con filtros [inicio,fin); importes solo por moneda, nunca un total entre monedas. */
 export function ReportsPage() {
   // D12: la URL solo aporta filtros. `key` hace que cualquier cambio de URL
   // (otro enlace, el menú, atrás/adelante) desmonte la vista: su limpieza D4
@@ -347,6 +348,9 @@ function ReportsView({ link, installationZone }: { link: ReportLinkRead; install
               </section>
             )}
             {distribution && <OrderDistribution {...distribution} />}
+            {/* I02 e I05–I07 de la misma cohorte. La clave anula lo que siga en
+                vuelo de una consulta anterior (D4); sin medición, «No medible». */}
+            <MonetaryIndicators key={`${data.startInclusive}|${data.endExclusive}`} start={data.startInclusive} end={data.endExclusive} />
             {/* D10: la clave cambia con período, observación y zona, así que un
                 cambio de la consulta principal desmonta la comparación y anula
                 sus peticiones en vuelo (D4). Solo se monta con cohorte válida. */}

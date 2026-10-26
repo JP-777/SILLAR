@@ -5,6 +5,12 @@ import { isSourceFailure } from './sourceFailure';
 import { exportAuditPortOver, readInstallationZone } from './coreSeam';
 import type { OrderIndicatorsView } from './orderIndicators';
 import { InconsistentIndicatorsError, verifyOrderIndicators } from './verifyOrderIndicators';
+import {
+  verifyOrderValue,
+  verifyPaymentIndicators,
+  type OrderValueView,
+  type PaymentIndicatorsView,
+} from './monetaryIndicators';
 
 export { orderStates, type OrderIndicatorsView } from './orderIndicators';
 export { InconsistentIndicatorsError } from './verifyOrderIndicators';
@@ -16,6 +22,18 @@ export { InconsistentIndicatorsError } from './verifyOrderIndicators';
 export async function loadOrderIndicators(start: string, end: string): Promise<OrderIndicatorsView> {
   const data = await http.get<OrderIndicatorsView>('/admin/reporting/orders', { query: { start, end } });
   return verifyOrderIndicators(data, { start, end });
+}
+
+/** I02: valor de pedidos por moneda, verificado antes de publicarse. */
+export async function loadOrderValue(start: string, end: string): Promise<OrderValueView> {
+  const data = await http.get<OrderValueView>('/admin/reporting/orders/value', { query: { start, end } });
+  return verifyOrderValue(data, { start, end });
+}
+
+/** I05–I07: cobros registrados, verificados antes de publicarse. */
+export async function loadPaymentIndicators(start: string, end: string): Promise<PaymentIndicatorsView> {
+  const data = await http.get<PaymentIndicatorsView>('/admin/reporting/payments', { query: { start, end } });
+  return verifyPaymentIndicators(data, { start, end });
 }
 
 /**
