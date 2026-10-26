@@ -40,6 +40,28 @@ public sealed class AutorizacionEditorialRevocableTests
     }
 
     [Fact]
+    public async Task SinGateDeCommitNingunaMutacionLlegaAlRepositorio()
+    {
+        using var rig = new Rig();
+        rig.Authority.WithholdGate = true;
+        Assert.Equal(EditorialResult.Forbidden, await rig.Save());
+        Assert.Equal(0, rig.Inner.Calls);
+        Assert.Equal(0, rig.Authority.Commits);
+    }
+
+    [Fact]
+    public async Task EscrituraSinteticaPasaUnaVezPorGateYLecturaNoHaceCommit()
+    {
+        using var rig = new Rig();
+        Assert.Equal(EditorialResult.Saved, await rig.Save());
+        Assert.Equal(1, rig.Authority.Commits);
+        Assert.Equal(EditorialLookupStatus.Found,
+            (await rig.Service.InspectAsync(rig.Actor, rig.Article,
+                TestContext.Current.CancellationToken)).Status);
+        Assert.Equal(1, rig.Authority.Commits);
+    }
+
+    [Fact]
     public async Task AllowedIncoherenteNoEsPermiso()
     {
         using var rig = new Rig();
@@ -120,7 +142,7 @@ public sealed class AutorizacionEditorialRevocableTests
         using var rig = new Rig();
         rig.Authority.Execution = async (operation, _) =>
         {
-            await operation(rig.Actor, rig.Revoked.Token);
+            await operation(rig.Actor, rig.Authority, rig.Revoked.Token);
             rig.Revoked.Cancel();
             return AssistantAuthorizedExecutionOutcome.Completed;
         };
@@ -160,14 +182,14 @@ public sealed class AutorizacionEditorialRevocableTests
     public async Task CompletedSinCallbackYCallbackTardioNoDanAcceso()
     {
         using var rig = new Rig();
-        Func<EditorialPrincipal, CancellationToken, Task>? saved = null;
+        Func<EditorialPrincipal, IEditorialCommitGate?, CancellationToken, Task>? saved = null;
         rig.Authority.Execution = (operation, _) =>
         {
             saved = operation;
             return Task.FromResult(AssistantAuthorizedExecutionOutcome.Completed);
         };
         Assert.Equal(EditorialResult.Forbidden, await rig.Save());
-        await saved!(rig.Actor, rig.Revoked.Token);
+        await saved!(rig.Actor, rig.Authority, rig.Revoked.Token);
         Assert.Equal(0, rig.Inner.Calls);
     }
 
@@ -177,8 +199,8 @@ public sealed class AutorizacionEditorialRevocableTests
         using var rig = new Rig();
         rig.Authority.Execution = async (operation, _) =>
         {
-            await operation(rig.Actor, rig.Revoked.Token);
-            await operation(rig.Actor, rig.Revoked.Token);
+            await operation(rig.Actor, rig.Authority, rig.Revoked.Token);
+            await operation(rig.Actor, rig.Authority, rig.Revoked.Token);
             return AssistantAuthorizedExecutionOutcome.Completed;
         };
         Assert.Equal(EditorialResult.Forbidden, await rig.Save());
@@ -317,22 +339,34 @@ public sealed class AutorizacionEditorialRevocableTests
         }
     }
 
-    private sealed class Authority : IRevocableAssistantEditorialAuthority
+    private sealed class Authority : IRevocableAssistantEditorialAuthority, IEditorialCommitGate
     {
         public EditorialPrincipal Principal { get; set; } = null!;
         public CancellationToken Token { get; set; }
         public int Calls { get; private set; }
         public AssistantEditorialAuthorizationRequest? Last { get; private set; }
-        public Func<Func<EditorialPrincipal, CancellationToken, Task>, CancellationToken,
+        public int Commits { get; private set; }
+        public bool WithholdGate { get; set; }
+        public Func<Func<EditorialPrincipal, IEditorialCommitGate?, CancellationToken, Task>, CancellationToken,
             Task<AssistantAuthorizedExecutionOutcome>>? Execution { get; set; }
         public async Task<AssistantAuthorizedExecutionOutcome> ExecuteAsync(AssistantEditorialAuthorizationRequest request,
-            Func<EditorialPrincipal, CancellationToken, Task> operation, CancellationToken ct)
+            Func<EditorialPrincipal, IEditorialCommitGate?, CancellationToken, Task> operation, CancellationToken ct)
         {
             Calls++;
             Last = request;
             if (Execution is not null) return await Execution(operation, ct);
-            await operation(Principal, Token);
+            await operation(Principal, WithholdGate ? null : this, Token);
             return AssistantAuthorizedExecutionOutcome.Completed;
+        }
+
+        public async Task<T> CommitAsync<T>(AssistantEditorialAuthorizationRequest request,
+            EditorialPrincipal principal, Func<CancellationToken, Task<T>> mutation, CancellationToken ct)
+        {
+            Commits++;
+            ct.ThrowIfCancellationRequested();
+            var result = await mutation(ct);
+            ct.ThrowIfCancellationRequested();
+            return result;
         }
     }
 

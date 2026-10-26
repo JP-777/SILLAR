@@ -8,7 +8,8 @@ namespace Sillar.Modules.Assistant.Authorization;
 /// <summary>
 /// Adaptador candidato de ejecución editorial. Reevalúa CORE por operación y
 /// exige además una autoridad revocable independiente. No emite identidad,
-/// permisos ni entitlement. No se registra automáticamente ni habilita endpoints.
+/// permisos ni entitlement. Es la única fachada registrada por M12; sin
+/// autoridades productivas deniega y no habilita endpoints.
 /// </summary>
 public sealed class RevocableAssistantEditorialAdministration(
     IAssistantEditorialAdministration inner,
@@ -69,7 +70,7 @@ public sealed class RevocableAssistantEditorialAdministration(
             try
             {
                 outcome = await editorialAuthority.ExecuteAsync(new(key, articleId, permission),
-                async (principal, revoked) =>
+                async (principal, commitGate, revoked) =>
                 {
                     if (Interlocked.Increment(ref invocations) != 1 ||
                         Volatile.Read(ref closed) != 0 || lifetime.IsCancellationRequested ||
@@ -78,7 +79,17 @@ public sealed class RevocableAssistantEditorialAdministration(
                     revocation = revoked;
                     using var linked = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token, revoked);
                     linked.Token.ThrowIfCancellationRequested();
-                    value = await operation(principal, linked.Token);
+                    // Toda escritura pasa por la frontera que serializa revocación,
+                    // commit y evidencia durable. Una lectura privada no escribe.
+                    if (permission == AssistantEditorialPermission.Inspect)
+                        value = await operation(principal, linked.Token);
+                    else
+                    {
+                        if (commitGate is null) return;
+                        value = await commitGate.CommitAsync(
+                            new(key, articleId, permission), principal,
+                            token => operation(principal, token), linked.Token);
+                    }
                     linked.Token.ThrowIfCancellationRequested();
                     finished = true;
                 }, ct);

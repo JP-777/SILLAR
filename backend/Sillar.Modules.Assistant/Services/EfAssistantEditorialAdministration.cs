@@ -4,8 +4,8 @@ using Sillar.Modules.Assistant.Endpoints;
 
 namespace Sillar.Modules.Assistant.Services;
 
-/// <summary>Adaptador al repositorio EF del lote 7, sin registro automático en el host.</summary>
-public sealed class EfAssistantEditorialAdministration(EfEditorialArticleStore repository)
+/// <summary>Adaptador EF interno; DI solo expone la fachada revocable.</summary>
+internal sealed class EfAssistantEditorialAdministration(EfEditorialArticleStore repository)
     : IAssistantEditorialAdministration
 {
     public Task<EditorialResult> CreateAsync(EditorialPrincipal actor, Guid articleId, CancellationToken ct)

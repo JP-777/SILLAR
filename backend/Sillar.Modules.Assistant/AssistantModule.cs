@@ -70,12 +70,13 @@ public sealed class AssistantModule : IModule, IModuleMigrations
     }
 
     /// <summary>
-    /// Por ahora solo expone FAQ de lectura. La edición HTTP permanece sin montar
-    /// hasta incorporar auditoría confiable de las escrituras e identidad administrativa.
+    /// No monta rutas mientras CORE no pueda acreditar un Allowed legítimo y su
+    /// vinculación con la identidad M12. ADR-004 exige ausencia de rutas sin licencia.
+    /// FAQ y edición conservan handlers aislados para completar sus contratos.
     /// </summary>
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
-        endpoints.MapAssistantFaqEndpoints();
+        // La composición productiva de Host/CORE todavía no acredita entitlement.
     }
 }

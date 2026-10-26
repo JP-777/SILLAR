@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Sillar.Core.Contracts;
+using Sillar.Modules.Assistant.Authorization;
 using Sillar.Modules.Assistant.Data;
 using Sillar.Modules.Assistant.Data.Repositories;
 using Sillar.Modules.Assistant.Endpoints;
@@ -27,13 +29,27 @@ public static class AssistantInternalServices
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configurePersistence);
         ArgumentNullException.ThrowIfNull(editorialPolicy);
+        if (services.Any(x => x.ServiceType == typeof(IAssistantEditorialAdministration)))
+            throw new InvalidOperationException("M12 ya tiene una fachada editorial registrada.");
 
         services.AddDbContext<AssistantDbContext>(configurePersistence);
         services.AddSingleton(editorialPolicy);
         services.TryAddSingleton<TimeProvider>(TimeProvider.System);
-        services.AddScoped<EfEditorialArticleStore>();
-        services.AddScoped<IAssistantEditorialAdministration, EfAssistantEditorialAdministration>();
-        services.AddScoped<IAsyncPublishedFaqReader, EfPublishedFaqReader>();
+        // La única interfaz que pueden resolver handlers o servicios externos es la
+        // fachada revocable. Ni el adaptador EF ni el repositorio son resolubles
+        // directamente desde DI; la fábrica les da el DbContext scoped.
+        services.AddScoped<IAssistantEditorialAdministration>(provider =>
+            new RevocableAssistantEditorialAdministration(
+                new EfAssistantEditorialAdministration(new EfEditorialArticleStore(
+                    provider.GetRequiredService<AssistantDbContext>(), editorialPolicy,
+                    provider.GetRequiredService<TimeProvider>())),
+                provider.GetService<IAssistantAccessAuthority>(),
+                provider.GetService<IRevocableAssistantEditorialAuthority>()));
+        services.AddScoped<IAsyncPublishedFaqReader>(provider => new EfPublishedFaqReader(
+            provider.GetRequiredService<AssistantDbContext>(),
+            new EfEditorialArticleStore(provider.GetRequiredService<AssistantDbContext>(),
+                editorialPolicy, provider.GetRequiredService<TimeProvider>()),
+            editorialPolicy));
         return services;
     }
 }

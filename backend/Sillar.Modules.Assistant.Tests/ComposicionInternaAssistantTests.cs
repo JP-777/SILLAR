@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Sillar.Core.Contracts;
+using Sillar.Modules.Assistant.Authorization;
 using Sillar.Modules.Assistant.Composition;
 using Sillar.Modules.Assistant.Data;
 using Sillar.Modules.Assistant.Data.Repositories;
+using Sillar.Modules.Assistant.Domain;
 using Sillar.Modules.Assistant.Endpoints;
 using Sillar.Modules.Assistant.Services;
 
@@ -49,13 +51,36 @@ public sealed class ComposicionInternaAssistantTests
     }
 
     [Fact]
-    public void RegistraAdaptadorEditorialYRepositorioEf()
+    public void SoloExponeFachadaRevocableEditorial()
     {
         using var provider = CrearProveedor();
         using var scope = provider.CreateScope();
         var editorial = scope.ServiceProvider.GetRequiredService<IAssistantEditorialAdministration>();
-        Assert.IsType<EfAssistantEditorialAdministration>(editorial);
-        Assert.NotNull(scope.ServiceProvider.GetRequiredService<EfEditorialArticleStore>());
+        Assert.IsType<RevocableAssistantEditorialAdministration>(editorial);
+        var direct = typeof(RevocableAssistantEditorialAdministration).Assembly.GetType(
+            "Sillar.Modules.Assistant.Services.EfAssistantEditorialAdministration", throwOnError: true)!;
+        Assert.Null(scope.ServiceProvider.GetService(direct));
+        Assert.Null(scope.ServiceProvider.GetService<EfEditorialArticleStore>());
+    }
+
+    [Fact]
+    public async Task SinAutoridadesLaFachadaNoLlegaAlRepositorioNiAbreConexion()
+    {
+        using var provider = CrearProveedor();
+        using var scope = provider.CreateScope();
+        var editorial = scope.ServiceProvider.GetRequiredService<IAssistantEditorialAdministration>();
+        var actor = new EditorialPrincipal(Instalacion, EditorialRoles.Admin, "principal", true);
+        Assert.Equal(EditorialResult.Forbidden,
+            await editorial.CreateAsync(actor, Guid.CreateVersion7(), TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public void RechazaRegistroEditorialPrevioQuePodriaSuplantarLaFachada()
+    {
+        var services = new ServiceCollection();
+        services.AddScoped<IAssistantEditorialAdministration>(_ => null!);
+        Assert.Throws<InvalidOperationException>(() =>
+            services.AddAssistantInternalServices(Configurar, Politica()));
     }
 
     [Fact]
