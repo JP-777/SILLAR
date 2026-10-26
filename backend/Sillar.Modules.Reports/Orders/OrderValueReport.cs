@@ -24,7 +24,11 @@ internal interface IOrderValueAggregatePort
 }
 
 /// <summary>Una cohorte de creación agrupada por la moneda guardada en cada pedido.</summary>
+/// <param name="StartInclusive">Límite incluido, en UTC; tiene que ser el pedido.</param>
+/// <param name="EndExclusive">Límite excluido, en UTC; tiene que ser el pedido.</param>
+/// <param name="ObservedAtUtc">Instante en que ventas leyó, según su reloj.</param>
 /// <param name="CreatedCount">Suma de los recuentos de los grupos; solo sirve para comprobar que cuadran.</param>
+/// <param name="Groups">Un grupo por moneda, y uno para los pedidos sin moneda.</param>
 internal sealed record OrderValueAggregate(
     DateTimeOffset StartInclusive,
     DateTimeOffset EndExclusive,
@@ -33,6 +37,7 @@ internal sealed record OrderValueAggregate(
     IReadOnlyList<OrderValueGroup> Groups);
 
 /// <param name="CurrencyCode">ISO 4217 guardado en el pedido; null en los pedidos sin moneda.</param>
+/// <param name="Count">Pedidos del grupo.</param>
 /// <param name="Amount">Suma del total congelado; null si y solo si no hay moneda.</param>
 internal sealed record OrderValueGroup(string? CurrencyCode, long Count, decimal? Amount);
 
@@ -110,6 +115,9 @@ internal sealed class OrderValueReport(IServiceProvider services)
 
 /// <summary>I02 tal como lo consume la pantalla.</summary>
 /// <param name="Status">Uno de <see cref="IndicatorStatus"/>.</param>
+/// <param name="StartInclusive">Límite incluido, en UTC.</param>
+/// <param name="EndExclusive">Límite excluido, en UTC.</param>
+/// <param name="ObservedAtUtc">Instante en que ventas leyó; nulo si no se pudo medir.</param>
 /// <param name="CreatedCount">Pedidos de la cohorte; nulo si no se pudo medir.</param>
 /// <param name="ByCurrency">Una fila por moneda; nula si no hay ningún importe publicable.</param>
 /// <param name="WithoutCurrencyCount">Pedidos sin moneda: cuentan, no suman.</param>

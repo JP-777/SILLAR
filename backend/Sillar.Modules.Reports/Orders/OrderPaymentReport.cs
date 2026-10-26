@@ -26,6 +26,10 @@ internal enum OrderPaymentCapability
     Measurable,
 }
 
+/// <param name="StartInclusive">Límite incluido, en UTC; tiene que ser el pedido.</param>
+/// <param name="EndExclusive">Límite excluido, en UTC; tiene que ser el pedido.</param>
+/// <param name="ObservedAtUtc">Instante en que ventas leyó, según su reloj.</param>
+/// <param name="Capability">Si M03 acredita poder registrar y leer cobros.</param>
 /// <param name="RegisteredCount">Pagos, no pedidos; nulo si no es medible.</param>
 /// <param name="Groups">Un grupo por método, origen, moneda y tardanza; nulo si no es medible.</param>
 internal sealed record OrderPaymentAggregate(
@@ -40,6 +44,7 @@ internal sealed record OrderPaymentAggregate(
 /// <param name="Source"><c>staff</c>, <c>provider</c> o null si el pago no guarda su origen.</param>
 /// <param name="CurrencyCode">ISO 4217 guardado en el pago; null si no lo tiene.</param>
 /// <param name="WasLate">El valor congelado al registrar; nunca recalculado.</param>
+/// <param name="Count">Pagos del grupo.</param>
 /// <param name="Amount">Null si y solo si no hay moneda.</param>
 internal sealed record OrderPaymentGroup(
     string Method, string? Source, string? CurrencyCode, bool WasLate, long Count, decimal? Amount);
