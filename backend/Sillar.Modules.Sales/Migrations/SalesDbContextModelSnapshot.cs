@@ -116,6 +116,11 @@ namespace Sillar.Modules.Sales.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
 
+                    b.Property<string>("CurrencyCode")
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency_code")
+                        .UseCollation("C");
+
                     b.Property<string>("CustomerDocumentNumber")
                         .HasColumnType("text")
                         .HasColumnName("customer_document_number");
@@ -199,6 +204,8 @@ namespace Sillar.Modules.Sales.Migrations
 
                     b.ToTable("orders", "sales", t =>
                         {
+                            t.HasCheckConstraint("ck_orders_currency_code_iso", "currency_code ~ '^[A-Z]{3}$'");
+
                             t.HasCheckConstraint("ck_orders_customer_email_no_vacio", "btrim(customer_email) <> ''");
 
                             t.HasCheckConstraint("ck_orders_customer_full_name_no_vacio", "btrim(customer_full_name) <> ''");
@@ -307,6 +314,11 @@ namespace Sillar.Modules.Sales.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
 
+                    b.Property<string>("CurrencyCode")
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency_code")
+                        .UseCollation("C");
+
                     b.Property<string>("Method")
                         .IsRequired()
                         .HasColumnType("text")
@@ -348,6 +360,11 @@ namespace Sillar.Modules.Sales.Migrations
                         .HasDefaultValue(1L)
                         .HasColumnName("row_version");
 
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("timestamptz")
@@ -377,9 +394,13 @@ namespace Sillar.Modules.Sales.Migrations
 
                             t.HasCheckConstraint("ck_order_payments_atribucion_local_positiva", "registered_by_admin_user_local_id > 0");
 
+                            t.HasCheckConstraint("ck_order_payments_currency_code_iso", "currency_code ~ '^[A-Z]{3}$'");
+
                             t.HasCheckConstraint("ck_order_payments_method", "method IN ('yape', 'efectivo')");
 
                             t.HasCheckConstraint("ck_order_payments_registered_by_no_vacio", "btrim(registered_by) <> ''");
+
+                            t.HasCheckConstraint("ck_order_payments_source", "source IN ('staff')");
                         });
                 });
 
@@ -541,7 +562,7 @@ namespace Sillar.Modules.Sales.Migrations
                     b.HasOne("Sillar.Modules.Sales.Domain.Order", null)
                         .WithMany()
                         .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_order_payments_order_id");
                 });

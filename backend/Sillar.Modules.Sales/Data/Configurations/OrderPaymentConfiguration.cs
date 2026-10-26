@@ -34,6 +34,18 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
             table.HasCheckConstraint(
                 "ck_order_payments_atribucion_home_node_no_vacio",
                 "btrim(registered_by_admin_user_home_node) <> ''");
+
+            // NULL pasa: es la moneda desconocida de los pagos anteriores, que no se
+            // rellena con ninguna supuesta.
+            table.HasCheckConstraint(
+                "ck_order_payments_currency_code_iso",
+                $"currency_code ~ '{CurrencyCode.CheckPattern}'");
+
+            // Solo lo ratificado: hoy, el personal. El proveedor entra con su propia
+            // migración cuando haya escritor, y no antes.
+            table.HasCheckConstraint(
+                "ck_order_payments_source",
+                $"source IN ({string.Join(", ", PaymentSource.Ratified.Select(s => $"'{s}'"))})");
         });
 
         builder.HasKey(x => x.OrderPaymentId).HasName("pk_order_payments");
@@ -50,6 +62,13 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
             .HasColumnName("amount")
             .HasColumnType("numeric(12,2)")
             .IsRequired();
+
+        builder.Property(x => x.CurrencyCode)
+            .HasColumnName("currency_code")
+            .HasColumnType("character(3)")
+            .UseCollation("C");
+
+        builder.Property(x => x.Source).HasColumnName("source").IsRequired();
 
         builder.Property(x => x.Reference).HasColumnName("reference");
 
@@ -96,7 +115,10 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
             .WithMany()
             .HasForeignKey(x => x.OrderId)
             .HasConstraintName("fk_order_payments_order_id")
-            .OnDelete(DeleteBehavior.Cascade);
+            // Restrict y no Cascade: un pago es un registro financiero y no desaparece
+            // porque alguien borre físicamente su pedido. El pedido no se borra nunca
+            // —baja lógica—, así que esto solo cambia el resultado de un error.
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(x => x.OrderId).HasDatabaseName("idx_order_payments_order_id");
 

@@ -125,7 +125,10 @@ internal sealed class CreadorDePedidos(
             CustomerEmail = cliente.Instantanea.Email,
             Status = OrderStatus.PendingPayment,
             PaymentDueAt = ahora.AddHours(plazo),
-            TotalAmount = total
+            TotalAmount = total,
+            // Desconocida, y dicho en voz alta: no hay autoridad de moneda ratificada,
+            // y suponer PEN pondría un hecho falso en un registro que se replica.
+            CurrencyCode = null
         };
 
         cliente.Instantanea.Congelar(pedido);
