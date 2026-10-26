@@ -23,12 +23,12 @@ public sealed class OrderIndicatorsEndpointTests
     private const string Fin = "2026-10-08T00:00:00-05:00";
 
     [Fact]
-    public void El_modulo_expone_sus_tres_rutas_y_todas_exigen_el_rol_admin()
+    public void El_modulo_expone_sus_rutas_y_todas_exigen_el_rol_admin()
     {
         var rutas = Endpoints(Aplicacion(lector: null));
 
         Assert.Equal(
-            [("GET", Ruta), ("GET", "/api/admin/reporting/installation-zone"), ("POST", "/api/admin/reporting/orders/export-audit")],
+            [("GET", Ruta), ("GET", "/api/admin/reporting/orders/value"), ("GET", "/api/admin/reporting/installation-zone"), ("POST", "/api/admin/reporting/orders/export-audit")],
             rutas.Select(r => (Assert.Single(r.Metadata.GetMetadata<HttpMethodMetadata>()!.HttpMethods), r.RoutePattern.RawText)).ToArray());
         foreach (var ruta in rutas)
         {

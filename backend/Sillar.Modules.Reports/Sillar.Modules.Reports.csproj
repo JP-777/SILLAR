@@ -8,4 +8,10 @@
     <ProjectReference Include="..\Sillar.Core.Contracts\Sillar.Core.Contracts.csproj" />
   </ItemGroup>
 
+  <!-- Los puertos hacia lectores que M03 todavía no publica son internos: las
+       pruebas los sustituyen por dobles sin que M10 publique una firma propia. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Sillar.Modules.Reports.Tests" />
+  </ItemGroup>
+
 </Project>

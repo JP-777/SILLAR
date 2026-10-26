@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -12,12 +10,6 @@ namespace Sillar.Modules.Reports.Endpoints;
 /// <summary>Lectura administrativa de I01, I03 e I04 desde el contrato de M03.</summary>
 public static class OrderIndicatorsEndpoints
 {
-    // El consumidor debe declarar el desplazamiento, no usar implícitamente
-    // la zona del navegador, servidor ni instancia.
-    private static readonly Regex ExplicitOffset = new(
-        @"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,7})?)?(?:Z|[+-]\d{2}:\d{2})$",
-        RegexOptions.CultureInvariant | RegexOptions.Compiled);
-
     /// <summary>Registra el GET protegido solo cuando M10 está activo.</summary>
     public static IEndpointRouteBuilder MapOrderIndicatorsEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -47,22 +39,10 @@ public static class OrderIndicatorsEndpoints
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
-        var startText = request.Query["start"].ToString();
-        var endText = request.Query["end"].ToString();
-        if (!TryReadInstant(startText, out var start) || !TryReadInstant(endText, out var end))
+        if (!ReportPeriod.TryRead(request.Query["start"].ToString(), request.Query["end"].ToString(),
+                out var start, out var end, out var problem))
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["periodo"] = ["Indica inicio y fin ISO 8601, cada uno con zona horaria explícita (Z o ±HH:MM)."]
-            });
-        }
-
-        if (end <= start)
-        {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["periodo"] = ["El fin debe ser posterior al inicio. El intervalo es [inicio, fin)."]
-            });
+            return problem!;
         }
 
         // Un fallo real del lector no se convierte en 0 ni en fuente ausente: es
@@ -96,13 +76,6 @@ public static class OrderIndicatorsEndpoints
             data.I04CurrentlyExpiredOrders,
             data.ActiveOrders,
             data.InactiveOrders));
-    }
-
-    private static bool TryReadInstant(string text, out DateTimeOffset instant)
-    {
-        instant = default;
-        return ExplicitOffset.IsMatch(text)
-            && DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out instant);
     }
 }
 

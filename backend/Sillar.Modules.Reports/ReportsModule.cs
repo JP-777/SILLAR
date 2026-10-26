@@ -45,6 +45,7 @@ public sealed class ReportsModule : IModule
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         endpoints.MapOrderIndicatorsEndpoints();
+        endpoints.MapMonetaryIndicatorsEndpoints();
         endpoints.MapCoreSeamEndpoints();
     }
 }
