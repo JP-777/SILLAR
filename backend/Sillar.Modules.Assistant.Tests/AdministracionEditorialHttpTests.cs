@@ -47,6 +47,7 @@ public sealed class AdministracionEditorialHttpTests
         var created = Assert.IsType<Created<AssistantEditorialWriteReply>>(response);
         Assert.Equal("saved", created.Value!.Outcome);
         Assert.NotEqual(Guid.Empty, created.Value.ArticleId);
+        Assert.Equal('7', created.Value.ArticleId.ToString("D")[14]);
         Assert.Equal(created.Value.ArticleId, service.LastArticle);
         Assert.Equal(Instalacion, service.LastActor!.InstallationId);
     }
@@ -115,6 +116,7 @@ public sealed class AdministracionEditorialHttpTests
         var ok = Assert.IsType<Ok<AssistantEditorialWriteReply>>(response);
         Assert.Equal(5, ok.Value!.Version);
         Assert.NotEqual(Guid.Empty, ok.Value.RevisionId);
+        Assert.Equal('7', ok.Value.RevisionId!.Value.ToString("D")[14]);
         Assert.Equal(ok.Value.RevisionId, service.LastDraft!.RevisionId);
         Assert.Equal(4, service.LastExpectedVersion);
         Assert.Equal(Instalacion, service.LastActor!.InstallationId);

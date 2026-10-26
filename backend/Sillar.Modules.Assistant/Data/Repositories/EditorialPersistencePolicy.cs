@@ -1,5 +1,6 @@
 using Sillar.Modules.Assistant.Data.Entities;
 using Sillar.Modules.Assistant.Domain;
+using Sillar.Modules.Assistant.Services;
 
 namespace Sillar.Modules.Assistant.Data.Repositories;
 
@@ -53,6 +54,26 @@ public sealed class EditorialPersistencePolicy
 
     public static bool MatchesVersion(EditorialArticleRow article, long expectedVersion) =>
         expectedVersion >= 0 && article.Version == expectedVersion && article.Version < long.MaxValue;
+
+    /// <summary>
+    /// Un puntero por sí solo no convierte una revisión en fuente vigente. La versión
+    /// de publicación debe pertenecer a la historia de la raíz y las marcas de
+    /// tiempo no pueden situar la publicación antes de crear la revisión.
+    /// </summary>
+    public static bool IsCurrentPublishedRevision(EditorialArticleRow article,
+        EditorialRevisionRow revision) =>
+        article.Id != Guid.Empty && article.InstallationId != Guid.Empty &&
+        !string.IsNullOrWhiteSpace(article.WriterNode) &&
+        article.CurrentPublishedRevisionId == revision.Id &&
+        revision.Id != Guid.Empty && revision.ArticleId == article.Id &&
+        revision.InstallationId == article.InstallationId &&
+        revision.PublishedAt is { } publishedAt &&
+        revision.PublishedArticleVersion is { } publishedVersion &&
+        publishedVersion > 0 && publishedVersion <= article.Version &&
+        article.CreatedAt <= revision.CreatedAt && revision.CreatedAt <= publishedAt &&
+        !string.IsNullOrWhiteSpace(revision.Question) &&
+        !string.IsNullOrWhiteSpace(revision.QuestionKey) &&
+        revision.QuestionKey == FaqService.Normalize(revision.Question);
 
     public bool IsValidDraft(Guid installationId, KnowledgeDraft? draft) =>
         draft is not null && draft.RevisionId != Guid.Empty &&

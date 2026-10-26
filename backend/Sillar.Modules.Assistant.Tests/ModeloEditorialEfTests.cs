@@ -112,6 +112,16 @@ public class ModeloEditorialEfTests
     }
 
     [Fact]
+    public void IndiceFaqAntecedePreguntaConInstalacion()
+    {
+        using var db = Contexto();
+        var revision = db.Model.FindEntityType(typeof(EditorialRevisionRow))!;
+        Assert.Contains(revision.GetIndexes(), index =>
+            index.Properties.Select(x => x.Name).SequenceEqual(
+                new[] { nameof(EditorialRevisionRow.InstallationId), nameof(EditorialRevisionRow.QuestionKey) }));
+    }
+
+    [Fact]
     public void NoExisteTablaDeOtroModuloEnElModelo()
     {
         using var db = Contexto();

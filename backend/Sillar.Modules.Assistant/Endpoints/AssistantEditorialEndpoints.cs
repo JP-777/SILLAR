@@ -66,7 +66,7 @@ public static class AssistantEditorialEndpoints
         => ExecuteSafely(async () =>
     {
         if (!TryActor(scope, false, out var actor)) return Results.NotFound();
-        var articleId = Guid.NewGuid();
+        var articleId = Guid.CreateVersion7();
         var result = await service.CreateAsync(actor!, articleId, ct);
         if (result == EditorialResult.Saved)
             return Results.Created($"/api/admin/assistant/articles/{articleId}",
@@ -100,7 +100,7 @@ public static class AssistantEditorialEndpoints
     {
         if (!TryActor(scope, false, out var actor)) return Results.NotFound();
         if (articleId == Guid.Empty || !ValidDraftRequest(request, out var uri)) return BadRequest();
-        var revisionId = Guid.NewGuid();
+        var revisionId = Guid.CreateVersion7();
         var draft = new KnowledgeDraft(revisionId, request!.Question!, request.Answer!,
             request.Title!, uri!);
         var result = await service.SaveDraftAsync(actor!, articleId, draft, request.ExpectedVersion, ct);

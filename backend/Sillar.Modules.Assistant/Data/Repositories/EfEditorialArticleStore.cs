@@ -171,8 +171,7 @@ public sealed class EfEditorialArticleStore(
         var revision = await db.Revisions.AsNoTracking().SingleOrDefaultAsync(x =>
             x.Id == revisionId && x.ArticleId == article.Id &&
             x.InstallationId == article.InstallationId, ct);
-        if (revision is null || revision.PublishedAt is not { } publishedAt ||
-            revision.PublishedArticleVersion is not { } version || version <= 0 ||
+        if (revision is null || !EditorialPersistencePolicy.IsCurrentPublishedRevision(article, revision) ||
             !Uri.TryCreate(revision.PublicUrl, UriKind.Absolute, out var uri) ||
             !policy.IsAllowedPublicUri(article.InstallationId, uri) ||
             string.IsNullOrWhiteSpace(revision.Question) ||
@@ -182,7 +181,8 @@ public sealed class EfEditorialArticleStore(
 
         return new(KnowledgeReadStatus.Authoritative,
             new PublishedKnowledge(article.Id, revision.Id, article.InstallationId,
-                revision.Question, revision.Answer, revision.Title, uri, version, publishedAt),
+                revision.Question, revision.Answer, revision.Title, uri,
+                revision.PublishedArticleVersion!.Value, revision.PublishedAt!.Value),
             true, true, false, null);
     }
 

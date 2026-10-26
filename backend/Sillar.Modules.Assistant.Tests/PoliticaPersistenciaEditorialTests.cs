@@ -1,6 +1,7 @@
 using Sillar.Modules.Assistant.Data.Entities;
 using Sillar.Modules.Assistant.Data.Repositories;
 using Sillar.Modules.Assistant.Domain;
+using Sillar.Modules.Assistant.Services;
 
 namespace Sillar.Modules.Assistant.Tests;
 
@@ -141,5 +142,53 @@ public sealed class PoliticaPersistenciaEditorialTests
     public void ImpideDesbordamientoVersion()
     {
         Assert.False(EditorialPersistencePolicy.MatchesVersion(Article(long.MaxValue), long.MaxValue));
+    }
+
+    [Fact]
+    public void FuentePublicadaExigePunteroAmbitoYVersionCoherentes()
+    {
+        var created = new DateTimeOffset(2026, 10, 20, 10, 0, 0, TimeSpan.Zero);
+        var article = Article(version: 3);
+        article.CreatedAt = created;
+        var revision = new EditorialRevisionRow
+        {
+            Id = Guid.CreateVersion7(), ArticleId = article.Id, InstallationId = _site,
+            Question = "¿Horario?", QuestionKey = FaqService.Normalize("¿Horario?"),
+            Answer = "Abrimos temprano.", Title = "Horario", PublicUrl = "https://sillar.example/faq",
+            CreatedAt = created.AddMinutes(1), PublishedAt = created.AddMinutes(2),
+            PublishedArticleVersion = 2
+        };
+        article.CurrentPublishedRevisionId = revision.Id;
+        Assert.True(EditorialPersistencePolicy.IsCurrentPublishedRevision(article, revision));
+
+        revision.PublishedArticleVersion = 4;
+        Assert.False(EditorialPersistencePolicy.IsCurrentPublishedRevision(article, revision));
+        revision.PublishedArticleVersion = 2;
+        revision.InstallationId = _foreign;
+        Assert.False(EditorialPersistencePolicy.IsCurrentPublishedRevision(article, revision));
+        revision.InstallationId = _site;
+        article.CurrentPublishedRevisionId = null;
+        Assert.False(EditorialPersistencePolicy.IsCurrentPublishedRevision(article, revision));
+    }
+
+    [Fact]
+    public void FuenteConClaveOFechaIncoherenteNoEsPublicacionVigente()
+    {
+        var created = new DateTimeOffset(2026, 10, 20, 10, 0, 0, TimeSpan.Zero);
+        var article = Article(version: 1);
+        article.CreatedAt = created;
+        var revision = new EditorialRevisionRow
+        {
+            Id = Guid.CreateVersion7(), ArticleId = article.Id, InstallationId = _site,
+            Question = "¿Horario?", QuestionKey = FaqService.Normalize("¿Horario?"), Answer = "Respuesta",
+            Title = "Horario", PublicUrl = "https://sillar.example/faq",
+            CreatedAt = created.AddMinutes(2), PublishedAt = created.AddMinutes(1),
+            PublishedArticleVersion = 1
+        };
+        article.CurrentPublishedRevisionId = revision.Id;
+        Assert.False(EditorialPersistencePolicy.IsCurrentPublishedRevision(article, revision));
+        revision.PublishedAt = created.AddMinutes(3);
+        revision.QuestionKey = "otra pregunta";
+        Assert.False(EditorialPersistencePolicy.IsCurrentPublishedRevision(article, revision));
     }
 }
