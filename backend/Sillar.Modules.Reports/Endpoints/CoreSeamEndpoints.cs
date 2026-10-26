@@ -90,11 +90,15 @@ public static class CoreSeamEndpoints
     /// pantalla, del lado del servidor: el navegador no es la garantía.
     /// </summary>
     internal static string? VerifiedZone(IInstallationTimeZoneResolver? resolver)
+        => VerifiedZoneInfo(resolver)?.Id;
+
+    /// <summary>La zona verificada con su <see cref="TimeZoneInfo"/>, para escribir horas locales.</summary>
+    internal static (string Id, TimeZoneInfo Zone)? VerifiedZoneInfo(IInstallationTimeZoneResolver? resolver)
     {
         if (resolver is null) return null;
         var resolution = resolver.Resolve();
-        return resolution is { IsResolved: true, Verification: InstallationTimeZoneVerification.Verified, ZoneId: { Length: > 0 } zoneId }
-            ? zoneId
+        return resolution is { IsResolved: true, Verification: InstallationTimeZoneVerification.Verified, ZoneId: { Length: > 0 } zoneId, Zone: { } zone }
+            ? (zoneId, zone)
             : null;
     }
 
