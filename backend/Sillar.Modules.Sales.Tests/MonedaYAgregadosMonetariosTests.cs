@@ -112,9 +112,12 @@ public sealed class MonedaYAgregadosMonetariosTests
     }
 
     [Fact]
-    public void Un_pago_nuevo_exige_origen_por_CHECK()
+    public void Ningun_CHECK_exige_origen_porque_bloquearia_los_UPDATE_historicos()
     {
-        Assert.Equal("source IS NOT NULL", Check<OrderPayment>("ck_order_payments_source_obligatorio"));
+        // Un CHECK se evalúa sobre la fila nueva de cada UPDATE; el origen obligatorio va en trigger.
+        Assert.DoesNotContain(
+            Modelo().FindEntityType(typeof(OrderPayment))!.GetCheckConstraints(),
+            c => c.Sql.Contains("source IS NOT NULL", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -189,17 +192,63 @@ public sealed class MonedaYAgregadosMonetariosTests
     }
 
     [Fact]
-    public void La_candidata_de_origen_exige_origen_a_lo_nuevo_sin_validar_lo_historico()
+    public void La_candidata_de_origen_no_crea_ningun_CHECK_que_alcance_a_los_UPDATE_historicos()
     {
         var subida = new SalesPaymentSourceNullableCandidate20261027().UpOperations;
-        var sql = string.Join("\n", subida.OfType<SqlOperation>().Select(o => o.Sql));
+        var sql = SqlDe(subida);
 
-        // AddCheckConstraint validaría las filas existentes y rechazaría los históricos.
-        Assert.DoesNotContain(subida.OfType<AddCheckConstraintOperation>(),
-            c => c.Name == "ck_order_payments_source_obligatorio");
-        Assert.Contains("CHECK (source IS NOT NULL) NOT VALID", sql, StringComparison.Ordinal);
-        Assert.DoesNotContain("VALIDATE CONSTRAINT", sql, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("trg_order_payments_source_inmutable", sql, StringComparison.Ordinal);
+        Assert.Equal(
+            ["ck_order_payments_source"],
+            subida.OfType<AddCheckConstraintOperation>().Select(c => c.Name));
+        Assert.DoesNotContain("NOT VALID", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ADD CONSTRAINT", sql, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void El_trigger_de_origen_vigila_INSERT_y_UPDATE_de_cada_fila()
+    {
+        var sql = SqlDe(new SalesPaymentSourceNullableCandidate20261027().UpOperations);
+
+        Assert.Contains("BEFORE INSERT OR UPDATE ON sales.order_payments", sql, StringComparison.Ordinal);
+        Assert.Contains("FOR EACH ROW EXECUTE FUNCTION sales.order_payments_source_protegido()", sql, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void En_SQL_un_INSERT_con_origen_NULL_se_rechaza()
+    {
+        var sql = SqlDe(new SalesPaymentSourceNullableCandidate20261027().UpOperations);
+
+        Assert.Contains("IF TG_OP = 'INSERT' AND NEW.source IS NULL THEN", sql, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void En_SQL_un_INSERT_valido_solo_depende_del_CHECK_de_valores_admitidos()
+    {
+        // El trigger no repite la lista: 'staff' pasa por él y lo decide ck_order_payments_source.
+        var subida = new SalesPaymentSourceNullableCandidate20261027().UpOperations;
+
+        Assert.DoesNotContain("'staff'", SqlDe(subida), StringComparison.Ordinal);
+        Assert.Equal("source IN ('staff')",
+            Assert.Single(subida.OfType<AddCheckConstraintOperation>()).Sql);
+    }
+
+    [Fact]
+    public void En_SQL_un_UPDATE_solo_se_rechaza_si_cambia_el_origen_comparando_NULL_como_valor()
+    {
+        var sql = SqlDe(new SalesPaymentSourceNullableCandidate20261027().UpOperations);
+
+        // IS DISTINCT FROM: NULL→staff es un cambio y se rechaza; NULL→NULL no lo es y pasa.
+        Assert.Contains("IF TG_OP = 'UPDATE' AND NEW.source IS DISTINCT FROM OLD.source THEN", sql, StringComparison.Ordinal);
+        Assert.DoesNotMatch(@"NEW\.source\s*(<>|!=|=)\s*OLD\.source", sql);
+    }
+
+    [Fact]
+    public void Deshacer_la_candidata_de_origen_retira_trigger_y_funcion()
+    {
+        var sql = SqlDe(new SalesPaymentSourceNullableCandidate20261027().DownOperations);
+
+        Assert.Contains("DROP TRIGGER IF EXISTS trg_order_payments_source_protegido", sql, StringComparison.Ordinal);
+        Assert.Contains("DROP FUNCTION IF EXISTS sales.order_payments_source_protegido()", sql, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -236,6 +285,20 @@ public sealed class MonedaYAgregadosMonetariosTests
         contexto.OrderPayments.Add(Pago(PaymentSource.Staff));
 
         OrigenDePagoObligatorio.Comprobar(contexto.ChangeTracker);
+    }
+
+    [Fact]
+    public void Un_historico_sin_origen_se_puede_actualizar_en_otros_campos()
+    {
+        using var contexto = Contexto();
+        var historico = Pago(null);
+        contexto.OrderPayments.Attach(historico);
+
+        historico.Reference = "OP-123";
+
+        OrigenDePagoObligatorio.Comprobar(contexto.ChangeTracker);
+        Assert.Equal(EntityState.Modified, contexto.Entry(historico).State);
+        Assert.False(contexto.Entry(historico).Property(p => p.Source).IsModified);
     }
 
     [Fact]
@@ -593,6 +656,9 @@ public sealed class MonedaYAgregadosMonetariosTests
         => PaymentSource.All
             .Select(o => new AcreditacionDeEscritor(o, o == origen ? desde : null))
             .ToArray();
+
+    private static string SqlDe(IEnumerable<MigrationOperation> operaciones)
+        => string.Join("\n", operaciones.OfType<SqlOperation>().Select(o => o.Sql));
 
     private static OrderPayment Pago(string? origen) => new()
     {

@@ -15,12 +15,16 @@ namespace Sillar.Modules.Sales.Migrations
     /// <b>Sin valor por defecto y sin <c>UPDATE</c>:</b> ninguna fila existente cambia.
     /// </para>
     /// <para>
-    /// Tres barreras, ninguna de las cuales toca una fila existente:
-    /// <c>ck_order_payments_source</c> admite solo lo ratificado (un NULL lo cumple);
-    /// <c>ck_order_payments_source_obligatorio</c> nace <c>NOT VALID</c>, así que se exige
-    /// a cada INSERT y UPDATE pero no se comprueba contra lo que ya estaba; y el trigger
-    /// impide cambiar el origen de un pago ya registrado, que es lo que reclasificaría un
-    /// histórico.
+    /// Dos barreras, ninguna de las cuales toca una fila existente:
+    /// <c>ck_order_payments_source</c> admite solo lo ratificado (un NULL lo cumple), y
+    /// <c>trg_order_payments_source_protegido</c> exige origen a cada INSERT y prohíbe
+    /// cambiarlo en un UPDATE. Un histórico se puede seguir actualizando en sus otros
+    /// campos; lo que no puede es ganar, perder ni cambiar de origen.
+    /// </para>
+    /// <para>
+    /// <b>Trigger y no <c>CHECK (source IS NOT NULL) NOT VALID</c>:</b> PostgreSQL evalúa
+    /// un CHECK sobre la fila nueva de cada UPDATE, así que ese CHECK habría bloqueado
+    /// cualquier UPDATE de un histórico aunque no tocara el origen.
     /// </para>
     /// <para>
     /// <b>Una base que ya aplicó la candidata anterior se trata aparte, no aquí.</b> Allí
@@ -65,30 +69,29 @@ namespace Sillar.Modules.Sales.Migrations
                 table: "order_payments",
                 sql: "source IN ('staff')");
 
-            // NOT VALID a propósito, y nunca VALIDATE: validarla rechazaría los históricos.
+            // Los valores admitidos los fija ck_order_payments_source; aquí solo la
+            // presencia en INSERT y la inmutabilidad en UPDATE. IS DISTINCT FROM trata
+            // NULL como un valor: NULL→staff y staff→NULL son cambios, NULL→NULL no.
             migrationBuilder.Sql("""
-                ALTER TABLE sales.order_payments
-                    ADD CONSTRAINT ck_order_payments_source_obligatorio
-                    CHECK (source IS NOT NULL) NOT VALID;
-                """);
-
-            migrationBuilder.Sql("""
-                CREATE OR REPLACE FUNCTION sales.order_payments_source_inmutable()
+                CREATE OR REPLACE FUNCTION sales.order_payments_source_protegido()
                 RETURNS trigger
                 LANGUAGE plpgsql
                 AS $$
                 BEGIN
-                    IF NEW.source IS DISTINCT FROM OLD.source THEN
+                    IF TG_OP = 'INSERT' AND NEW.source IS NULL THEN
+                        RAISE EXCEPTION 'Un pago nuevo exige un origen: solo los pagos históricos carecen de él.';
+                    END IF;
+                    IF TG_OP = 'UPDATE' AND NEW.source IS DISTINCT FROM OLD.source THEN
                         RAISE EXCEPTION 'El origen de un pago registrado no se cambia: un histórico sin origen no se reclasifica.';
                     END IF;
                     RETURN NEW;
                 END;
                 $$;
 
-                DROP TRIGGER IF EXISTS trg_order_payments_source_inmutable ON sales.order_payments;
-                CREATE TRIGGER trg_order_payments_source_inmutable
-                    BEFORE UPDATE ON sales.order_payments
-                    FOR EACH ROW EXECUTE FUNCTION sales.order_payments_source_inmutable();
+                DROP TRIGGER IF EXISTS trg_order_payments_source_protegido ON sales.order_payments;
+                CREATE TRIGGER trg_order_payments_source_protegido
+                    BEFORE INSERT OR UPDATE ON sales.order_payments
+                    FOR EACH ROW EXECUTE FUNCTION sales.order_payments_source_protegido();
                 """);
 
             migrationBuilder.Sql("""
@@ -101,14 +104,9 @@ namespace Sillar.Modules.Sales.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql("""
-                DROP TRIGGER IF EXISTS trg_order_payments_source_inmutable ON sales.order_payments;
-                DROP FUNCTION IF EXISTS sales.order_payments_source_inmutable();
+                DROP TRIGGER IF EXISTS trg_order_payments_source_protegido ON sales.order_payments;
+                DROP FUNCTION IF EXISTS sales.order_payments_source_protegido();
                 """);
-
-            migrationBuilder.DropCheckConstraint(
-                name: "ck_order_payments_source_obligatorio",
-                schema: "sales",
-                table: "order_payments");
 
             migrationBuilder.DropCheckConstraint(
                 name: "ck_order_payments_source",

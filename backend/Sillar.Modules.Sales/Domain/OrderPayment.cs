@@ -68,8 +68,8 @@ public class OrderPayment : IReplicatedEntity
     /// <para>
     /// Anulable por la opción B ratificada: un histórico sin origen acreditado conserva
     /// <c>null</c> y nadie lo reclasifica. <c>required</c> obliga a cada escritor a
-    /// nombrarlo, y <c>OrigenDePagoObligatorio</c> y el <c>CHECK ... NOT VALID</c>
-    /// rechazan un pago nuevo que lo traiga vacío.
+    /// nombrarlo, y <c>OrigenDePagoObligatorio</c> y el trigger
+    /// <c>trg_order_payments_source_protegido</c> rechazan un pago nuevo que lo traiga vacío.
     /// </para>
     /// </remarks>
     public required string? Source { get; set; }

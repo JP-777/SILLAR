@@ -47,12 +47,9 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
                 "ck_order_payments_source",
                 $"source IN ({string.Join(", ", PaymentSource.Ratified.Select(s => $"'{s}'"))})");
 
-            // Un pago nuevo trae origen. La migración lo crea NOT VALID: PostgreSQL lo
-            // exige a cada INSERT y UPDATE, pero no lo comprueba contra las filas que ya
-            // estaban, que conservan su NULL. Nunca se valida (VALIDATE CONSTRAINT).
-            table.HasCheckConstraint(
-                "ck_order_payments_source_obligatorio",
-                "source IS NOT NULL");
+            // Que un pago nuevo traiga origen no es un CHECK: uno sobre la fila nueva
+            // bloquearía cualquier UPDATE de un histórico. Lo hace el trigger
+            // trg_order_payments_source_protegido de la migración, solo en INSERT.
         });
 
         builder.HasKey(x => x.OrderPaymentId).HasName("pk_order_payments");
