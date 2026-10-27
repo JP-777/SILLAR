@@ -160,8 +160,8 @@ internal sealed partial class OrderPaymentReport(IServiceProvider services)
     }
 
     /// <summary>
-    /// Una entrada por origen e indicador, y cada una coherente consigo misma, con
-    /// las demás de su origen y con las filas.
+    /// Una entrada por origen e indicador, cada una coherente consigo misma y con
+    /// las filas de su origen.
     /// </summary>
     private static Dictionary<(string, string), PaymentCoverageEntry> CheckedCoverage(
         IReadOnlyList<PaymentCoverageEntry> entries, PaymentGroup[] groups, DateTimeOffset startUtc)
@@ -188,18 +188,11 @@ internal sealed partial class OrderPaymentReport(IServiceProvider services)
             if (!coherent) throw new SourceIncoherentException("Cobertura incoherente.");
         }
 
+        // Cada indicador tiene su propia fecha de acreditación: el contrato no
+        // promete que las tres capacidades de un origen empiecen a la vez.
         foreach (var source in Sources)
         {
-            var count = coverage[(source, PaymentIndicators.Count)];
-            var late = coverage[(source, PaymentIndicators.LateCount)];
             var amount = coverage[(source, PaymentIndicators.AmountByCurrency)];
-            // El escritor es uno por origen: desde cuándo está acreditado no depende del indicador.
-            if (late.CoveredSinceUtc != count.CoveredSinceUtc || amount.CoveredSinceUtc != count.CoveredSinceUtc)
-            {
-                throw new SourceIncoherentException("Acreditación distinta según el indicador.");
-            }
-            // Tardíos e importe se miden sobre los mismos pagos que el recuento.
-            if ((late.Measured || amount.Measured) && !count.Measured) throw new SourceIncoherentException("Medida sin recuento medido.");
             var withoutCurrency = groups.Any(g => g.Source == source && g.CurrencyCode is null);
             if (amount.Measured && withoutCurrency) throw new SourceIncoherentException("Importe completo con pagos sin moneda.");
             if (amount.Reason == NotMeasurableReasons.CurrencyNotRecorded && !withoutCurrency)
@@ -240,7 +233,10 @@ internal sealed partial class OrderPaymentReport(IServiceProvider services)
 
         if (measured.Length == 0)
         {
-            return new(IndicatorStatus.CurrencyNotAccredited, null, null, withoutCurrency, CurrencyCoverage.None, bySource);
+            // Sin moneda es «no acreditada»; cualquier otro motivo (escritor o ventana) es «no medible».
+            return Sources.Any(s => of(s, PaymentIndicators.AmountByCurrency).Reason == NotMeasurableReasons.CurrencyNotRecorded)
+                ? new(IndicatorStatus.CurrencyNotAccredited, null, null, withoutCurrency, CurrencyCoverage.None, bySource)
+                : new(IndicatorStatus.NotMeasurable, null, null, withoutCurrency, null, bySource);
         }
         var priced = groups.Where(g => measured.Contains(g.Source)).ToArray();
         var byMethod = priced
@@ -270,8 +266,11 @@ internal sealed partial class OrderPaymentReport(IServiceProvider services)
         var priced = measured.Where(s => of(s, PaymentIndicators.AmountByCurrency).Measured).ToArray();
         if (priced.Length == 0)
         {
-            return new(CountStatus(late, measured.Length), late, Coverage(measured.Length), bySource,
-                IndicatorStatus.CurrencyNotAccredited, null, CurrencyCoverage.None);
+            return measured.Any(s => of(s, PaymentIndicators.AmountByCurrency).Reason == NotMeasurableReasons.CurrencyNotRecorded)
+                ? new(CountStatus(late, measured.Length), late, Coverage(measured.Length), bySource,
+                    IndicatorStatus.CurrencyNotAccredited, null, CurrencyCoverage.None)
+                : new(CountStatus(late, measured.Length), late, Coverage(measured.Length), bySource,
+                    IndicatorStatus.NotMeasurable, null, null);
         }
         var lateGroups = groups.Where(g => g.WasLate && priced.Contains(g.Source)).ToArray();
         return new(CountStatus(late, measured.Length), late, Coverage(measured.Length), bySource,

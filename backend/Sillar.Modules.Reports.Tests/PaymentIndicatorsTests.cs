@@ -180,10 +180,56 @@ public sealed class PaymentIndicatorsTests
         Assert.Equal("currency_not_accredited", cuerpo.GetProperty("i07").GetProperty("amountStatus").GetString());
     }
 
+    [Fact]
+    public async Task Cada_indicador_de_un_origen_puede_estar_acreditado_desde_una_fecha_distinta()
+    {
+        var ventana = new PaymentWindow(InicioUtc, FinUtc, Observado,
+            [Grupo("staff", "yape", "PEN", false, 2, 20m), Grupo("staff", "efectivo", "PEN", true, 1, 5m)],
+            [
+                new("staff", "count", true, null, AcreditadoAntes),
+                new("staff", "late_count", true, null, AcreditadoAntes.AddDays(20)),
+                new("staff", "amount_by_currency", false, "window_starts_before_coverage", AcreditadoDespues),
+                .. Cobertura("provider", Cubierto.SinEscritor),
+            ]);
+
+        var (codigo, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(ventana)));
+
+        Assert.Equal(StatusCodes.Status200OK, codigo);
+        Assert.Equal((3L, "partial"), (cuerpo.GetProperty("i05").GetProperty("count").GetInt64(), cuerpo.GetProperty("i05").GetProperty("coverage").GetString()));
+        Assert.Equal(AcreditadoAntes.AddDays(20), cuerpo.GetProperty("i07").GetProperty("bySource")[0].GetProperty("coveredSinceUtc").GetDateTimeOffset());
+        Assert.Equal(1, cuerpo.GetProperty("i07").GetProperty("count").GetInt64());
+        // El importe no se mide por la ventana, no por la moneda: no medible, y sin cifras.
+        var i06 = cuerpo.GetProperty("i06");
+        Assert.Equal("not_measurable", i06.GetProperty("status").GetString());
+        Assert.Equal("window_starts_before_coverage", i06.GetProperty("bySource")[0].GetProperty("reason").GetString());
+        Assert.Equal(JsonValueKind.Null, i06.GetProperty("byCurrency").ValueKind);
+        Assert.Equal("not_measurable", cuerpo.GetProperty("i07").GetProperty("amountStatus").GetString());
+    }
+
+    [Fact]
+    public async Task Los_tardios_medidos_de_un_origen_cuyo_recuento_no_se_mide_se_publican_solo_en_I07()
+    {
+        var ventana = new PaymentWindow(InicioUtc, FinUtc, Observado,
+            [Grupo("staff", "yape", "PEN", false, 2, 20m), Grupo("provider", "yape", "PEN", true, 3, 30m)],
+            [
+                .. Cobertura("staff", Cubierto.Medido),
+                new("provider", "count", false, "window_starts_before_coverage", AcreditadoDespues),
+                new("provider", "late_count", true, null, AcreditadoAntes),
+                new("provider", "amount_by_currency", false, "window_starts_before_coverage", AcreditadoDespues),
+            ]);
+
+        var (codigo, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(ventana)));
+
+        Assert.Equal(StatusCodes.Status200OK, codigo);
+        Assert.Equal((2L, "partial"), (cuerpo.GetProperty("i05").GetProperty("count").GetInt64(), cuerpo.GetProperty("i05").GetProperty("coverage").GetString()));
+        Assert.Equal((3L, "complete"), (cuerpo.GetProperty("i07").GetProperty("count").GetInt64(), cuerpo.GetProperty("i07").GetProperty("coverage").GetString()));
+        Assert.Equal("partial", cuerpo.GetProperty("i07").GetProperty("amountCoverage").GetString());
+    }
+
     public static TheoryData<string> Incoherencias =>
         ["cobertura_incompleta", "cobertura_repetida", "medido_con_motivo", "medido_acreditado_despues", "sin_escritor_con_fecha",
-         "tardio_medido_sin_recuento", "importe_completo_con_pagos_sin_moneda", "sin_moneda_sin_pagos_sin_moneda",
-         "sin_moneda_en_el_recuento", "acreditacion_distinta", "origen_desconocido", "medio_mayusculas", "grupo_repetido",
+         "importe_completo_con_pagos_sin_moneda", "sin_moneda_sin_pagos_sin_moneda",
+         "sin_moneda_en_el_recuento", "origen_desconocido", "medio_mayusculas", "grupo_repetido",
          "importe_sin_moneda", "importe_negativo", "otro_periodo"];
 
     [Theory]
@@ -203,11 +249,9 @@ public sealed class PaymentIndicatorsTests
                 Coverage = [.. Cobertura("staff", Cubierto.Medido).Select(c => c with { CoveredSinceUtc = AcreditadoDespues }), .. Cobertura("provider", Cubierto.SinEscritor)],
             },
             "sin_escritor_con_fecha" => Cambia("provider", "count", new("provider", "count", false, "writer_not_accredited", AcreditadoAntes)),
-            "tardio_medido_sin_recuento" => Cambia("provider", "late_count", new("provider", "late_count", true, null, null)),
             "importe_completo_con_pagos_sin_moneda" => ventana with { Groups = [Grupo("staff", "yape", null, false, 2, null)] },
             "sin_moneda_sin_pagos_sin_moneda" => Ventana(Cubierto.SinMoneda, Cubierto.SinEscritor, Grupo("staff", "yape", "PEN", false, 2, 20m)),
             "sin_moneda_en_el_recuento" => Cambia("staff", "count", new("staff", "count", false, "currency_not_recorded", AcreditadoAntes)),
-            "acreditacion_distinta" => Cambia("staff", "late_count", new("staff", "late_count", true, null, AcreditadoAntes.AddDays(-1))),
             "origen_desconocido" => ventana with { Groups = [Grupo("cliente", "yape", "PEN", false, 2, 20m)] },
             "medio_mayusculas" => ventana with { Groups = [Grupo("staff", "Yape", "PEN", false, 2, 20m)] },
             "grupo_repetido" => ventana with { Groups = [Grupo("staff", "yape", "PEN", false, 1, 10m), Grupo("staff", "yape", "PEN", false, 1, 10m)] },

@@ -1082,6 +1082,19 @@ test('64 · un origen no medido nunca da un período vacío ni cobertura complet
     estropear(datos);
     assert.throws(() => verifyPaymentIndicators(datos, cohorteMonetaria), InconsistentIndicatorsError, `caso ${n}`);
   });
+  // Fechas de acreditación distintas por indicador, e importe sin medir por la ventana: válido.
+  const fechas = cobros();
+  fechas.i07.bySource[0] = { ...medido('staff', 1), coveredSinceUtc: '2026-08-20T05:00:00+00:00' };
+  fechas.i06 = { status: 'not_measurable', byCurrency: null, byMethod: null, withoutCurrencyCount: 0, coverage: null,
+    bySource: [{ source: 'staff', status: 'not_measurable', count: null, reason: 'window_starts_before_coverage', coveredSinceUtc: '2026-09-04T05:00:00+00:00' }, sinEscritor('provider')] };
+  fechas.i07.amountStatus = 'not_measurable';
+  fechas.i07.amountByCurrency = null;
+  fechas.i07.amountCoverage = null;
+  assert.equal(verifyPaymentIndicators(fechas, cohorteMonetaria).i06.status, 'not_measurable');
+  // Tardíos medidos de un origen cuyo recuento no se mide: no se comparan con un total que no los incluye.
+  const tardios = cobros();
+  tardios.i07 = { ...tardios.i07, count: 4, coverage: 'complete', bySource: [medido('staff', 1), medido('provider', 3)] };
+  assert.equal(verifyPaymentIndicators(tardios, cohorteMonetaria).i07.count, 4);
   // Con los dos orígenes medidos y sin cobros, sí es un período vacío.
   const completo = {
     ...cobros(),
@@ -1111,6 +1124,6 @@ test('66 · la pantalla monta los importes con la cohorte y dice «No medible»,
   assert.match(panel, /return \(\) => \{ current = false; \}/);
   // Antes de cualquier cifra, los estados sin medición devuelven su frase.
   for (const indicador of ['i05', 'i06', 'i07']) {
-    assert.match(panel, new RegExp(`if \\(${indicador}\\.status === 'source_unavailable' \\|\\| ${indicador}\\.status === 'not_measurable'\\) \\{\\s*return <Unmeasured`));
+    assert.match(panel, new RegExp(`if \\(${indicador}\\.status === 'source_unavailable' \\|\\| ${indicador}\\.status === 'not_measurable'\\) \\{\\s*return (<>)?<Unmeasured`));
   }
 });

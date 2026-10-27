@@ -164,7 +164,8 @@ export function verifyOrderValue(data: OrderValueView, requested: { start: strin
 
 /**
  * Las medidas por origen de un indicador: personal y proveedor, en ese orden.
- * Devuelve las cuentas de los medidos; ninguno medido, lista vacía.
+ * Devuelve las cuentas de los medidos; ninguno medido, mapa vacío. Cada
+ * indicador trae su propia fecha de acreditación.
  */
 function sources(list: unknown): Map<string, number> {
   if (!Array.isArray(list) || list.length !== SOURCES.length) fail();
@@ -237,6 +238,10 @@ export function verifyPaymentIndicators(
   if (s06 === 'currency_not_accredited') {
     if (priced.size !== 0 || i06.byCurrency !== null || i06.byMethod !== null || i06.coverage !== 'none'
       || i06.withoutCurrencyCount === 0) fail();
+  } else if (s06 === 'not_measurable') {
+    // Importe sin medir por el escritor o por la ventana, no por la moneda.
+    if (priced.size !== 0) fail();
+    nothing(i06.byCurrency, i06.byMethod, i06.coverage);
   } else {
     const byCurrency = amounts(i06.byCurrency);
     if (!Array.isArray(i06.byMethod) || priced.size === 0) fail();
@@ -265,13 +270,21 @@ export function verifyPaymentIndicators(
     return data;
   }
   const lateCount = count(i07.count);
-  if (late.size === 0 || lateCount !== sum([...late.values()]) || lateCount > registered
+  if (late.size === 0 || lateCount !== sum([...late.values()])
     || i07.coverage !== coverageOf(late.size) || s07 !== countStatus(lateCount, late.size === SOURCES.length)) fail();
+  // Cada indicador tiene su propia acreditación: los tardíos de un origen solo se
+  // comparan con su recuento cuando los dos se miden.
+  for (const [source, n] of late) {
+    if (counted.has(source) && n > counted.get(source)!) fail();
+  }
   // El importe de los tardíos, solo de los orígenes con tardanza e importe medidos.
   const lateAndPriced = [...late.keys()].filter((source) => priced.has(source)).length;
   const a07 = status(i07.amountStatus);
   if (a07 === 'currency_not_accredited') {
     if (lateAndPriced !== 0 || i07.amountByCurrency !== null || i07.amountCoverage !== 'none') fail();
+  } else if (a07 === 'not_measurable') {
+    if (lateAndPriced !== 0) fail();
+    nothing(i07.amountByCurrency, i07.amountCoverage);
   } else {
     const lateAmounts = sum(amounts(i07.amountByCurrency).map((c) => c.count));
     if (lateAndPriced === 0 || lateAmounts > lateCount || i07.amountCoverage !== coverageOf(lateAndPriced)

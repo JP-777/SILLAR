@@ -166,7 +166,7 @@ function PaymentCount({ data }: { data: PaymentIndicatorsView }) {
 function PaymentAmounts({ data }: { data: PaymentIndicatorsView }) {
   const { i06 } = data;
   if (i06.status === 'source_unavailable' || i06.status === 'not_measurable') {
-    return <Unmeasured status={i06.status} reason={data.notMeasurableReason} zero="cero cobros" />;
+    return <><Unmeasured status={i06.status} reason={data.notMeasurableReason} zero="cero cobros" /><Sources list={i06.bySource} unit="cobros con importe" /></>;
   }
   if (i06.status === 'empty') return <p>No se registró ningún cobro en este período, así que no hay importe que sumar.</p>;
   return (
@@ -203,6 +203,7 @@ function LatePayments({ data }: { data: PaymentIndicatorsView }) {
       <Sources list={i07.bySource} unit="con retraso" />
       {i07.amountByCurrency && i07.amountByCurrency.length > 0 && <Amounts list={i07.amountByCurrency} unit="cobros con retraso" />}
       {i07.amountStatus === 'currency_not_accredited' && <p className="rp-note">Su importe no se suma: hay cobros sin moneda registrada.</p>}
+      {i07.amountStatus === 'not_measurable' && <p className="rp-note">Su importe no se puede medir en este período.</p>}
       <PartialNote coverage={i07.amountCoverage} />
       <p className="rp-note">Retraso marcado al registrar el cobro; no se recalcula con el plazo actual.</p>
     </>
