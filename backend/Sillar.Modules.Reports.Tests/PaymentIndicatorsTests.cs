@@ -10,8 +10,9 @@ using Sillar.Modules.Sales.Contracts;
 namespace Sillar.Modules.Reports.Tests;
 
 /// <summary>
-/// I05–I07 por la ruta que monta el módulo: sin capacidad acreditada por ventas,
-/// «no medible» y nunca 0; con ella, origen, medio, moneda y tardanza separados.
+/// I05–I07 por la ruta que monta el módulo, con la forma del lector de pagos de
+/// M03: sin escritor acreditado, «no medible» y nunca 0; un origen no medible
+/// nunca cuenta como cero ni deja afirmar cobertura total.
 /// </summary>
 public sealed class PaymentIndicatorsTests
 {
@@ -23,16 +24,19 @@ public sealed class PaymentIndicatorsTests
     private static readonly DateTimeOffset Observado = new(2026, 10, 26, 15, 42, 10, TimeSpan.Zero);
     private static readonly string[] Indicadores = ["i05", "i06", "i07"];
 
+    /// <summary>Lo que declara M03 hoy: sin escritor de proveedor. Lo del personal lo decide cada prueba.</summary>
+    private static PaymentCapabilities Capacidades(bool personal = true, bool proveedor = false, bool origen = true, bool tardio = true, bool moneda = true)
+        => new(origen, moneda, tardio, proveedor, personal);
+
+    private static readonly PaymentMeasure SinEscritorDeProveedor = new(false, null, NotMeasurableReasons.ProviderWriterAbsent);
+
     [Fact]
     public async Task Sin_el_modulo_de_ventas_los_tres_indicadores_salen_fuente_no_disponible()
     {
-        var (codigo, cuerpo) = await Consultar(Aplicacion(ventas: false, new PuertoFijo(Medible(0))));
+        var (codigo, cuerpo) = await Consultar(Aplicacion(ventas: false, new PuertoFijo(Capacidades(), Cohorte())));
 
         Assert.Equal(StatusCodes.Status200OK, codigo);
-        foreach (var indicador in Indicadores)
-        {
-            Assert.Equal("source_unavailable", cuerpo.GetProperty(indicador).GetProperty("status").GetString());
-        }
+        Estados(cuerpo, "source_unavailable");
         SinCifras(cuerpo);
     }
 
@@ -41,147 +45,158 @@ public sealed class PaymentIndicatorsTests
     {
         var (_, cuerpo) = await Consultar(Aplicacion(ventas: true, puerto: null));
 
-        foreach (var indicador in Indicadores)
-        {
-            Assert.Equal("not_measurable", cuerpo.GetProperty(indicador).GetProperty("status").GetString());
-        }
+        Estados(cuerpo, "not_measurable");
+        Assert.Equal("reader_absent", cuerpo.GetProperty("notMeasurableReason").GetString());
         Assert.Equal("not_measurable", cuerpo.GetProperty("i07").GetProperty("amountStatus").GetString());
         SinCifras(cuerpo);
     }
 
     [Fact]
-    public async Task Si_ventas_no_acredita_la_capacidad_es_no_medible_aunque_responda_un_cero()
+    public async Task Sin_escritor_de_pagos_del_personal_acreditado_es_no_medible_y_ni_siquiera_se_consulta()
     {
-        var sinEscritor = Medible(0) with { Capability = OrderPaymentCapability.NotMeasurable };
+        var puerto = new PuertoFijo(Capacidades(personal: false), Cohorte(staff: 0));
 
-        var (_, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(sinEscritor)));
+        var (_, cuerpo) = await Consultar(Aplicacion(ventas: true, puerto));
 
-        Assert.Equal("not_measurable", cuerpo.GetProperty("i05").GetProperty("status").GetString());
+        Estados(cuerpo, "not_measurable");
+        Assert.Equal("staff_writer_not_accredited", cuerpo.GetProperty("notMeasurableReason").GetString());
         SinCifras(cuerpo);
-    }
-
-    [Theory]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    public async Task Una_respuesta_medible_sin_cobertura_completa_es_no_medible(bool sinRecuento, bool sinGrupos)
-    {
-        var incompleta = Medible(0) with
-        {
-            RegisteredCount = sinRecuento ? null : 0,
-            Groups = sinGrupos ? null : [],
-        };
-
-        var (_, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(incompleta)));
-
-        Assert.Equal("not_measurable", cuerpo.GetProperty("i05").GetProperty("status").GetString());
-        SinCifras(cuerpo);
+        Assert.Equal(0, puerto.Llamadas);
     }
 
     [Fact]
-    public async Task Solo_con_capacidad_acreditada_y_sin_cobros_los_tres_salen_vacios_con_cero()
+    public async Task Si_el_libro_no_guarda_el_origen_es_no_medible()
     {
-        var (_, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(Medible(0))));
+        var (_, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(Capacidades(origen: false), Cohorte())));
 
-        Assert.Equal("empty", cuerpo.GetProperty("i05").GetProperty("status").GetString());
+        Estados(cuerpo, "not_measurable");
+        Assert.Equal("source_not_recorded", cuerpo.GetProperty("notMeasurableReason").GetString());
+    }
+
+    [Fact]
+    public async Task Con_el_proveedor_no_medible_un_cero_del_personal_no_es_un_periodo_vacio_ni_cobertura_total()
+    {
+        var (_, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(Capacidades(), Cohorte(staff: 0))));
+
+        var i05 = cuerpo.GetProperty("i05");
+        Assert.Equal("with_data", i05.GetProperty("status").GetString());
+        Assert.Equal("partial", i05.GetProperty("coverage").GetString());
+        Assert.Equal(0, i05.GetProperty("count").GetInt64());
+        var origenes = i05.GetProperty("bySource").EnumerateArray().Select(s => (
+            s.GetProperty("source").GetString(), s.GetProperty("status").GetString(),
+            s.GetProperty("count").ValueKind == JsonValueKind.Null ? (long?)null : s.GetProperty("count").GetInt64(),
+            s.GetProperty("reason").GetString())).ToArray();
+        Assert.Equal([("staff", "measured", 0L, null), ("provider", "not_measurable", null, "provider_writer_absent")], origenes);
+        Assert.Equal("partial", cuerpo.GetProperty("i06").GetProperty("coverage").GetString());
+        Assert.Equal("with_data", cuerpo.GetProperty("i07").GetProperty("status").GetString());
+        Assert.Equal("partial", cuerpo.GetProperty("i07").GetProperty("coverage").GetString());
+        Assert.DoesNotContain("\"empty\"", cuerpo.GetRawText());
+    }
+
+    [Fact]
+    public async Task Solo_con_todos_los_origenes_medidos_y_sin_pagos_los_tres_salen_vacios()
+    {
+        var (_, cuerpo) = await Consultar(Aplicacion(ventas: true,
+            new PuertoFijo(Capacidades(proveedor: true), Cohorte(staff: 0, provider: 0))));
+
+        Estados(cuerpo, "empty");
         Assert.Equal(0, cuerpo.GetProperty("i05").GetProperty("count").GetInt64());
-        Assert.Equal("empty", cuerpo.GetProperty("i06").GetProperty("status").GetString());
-        Assert.Equal("empty", cuerpo.GetProperty("i07").GetProperty("status").GetString());
-        Assert.Equal(0, cuerpo.GetProperty("i07").GetProperty("count").GetInt64());
+        Assert.Equal("complete", cuerpo.GetProperty("i05").GetProperty("coverage").GetString());
     }
 
     [Fact]
-    public async Task Separa_origen_medio_moneda_y_tardanza_sin_sumar_monedas_distintas()
+    public async Task Separa_origen_moneda_y_tardanza_sin_sumar_monedas_y_sin_inventar_el_desglose_por_medio()
     {
-        var cohorte = Medible(11,
-            ("yape", "staff", "PEN", false, 4, 400.00m),
-            ("yape", "provider", "PEN", false, 2, 150m),
-            ("efectivo", "staff", "USD", true, 1, 20.00m),
-            ("efectivo", "staff", null, true, 3, null),
-            ("yape", null, "PEN", true, 1, 35.5m));
+        var cohorte = Cohorte(staff: 8, provider: 2, tardios: 3, sinMoneda: 2, ("USD", 1, 20.00m), ("PEN", 7, 735.5m));
 
-        var (codigo, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(cohorte)));
+        var (codigo, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(Capacidades(proveedor: true), cohorte)));
 
         Assert.Equal(StatusCodes.Status200OK, codigo);
         var i05 = cuerpo.GetProperty("i05");
-        Assert.Equal("with_data", i05.GetProperty("status").GetString());
-        Assert.Equal(11, i05.GetProperty("count").GetInt64());
-        Assert.Equal([("staff", 8L), ("provider", 2L), ("unrecorded", 1L)],
-            i05.GetProperty("bySource").EnumerateArray().Select(s => (s.GetProperty("source").GetString(), s.GetProperty("count").GetInt64())));
+        Assert.Equal(10, i05.GetProperty("count").GetInt64());
+        Assert.Equal("complete", i05.GetProperty("coverage").GetString());
+        Assert.Equal([8L, 2L], i05.GetProperty("bySource").EnumerateArray().Select(s => s.GetProperty("count").GetInt64()));
 
         var i06 = cuerpo.GetProperty("i06");
         Assert.Equal("with_data", i06.GetProperty("status").GetString());
         Assert.Equal("partial", i06.GetProperty("coverage").GetString());
-        Assert.Equal(
-            [("efectivo", "staff", "USD", 1L, "20.00"), ("yape", "staff", "PEN", 4L, "400.00"),
-             ("yape", "provider", "PEN", 2L, "150"), ("yape", "unrecorded", "PEN", 1L, "35.5")],
-            i06.GetProperty("byMethod").EnumerateArray().Select(m => (
-                m.GetProperty("method").GetString(), m.GetProperty("source").GetString(), m.GetProperty("currencyCode").GetString(),
-                m.GetProperty("count").GetInt64(), m.GetProperty("amount").GetString())));
-        Assert.Equal([("efectivo", "staff", 3L)],
-            i06.GetProperty("withoutCurrency").EnumerateArray().Select(m => (
-                m.GetProperty("method").GetString(), m.GetProperty("source").GetString(), m.GetProperty("count").GetInt64())));
+        Assert.Equal(2, i06.GetProperty("withoutCurrencyCount").GetInt64());
+        Assert.Equal("not_published", i06.GetProperty("methodBreakdown").GetString());
+        Assert.Equal([("PEN", 7L, "735.5"), ("USD", 1L, "20.00")],
+            i06.GetProperty("byCurrency").EnumerateArray().Select(m => (
+                m.GetProperty("currencyCode").GetString(), m.GetProperty("count").GetInt64(), m.GetProperty("amount").GetString())));
 
         var i07 = cuerpo.GetProperty("i07");
         Assert.Equal("with_data", i07.GetProperty("status").GetString());
-        Assert.Equal(5, i07.GetProperty("count").GetInt64());
-        Assert.Equal("with_data", i07.GetProperty("amountStatus").GetString());
-        Assert.Equal([("PEN", 1L, "35.5"), ("USD", 1L, "20.00")],
-            i07.GetProperty("amountByCurrency").EnumerateArray().Select(m => (
-                m.GetProperty("currencyCode").GetString(), m.GetProperty("count").GetInt64(), m.GetProperty("amount").GetString())));
-        Assert.Equal(3, i07.GetProperty("withoutCurrencyCount").GetInt64());
+        Assert.Equal(3, i07.GetProperty("count").GetInt64());
+        Assert.Equal("not_measurable", i07.GetProperty("amountStatus").GetString());
 
-        // Ninguna suma entre PEN y USD, ni en I06 ni en I07.
-        Assert.DoesNotContain("605.5", cuerpo.GetRawText());
-        Assert.DoesNotContain("55.5", cuerpo.GetRawText());
+        Assert.DoesNotContain("755.5", cuerpo.GetRawText());
+    }
+
+    [Fact]
+    public async Task Aunque_M03_de_el_importe_completo_en_moneda_sin_el_proveedor_medido_la_cobertura_es_parcial()
+    {
+        var cohorte = Cohorte(staff: 2, sinMoneda: 0, monedas: [("PEN", 2, 50m)]);
+
+        var (_, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(Capacidades(), cohorte)));
+
+        Assert.True(cohorte.AmountsComplete);
+        Assert.Equal("partial", cuerpo.GetProperty("i06").GetProperty("coverage").GetString());
     }
 
     [Fact]
     public async Task Cobros_sin_ninguna_moneda_se_cuentan_y_su_importe_no_se_publica()
     {
-        var (_, cuerpo) = await Consultar(Aplicacion(ventas: true,
-            new PuertoFijo(Medible(2, ("yape", "staff", null, false, 2, null)))));
+        var (_, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(Capacidades(), Cohorte(staff: 2, sinMoneda: 2))));
 
         Assert.Equal("with_data", cuerpo.GetProperty("i05").GetProperty("status").GetString());
         Assert.Equal("currency_not_accredited", cuerpo.GetProperty("i06").GetProperty("status").GetString());
-        Assert.Equal(JsonValueKind.Null, cuerpo.GetProperty("i06").GetProperty("byMethod").ValueKind);
+        Assert.Equal(JsonValueKind.Null, cuerpo.GetProperty("i06").GetProperty("byCurrency").ValueKind);
         Assert.Equal("none", cuerpo.GetProperty("i06").GetProperty("coverage").GetString());
-        Assert.Equal("empty", cuerpo.GetProperty("i07").GetProperty("status").GetString());
     }
 
     [Fact]
-    public async Task Los_tardios_sin_moneda_se_cuentan_y_su_importe_no_esta_acreditado()
+    public async Task Sin_retraso_registrado_I07_es_no_medible_y_los_demas_siguen()
     {
-        var (_, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(Medible(4,
-            ("yape", "staff", "PEN", false, 1, 10m), ("efectivo", "staff", null, true, 3, null)))));
+        var cohorte = Cohorte(staff: 1, monedas: [("PEN", 1, 10m)]) with { Late = new(false, null, "late_not_recorded") };
 
-        var i07 = cuerpo.GetProperty("i07");
-        Assert.Equal("with_data", i07.GetProperty("status").GetString());
-        Assert.Equal(3, i07.GetProperty("count").GetInt64());
-        Assert.Equal("currency_not_accredited", i07.GetProperty("amountStatus").GetString());
-        Assert.Equal(JsonValueKind.Null, i07.GetProperty("amountByCurrency").ValueKind);
+        var (_, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(Capacidades(tardio: false), cohorte)));
+
+        Assert.Equal("with_data", cuerpo.GetProperty("i05").GetProperty("status").GetString());
+        Assert.Equal("not_measurable", cuerpo.GetProperty("i07").GetProperty("status").GetString());
+        Assert.Equal(JsonValueKind.Null, cuerpo.GetProperty("i07").GetProperty("count").ValueKind);
     }
 
     public static TheoryData<string> Incoherencias =>
-        ["origen_desconocido", "medio_vacio", "medio_mayusculas", "grupo_repetido", "no_suma",
-         "importe_sin_moneda", "reverso_negativo", "otro_periodo"];
+        ["proveedor_medido_sin_escritor", "proveedor_no_medido_con_escritor", "medido_con_motivo", "no_medible_con_cifra",
+         "tardio_sin_registro", "mas_tardios_que_pagos", "importes_no_suman", "completo_con_pagos_sin_moneda",
+         "moneda_repetida", "moneda_minuscula", "importe_negativo", "moneda_sin_columna", "otro_periodo"];
 
     [Theory]
     [MemberData(nameof(Incoherencias))]
     public async Task Una_respuesta_de_cobros_que_no_cuadra_responde_503_sin_ninguna_cifra(string caso)
     {
-        var cohorte = caso switch
+        var capacidades = Capacidades();
+        var cohorte = Cohorte(staff: 2, monedas: [("PEN", 2, 20m)]);
+        switch (caso)
         {
-            "origen_desconocido" => Medible(1, ("yape", "cliente", "PEN", false, 1, 10m)),
-            "medio_vacio" => Medible(1, ("", "staff", "PEN", false, 1, 10m)),
-            "medio_mayusculas" => Medible(1, ("Yape", "staff", "PEN", false, 1, 10m)),
-            "grupo_repetido" => Medible(2, ("yape", "staff", "PEN", false, 1, 10m), ("yape", "staff", "PEN", false, 1, 10m)),
-            "no_suma" => Medible(3, ("yape", "staff", "PEN", false, 1, 10m)),
-            "importe_sin_moneda" => Medible(1, ("yape", "staff", null, false, 1, 10m)),
-            "reverso_negativo" => Medible(1, ("yape", "staff", "PEN", false, 1, -10m)),
-            _ => Medible(0) with { StartInclusive = InicioUtc.AddHours(-1) },
-        };
+            case "proveedor_medido_sin_escritor": cohorte = cohorte with { Provider = new(true, 0, null) }; break;
+            case "proveedor_no_medido_con_escritor": capacidades = Capacidades(proveedor: true); break;
+            case "medido_con_motivo": cohorte = cohorte with { Staff = new(true, 2, "provider_writer_absent") }; break;
+            case "no_medible_con_cifra": cohorte = cohorte with { Provider = new(false, 0, "provider_writer_absent") }; break;
+            case "tardio_sin_registro": capacidades = Capacidades(tardio: false); break;
+            case "mas_tardios_que_pagos": cohorte = cohorte with { Late = new(true, 3, null) }; break;
+            case "importes_no_suman": cohorte = Cohorte(staff: 3, monedas: [("PEN", 2, 20m)]); break;
+            case "completo_con_pagos_sin_moneda": cohorte = Cohorte(staff: 3, sinMoneda: 1, monedas: [("PEN", 2, 20m)]) with { AmountsComplete = true }; break;
+            case "moneda_repetida": cohorte = Cohorte(staff: 2, monedas: [("PEN", 1, 10m), ("PEN", 1, 10m)]); break;
+            case "moneda_minuscula": cohorte = Cohorte(staff: 2, monedas: [("pen", 2, 20m)]); break;
+            case "importe_negativo": cohorte = Cohorte(staff: 2, monedas: [("PEN", 2, -20m)]); break;
+            case "moneda_sin_columna": capacidades = Capacidades(moneda: false); break;
+            default: cohorte = cohorte with { StartInclusive = InicioUtc.AddHours(-1) }; break;
+        }
 
-        var (codigo, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(cohorte)));
+        var (codigo, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(capacidades, cohorte)));
 
         Assert.Equal(StatusCodes.Status503ServiceUnavailable, codigo);
         Assert.Contains("no cuadran", cuerpo.GetProperty("title").GetString());
@@ -191,7 +206,7 @@ public sealed class PaymentIndicatorsTests
     [Fact]
     public async Task Un_fallo_del_lector_de_cobros_responde_503_y_no_cero()
     {
-        var (codigo, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(Medible(0)) { Falla = true }));
+        var (codigo, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(Capacidades(), Cohorte()) { Falla = true }));
 
         Assert.Equal(StatusCodes.Status503ServiceUnavailable, codigo);
         Assert.False(cuerpo.TryGetProperty("i05", out _));
@@ -204,22 +219,41 @@ public sealed class PaymentIndicatorsTests
         cancelada.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => Consultar(Aplicacion(ventas: true, new PuertoFijo(Medible(0))), cancelada.Token));
+            () => Consultar(Aplicacion(ventas: true, new PuertoFijo(Capacidades(), Cohorte())), cancelada.Token));
+    }
+
+    private static void Estados(JsonElement cuerpo, string estado)
+    {
+        foreach (var indicador in Indicadores)
+        {
+            Assert.Equal(estado, cuerpo.GetProperty(indicador).GetProperty("status").GetString());
+        }
     }
 
     private static void SinCifras(JsonElement cuerpo)
     {
         Assert.Equal(JsonValueKind.Null, cuerpo.GetProperty("i05").GetProperty("count").ValueKind);
         Assert.Equal(JsonValueKind.Null, cuerpo.GetProperty("i05").GetProperty("bySource").ValueKind);
-        Assert.Equal(JsonValueKind.Null, cuerpo.GetProperty("i06").GetProperty("byMethod").ValueKind);
+        Assert.Equal(JsonValueKind.Null, cuerpo.GetProperty("i06").GetProperty("byCurrency").ValueKind);
+        Assert.Equal(JsonValueKind.Null, cuerpo.GetProperty("i06").GetProperty("withoutCurrencyCount").ValueKind);
         Assert.Equal(JsonValueKind.Null, cuerpo.GetProperty("i07").GetProperty("count").ValueKind);
         Assert.Equal(JsonValueKind.Null, cuerpo.GetProperty("observedAtUtc").ValueKind);
     }
 
-    private static OrderPaymentAggregate Medible(long registrados,
-        params (string Medio, string? Origen, string? Moneda, bool Tardio, long Pagos, decimal? Importe)[] grupos)
-        => new(InicioUtc, FinUtc, Observado, OrderPaymentCapability.Measurable, registrados,
-            [.. grupos.Select(g => new OrderPaymentGroup(g.Medio, g.Origen, g.Moneda, g.Tardio, g.Pagos, g.Importe))]);
+    /// <summary>
+    /// Una cohorte como la produce el reductor de M03: personal medido, proveedor
+    /// no medible salvo que se dé su recuento, tardíos medidos, importe completo si
+    /// y solo si no hay pagos sin moneda.
+    /// </summary>
+    private static PaymentCohort Cohorte(long staff = 0, long? provider = null, long tardios = 0, long sinMoneda = 0,
+        params (string Moneda, long Pagos, decimal Importe)[] monedas)
+        => new(InicioUtc, FinUtc, Observado,
+            new(true, staff, null),
+            provider is { } p ? new(true, p, null) : SinEscritorDeProveedor,
+            new(true, tardios, null),
+            [.. monedas.Select(m => new PaymentCurrencyGroup(m.Moneda, m.Pagos, m.Importe))],
+            sinMoneda,
+            sinMoneda == 0);
 
     private static WebApplication Aplicacion(bool ventas, IOrderPaymentAggregatePort? puerto)
     {
@@ -257,13 +291,17 @@ public sealed class PaymentIndicatorsTests
             => throw new InvalidOperationException("Los cobros no leen recuentos de pedidos.");
     }
 
-    private sealed class PuertoFijo(OrderPaymentAggregate respuesta) : IOrderPaymentAggregatePort
+    private sealed class PuertoFijo(PaymentCapabilities capacidades, PaymentCohort respuesta) : IOrderPaymentAggregatePort
     {
         public bool Falla { get; init; }
+        public int Llamadas { get; private set; }
 
-        public Task<OrderPaymentAggregate> ReadRegisteredBetweenAsync(
+        public PaymentCapabilities Capabilities => capacidades;
+
+        public Task<PaymentCohort> ReadRegisteredBetweenAsync(
             DateTimeOffset startInclusive, DateTimeOffset endExclusive, CancellationToken cancellationToken)
         {
+            Llamadas++;
             cancellationToken.ThrowIfCancellationRequested();
             if (Falla) throw new InvalidOperationException("Cobros no respondió.");
             return Task.FromResult(respuesta);

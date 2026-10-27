@@ -1,65 +1,102 @@
-using System.Text.RegularExpressions;
 using Sillar.Modules.Sales.Contracts;
 
 namespace Sillar.Modules.Reports.Orders;
 
 /// <summary>
-/// Puerto consumidor de I05–I07, con la forma propuesta a M03 en L-NR-04.
+/// Puerto consumidor de I05–I07. Refleja <c>IOrderPaymentAggregateReader</c> de M03
+/// (candidato <c>014fba0</c>), más una señal que ese contrato no declara.
 /// </summary>
 /// <remarks>
-/// Interno por la misma razón que <see cref="IOrderValueAggregatePort"/>: M03 no
-/// tiene todavía ni ruta de registro de cobros ni lector agregado, y M10 no
-/// publica una firma propia. Nadie lo registra fuera de las pruebas: en
-/// producción I05–I07 salen «no medible» (D-M10-11).
+/// Interno por la misma razón que <see cref="IOrderValueAggregatePort"/>. El
+/// adaptador explícito está en <see cref="MonetarySources"/>.
 /// </remarks>
 internal interface IOrderPaymentAggregatePort
 {
+    /// <summary>Lo que el libro de pagos de M03 registra hoy.</summary>
+    PaymentCapabilities Capabilities { get; }
+
     /// <summary>Pagos por <c>registered_at</c> en [inicio, fin).</summary>
-    Task<OrderPaymentAggregate> ReadRegisteredBetweenAsync(
+    Task<PaymentCohort> ReadRegisteredBetweenAsync(
         DateTimeOffset startInclusive, DateTimeOffset endExclusive, CancellationToken cancellationToken);
 }
 
-/// <summary>Si M03 puede registrar y leer cobros. Solo lo afirma M03.</summary>
-internal enum OrderPaymentCapability
-{
-    NotMeasurable,
-    Measurable,
-}
+/// <summary>Capacidades del libro de pagos, como <c>OrderPaymentAggregateCapabilities</c>.</summary>
+/// <param name="SourceRecorded">El origen staff/provider se guarda por pago.</param>
+/// <param name="CurrencyRecorded">Existe la moneda por pago.</param>
+/// <param name="LateRecorded">El retraso se guarda como hecho.</param>
+/// <param name="ProviderWriterPresent">Existe un escritor de pagos de proveedor.</param>
+/// <param name="StaffWriterPresent">
+/// Existe un escritor funcional de pagos del personal. <b>No está en el contrato de
+/// M03</b>: D-M10-11 exige que M03 acredite la capacidad, y que exista la tabla no la
+/// acredita. Hasta que M03 la declare, el adaptador la da por falsa.
+/// </param>
+internal sealed record PaymentCapabilities(
+    bool SourceRecorded, bool CurrencyRecorded, bool LateRecorded, bool ProviderWriterPresent, bool StaffWriterPresent);
 
+/// <summary>Un recuento que dice si está respaldado, como <c>PaymentCountMeasure</c>.</summary>
+/// <param name="Measured">Medido. Un cero aquí es un cero comprobado.</param>
+/// <param name="Count">Nulo si y solo si no es medible.</param>
+/// <param name="Reason">Por qué no es medible (<see cref="NotMeasurableReasons"/>); nulo si lo es.</param>
+internal sealed record PaymentMeasure(bool Measured, long? Count, string? Reason);
+
+/// <summary>Una cohorte de pagos, como <c>OrderPaymentAggregateSnapshot</c>.</summary>
 /// <param name="StartInclusive">Límite incluido, en UTC; tiene que ser el pedido.</param>
 /// <param name="EndExclusive">Límite excluido, en UTC; tiene que ser el pedido.</param>
 /// <param name="ObservedAtUtc">Instante en que ventas leyó, según su reloj.</param>
-/// <param name="Capability">Si M03 acredita poder registrar y leer cobros.</param>
-/// <param name="RegisteredCount">Pagos, no pedidos; nulo si no es medible.</param>
-/// <param name="Groups">Un grupo por método, origen, moneda y tardanza; nulo si no es medible.</param>
-internal sealed record OrderPaymentAggregate(
+/// <param name="Staff">Pagos registrados por el personal.</param>
+/// <param name="Provider">Pagos de proveedor.</param>
+/// <param name="Late">Pagos con <c>was_late</c> guardado, de cualquier origen registrado.</param>
+/// <param name="AmountsByCurrency">Importe por moneda de los pagos que la tienen.</param>
+/// <param name="PaymentsWithoutCurrency">Pagos sin moneda: solo se cuentan.</param>
+/// <param name="AmountsComplete">Si todos los pagos de la cohorte tienen moneda.</param>
+internal sealed record PaymentCohort(
     DateTimeOffset StartInclusive,
     DateTimeOffset EndExclusive,
     DateTimeOffset ObservedAtUtc,
-    OrderPaymentCapability Capability,
-    long? RegisteredCount,
-    IReadOnlyList<OrderPaymentGroup>? Groups);
+    PaymentMeasure Staff,
+    PaymentMeasure Provider,
+    PaymentMeasure Late,
+    IReadOnlyList<PaymentCurrencyGroup> AmountsByCurrency,
+    long PaymentsWithoutCurrency,
+    bool AmountsComplete);
 
-/// <param name="Method">Código de medio de M03 (<see cref="PaymentMethod"/>).</param>
-/// <param name="Source"><c>staff</c>, <c>provider</c> o null si el pago no guarda su origen.</param>
-/// <param name="CurrencyCode">ISO 4217 guardado en el pago; null si no lo tiene.</param>
-/// <param name="WasLate">El valor congelado al registrar; nunca recalculado.</param>
-/// <param name="Count">Pagos del grupo.</param>
-/// <param name="Amount">Null si y solo si no hay moneda.</param>
-internal sealed record OrderPaymentGroup(
-    string Method, string? Source, string? CurrencyCode, bool WasLate, long Count, decimal? Amount);
+/// <summary>Importe de una moneda, como <c>PaymentAmountByCurrency</c>.</summary>
+/// <param name="CurrencyCode">ISO 4217.</param>
+/// <param name="Count">Pagos en esa moneda.</param>
+/// <param name="Amount">Suma de sus importes.</param>
+internal sealed record PaymentCurrencyGroup(string CurrencyCode, long Count, decimal Amount);
+
+/// <summary>Por qué un valor no se puede medir, con el vocabulario de la pantalla.</summary>
+public static class NotMeasurableReasons
+{
+    /// <summary>Ventas está, pero no publica el lector de cobros.</summary>
+    public const string ReaderAbsent = "reader_absent";
+
+    /// <summary>M03 no acredita un escritor funcional de pagos del personal (D-M10-11).</summary>
+    public const string StaffWriterNotAccredited = "staff_writer_not_accredited";
+
+    /// <summary>El libro no guarda el origen de cada pago.</summary>
+    public const string SourceNotRecorded = "source_not_recorded";
+
+    /// <summary>No hay escritor de pagos de proveedor: su ausencia no prueba que no los hubo.</summary>
+    public const string ProviderWriterAbsent = "provider_writer_absent";
+
+    /// <summary>Hay pagos sin moneda: el importe no se puede afirmar completo.</summary>
+    public const string CurrencyNotRecorded = "currency_not_recorded";
+}
 
 /// <summary>
-/// I05 cobros registrados, I06 importe por medio, I07 cobros tardíos (D-M10-04:
-/// «cobros registrados», no ingresos). Ningún 0 sin capacidad acreditada.
+/// I05 cobros registrados, I06 importe cobrado, I07 cobros tardíos (D-M10-04:
+/// «cobros registrados», no ingresos).
 /// </summary>
-internal sealed partial class OrderPaymentReport(IServiceProvider services)
+/// <remarks>
+/// <b>Un origen que no se puede medir nunca cuenta como cero</b> y nunca deja
+/// afirmar cobertura total: con el proveedor no medible, los recuentos son los de
+/// los orígenes medidos y la cobertura es <c>partial</c>, aunque M03 diga que el
+/// importe está completo en moneda.
+/// </remarks>
+internal sealed class OrderPaymentReport(IServiceProvider services)
 {
-    /// <summary>Origen de un pago que no lo guarda.</summary>
-    public const string UnrecordedSource = "unrecorded";
-
-    private static readonly string[] SourceOrder = ["staff", "provider", UnrecordedSource];
-
     /// <summary>Lee los cobros del período. Un fallo o una respuesta que no cuadra se propagan.</summary>
     public async Task<PaymentIndicatorsView> ReadAsync(
         DateTimeOffset startInclusive, DateTimeOffset endExclusive, CancellationToken cancellationToken)
@@ -69,173 +106,198 @@ internal sealed partial class OrderPaymentReport(IServiceProvider services)
 
         if (services.GetService(typeof(IOrderAggregateReader)) is null)
         {
-            return PaymentIndicatorsView.Unmeasured(IndicatorStatus.SourceUnavailable, startUtc, endUtc);
+            return PaymentIndicatorsView.Unmeasured(IndicatorStatus.SourceUnavailable, null, startUtc, endUtc);
         }
-        // Que exista sales.order_payments no hace operativo el registro de cobros:
-        // sin el lector de M03 no hay capacidad acreditada (D-M10-11).
-        if (services.GetService(typeof(IOrderPaymentAggregatePort)) is not IOrderPaymentAggregatePort port)
+        if (MonetarySources.Payments(services) is not { } port)
         {
-            return PaymentIndicatorsView.Unmeasured(IndicatorStatus.NotMeasurable, startUtc, endUtc);
+            return PaymentIndicatorsView.Unmeasured(IndicatorStatus.NotMeasurable, NotMeasurableReasons.ReaderAbsent, startUtc, endUtc);
         }
 
-        var aggregate = await port.ReadRegisteredBetweenAsync(startUtc, endUtc, cancellationToken);
-        return Project(aggregate, startUtc, endUtc);
+        // La capacidad se decide antes de leer: sin escritor acreditado no se
+        // consulta nada que pudiera parecer un cero.
+        var capabilities = port.Capabilities;
+        if (Unaccredited(capabilities) is { } reason)
+        {
+            return PaymentIndicatorsView.Unmeasured(IndicatorStatus.NotMeasurable, reason, startUtc, endUtc);
+        }
+
+        var cohort = await port.ReadRegisteredBetweenAsync(startUtc, endUtc, cancellationToken);
+        return Project(capabilities, cohort, startUtc, endUtc);
     }
+
+    private static string? Unaccredited(PaymentCapabilities capabilities)
+        => !capabilities.StaffWriterPresent ? NotMeasurableReasons.StaffWriterNotAccredited
+            : !capabilities.SourceRecorded ? NotMeasurableReasons.SourceNotRecorded
+            : null;
 
     /// <summary>Comprueba la respuesta y la reparte en los tres indicadores.</summary>
-    internal static PaymentIndicatorsView Project(OrderPaymentAggregate aggregate, DateTimeOffset startUtc, DateTimeOffset endUtc)
+    internal static PaymentIndicatorsView Project(
+        PaymentCapabilities capabilities, PaymentCohort cohort, DateTimeOffset startUtc, DateTimeOffset endUtc)
     {
-        MonetaryFacts.CheckPeriod(aggregate.StartInclusive, aggregate.EndExclusive, startUtc, endUtc);
-
-        // Capacidad no acreditada o respuesta sin cobertura completa: no medible.
-        // Lo que viniera además no se mira, para no dejar escapar un 0.
-        if (aggregate is not { Capability: OrderPaymentCapability.Measurable, RegisteredCount: { } registered, Groups: { } groups })
+        MonetaryFacts.CheckPeriod(cohort.StartInclusive, cohort.EndExclusive, startUtc, endUtc);
+        if (Unaccredited(capabilities) is { } reason)
         {
-            return PaymentIndicatorsView.Unmeasured(IndicatorStatus.NotMeasurable, startUtc, endUtc);
+            return PaymentIndicatorsView.Unmeasured(IndicatorStatus.NotMeasurable, reason, startUtc, endUtc);
         }
 
-        foreach (var group in groups)
+        Check(cohort.Staff);
+        Check(cohort.Provider);
+        Check(cohort.Late);
+        // Lo que M03 dice medir tiene que cuadrar con lo que dice registrar.
+        if (cohort.Provider.Measured != capabilities.ProviderWriterPresent
+            || (cohort.Late.Measured && !capabilities.LateRecorded))
         {
-            if (group.Method is null || !MethodCode().IsMatch(group.Method)) throw new SourceIncoherentException("Medio de pago sin código.");
-            if (group.Source is not (null or "staff" or "provider")) throw new SourceIncoherentException("Origen desconocido.");
+            throw new SourceIncoherentException("Medición que contradice las capacidades.");
+        }
+        if (!cohort.Staff.Measured)
+        {
+            return PaymentIndicatorsView.Unmeasured(IndicatorStatus.NotMeasurable, cohort.Staff.Reason, startUtc, endUtc);
+        }
+
+        if (cohort.AmountsByCurrency is null) throw new SourceIncoherentException("Sin importes.");
+        foreach (var group in cohort.AmountsByCurrency)
+        {
+            if (group.CurrencyCode is null) throw new SourceIncoherentException("Importe sin moneda.");
             MonetaryFacts.CheckGroup(group.CurrencyCode, group.Count, group.Amount);
+            if (group.Count == 0) throw new SourceIncoherentException("Moneda sin pagos.");
         }
-        if (groups.Select(g => (g.Method, g.Source, g.CurrencyCode, g.WasLate)).Distinct().Count() != groups.Count)
+        if (cohort.AmountsByCurrency.Select(g => g.CurrencyCode).Distinct().Count() != cohort.AmountsByCurrency.Count)
         {
-            throw new SourceIncoherentException("Grupo repetido.");
+            throw new SourceIncoherentException("Moneda repetida.");
         }
-        if (MonetaryFacts.Total(groups.Select(g => g.Count)) != registered)
+        if (!capabilities.CurrencyRecorded && cohort.AmountsByCurrency.Count > 0)
         {
-            throw new SourceIncoherentException("Los grupos no suman los cobros registrados.");
+            throw new SourceIncoherentException("Moneda sin columna de moneda.");
+        }
+        if (cohort.PaymentsWithoutCurrency < 0 || cohort.AmountsComplete != (cohort.PaymentsWithoutCurrency == 0))
+        {
+            throw new SourceIncoherentException("Cobertura de importes que no cuadra.");
         }
 
-        var observed = aggregate.ObservedAtUtc;
-        if (registered == 0)
+        var staff = cohort.Staff.Count!.Value;
+        var provider = cohort.Provider.Count ?? 0;
+        var measured = MonetaryFacts.Total([staff, provider]);
+        var listed = MonetaryFacts.Total(cohort.AmountsByCurrency.Select(g => g.Count));
+        if (MonetaryFacts.Total([listed, cohort.PaymentsWithoutCurrency]) != measured)
         {
-            return new(startUtc, endUtc, observed,
-                new(IndicatorStatus.Empty, 0, []),
-                new(IndicatorStatus.Empty, [], [], CurrencyCoverage.Complete),
-                new(IndicatorStatus.Empty, 0, IndicatorStatus.Empty, [], 0));
+            throw new SourceIncoherentException("Los importes no suman los pagos medidos.");
+        }
+        if (cohort.Late.Measured && cohort.Late.Count > measured)
+        {
+            throw new SourceIncoherentException("Más tardíos que pagos.");
         }
 
-        var present = groups.Where(g => g.Count > 0).ToArray();
-        return new(startUtc, endUtc, observed, I05(registered, present), I06(present), I07(present));
+        var allSources = cohort.Provider.Measured;
+        return new(startUtc, endUtc, cohort.ObservedAtUtc, null,
+            I05(cohort, measured, allSources),
+            I06(cohort, measured, allSources),
+            I07(cohort.Late, allSources));
     }
 
-    private static PaymentCountView I05(long registered, OrderPaymentGroup[] groups)
+    /// <summary>Medido: cuenta y sin motivo. No medible: sin cuenta y con motivo.</summary>
+    private static void Check(PaymentMeasure measure)
     {
-        var bySource = groups
-            .GroupBy(g => g.Source ?? UnrecordedSource)
-            .OrderBy(g => Array.IndexOf(SourceOrder, g.Key))
-            .Select(g => new SourceCountView(g.Key, MonetaryFacts.Total(g.Select(x => x.Count))))
-            .ToArray();
-        return new(IndicatorStatus.WithData, registered, bySource);
+        if (measure is null) throw new SourceIncoherentException("Medida ausente.");
+        var coherent = measure.Measured
+            ? measure is { Count: >= 0, Reason: null }
+            : measure is { Count: null, Reason.Length: > 0 };
+        if (!coherent) throw new SourceIncoherentException("Medida incoherente.");
     }
 
-    private static PaymentAmountsView I06(OrderPaymentGroup[] groups)
+    private static string Coverage(bool allSources) => allSources ? CurrencyCoverage.Complete : CurrencyCoverage.Partial;
+
+    /// <summary>Solo con todos los orígenes medidos un cero dice «no hubo».</summary>
+    private static string CountStatus(long count, bool allSources)
+        => allSources && count == 0 ? IndicatorStatus.Empty : IndicatorStatus.WithData;
+
+    private static PaymentCountView I05(PaymentCohort cohort, long measured, bool allSources)
+        => new(CountStatus(measured, allSources), measured, Coverage(allSources),
+        [
+            Source("staff", cohort.Staff),
+            Source("provider", cohort.Provider),
+        ]);
+
+    private static SourceMeasureView Source(string source, PaymentMeasure measure)
+        => measure.Measured
+            ? new(source, MeasureStatus.Measured, measure.Count, null)
+            : new(source, MeasureStatus.NotMeasurable, null, measure.Reason);
+
+    private static PaymentAmountsView I06(PaymentCohort cohort, long measured, bool allSources)
     {
-        // Se juntan tardíos y a tiempo de un mismo medio, origen y moneda; nunca dos monedas.
-        var byMethod = groups
-            .Where(g => g.CurrencyCode is not null)
-            .GroupBy(g => (g.Method, Source: g.Source ?? UnrecordedSource, Currency: g.CurrencyCode!))
-            .OrderBy(g => g.Key.Method, StringComparer.Ordinal)
-            .ThenBy(g => Array.IndexOf(SourceOrder, g.Key.Source))
-            .ThenBy(g => g.Key.Currency, StringComparer.Ordinal)
-            .Select(g => new MethodAmountView(g.Key.Method, g.Key.Source, g.Key.Currency,
-                MonetaryFacts.Total(g.Select(x => x.Count)), MonetaryFacts.Format(Sum(g))))
+        var without = cohort.PaymentsWithoutCurrency;
+        if (cohort.AmountsByCurrency.Count == 0 && without > 0)
+        {
+            return new(IndicatorStatus.CurrencyNotAccredited, null, without, CurrencyCoverage.None, MethodBreakdown.NotPublished);
+        }
+        var byCurrency = cohort.AmountsByCurrency
+            .OrderBy(g => g.CurrencyCode, StringComparer.Ordinal)
+            .Select(g => new CurrencyAmountView(g.CurrencyCode, g.Count, MonetaryFacts.Format(g.Amount)))
             .ToArray();
-        var withoutCurrency = groups
-            .Where(g => g.CurrencyCode is null)
-            .GroupBy(g => (g.Method, Source: g.Source ?? UnrecordedSource))
-            .OrderBy(g => g.Key.Method, StringComparer.Ordinal)
-            .ThenBy(g => Array.IndexOf(SourceOrder, g.Key.Source))
-            .Select(g => new MethodCountView(g.Key.Method, g.Key.Source, MonetaryFacts.Total(g.Select(x => x.Count))))
-            .ToArray();
-
-        return byMethod.Length == 0
-            ? new(IndicatorStatus.CurrencyNotAccredited, null, withoutCurrency, CurrencyCoverage.None)
-            : new(IndicatorStatus.WithData, byMethod, withoutCurrency,
-                withoutCurrency.Length == 0 ? CurrencyCoverage.Complete : CurrencyCoverage.Partial);
+        // «Completo» exige las dos cosas: todos los pagos con moneda y todos los orígenes medidos.
+        var coverage = allSources && without == 0 ? CurrencyCoverage.Complete : CurrencyCoverage.Partial;
+        return new(CountStatus(measured, allSources), byCurrency, without, coverage, MethodBreakdown.NotPublished);
     }
 
-    private static LatePaymentsView I07(OrderPaymentGroup[] groups)
-    {
-        var late = groups.Where(g => g.WasLate).ToArray();
-        var lateCount = MonetaryFacts.Total(late.Select(g => g.Count));
-        if (lateCount == 0)
-        {
-            return new(IndicatorStatus.Empty, 0, IndicatorStatus.Empty, [], 0);
-        }
-        var byCurrency = late
-            .Where(g => g.CurrencyCode is not null)
-            .GroupBy(g => g.CurrencyCode!)
-            .OrderBy(g => g.Key, StringComparer.Ordinal)
-            .Select(g => new CurrencyAmountView(g.Key, MonetaryFacts.Total(g.Select(x => x.Count)), MonetaryFacts.Format(Sum(g))))
-            .ToArray();
-        var withoutCurrency = MonetaryFacts.Total(late.Where(g => g.CurrencyCode is null).Select(g => g.Count));
+    private static LatePaymentsView I07(PaymentMeasure late, bool allSources)
+        => late.Measured
+            ? new(CountStatus(late.Count!.Value, allSources), late.Count, Coverage(allSources), IndicatorStatus.NotMeasurable)
+            : new(IndicatorStatus.NotMeasurable, null, null, IndicatorStatus.NotMeasurable);
+}
 
-        // El recuento de tardíos se publica aunque su importe no tenga moneda.
-        return byCurrency.Length == 0
-            ? new(IndicatorStatus.WithData, lateCount, IndicatorStatus.CurrencyNotAccredited, null, withoutCurrency)
-            : new(IndicatorStatus.WithData, lateCount, IndicatorStatus.WithData, byCurrency, withoutCurrency);
-    }
+/// <summary>Estado de un recuento por origen.</summary>
+public static class MeasureStatus
+{
+    /// <summary>Medido: su cero es un cero comprobado.</summary>
+    public const string Measured = "measured";
 
-    /// <summary>Suma de una sola moneda.</summary>
-    private static decimal Sum(IEnumerable<OrderPaymentGroup> sameCurrency)
-    {
-        try
-        {
-            return sameCurrency.Aggregate(0m, (sum, g) => sum + g.Amount!.Value);
-        }
-        catch (OverflowException)
-        {
-            throw new SourceIncoherentException("Los importes desbordan.");
-        }
-    }
+    /// <summary>No medible: sin cifra.</summary>
+    public const string NotMeasurable = "not_measurable";
+}
 
-    [GeneratedRegex("^[a-z][a-z0-9_]*$", RegexOptions.CultureInvariant)]
-    private static partial Regex MethodCode();
+/// <summary>El desglose por medio de pago.</summary>
+public static class MethodBreakdown
+{
+    /// <summary>M03 no publica importes por medio: I06 va solo por moneda.</summary>
+    public const string NotPublished = "not_published";
 }
 
 /// <summary>I05–I07 tal como los consume la pantalla. Cada indicador lleva su propio estado.</summary>
+/// <param name="StartInclusive">Límite incluido, en UTC.</param>
+/// <param name="EndExclusive">Límite excluido, en UTC.</param>
+/// <param name="ObservedAtUtc">Instante en que ventas leyó; nulo si no se midió.</param>
+/// <param name="NotMeasurableReason">Por qué ninguno se pudo medir (<see cref="NotMeasurableReasons"/>); nulo si se midió.</param>
+/// <param name="I05">Cobros registrados.</param>
+/// <param name="I06">Importe cobrado.</param>
+/// <param name="I07">Cobros tardíos.</param>
 public sealed record PaymentIndicatorsView(
     DateTimeOffset StartInclusive,
     DateTimeOffset EndExclusive,
     DateTimeOffset? ObservedAtUtc,
+    string? NotMeasurableReason,
     PaymentCountView I05,
     PaymentAmountsView I06,
     LatePaymentsView I07)
 {
-    internal static PaymentIndicatorsView Unmeasured(string status, DateTimeOffset startUtc, DateTimeOffset endUtc)
-        => new(startUtc, endUtc, null,
-            new(status, null, null),
+    internal static PaymentIndicatorsView Unmeasured(string status, string? reason, DateTimeOffset startUtc, DateTimeOffset endUtc)
+        => new(startUtc, endUtc, null, reason,
             new(status, null, null, null),
-            new(status, null, status, null, null));
+            new(status, null, null, null, MethodBreakdown.NotPublished),
+            new(status, null, null, status));
 }
 
-/// <summary>I05: cuántos pagos se registraron, separados por origen.</summary>
-public sealed record PaymentCountView(string Status, long? Count, IReadOnlyList<SourceCountView>? BySource);
+/// <summary>I05: pagos de los orígenes medidos; cobertura <c>partial</c> si alguno no lo es.</summary>
+public sealed record PaymentCountView(string Status, long? Count, string? Coverage, IReadOnlyList<SourceMeasureView>? BySource);
 
-/// <summary>Pagos de un origen: <c>staff</c>, <c>provider</c> o <c>unrecorded</c>.</summary>
-public sealed record SourceCountView(string Source, long Count);
+/// <summary>Un origen: <c>staff</c> o <c>provider</c>, medido o no, con su motivo.</summary>
+public sealed record SourceMeasureView(string Source, string Status, long? Count, string? Reason);
 
-/// <summary>I06: importe por medio, origen y moneda; los pagos sin moneda, contados aparte.</summary>
+/// <summary>I06: importe por moneda y pagos sin moneda contados aparte. Sin desglose por medio.</summary>
 public sealed record PaymentAmountsView(
     string Status,
-    IReadOnlyList<MethodAmountView>? ByMethod,
-    IReadOnlyList<MethodCountView>? WithoutCurrency,
-    string? Coverage);
+    IReadOnlyList<CurrencyAmountView>? ByCurrency,
+    long? WithoutCurrencyCount,
+    string? Coverage,
+    string MethodBreakdown);
 
-/// <summary>Importe de un medio y origen en una sola moneda.</summary>
-public sealed record MethodAmountView(string Method, string Source, string CurrencyCode, long Count, string Amount);
-
-/// <summary>Pagos de un medio y origen sin moneda: cuentan, no suman.</summary>
-public sealed record MethodCountView(string Method, string Source, long Count);
-
-/// <summary>I07: pagos marcados como tardíos al registrarse; el importe, solo con moneda.</summary>
-public sealed record LatePaymentsView(
-    string Status,
-    long? Count,
-    string AmountStatus,
-    IReadOnlyList<CurrencyAmountView>? AmountByCurrency,
-    long? WithoutCurrencyCount);
+/// <summary>I07: pagos marcados tardíos al registrarse. M03 no publica su importe.</summary>
+public sealed record LatePaymentsView(string Status, long? Count, string? Coverage, string AmountStatus);
