@@ -115,10 +115,10 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
             .WithMany()
             .HasForeignKey(x => x.OrderId)
             .HasConstraintName("fk_order_payments_order_id")
-            // Restrict y no Cascade: un pago es un registro financiero y no desaparece
-            // porque alguien borre físicamente su pedido. El pedido no se borra nunca
-            // —baja lógica—, así que esto solo cambia el resultado de un error.
-            .OnDelete(DeleteBehavior.Restrict);
+            // Cascade, lo ratificado en SalesInitial. Restrict es una decisión candidata
+            // no ratificada: su migración existe pero está fuera de la compilación (ver
+            // el .csproj), y el modelo no se adelanta a ella.
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(x => x.OrderId).HasDatabaseName("idx_order_payments_order_id");
 

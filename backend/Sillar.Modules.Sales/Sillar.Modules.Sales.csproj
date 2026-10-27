@@ -29,4 +29,17 @@
     <InternalsVisibleTo Include="Sillar.Modules.Sales.Tests" />
   </ItemGroup>
 
+  <!-- Migraciones candidatas NO RATIFICADAS, fuera de la secuencia ejecutable.
+       Los archivos se conservan intactos en Migrations/, pero no se compilan: EF no
+       las descubre, así que ni el instalador (MigrateAsync) ni `dotnet ef database
+       update` pueden aplicarlas junto con las autorizadas. El modelo y el snapshot
+       siguen en lo ratificado. Ratificar una es quitar su línea de aquí y llevar el
+       modelo y el snapshot a lo que ella describe. -->
+  <ItemGroup>
+    <Compile Remove="Migrations\20261026235530_SalesPaymentRetentionCandidate20261026.cs" />
+    <Compile Remove="Migrations\20261026235530_SalesPaymentRetentionCandidate20261026.Designer.cs" />
+    <None Include="Migrations\20261026235530_SalesPaymentRetentionCandidate20261026.cs" />
+    <None Include="Migrations\20261026235530_SalesPaymentRetentionCandidate20261026.Designer.cs" />
+  </ItemGroup>
+
 </Project>

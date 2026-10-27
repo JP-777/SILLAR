@@ -562,7 +562,7 @@ namespace Sillar.Modules.Sales.Migrations
                     b.HasOne("Sillar.Modules.Sales.Domain.Order", null)
                         .WithMany()
                         .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_order_payments_order_id");
                 });

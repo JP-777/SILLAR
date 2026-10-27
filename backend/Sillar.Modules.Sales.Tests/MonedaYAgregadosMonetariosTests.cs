@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Sillar.Modules.Sales.Contracts;
 using Sillar.Modules.Sales.Data;
 using Sillar.Modules.Sales.Domain;
@@ -126,12 +127,59 @@ public sealed class MonedaYAgregadosMonetariosTests
     }
 
     [Fact]
-    public void Borrar_fisicamente_un_pedido_no_se_lleva_sus_pagos()
+    public void El_modelo_no_se_adelanta_a_la_retencion_no_ratificada()
     {
+        // RESTRICT es candidata; mientras no se ratifique, el modelo dice lo de SalesInitial.
         var fk = Modelo().FindEntityType(typeof(OrderPayment))!.GetForeignKeys()
             .Single(f => f.PrincipalEntityType.ClrType == typeof(Order));
 
-        Assert.Equal(DeleteBehavior.Restrict, fk.DeleteBehavior);
+        Assert.Equal(DeleteBehavior.Cascade, fk.DeleteBehavior);
+    }
+
+    // ------------------------------------------------------------------ migraciones
+
+    [Fact]
+    public void Las_migraciones_descubribles_son_exactamente_las_esperadas()
+    {
+        // Lo que el instalador y `dotnet ef database update` aplicarían. Cualquier
+        // migración que entre o salga de la secuencia ejecutable cambia esta lista.
+        using var contexto = Contexto();
+
+        Assert.Equal(
+            [
+                "20260930185029_SalesInitial",
+                "20261026235312_SalesCurrencyCandidate20261026",
+                // Pendiente de decisión de JP: no puede salir de la secuencia sin cambiar
+                // el modelo persistido, que el lector de pagos agrupa por source.
+                "20261026235423_SalesPaymentSourceCandidate20261026",
+            ],
+            contexto.Database.GetMigrations());
+    }
+
+    [Fact]
+    public void La_candidata_de_retencion_no_se_compila_y_no_puede_aplicarse()
+    {
+        var ensamblado = typeof(SalesDbContext).Assembly;
+
+        Assert.Null(ensamblado.GetType(
+            "Sillar.Modules.Sales.Migrations.SalesPaymentRetentionCandidate20261026"));
+    }
+
+    [Fact]
+    public void El_snapshot_coincide_con_el_modelo_sin_cambios_pendientes()
+    {
+        using var contexto = Contexto();
+        var snapshot = contexto.GetService<IMigrationsAssembly>().ModelSnapshot!.Model;
+        if (snapshot is IMutableModel mutable)
+        {
+            snapshot = mutable.FinalizeModel();
+        }
+
+        snapshot = contexto.GetService<IModelRuntimeInitializer>()
+            .Initialize(snapshot, designTime: true, validationLogger: null);
+
+        Assert.False(contexto.GetService<IMigrationsModelDiffer>().HasDifferences(
+            snapshot.GetRelationalModel(), Modelo().GetRelationalModel()));
     }
 
     // ------------------------------------------------------------------ período
