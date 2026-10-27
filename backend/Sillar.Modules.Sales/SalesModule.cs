@@ -99,6 +99,10 @@ public sealed class SalesModule : IModule, IModuleMigrations
         services.AddScoped<VencimientoDePlazos>();
         services.AddScoped<CreadorDePedidos>();
 
+        // Sin autoridad de moneda ratificada, ningún pedido monetario nace. Cuando
+        // exista, se sustituye esta línea y nada más.
+        services.AddSingleton<IAutoridadDeMoneda, SinAutoridadDeMoneda>();
+
         // El hueco que M04 declara en su ficha de cliente. Se registra el contrato,
         // no la clase: M04 lo pide al contenedor y comprueba si vino, así que sin M03
         // instalado el hueco se explica y no falla.

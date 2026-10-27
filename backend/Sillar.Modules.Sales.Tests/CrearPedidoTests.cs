@@ -4,6 +4,7 @@ using Sillar.Modules.Crm.Contracts;
 using Sillar.Modules.Sales.Contracts;
 using Sillar.Modules.Sales.Data;
 using Sillar.Modules.Sales.Dtos;
+using Sillar.Modules.Sales.Pedidos;
 
 namespace Sillar.Modules.Sales.Tests;
 
@@ -87,6 +88,15 @@ internal static class Dobles
     internal sealed class RelojFijo(DateTimeOffset ahora) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => ahora;
+    }
+
+    /// <summary>
+    /// La autoridad de moneda, fijada por la prueba. Es dato de prueba, no una moneda
+    /// del producto: el producto no tiene ninguna mientras JP no ratifique su autoridad.
+    /// </summary>
+    internal sealed class MonedaDice(string? moneda) : IAutoridadDeMoneda
+    {
+        public string? MonedaDeVenta() => moneda;
     }
 
     internal static CustomerOrderContactSnapshot Cliente(Guid id, bool verificado = true)

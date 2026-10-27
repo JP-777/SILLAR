@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Sillar.Modules.Sales.Contracts;
 using Sillar.Modules.Sales.Data;
 using Sillar.Modules.Sales.Domain;
+using Sillar.Modules.Sales.Dtos;
 using Sillar.Modules.Sales.Pedidos;
 using Sillar.Shared.Replication;
 
@@ -24,8 +25,8 @@ public sealed class MonedaYAgregadosMonetariosTests
     private static readonly DateTimeOffset Fin = new(2026, 11, 1, 0, 0, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset Observado = new(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
 
-    private static readonly OrderPaymentAggregateCapabilities SinEscritorProveedor =
-        AgregadosMonetarios.Capacidades;
+    private static readonly IReadOnlyCollection<AcreditacionDeEscritor> SinAcreditar =
+        AgregadosMonetarios.Acreditaciones;
 
     // ------------------------------------------------------------------ forma ISO
 
@@ -193,7 +194,7 @@ public sealed class MonedaYAgregadosMonetariosTests
         Assert.Contains("o.registered_at >= ", sql, StringComparison.Ordinal);
         Assert.Contains("o.registered_at < ", sql, StringComparison.Ordinal);
         Assert.DoesNotContain("created_at", sql, StringComparison.Ordinal);
-        Assert.Contains("GROUP BY o.source, o.currency_code, o.was_late", sql, StringComparison.Ordinal);
+        Assert.Contains("GROUP BY o.source, o.method, o.currency_code, o.was_late", sql, StringComparison.Ordinal);
     }
 
     // ------------------------------------------------------------------ valor de pedidos
@@ -260,99 +261,169 @@ public sealed class MonedaYAgregadosMonetariosTests
         Assert.Equal(foto.CohortCount, enGrupos + foto.WithoutCurrency.Total);
     }
 
+    // ------------------------------------------------------------------ guarda de moneda
+
+    [Fact]
+    public void Sin_autoridad_de_moneda_no_hay_moneda_de_venta()
+        => Assert.Null(new SinAutoridadDeMoneda().MonedaDeVenta());
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("pen")]
+    [InlineData("PE")]
+    public async Task Sin_moneda_afirmada_no_nace_ningun_pedido_y_no_se_llega_a_la_base(string? moneda)
+    {
+        // El contexto apunta a un puerto cerrado: si la guarda no cortara, el pedido
+        // fallaría por conexión, no con este motivo.
+        await using var contexto = Contexto();
+        var item = Guid.CreateVersion7();
+        var creador = new CreadorDePedidos(
+            contexto,
+            new CongeladorDeCliente(new Dobles.M04Dice(Dobles.Cliente(Guid.CreateVersion7()))),
+            new Dobles.CatalogoDice().Con(item, activo: true, precio: 8.50m),
+            new OrderCodeAllocator(contexto, new Dobles.AjustesDice(), new NodeIdentity("prueba"), TimeProvider.System),
+            new Dobles.AjustesDice(),
+            new Dobles.MonedaDice(moneda),
+            TimeProvider.System);
+
+        var r = await creador.CrearAsync(Guid.CreateVersion7(), [new LineaPedida(item, 1)], CancellationToken.None);
+
+        Assert.False(r.Creado);
+        Assert.Equal(MotivoDeNoCreacion.MonedaSinAutoridad, r.Motivo);
+        Assert.Null(r.OrderCode);
+    }
+
     // ------------------------------------------------------------------ pagos
 
     [Fact]
-    public void Hoy_no_hay_escritor_de_pagos_de_proveedor()
-        => Assert.False(AgregadosMonetarios.Capacidades.ProviderWriterPresent);
-
-    [Fact]
-    public void Sin_escritor_los_pagos_de_proveedor_son_no_medibles_y_no_cero()
+    public void Hoy_ningun_origen_tiene_escritor_acreditado()
     {
-        var foto = AgregadosMonetarios.ReducirPagos(Inicio, Fin, Observado, [], SinEscritorProveedor);
-
-        Assert.Equal(MeasureState.NotMeasurable, foto.Provider.State);
-        Assert.Null(foto.Provider.Count);
-        Assert.Equal(NotMeasurableReason.ProviderWriterAbsent, foto.Provider.Reason);
+        Assert.Equal(PaymentSource.All, AgregadosMonetarios.Acreditaciones.Select(a => a.Origen));
+        Assert.All(AgregadosMonetarios.Acreditaciones, a => Assert.Null(a.CubiertoDesdeUtc));
     }
 
     [Fact]
-    public void Una_cohorte_de_pagos_vacia_es_cero_comprobado_para_el_personal_y_los_tardios()
+    public void Sin_escritor_acreditado_ningun_indicador_de_ningun_origen_es_medible_aunque_haya_filas()
     {
-        var foto = AgregadosMonetarios.ReducirPagos(Inicio, Fin, Observado, [], SinEscritorProveedor);
+        var foto = AgregadosMonetarios.ReducirPagos(Inicio, Fin, Observado,
+            [new GrupoDePagos(PaymentSource.Staff, PaymentMethod.Yape, "PEN", false, 3, 30m)], SinAcreditar);
 
-        Assert.Equal(PaymentCountMeasure.Measured(0), foto.Staff);
-        Assert.Equal(PaymentCountMeasure.Measured(0), foto.Late);
-        Assert.Empty(foto.AmountsByCurrency);
-        Assert.Equal(0, foto.PaymentsWithoutCurrency);
-        Assert.Equal(MeasureState.Measured, foto.Amounts.State);
+        Assert.Equal(PaymentSource.All.Length * Enum.GetValues<PaymentIndicator>().Length, foto.Coverage.Count);
+        Assert.All(foto.Coverage, c =>
+        {
+            Assert.Equal(MeasureState.NotMeasurable, c.State);
+            Assert.Equal(NotMeasurableReason.WriterNotAccredited, c.Reason);
+            Assert.Null(c.CoveredSinceUtc);
+        });
     }
 
     [Fact]
-    public void Los_tardios_salen_del_hecho_guardado()
+    public void Una_ventana_vacia_sin_escritor_no_se_declara_cero()
+    {
+        var foto = AgregadosMonetarios.ReducirPagos(Inicio, Fin, Observado, [], SinAcreditar);
+
+        Assert.Empty(foto.Groups);
+        Assert.DoesNotContain(foto.Coverage, c => c.State == MeasureState.Measured);
+    }
+
+    [Fact]
+    public void Los_grupos_separan_origen_medio_moneda_y_tardio()
     {
         var foto = AgregadosMonetarios.ReducirPagos(Inicio, Fin, Observado,
         [
-            new GrupoDePagos(PaymentSource.Staff, "PEN", true, 2, 20m),
-            new GrupoDePagos(PaymentSource.Staff, "PEN", false, 5, 50m),
-            new GrupoDePagos(PaymentSource.Staff, null, true, 1, 10m),
-        ], SinEscritorProveedor);
-
-        Assert.Equal(PaymentCountMeasure.Measured(8), foto.Staff);
-        Assert.Equal(PaymentCountMeasure.Measured(3), foto.Late);
-    }
-
-    [Fact]
-    public void Un_solo_pago_sin_moneda_deja_el_importe_cobrado_como_no_medible_sin_borrar_los_grupos()
-    {
-        var foto = AgregadosMonetarios.ReducirPagos(Inicio, Fin, Observado,
-        [
-            new GrupoDePagos(PaymentSource.Staff, "PEN", false, 2, 70m),
-            new GrupoDePagos(PaymentSource.Staff, null, false, 1, 999m),
-        ], SinEscritorProveedor);
-
-        Assert.Equal([new PaymentAmountByCurrency("PEN", 2, 70m)], foto.AmountsByCurrency);
-        Assert.Equal(1, foto.PaymentsWithoutCurrency);
-        Assert.Equal(
-            new PaymentAmountsCoverage(MeasureState.NotMeasurable, NotMeasurableReason.CurrencyNotRecorded),
-            foto.Amounts);
-    }
-
-    [Fact]
-    public void Si_todos_los_pagos_tienen_moneda_el_importe_es_medido_por_moneda()
-    {
-        var foto = AgregadosMonetarios.ReducirPagos(Inicio, Fin, Observado,
-        [
-            new GrupoDePagos(PaymentSource.Staff, "USD", false, 1, 10m),
-            new GrupoDePagos(PaymentSource.Staff, "PEN", true, 1, 5m),
-            new GrupoDePagos(PaymentSource.Staff, "PEN", false, 2, 15m),
-        ], SinEscritorProveedor);
+            new GrupoDePagos(PaymentSource.Staff, PaymentMethod.Yape, "USD", false, 1, 10m),
+            new GrupoDePagos(PaymentSource.Staff, PaymentMethod.Cash, "PEN", false, 2, 20m),
+            new GrupoDePagos(PaymentSource.Staff, PaymentMethod.Yape, "PEN", true, 1, 5m),
+            new GrupoDePagos(PaymentSource.Staff, PaymentMethod.Yape, "PEN", false, 4, 40m),
+            new GrupoDePagos(PaymentSource.Staff, PaymentMethod.Yape, null, false, 1, 999m),
+        ], SinAcreditar);
 
         Assert.Equal(
-            [new PaymentAmountByCurrency("PEN", 3, 20m), new PaymentAmountByCurrency("USD", 1, 10m)],
-            foto.AmountsByCurrency);
-        Assert.Equal(new PaymentAmountsCoverage(MeasureState.Measured, NotMeasurableReason.None), foto.Amounts);
+            [
+                new PaymentAggregateGroup("staff", "efectivo", "PEN", false, 2, 20m),
+                new PaymentAggregateGroup("staff", "yape", "PEN", false, 4, 40m),
+                new PaymentAggregateGroup("staff", "yape", "PEN", true, 1, 5m),
+                new PaymentAggregateGroup("staff", "yape", "USD", false, 1, 10m),
+                new PaymentAggregateGroup("staff", "yape", null, false, 1, null),
+            ],
+            foto.Groups);
     }
 
     [Fact]
-    public void Con_escritor_de_proveedor_su_recuento_pasaria_a_ser_medible()
+    public void Un_grupo_sin_moneda_cuenta_pagos_pero_no_publica_importe()
     {
-        // Capacidad hipotética construida en la prueba: no hay escritor, solo se fija
-        // que la rama medible existe y no confunde orígenes.
-        var conEscritor = SinEscritorProveedor with { ProviderWriterPresent = true };
+        var foto = AgregadosMonetarios.ReducirPagos(Inicio, Fin, Observado,
+            [new GrupoDePagos(PaymentSource.Staff, PaymentMethod.Cash, null, true, 2, 70m)], SinAcreditar);
+
+        var grupo = Assert.Single(foto.Groups);
+        Assert.Equal(2, grupo.Count);
+        Assert.True(grupo.WasLate);
+        Assert.Null(grupo.Amount);
+    }
+
+    [Fact]
+    public void Con_escritor_acreditado_desde_antes_de_la_ventana_el_origen_es_medible()
+    {
+        // Acreditación hipotética construida en la prueba: fija la rama, no afirma escritor.
+        var acreditado = Acreditar(PaymentSource.Staff, Inicio.AddDays(-1));
 
         var foto = AgregadosMonetarios.ReducirPagos(Inicio, Fin, Observado,
-            [new GrupoDePagos(PaymentSource.Staff, "PEN", false, 2, 20m)], conEscritor);
+            [new GrupoDePagos(PaymentSource.Staff, PaymentMethod.Yape, "PEN", false, 1, 10m)], acreditado);
 
-        Assert.Equal(PaymentCountMeasure.Measured(0), foto.Provider);
-        Assert.Equal(PaymentCountMeasure.Measured(2), foto.Staff);
+        Assert.All(Cobertura(foto, PaymentSource.Staff), c =>
+        {
+            Assert.Equal(MeasureState.Measured, c.State);
+            Assert.Equal(Inicio.AddDays(-1), c.CoveredSinceUtc);
+        });
+        Assert.All(Cobertura(foto, PaymentSource.Provider), c =>
+            Assert.Equal(NotMeasurableReason.WriterNotAccredited, c.Reason));
+    }
+
+    [Fact]
+    public void Un_escritor_acreditado_a_mitad_de_ventana_no_cubre_la_ventana()
+    {
+        var acreditado = Acreditar(PaymentSource.Staff, Inicio.AddDays(3));
+
+        var foto = AgregadosMonetarios.ReducirPagos(Inicio, Fin, Observado, [], acreditado);
+
+        Assert.All(Cobertura(foto, PaymentSource.Staff), c =>
+            Assert.Equal(NotMeasurableReason.WindowStartsBeforeCoverage, c.Reason));
+    }
+
+    [Fact]
+    public void Un_solo_pago_sin_moneda_deja_no_medible_el_importe_de_su_origen_y_no_el_recuento()
+    {
+        var acreditado = Acreditar(PaymentSource.Staff, Inicio);
+
+        var foto = AgregadosMonetarios.ReducirPagos(Inicio, Fin, Observado,
+        [
+            new GrupoDePagos(PaymentSource.Staff, PaymentMethod.Yape, "PEN", false, 2, 20m),
+            new GrupoDePagos(PaymentSource.Staff, PaymentMethod.Yape, null, false, 1, 9m),
+        ], acreditado);
+
+        var staff = Cobertura(foto, PaymentSource.Staff).ToDictionary(c => c.Indicator);
+        Assert.Equal(MeasureState.Measured, staff[PaymentIndicator.Count].State);
+        Assert.Equal(MeasureState.Measured, staff[PaymentIndicator.LateCount].State);
+        Assert.Equal(NotMeasurableReason.CurrencyNotRecorded, staff[PaymentIndicator.AmountByCurrency].Reason);
     }
 
     // ------------------------------------------------------------------ apoyo
 
+    private static AcreditacionDeEscritor[] Acreditar(string origen, DateTimeOffset desde)
+        => PaymentSource.All
+            .Select(o => new AcreditacionDeEscritor(o, o == origen ? desde : null))
+            .ToArray();
+
+    private static IEnumerable<PaymentCoverage> Cobertura(OrderPaymentAggregateSnapshot foto, string origen)
+        => foto.Coverage.Where(c => c.Source == origen);
+
+    private const string CadenaSinBase =
+        "Host=127.0.0.1;Port=1;Database=sin_base;Username=x;Password=x;Timeout=1";
+
     private static SalesDbContext Contexto() => new(
         new DbContextOptionsBuilder<SalesDbContext>()
-            .UseNpgsql("Host=127.0.0.1;Port=1;Database=sin_base;Username=x;Password=x;Timeout=1")
+            .UseNpgsql(CadenaSinBase)
             .Options,
         new NodeIdentity("prueba"),
         TimeProvider.System);

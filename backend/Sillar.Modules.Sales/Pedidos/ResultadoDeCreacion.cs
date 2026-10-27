@@ -37,7 +37,16 @@ public enum MotivoDeNoCreacion
     /// <remarks>
     /// <b>Nulo es «a consultar», no «sin precio» ni «gratis».</b> Cero sí se vende.
     /// </remarks>
-    ItemAConsultar
+    ItemAConsultar,
+
+    /// <summary>
+    /// No hay autoridad que afirme la moneda de venta. Ver <c>IAutoridadDeMoneda</c>.
+    /// </summary>
+    /// <remarks>
+    /// <b>No es culpa del cliente y no lo arregla él.</b> Es la tienda la que todavía
+    /// no puede cobrar en una moneda afirmada; la frase lo dice así.
+    /// </remarks>
+    MonedaSinAutoridad
 }
 
 /// <summary>El resultado de intentar crear un pedido.</summary>

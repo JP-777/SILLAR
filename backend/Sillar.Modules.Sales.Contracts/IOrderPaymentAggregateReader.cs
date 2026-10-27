@@ -5,10 +5,11 @@ namespace Sillar.Modules.Sales.Contracts;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Distingue lo comprobado de lo que no se puede medir.</b> Un recuento que M03 no
-/// puede respaldar llega como <see cref="MeasureState.NotMeasurable"/> con
-/// <c>Count = null</c>, nunca como cero: un cero afirmaría que no hubo nada, y lo único
-/// que M03 sabe es que no lo registra.
+/// <b>Separa lo observado de lo que se puede afirmar.</b> <see cref="OrderPaymentAggregateSnapshot.Groups"/>
+/// son las filas que hay, agrupadas; <see cref="OrderPaymentAggregateSnapshot.Coverage"/> dice, por
+/// origen, indicador y ventana, si esas filas son <b>todo</b> lo que ocurrió. Sin un escritor
+/// acreditado para un origen, que no haya filas no prueba que no hubo pagos, y lo que sí hay
+/// no prueba que sea completo.
 /// </para>
 /// <para>
 /// Solo trabaja sobre esta base de datos. No publica pedidos, clientes ni trabajadores.
@@ -16,11 +17,6 @@ namespace Sillar.Modules.Sales.Contracts;
 /// </remarks>
 public interface IOrderPaymentAggregateReader
 {
-    /// <summary>
-    /// Lo que el esquema de M03 registra hoy. Es constante del código, no se sondea la base.
-    /// </summary>
-    OrderPaymentAggregateCapabilities Capabilities { get; }
-
     /// <summary>
     /// Agrega los pagos registrados en el intervalo semiabierto
     /// [<paramref name="startInclusive"/>, <paramref name="endExclusive"/>), en UTC,
@@ -34,16 +30,55 @@ public interface IOrderPaymentAggregateReader
         CancellationToken cancellationToken);
 }
 
-/// <summary>Qué hechos registra el libro de pagos de M03.</summary>
-/// <param name="SourceRecorded">El origen staff/provider se guarda explícito por pago.</param>
-/// <param name="CurrencyRecorded">Existe la columna de moneda. Puede estar vacía en pagos anteriores.</param>
-/// <param name="LateRecorded">El pago tardío se guarda como hecho, no se recalcula.</param>
-/// <param name="ProviderWriterPresent">Existe un escritor de pagos de proveedor. <b>Hoy no.</b></param>
-public sealed record OrderPaymentAggregateCapabilities(
-    bool SourceRecorded,
-    bool CurrencyRecorded,
-    bool LateRecorded,
-    bool ProviderWriterPresent);
+/// <summary>Una ventana de pagos, un instante de lectura.</summary>
+/// <param name="StartInclusive">Límite inferior incluido, en UTC.</param>
+/// <param name="EndExclusive">Límite superior excluido, en UTC.</param>
+/// <param name="ObservedAtUtc">Instante del servidor tomado antes de la consulta.</param>
+/// <param name="Groups">
+/// Filas observadas por origen + método + moneda + tardío, ordenadas. <b>Observadas no es
+/// completas:</b> lo dice <paramref name="Coverage"/>.
+/// </param>
+/// <param name="Coverage">
+/// Una entrada por cada origen de <see cref="PaymentSource.All"/> y cada
+/// <see cref="PaymentIndicator"/>, para esta ventana.
+/// </param>
+public sealed record OrderPaymentAggregateSnapshot(
+    DateTimeOffset StartInclusive,
+    DateTimeOffset EndExclusive,
+    DateTimeOffset ObservedAtUtc,
+    IReadOnlyList<PaymentAggregateGroup> Groups,
+    IReadOnlyList<PaymentCoverage> Coverage);
+
+/// <summary>Pagos observados con el mismo origen, método, moneda y condición de tardío.</summary>
+/// <param name="Source">Origen, de <see cref="PaymentSource"/>.</param>
+/// <param name="Method">Medio, de <see cref="PaymentMethod"/>.</param>
+/// <param name="CurrencyCode">ISO 4217, o <c>null</c> si la moneda es desconocida.</param>
+/// <param name="WasLate">El hecho guardado <c>was_late</c>; no se recalcula.</param>
+/// <param name="Count">Pagos del grupo.</param>
+/// <param name="Amount">
+/// Suma de importes. <b><c>null</c> cuando la moneda es desconocida:</b> un total sin unidad
+/// no se publica.
+/// </param>
+public sealed record PaymentAggregateGroup(
+    string Source,
+    string Method,
+    string? CurrencyCode,
+    bool WasLate,
+    long Count,
+    decimal? Amount);
+
+/// <summary>Qué se mide sobre los pagos de un origen.</summary>
+public enum PaymentIndicator
+{
+    /// <summary>Cuántos pagos se registraron.</summary>
+    Count,
+
+    /// <summary>Cuántos de ellos fueron tardíos (<c>was_late</c>).</summary>
+    LateCount,
+
+    /// <summary>Cuánto se cobró, por moneda.</summary>
+    AmountByCurrency,
+}
 
 /// <summary>Si un valor está respaldado por lo que M03 registra.</summary>
 public enum MeasureState
@@ -51,7 +86,7 @@ public enum MeasureState
     /// <summary>Medido. Un cero aquí es un cero comprobado.</summary>
     Measured,
 
-    /// <summary>No medible: el valor es <c>null</c> y no significa cero.</summary>
+    /// <summary>No medible: lo observado no se puede presentar como completo, y su ausencia no es cero.</summary>
     NotMeasurable,
 }
 
@@ -61,61 +96,27 @@ public enum NotMeasurableReason
     /// <summary>Sí se pudo medir.</summary>
     None,
 
-    /// <summary>No existe escritor de pagos de proveedor: su ausencia no prueba que no los hubo.</summary>
-    ProviderWriterAbsent,
+    /// <summary>No hay escritor acreditado para el origen: no consta que se registre todo, ni siquiera algo.</summary>
+    WriterNotAccredited,
 
-    /// <summary>Hay pagos sin moneda en la cohorte: el importe cobrado no se puede afirmar completo.</summary>
+    /// <summary>El escritor está acreditado, pero desde después del inicio de la ventana.</summary>
+    WindowStartsBeforeCoverage,
+
+    /// <summary>Hay pagos del origen sin moneda en la ventana: el importe no se puede afirmar completo.</summary>
     CurrencyNotRecorded,
 }
 
-/// <summary>Un recuento que dice si está respaldado.</summary>
+/// <summary>Cobertura de un indicador, para un origen, en la ventana pedida.</summary>
+/// <param name="Source">Origen, de <see cref="PaymentSource.All"/>.</param>
+/// <param name="Indicator">Qué se mide.</param>
 /// <param name="State">Medido o no medible.</param>
-/// <param name="Count"><c>null</c> si y solo si no es medible.</param>
 /// <param name="Reason"><see cref="NotMeasurableReason.None"/> si y solo si es medible.</param>
-public sealed record PaymentCountMeasure(MeasureState State, long? Count, NotMeasurableReason Reason)
-{
-    /// <summary>Un recuento comprobado.</summary>
-    public static PaymentCountMeasure Measured(long count) =>
-        new(MeasureState.Measured, count, NotMeasurableReason.None);
-
-    /// <summary>Un recuento que no se puede afirmar.</summary>
-    public static PaymentCountMeasure NotMeasurable(NotMeasurableReason reason) =>
-        new(MeasureState.NotMeasurable, null, reason);
-}
-
-/// <summary>Importe cobrado en una moneda.</summary>
-/// <param name="CurrencyCode">Código ISO 4217.</param>
-/// <param name="Count">Pagos en esa moneda.</param>
-/// <param name="Amount">Suma de sus importes.</param>
-public sealed record PaymentAmountByCurrency(string CurrencyCode, long Count, decimal Amount);
-
-/// <summary>
-/// Una cohorte de pagos por <c>registered_at</c>, un instante de lectura.
-/// </summary>
-/// <param name="StartInclusive">Límite inferior incluido, en UTC.</param>
-/// <param name="EndExclusive">Límite superior excluido, en UTC.</param>
-/// <param name="ObservedAtUtc">Instante del servidor tomado antes de la consulta.</param>
-/// <param name="Staff">Pagos registrados por el personal. Siempre medible.</param>
-/// <param name="Provider">Pagos de proveedor. No medible mientras no haya escritor.</param>
-/// <param name="Late">Pagos con <c>was_late</c> guardado, de cualquier origen registrado.</param>
-/// <param name="AmountsByCurrency">Importe por moneda de los pagos que la tienen, ordenado por código.</param>
-/// <param name="PaymentsWithoutCurrency">Pagos sin moneda: <b>solo se cuentan</b>, su importe no se publica.</param>
-/// <param name="Amounts">
-/// Si el importe cobrado de la cohorte está completo. No medible en cuanto haya un solo
-/// pago sin moneda; los grupos por moneda siguen siendo ciertos, pero no son el todo.
+/// <param name="CoveredSinceUtc">
+/// Desde cuándo está acreditado el escritor de ese origen, o <c>null</c> si no lo está.
 /// </param>
-public sealed record OrderPaymentAggregateSnapshot(
-    DateTimeOffset StartInclusive,
-    DateTimeOffset EndExclusive,
-    DateTimeOffset ObservedAtUtc,
-    PaymentCountMeasure Staff,
-    PaymentCountMeasure Provider,
-    PaymentCountMeasure Late,
-    IReadOnlyList<PaymentAmountByCurrency> AmountsByCurrency,
-    long PaymentsWithoutCurrency,
-    PaymentAmountsCoverage Amounts);
-
-/// <summary>Cobertura del importe cobrado de una cohorte.</summary>
-/// <param name="State">Medido si todos los pagos de la cohorte tienen moneda.</param>
-/// <param name="Reason"><see cref="NotMeasurableReason.None"/> si y solo si es medible.</param>
-public sealed record PaymentAmountsCoverage(MeasureState State, NotMeasurableReason Reason);
+public sealed record PaymentCoverage(
+    string Source,
+    PaymentIndicator Indicator,
+    MeasureState State,
+    NotMeasurableReason Reason,
+    DateTimeOffset? CoveredSinceUtc);

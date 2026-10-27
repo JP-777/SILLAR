@@ -8,8 +8,15 @@ namespace Sillar.Modules.Sales.Pedidos;
 /// <summary>Un grupo de pedidos tal como lo devuelve PostgreSQL: moneda × actividad.</summary>
 internal sealed record GrupoDeValor(string? Moneda, bool Activo, long Pedidos, decimal Total);
 
-/// <summary>Un grupo de pagos tal como lo devuelve PostgreSQL: origen × moneda × tardío.</summary>
-internal sealed record GrupoDePagos(string Origen, string? Moneda, bool Tardio, long Pagos, decimal Importe);
+/// <summary>Un grupo de pagos tal como lo devuelve PostgreSQL: origen × medio × moneda × tardío.</summary>
+internal sealed record GrupoDePagos(
+    string Origen, string Medio, string? Moneda, bool Tardio, long Pagos, decimal Importe);
+
+/// <summary>
+/// Desde cuándo consta que un escritor registra <b>todos</b> los pagos de un origen.
+/// <c>null</c> en <see cref="CubiertoDesdeUtc"/>: no acreditado.
+/// </summary>
+internal sealed record AcreditacionDeEscritor(string Origen, DateTimeOffset? CubiertoDesdeUtc);
 
 /// <summary>
 /// Las reglas de los dos agregados monetarios, puras y sin base.
@@ -28,12 +35,17 @@ internal sealed record GrupoDePagos(string Origen, string? Moneda, bool Tardio, 
 /// </remarks>
 internal static class AgregadosMonetarios
 {
-    /// <summary>Lo que el esquema registra hoy. Cambia solo con una migración.</summary>
-    public static readonly OrderPaymentAggregateCapabilities Capacidades = new(
-        SourceRecorded: true,
-        CurrencyRecorded: true,
-        LateRecorded: true,
-        ProviderWriterPresent: PaymentSource.Ratified.Contains(PaymentSource.Provider));
+    /// <summary>
+    /// <b>Ningún escritor acreditado, de ningún origen.</b>
+    /// </summary>
+    /// <remarks>
+    /// No es pesimismo: M03 no tiene hoy ninguna operación que cree un
+    /// <c>OrderPayment</c>, ni del personal ni de un proveedor. Las filas que haya
+    /// llegaron por otro camino y no prueban cobertura. Acreditar un origen es cambiar
+    /// esta lista, con la fecha desde la que el escritor está en servicio, cuando exista.
+    /// </remarks>
+    public static readonly AcreditacionDeEscritor[] Acreditaciones =
+        PaymentSource.All.Select(origen => new AcreditacionDeEscritor(origen, null)).ToArray();
 
     /// <summary>Valida el período y lo lleva a UTC, que es lo que Npgsql exige para <c>timestamptz</c>.</summary>
     /// <exception cref="ArgumentOutOfRangeException">El fin no es posterior al inicio.</exception>
@@ -79,36 +91,45 @@ internal static class AgregadosMonetarios
     public static OrderPaymentAggregateSnapshot ReducirPagos(
         DateTimeOffset inicio, DateTimeOffset fin, DateTimeOffset observado,
         IReadOnlyCollection<GrupoDePagos> grupos,
-        OrderPaymentAggregateCapabilities capacidades)
+        IReadOnlyCollection<AcreditacionDeEscritor> acreditaciones)
     {
-        var staff = PaymentCountMeasure.Measured(
-            grupos.Where(g => g.Origen == PaymentSource.Staff).Sum(g => g.Pagos));
-
-        // Sin escritor, la ausencia de filas no prueba que no hubo cobros de proveedor.
-        var proveedor = capacidades.ProviderWriterPresent
-            ? PaymentCountMeasure.Measured(
-                grupos.Where(g => g.Origen == PaymentSource.Provider).Sum(g => g.Pagos))
-            : PaymentCountMeasure.NotMeasurable(NotMeasurableReason.ProviderWriterAbsent);
-
-        var tardios = PaymentCountMeasure.Measured(grupos.Where(g => g.Tardio).Sum(g => g.Pagos));
-
-        var porMoneda = grupos
-            .Where(g => g.Moneda is not null)
-            .GroupBy(g => g.Moneda!, StringComparer.Ordinal)
-            .OrderBy(g => g.Key, StringComparer.Ordinal)
-            .Select(g => new PaymentAmountByCurrency(g.Key, g.Sum(x => x.Pagos), g.Sum(x => x.Importe)))
+        var observados = grupos
+            .GroupBy(g => (g.Origen, g.Medio, g.Moneda, g.Tardio))
+            .Select(g => new PaymentAggregateGroup(
+                g.Key.Origen, g.Key.Medio, g.Key.Moneda, g.Key.Tardio,
+                g.Sum(x => x.Pagos),
+                // Sin moneda no hay unidad, y un importe sin unidad no se publica.
+                g.Key.Moneda is null ? null : g.Sum(x => x.Importe)))
+            .OrderBy(g => g.Source, StringComparer.Ordinal)
+            .ThenBy(g => g.Method, StringComparer.Ordinal)
+            .ThenBy(g => g.CurrencyCode is null)
+            .ThenBy(g => g.CurrencyCode, StringComparer.Ordinal)
+            .ThenBy(g => g.WasLate)
             .ToArray();
 
-        var sinMoneda = grupos.Where(g => g.Moneda is null).Sum(g => g.Pagos);
+        var cobertura = new List<PaymentCoverage>();
 
-        var cobertura = sinMoneda == 0
-            ? new PaymentAmountsCoverage(MeasureState.Measured, NotMeasurableReason.None)
-            : new PaymentAmountsCoverage(MeasureState.NotMeasurable, NotMeasurableReason.CurrencyNotRecorded);
+        foreach (var origen in PaymentSource.All)
+        {
+            var desde = acreditaciones.SingleOrDefault(a => a.Origen == origen)?.CubiertoDesdeUtc;
+            var sinMoneda = grupos.Any(g => g.Origen == origen && g.Moneda is null);
 
-        return new OrderPaymentAggregateSnapshot(
-            inicio, fin, observado,
-            staff, proveedor, tardios,
-            porMoneda, sinMoneda, cobertura);
+            foreach (var indicador in Enum.GetValues<PaymentIndicator>())
+            {
+                var motivo = desde is null ? NotMeasurableReason.WriterNotAccredited
+                    : desde > inicio ? NotMeasurableReason.WindowStartsBeforeCoverage
+                    : indicador == PaymentIndicator.AmountByCurrency && sinMoneda
+                        ? NotMeasurableReason.CurrencyNotRecorded
+                    : NotMeasurableReason.None;
+
+                cobertura.Add(new PaymentCoverage(
+                    origen, indicador,
+                    motivo == NotMeasurableReason.None ? MeasureState.Measured : MeasureState.NotMeasurable,
+                    motivo, desde));
+            }
+        }
+
+        return new OrderPaymentAggregateSnapshot(inicio, fin, observado, observados, cobertura);
     }
 }
 
@@ -151,9 +172,6 @@ internal sealed class LectorAgregadoDePagos(SalesDbContext database, TimeProvide
     : IOrderPaymentAggregateReader
 {
     /// <inheritdoc />
-    public OrderPaymentAggregateCapabilities Capabilities => AgregadosMonetarios.Capacidades;
-
-    /// <inheritdoc />
     public async Task<OrderPaymentAggregateSnapshot> ReadRegisteredBetweenAsync(
         DateTimeOffset startInclusive, DateTimeOffset endExclusive, CancellationToken cancellationToken)
     {
@@ -162,7 +180,8 @@ internal sealed class LectorAgregadoDePagos(SalesDbContext database, TimeProvide
 
         var grupos = await Consulta(inicio, fin).ToListAsync(cancellationToken);
 
-        return AgregadosMonetarios.ReducirPagos(inicio, fin, observado, grupos, Capabilities);
+        return AgregadosMonetarios.ReducirPagos(
+            inicio, fin, observado, grupos, AgregadosMonetarios.Acreditaciones);
     }
 
     /// <summary>La consulta, expuesta para poder leer su SQL sin base.</summary>
@@ -170,9 +189,10 @@ internal sealed class LectorAgregadoDePagos(SalesDbContext database, TimeProvide
         => database.OrderPayments
             .AsNoTracking()
             .Where(p => p.RegisteredAt >= inicio && p.RegisteredAt < fin)
-            .GroupBy(p => new { p.Source, p.CurrencyCode, p.WasLate })
+            .GroupBy(p => new { p.Source, p.Method, p.CurrencyCode, p.WasLate })
             .Select(g => new GrupoDePagos(
-                g.Key.Source, g.Key.CurrencyCode, g.Key.WasLate, g.LongCount(), g.Sum(p => p.Amount)));
+                g.Key.Source, g.Key.Method, g.Key.CurrencyCode, g.Key.WasLate,
+                g.LongCount(), g.Sum(p => p.Amount)));
 }
 
 /// <summary>

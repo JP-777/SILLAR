@@ -12,8 +12,8 @@ using Sillar.Modules.Sales.Data;
 namespace Sillar.Modules.Sales.Migrations
 {
     [DbContext(typeof(SalesDbContext))]
-    [Migration("20261026230437_SalesCurrencyAndSourceCandidate20261026")]
-    partial class SalesCurrencyAndSourceCandidate20261026
+    [Migration("20261026235423_SalesPaymentSourceCandidate20261026")]
+    partial class SalesPaymentSourceCandidate20261026
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -565,7 +565,7 @@ namespace Sillar.Modules.Sales.Migrations
                     b.HasOne("Sillar.Modules.Sales.Domain.Order", null)
                         .WithMany()
                         .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_order_payments_order_id");
                 });

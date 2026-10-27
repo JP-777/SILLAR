@@ -35,4 +35,10 @@ public static class PaymentSource
     /// y la restricción no pueden separarse.
     /// </summary>
     public static readonly string[] Ratified = [Staff];
+
+    /// <summary>
+    /// Todos los orígenes nombrados, admitidos o no. Es la lista sobre la que se declara
+    /// cobertura: un origen que no se puede medir se dice, no se omite.
+    /// </summary>
+    public static readonly string[] All = [Staff, Provider];
 }
