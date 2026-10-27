@@ -50,7 +50,11 @@ public sealed record OrderPaymentAggregateSnapshot(
     IReadOnlyList<PaymentCoverage> Coverage);
 
 /// <summary>Pagos observados con el mismo origen, método, moneda y condición de tardío.</summary>
-/// <param name="Source">Origen, de <see cref="PaymentSource"/>.</param>
+/// <param name="Source">
+/// Origen, de <see cref="PaymentSource"/>. <b><c>null</c>: pago histórico sin origen
+/// registrado</b>, anterior a la columna. No se atribuye a ningún canal ni se cuenta en
+/// la cobertura de ninguno.
+/// </param>
 /// <param name="Method">Medio, de <see cref="PaymentMethod"/>.</param>
 /// <param name="CurrencyCode">ISO 4217, o <c>null</c> si la moneda es desconocida.</param>
 /// <param name="WasLate">El hecho guardado <c>was_late</c>; no se recalcula.</param>
@@ -60,7 +64,7 @@ public sealed record OrderPaymentAggregateSnapshot(
 /// no se publica.
 /// </param>
 public sealed record PaymentAggregateGroup(
-    string Source,
+    string? Source,
     string Method,
     string? CurrencyCode,
     bool WasLate,
@@ -104,6 +108,12 @@ public enum NotMeasurableReason
 
     /// <summary>Hay pagos del origen sin moneda en la ventana: el importe no se puede afirmar completo.</summary>
     CurrencyNotRecorded,
+
+    /// <summary>
+    /// Hay pagos históricos sin origen en la ventana: cualquiera de ellos podría ser de este
+    /// origen, así que nada de él se puede afirmar completo.
+    /// </summary>
+    SourceNotRecorded,
 }
 
 /// <summary>Cobertura de un indicador, para un origen, en la ventana pedida.</summary>

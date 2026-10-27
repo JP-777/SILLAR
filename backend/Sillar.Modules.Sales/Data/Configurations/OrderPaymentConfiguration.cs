@@ -46,6 +46,13 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
             table.HasCheckConstraint(
                 "ck_order_payments_source",
                 $"source IN ({string.Join(", ", PaymentSource.Ratified.Select(s => $"'{s}'"))})");
+
+            // Un pago nuevo trae origen. La migración lo crea NOT VALID: PostgreSQL lo
+            // exige a cada INSERT y UPDATE, pero no lo comprueba contra las filas que ya
+            // estaban, que conservan su NULL. Nunca se valida (VALIDATE CONSTRAINT).
+            table.HasCheckConstraint(
+                "ck_order_payments_source_obligatorio",
+                "source IS NOT NULL");
         });
 
         builder.HasKey(x => x.OrderPaymentId).HasName("pk_order_payments");
@@ -68,7 +75,8 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
             .HasColumnType("character(3)")
             .UseCollation("C");
 
-        builder.Property(x => x.Source).HasColumnName("source").IsRequired();
+        // Anulable solo para los históricos; sin valor por defecto, que sería un origen inventado.
+        builder.Property(x => x.Source).HasColumnName("source");
 
         builder.Property(x => x.Reference).HasColumnName("reference");
 

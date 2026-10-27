@@ -57,13 +57,22 @@ public class OrderPayment : IReplicatedEntity
 
     /// <summary>
     /// Quién asienta el pago: hoy solo <c>staff</c>. Ver <c>PaymentSource</c>.
+    /// <b><c>null</c> solo en pagos históricos</b>, anteriores a la columna.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// <b>No es <see cref="Method"/>.</b> El medio dice cómo pagó el cliente; el origen,
     /// quién registró el hecho. Se guarda explícito y no se deduce de que la atribución
     /// humana esté o no: deducirlo es lo que haría pasar un hueco por un proveedor.
+    /// </para>
+    /// <para>
+    /// Anulable por la opción B ratificada: un histórico sin origen acreditado conserva
+    /// <c>null</c> y nadie lo reclasifica. <c>required</c> obliga a cada escritor a
+    /// nombrarlo, y <c>OrigenDePagoObligatorio</c> y el <c>CHECK ... NOT VALID</c>
+    /// rechazan un pago nuevo que lo traiga vacío.
+    /// </para>
     /// </remarks>
-    public required string Source { get; set; }
+    public required string? Source { get; set; }
 
     /// <summary>Código de operación que el cliente dio, si lo hay.</summary>
     public string? Reference { get; set; }

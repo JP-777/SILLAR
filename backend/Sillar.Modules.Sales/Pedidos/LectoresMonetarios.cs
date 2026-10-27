@@ -8,9 +8,12 @@ namespace Sillar.Modules.Sales.Pedidos;
 /// <summary>Un grupo de pedidos tal como lo devuelve PostgreSQL: moneda × actividad.</summary>
 internal sealed record GrupoDeValor(string? Moneda, bool Activo, long Pedidos, decimal Total);
 
-/// <summary>Un grupo de pagos tal como lo devuelve PostgreSQL: origen × medio × moneda × tardío.</summary>
+/// <summary>
+/// Un grupo de pagos tal como lo devuelve PostgreSQL: origen × medio × moneda × tardío.
+/// <c>Origen</c> nulo: históricos anteriores a la columna.
+/// </summary>
 internal sealed record GrupoDePagos(
-    string Origen, string Medio, string? Moneda, bool Tardio, long Pagos, decimal Importe);
+    string? Origen, string Medio, string? Moneda, bool Tardio, long Pagos, decimal Importe);
 
 /// <summary>
 /// Desde cuándo consta que un escritor registra <b>todos</b> los pagos de un origen.
@@ -100,7 +103,8 @@ internal static class AgregadosMonetarios
                 g.Sum(x => x.Pagos),
                 // Sin moneda no hay unidad, y un importe sin unidad no se publica.
                 g.Key.Moneda is null ? null : g.Sum(x => x.Importe)))
-            .OrderBy(g => g.Source, StringComparer.Ordinal)
+            .OrderBy(g => g.Source is null)
+            .ThenBy(g => g.Source, StringComparer.Ordinal)
             .ThenBy(g => g.Method, StringComparer.Ordinal)
             .ThenBy(g => g.CurrencyCode is null)
             .ThenBy(g => g.CurrencyCode, StringComparer.Ordinal)
@@ -108,6 +112,9 @@ internal static class AgregadosMonetarios
             .ToArray();
 
         var cobertura = new List<PaymentCoverage>();
+
+        // Un histórico sin origen podría ser de cualquiera: ningún origen se afirma completo.
+        var historicosSinOrigen = grupos.Any(g => g.Origen is null);
 
         foreach (var origen in PaymentSource.All)
         {
@@ -118,6 +125,7 @@ internal static class AgregadosMonetarios
             {
                 var motivo = desde is null ? NotMeasurableReason.WriterNotAccredited
                     : desde > inicio ? NotMeasurableReason.WindowStartsBeforeCoverage
+                    : historicosSinOrigen ? NotMeasurableReason.SourceNotRecorded
                     : indicador == PaymentIndicator.AmountByCurrency && sinMoneda
                         ? NotMeasurableReason.CurrencyNotRecorded
                     : NotMeasurableReason.None;

@@ -2,9 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Sillar.Modules.Sales.Contracts;
 using Sillar.Modules.Sales.Data;
 using Sillar.Modules.Sales.Domain;
+using Sillar.Modules.Sales.Migrations;
 using Sillar.Modules.Sales.Dtos;
 using Sillar.Modules.Sales.Pedidos;
 using Sillar.Shared.Replication;
@@ -97,14 +99,22 @@ public sealed class MonedaYAgregadosMonetariosTests
     }
 
     [Fact]
-    public void El_origen_del_pago_es_obligatorio_sin_valor_por_defecto_y_distinto_del_medio()
+    public void El_origen_del_pago_es_anulable_para_los_historicos_sin_valor_por_defecto_y_distinto_del_medio()
     {
+        // Opción B: un histórico se materializa con NULL. Ningún valor por defecto lo rellena.
         var origen = Propiedad<OrderPayment>(nameof(OrderPayment.Source));
 
-        Assert.False(origen.IsNullable);
+        Assert.True(origen.IsNullable);
         Assert.Equal("source", origen.GetColumnName());
         Assert.Null(origen.GetDefaultValue());
+        Assert.Null(origen.GetDefaultValueSql());
         Assert.NotEqual(origen.GetColumnName(), Propiedad<OrderPayment>(nameof(OrderPayment.Method)).GetColumnName());
+    }
+
+    [Fact]
+    public void Un_pago_nuevo_exige_origen_por_CHECK()
+    {
+        Assert.Equal("source IS NOT NULL", Check<OrderPayment>("ck_order_payments_source_obligatorio"));
     }
 
     [Fact]
@@ -149,20 +159,96 @@ public sealed class MonedaYAgregadosMonetariosTests
             [
                 "20260930185029_SalesInitial",
                 "20261026235312_SalesCurrencyCandidate20261026",
-                // Pendiente de decisión de JP: no puede salir de la secuencia sin cambiar
-                // el modelo persistido, que el lector de pagos agrupa por source.
-                "20261026235423_SalesPaymentSourceCandidate20261026",
+                "20261027145605_SalesPaymentSourceNullableCandidate20261027",
             ],
             contexto.Database.GetMigrations());
     }
 
-    [Fact]
-    public void La_candidata_de_retencion_no_se_compila_y_no_puede_aplicarse()
+    [Theory]
+    [InlineData("SalesPaymentRetentionCandidate20261026")]   // RESTRICT, no ratificada
+    [InlineData("SalesPaymentSourceCandidate20261026")]      // reclasificación a staff, rechazada
+    public void Una_candidata_no_ratificada_no_se_compila_y_no_puede_aplicarse(string clase)
     {
-        var ensamblado = typeof(SalesDbContext).Assembly;
+        Assert.Null(typeof(SalesDbContext).Assembly.GetType($"Sillar.Modules.Sales.Migrations.{clase}"));
+    }
 
-        Assert.Null(ensamblado.GetType(
-            "Sillar.Modules.Sales.Migrations.SalesPaymentRetentionCandidate20261026"));
+    [Fact]
+    public void La_candidata_de_origen_anade_la_columna_anulable_sin_relleno_ni_valor_por_defecto()
+    {
+        var subida = new SalesPaymentSourceNullableCandidate20261027().UpOperations;
+
+        var columna = Assert.Single(subida.OfType<AddColumnOperation>());
+        Assert.Equal("source", columna.Name);
+        Assert.True(columna.IsNullable);
+        Assert.Null(columna.DefaultValue);
+        Assert.Null(columna.DefaultValueSql);
+
+        var sql = string.Join("\n", subida.OfType<SqlOperation>().Select(o => o.Sql));
+        Assert.DoesNotMatch(@"(?i)\bUPDATE\s+sales\.order_payments\b", sql);
+        Assert.DoesNotContain(subida.OfType<AlterColumnOperation>(), _ => true);
+    }
+
+    [Fact]
+    public void La_candidata_de_origen_exige_origen_a_lo_nuevo_sin_validar_lo_historico()
+    {
+        var subida = new SalesPaymentSourceNullableCandidate20261027().UpOperations;
+        var sql = string.Join("\n", subida.OfType<SqlOperation>().Select(o => o.Sql));
+
+        // AddCheckConstraint validaría las filas existentes y rechazaría los históricos.
+        Assert.DoesNotContain(subida.OfType<AddCheckConstraintOperation>(),
+            c => c.Name == "ck_order_payments_source_obligatorio");
+        Assert.Contains("CHECK (source IS NOT NULL) NOT VALID", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("VALIDATE CONSTRAINT", sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("trg_order_payments_source_inmutable", sql, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void La_candidata_de_origen_se_detiene_ante_una_base_que_aplico_la_reclasificacion()
+    {
+        var sql = string.Join("\n", new SalesPaymentSourceNullableCandidate20261027().UpOperations
+            .OfType<SqlOperation>().Select(o => o.Sql));
+
+        Assert.Contains("'20261026235423_SalesPaymentSourceCandidate20261026'", sql, StringComparison.Ordinal);
+        Assert.Contains("RAISE EXCEPTION", sql, StringComparison.Ordinal);
+    }
+
+    // ------------------------------------------------------------------ escritura de pagos
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("provider")]   // nombrado, pero sin escritor ni ratificación
+    [InlineData("Staff")]
+    public void Un_pago_nuevo_sin_origen_ratificado_no_llega_a_la_base(string? origen)
+    {
+        using var contexto = Contexto();
+        contexto.OrderPayments.Add(Pago(origen));
+
+        // Contra un puerto cerrado: si la guarda no cortara, el fallo sería de conexión.
+        var error = Assert.Throws<InvalidOperationException>(() => contexto.SaveChanges());
+        Assert.Contains("origen ratificado", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Un_pago_nuevo_con_origen_staff_pasa_la_guarda()
+    {
+        using var contexto = Contexto();
+        contexto.OrderPayments.Add(Pago(PaymentSource.Staff));
+
+        OrigenDePagoObligatorio.Comprobar(contexto.ChangeTracker);
+    }
+
+    [Fact]
+    public void Un_historico_sin_origen_no_se_reclasifica()
+    {
+        using var contexto = Contexto();
+        var historico = Pago(null);
+        contexto.OrderPayments.Attach(historico);
+
+        historico.Source = PaymentSource.Staff;
+
+        var error = Assert.Throws<InvalidOperationException>(() => contexto.SaveChanges());
+        Assert.Contains("no se reclasifica", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -440,6 +526,51 @@ public sealed class MonedaYAgregadosMonetariosTests
     }
 
     [Fact]
+    public void Los_historicos_sin_origen_se_publican_aparte_sin_atribuirse_a_ningun_canal()
+    {
+        var foto = AgregadosMonetarios.ReducirPagos(Inicio, Fin, Observado,
+        [
+            new GrupoDePagos(null, PaymentMethod.Yape, "PEN", false, 3, 30m),
+            new GrupoDePagos(PaymentSource.Staff, PaymentMethod.Yape, "PEN", false, 1, 10m),
+        ], SinAcreditar);
+
+        Assert.Equal(
+            [
+                new PaymentAggregateGroup("staff", "yape", "PEN", false, 1, 10m),
+                new PaymentAggregateGroup(null, "yape", "PEN", false, 3, 30m),
+            ],
+            foto.Groups);
+        Assert.DoesNotContain(foto.Coverage, c => c.Source is null);
+    }
+
+    [Fact]
+    public void Sin_escritores_los_dos_origenes_siguen_sin_acreditar_aunque_haya_historicos()
+    {
+        var foto = AgregadosMonetarios.ReducirPagos(Inicio, Fin, Observado,
+            [new GrupoDePagos(null, PaymentMethod.Cash, "PEN", false, 2, 20m)], SinAcreditar);
+
+        Assert.All(foto.Coverage, c => Assert.Equal(NotMeasurableReason.WriterNotAccredited, c.Reason));
+    }
+
+    [Fact]
+    public void Un_historico_sin_origen_en_la_ventana_impide_afirmar_completo_un_origen_acreditado()
+    {
+        var acreditado = Acreditar(PaymentSource.Staff, Inicio);
+
+        var foto = AgregadosMonetarios.ReducirPagos(Inicio, Fin, Observado,
+        [
+            new GrupoDePagos(PaymentSource.Staff, PaymentMethod.Yape, "PEN", false, 2, 20m),
+            new GrupoDePagos(null, PaymentMethod.Yape, "PEN", false, 1, 9m),
+        ], acreditado);
+
+        Assert.All(Cobertura(foto, PaymentSource.Staff), c =>
+        {
+            Assert.Equal(MeasureState.NotMeasurable, c.State);
+            Assert.Equal(NotMeasurableReason.SourceNotRecorded, c.Reason);
+        });
+    }
+
+    [Fact]
     public void Un_solo_pago_sin_moneda_deja_no_medible_el_importe_de_su_origen_y_no_el_recuento()
     {
         var acreditado = Acreditar(PaymentSource.Staff, Inicio);
@@ -462,6 +593,20 @@ public sealed class MonedaYAgregadosMonetariosTests
         => PaymentSource.All
             .Select(o => new AcreditacionDeEscritor(o, o == origen ? desde : null))
             .ToArray();
+
+    private static OrderPayment Pago(string? origen) => new()
+    {
+        OrderPaymentId = Guid.CreateVersion7(),
+        OrderId = Guid.CreateVersion7(),
+        Method = PaymentMethod.Yape,
+        Amount = 10m,
+        CurrencyCode = "PEN",
+        Source = origen,
+        RegisteredBy = "Ana Quispe",
+        RegisteredByAdminUserLocalId = 7,
+        RegisteredByAdminUserHomeNode = "A",
+        OriginNode = "A",
+    };
 
     private static IEnumerable<PaymentCoverage> Cobertura(OrderPaymentAggregateSnapshot foto, string origen)
         => foto.Coverage.Where(c => c.Source == origen);

@@ -361,7 +361,6 @@ namespace Sillar.Modules.Sales.Migrations
                         .HasColumnName("row_version");
 
                     b.Property<string>("Source")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("source");
 
@@ -401,6 +400,8 @@ namespace Sillar.Modules.Sales.Migrations
                             t.HasCheckConstraint("ck_order_payments_registered_by_no_vacio", "btrim(registered_by) <> ''");
 
                             t.HasCheckConstraint("ck_order_payments_source", "source IN ('staff')");
+
+                            t.HasCheckConstraint("ck_order_payments_source_obligatorio", "source IS NOT NULL");
                         });
                 });
 
