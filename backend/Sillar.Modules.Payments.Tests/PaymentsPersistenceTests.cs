@@ -132,6 +132,28 @@ public sealed class PaymentsPersistenceTests
     }
 
     [Fact]
+    public void Modelo_distingue_rechazo_terminal_de_incertidumbre_en_hold()
+    {
+        using var context = Context();
+        var inbox = context.GetService<IDesignTimeModel>().Model
+            .FindEntityType(typeof(ProviderInboxEvent))!;
+
+        Assert.Contains(
+            inbox.GetCheckConstraints(),
+            check => check.Name == "ck_payment_inbox_commercial_effect_state"
+                && check.Sql.Contains("'rejected'", StringComparison.Ordinal));
+        Assert.Contains(
+            inbox.GetCheckConstraints(),
+            check => check.Name == "ck_payment_inbox_retry"
+                && check.Sql.Contains(
+                    "commercial_effect_state = 'indeterminate'",
+                    StringComparison.Ordinal)
+                && check.Sql.Contains(
+                    "processing_state = 'held'",
+                    StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Hechos_monetarios_son_append_only_y_pertenecen_a_una_recepcion()
     {
         using var context = Context();
@@ -574,6 +596,7 @@ public sealed class PaymentsPersistenceTests
     }
 
     [Theory]
+    [InlineData(ProviderCommercialEffectStates.Rejected)]
     [InlineData(ProviderCommercialEffectStates.Conflict)]
     [InlineData(ProviderCommercialEffectStates.DecisionRequired)]
     public void Resultado_comercial_no_aplicado_queda_en_hold_sin_reintento(
@@ -596,6 +619,32 @@ public sealed class PaymentsPersistenceTests
         Assert.Equal("commercial_authority_required", inbox.HoldReason);
         Assert.Equal("commercial_authority_required", inbox.LastFailureCode);
         Assert.Null(inbox.CommercialEffectReference);
+        Assert.Null(inbox.NextAttemptAt);
+        Assert.Null(inbox.LeaseToken);
+    }
+
+    [Fact]
+    public void Incertidumbre_sin_presupuesto_de_reintento_queda_en_hold()
+    {
+        var now = PaymentTestData.VerifiedAt;
+        var inbox = ProviderInboxEvent.Create(PaymentTestData.Evidence(), now);
+        var lease = Guid.CreateVersion7();
+        inbox.MarkReady(now.AddSeconds(1));
+        inbox.BeginAttempt(lease, now.AddMinutes(1), now.AddSeconds(2));
+
+        inbox.MarkIndeterminate(
+            lease,
+            "timeout|automatic_retry_policy_not_ratified",
+            null,
+            now.AddSeconds(3));
+
+        Assert.Equal(ProviderInboxStates.Held, inbox.ProcessingState);
+        Assert.Equal(
+            ProviderCommercialEffectStates.Indeterminate,
+            inbox.CommercialEffectState);
+        Assert.Equal(
+            "timeout|automatic_retry_policy_not_ratified",
+            inbox.HoldReason);
         Assert.Null(inbox.NextAttemptAt);
         Assert.Null(inbox.LeaseToken);
     }

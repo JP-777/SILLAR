@@ -4,6 +4,7 @@ internal enum ProviderInboxProcessOutcome
 {
     Applied,
     AlreadyApplied,
+    Rejected,
     Conflict,
     DecisionRequired,
     Indeterminate,

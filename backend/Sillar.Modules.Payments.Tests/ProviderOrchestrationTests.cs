@@ -223,7 +223,9 @@ public sealed class ProviderOrchestrationTests
             ProviderCommercialEffectResult.Applied(
                 "commercial-ref-001",
                 false));
-        var service = new ProviderCommercialRecoveryService(port);
+        var service = new ProviderCommercialRecoveryService(
+            port,
+            new ConfiguredCommercialRetryPolicy(2));
         var evidence = PaymentTestData.Evidence();
         var candidate = PaymentTestData.CommercialCandidate(
             evidence: evidence);
@@ -272,7 +274,8 @@ public sealed class ProviderOrchestrationTests
         var service = new ProviderCommercialRecoveryService(
             new SequencedCommercialPort(
                 ProviderCommercialEffectResult.DecisionRequired(
-                    "expired_order_policy_pending")));
+                    "expired_order_policy_pending")),
+            new HoldIndeterminateCommercialRetryPolicy());
         var candidate = PaymentTestData.CommercialCandidate();
         var held = await service.AttemptAsync(
             candidate,

@@ -11,7 +11,8 @@ namespace Sillar.Modules.Payments.Application;
 internal sealed class ProviderInboxProcessor(
     IProviderInboxRepository repository,
     IProviderCommercialCandidateSource candidateSource,
-    IProviderCommercialEffectPort commercialPort)
+    IProviderCommercialEffectPort commercialPort,
+    IProviderCommercialRetryPolicy retryPolicy)
     : IProviderInboxProcessingService
 {
     public async ValueTask<ProviderInboxProcessResult> ProcessAsync(
@@ -107,6 +108,12 @@ internal sealed class ProviderInboxProcessor(
                     leaseToken,
                     attemptedAt,
                     result.Reference),
+            ProviderCommercialEffectOutcome.Rejected =>
+                ProviderInboxCompletion.Rejected(
+                    inboxEventId,
+                    leaseToken,
+                    attemptedAt,
+                    result.Reason),
             ProviderCommercialEffectOutcome.Conflict =>
                 ProviderInboxCompletion.Conflict(
                     inboxEventId,
@@ -120,12 +127,12 @@ internal sealed class ProviderInboxProcessor(
                     attemptedAt,
                     result.Reason),
             ProviderCommercialEffectOutcome.Indeterminate =>
-                ProviderInboxCompletion.Indeterminate(
-                    inboxEventId,
+                IndeterminateCompletion(
+                    claimed,
                     leaseToken,
                     attemptedAt,
-                    attemptedAt.Add(retryDelay),
-                    result.Reason),
+                    retryDelay,
+                    result.Reason!),
             _ => throw new InvalidOperationException(
                 "El resultado comercial no tiene transición.")
         };
@@ -160,7 +167,7 @@ internal sealed class ProviderInboxProcessor(
             reviewedAt,
             cancellationToken);
 
-    public ValueTask<bool> TryRecoverExpiredLeaseAsync(
+    public async ValueTask<bool> TryRecoverExpiredLeaseAsync(
         Guid inboxEventId,
         DateTimeOffset recoveredAt,
         TimeSpan retryDelay,
@@ -172,10 +179,31 @@ internal sealed class ProviderInboxProcessor(
                 "La recuperación exige instante y demora positiva.");
         }
 
-        return repository.TryRecoverExpiredLeaseAsync(
+        var status = await repository.GetStatusAsync(
+            inboxEventId,
+            cancellationToken);
+        if (status is null
+            || status.ProcessingState != ProviderInboxProcessingState.Processing
+            || status.LeaseUntil is null
+            || status.LeaseUntil > recoveredAt
+            || status.AttemptCount <= 0)
+        {
+            return false;
+        }
+
+        const string uncertaintyReason = "lease_expired_before_confirmation";
+        var retry = retryPolicy.Decide(
+            status.AttemptCount,
+            recoveredAt,
+            retryDelay,
+            uncertaintyReason)
+            ?? throw new InvalidOperationException(
+                "La política no devolvió una decisión de reintento.");
+        retry.EnsureValidFor(recoveredAt);
+        return await repository.TryRecoverExpiredLeaseAsync(
             inboxEventId,
             recoveredAt,
-            recoveredAt.Add(retryDelay),
+            retry.RetryAt,
             cancellationToken);
     }
 
@@ -192,6 +220,32 @@ internal sealed class ProviderInboxProcessor(
             _ => throw new InvalidOperationException(
                 "Un claim adquirido debe continuar el procesamiento.")
         };
+
+    private ProviderInboxCompletion IndeterminateCompletion(
+        ProviderInboxStatus claimed,
+        Guid leaseToken,
+        DateTimeOffset attemptedAt,
+        TimeSpan retryDelay,
+        string reason)
+    {
+        var retry = retryPolicy.Decide(
+            claimed.AttemptCount,
+            attemptedAt,
+            retryDelay,
+            reason)
+            ?? throw new InvalidOperationException(
+                "La política no devolvió una decisión de reintento.");
+        retry.EnsureValidFor(attemptedAt);
+        var persistedReason = retry.ShouldRetry
+            ? reason
+            : $"{reason}|{retry.Reason}";
+        return ProviderInboxCompletion.Indeterminate(
+            claimed.InboxEventId,
+            leaseToken,
+            attemptedAt,
+            retry.RetryAt,
+            persistedReason);
+    }
 
     private async ValueTask<ProviderInboxProcessResult>
         CompleteWithoutCommercialCallAsync(
@@ -230,6 +284,8 @@ internal sealed class ProviderInboxProcessor(
                 ProviderInboxProcessOutcome.Applied,
             ProviderCommercialEffectOutcome.AlreadyApplied =>
                 ProviderInboxProcessOutcome.AlreadyApplied,
+            ProviderCommercialEffectOutcome.Rejected =>
+                ProviderInboxProcessOutcome.Rejected,
             ProviderCommercialEffectOutcome.Conflict =>
                 ProviderInboxProcessOutcome.Conflict,
             ProviderCommercialEffectOutcome.DecisionRequired =>

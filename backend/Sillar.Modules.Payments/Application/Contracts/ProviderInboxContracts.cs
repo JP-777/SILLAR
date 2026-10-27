@@ -16,6 +16,7 @@ internal enum ProviderInboxCommercialState
 {
     NotRequested,
     Indeterminate,
+    Rejected,
     Conflict,
     DecisionRequired,
     Applied,
@@ -72,6 +73,7 @@ internal enum ProviderInboxCompletionOutcome
 {
     Applied,
     AlreadyApplied,
+    Rejected,
     Conflict,
     DecisionRequired,
     Indeterminate
@@ -147,6 +149,20 @@ internal sealed record ProviderInboxCompletion
             null,
             reason);
 
+    internal static ProviderInboxCompletion Rejected(
+        Guid inboxEventId,
+        Guid leaseToken,
+        DateTimeOffset completedAt,
+        string? reason)
+        => Create(
+            inboxEventId,
+            leaseToken,
+            ProviderInboxCompletionOutcome.Rejected,
+            completedAt,
+            null,
+            null,
+            reason);
+
     internal static ProviderInboxCompletion DecisionRequired(
         Guid inboxEventId,
         Guid leaseToken,
@@ -165,7 +181,7 @@ internal sealed record ProviderInboxCompletion
         Guid inboxEventId,
         Guid leaseToken,
         DateTimeOffset completedAt,
-        DateTimeOffset retryAt,
+        DateTimeOffset? retryAt,
         string? reason)
         => Create(
             inboxEventId,
@@ -212,10 +228,10 @@ internal sealed record ProviderInboxCompletion
 
         if (outcome == ProviderInboxCompletionOutcome.Indeterminate)
         {
-            if (retryAt is null || retryAt <= completedAt)
+            if (retryAt is not null && retryAt <= completedAt)
             {
                 throw new ArgumentException(
-                    "Un resultado indeterminado exige reintento futuro.");
+                    "Un reintento indeterminado debe quedar en el futuro.");
             }
         }
         else if (retryAt is not null)
@@ -265,6 +281,6 @@ internal interface IProviderInboxRepository
     ValueTask<bool> TryRecoverExpiredLeaseAsync(
         Guid inboxEventId,
         DateTimeOffset recoveredAt,
-        DateTimeOffset retryAt,
+        DateTimeOffset? retryAt,
         CancellationToken cancellationToken);
 }

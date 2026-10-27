@@ -48,7 +48,7 @@ public sealed class M03CandidateResultMapperTests
     }
 
     [Fact]
-    public void Rechazo_con_causa_conservable_es_indeterminado_provisional()
+    public void Rechazo_con_causa_conservable_permanece_terminal()
     {
         var candidate = Candidate();
         var mapping = M03CandidateResultMapper.Map(
@@ -59,7 +59,7 @@ public sealed class M03CandidateResultMapperTests
                 candidate));
 
         Assert.Equal(
-            ProviderCommercialEffectOutcome.Indeterminate,
+            ProviderCommercialEffectOutcome.Rejected,
             mapping.Result!.Outcome);
         Assert.Equal("UnauthenticatedEvent", mapping.Result.Reason);
         Assert.Null(mapping.Result.Reference);

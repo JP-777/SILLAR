@@ -71,6 +71,7 @@ internal enum ProviderCommercialEffectOutcome
 {
     Applied,
     AlreadyApplied,
+    Rejected,
     Conflict,
     DecisionRequired,
     Indeterminate
@@ -119,6 +120,9 @@ internal sealed record ProviderCommercialEffectResult
 
     internal static ProviderCommercialEffectResult Conflict(string? reason)
         => WithoutApplication(ProviderCommercialEffectOutcome.Conflict, reason);
+
+    internal static ProviderCommercialEffectResult Rejected(string? reason)
+        => WithoutApplication(ProviderCommercialEffectOutcome.Rejected, reason);
 
     internal static ProviderCommercialEffectResult DecisionRequired(string? reason)
         => WithoutApplication(
@@ -189,6 +193,7 @@ internal enum ProviderCommercialRecoveryState
     Indeterminate,
     Applied,
     AlreadyApplied,
+    Rejected,
     Conflict,
     DecisionRequired
 }

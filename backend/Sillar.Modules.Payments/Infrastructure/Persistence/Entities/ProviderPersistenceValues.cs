@@ -48,6 +48,7 @@ internal static class ProviderCommercialEffectStates
 {
     internal const string NotRequested = "not_requested";
     internal const string Indeterminate = "indeterminate";
+    internal const string Rejected = "rejected";
     internal const string Conflict = "conflict";
     internal const string DecisionRequired = "decision_required";
     internal const string Applied = "applied";
@@ -57,6 +58,7 @@ internal static class ProviderCommercialEffectStates
     [
         NotRequested,
         Indeterminate,
+        Rejected,
         Conflict,
         DecisionRequired,
         Applied,

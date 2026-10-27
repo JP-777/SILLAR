@@ -100,7 +100,7 @@ internal static class M03CandidateResultMapper
             && IsPreservableRejection(source.Reason))
         {
             return M03CandidateMapping.WithoutCommercialEffect(
-                ProviderCommercialEffectResult.Indeterminate(
+                ProviderCommercialEffectResult.Rejected(
                     source.Reason.ToString()),
                 source);
         }

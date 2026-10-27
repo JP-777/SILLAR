@@ -553,6 +553,17 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
                     completion.CompletedAt,
                     null);
                 break;
+            case ProviderInboxCompletionOutcome.Rejected:
+                entity.MarkCommercialHold(
+                    completion.LeaseToken,
+                    ProviderCommercialEffectStates.Rejected,
+                    completion.Reason,
+                    completion.CompletedAt);
+                attempt.Complete(
+                    ProviderAttemptOutcomes.Held,
+                    completion.CompletedAt,
+                    completion.Reason);
+                break;
             case ProviderInboxCompletionOutcome.Conflict:
                 entity.MarkCommercialHold(
                     completion.LeaseToken,
@@ -579,7 +590,7 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
                 entity.MarkIndeterminate(
                     completion.LeaseToken,
                     completion.Reason,
-                    completion.RetryAt!.Value,
+                    completion.RetryAt,
                     completion.CompletedAt);
                 attempt.Complete(
                     ProviderAttemptOutcomes.Indeterminate,
@@ -597,10 +608,11 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
     public async ValueTask<bool> TryRecoverExpiredLeaseAsync(
         Guid inboxEventId,
         DateTimeOffset recoveredAt,
-        DateTimeOffset retryAt,
+        DateTimeOffset? retryAt,
         CancellationToken cancellationToken)
     {
-        if (inboxEventId == Guid.Empty || retryAt <= recoveredAt)
+        if (inboxEventId == Guid.Empty
+            || (retryAt is not null && retryAt <= recoveredAt))
         {
             return false;
         }
@@ -968,6 +980,8 @@ internal sealed class EfProviderInboxRepository(PaymentsDbContext database)
                 ProviderInboxCommercialState.NotRequested,
             ProviderCommercialEffectStates.Indeterminate =>
                 ProviderInboxCommercialState.Indeterminate,
+            ProviderCommercialEffectStates.Rejected =>
+                ProviderInboxCommercialState.Rejected,
             ProviderCommercialEffectStates.Conflict =>
                 ProviderInboxCommercialState.Conflict,
             ProviderCommercialEffectStates.DecisionRequired =>
