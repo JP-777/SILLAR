@@ -140,5 +140,11 @@ public sealed class PaymentsModuleTests
                 typeof(IProviderAuthorizedOrderCorrelationSource)
                 && descriptor.ImplementationType == typeof(
                     UnavailableProviderAuthorizedOrderCorrelationSource));
+        Assert.Contains(
+            services,
+            descriptor => descriptor.ServiceType ==
+                typeof(IProviderCommercialRetryPolicy)
+                && descriptor.ImplementationType == typeof(
+                    HoldIndeterminateCommercialRetryPolicy));
     }
 }

@@ -127,22 +127,25 @@ internal sealed class ProviderInboxEvent
     internal void MarkIndeterminate(
         Guid leaseToken,
         string? failureCode,
-        DateTimeOffset retryAt,
+        DateTimeOffset? retryAt,
         DateTimeOffset changedAt)
     {
         ValidateChangeInstant(changedAt);
         EnsureLease(leaseToken);
-        if (retryAt <= changedAt)
+        if (retryAt is not null && retryAt <= changedAt)
         {
             throw new ArgumentException(
                 "El reintento debe quedar en el futuro.",
                 nameof(retryAt));
         }
 
-        ProcessingState = ProviderInboxStates.Indeterminate;
+        ProcessingState = retryAt is null
+            ? ProviderInboxStates.Held
+            : ProviderInboxStates.Indeterminate;
         CommercialEffectState = ProviderCommercialEffectStates.Indeterminate;
         LastFailureCode = ProviderPersistenceGuard.OpaqueRequired(
             failureCode, nameof(failureCode));
+        HoldReason = retryAt is null ? LastFailureCode : null;
         NextAttemptAt = retryAt;
         ClearLease();
         Touch(changedAt);
@@ -183,10 +186,11 @@ internal sealed class ProviderInboxEvent
         ValidateChangeInstant(changedAt);
         EnsureLease(leaseToken);
         if (effectState is not ProviderCommercialEffectStates.Conflict
-            and not ProviderCommercialEffectStates.DecisionRequired)
+            and not ProviderCommercialEffectStates.DecisionRequired
+            and not ProviderCommercialEffectStates.Rejected)
         {
             throw new ArgumentException(
-                "El HOLD comercial exige conflicto o decisión pendiente.",
+                "El HOLD comercial exige rechazo, conflicto o decisión pendiente.",
                 nameof(effectState));
         }
 

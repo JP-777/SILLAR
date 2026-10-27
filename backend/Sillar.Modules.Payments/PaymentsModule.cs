@@ -60,6 +60,9 @@ public sealed class PaymentsModule : IModule
             ProviderSettlementAnalysisService>();
         services.AddScoped<ProviderReceptionOrchestrator>();
         services.AddScoped<ProviderCommercialRecoveryService>();
+        services.AddSingleton<
+            IProviderCommercialRetryPolicy,
+            HoldIndeterminateCommercialRetryPolicy>();
         services.AddScoped<ProviderCommercialCandidateSource>();
         services.AddScoped<IProviderCommercialCandidateSource>(provider =>
             provider.GetRequiredService<ProviderCommercialCandidateSource>());

@@ -7,7 +7,8 @@ namespace Sillar.Modules.Payments.Application;
 /// aplicación explícita del puerto simulado/futuro.
 /// </summary>
 internal sealed class ProviderCommercialRecoveryService(
-    IProviderCommercialEffectPort port)
+    IProviderCommercialEffectPort port,
+    IProviderCommercialRetryPolicy retryPolicy)
 {
     internal async ValueTask<ProviderCommercialRecoverySnapshot> AttemptAsync(
         ProviderCommercialEffectCandidate candidate,
@@ -26,11 +27,19 @@ internal sealed class ProviderCommercialRecoveryService(
 
         if (current.State is ProviderCommercialRecoveryState.Applied
             or ProviderCommercialRecoveryState.AlreadyApplied
+            or ProviderCommercialRecoveryState.Rejected
             or ProviderCommercialRecoveryState.Conflict
             or ProviderCommercialRecoveryState.DecisionRequired)
         {
             throw new InvalidOperationException(
                 "Un resultado terminal no puede reintentarse.");
+        }
+
+        if (current.State == ProviderCommercialRecoveryState.Indeterminate
+            && current.NextAttemptAt is null)
+        {
+            throw new InvalidOperationException(
+                "La incertidumbre en HOLD no autoriza otro intento automático.");
         }
 
         if (current.NextAttemptAt is { } nextAttemptAt
@@ -66,6 +75,14 @@ internal sealed class ProviderCommercialRecoveryService(
                 attemptedAt,
                 null,
                 result.OrderWasExpired),
+            ProviderCommercialEffectOutcome.Rejected => new(
+                ProviderCommercialRecoveryState.Rejected,
+                attempts,
+                null,
+                result.Reason,
+                attemptedAt,
+                null,
+                null),
             ProviderCommercialEffectOutcome.Conflict => new(
                 ProviderCommercialRecoveryState.Conflict,
                 attempts,
@@ -82,16 +99,37 @@ internal sealed class ProviderCommercialRecoveryService(
                 attemptedAt,
                 null,
                 null),
-            ProviderCommercialEffectOutcome.Indeterminate => new(
-                ProviderCommercialRecoveryState.Indeterminate,
+            ProviderCommercialEffectOutcome.Indeterminate => Indeterminate(
                 attempts,
-                null,
-                result.Reason,
                 attemptedAt,
-                attemptedAt.Add(retryDelay),
-                null),
+                retryDelay,
+                result.Reason!),
             _ => throw new InvalidOperationException(
                 "El resultado comercial no tiene transición.")
         };
+    }
+
+    private ProviderCommercialRecoverySnapshot Indeterminate(
+        int attempts,
+        DateTimeOffset attemptedAt,
+        TimeSpan retryDelay,
+        string reason)
+    {
+        var retry = retryPolicy.Decide(
+            attempts,
+            attemptedAt,
+            retryDelay,
+            reason)
+            ?? throw new InvalidOperationException(
+                "La política no devolvió una decisión de reintento.");
+        retry.EnsureValidFor(attemptedAt);
+        return new(
+            ProviderCommercialRecoveryState.Indeterminate,
+            attempts,
+            null,
+            retry.ShouldRetry ? reason : $"{reason}|{retry.Reason}",
+            attemptedAt,
+            retry.RetryAt,
+            null);
     }
 }

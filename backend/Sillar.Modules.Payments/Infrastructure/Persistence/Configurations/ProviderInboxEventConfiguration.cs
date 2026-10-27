@@ -30,7 +30,7 @@ internal sealed class ProviderInboxEventConfiguration
             table.HasCheckConstraint(
                 "ck_payment_inbox_commercial_effect_state",
                 "commercial_effect_state IN " +
-                "('not_requested','indeterminate','conflict'," +
+                "('not_requested','indeterminate','rejected','conflict'," +
                 "'decision_required','applied','already_applied')");
             table.HasCheckConstraint(
                 "ck_payment_inbox_attempt_count",
@@ -54,14 +54,25 @@ internal sealed class ProviderInboxEventConfiguration
                 "AND next_attempt_at IS NOT NULL AND next_attempt_at > updated_at " +
                 "AND last_failure_code IS NOT NULL " +
                 "AND btrim(last_failure_code) <> '') OR " +
-                "(processing_state <> 'indeterminate' AND next_attempt_at IS NULL)");
+                "(processing_state = 'held' " +
+                "AND commercial_effect_state = 'indeterminate' " +
+                "AND next_attempt_at IS NULL " +
+                "AND last_failure_code IS NOT NULL " +
+                "AND btrim(last_failure_code) <> '') OR " +
+                "(processing_state NOT IN ('indeterminate','held') " +
+                "AND next_attempt_at IS NULL) OR " +
+                "(processing_state = 'held' " +
+                "AND commercial_effect_state <> 'indeterminate' " +
+                "AND next_attempt_at IS NULL)");
             table.HasCheckConstraint(
                 "ck_payment_inbox_commercial_hold",
-                "(commercial_effect_state IN ('conflict','decision_required') " +
+                "(commercial_effect_state IN " +
+                "('rejected','conflict','decision_required') " +
                 "AND processing_state = 'held' " +
                 "AND last_failure_code IS NOT NULL " +
                 "AND btrim(last_failure_code) <> '') OR " +
-                "commercial_effect_state NOT IN ('conflict','decision_required')");
+                "commercial_effect_state NOT IN " +
+                "('rejected','conflict','decision_required')");
             table.HasCheckConstraint(
                 "ck_payment_inbox_application",
                 "(processing_state = 'completed' " +
