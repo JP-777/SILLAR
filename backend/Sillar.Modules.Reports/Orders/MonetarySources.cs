@@ -12,7 +12,7 @@ namespace Sillar.Modules.Reports.Orders;
 /// <para>
 /// <b>Por qué hay compilación condicional.</b> Los contratos
 /// <c>IOrderValueAggregateReader</c> e <c>IOrderPaymentAggregateReader</c> están en
-/// la rama de M03 (<c>014fba0</c>) y no en esta; las ramas no están integradas y M10
+/// la rama de M03 (<c>77ffa20</c>) y no en esta; las ramas no están integradas y M10
 /// no los copia. Los adaptadores se compilan con
 /// <c>-p:SalesMonetaryContracts=true</c> sobre un árbol que los tenga. Al integrar,
 /// la condición se retira y queda el código.
@@ -72,62 +72,53 @@ internal sealed class SalesOrderValueAdapter(IOrderValueAggregateReader reader) 
     }
 }
 
-/// <summary>
-/// I05–I07: copia campo a campo, salvo una diferencia declarada: el contrato de
-/// M03 no acredita un escritor de pagos del personal, así que aquí es falso.
-/// </summary>
+/// <summary>I05–I07: copia campo a campo; los enumerados pasan al vocabulario de M10.</summary>
 internal sealed class SalesOrderPaymentAdapter(IOrderPaymentAggregateReader reader) : IOrderPaymentAggregatePort
 {
-    public PaymentCapabilities Capabilities => Map(reader.Capabilities);
-
-    public async Task<PaymentCohort> ReadRegisteredBetweenAsync(
+    public async Task<PaymentWindow> ReadRegisteredBetweenAsync(
         DateTimeOffset startInclusive, DateTimeOffset endExclusive, CancellationToken cancellationToken)
         => Map(await reader.ReadRegisteredBetweenAsync(startInclusive, endExclusive, cancellationToken));
 
-    internal static PaymentCapabilities Map(OrderPaymentAggregateCapabilities capabilities)
-        => new(capabilities.SourceRecorded, capabilities.CurrencyRecorded, capabilities.LateRecorded,
-            capabilities.ProviderWriterPresent,
-            // D-M10-11: Sales.Contracts no declara escritor de pagos del personal y
-            // M03 no tiene ruta que registre pagos. Cambia cuando M03 lo acredite.
-            StaffWriterPresent: false);
-
-    internal static PaymentCohort Map(OrderPaymentAggregateSnapshot snapshot)
+    internal static PaymentWindow Map(OrderPaymentAggregateSnapshot snapshot)
     {
-        if (snapshot.AmountsByCurrency is null || snapshot.Amounts is null) throw new SourceIncoherentException("Cohorte incompleta.");
-        var amountsComplete = Measured(snapshot.Amounts.State, snapshot.Amounts.Reason);
+        if (snapshot.Groups is null || snapshot.Coverage is null) throw new SourceIncoherentException("Ventana incompleta.");
         return new(
             snapshot.StartInclusive,
             snapshot.EndExclusive,
             snapshot.ObservedAtUtc,
-            Map(snapshot.Staff),
-            Map(snapshot.Provider),
-            Map(snapshot.Late),
-            [.. snapshot.AmountsByCurrency.Select(g => new PaymentCurrencyGroup(g.CurrencyCode, g.Count, g.Amount))],
-            snapshot.PaymentsWithoutCurrency,
-            amountsComplete);
+            [.. snapshot.Groups.Select(g => g is null
+                ? throw new SourceIncoherentException("Grupo ausente.")
+                : new PaymentGroup(g.Source, g.Method, g.CurrencyCode, g.WasLate, g.Count, g.Amount))],
+            [.. snapshot.Coverage.Select(Map)]);
     }
 
-    internal static PaymentMeasure Map(PaymentCountMeasure measure)
+    internal static PaymentCoverageEntry Map(PaymentCoverage coverage)
     {
-        if (measure is null) throw new SourceIncoherentException("Medida ausente.");
-        return Measured(measure.State, measure.Reason)
-            ? new(true, measure.Count, null)
-            : new(false, measure.Count, Reason(measure.Reason));
+        if (coverage is null) throw new SourceIncoherentException("Cobertura ausente.");
+        var measured = (coverage.State, coverage.Reason) switch
+        {
+            (MeasureState.Measured, NotMeasurableReason.None) => true,
+            (MeasureState.NotMeasurable, not NotMeasurableReason.None) => false,
+            _ => throw new SourceIncoherentException("Estado y motivo que no concuerdan."),
+        };
+        return new(coverage.Source, Indicator(coverage.Indicator), measured,
+            measured ? null : Reason(coverage.Reason), coverage.CoveredSinceUtc);
     }
 
-    /// <summary>El estado y su motivo tienen que concordar: medido sin motivo, no medible con él.</summary>
-    private static bool Measured(MeasureState state, NotMeasurableReason reason) => (state, reason) switch
+    private static string Indicator(PaymentIndicator indicator) => indicator switch
     {
-        (MeasureState.Measured, NotMeasurableReason.None) => true,
-        (MeasureState.NotMeasurable, not NotMeasurableReason.None) => false,
-        _ => throw new SourceIncoherentException("Estado y motivo que no concuerdan."),
+        PaymentIndicator.Count => PaymentIndicators.Count,
+        PaymentIndicator.LateCount => PaymentIndicators.LateCount,
+        PaymentIndicator.AmountByCurrency => PaymentIndicators.AmountByCurrency,
+        _ => throw new SourceIncoherentException("Indicador desconocido."),
     };
 
+    // Un motivo que M10 no conoce no se convierte en otro: no se publica.
     private static string Reason(NotMeasurableReason reason) => reason switch
     {
-        NotMeasurableReason.ProviderWriterAbsent => NotMeasurableReasons.ProviderWriterAbsent,
+        NotMeasurableReason.WriterNotAccredited => NotMeasurableReasons.WriterNotAccredited,
+        NotMeasurableReason.WindowStartsBeforeCoverage => NotMeasurableReasons.WindowStartsBeforeCoverage,
         NotMeasurableReason.CurrencyNotRecorded => NotMeasurableReasons.CurrencyNotRecorded,
-        // Un motivo que M10 no conoce no se convierte en otro: no se publica.
         _ => throw new SourceIncoherentException("Motivo desconocido."),
     };
 }

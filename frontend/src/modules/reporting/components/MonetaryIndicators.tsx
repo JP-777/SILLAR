@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { type Failure } from '../../../shared/errors/messages';
 import { FailureAlert } from '../../../shared/ui/patterns';
 import {
+  methodLabel,
   REASON_LABELS,
   showAmount,
   SOURCE_LABELS,
@@ -9,6 +10,7 @@ import {
   type NotMeasurableReason,
   type OrderValueView,
   type PaymentIndicatorsView,
+  type SourceMeasure,
 } from '../services/monetaryIndicators';
 import { showCount } from '../services/period';
 import { describeReportFailure, loadOrderValue, loadPaymentIndicators } from '../services/reporting';
@@ -55,7 +57,7 @@ export function MonetaryIndicators({ start, end }: Props) {
         <Shown read={payments} render={(data) => <PaymentCount data={data} />} />
       </section>
       <section className="rp-panel">
-        <h2>Importe de cobros registrados</h2>
+        <h2>Importe de cobros por medio</h2>
         <Shown read={payments} render={(data) => <PaymentAmounts data={data} />} />
         <p className="rp-note">Suma de cobros registrados, no neta: no descuenta reembolsos ni reversos.</p>
       </section>
@@ -119,6 +121,32 @@ function OrderValue({ data }: { data: OrderValueView }) {
   );
 }
 
+/** Cada origen con su cifra, o con el motivo por el que no la tiene. */
+function Sources({ list, unit }: { list: SourceMeasure[] | null; unit: string }) {
+  if (!list) return null;
+  return (
+    <ul>
+      {list.map((s) => (
+        <li key={s.source}>
+          {SOURCE_LABELS[s.source]}: {s.status === 'measured'
+            ? `${showCount(s.count)} ${unit}`
+            : <>no medible. {s.reason ? REASON_LABELS[s.reason] : ''}</>}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Amounts({ list, unit }: { list: { currencyCode: string; count: number; amount: string }[]; unit: string }) {
+  return (
+    <ul>
+      {list.map((row) => (
+        <li key={row.currencyCode}><strong>{showAmount(row.currencyCode, row.amount)}</strong> · {showCount(row.count)} {unit}</li>
+      ))}
+    </ul>
+  );
+}
+
 function PaymentCount({ data }: { data: PaymentIndicatorsView }) {
   const { i05 } = data;
   if (i05.status === 'source_unavailable' || i05.status === 'not_measurable') {
@@ -129,15 +157,7 @@ function PaymentCount({ data }: { data: PaymentIndicatorsView }) {
       <strong>{showCount(i05.count)}</strong>
       {i05.status === 'empty' && <p>No se registró ningún cobro en este período.</p>}
       <PartialNote coverage={i05.coverage} />
-      {i05.bySource && (
-        <ul>
-          {i05.bySource.map((s) => (
-            <li key={s.source}>
-              {SOURCE_LABELS[s.source]}: {s.status === 'measured' ? showCount(s.count) : <>no medible. {s.reason ? REASON_LABELS[s.reason] : ''}</>}
-            </li>
-          ))}
-        </ul>
-      )}
+      <Sources list={i05.bySource} unit="cobros" />
       <p className="rp-note">Cuenta cobros, no pedidos: un pedido puede tener varios.</p>
     </>
   );
@@ -151,10 +171,13 @@ function PaymentAmounts({ data }: { data: PaymentIndicatorsView }) {
   if (i06.status === 'empty') return <p>No se registró ningún cobro en este período, así que no hay importe que sumar.</p>;
   return (
     <>
-      {i06.byCurrency && i06.byCurrency.length > 0 && (
+      {i06.byCurrency && i06.byCurrency.length > 0 && <Amounts list={i06.byCurrency} unit="cobros" />}
+      {i06.byMethod && i06.byMethod.length > 0 && (
         <ul>
-          {i06.byCurrency.map((row) => (
-            <li key={row.currencyCode}><strong>{showAmount(row.currencyCode, row.amount)}</strong> · {showCount(row.count)} cobros</li>
+          {i06.byMethod.map((m) => (
+            <li key={`${m.method}|${m.source}|${m.currencyCode}`}>
+              {methodLabel(m.method)} · {SOURCE_LABELS[m.source]}: {showAmount(m.currencyCode, m.amount)} ({showCount(m.count)} cobros)
+            </li>
           ))}
         </ul>
       )}
@@ -162,7 +185,7 @@ function PaymentAmounts({ data }: { data: PaymentIndicatorsView }) {
         <p className="rp-note">{showCount(i06.withoutCurrencyCount)} cobros no tienen moneda registrada: se cuentan, pero su importe no se suma.</p>
       )}
       <PartialNote coverage={i06.coverage} />
-      <p className="rp-note">Ventas no informa el importe por medio de pago.</p>
+      <Sources list={i06.bySource} unit="cobros con importe" />
     </>
   );
 }
@@ -177,7 +200,11 @@ function LatePayments({ data }: { data: PaymentIndicatorsView }) {
       <strong>{showCount(i07.count)}</strong>
       {i07.status === 'empty' && <p>Ningún cobro de este período se registró con retraso.</p>}
       <PartialNote coverage={i07.coverage} />
-      <p className="rp-note">Retraso marcado al registrar el cobro; no se recalcula con el plazo actual. Ventas no informa su importe.</p>
+      <Sources list={i07.bySource} unit="con retraso" />
+      {i07.amountByCurrency && i07.amountByCurrency.length > 0 && <Amounts list={i07.amountByCurrency} unit="cobros con retraso" />}
+      {i07.amountStatus === 'currency_not_accredited' && <p className="rp-note">Su importe no se suma: hay cobros sin moneda registrada.</p>}
+      <PartialNote coverage={i07.amountCoverage} />
+      <p className="rp-note">Retraso marcado al registrar el cobro; no se recalcula con el plazo actual.</p>
     </>
   );
 }

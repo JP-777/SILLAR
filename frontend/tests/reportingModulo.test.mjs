@@ -988,18 +988,33 @@ const sinMedir = (status, notMeasurableReason) => ({
   observedAtUtc: null,
   notMeasurableReason,
   i05: { status, count: null, coverage: null, bySource: null },
-  i06: { status, byCurrency: null, withoutCurrencyCount: null, coverage: null, methodBreakdown: 'not_published' },
-  i07: { status, count: null, coverage: null, amountStatus: status },
+  i06: { status, byCurrency: null, byMethod: null, withoutCurrencyCount: null, coverage: null, bySource: null },
+  i07: { status, count: null, coverage: null, bySource: null, amountStatus: status, amountByCurrency: null, amountCoverage: null },
 });
-const proveedorSinEscritor = { source: 'provider', status: 'not_measurable', count: null, reason: 'provider_writer_absent' };
-/** Lo que da hoy M03 con el personal acreditado: proveedor no medible, cobertura parcial. */
+const desde = '2026-08-02T05:00:00+00:00';
+const medido = (source, count) => ({ source, status: 'measured', count, reason: null, coveredSinceUtc: desde });
+const sinEscritor = (source) => ({ source, status: 'not_measurable', count: null, reason: 'writer_not_accredited', coveredSinceUtc: null });
+/** Personal acreditado y proveedor sin escritor: todo parcial, como lo produce PaymentIndicatorsTests. */
 const cobros = () => ({
   ...periodoMonetario,
   observedAtUtc: '2026-10-26T15:42:10+00:00',
   notMeasurableReason: null,
-  i05: { status: 'with_data', count: 3, coverage: 'partial', bySource: [{ source: 'staff', status: 'measured', count: 3, reason: null }, proveedorSinEscritor] },
-  i06: { status: 'with_data', byCurrency: [{ currencyCode: 'PEN', count: 2, amount: '70' }], withoutCurrencyCount: 1, coverage: 'partial', methodBreakdown: 'not_published' },
-  i07: { status: 'with_data', count: 1, coverage: 'partial', amountStatus: 'not_measurable' },
+  i05: { status: 'with_data', count: 5, coverage: 'partial', bySource: [medido('staff', 5), sinEscritor('provider')] },
+  i06: {
+    status: 'with_data',
+    byCurrency: [{ currencyCode: 'PEN', count: 4, amount: '400.00' }, { currencyCode: 'USD', count: 1, amount: '20.00' }],
+    byMethod: [
+      { method: 'efectivo', source: 'staff', currencyCode: 'USD', count: 1, amount: '20.00' },
+      { method: 'yape', source: 'staff', currencyCode: 'PEN', count: 4, amount: '400.00' },
+    ],
+    withoutCurrencyCount: 0,
+    coverage: 'partial',
+    bySource: [medido('staff', 5), sinEscritor('provider')],
+  },
+  i07: {
+    status: 'with_data', count: 1, coverage: 'partial', bySource: [medido('staff', 1), sinEscritor('provider')],
+    amountStatus: 'with_data', amountByCurrency: [{ currencyCode: 'USD', count: 1, amount: '20.00' }], amountCoverage: 'partial',
+  },
 });
 
 test('61 · I02 acepta cada moneda con activos y bajas separados, y rechaza lo que mezcle o no cuadre', () => {
@@ -1029,42 +1044,50 @@ test('62 · I02 no medible o sin fuente no admite ninguna cifra, ni siquiera un 
   assert.throws(() => verifyOrderValue({ ...sinMoneda, byCurrency: [] }, cohorteMonetaria), InconsistentIndicatorsError);
 });
 
-test('63 · I05–I07 sin capacidad no traen ningún cero, y con el proveedor sin escritor la cobertura es parcial', () => {
+test('63 · I05–I07 sin ningún escritor acreditado no traen ninguna cifra; con uno solo, todo es parcial', () => {
   assert.deepEqual(verifyPaymentIndicators(cobros(), cohorteMonetaria), cobros());
-  assert.equal(verifyPaymentIndicators(sinMedir('not_measurable', 'staff_writer_not_accredited'), cohorteMonetaria).i05.status, 'not_measurable');
+  assert.equal(verifyPaymentIndicators(sinMedir('not_measurable', 'writer_not_accredited'), cohorteMonetaria).i05.status, 'not_measurable');
   assert.equal(verifyPaymentIndicators(sinMedir('source_unavailable', null), cohorteMonetaria).i05.status, 'source_unavailable');
-  const conCero = sinMedir('not_measurable', 'staff_writer_not_accredited');
+  const conCero = sinMedir('not_measurable', 'writer_not_accredited');
   conCero.i05.count = 0;
   assert.throws(() => verifyPaymentIndicators(conCero, cohorteMonetaria), InconsistentIndicatorsError);
   assert.throws(() => verifyPaymentIndicators(sinMedir('not_measurable', null), cohorteMonetaria), InconsistentIndicatorsError);
   const mezclada = sinMedir('not_measurable', 'reader_absent');
   mezclada.i06.status = 'empty';
   assert.throws(() => verifyPaymentIndicators(mezclada, cohorteMonetaria), InconsistentIndicatorsError);
+  // Ningún origen medido no se disfraza de datos.
+  const ninguno = cobros();
+  ninguno.i05.bySource = [sinEscritor('staff'), sinEscritor('provider')];
+  ninguno.i05.count = 0;
+  assert.throws(() => verifyPaymentIndicators(ninguno, cohorteMonetaria), InconsistentIndicatorsError);
 });
 
-test('64 · un origen no medible nunca da un período vacío ni cobertura completa, y los totales cuadran', () => {
+test('64 · un origen no medido nunca da un período vacío ni cobertura completa, y los totales cuadran', () => {
   const casos = [
     (d) => { d.i05.coverage = 'complete'; },
-    (d) => { d.i06.coverage = 'complete'; d.i06.withoutCurrencyCount = 0; d.i06.byCurrency[0].count = 3; },
+    (d) => { d.i06.coverage = 'complete'; },
+    (d) => { d.i07.amountCoverage = 'complete'; },
     (d) => { d.i05.count = 0; d.i05.bySource[0].count = 0; d.i05.status = 'empty'; },
-    (d) => { d.i05.bySource[1] = { source: 'provider', status: 'measured', count: 0, reason: 'provider_writer_absent' }; },
-    (d) => { d.i05.bySource[0] = { source: 'staff', status: 'not_measurable', count: null, reason: 'provider_writer_absent' }; },
-    (d) => { d.i06.withoutCurrencyCount = 2; },
-    (d) => { d.i07.count = 4; },
-    (d) => { d.i07.amountStatus = 'with_data'; },
-    (d) => { d.i06.methodBreakdown = 'by_method'; },
+    (d) => { d.i05.bySource[1] = { ...sinEscritor('provider'), count: 0 }; },
+    (d) => { d.i05.bySource = [sinEscritor('provider'), medido('staff', 5)]; },
+    (d) => { d.i06.byMethod[0].source = 'provider'; },
+    (d) => { d.i06.byCurrency[0].count = 3; },
+    (d) => { d.i06.byMethod[1].amount = 400; },
+    (d) => { d.i07.count = 6; d.i07.bySource[0].count = 6; },
+    (d) => { d.i07.amountByCurrency[0].count = 2; },
+    (d) => { d.notMeasurableReason = 'writer_not_accredited'; },
   ];
-  for (const estropear of casos) {
+  casos.forEach((estropear, n) => {
     const datos = cobros();
     estropear(datos);
-    assert.throws(() => verifyPaymentIndicators(datos, cohorteMonetaria), InconsistentIndicatorsError);
-  }
+    assert.throws(() => verifyPaymentIndicators(datos, cohorteMonetaria), InconsistentIndicatorsError, `caso ${n}`);
+  });
   // Con los dos orígenes medidos y sin cobros, sí es un período vacío.
   const completo = {
     ...cobros(),
-    i05: { status: 'empty', count: 0, coverage: 'complete', bySource: [{ source: 'staff', status: 'measured', count: 0, reason: null }, { source: 'provider', status: 'measured', count: 0, reason: null }] },
-    i06: { status: 'empty', byCurrency: [], withoutCurrencyCount: 0, coverage: 'complete', methodBreakdown: 'not_published' },
-    i07: { status: 'empty', count: 0, coverage: 'complete', amountStatus: 'not_measurable' },
+    i05: { status: 'empty', count: 0, coverage: 'complete', bySource: [medido('staff', 0), medido('provider', 0)] },
+    i06: { status: 'empty', byCurrency: [], byMethod: [], withoutCurrencyCount: 0, coverage: 'complete', bySource: [medido('staff', 0), medido('provider', 0)] },
+    i07: { status: 'empty', count: 0, coverage: 'complete', bySource: [medido('staff', 0), medido('provider', 0)], amountStatus: 'empty', amountByCurrency: [], amountCoverage: 'complete' },
   };
   assert.equal(verifyPaymentIndicators(completo, cohorteMonetaria).i05.status, 'empty');
 });
@@ -1083,6 +1106,7 @@ test('66 · la pantalla monta los importes con la cohorte y dice «No medible»,
   assert.match(panel, /No medible\./);
   assert.match(panel, /No significa \{zero\}/);
   assert.match(panel, /no es el total/);
+  assert.match(panel, /<Sources list=\{i05\.bySource\}/);
   assert.match(panel, /if \(current\) setValue/);
   assert.match(panel, /return \(\) => \{ current = false; \}/);
   // Antes de cualquier cifra, los estados sin medición devuelven su frase.

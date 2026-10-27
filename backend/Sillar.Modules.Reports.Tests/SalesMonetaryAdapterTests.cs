@@ -11,7 +11,7 @@ using Sillar.Modules.Sales.Contracts;
 namespace Sillar.Modules.Reports.Tests;
 
 /// <summary>
-/// La adaptación a los contratos públicos de M03 (candidato <c>014fba0</c>). Solo
+/// La adaptación a los contratos públicos de M03 (candidato <c>77ffa20</c>). Solo
 /// compila con <c>-p:SalesMonetaryContracts=true</c> sobre un árbol que los tenga.
 /// </summary>
 public sealed class SalesMonetaryAdapterTests
@@ -20,20 +20,18 @@ public sealed class SalesMonetaryAdapterTests
     private static readonly DateTimeOffset FinUtc = new(2026, 10, 1, 5, 0, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset Observado = new(2026, 10, 26, 15, 42, 10, TimeSpan.Zero);
 
-    /// <summary>Lo que devuelve hoy el reductor de M03: personal medido, proveedor sin escritor.</summary>
-    private static readonly OrderPaymentAggregateCapabilities CapacidadesDeM03 = new(
-        SourceRecorded: true, CurrencyRecorded: true, LateRecorded: true, ProviderWriterPresent: false);
+    private static readonly DateTimeOffset AcreditadoAntes = InicioUtc.AddDays(-30);
 
-    private static OrderPaymentAggregateSnapshot PagosDeM03(long staff, long sinMoneda, params PaymentAmountByCurrency[] monedas)
+    /// <summary>Cobertura de un origen en la forma de M03: los tres indicadores con el mismo estado.</summary>
+    private static IEnumerable<PaymentCoverage> Cobertura(string origen, NotMeasurableReason motivo, DateTimeOffset? desde)
+        => Enum.GetValues<PaymentIndicator>().Select(i => new PaymentCoverage(origen, i,
+            motivo == NotMeasurableReason.None ? MeasureState.Measured : MeasureState.NotMeasurable, motivo, desde));
+
+    /// <summary>Lo que devuelve hoy M03: ningún origen acreditado, aunque haya filas históricas.</summary>
+    private static OrderPaymentAggregateSnapshot PagosDeHoy()
         => new(InicioUtc, FinUtc, Observado,
-            PaymentCountMeasure.Measured(staff),
-            PaymentCountMeasure.NotMeasurable(NotMeasurableReason.ProviderWriterAbsent),
-            PaymentCountMeasure.Measured(1),
-            monedas,
-            sinMoneda,
-            sinMoneda == 0
-                ? new PaymentAmountsCoverage(MeasureState.Measured, NotMeasurableReason.None)
-                : new PaymentAmountsCoverage(MeasureState.NotMeasurable, NotMeasurableReason.CurrencyNotRecorded));
+            [new(PaymentSource.Staff, PaymentMethod.Yape, "PEN", false, 4, 400m)],
+            [.. PaymentSource.All.SelectMany(s => Cobertura(s, NotMeasurableReason.WriterNotAccredited, null))]);
 
     [Fact]
     public void El_valor_de_M03_se_copia_campo_a_campo_con_activos_y_bajas_separados()
@@ -64,59 +62,73 @@ public sealed class SalesMonetaryAdapterTests
     }
 
     [Fact]
-    public async Task Con_el_lector_publico_de_pagos_y_sin_escritor_del_personal_acreditado_I05_I07_no_son_medibles()
+    public void Los_origenes_sobre_los_que_M03_declara_cobertura_son_los_que_espera_M10()
     {
-        var lector = new LectorDePagos(CapacidadesDeM03, PagosDeM03(staff: 0, sinMoneda: 0));
+        Assert.Equal(PaymentSource.All, OrderPaymentReport.Sources);
+        Assert.Equal(Enum.GetValues<PaymentIndicator>().Length, PaymentIndicators.All.Length);
+    }
 
-        var (_, cuerpo) = await Consultar(Aplicacion(s => s.AddSingleton<IOrderPaymentAggregateReader>(lector)), "/api/admin/reporting/payments");
+    [Fact]
+    public async Task Con_el_lector_publico_de_pagos_y_ningun_escritor_acreditado_I05_I07_no_son_medibles_aunque_haya_filas()
+    {
+        var (_, cuerpo) = await Consultar(Aplicacion(s => s.AddSingleton<IOrderPaymentAggregateReader>(new LectorDePagos(PagosDeHoy()))),
+            "/api/admin/reporting/payments");
 
         Assert.Equal("not_measurable", cuerpo.GetProperty("i05").GetProperty("status").GetString());
-        Assert.Equal("staff_writer_not_accredited", cuerpo.GetProperty("notMeasurableReason").GetString());
+        Assert.Equal("writer_not_accredited", cuerpo.GetProperty("notMeasurableReason").GetString());
         Assert.Equal(JsonValueKind.Null, cuerpo.GetProperty("i05").GetProperty("count").ValueKind);
-        Assert.Equal(0, lector.Llamadas);
+        Assert.DoesNotContain("400", cuerpo.GetRawText());
     }
 
     [Fact]
-    public void Las_capacidades_de_M03_pasan_tal_cual_y_el_escritor_del_personal_queda_sin_acreditar()
+    public async Task Con_el_personal_acreditado_y_el_proveedor_no_los_datos_salen_parciales_por_origen()
     {
-        Assert.Equal(new PaymentCapabilities(true, true, true, false, StaffWriterPresent: false),
-            SalesOrderPaymentAdapter.Map(CapacidadesDeM03));
+        var snapshot = new OrderPaymentAggregateSnapshot(InicioUtc, FinUtc, Observado,
+            [new(PaymentSource.Staff, PaymentMethod.Yape, "PEN", false, 2, 70m), new(PaymentSource.Staff, PaymentMethod.Cash, null, true, 1, null)],
+            [.. Cobertura(PaymentSource.Staff, NotMeasurableReason.None, AcreditadoAntes)
+                .Select(c => c.Indicator == PaymentIndicator.AmountByCurrency
+                    ? c with { State = MeasureState.NotMeasurable, Reason = NotMeasurableReason.CurrencyNotRecorded }
+                    : c),
+             .. Cobertura(PaymentSource.Provider, NotMeasurableReason.WriterNotAccredited, null)]);
+
+        var (_, cuerpo) = await Consultar(Aplicacion(s => s.AddSingleton<IOrderPaymentAggregateReader>(new LectorDePagos(snapshot))),
+            "/api/admin/reporting/payments");
+
+        var i05 = cuerpo.GetProperty("i05");
+        Assert.Equal(("with_data", 3L, "partial"), (i05.GetProperty("status").GetString(), i05.GetProperty("count").GetInt64(), i05.GetProperty("coverage").GetString()));
+        Assert.Equal(AcreditadoAntes, i05.GetProperty("bySource")[0].GetProperty("coveredSinceUtc").GetDateTimeOffset());
+        Assert.Equal("writer_not_accredited", i05.GetProperty("bySource")[1].GetProperty("reason").GetString());
+        Assert.Equal("currency_not_accredited", cuerpo.GetProperty("i06").GetProperty("status").GetString());
+        Assert.Equal(1, cuerpo.GetProperty("i06").GetProperty("withoutCurrencyCount").GetInt64());
+        Assert.Equal((1L, "partial"), (cuerpo.GetProperty("i07").GetProperty("count").GetInt64(), cuerpo.GetProperty("i07").GetProperty("coverage").GetString()));
     }
 
     [Fact]
-    public void Una_cohorte_de_M03_con_proveedor_sin_escritor_y_pagos_sin_moneda_da_cobertura_parcial_y_ningun_vacio()
+    public void Los_grupos_y_la_cobertura_de_M03_se_copian_campo_a_campo()
     {
-        var cohorte = SalesOrderPaymentAdapter.Map(PagosDeM03(staff: 3, sinMoneda: 1, new PaymentAmountByCurrency("PEN", 2, 70m)));
+        var ventana = SalesOrderPaymentAdapter.Map(PagosDeHoy());
 
-        Assert.Equal(new PaymentMeasure(false, null, NotMeasurableReasons.ProviderWriterAbsent), cohorte.Provider);
-        Assert.False(cohorte.AmountsComplete);
-
-        // Con el escritor del personal acreditado, que es lo único que M03 aún no declara.
-        var vista = OrderPaymentReport.Project(
-            SalesOrderPaymentAdapter.Map(CapacidadesDeM03) with { StaffWriterPresent = true }, cohorte, InicioUtc, FinUtc);
-
-        Assert.Equal((IndicatorStatus.WithData, 3L, CurrencyCoverage.Partial), (vista.I05.Status, vista.I05.Count, vista.I05.Coverage));
-        Assert.Equal([new SourceMeasureView("staff", MeasureStatus.Measured, 3, null),
-            new SourceMeasureView("provider", MeasureStatus.NotMeasurable, null, NotMeasurableReasons.ProviderWriterAbsent)], vista.I05.BySource);
-        Assert.Equal(CurrencyCoverage.Partial, vista.I06.Coverage);
-        Assert.Equal(1, vista.I06.WithoutCurrencyCount);
-        Assert.Equal((IndicatorStatus.WithData, 1L), (vista.I07.Status, vista.I07.Count));
+        Assert.Equal([new PaymentGroup("staff", "yape", "PEN", false, 4, 400m)], ventana.Groups);
+        Assert.Equal(6, ventana.Coverage.Count);
+        Assert.All(ventana.Coverage, c => Assert.Equal((false, "writer_not_accredited", (DateTimeOffset?)null), (c.Measured, c.Reason, c.CoveredSinceUtc)));
+        Assert.Equal(["count", "late_count", "amount_by_currency"], ventana.Coverage.Where(c => c.Source == "staff").Select(c => c.Indicator));
     }
 
-    public static TheoryData<string> MedidasIncoherentes => ["medida_con_motivo", "no_medible_sin_motivo", "motivo_desconocido"];
+    public static TheoryData<string> CoberturasIncoherentes => ["medida_con_motivo", "no_medible_sin_motivo", "motivo_desconocido", "indicador_desconocido"];
 
     [Theory]
-    [MemberData(nameof(MedidasIncoherentes))]
-    public void Un_estado_y_un_motivo_de_M03_que_no_concuerdan_no_se_adaptan(string caso)
+    [MemberData(nameof(CoberturasIncoherentes))]
+    public void Un_estado_un_motivo_o_un_indicador_de_M03_que_M10_no_reconoce_no_se_adaptan(string caso)
     {
-        PaymentCountMeasure medida = caso switch
+        PaymentCoverage cobertura = caso switch
         {
-            "medida_con_motivo" => new(MeasureState.Measured, 1, NotMeasurableReason.ProviderWriterAbsent),
-            "no_medible_sin_motivo" => new(MeasureState.NotMeasurable, null, NotMeasurableReason.None),
-            _ => new(MeasureState.NotMeasurable, null, (NotMeasurableReason)99),
+            "medida_con_motivo" => new(PaymentSource.Staff, PaymentIndicator.Count, MeasureState.Measured, NotMeasurableReason.WriterNotAccredited, null),
+            "no_medible_sin_motivo" => new(PaymentSource.Staff, PaymentIndicator.Count, MeasureState.NotMeasurable, NotMeasurableReason.None, null),
+            "motivo_desconocido" => new(PaymentSource.Staff, PaymentIndicator.Count, MeasureState.NotMeasurable, (NotMeasurableReason)99, null),
+            _ => new(PaymentSource.Staff, (PaymentIndicator)99, MeasureState.Measured, NotMeasurableReason.None, AcreditadoAntes),
         };
 
-        Assert.Throws<SourceIncoherentException>(() => SalesOrderPaymentAdapter.Map(medida));
+        Assert.Throws<SourceIncoherentException>(() => SalesOrderPaymentAdapter.Map(cobertura));
     }
 
     [Fact]
@@ -179,19 +191,11 @@ public sealed class SalesMonetaryAdapterTests
         }
     }
 
-    private sealed class LectorDePagos(OrderPaymentAggregateCapabilities capacidades, OrderPaymentAggregateSnapshot respuesta)
-        : IOrderPaymentAggregateReader
+    private sealed class LectorDePagos(OrderPaymentAggregateSnapshot respuesta) : IOrderPaymentAggregateReader
     {
-        public int Llamadas { get; private set; }
-
-        public OrderPaymentAggregateCapabilities Capabilities => capacidades;
-
         public Task<OrderPaymentAggregateSnapshot> ReadRegisteredBetweenAsync(
             DateTimeOffset startInclusive, DateTimeOffset endExclusive, CancellationToken cancellationToken)
-        {
-            Llamadas++;
-            return Task.FromResult(respuesta);
-        }
+            => Task.FromResult(respuesta);
     }
 }
 #endif

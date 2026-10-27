@@ -4,7 +4,7 @@ namespace Sillar.Modules.Reports.Orders;
 
 /// <summary>
 /// Puerto consumidor de I02. Refleja campo a campo <c>IOrderValueAggregateReader</c>
-/// de M03 (candidato <c>014fba0</c>).
+/// de M03 (candidato <c>77ffa20</c>).
 /// </summary>
 /// <remarks>
 /// <para>

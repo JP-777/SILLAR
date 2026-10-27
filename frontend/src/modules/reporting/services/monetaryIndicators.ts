@@ -17,7 +17,7 @@ import { InconsistentIndicatorsError } from './verifyOrderIndicators.ts';
 export type IndicatorStatus = 'source_unavailable' | 'not_measurable' | 'empty' | 'currency_not_accredited' | 'with_data';
 export type CurrencyCoverage = 'complete' | 'partial' | 'none';
 export type NotMeasurableReason =
-  | 'reader_absent' | 'staff_writer_not_accredited' | 'source_not_recorded' | 'provider_writer_absent' | 'currency_not_recorded';
+  | 'reader_absent' | 'writer_not_accredited' | 'window_starts_before_coverage' | 'currency_not_recorded';
 
 export interface CurrencyAmount { currencyCode: string; count: number; amount: string }
 
@@ -32,11 +32,13 @@ export interface OrderValueView {
   coverage: CurrencyCoverage | null;
 }
 
+/** Un origen con su medida para un indicador: cuenta si se mide; motivo si no. */
 export interface SourceMeasure {
   source: 'staff' | 'provider';
   status: 'measured' | 'not_measurable';
   count: number | null;
   reason: NotMeasurableReason | null;
+  coveredSinceUtc: string | null;
 }
 
 export interface PaymentIndicatorsView {
@@ -48,17 +50,27 @@ export interface PaymentIndicatorsView {
   i06: {
     status: IndicatorStatus;
     byCurrency: CurrencyAmount[] | null;
+    byMethod: { method: string; source: SourceMeasure['source']; currencyCode: string; count: number; amount: string }[] | null;
     withoutCurrencyCount: number | null;
     coverage: CurrencyCoverage | null;
-    methodBreakdown: 'not_published';
+    bySource: SourceMeasure[] | null;
   };
-  i07: { status: IndicatorStatus; count: number | null; coverage: CurrencyCoverage | null; amountStatus: IndicatorStatus };
+  i07: {
+    status: IndicatorStatus;
+    count: number | null;
+    coverage: CurrencyCoverage | null;
+    bySource: SourceMeasure[] | null;
+    amountStatus: IndicatorStatus;
+    amountByCurrency: CurrencyAmount[] | null;
+    amountCoverage: CurrencyCoverage | null;
+  };
 }
 
 const STATUSES: ReadonlySet<string> = new Set(['source_unavailable', 'not_measurable', 'empty', 'currency_not_accredited', 'with_data']);
 const REASONS: ReadonlySet<string> = new Set([
-  'reader_absent', 'staff_writer_not_accredited', 'source_not_recorded', 'provider_writer_absent', 'currency_not_recorded',
+  'reader_absent', 'writer_not_accredited', 'window_starts_before_coverage', 'currency_not_recorded',
 ]);
+const METHOD = /^[a-z][a-z0-9_]*$/;
 const SOURCES = ['staff', 'provider'] as const;
 const CURRENCY = /^[A-Z]{3}$/;
 const AMOUNT = /^\d{1,29}(\.\d{1,28})?$/;
@@ -150,7 +162,47 @@ export function verifyOrderValue(data: OrderValueView, requested: { start: strin
   return data;
 }
 
-/** I05–I07: cada indicador con su estado, y entre ellos los totales y la cobertura cuadran. */
+/**
+ * Las medidas por origen de un indicador: personal y proveedor, en ese orden.
+ * Devuelve las cuentas de los medidos; ninguno medido, lista vacía.
+ */
+function sources(list: unknown): Map<string, number> {
+  if (!Array.isArray(list) || list.length !== SOURCES.length) fail();
+  const measured = new Map<string, number>();
+  list.forEach((item: SourceMeasure, index) => {
+    if (!item || item.source !== SOURCES[index]) fail();
+    if (item.status === 'measured') {
+      if (item.reason !== null) fail();
+      instant(item.coveredSinceUtc);
+      measured.set(item.source, count(item.count));
+    } else if (item.status !== 'not_measurable' || item.count !== null
+      || typeof item.reason !== 'string' || !REASONS.has(item.reason) || item.reason === 'reader_absent') {
+      fail();
+    }
+  });
+  return measured;
+}
+
+function coverageOf(measured: number): CurrencyCoverage {
+  return measured === SOURCES.length ? 'complete' : 'partial';
+}
+
+function amounts(list: unknown): CurrencyAmount[] {
+  if (!Array.isArray(list)) fail();
+  const seen = new Set<string>();
+  for (const row of list) {
+    if (!row || typeof row.currencyCode !== 'string' || !CURRENCY.test(row.currencyCode) || seen.has(row.currencyCode)) fail();
+    seen.add(row.currencyCode);
+    if (count(row.count) === 0) fail();
+    amount(row.amount, row.count);
+  }
+  return list as CurrencyAmount[];
+}
+
+/**
+ * I05–I07: solo cuentan los orígenes que la cobertura declara medidos, por
+ * indicador; con alguno sin medir, la cobertura es parcial y nunca hay un vacío.
+ */
 export function verifyPaymentIndicators(
   data: PaymentIndicatorsView,
   requested: { start: string; end: string },
@@ -159,63 +211,71 @@ export function verifyPaymentIndicators(
   samePeriod(data, requested);
   const { i05, i06, i07 } = data;
   const s05 = status(i05.status);
-  if (i06.methodBreakdown !== 'not_published' || status(i07.amountStatus) === 'with_data') fail();
 
-  // Sin medición, los tres a la vez y sin cifras: la capacidad es una sola.
+  // Sin medición, los tres a la vez y sin cifras.
   if (s05 === 'source_unavailable' || s05 === 'not_measurable') {
     if (status(i06.status) !== s05 || status(i07.status) !== s05 || i07.amountStatus !== s05) fail();
     const reason = data.notMeasurableReason;
     if (s05 === 'source_unavailable' ? reason !== null : (typeof reason !== 'string' || !REASONS.has(reason))) fail();
-    nothing(data.observedAtUtc, i05.count, i05.coverage, i05.bySource, i06.byCurrency, i06.withoutCurrencyCount,
-      i06.coverage, i07.count, i07.coverage);
+    nothing(data.observedAtUtc, i05.count, i05.coverage, i05.bySource, i06.byCurrency, i06.byMethod, i06.withoutCurrencyCount,
+      i06.coverage, i06.bySource, i07.count, i07.coverage, i07.bySource, i07.amountByCurrency, i07.amountCoverage);
     return data;
   }
   if (data.notMeasurableReason !== null) fail();
   instant(data.observedAtUtc);
 
-  // I05: personal y proveedor, en ese orden; el personal siempre medido.
-  if (!Array.isArray(i05.bySource) || i05.bySource.length !== SOURCES.length) fail();
-  const measured: number[] = [];
-  i05.bySource.forEach((item, index) => {
-    if (!item || item.source !== SOURCES[index]) fail();
-    if (item.status === 'measured') {
-      if (item.reason !== null) fail();
-      measured.push(count(item.count));
-    } else if (item.status !== 'not_measurable' || item.count !== null
-      || typeof item.reason !== 'string' || !REASONS.has(item.reason) || index === 0) {
-      fail();
-    }
-  });
-  const allSources = measured.length === SOURCES.length;
+  // I05: al menos un origen medido; la cifra es la suma de los medidos.
+  const counted = sources(i05.bySource);
   const registered = count(i05.count);
-  if (registered !== sum(measured) || i05.coverage !== (allSources ? 'complete' : 'partial')
-    || s05 !== countStatus(registered, allSources)) fail();
+  if (counted.size === 0 || registered !== sum([...counted.values()]) || i05.coverage !== coverageOf(counted.size)
+    || s05 !== countStatus(registered, counted.size === SOURCES.length)) fail();
 
-  // I06: lo que tiene moneda y lo que no suman los pagos medidos.
-  const without = count(i06.withoutCurrencyCount);
+  // I06: importe de los orígenes con importe medido, por moneda y por medio.
+  const priced = sources(i06.bySource);
+  count(i06.withoutCurrencyCount);
   const s06 = status(i06.status);
   if (s06 === 'currency_not_accredited') {
-    if (i06.byCurrency !== null || i06.coverage !== 'none' || without === 0 || without !== registered) fail();
+    if (priced.size !== 0 || i06.byCurrency !== null || i06.byMethod !== null || i06.coverage !== 'none'
+      || i06.withoutCurrencyCount === 0) fail();
   } else {
-    if (!Array.isArray(i06.byCurrency) || s06 !== countStatus(registered, allSources)) fail();
-    const seen = new Set<string>();
-    for (const row of i06.byCurrency) {
-      if (!row || typeof row.currencyCode !== 'string' || !CURRENCY.test(row.currencyCode) || seen.has(row.currencyCode)) fail();
-      seen.add(row.currencyCode);
-      if (count(row.count) === 0) fail();
+    const byCurrency = amounts(i06.byCurrency);
+    if (!Array.isArray(i06.byMethod) || priced.size === 0) fail();
+    const rows = new Set<string>();
+    const perCurrency = new Map<string, number>();
+    for (const row of i06.byMethod) {
+      const key = `${row?.method}|${row?.source}|${row?.currencyCode}`;
+      if (!row || typeof row.method !== 'string' || !METHOD.test(row.method) || !priced.has(row.source)
+        || !CURRENCY.test(row.currencyCode) || rows.has(key) || count(row.count) === 0) fail();
       amount(row.amount, row.count);
+      rows.add(key);
+      perCurrency.set(row.currencyCode, (perCurrency.get(row.currencyCode) ?? 0) + row.count);
     }
-    if (sum([...i06.byCurrency.map((row) => row.count), without]) !== registered
-      || i06.coverage !== (allSources && without === 0 ? 'complete' : 'partial')) fail();
+    const total = sum([...priced.values()]);
+    if (byCurrency.length !== perCurrency.size || byCurrency.some((c) => perCurrency.get(c.currencyCode) !== c.count)
+      || sum(byCurrency.map((c) => c.count)) !== total || i06.coverage !== coverageOf(priced.size)
+      || s06 !== countStatus(total, priced.size === SOURCES.length)) fail();
   }
 
-  // I07: los tardíos son parte de los registrados; su importe M03 no lo publica.
+  // I07: tardíos de los orígenes con tardanza medida; su importe, aparte.
+  const late = sources(i07.bySource);
   const s07 = status(i07.status);
   if (s07 === 'not_measurable') {
-    nothing(i07.count, i07.coverage);
+    if (late.size !== 0 || i07.amountStatus !== 'not_measurable') fail();
+    nothing(i07.count, i07.coverage, i07.amountByCurrency, i07.amountCoverage);
+    return data;
+  }
+  const lateCount = count(i07.count);
+  if (late.size === 0 || lateCount !== sum([...late.values()]) || lateCount > registered
+    || i07.coverage !== coverageOf(late.size) || s07 !== countStatus(lateCount, late.size === SOURCES.length)) fail();
+  // El importe de los tardíos, solo de los orígenes con tardanza e importe medidos.
+  const lateAndPriced = [...late.keys()].filter((source) => priced.has(source)).length;
+  const a07 = status(i07.amountStatus);
+  if (a07 === 'currency_not_accredited') {
+    if (lateAndPriced !== 0 || i07.amountByCurrency !== null || i07.amountCoverage !== 'none') fail();
   } else {
-    const late = count(i07.count);
-    if (late > registered || i07.coverage !== i05.coverage || s07 !== countStatus(late, allSources)) fail();
+    const lateAmounts = sum(amounts(i07.amountByCurrency).map((c) => c.count));
+    if (lateAndPriced === 0 || lateAmounts > lateCount || i07.amountCoverage !== coverageOf(lateAndPriced)
+      || a07 !== countStatus(lateAmounts, lateAndPriced === SOURCES.length)) fail();
   }
   return data;
 }
@@ -238,8 +298,14 @@ export const SOURCE_LABELS: Record<SourceMeasure['source'], string> = {
 /** Por qué no hay cifra, dicho para quien administra la tienda. */
 export const REASON_LABELS: Record<NotMeasurableReason, string> = {
   reader_absent: 'Ventas todavía no publica la lectura de cobros.',
-  staff_writer_not_accredited: 'Ventas todavía no acredita que el personal pueda registrar cobros.',
-  source_not_recorded: 'Ventas no guarda quién registró cada cobro.',
-  provider_writer_absent: 'Todavía no hay registro de cobros del proveedor de pagos.',
+  writer_not_accredited: 'Ventas todavía no acredita que se registren todos los cobros de este origen.',
+  window_starts_before_coverage: 'El registro de este origen empezó después del inicio del período.',
   currency_not_recorded: 'Hay cobros sin moneda registrada.',
 };
+
+const METHOD_LABELS: Record<string, string> = { yape: 'Yape', efectivo: 'Efectivo' };
+
+/** Un medio que M03 añada después se muestra por su código, no se oculta. */
+export function methodLabel(code: string): string {
+  return METHOD_LABELS[code] ?? code;
+}
