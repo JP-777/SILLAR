@@ -12,7 +12,7 @@ namespace Sillar.Modules.Reports.Orders;
 /// <para>
 /// <b>Por qué hay compilación condicional.</b> Los contratos
 /// <c>IOrderValueAggregateReader</c> e <c>IOrderPaymentAggregateReader</c> están en
-/// la rama de M03 (<c>77ffa20</c>) y no en esta; las ramas no están integradas y M10
+/// la rama de M03 (<c>30cb8c3</c>) y no en esta; las ramas no están integradas y M10
 /// no los copia. Los adaptadores se compilan con
 /// <c>-p:SalesMonetaryContracts=true</c> sobre un árbol que los tenga. Al integrar,
 /// la condición se retira y queda el código.
@@ -119,6 +119,7 @@ internal sealed class SalesOrderPaymentAdapter(IOrderPaymentAggregateReader read
         NotMeasurableReason.WriterNotAccredited => NotMeasurableReasons.WriterNotAccredited,
         NotMeasurableReason.WindowStartsBeforeCoverage => NotMeasurableReasons.WindowStartsBeforeCoverage,
         NotMeasurableReason.CurrencyNotRecorded => NotMeasurableReasons.CurrencyNotRecorded,
+        NotMeasurableReason.SourceNotRecorded => NotMeasurableReasons.SourceNotRecorded,
         _ => throw new SourceIncoherentException("Motivo desconocido."),
     };
 }

@@ -54,7 +54,7 @@ export function MonetaryIndicators({ start, end }: Props) {
       </section>
       <section className="rp-panel">
         <h2>Cobros registrados</h2>
-        <Shown read={payments} render={(data) => <PaymentCount data={data} />} />
+        <Shown read={payments} render={(data) => <><PaymentCount data={data} /><HistoricalWithoutSource data={data} /></>} />
       </section>
       <section className="rp-panel">
         <h2>Importe de cobros por medio</h2>
@@ -144,6 +144,17 @@ function Amounts({ list, unit }: { list: { currencyCode: string; count: number; 
         <li key={row.currencyCode}><strong>{showAmount(row.currencyCode, row.amount)}</strong> · {showCount(row.count)} {unit}</li>
       ))}
     </ul>
+  );
+}
+
+/** Los históricos sin origen: origen histórico no acreditado, nunca del personal ni del proveedor. */
+function HistoricalWithoutSource({ data }: { data: PaymentIndicatorsView }) {
+  if (!data.historicalWithoutSource) return null;
+  return (
+    <p className="rp-note">
+      Origen histórico no acreditado: {showCount(data.historicalWithoutSource.count)} cobros antiguos sin origen registrado.
+      No se atribuyen al personal ni al proveedor de pagos, ni se suman a ninguna cifra.
+    </p>
   );
 }
 

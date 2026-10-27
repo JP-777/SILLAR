@@ -5,7 +5,7 @@ namespace Sillar.Modules.Reports.Orders;
 
 /// <summary>
 /// Puerto consumidor de I05–I07. Refleja campo a campo <c>IOrderPaymentAggregateReader</c>
-/// de M03 (candidato <c>77ffa20</c>).
+/// de M03 (candidato <c>30cb8c3</c>).
 /// </summary>
 /// <remarks>
 /// Interno por la misma razón que <see cref="IOrderValueAggregatePort"/>. El
@@ -32,13 +32,16 @@ internal sealed record PaymentWindow(
     IReadOnlyList<PaymentCoverageEntry> Coverage);
 
 /// <summary>Pagos con el mismo origen, medio, moneda y tardanza, como <c>PaymentAggregateGroup</c>.</summary>
-/// <param name="Source">Origen: <c>staff</c> o <c>provider</c>.</param>
+/// <param name="Source">
+/// Origen: <c>staff</c>, <c>provider</c> o null, que es un pago histórico sin origen
+/// registrado (decisión JP-B): no se atribuye a ningún origen.
+/// </param>
 /// <param name="Method">Código de medio de M03.</param>
 /// <param name="CurrencyCode">ISO 4217, o null si la moneda es desconocida.</param>
 /// <param name="WasLate">El hecho guardado; no se recalcula.</param>
 /// <param name="Count">Pagos del grupo.</param>
 /// <param name="Amount">Suma de importes; null si y solo si no hay moneda.</param>
-internal sealed record PaymentGroup(string Source, string Method, string? CurrencyCode, bool WasLate, long Count, decimal? Amount);
+internal sealed record PaymentGroup(string? Source, string Method, string? CurrencyCode, bool WasLate, long Count, decimal? Amount);
 
 /// <summary>Cobertura de un indicador para un origen en la ventana, como <c>PaymentCoverage</c>.</summary>
 /// <param name="Source">Origen.</param>
@@ -73,6 +76,9 @@ public static class NotMeasurableReasons
 
     /// <summary>Hay pagos del origen sin moneda: el importe no se puede afirmar completo.</summary>
     public const string CurrencyNotRecorded = "currency_not_recorded";
+
+    /// <summary>Hay pagos históricos sin origen: cualquiera podría ser de este, así que nada se afirma completo.</summary>
+    public const string SourceNotRecorded = "source_not_recorded";
 }
 
 /// <summary>
@@ -124,13 +130,22 @@ internal sealed partial class OrderPaymentReport(IServiceProvider services)
         var coverage = CheckedCoverage(window.Coverage, groups, startUtc);
         PaymentCoverageEntry Of(string source, string indicator) => coverage[(source, indicator)];
 
-        // Ningún origen con el recuento medido: ninguna cifra, haya filas o no.
+        // Los históricos sin origen no se descartan ni se atribuyen: se cuentan aparte.
+        var historical = MonetaryFacts.Total(groups.Where(g => g.Source is null).Select(g => g.Count)) is > 0 and var n
+            ? new HistoricalWithoutSourceView(n, window.ObservedAtUtc)
+            : null;
+
+        // Ningún origen con el recuento medido: ninguna cifra por origen, haya filas o no.
         if (!Sources.Any(s => Of(s, PaymentIndicators.Count).Measured))
         {
-            var reason = Sources.All(s => Of(s, PaymentIndicators.Count).Reason == NotMeasurableReasons.WriterNotAccredited)
-                ? NotMeasurableReasons.WriterNotAccredited
-                : NotMeasurableReasons.WindowStartsBeforeCoverage;
-            return PaymentIndicatorsView.Unmeasured(IndicatorStatus.NotMeasurable, reason, startUtc, endUtc);
+            var reasons = Sources.Select(s => Of(s, PaymentIndicators.Count).Reason).ToArray();
+            var reason = reasons.Contains(NotMeasurableReasons.SourceNotRecorded) ? NotMeasurableReasons.SourceNotRecorded
+                : reasons.Contains(NotMeasurableReasons.WindowStartsBeforeCoverage) ? NotMeasurableReasons.WindowStartsBeforeCoverage
+                : NotMeasurableReasons.WriterNotAccredited;
+            return PaymentIndicatorsView.Unmeasured(IndicatorStatus.NotMeasurable, reason, startUtc, endUtc) with
+            {
+                HistoricalWithoutSource = historical,
+            };
         }
 
         long CountOf(string source, Func<PaymentGroup, bool>? filter = null)
@@ -139,7 +154,10 @@ internal sealed partial class OrderPaymentReport(IServiceProvider services)
         return new(startUtc, endUtc, window.ObservedAtUtc, null,
             I05(Of, CountOf),
             I06(Of, CountOf, groups),
-            I07(Of, CountOf, groups));
+            I07(Of, CountOf, groups))
+        {
+            HistoricalWithoutSource = historical,
+        };
     }
 
     private static PaymentGroup[] CheckedGroups(IReadOnlyList<PaymentGroup> groups)
@@ -147,7 +165,11 @@ internal sealed partial class OrderPaymentReport(IServiceProvider services)
         if (groups is null) throw new SourceIncoherentException("Sin grupos.");
         foreach (var group in groups)
         {
-            if (group is null || !Sources.Contains(group.Source)) throw new SourceIncoherentException("Origen desconocido.");
+            // Null es el histórico sin origen; cualquier otro valor tiene que ser un origen conocido.
+            if (group is null || (group.Source is not null && !Sources.Contains(group.Source)))
+            {
+                throw new SourceIncoherentException("Origen desconocido.");
+            }
             if (group.Method is null || !MethodCode().IsMatch(group.Method)) throw new SourceIncoherentException("Medio sin código.");
             MonetaryFacts.CheckGroup(group.CurrencyCode, group.Count, group.Amount);
             if (group.Count == 0) throw new SourceIncoherentException("Grupo sin pagos.");
@@ -183,9 +205,21 @@ internal sealed partial class OrderPaymentReport(IServiceProvider services)
                     NotMeasurableReasons.WindowStartsBeforeCoverage => entry.CoveredSinceUtc > startUtc,
                     NotMeasurableReasons.CurrencyNotRecorded => entry.Indicator == PaymentIndicators.AmountByCurrency
                         && entry.CoveredSinceUtc <= startUtc,
+                    NotMeasurableReasons.SourceNotRecorded => entry.CoveredSinceUtc <= startUtc,
                     _ => false,
                 };
             if (!coherent) throw new SourceIncoherentException("Cobertura incoherente.");
+        }
+
+        // Con históricos sin origen en la ventana, ningún origen es completo: podrían ser suyos.
+        var withoutSource = groups.Any(g => g.Source is null);
+        if (withoutSource && coverage.Values.Any(e => e.Measured))
+        {
+            throw new SourceIncoherentException("Origen medido con pagos sin origen.");
+        }
+        if (!withoutSource && coverage.Values.Any(e => e.Reason == NotMeasurableReasons.SourceNotRecorded))
+        {
+            throw new SourceIncoherentException("Origen no registrado sin pagos sin origen.");
         }
 
         // Cada indicador tiene su propia fecha de acreditación: el contrato no
@@ -240,7 +274,7 @@ internal sealed partial class OrderPaymentReport(IServiceProvider services)
         }
         var priced = groups.Where(g => measured.Contains(g.Source)).ToArray();
         var byMethod = priced
-            .GroupBy(g => (g.Method, g.Source, Currency: g.CurrencyCode!))
+            .GroupBy(g => (g.Method, Source: g.Source!, Currency: g.CurrencyCode!))
             .OrderBy(g => g.Key.Method, StringComparer.Ordinal)
             .ThenBy(g => Array.IndexOf(Sources, g.Key.Source))
             .ThenBy(g => g.Key.Currency, StringComparer.Ordinal)
@@ -319,6 +353,10 @@ public static class MeasureStatus
 /// <param name="I05">Cobros registrados.</param>
 /// <param name="I06">Importe por medio y moneda.</param>
 /// <param name="I07">Cobros tardíos.</param>
+/// <remarks>
+/// <see cref="HistoricalWithoutSource"/>: pagos históricos sin origen registrado
+/// (JP-B), observados en la ventana. Nunca se suman a un origen; nulo si no hay.
+/// </remarks>
 public sealed record PaymentIndicatorsView(
     DateTimeOffset StartInclusive,
     DateTimeOffset EndExclusive,
@@ -328,12 +366,22 @@ public sealed record PaymentIndicatorsView(
     PaymentAmountsView I06,
     LatePaymentsView I07)
 {
+    /// <summary>Pagos históricos sin origen observados en la ventana; nulo si no hay.</summary>
+    public HistoricalWithoutSourceView? HistoricalWithoutSource { get; init; }
+
     internal static PaymentIndicatorsView Unmeasured(string status, string? reason, DateTimeOffset startUtc, DateTimeOffset endUtc)
         => new(startUtc, endUtc, null, reason,
             new(status, null, null, null),
             new(status, null, null, null, null, null),
             new(status, null, null, null, status, null, null));
 }
+
+/// <summary>
+/// Pagos históricos sin origen registrado: «origen histórico no acreditado». Se
+/// observan y se cuentan, pero no son del personal ni del proveedor, y no completan
+/// ninguna cifra.
+/// </summary>
+public sealed record HistoricalWithoutSourceView(long Count, DateTimeOffset ObservedAtUtc);
 
 /// <summary>Un origen con su medida: cuenta si se mide, motivo y desde cuándo si no.</summary>
 public sealed record SourceMeasureView(string Source, string Status, long? Count, string? Reason, DateTimeOffset? CoveredSinceUtc);

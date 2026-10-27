@@ -987,6 +987,7 @@ const sinMedir = (status, notMeasurableReason) => ({
   ...periodoMonetario,
   observedAtUtc: null,
   notMeasurableReason,
+  historicalWithoutSource: null,
   i05: { status, count: null, coverage: null, bySource: null },
   i06: { status, byCurrency: null, byMethod: null, withoutCurrencyCount: null, coverage: null, bySource: null },
   i07: { status, count: null, coverage: null, bySource: null, amountStatus: status, amountByCurrency: null, amountCoverage: null },
@@ -999,6 +1000,7 @@ const cobros = () => ({
   ...periodoMonetario,
   observedAtUtc: '2026-10-26T15:42:10+00:00',
   notMeasurableReason: null,
+  historicalWithoutSource: null,
   i05: { status: 'with_data', count: 5, coverage: 'partial', bySource: [medido('staff', 5), sinEscritor('provider')] },
   i06: {
     status: 'with_data',
@@ -1060,6 +1062,25 @@ test('63 · I05–I07 sin ningún escritor acreditado no traen ninguna cifra; co
   ninguno.i05.bySource = [sinEscritor('staff'), sinEscritor('provider')];
   ninguno.i05.count = 0;
   assert.throws(() => verifyPaymentIndicators(ninguno, cohorteMonetaria), InconsistentIndicatorsError);
+});
+
+test('67 · los cobros históricos sin origen se muestran como origen no acreditado, nunca como personal ni como cero', () => {
+  const historicos = { ...sinMedir('not_measurable', 'source_not_recorded'), historicalWithoutSource: { count: 4, observedAtUtc: '2026-10-26T15:42:10+00:00' } };
+  assert.equal(verifyPaymentIndicators(historicos, cohorteMonetaria).historicalWithoutSource.count, 4);
+  // Sin escritor también se informan: no se descartan en silencio.
+  assert.equal(verifyPaymentIndicators({ ...historicos, notMeasurableReason: 'writer_not_accredited' }, cohorteMonetaria).i05.status, 'not_measurable');
+  const malos = [
+    { ...historicos, historicalWithoutSource: { count: 0, observedAtUtc: '2026-10-26T15:42:10+00:00' } },
+    { ...historicos, historicalWithoutSource: { count: 4, observedAtUtc: null } },
+    { ...historicos, notMeasurableReason: 'reader_absent' },
+    { ...sinMedir('source_unavailable', null), historicalWithoutSource: historicos.historicalWithoutSource },
+  ];
+  for (const malo of malos) {
+    assert.throws(() => verifyPaymentIndicators(malo, cohorteMonetaria), InconsistentIndicatorsError);
+  }
+  const panel = codigo(fuente('src/modules/reporting/components/MonetaryIndicators.tsx'));
+  assert.match(panel, /Origen histórico no acreditado/);
+  assert.match(panel, /No se atribuyen al personal ni al proveedor de pagos/);
 });
 
 test('64 · un origen no medido nunca da un período vacío ni cobertura completa, y los totales cuadran', () => {

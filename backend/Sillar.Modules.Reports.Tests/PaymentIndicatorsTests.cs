@@ -27,7 +27,7 @@ public sealed class PaymentIndicatorsTests
     private static readonly string[] Indicadores = ["i05", "i06", "i07"];
 
     /// <summary>Cómo está cubierto un origen en la ventana.</summary>
-    private enum Cubierto { Medido, SinEscritor, DesdeDespues, SinMoneda }
+    private enum Cubierto { Medido, SinEscritor, DesdeDespues, SinMoneda, SinOrigen }
 
     private static IEnumerable<PaymentCoverageEntry> Cobertura(string origen, Cubierto cubierto)
         => cubierto switch
@@ -35,6 +35,7 @@ public sealed class PaymentIndicatorsTests
             Cubierto.Medido => PaymentIndicators.All.Select(i => new PaymentCoverageEntry(origen, i, true, null, AcreditadoAntes)),
             Cubierto.SinEscritor => PaymentIndicators.All.Select(i => new PaymentCoverageEntry(origen, i, false, "writer_not_accredited", null)),
             Cubierto.DesdeDespues => PaymentIndicators.All.Select(i => new PaymentCoverageEntry(origen, i, false, "window_starts_before_coverage", AcreditadoDespues)),
+            Cubierto.SinOrigen => PaymentIndicators.All.Select(i => new PaymentCoverageEntry(origen, i, false, "source_not_recorded", AcreditadoAntes)),
             _ => PaymentIndicators.All.Select(i => i == PaymentIndicators.AmountByCurrency
                 ? new PaymentCoverageEntry(origen, i, false, "currency_not_recorded", AcreditadoAntes)
                 : new PaymentCoverageEntry(origen, i, true, null, AcreditadoAntes)),
@@ -43,7 +44,7 @@ public sealed class PaymentIndicatorsTests
     private static PaymentWindow Ventana(Cubierto personal, Cubierto proveedor, params PaymentGroup[] grupos)
         => new(InicioUtc, FinUtc, Observado, grupos, [.. Cobertura("staff", personal), .. Cobertura("provider", proveedor)]);
 
-    private static PaymentGroup Grupo(string origen, string medio, string? moneda, bool tardio, long pagos, decimal? importe)
+    private static PaymentGroup Grupo(string? origen, string medio, string? moneda, bool tardio, long pagos, decimal? importe)
         => new(origen, medio, moneda, tardio, pagos, importe);
 
     [Fact]
@@ -226,11 +227,56 @@ public sealed class PaymentIndicatorsTests
         Assert.Equal("partial", cuerpo.GetProperty("i07").GetProperty("amountCoverage").GetString());
     }
 
+    [Fact]
+    public async Task Los_historicos_sin_origen_sin_escritor_acreditado_se_cuentan_aparte_y_no_dan_ninguna_cifra_por_origen()
+    {
+        var ventana = Ventana(Cubierto.SinEscritor, Cubierto.SinEscritor,
+            Grupo(null, "yape", "PEN", false, 6, 600m), Grupo("staff", "efectivo", "PEN", false, 1, 10m));
+
+        var (codigo, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(ventana)));
+
+        Assert.Equal(StatusCodes.Status200OK, codigo);
+        Estados(cuerpo, "not_measurable");
+        Assert.Equal("writer_not_accredited", cuerpo.GetProperty("notMeasurableReason").GetString());
+        SinCifras(cuerpo);
+        var historicos = cuerpo.GetProperty("historicalWithoutSource");
+        Assert.Equal(6, historicos.GetProperty("count").GetInt64());
+        Assert.Equal(Observado, historicos.GetProperty("observedAtUtc").GetDateTimeOffset());
+        Assert.DoesNotContain("600", cuerpo.GetRawText());
+    }
+
+    [Fact]
+    public async Task Con_historicos_sin_origen_ningun_origen_acreditado_es_completo_y_nada_se_imputa_al_personal()
+    {
+        var ventana = Ventana(Cubierto.SinOrigen, Cubierto.SinEscritor,
+            Grupo(null, "yape", "PEN", true, 4, 40m), Grupo("staff", "yape", "PEN", false, 2, 20m));
+
+        var (codigo, cuerpo) = await Consultar(Aplicacion(ventas: true, new PuertoFijo(ventana)));
+
+        Assert.Equal(StatusCodes.Status200OK, codigo);
+        Estados(cuerpo, "not_measurable");
+        Assert.Equal("source_not_recorded", cuerpo.GetProperty("notMeasurableReason").GetString());
+        // Ni 2 (lo observado del personal) ni 6 (personal más históricos) aparecen como cobros del personal.
+        SinCifras(cuerpo);
+        Assert.Equal(4, cuerpo.GetProperty("historicalWithoutSource").GetProperty("count").GetInt64());
+    }
+
+    [Fact]
+    public async Task Sin_historicos_sin_origen_no_se_informa_ninguno()
+    {
+        var (_, cuerpo) = await Consultar(Aplicacion(ventas: true,
+            new PuertoFijo(Ventana(Cubierto.Medido, Cubierto.SinEscritor, Grupo("staff", "yape", "PEN", false, 2, 20m)))));
+
+        Assert.Equal(JsonValueKind.Null, cuerpo.GetProperty("historicalWithoutSource").ValueKind);
+        Assert.Equal(2, cuerpo.GetProperty("i05").GetProperty("count").GetInt64());
+    }
+
     public static TheoryData<string> Incoherencias =>
         ["cobertura_incompleta", "cobertura_repetida", "medido_con_motivo", "medido_acreditado_despues", "sin_escritor_con_fecha",
          "importe_completo_con_pagos_sin_moneda", "sin_moneda_sin_pagos_sin_moneda",
          "sin_moneda_en_el_recuento", "origen_desconocido", "medio_mayusculas", "grupo_repetido",
-         "importe_sin_moneda", "importe_negativo", "otro_periodo"];
+         "importe_sin_moneda", "importe_negativo", "otro_periodo",
+         "origen_medido_con_historicos_sin_origen", "sin_origen_sin_historicos", "sin_origen_sin_acreditacion", "origen_vacio"];
 
     [Theory]
     [MemberData(nameof(Incoherencias))]
@@ -257,6 +303,13 @@ public sealed class PaymentIndicatorsTests
             "grupo_repetido" => ventana with { Groups = [Grupo("staff", "yape", "PEN", false, 1, 10m), Grupo("staff", "yape", "PEN", false, 1, 10m)] },
             "importe_sin_moneda" => ventana with { Groups = [Grupo("staff", "yape", null, false, 2, 20m)] },
             "importe_negativo" => ventana with { Groups = [Grupo("staff", "yape", "PEN", false, 2, -20m)] },
+            "origen_medido_con_historicos_sin_origen" => ventana with { Groups = [Grupo(null, "yape", "PEN", false, 1, 10m), Grupo("staff", "yape", "PEN", false, 2, 20m)] },
+            "sin_origen_sin_historicos" => Ventana(Cubierto.SinOrigen, Cubierto.SinEscritor, Grupo("staff", "yape", "PEN", false, 2, 20m)),
+            "sin_origen_sin_acreditacion" => Ventana(Cubierto.SinEscritor, Cubierto.SinEscritor, Grupo(null, "yape", "PEN", false, 1, 10m)) with
+            {
+                Coverage = [.. Cobertura("staff", Cubierto.SinOrigen).Select(c => c with { CoveredSinceUtc = null }), .. Cobertura("provider", Cubierto.SinEscritor)],
+            },
+            "origen_vacio" => ventana with { Groups = [Grupo("", "yape", "PEN", false, 2, 20m)] },
             _ => ventana with { StartInclusive = InicioUtc.AddHours(-1) },
         };
 

@@ -11,7 +11,7 @@ using Sillar.Modules.Sales.Contracts;
 namespace Sillar.Modules.Reports.Tests;
 
 /// <summary>
-/// La adaptación a los contratos públicos de M03 (candidato <c>77ffa20</c>). Solo
+/// La adaptación a los contratos públicos de M03 (candidato <c>30cb8c3</c>). Solo
 /// compila con <c>-p:SalesMonetaryContracts=true</c> sobre un árbol que los tenga.
 /// </summary>
 public sealed class SalesMonetaryAdapterTests
@@ -112,6 +112,28 @@ public sealed class SalesMonetaryAdapterTests
         Assert.Equal(6, ventana.Coverage.Count);
         Assert.All(ventana.Coverage, c => Assert.Equal((false, "writer_not_accredited", (DateTimeOffset?)null), (c.Measured, c.Reason, c.CoveredSinceUtc)));
         Assert.Equal(["count", "late_count", "amount_by_currency"], ventana.Coverage.Where(c => c.Source == "staff").Select(c => c.Indicator));
+    }
+
+    [Fact]
+    public async Task Un_historico_con_origen_null_de_M03_se_presenta_como_no_acreditado_y_no_como_personal()
+    {
+        var snapshot = new OrderPaymentAggregateSnapshot(InicioUtc, FinUtc, Observado,
+            [new(null, PaymentMethod.Yape, "PEN", false, 5, 500m), new(PaymentSource.Staff, PaymentMethod.Yape, "PEN", false, 2, 20m)],
+            [.. Cobertura(PaymentSource.Staff, NotMeasurableReason.SourceNotRecorded, AcreditadoAntes),
+             .. Cobertura(PaymentSource.Provider, NotMeasurableReason.WriterNotAccredited, null)]);
+
+        var ventana = SalesOrderPaymentAdapter.Map(snapshot);
+        Assert.Null(ventana.Groups[0].Source);
+        Assert.Equal("source_not_recorded", ventana.Coverage[0].Reason);
+
+        var (codigo, cuerpo) = await Consultar(Aplicacion(s => s.AddSingleton<IOrderPaymentAggregateReader>(new LectorDePagos(snapshot))),
+            "/api/admin/reporting/payments");
+
+        Assert.Equal(StatusCodes.Status200OK, codigo);
+        Assert.Equal("not_measurable", cuerpo.GetProperty("i05").GetProperty("status").GetString());
+        Assert.Equal("source_not_recorded", cuerpo.GetProperty("notMeasurableReason").GetString());
+        Assert.Equal(5, cuerpo.GetProperty("historicalWithoutSource").GetProperty("count").GetInt64());
+        Assert.Equal(JsonValueKind.Null, cuerpo.GetProperty("i05").GetProperty("bySource").ValueKind);
     }
 
     public static TheoryData<string> CoberturasIncoherentes => ["medida_con_motivo", "no_medible_sin_motivo", "motivo_desconocido", "indicador_desconocido"];

@@ -17,7 +17,7 @@ import { InconsistentIndicatorsError } from './verifyOrderIndicators.ts';
 export type IndicatorStatus = 'source_unavailable' | 'not_measurable' | 'empty' | 'currency_not_accredited' | 'with_data';
 export type CurrencyCoverage = 'complete' | 'partial' | 'none';
 export type NotMeasurableReason =
-  | 'reader_absent' | 'writer_not_accredited' | 'window_starts_before_coverage' | 'currency_not_recorded';
+  | 'reader_absent' | 'writer_not_accredited' | 'window_starts_before_coverage' | 'currency_not_recorded' | 'source_not_recorded';
 
 export interface CurrencyAmount { currencyCode: string; count: number; amount: string }
 
@@ -46,6 +46,8 @@ export interface PaymentIndicatorsView {
   endExclusive: string;
   observedAtUtc: string | null;
   notMeasurableReason: NotMeasurableReason | null;
+  /** Pagos históricos sin origen registrado (JP-B): se cuentan aparte, nunca se atribuyen. */
+  historicalWithoutSource: { count: number; observedAtUtc: string } | null;
   i05: { status: IndicatorStatus; count: number | null; coverage: CurrencyCoverage | null; bySource: SourceMeasure[] | null };
   i06: {
     status: IndicatorStatus;
@@ -68,7 +70,7 @@ export interface PaymentIndicatorsView {
 
 const STATUSES: ReadonlySet<string> = new Set(['source_unavailable', 'not_measurable', 'empty', 'currency_not_accredited', 'with_data']);
 const REASONS: ReadonlySet<string> = new Set([
-  'reader_absent', 'writer_not_accredited', 'window_starts_before_coverage', 'currency_not_recorded',
+  'reader_absent', 'writer_not_accredited', 'window_starts_before_coverage', 'currency_not_recorded', 'source_not_recorded',
 ]);
 const METHOD = /^[a-z][a-z0-9_]*$/;
 const SOURCES = ['staff', 'provider'] as const;
@@ -213,6 +215,14 @@ export function verifyPaymentIndicators(
   const { i05, i06, i07 } = data;
   const s05 = status(i05.status);
 
+  // Los históricos sin origen solo existen si ventas respondió, y nunca son cero.
+  const historical = data.historicalWithoutSource;
+  if (historical !== null) {
+    if (typeof historical !== 'object' || count(historical.count) === 0 || s05 === 'source_unavailable'
+      || data.notMeasurableReason === 'reader_absent') fail();
+    instant(historical.observedAtUtc);
+  }
+
   // Sin medición, los tres a la vez y sin cifras.
   if (s05 === 'source_unavailable' || s05 === 'not_measurable') {
     if (status(i06.status) !== s05 || status(i07.status) !== s05 || i07.amountStatus !== s05) fail();
@@ -314,6 +324,7 @@ export const REASON_LABELS: Record<NotMeasurableReason, string> = {
   writer_not_accredited: 'Ventas todavía no acredita que se registren todos los cobros de este origen.',
   window_starts_before_coverage: 'El registro de este origen empezó después del inicio del período.',
   currency_not_recorded: 'Hay cobros sin moneda registrada.',
+  source_not_recorded: 'Hay cobros antiguos sin origen registrado: no se puede afirmar que estén todos los de cada origen.',
 };
 
 const METHOD_LABELS: Record<string, string> = { yape: 'Yape', efectivo: 'Efectivo' };
