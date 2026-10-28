@@ -33,17 +33,7 @@ public static class AuditAction
     /// <summary>Intento de envío de correo.</summary>
     public const string EmailSend = "email_send";
 
-    /// <summary>
-    /// Exportación de datos fuera del sistema (un informe descargado, un volcado).
-    /// </summary>
-    /// <remarks>
-    /// Fase A, candidato. Requiere la migración <c>CoreAuditExport</c>: sin ella,
-    /// el CHECK <c>ck_audit_log_action</c> de la base rechaza la fila. Que la
-    /// acción exista no habilita ninguna descarga en Fase A.
-    /// </remarks>
-    public const string Export = "export";
-
     /// <summary>Todos los valores admitidos.</summary>
     public static readonly string[] All =
-        [Create, Update, Delete, Activate, Deactivate, Login, LoginFailed, Logout, Setup, EmailSend, Export];
+        [Create, Update, Delete, Activate, Deactivate, Login, LoginFailed, Logout, Setup, EmailSend];
 }
