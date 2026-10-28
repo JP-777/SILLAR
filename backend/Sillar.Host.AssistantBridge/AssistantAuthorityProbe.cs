@@ -23,12 +23,21 @@ public enum AssistantInstallationIdentityEvidence
 }
 
 /// <summary>
-/// Proyección interna y deliberadamente reducida de una decisión autoritativa.
-/// No copia el DTO de CORE ni transporta su <c>InstallationKey</c>.
+/// Traza inmutable de la decisión autoritativa recibida por Host.
 /// </summary>
+/// <remarks>
+/// Conserva causa, fuente y vigencia sin interpretarlas como licencia. La clave
+/// interna sirve exclusivamente para cotejar la identidad de la observación;
+/// nunca se publica como <c>InstallationId</c> de M12 ni como credencial.
+/// </remarks>
 public sealed record AssistantAuthorityObservation(
     AssistantAuthorityVerdict Verdict,
-    AssistantInstallationIdentityEvidence InstallationIdentity);
+    AssistantInstallationIdentityEvidence InstallationIdentity,
+    string Reason,
+    string Source,
+    DateTimeOffset ObservedAt,
+    DateTimeOffset? ValidUntil,
+    Guid? AuthorityInstallationKey);
 
 /// <summary>
 /// Punto de composición asíncrono del Host. Nunca recibe identidad, licencia ni
