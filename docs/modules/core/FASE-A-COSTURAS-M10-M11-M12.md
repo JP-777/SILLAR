@@ -15,7 +15,7 @@ bloqueado. Lo bloqueado se queda bloqueado: aquí no se resuelve, se nombra.
 |---|---|---|
 | Procedencia de la instalación (M10; sello para M11 y M12) | `IInstallationProvenance` | `AddCandidateInstallationProvenance()` |
 | Identidad y acceso al Asistente (M12) | `IAssistantAccessAuthority` | `AddCandidateAssistantAuthority()` |
-| Auditoría de exportación (M10) | `AuditAction.Export` | migración `CoreAuditExport`, no aplicada |
+| Auditoría de exportación (M10, fail-closed) | `IExportAudit` | `AddCandidateExportAudit()` opt-in; `AuditAction.Export` no está admitida y `CoreAuditExport` sigue diferida |
 
 La procedencia solo se emite con todos sus hechos: una instalación, con clave no vacía, con la
 configuración inicial terminada, y con `Sillar:Node:Code` configurado e igual al nodo que el
