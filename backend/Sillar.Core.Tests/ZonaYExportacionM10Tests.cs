@@ -92,8 +92,28 @@ public sealed class ZonaYExportacionM10Tests
 
     private static readonly ExportAuditRequest Valida = new("reporting", "sales_by_day", "csv", 120);
 
+    // Conciliado con el vocabulario canónico de CORE (1d7c968): «export» no está
+    // admitido. Con el vocabulario real, ninguna exportación se registra; los
+    // caminos de escritura se prueban con «export» admitido explícitamente, como
+    // en ExportacionAuditadaM10Tests.
+
     [Fact]
-    public async Task Una_exportacion_valida_queda_registrada_con_los_metadatos_minimos_y_el_autor_de_la_sesion()
+    public async Task Con_el_vocabulario_real_una_exportacion_valida_se_rechaza_sin_escribir()
+    {
+        var escritor = new EscritorFalso();
+        var (auditoria, contexto) = Auditoria(escritor, vocabularioReal: true);
+        using var _ = contexto;
+
+        var resultado = await auditoria.RecordAsync(Valida, TestContext.Current.CancellationToken);
+
+        Assert.False(resultado.IsRecorded);
+        Assert.Equal(ExportAuditFailure.ExportActionNotAdmitted, resultado.Failure);
+        Assert.Null(resultado.ExportId);
+        Assert.Empty(escritor.Entradas);
+    }
+
+    [Fact]
+    public async Task Con_export_admitido_una_exportacion_valida_queda_registrada_con_los_metadatos_minimos_y_el_autor_de_la_sesion()
     {
         var escritor = new EscritorFalso();
         var (auditoria, contexto) = Auditoria(escritor);
@@ -105,7 +125,7 @@ public sealed class ZonaYExportacionM10Tests
         Assert.Equal(7, resultado.ExportId!.Value.Version);
         var entrada = Assert.Single(escritor.Entradas);
         Assert.Equal(
-            new AuditEntry(AuditAction.Export)
+            new AuditEntry(ExportAudit.ExportActionCode)
             {
                 AdminUserId = 7,
                 AdminUserEmail = "operador@ejemplo.test",
@@ -193,7 +213,7 @@ public sealed class ZonaYExportacionM10Tests
         var contexto = Contexto(CadenaSinServidor);
         await using var _ = contexto;
         var escritor = new AuditWriter(contexto, new HttpContextAccessor(), TimeProvider.System);
-        var auditoria = new ExportAudit(escritor, new AdminFalso(7, "operador@ejemplo.test"), contexto, NullLogger<ExportAudit>.Instance);
+        var auditoria = new ExportAudit(escritor, new AdminFalso(7, "operador@ejemplo.test"), contexto, NullLogger<ExportAudit>.Instance, ConExport);
 
         var resultado = await auditoria.RecordAsync(Valida, TestContext.Current.CancellationToken);
 
@@ -247,10 +267,18 @@ public sealed class ZonaYExportacionM10Tests
 
     private const string CadenaSinServidor = "Host=127.0.0.1;Port=1;Database=ninguna;Username=nadie;Password=nada;Timeout=2";
 
-    private static (ExportAudit Auditoria, CoreDbContext Contexto) Auditoria(IAuditWriter escritor, ICurrentAdmin? admin = null)
+    /// <summary>Vocabulario de prueba: el real más «export», como lo dejaría una migración ratificada.</summary>
+    private static readonly string[] ConExport = [.. AuditAction.All, ExportAudit.ExportActionCode];
+
+    private static (ExportAudit Auditoria, CoreDbContext Contexto) Auditoria(
+        IAuditWriter escritor, ICurrentAdmin? admin = null, bool vocabularioReal = false)
     {
         var contexto = Contexto(CadenaSinServidor);
-        return (new ExportAudit(escritor, admin ?? new AdminFalso(7, "operador@ejemplo.test"), contexto, NullLogger<ExportAudit>.Instance), contexto);
+        var quien = admin ?? new AdminFalso(7, "operador@ejemplo.test");
+        var auditoria = vocabularioReal
+            ? new ExportAudit(escritor, quien, contexto, NullLogger<ExportAudit>.Instance)
+            : new ExportAudit(escritor, quien, contexto, NullLogger<ExportAudit>.Instance, ConExport);
+        return (auditoria, contexto);
     }
 
     private sealed class EscritorFalso(Action? alEscribir = null) : IAuditWriter

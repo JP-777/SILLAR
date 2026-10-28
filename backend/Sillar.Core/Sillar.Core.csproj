@@ -26,4 +26,14 @@
     <InternalsVisibleTo Include="Sillar.Core.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Candidata histórica CoreAuditExport (añadía «export» al CHECK de
+         core.audit_log), fuera de la secuencia de migraciones: el vocabulario
+         canónico de CORE (1d7c968) no admite «export» y la decisión sigue
+         diferida. Los archivos se conservan intactos como evidencia; EF no la
+         descubre ni la aplica. -->
+    <Compile Remove="Migrations/20261023192531_CoreAuditExport.cs" />
+    <Compile Remove="Migrations/20261023192531_CoreAuditExport.Designer.cs" />
+  </ItemGroup>
+
 </Project>

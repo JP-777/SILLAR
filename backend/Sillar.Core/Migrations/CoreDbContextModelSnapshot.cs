@@ -262,7 +262,7 @@ namespace Sillar.Core.Migrations
 
                     b.ToTable("audit_log", "core", t =>
                         {
-                            t.HasCheckConstraint("ck_audit_log_action", "action IN ('create', 'update', 'delete', 'activate', 'deactivate', 'login', 'login_failed', 'logout', 'setup', 'email_send', 'export')");
+                            t.HasCheckConstraint("ck_audit_log_action", "action IN ('create', 'update', 'delete', 'activate', 'deactivate', 'login', 'login_failed', 'logout', 'setup', 'email_send')");
                         });
                 });
 

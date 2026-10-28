@@ -121,20 +121,30 @@ public sealed class ZonaIanaYExportFaseATests
     }
 
     // ── Auditoría: export ─────────────────────────────────────────────────
+    // Conciliada con el vocabulario canónico de CORE (1d7c968): «export» no es
+    // todavía una acción admitida, y la migración candidata CoreAuditExport está
+    // fuera de la secuencia.
 
     [Fact]
-    public void La_exportacion_es_una_accion_de_auditoria_admitida()
+    public void La_exportacion_no_es_todavia_una_accion_de_auditoria_admitida()
     {
-        Assert.Equal("export", AuditAction.Export);
-        Assert.Contains(AuditAction.Export, AuditAction.All);
+        Assert.DoesNotContain("export", AuditAction.All);
         Assert.Equal(AuditAction.All.Length, AuditAction.All.Distinct().Count());
+    }
+
+    [Fact]
+    public void La_migracion_candidata_CoreAuditExport_no_esta_en_la_secuencia()
+    {
+        using var contexto = Contexto("Host=127.0.0.1;Port=1;Database=ninguna;Username=nadie;Password=nada");
+
+        Assert.DoesNotContain(contexto.Database.GetMigrations(), m => m.EndsWith("_CoreAuditExport", StringComparison.Ordinal));
     }
 
     [Fact]
     public void El_modelo_de_CORE_no_tiene_cambios_sin_migracion()
     {
-        // Sin CoreAuditExport, añadir la acción cambia el CHECK del modelo y
-        // MigrateAsync se niega a arrancar. La comparación no abre conexión.
+        // El CHECK del modelo sale de AuditAction.All: si el vocabulario y la
+        // instantánea se separan, MigrateAsync se niega a arrancar. No abre conexión.
         using var contexto = Contexto("Host=127.0.0.1;Port=1;Database=ninguna;Username=nadie;Password=nada");
 
         Assert.False(contexto.Database.HasPendingModelChanges());
