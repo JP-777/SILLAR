@@ -1,0 +1,298 @@
+using Sillar.Modules.Payments.Application.Contracts;
+using Sillar.Modules.Payments.Domain;
+
+namespace Sillar.Modules.Payments.Application;
+
+/// <summary>
+/// Coordina un único intento del inbox. El resultado sólo se presenta como
+/// acreditado cuando el puerto lo confirma y el repositorio conserva esa
+/// confirmación bajo el mismo lease.
+/// </summary>
+internal sealed class ProviderInboxProcessor(
+    IProviderInboxRepository repository,
+    IProviderCommercialCandidateSource candidateSource,
+    IProviderCommercialEffectPort commercialPort,
+    IProviderCommercialRetryPolicy retryPolicy)
+    : IProviderInboxProcessingService
+{
+    public async ValueTask<ProviderInboxProcessResult> ProcessAsync(
+        Guid inboxEventId,
+        DateTimeOffset attemptedAt,
+        TimeSpan leaseDuration,
+        TimeSpan retryDelay,
+        CancellationToken cancellationToken = default)
+    {
+        if (inboxEventId == Guid.Empty
+            || attemptedAt == default
+            || leaseDuration <= TimeSpan.Zero
+            || retryDelay <= TimeSpan.Zero)
+        {
+            throw new ArgumentException(
+                "El procesamiento exige inbox, instante y demoras positivas.");
+        }
+
+        var leaseToken = Guid.CreateVersion7();
+        var claim = await repository.TryClaimAsync(
+            inboxEventId,
+            leaseToken,
+            attemptedAt,
+            attemptedAt.Add(leaseDuration),
+            cancellationToken);
+        if (claim.Outcome != ProviderInboxClaimOutcome.Acquired)
+        {
+            return new(
+                MapClaimOutcome(claim.Outcome),
+                null,
+                claim.Status?.AttemptCount,
+                claim.Status?.ProcessingState.ToString());
+        }
+
+        var claimed = claim.Status!;
+        var preparation = await candidateSource.PrepareAsync(
+            claimed.InboxEventId,
+            cancellationToken);
+        if (preparation.Outcome !=
+            ProviderCommercialCandidatePreparationOutcome.Ready)
+        {
+            return await CompleteWithoutCommercialCallAsync(
+                claimed,
+                leaseToken,
+                attemptedAt,
+                preparation.Reason!,
+                cancellationToken);
+        }
+
+        var candidate = preparation.Candidate!;
+        if (candidate.InboxEventId != claimed.InboxEventId
+            || candidate.Identity != PaymentIdempotencyKeys.From(
+                claimed.Evidence))
+        {
+            return await CompleteWithoutCommercialCallAsync(
+                claimed,
+                leaseToken,
+                attemptedAt,
+                "commercial_candidate_identity_mismatch",
+                cancellationToken);
+        }
+
+        var result = await commercialPort.TryApplyAsync(
+            candidate,
+            cancellationToken);
+        if (result is null || !Enum.IsDefined(result.Outcome))
+        {
+            throw new InvalidOperationException(
+                "El puerto comercial devolvió un resultado inválido.");
+        }
+
+        if (result.Outcome == ProviderCommercialEffectOutcome.AlreadyApplied
+            && ProviderSettlementFactClassifier.Classify(
+                candidate.Facts,
+                [result.ConfirmedFacts!])
+                != ProviderSettlementFactDecision.Duplicate)
+        {
+            result = ProviderCommercialEffectResult.Conflict(
+                "already_applied_facts_divergent");
+        }
+
+        var completion = result.Outcome switch
+        {
+            ProviderCommercialEffectOutcome.Applied =>
+                ProviderInboxCompletion.Applied(
+                    inboxEventId,
+                    leaseToken,
+                    attemptedAt,
+                    result.Reference),
+            ProviderCommercialEffectOutcome.AlreadyApplied =>
+                ProviderInboxCompletion.AlreadyApplied(
+                    inboxEventId,
+                    leaseToken,
+                    attemptedAt,
+                    result.Reference),
+            ProviderCommercialEffectOutcome.Rejected =>
+                ProviderInboxCompletion.Rejected(
+                    inboxEventId,
+                    leaseToken,
+                    attemptedAt,
+                    result.Reason),
+            ProviderCommercialEffectOutcome.Conflict =>
+                ProviderInboxCompletion.Conflict(
+                    inboxEventId,
+                    leaseToken,
+                    attemptedAt,
+                    result.Reason),
+            ProviderCommercialEffectOutcome.DecisionRequired =>
+                ProviderInboxCompletion.DecisionRequired(
+                    inboxEventId,
+                    leaseToken,
+                    attemptedAt,
+                    result.Reason),
+            ProviderCommercialEffectOutcome.Indeterminate =>
+                IndeterminateCompletion(
+                    claimed,
+                    leaseToken,
+                    attemptedAt,
+                    retryDelay,
+                    result.Reason!),
+            _ => throw new InvalidOperationException(
+                "El resultado comercial no tiene transición.")
+        };
+
+        if (!await repository.TryCompleteAsync(
+                completion,
+                cancellationToken))
+        {
+            return new(
+                ProviderInboxProcessOutcome.ConfirmationNotPersisted,
+                leaseToken,
+                claimed.AttemptCount,
+                "lease_or_concurrency_conflict");
+        }
+
+        return new(
+            MapCommercialOutcome(result.Outcome),
+            leaseToken,
+            claimed.AttemptCount,
+            result.Reason ?? result.Reference,
+            result.OrderWasExpired);
+    }
+
+    public ValueTask<bool> TryReleaseAfterReviewAsync(
+        Guid inboxEventId,
+        long expectedRevision,
+        DateTimeOffset reviewedAt,
+        CancellationToken cancellationToken = default)
+        => repository.TryMarkReadyAsync(
+            inboxEventId,
+            expectedRevision,
+            reviewedAt,
+            cancellationToken);
+
+    public async ValueTask<bool> TryRecoverExpiredLeaseAsync(
+        Guid inboxEventId,
+        DateTimeOffset recoveredAt,
+        TimeSpan retryDelay,
+        CancellationToken cancellationToken = default)
+    {
+        if (recoveredAt == default || retryDelay <= TimeSpan.Zero)
+        {
+            throw new ArgumentException(
+                "La recuperación exige instante y demora positiva.");
+        }
+
+        var status = await repository.GetStatusAsync(
+            inboxEventId,
+            cancellationToken);
+        if (status is null
+            || status.ProcessingState != ProviderInboxProcessingState.Processing
+            || status.LeaseUntil is null
+            || status.LeaseUntil > recoveredAt
+            || status.AttemptCount <= 0)
+        {
+            return false;
+        }
+
+        const string uncertaintyReason = "lease_expired_before_confirmation";
+        var retry = retryPolicy.Decide(
+            status.AttemptCount,
+            recoveredAt,
+            retryDelay,
+            uncertaintyReason)
+            ?? throw new InvalidOperationException(
+                "La política no devolvió una decisión de reintento.");
+        retry.EnsureValidFor(recoveredAt);
+        return await repository.TryRecoverExpiredLeaseAsync(
+            inboxEventId,
+            recoveredAt,
+            retry.RetryAt,
+            cancellationToken);
+    }
+
+    private static ProviderInboxProcessOutcome MapClaimOutcome(
+        ProviderInboxClaimOutcome outcome)
+        => outcome switch
+        {
+            ProviderInboxClaimOutcome.NotFound =>
+                ProviderInboxProcessOutcome.NotFound,
+            ProviderInboxClaimOutcome.NotReady =>
+                ProviderInboxProcessOutcome.NotReady,
+            ProviderInboxClaimOutcome.Contended =>
+                ProviderInboxProcessOutcome.Contended,
+            _ => throw new InvalidOperationException(
+                "Un claim adquirido debe continuar el procesamiento.")
+        };
+
+    private ProviderInboxCompletion IndeterminateCompletion(
+        ProviderInboxStatus claimed,
+        Guid leaseToken,
+        DateTimeOffset attemptedAt,
+        TimeSpan retryDelay,
+        string reason)
+    {
+        var retry = retryPolicy.Decide(
+            claimed.AttemptCount,
+            attemptedAt,
+            retryDelay,
+            reason)
+            ?? throw new InvalidOperationException(
+                "La política no devolvió una decisión de reintento.");
+        retry.EnsureValidFor(attemptedAt);
+        var persistedReason = retry.ShouldRetry
+            ? reason
+            : $"{reason}|{retry.Reason}";
+        return ProviderInboxCompletion.Indeterminate(
+            claimed.InboxEventId,
+            leaseToken,
+            attemptedAt,
+            retry.RetryAt,
+            persistedReason);
+    }
+
+    private async ValueTask<ProviderInboxProcessResult>
+        CompleteWithoutCommercialCallAsync(
+            ProviderInboxStatus claimed,
+            Guid leaseToken,
+            DateTimeOffset completedAt,
+            string reason,
+            CancellationToken cancellationToken)
+    {
+        var completion = ProviderInboxCompletion.DecisionRequired(
+            claimed.InboxEventId,
+            leaseToken,
+            completedAt,
+            reason);
+        if (!await repository.TryCompleteAsync(completion, cancellationToken))
+        {
+            return new(
+                ProviderInboxProcessOutcome.ConfirmationNotPersisted,
+                leaseToken,
+                claimed.AttemptCount,
+                "lease_or_concurrency_conflict");
+        }
+
+        return new(
+            ProviderInboxProcessOutcome.DecisionRequired,
+            leaseToken,
+            claimed.AttemptCount,
+            reason);
+    }
+
+    private static ProviderInboxProcessOutcome MapCommercialOutcome(
+        ProviderCommercialEffectOutcome outcome)
+        => outcome switch
+        {
+            ProviderCommercialEffectOutcome.Applied =>
+                ProviderInboxProcessOutcome.Applied,
+            ProviderCommercialEffectOutcome.AlreadyApplied =>
+                ProviderInboxProcessOutcome.AlreadyApplied,
+            ProviderCommercialEffectOutcome.Rejected =>
+                ProviderInboxProcessOutcome.Rejected,
+            ProviderCommercialEffectOutcome.Conflict =>
+                ProviderInboxProcessOutcome.Conflict,
+            ProviderCommercialEffectOutcome.DecisionRequired =>
+                ProviderInboxProcessOutcome.DecisionRequired,
+            ProviderCommercialEffectOutcome.Indeterminate =>
+                ProviderInboxProcessOutcome.Indeterminate,
+            _ => throw new InvalidOperationException(
+                "El resultado comercial no tiene salida de proceso.")
+        };
+}
