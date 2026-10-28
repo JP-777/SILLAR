@@ -21,6 +21,14 @@ namespace Sillar.Core.Tests;
 public sealed class ZonaYExportacionM10Tests
 {
     // ── Zona horaria ───────────────────────────────────────────────────────
+    // Conciliadas con el contrato definitivo de CORE (1d7c968): la resolución
+    // pasa por InstallationTimeZoneEvaluator, con Status y Reason en lugar de
+    // Verification y Failure. Sin hechos de fuente ni de atestación, como hoy.
+
+    private static readonly DateTimeOffset Ahora = new(2026, 10, 27, 12, 0, 0, TimeSpan.FromHours(-5));
+
+    private static InstallationTimeZoneResolution Resolver(string? valor, string inicial = IInstallationTimeZoneResolver.InitialZoneId)
+        => InstallationTimeZoneEvaluator.Evaluate(IanaZoneCandidate.Evaluate(valor), inicial, facts: null, Ahora);
 
     [Theory]
     [InlineData(null)]
@@ -28,24 +36,27 @@ public sealed class ZonaYExportacionM10Tests
     [InlineData("PENDIENTE_DEFINIR")]
     public void Sin_valor_configurado_la_zona_es_la_inicial_aprobada_y_sin_verificar(string? valor)
     {
-        var zona = new InstallationTimeZoneResolver(new LectorFijo(valor)).Resolve();
+        var zona = Resolver(valor);
 
         Assert.True(zona.IsResolved);
         Assert.Equal("America/Lima", zona.ZoneId);
         Assert.Equal("America/Lima", zona.Zone!.Id);
         Assert.Equal(InstallationTimeZoneOrigin.ApprovedInitial, zona.Origin);
-        Assert.Equal(InstallationTimeZoneVerification.Unverified, zona.Verification);
+        Assert.Equal(TimeZoneVerificationStatus.Unverified, zona.Status);
+        Assert.Equal(TimeZoneVerificationReason.InitialZoneNotAttestable, zona.Reason);
         Assert.Equal(IanaZoneOutcome.Missing, zona.Setting.Outcome);
     }
 
     [Fact]
     public void Con_un_valor_configurado_que_el_runtime_resuelve_se_usa_ese_y_tampoco_queda_verificado()
     {
-        var zona = new InstallationTimeZoneResolver(new LectorFijo("America/Bogota")).Resolve();
+        var zona = Resolver("America/Bogota");
 
         Assert.Equal("America/Bogota", zona.ZoneId);
         Assert.Equal(InstallationTimeZoneOrigin.ConfiguredSetting, zona.Origin);
-        Assert.Equal(InstallationTimeZoneVerification.Unverified, zona.Verification);
+        // Sin fuente TZDB, que es lo que hay hoy: no verificable, nunca verificada.
+        Assert.Equal(TimeZoneVerificationStatus.SourceNotVerifiable, zona.Status);
+        Assert.NotEqual(TimeZoneVerificationStatus.Verified, zona.Status);
     }
 
     [Theory]
@@ -54,42 +65,28 @@ public sealed class ZonaYExportacionM10Tests
     [InlineData("America/Ciudad_Que_No_Existe")]
     public void Un_valor_invalido_no_cae_a_la_zona_inicial(string valor)
     {
-        var zona = new InstallationTimeZoneResolver(new LectorFijo(valor)).Resolve();
+        var zona = Resolver(valor);
 
         Assert.False(zona.IsResolved);
         Assert.Null(zona.ZoneId);
         Assert.Null(zona.Origin);
-        Assert.Equal(InstallationTimeZoneFailure.ConfiguredValueInvalid, zona.Failure);
+        Assert.Equal(TimeZoneVerificationReason.ConfiguredValueInvalid, zona.Reason);
         Assert.Equal(valor, zona.Setting.OriginalValue);
     }
 
     [Fact]
     public void Si_el_runtime_no_conoce_la_zona_inicial_no_se_inventa_otra()
     {
-        var zona = InstallationTimeZoneResolver.Resolve(IanaZoneCandidate.Evaluate(null), "America/Zona_Que_No_Existe");
+        var zona = Resolver(null, "America/Zona_Que_No_Existe");
 
         Assert.False(zona.IsResolved);
-        Assert.Equal(InstallationTimeZoneFailure.InitialZoneUnresolvable, zona.Failure);
+        Assert.Equal(TimeZoneVerificationReason.InitialZoneUnresolvable, zona.Reason);
     }
 
-    [Fact]
-    public void Una_evaluacion_canonica_tampoco_convierte_la_zona_en_verificada()
-    {
-        var zona = InstallationTimeZoneResolver.Resolve(
-            new IanaZoneEvaluation(IanaZoneOutcome.IanaCanonicalVerified, "America/Lima", "America/Lima"),
-            IInstallationTimeZoneResolver.InitialZoneId);
-
-        Assert.Equal(InstallationTimeZoneVerification.Unverified, zona.Verification);
-    }
-
-    private sealed class LectorFijo(string? valor) : ISettingsReader
-    {
-        public string? Get(string key) => key == IanaZoneCandidate.SettingKey ? valor : null;
-
-        public T? Get<T>(string key) => throw new NotSupportedException();
-
-        public IReadOnlyDictionary<string, string> GetPublic() => throw new NotSupportedException();
-    }
+    // «Una_evaluacion_canonica_tampoco_convierte_la_zona_en_verificada» queda
+    // obsoleta: IanaZoneOutcome.IanaCanonicalVerified ya no existe en el contrato.
+    // Sustituta: ZonaVerificacionM10Tests.Con_todos_los_hechos_a_favor_no_hay_verificado_sin_autoridad_ratificada,
+    // que exige lo mismo con todos los hechos de fuente y atestación a favor.
 
     // ── Exportación: metadatos ─────────────────────────────────────────────
 

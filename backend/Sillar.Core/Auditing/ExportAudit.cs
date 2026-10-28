@@ -9,31 +9,64 @@ using Sillar.Core.Domain;
 namespace Sillar.Core.Auditing;
 
 /// <summary>
-/// Productor candidato de <see cref="IExportAudit"/>: valida los metadatos,
-/// toma el autor de <see cref="ICurrentAdmin"/> y escribe con
-/// <see cref="IAuditWriter"/>.
+/// Productor candidato de <see cref="IExportAudit"/>.
 /// </summary>
 /// <remarks>
-/// El resumen lo compone CORE a partir de los metadatos validados; nada de lo que
-/// llega de quien llama entra en él sin pasar por un formato cerrado.
+/// <para>
+/// <c>AuditAction.cs</c> no se toca aquí: el código de acción se declara local y
+/// solo se usa si <see cref="AuditAction.All"/> ya lo admite. Cuando la acción
+/// entre en el vocabulario —con su migración—, este productor empieza a escribir
+/// sin cambios. Hasta entonces se niega antes de llegar a la base.
+/// </para>
+/// <para>
+/// El resumen lo compone CORE con metadatos validados; nada de quien llama entra
+/// en él sin pasar por un formato cerrado.
+/// </para>
 /// </remarks>
-internal sealed partial class ExportAudit(
-    IAuditWriter writer,
-    ICurrentAdmin admin,
-    CoreDbContext database,
-    ILogger<ExportAudit> logger) : IExportAudit
+internal sealed partial class ExportAudit : IExportAudit
 {
+    /// <summary>Código de acción. Debe coincidir con el de <c>AuditAction</c> cuando exista.</summary>
+    internal const string ExportActionCode = "export";
+
     /// <summary>Longitudes de las columnas de <c>core.audit_log</c> que reciben cada metadato.</summary>
     internal const int ModuleCodeMaxLength = 40;
     internal const int ExportKindMaxLength = 60;
     internal const int FormatMaxLength = 10;
+
+    private readonly IAuditWriter writer;
+    private readonly ICurrentAdmin admin;
+    private readonly CoreDbContext database;
+    private readonly ILogger<ExportAudit> logger;
+    private readonly IReadOnlyCollection<string> admittedActions;
+
+    public ExportAudit(IAuditWriter writer, ICurrentAdmin admin, CoreDbContext database, ILogger<ExportAudit> logger)
+        : this(writer, admin, database, logger, AuditAction.All)
+    {
+    }
+
+    /// <summary>Con otro vocabulario. Solo para probar el camino que hoy está cerrado.</summary>
+    internal ExportAudit(
+        IAuditWriter writer,
+        ICurrentAdmin admin,
+        CoreDbContext database,
+        ILogger<ExportAudit> logger,
+        IReadOnlyCollection<string> admittedActions)
+    {
+        this.writer = writer;
+        this.admin = admin;
+        this.database = database;
+        this.logger = logger;
+        this.admittedActions = admittedActions;
+    }
 
     /// <inheritdoc />
     public async Task<ExportAuditResult> RecordAsync(ExportAuditRequest request, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (admin.AdminUserId is not { } adminUserId || string.IsNullOrEmpty(admin.Email))
+        if (admin.AdminUserId is not { } adminUserId
+            || string.IsNullOrEmpty(admin.Email)
+            || string.IsNullOrEmpty(admin.HomeNode))
         {
             return ExportAuditResult.Rejected(ExportAuditFailure.ActorMissing);
         }
@@ -43,11 +76,22 @@ internal sealed partial class ExportAudit(
             return ExportAuditResult.Rejected(ExportAuditFailure.MetadataInvalid);
         }
 
-        var exportId = Guid.CreateVersion7();
-        var entry = new AuditEntry(AuditAction.Export)
+        if (!admittedActions.Contains(ExportActionCode))
         {
-            AdminUserId = adminUserId,
-            AdminUserEmail = admin.Email,
+            return ExportAuditResult.Rejected(ExportAuditFailure.ExportActionNotAdmitted);
+        }
+
+        if (database.Database.CurrentTransaction is not null)
+        {
+            return ExportAuditResult.Rejected(ExportAuditFailure.AuditNotDurable);
+        }
+
+        var actor = new ExportActor(adminUserId, admin.Email, admin.HomeNode);
+        var exportId = Guid.CreateVersion7();
+        var entry = new AuditEntry(ExportActionCode)
+        {
+            AdminUserId = actor.AdminUserId,
+            AdminUserEmail = actor.Email,
             ModuleCode = request.ModuleCode,
             EntityType = request.ExportKind,
             EntityId = exportId.ToString(),
@@ -66,20 +110,17 @@ internal sealed partial class ExportAudit(
         }
         catch (Exception exception)
         {
-            // Sin registro no hay exportación. Incluye la base caída y el CHECK
-            // ck_audit_log_action mientras CoreAuditExport no esté aplicada.
             Forget(exportId);
-            logger.LogWarning(exception, "No se pudo auditar la exportación {Kind} de {Module}; no debe entregarse.", request.ExportKind, request.ModuleCode);
+            logger.LogWarning(exception, "No se pudo auditar la exportación {Kind} de {Module}; no se entrega.", request.ExportKind, request.ModuleCode);
             return ExportAuditResult.Rejected(ExportAuditFailure.AuditUnavailable);
         }
 
-        return ExportAuditResult.Recorded(exportId);
+        return ExportAuditResult.Recorded(exportId, actor);
     }
 
     /// <summary>
-    /// Quita del contexto la fila que no se pudo guardar. Si se quedara, el
-    /// siguiente <c>SaveChanges</c> de la misma petición la reintentaría por su
-    /// cuenta, ya sin nadie esperando el resultado.
+    /// Quita del contexto la fila que no se pudo guardar, para que ningún guardado
+    /// posterior de la misma petición la reintente a escondidas.
     /// </summary>
     private void Forget(Guid exportId)
     {
@@ -110,8 +151,11 @@ internal sealed partial class ExportAudit(
     private static partial Regex FormatCode();
 }
 
-/// <summary>Registro explícito y opcional del productor candidato de auditoría de exportaciones.</summary>
-/// <remarks>No lo llama <c>CoreServices</c> ni el host.</remarks>
+/// <summary>Registro explícito y opcional del productor candidato.</summary>
+/// <remarks>
+/// No lo llama <c>CoreServices</c> ni el host. Solo vale en modo normal:
+/// <see cref="ICurrentAdmin"/> no existe en modo instalación.
+/// </remarks>
 public static class CandidateExportAuditRegistration
 {
     /// <summary>Registra <see cref="IExportAudit"/> con el productor candidato, con ámbito de petición.</summary>

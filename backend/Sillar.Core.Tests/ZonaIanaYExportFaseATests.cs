@@ -77,9 +77,18 @@ public sealed class ZonaIanaYExportFaseATests
     [InlineData("Pacific/Samoa")]
     [InlineData("Etc/UTC")]
     public void Ningun_valor_se_da_por_canonico_verificado_sin_una_regla_ratificada(string valor)
-        // "america/lima" en Linux es inválido; en Windows la resolución pasa por
-        // ICU y podría resolverse. En ningún caso llega a canónico verificado.
-        => Assert.NotEqual(IanaZoneOutcome.IanaCanonicalVerified, IanaZoneCandidate.Evaluate(valor).Outcome);
+    {
+        // Conciliada con 1d7c968: la evaluación ya no tiene un resultado «canónico
+        // verificado»; lo más que dice es que el runtime lo resuelve. Y la
+        // resolución, sin fuente ni atestación, nunca llega a Verified.
+        // "america/lima" en Linux es inválido; en Windows la resolución pasa por ICU.
+        var evaluacion = IanaZoneCandidate.Evaluate(valor);
+
+        Assert.Contains(evaluacion.Outcome, new[] { IanaZoneOutcome.RuntimeResolvedCandidate, IanaZoneOutcome.Invalid });
+        Assert.NotEqual(TimeZoneVerificationStatus.Verified,
+            Sillar.Core.Settings.InstallationTimeZoneEvaluator.Evaluate(
+                evaluacion, IInstallationTimeZoneResolver.InitialZoneId, facts: null, DateTimeOffset.UnixEpoch).Status);
+    }
 
     [Fact]
     public void La_lectura_pide_la_clave_candidata_y_ninguna_otra()

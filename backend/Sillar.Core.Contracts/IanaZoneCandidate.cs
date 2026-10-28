@@ -1,28 +1,25 @@
 namespace Sillar.Core.Contracts;
 
 /// <summary>
-/// Zona horaria IANA de la instalación. Fase A, candidato: clave privada, sin
-/// semilla y sin claim público.
+/// Valor de zona horaria IANA guardado para la instalación. Fase A, candidato:
+/// clave privada, sin semilla y sin claim público.
 /// </summary>
 /// <remarks>
 /// <para>
-/// La autoridad es la que lee el servidor; nunca un campo que mande el cliente.
-/// No hay zona por defecto: sin valor, la zona está ausente, y quien la necesite
-/// tiene que decirlo en vez de suponer una.
+/// <b>Reconocible no es verificada.</b> Que el runtime resuelva la zona solo dice
+/// que existe en la base de zonas de esta máquina: un alias se resuelve igual que
+/// un identificador canónico. Lo que hace falta para verificarla lo decide
+/// <see cref="IInstallationTimeZoneResolver"/>, no esta evaluación.
 /// </para>
 /// <para>
-/// <b>Resolver no es canonizar.</b> Que el runtime encuentre la zona solo dice
-/// que existe en la base de zonas de esta máquina. Un alias (<c>Pacific/Samoa</c>)
-/// se resuelve igual que un identificador canónico, y en Windows la resolución
-/// pasa por ICU con reglas propias. Por eso comparar con <see cref="TimeZoneInfo.Id"/>
-/// no prueba la canonización, y <see cref="IanaZoneOutcome.IanaCanonicalVerified"/>
-/// no lo devuelve ningún camino hasta que exista una regla ratificada (por
-/// ejemplo, una lista canónica fijada con su versión de tzdata).
+/// Hoy ninguna semilla ni migración crea la fila de <see cref="SettingKey"/>, y el
+/// API de configuración solo actualiza filas que ya existen: el valor está
+/// siempre ausente.
 /// </para>
 /// </remarks>
 public static class IanaZoneCandidate
 {
-    /// <summary>Clave candidata en <c>core.site_settings</c>. Única: no hay otra en paralelo.</summary>
+    /// <summary>Clave candidata en <c>core.site_settings</c>.</summary>
     public const string SettingKey = "installation.timezone_iana";
 
     /// <summary>
@@ -33,10 +30,8 @@ public static class IanaZoneCandidate
 
     /// <summary>Lee la clave e interpreta su valor.</summary>
     /// <remarks>
-    /// <b>Frescura.</b> En el host, <see cref="ISettingsReader"/> es una caché
-    /// singleton que se invalida al escribir por el servicio de configuración. Esta
-    /// lectura es tan fresca como esa caché, y no más: un cambio hecho por fuera
-    /// del servicio no se ve hasta que la caché se recargue.
+    /// Tan fresca como <see cref="ISettingsReader"/>, que en el host es una caché
+    /// singleton invalidada al escribir por el servicio de configuración.
     /// </remarks>
     public static IanaZoneEvaluation Read(ISettingsReader settings)
         => Evaluate(settings.Get(SettingKey));
@@ -49,9 +44,9 @@ public static class IanaZoneCandidate
             return new(IanaZoneOutcome.Missing, value, null);
         }
 
-        // Filtro de forma antes de preguntar al runtime: sin espacios ni barras
-        // invertidas (los identificadores de Windows llevan espacios), con al menos
-        // una barra y sin segmentos vacíos ni de ruta.
+        // Forma antes que runtime: sin espacios ni barras invertidas (los
+        // identificadores de Windows llevan espacios), con al menos una barra y sin
+        // segmentos vacíos ni de ruta.
         if (value.Contains(' ')
             || value.Contains('\\')
             || !string.Equals(value, value.Trim(), StringComparison.Ordinal)
@@ -73,20 +68,17 @@ public static class IanaZoneCandidate
     }
 }
 
-/// <summary>Qué se puede decir del valor guardado.</summary>
+/// <summary>Qué se puede decir del valor guardado, sin verificar nada.</summary>
 public enum IanaZoneOutcome
 {
     /// <summary>Sin valor, vacío o con el marcador de la semilla.</summary>
     Missing,
 
-    /// <summary>Hay valor y no es un identificador IANA que este runtime resuelva.</summary>
+    /// <summary>Hay valor y no es un identificador que este runtime resuelva.</summary>
     Invalid,
 
-    /// <summary>El runtime lo resuelve. Pendiente de canonización: puede ser un alias.</summary>
+    /// <summary>El runtime lo resuelve. Puede ser un alias.</summary>
     RuntimeResolvedCandidate,
-
-    /// <summary>Reservado a una regla de canonización ratificada. Ningún camino de Fase A lo devuelve.</summary>
-    IanaCanonicalVerified,
 }
 
 /// <summary>El valor tal como se guardó y lo que el runtime resolvió, por separado.</summary>
