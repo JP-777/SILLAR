@@ -29,11 +29,14 @@ public static class AssistantInternalServices
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configurePersistence);
         ArgumentNullException.ThrowIfNull(editorialPolicy);
+        var policies = services.Where(x => x.ServiceType == typeof(EditorialPersistencePolicy)).ToArray();
+        if (policies.Length != 1 || !ReferenceEquals(policies[0].ImplementationInstance, editorialPolicy))
+            throw new InvalidOperationException(
+                "M12 requiere exactamente la política editorial proporcionada por el host.");
         if (services.Any(x => x.ServiceType == typeof(IAssistantEditorialAdministration)))
             throw new InvalidOperationException("M12 ya tiene una fachada editorial registrada.");
 
         services.AddDbContext<AssistantDbContext>(configurePersistence);
-        services.AddSingleton(editorialPolicy);
         services.TryAddSingleton<TimeProvider>(TimeProvider.System);
         // La única interfaz que pueden resolver handlers o servicios externos es la
         // fachada revocable. Ni el adaptador EF ni el repositorio son resolubles

@@ -96,14 +96,27 @@ public sealed class ModuloAssistantPreparadoTests
     }
 
     [Fact]
+    public void RechazaPoliticaEditorialRegistradaComoFabrica()
+    {
+        var services = Servicios(conPolitica: false);
+        services.AddSingleton<EditorialPersistencePolicy>(_ => Politica());
+        Assert.Throws<InvalidOperationException>(() =>
+            new AssistantModule().RegisterServices(services, Configuracion()));
+    }
+
+    [Fact]
     public void RegistroValidoConservaAutoridadDelHost()
     {
         var services = Servicios();
         var original = services.Single(x => x.ServiceType == typeof(EditorialPersistencePolicy))
             .ImplementationInstance;
         new AssistantModule().RegisterServices(services, Configuracion());
+        Assert.Same(original,
+            Assert.Single(services, x => x.ServiceType == typeof(EditorialPersistencePolicy))
+                .ImplementationInstance);
         using var provider = services.BuildServiceProvider();
         Assert.Same(original, provider.GetRequiredService<EditorialPersistencePolicy>());
+        Assert.Same(original, Assert.Single(provider.GetServices<EditorialPersistencePolicy>()));
         Assert.IsType<AmbitoSinInstalacionActiva>(
             provider.GetRequiredService<ITrustedAssistantInstallationScope>());
     }
