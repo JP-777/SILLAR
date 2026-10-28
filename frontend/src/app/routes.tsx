@@ -14,6 +14,7 @@ import { crmAdminRoutes, crmPublicRoutes, RequireCustomerAuth } from '../modules
 import { portalPublicRoutes } from '../modules/portal/routes';
 import { servicesAdminRoutes, servicesPublicRoutes } from '../modules/services/routes';
 import { trackingRoutes } from '../modules/tracking/routes';
+import { reportingRoutes } from '../modules/reporting/routes';
 
 /**
  * Rutas de la aplicación.
@@ -67,6 +68,7 @@ export function AppRoutes() {
           {has('crm') && crmAdminRoutes}
           {has('b2b') && b2bRoutes}
           {has('tracking') && trackingRoutes}
+          {has('reporting') && reportingRoutes}
         </Route>
       </Route>
 

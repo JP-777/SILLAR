@@ -107,6 +107,9 @@ public sealed class SalesModule : IModule, IModuleMigrations
         // no la clase: M04 lo pide al contenedor y comprueba si vino, así que sin M03
         // instalado el hueco se explica y no falla.
         services.AddScoped<ICustomerOrderHistory, HistorialDePedidos>();
+        // D1: lectura agregada de la cohorte de pedidos para M10.
+        // Se registra solo cuando M03 está activo, sin exponer sales.orders.
+        services.AddScoped<IOrderAggregateReader, LectorAgregadoDePedidos>();
     }
 
     /// <inheritdoc />

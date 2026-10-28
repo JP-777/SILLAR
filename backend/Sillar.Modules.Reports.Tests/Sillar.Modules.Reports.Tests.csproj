@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Modules.Reports\Sillar.Modules.Reports.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!-- Adaptadores a los lectores monetarios de M03 (candidato 30cb8c3). Esta rama no
+       tiene esos contratos: compilan solo con -p:SalesMonetaryContracts=true sobre un
+       árbol que los tenga. Al integrar las ramas, se retira la condición. -->
+  <PropertyGroup Condition="'$(SalesMonetaryContracts)' == 'true'">
+    <DefineConstants>$(DefineConstants);SALES_MONETARY_CONTRACTS</DefineConstants>
+  </PropertyGroup>
+
+</Project>
