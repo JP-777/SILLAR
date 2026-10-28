@@ -11,6 +11,7 @@ using Sillar.Core.Contracts;
 using Sillar.Modules.Reports.Endpoints;
 using Sillar.Modules.Reports.Export;
 using Sillar.Modules.Sales.Contracts;
+using static Sillar.Modules.Reports.Tests.ZonaDeCore;
 
 namespace Sillar.Modules.Reports.Tests;
 
@@ -29,7 +30,7 @@ public sealed class OrderIndicatorsExportTests
     [Fact]
     public void El_modulo_no_monta_la_exportacion_generada_en_el_servidor()
     {
-        var app = Aplicacion(new Zona(Verificada(Bogota)), Registra(), new Ventas(5), montarExportacion: false);
+        var app = Aplicacion(Siempre(Verificada(Bogota)), AuditoriaDeCore.Registra(), new Ventas(5), montarExportacion: false);
 
         Assert.DoesNotContain(Rutas(app), r => r.RoutePattern.RawText == Ruta);
     }
@@ -38,10 +39,10 @@ public sealed class OrderIndicatorsExportTests
     public async Task Con_todo_confirmado_entrega_el_archivo_con_las_filas_auditadas_iguales_a_las_escritas()
     {
         var id = Guid.CreateVersion7();
-        var auditoria = new Auditoria(ExportAuditResult.Recorded(id));
+        var auditoria = new AuditoriaDeCore(ExportAuditResult.Recorded(id, AuditoriaDeCore.Actor));
         var ventas = new Ventas(5);
 
-        var respuesta = await Exportar(Aplicacion(new Zona(Verificada(Bogota)), auditoria, ventas), Pedido);
+        var respuesta = await Exportar(Aplicacion(Siempre(Verificada(Bogota)), auditoria, ventas), Pedido);
 
         Assert.Equal(StatusCodes.Status200OK, respuesta.Codigo);
         Assert.StartsWith("text/csv", respuesta.Tipo);
@@ -59,27 +60,32 @@ public sealed class OrderIndicatorsExportTests
     [Fact]
     public async Task Las_filas_que_declare_el_pedido_se_ignoran_y_se_audita_lo_escrito()
     {
-        var auditoria = new Auditoria(ExportAuditResult.Recorded(Guid.CreateVersion7()));
+        var auditoria = new AuditoriaDeCore(ExportAuditResult.Recorded(Guid.CreateVersion7(), AuditoriaDeCore.Actor));
 
-        await Exportar(Aplicacion(new Zona(Verificada(Bogota)), auditoria, new Ventas(5)),
+        await Exportar(Aplicacion(Siempre(Verificada(Bogota)), auditoria, new Ventas(5)),
             new { startInclusive = "2026-10-01T00:00:00-05:00", endExclusive = "2026-10-08T00:00:00-05:00", zone = "UTC", dataRows = 999 });
 
         Assert.Equal(11, Assert.Single(auditoria.Pedidos).RowCount);
     }
 
-    public static TheoryData<string> ZonasNoVerificadas => ["sin_conexion", "inicial", "configurada"];
+    public static TheoryData<string> ZonasNoVerificadas =>
+        ["sin_conexion", "inicial", "configurada", "caducada", "revocada", "sin_fuente", "verified_sin_atestacion"];
 
     [Theory]
     [MemberData(nameof(ZonasNoVerificadas))]
     public async Task Sin_zona_verificada_no_se_lee_ventas_ni_se_audita_ni_sale_ningun_byte(string caso)
     {
-        Zona? zona = caso switch
+        ZonaDeCore? zona = caso switch
         {
-            "inicial" => new Zona(Resuelta("America/Lima", InstallationTimeZoneOrigin.ApprovedInitial, InstallationTimeZoneVerification.Unverified)),
-            "configurada" => new Zona(Resuelta(Bogota, InstallationTimeZoneOrigin.ConfiguredSetting, InstallationTimeZoneVerification.Unverified)),
+            "inicial" => Siempre(Inicial()),
+            "configurada" => Siempre(Configurada(Bogota, TimeZoneVerificationStatus.Unverified, TimeZoneVerificationReason.AttestationAuthorityUnratified, AtestacionA)),
+            "caducada" => Siempre(Configurada(Bogota, TimeZoneVerificationStatus.Stale, TimeZoneVerificationReason.StaleSourceChanged, AtestacionA)),
+            "revocada" => Siempre(Configurada(Bogota, TimeZoneVerificationStatus.Revoked, TimeZoneVerificationReason.AttestationRevoked, AtestacionA)),
+            "sin_fuente" => Siempre(Configurada(Bogota, TimeZoneVerificationStatus.SourceNotVerifiable, TimeZoneVerificationReason.TzdbSourceUnavailable)),
+            "verified_sin_atestacion" => Siempre(Configurada(Bogota, TimeZoneVerificationStatus.Verified, TimeZoneVerificationReason.AttestationAuthorityUnratified)),
             _ => null,
         };
-        var auditoria = Registra();
+        var auditoria = AuditoriaDeCore.Registra();
         var ventas = new Ventas(5);
 
         var respuesta = await Exportar(Aplicacion(zona, auditoria, ventas), Pedido);
@@ -92,9 +98,9 @@ public sealed class OrderIndicatorsExportTests
     [Fact]
     public async Task Un_archivo_en_otra_zona_que_la_verificada_o_UTC_no_se_genera()
     {
-        var auditoria = Registra();
+        var auditoria = AuditoriaDeCore.Registra();
 
-        var respuesta = await Exportar(Aplicacion(new Zona(Verificada(Bogota)), auditoria, new Ventas(5)),
+        var respuesta = await Exportar(Aplicacion(Siempre(Verificada(Bogota)), auditoria, new Ventas(5)),
             new { startInclusive = "2026-10-01T00:00:00-05:00", endExclusive = "2026-10-08T00:00:00-05:00", zone = "America/Lima" });
 
         Assert.Equal(StatusCodes.Status409Conflict, respuesta.Codigo);
@@ -104,10 +110,10 @@ public sealed class OrderIndicatorsExportTests
     [Fact]
     public async Task Sin_token_CSRF_no_se_lee_ni_se_audita_nada()
     {
-        var auditoria = Registra();
+        var auditoria = AuditoriaDeCore.Registra();
         var ventas = new Ventas(5);
 
-        var respuesta = await Exportar(Aplicacion(new Zona(Verificada(Bogota)), auditoria, ventas), Pedido, conToken: false);
+        var respuesta = await Exportar(Aplicacion(Siempre(Verificada(Bogota)), auditoria, ventas), Pedido, conToken: false);
 
         Assert.Equal(StatusCodes.Status403Forbidden, respuesta.Codigo);
         SinArchivo(respuesta, auditoria);
@@ -119,16 +125,17 @@ public sealed class OrderIndicatorsExportTests
     [InlineData(ExportAuditFailure.MetadataInvalid)]
     public async Task Si_la_auditoria_se_niega_responde_403_sin_archivo(ExportAuditFailure causa)
     {
-        var auditoria = new Auditoria(ExportAuditResult.Rejected(causa));
+        var auditoria = new AuditoriaDeCore(ExportAuditResult.Rejected(causa));
 
-        var respuesta = await Exportar(Aplicacion(new Zona(Verificada(Bogota)), auditoria, new Ventas(5)), Pedido);
+        var respuesta = await Exportar(Aplicacion(Siempre(Verificada(Bogota)), auditoria, new Ventas(5)), Pedido);
 
         Assert.Equal(StatusCodes.Status403Forbidden, respuesta.Codigo);
         Assert.Null(respuesta.ExportId);
         Assert.DoesNotContain("text/csv", respuesta.Tipo);
     }
 
-    public static TheoryData<string> RegistrosNoLegitimos => ["sin_productor", "no_disponible", "uuid_v4", "uuid_vacio"];
+    public static TheoryData<string> RegistrosNoLegitimos =>
+        ["sin_productor", "no_disponible", "uuid_v4", "uuid_vacio", "sin_actor", "actor_sin_nodo", "accion_no_admitida", "no_durable"];
 
     [Theory]
     [MemberData(nameof(RegistrosNoLegitimos))]
@@ -137,12 +144,16 @@ public sealed class OrderIndicatorsExportTests
         var auditoria = caso switch
         {
             "sin_productor" => null,
-            "no_disponible" => new Auditoria(ExportAuditResult.Rejected(ExportAuditFailure.AuditUnavailable)),
-            "uuid_v4" => new Auditoria(ExportAuditResult.Recorded(Guid.Parse("0199a6f0-0000-4000-8000-000000000001"))),
-            _ => new Auditoria(ExportAuditResult.Recorded(Guid.Empty)),
+            "no_disponible" => new AuditoriaDeCore(ExportAuditResult.Rejected(ExportAuditFailure.AuditUnavailable)),
+            "uuid_v4" => new AuditoriaDeCore(ExportAuditResult.Recorded(Guid.Parse("0199a6f0-0000-4000-8000-000000000001"), AuditoriaDeCore.Actor)),
+            "sin_actor" => new AuditoriaDeCore(ExportAuditResult.Recorded(Guid.CreateVersion7(), null!)),
+            "actor_sin_nodo" => new AuditoriaDeCore(ExportAuditResult.Recorded(Guid.CreateVersion7(), AuditoriaDeCore.Actor with { HomeNode = "" })),
+            "accion_no_admitida" => new AuditoriaDeCore(ExportAuditResult.Rejected(ExportAuditFailure.ExportActionNotAdmitted)),
+            "no_durable" => new AuditoriaDeCore(ExportAuditResult.Rejected(ExportAuditFailure.AuditNotDurable)),
+            _ => new AuditoriaDeCore(ExportAuditResult.Recorded(Guid.Empty, AuditoriaDeCore.Actor)),
         };
 
-        var respuesta = await Exportar(Aplicacion(new Zona(Verificada(Bogota)), auditoria, new Ventas(5)), Pedido);
+        var respuesta = await Exportar(Aplicacion(Siempre(Verificada(Bogota)), auditoria, new Ventas(5)), Pedido);
 
         Assert.Equal(StatusCodes.Status503ServiceUnavailable, respuesta.Codigo);
         Assert.Null(respuesta.ExportId);
@@ -155,7 +166,7 @@ public sealed class OrderIndicatorsExportTests
     [InlineData("incoherente", StatusCodes.Status503ServiceUnavailable)]
     public async Task Sin_una_instantanea_valida_de_ventas_no_se_audita(string caso, int esperado)
     {
-        var auditoria = Registra();
+        var auditoria = AuditoriaDeCore.Registra();
         var ventas = caso switch
         {
             "ausente" => null,
@@ -163,7 +174,7 @@ public sealed class OrderIndicatorsExportTests
             _ => new Ventas(5) { Incoherente = true },
         };
 
-        var respuesta = await Exportar(Aplicacion(new Zona(Verificada(Bogota)), auditoria, ventas), Pedido);
+        var respuesta = await Exportar(Aplicacion(Siempre(Verificada(Bogota)), auditoria, ventas), Pedido);
 
         Assert.Equal(esperado, respuesta.Codigo);
         SinArchivo(respuesta, auditoria);
@@ -172,8 +183,8 @@ public sealed class OrderIndicatorsExportTests
     [Fact]
     public async Task Si_la_zona_cambia_mientras_se_lee_no_se_audita_ni_se_entrega()
     {
-        var auditoria = Registra();
-        var zona = new Zona(Verificada(Bogota), Verificada("America/Lima"));
+        var auditoria = AuditoriaDeCore.Registra();
+        var zona = EnOrden(Verificada(Bogota), Verificada("America/Lima"));
 
         var respuesta = await Exportar(Aplicacion(zona, auditoria, new Ventas(5)), Pedido);
 
@@ -184,8 +195,8 @@ public sealed class OrderIndicatorsExportTests
     [Fact]
     public async Task Si_la_zona_cambia_mientras_se_registra_queda_el_registro_y_no_sale_el_archivo()
     {
-        var auditoria = Registra();
-        var zona = new Zona(Verificada(Bogota), Verificada(Bogota), Verificada("America/Lima"));
+        var auditoria = AuditoriaDeCore.Registra();
+        var zona = EnOrden(Verificada(Bogota), Verificada(Bogota), Verificada("America/Lima"));
 
         var respuesta = await Exportar(Aplicacion(zona, auditoria, new Ventas(5)), Pedido);
 
@@ -199,13 +210,73 @@ public sealed class OrderIndicatorsExportTests
     public async Task Una_cancelacion_durante_el_registro_se_propaga_sin_ningun_byte()
     {
         using var abortada = new CancellationTokenSource();
-        var auditoria = new Auditoria(ExportAuditResult.Recorded(Guid.CreateVersion7())) { AlRegistrar = abortada.Cancel };
-        var app = Aplicacion(new Zona(Verificada(Bogota)), auditoria, new Ventas(5));
+        var auditoria = new AuditoriaDeCore(ExportAuditResult.Recorded(Guid.CreateVersion7(), AuditoriaDeCore.Actor)) { AlRegistrar = abortada.Cancel };
+        var app = Aplicacion(Siempre(Verificada(Bogota)), auditoria, new Ventas(5));
         using var salida = new MemoryStream();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Exportar(app, Pedido, abortada: abortada.Token, salida: salida));
 
         Assert.Equal(0, salida.Length);
+    }
+
+    public static TheoryData<string> ZonaQueDejaDeValer =>
+        ["revocada_antes", "otra_atestacion_antes", "revocada_despues", "otra_atestacion_despues", "caducada_despues", "averia_despues"];
+
+    [Theory]
+    [MemberData(nameof(ZonaQueDejaDeValer))]
+    public async Task Si_la_zona_se_revoca_o_cambia_de_atestacion_con_el_mismo_ZoneId_no_sale_ningun_byte(string caso)
+    {
+        var revocada = Configurada(Bogota, TimeZoneVerificationStatus.Revoked, TimeZoneVerificationReason.AttestationRevoked, AtestacionA);
+        var zona = caso switch
+        {
+            "revocada_antes" => EnOrden(Verificada(Bogota), revocada),
+            "otra_atestacion_antes" => EnOrden(Verificada(Bogota), Verificada(Bogota, AtestacionB)),
+            "revocada_despues" => EnOrden(Verificada(Bogota), Verificada(Bogota), revocada),
+            "otra_atestacion_despues" => EnOrden(Verificada(Bogota), Verificada(Bogota), Verificada(Bogota, AtestacionB)),
+            "caducada_despues" => EnOrden(Verificada(Bogota), Verificada(Bogota),
+                Configurada(Bogota, TimeZoneVerificationStatus.Stale, TimeZoneVerificationReason.StaleSourceChanged, AtestacionA)),
+            _ => new ZonaDeCore(() => Verificada(Bogota), () => Verificada(Bogota), () => throw new InvalidOperationException("caída")),
+        };
+        var auditoria = AuditoriaDeCore.Registra();
+
+        var respuesta = await Exportar(Aplicacion(zona, auditoria, new Ventas(5)), Pedido);
+
+        Assert.Equal(caso == "averia_despues" ? StatusCodes.Status503ServiceUnavailable : StatusCodes.Status409Conflict, respuesta.Codigo);
+        Assert.Null(respuesta.ExportId);
+        Assert.DoesNotContain("text/csv", respuesta.Tipo);
+        Assert.DoesNotContain("Cohorte", Encoding.UTF8.GetString(respuesta.Bytes));
+        // Antes del registro no se audita; después, el registro queda sin archivo.
+        Assert.Equal(caso.EndsWith("antes") ? 0 : 1, auditoria.Pedidos.Count);
+    }
+
+    [Fact]
+    public async Task Si_CORE_no_puede_resolver_la_zona_responde_503_sin_leer_ventas_ni_auditar()
+    {
+        var auditoria = AuditoriaDeCore.Registra();
+        var ventas = new Ventas(5);
+
+        var respuesta = await Exportar(Aplicacion(Averiada(), auditoria, ventas), Pedido);
+
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, respuesta.Codigo);
+        SinArchivo(respuesta, auditoria);
+        Assert.Equal(0, ventas.Llamadas);
+    }
+
+    [Fact]
+    public async Task Una_cancelacion_durante_la_resolucion_de_la_zona_se_propaga_sin_ningun_byte()
+    {
+        using var abortada = new CancellationTokenSource();
+        abortada.Cancel();
+        var auditoria = AuditoriaDeCore.Registra();
+        var ventas = new Ventas(5);
+        using var salida = new MemoryStream();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => Exportar(Aplicacion(Siempre(Verificada(Bogota)), auditoria, ventas), Pedido, abortada: abortada.Token, salida: salida));
+
+        Assert.Equal(0, salida.Length);
+        Assert.Empty(auditoria.Pedidos);
+        Assert.Equal(0, ventas.Llamadas);
     }
 
     [Theory]
@@ -214,10 +285,10 @@ public sealed class OrderIndicatorsExportTests
     [InlineData("""{"startInclusive":"2026-10-01T00:00:00-05:00","endExclusive":"2026-10-08T00:00:00-05:00"}""")]
     public async Task Un_pedido_invalido_responde_400_sin_leer_ni_auditar(string json)
     {
-        var auditoria = Registra();
+        var auditoria = AuditoriaDeCore.Registra();
         var ventas = new Ventas(5);
 
-        var respuesta = await Exportar(Aplicacion(new Zona(Verificada(Bogota)), auditoria, ventas), JsonDocument.Parse(json).RootElement);
+        var respuesta = await Exportar(Aplicacion(Siempre(Verificada(Bogota)), auditoria, ventas), JsonDocument.Parse(json).RootElement);
 
         Assert.Equal(StatusCodes.Status400BadRequest, respuesta.Codigo);
         SinArchivo(respuesta, auditoria);
@@ -240,7 +311,7 @@ public sealed class OrderIndicatorsExportTests
         Assert.Equal(OrderStatus.All.Order(), OrderIndicatorsCsv.StateLabels.Keys.Order());
     }
 
-    private static void SinArchivo(Respuesta respuesta, Auditoria? auditoria)
+    private static void SinArchivo(Respuesta respuesta, AuditoriaDeCore? auditoria)
     {
         Assert.Null(respuesta.ExportId);
         Assert.DoesNotContain("text/csv", respuesta.Tipo);
@@ -248,16 +319,7 @@ public sealed class OrderIndicatorsExportTests
         if (auditoria is not null) Assert.Empty(auditoria.Pedidos);
     }
 
-    private static Auditoria Registra() => new(ExportAuditResult.Recorded(Guid.CreateVersion7()));
-
-    private static InstallationTimeZoneResolution Verificada(string id)
-        => Resuelta(id, InstallationTimeZoneOrigin.ConfiguredSetting, InstallationTimeZoneVerification.Verified);
-
-    private static InstallationTimeZoneResolution Resuelta(string id, InstallationTimeZoneOrigin origen, InstallationTimeZoneVerification verificacion)
-        => new(TimeZoneInfo.FindSystemTimeZoneById(id), id, origen, verificacion, null,
-            new(verificacion == InstallationTimeZoneVerification.Verified ? IanaZoneOutcome.IanaCanonicalVerified : IanaZoneOutcome.RuntimeResolvedCandidate, id, id));
-
-    private static WebApplication Aplicacion(Zona? zona, Auditoria? auditoria, Ventas? ventas, bool montarExportacion = true)
+    private static WebApplication Aplicacion(ZonaDeCore? zona, AuditoriaDeCore? auditoria, Ventas? ventas, bool montarExportacion = true)
     {
         var builder = WebApplication.CreateSlimBuilder();
         builder.Services.AddRouting();
@@ -303,28 +365,6 @@ public sealed class OrderIndicatorsExportTests
     private sealed class ConCuerpo : IHttpRequestBodyDetectionFeature
     {
         public bool CanHaveBody => true;
-    }
-
-    /// <summary>Devuelve las resoluciones en orden y repite la última: así cambia la zona a mitad.</summary>
-    private sealed class Zona(params InstallationTimeZoneResolution[] resoluciones) : IInstallationTimeZoneResolver
-    {
-        private int llamada;
-
-        public InstallationTimeZoneResolution Resolve() => resoluciones[Math.Min(llamada++, resoluciones.Length - 1)];
-    }
-
-    private sealed class Auditoria(ExportAuditResult respuesta) : IExportAudit
-    {
-        public List<ExportAuditRequest> Pedidos { get; } = [];
-        public Action? AlRegistrar { get; init; }
-
-        public Task<ExportAuditResult> RecordAsync(ExportAuditRequest request, CancellationToken cancellationToken)
-        {
-            Pedidos.Add(request);
-            AlRegistrar?.Invoke();
-            cancellationToken.ThrowIfCancellationRequested();
-            return Task.FromResult(respuesta);
-        }
     }
 
     private sealed class Ventas(long creados) : IOrderAggregateReader

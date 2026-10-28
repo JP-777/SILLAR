@@ -75,10 +75,12 @@ internal static class OrderIndicatorsExportEndpoints
         }
 
         // 1. Zona: verificada por CORE, y la del archivo es esa o UTC.
-        var resolver = http.RequestServices.GetService(typeof(IInstallationTimeZoneResolver)) as IInstallationTimeZoneResolver;
-        if (CoreSeamEndpoints.VerifiedZoneInfo(resolver) is not { } verified)
+        var services = http.RequestServices;
+        var read = await InstallationZoneGate.ReadAsync(services, loggerFactory, cancellationToken);
+        if (read.Failed) return InstallationZoneGate.Unreadable();
+        if (InstallationZoneGate.Verified(read.Resolution) is not { } verified)
         {
-            return Conflict("Para exportar, la zona horaria de la instalación tiene que estar verificada, y todavía no lo está.");
+            return InstallationZoneGate.NotVerified();
         }
         if (body.Zone != verified.Id && body.Zone != "UTC")
         {
@@ -116,20 +118,21 @@ internal static class OrderIndicatorsExportEndpoints
         }
 
         // Si la zona cambió mientras se leía, no se audita lo que ya no vale.
-        if (!StillVerified(resolver, verified.Id))
+        if (await Revalidated(services, verified, loggerFactory, cancellationToken) is { } beforeAudit)
         {
-            return ZoneChanged();
+            return beforeAudit;
         }
 
         // 4. Registro durable antes de cualquier byte.
-        if (http.RequestServices.GetService(typeof(IExportAudit)) is not IExportAudit audit)
+        if (services.GetService(typeof(IExportAudit)) is not IExportAudit audit)
         {
             return Unavailable("No se pudo registrar la exportación en la auditoría, así que no se generó el archivo.");
         }
         var result = await audit.RecordAsync(
             new ExportAuditRequest(ReportsModule.ModuleCode, CoreSeamEndpoints.OrderIndicatorsExportKind, CoreSeamEndpoints.CsvFormat, file.DataRows),
             cancellationToken);
-        if (result is not { IsRecorded: true, ExportId: { Version: 7 } exportId })
+        // Legítimo: registrado, uuid v7 y un actor con id, correo y nodo.
+        if (CoreSeamEndpoints.LegitimateRecord(result) is not { } exportId)
         {
             return result is { IsRecorded: false, Failure: ExportAuditFailure.ActorMissing or ExportAuditFailure.MetadataInvalid }
                 ? Results.Problem(
@@ -139,11 +142,11 @@ internal static class OrderIndicatorsExportEndpoints
                 : Unavailable("No se pudo registrar la exportación en la auditoría, así que no se generó el archivo.");
         }
 
-        // Cambió durante el registro: queda un registro sin archivo, que es lo que
-        // admite la auditoría; un archivo en una zona que ya no vale, no.
-        if (!StillVerified(resolver, verified.Id))
+        // Cambió o se revocó durante el registro: queda un registro sin archivo, que
+        // es lo que admite la auditoría; un archivo en una zona que ya no vale, no.
+        if (await Revalidated(services, verified, loggerFactory, cancellationToken) is { } afterAudit)
         {
-            return ZoneChanged();
+            return afterAudit;
         }
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -152,11 +155,17 @@ internal static class OrderIndicatorsExportEndpoints
         return Results.File(file.Content, "text/csv; charset=utf-8", file.FileName);
     }
 
-    private static bool StillVerified(IInstallationTimeZoneResolver? resolver, string zoneId)
-        => CoreSeamEndpoints.VerifiedZoneInfo(resolver)?.Id == zoneId;
-
-    private static IResult ZoneChanged() => Conflict(
-        "La zona horaria de la instalación cambió mientras se preparaba la exportación, así que no se entregó el archivo. Vuelve a consultar y exporta de nuevo.");
+    /// <summary>
+    /// Vuelve a resolver la zona: null si sigue siendo la misma con la misma
+    /// atestación; si no, la respuesta sin archivo (409 si cambió, 503 si CORE falló).
+    /// </summary>
+    private static async Task<IResult?> Revalidated(IServiceProvider services, VerifiedInstallationZone verified,
+        ILoggerFactory loggerFactory, CancellationToken cancellationToken)
+    {
+        var read = await InstallationZoneGate.ReadAsync(services, loggerFactory, cancellationToken);
+        if (read.Failed) return InstallationZoneGate.Unreadable();
+        return InstallationZoneGate.StillSame(verified, read.Resolution) ? null : InstallationZoneGate.Changed();
+    }
 
     private static IResult Conflict(string title)
         => Results.Problem(statusCode: StatusCodes.Status409Conflict, title: title);
