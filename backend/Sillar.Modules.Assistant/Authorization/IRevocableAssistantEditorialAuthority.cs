@@ -1,3 +1,4 @@
+using Sillar.Core.Contracts;
 using Sillar.Modules.Assistant.Domain;
 
 namespace Sillar.Modules.Assistant.Authorization;
@@ -13,12 +14,17 @@ public enum AssistantEditorialPermission
 }
 
 /// <summary>
-/// Objetivo de una operación, no una credencial. InstallationKey solo vincula la
-/// evaluación CORE: la autoridad debe acreditar por su cuenta la identidad M12
-/// y el permiso vigente. Nunca convertir la clave por igualdad o formato.
+/// Objetivo de una operación, no una credencial. Conserva la decisión CORE
+/// original para que el productor pueda vincular por su cuenta actor, sesión e
+/// instalación con la identidad M12 y comprobar el permiso vigente. HomeNode no
+/// es WriterNode e InstallationKey no es InstallationId: nunca convertirlos ni
+/// compararlos por igualdad o formato.
 /// </summary>
 public sealed record AssistantEditorialAuthorizationRequest(
-    Guid InstallationKey, Guid ArticleId, AssistantEditorialPermission Permission);
+    Guid ArticleId,
+    AssistantEditorialPermission Permission,
+    EditorialOperation CoreOperation,
+    EditorialAuthorityDecision CoreDecision);
 
 public enum AssistantAuthorizedExecutionOutcome
 {
