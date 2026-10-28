@@ -22,6 +22,12 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
             table.HasCheckConstraint("ck_orders_customer_full_name_no_vacio", "btrim(customer_full_name) <> ''");
             table.HasCheckConstraint("ck_orders_customer_email_no_vacio", "btrim(customer_email) <> ''");
             table.HasCheckConstraint("ck_orders_total_amount_no_negativo", "total_amount >= 0");
+
+            // Un NULL pasa el CHECK, y es a propósito: es la moneda desconocida de los
+            // pedidos anteriores, que no se rellena con ninguna supuesta.
+            table.HasCheckConstraint(
+                "ck_orders_currency_code_iso",
+                $"currency_code ~ '{CurrencyCode.CheckPattern}'");
         });
 
         builder.HasKey(x => x.OrderId).HasName("pk_orders");
@@ -53,6 +59,13 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasColumnName("total_amount")
             .HasColumnType("numeric(12,2)")
             .IsRequired();
+
+        // Colación "C": el código se compara byte a byte, y el CHECK de la forma no
+        // depende de cómo ordene es-PE las letras.
+        builder.Property(x => x.CurrencyCode)
+            .HasColumnName("currency_code")
+            .HasColumnType("character(3)")
+            .UseCollation("C");
 
         builder.Property(x => x.IsActive)
             .HasColumnName("is_active")

@@ -71,6 +71,7 @@ public class SalesDbContext(
     /// <inheritdoc />
     public override int SaveChanges()
     {
+        OrigenDePagoObligatorio.Comprobar(ChangeTracker);
         ChangeTracker.StampReplicationColumns(node, clock);
         return base.SaveChanges();
     }
@@ -80,6 +81,7 @@ public class SalesDbContext(
         bool acceptAllChangesOnSuccess,
         CancellationToken cancellationToken = default)
     {
+        OrigenDePagoObligatorio.Comprobar(ChangeTracker);
         ChangeTracker.StampReplicationColumns(node, clock);
         return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
     }

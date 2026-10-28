@@ -147,6 +147,13 @@ public static class PedidosDelClienteEndpoints
                     "decimos el precio.",
                 statusCode: StatusCodes.Status409Conflict),
 
+            MotivoDeNoCreacion.MonedaSinAutoridad => Results.Problem(
+                title: "La tienda todavía no está recibiendo pedidos en línea",
+                detail:
+                    "Falta configurar la moneda en que cobra la tienda. Tu carrito se " +
+                    "conserva: escríbenos y te avisamos cuando puedas confirmarlo.",
+                statusCode: StatusCodes.Status503ServiceUnavailable),
+
             _ => Results.Problem(statusCode: StatusCodes.Status409Conflict)
         };
     }

@@ -29,4 +29,26 @@
     <InternalsVisibleTo Include="Sillar.Modules.Sales.Tests" />
   </ItemGroup>
 
+  <!-- Migraciones candidatas NO RATIFICADAS, fuera de la secuencia ejecutable.
+       Los archivos se conservan intactos en Migrations/, pero no se compilan: EF no
+       las descubre, así que ni el instalador (MigrateAsync) ni `dotnet ef database
+       update` pueden aplicarlas junto con las autorizadas. El modelo y el snapshot
+       siguen en lo ratificado. Ratificar una es quitar su línea de aquí y llevar el
+       modelo y el snapshot a lo que ella describe.
+
+       - RetentionCandidate: FK RESTRICT, no ratificada.
+       - SourceCandidate20261026: RECHAZADA por JP (opción B, 27/10/2026), que prohíbe
+         reclasificar a `staff` los pagos históricos. Se conserva como evidencia; la
+         sustituye SalesPaymentSourceNullableCandidate20261027. -->
+  <ItemGroup>
+    <Compile Remove="Migrations\20261026235530_SalesPaymentRetentionCandidate20261026.cs" />
+    <Compile Remove="Migrations\20261026235530_SalesPaymentRetentionCandidate20261026.Designer.cs" />
+    <None Include="Migrations\20261026235530_SalesPaymentRetentionCandidate20261026.cs" />
+    <None Include="Migrations\20261026235530_SalesPaymentRetentionCandidate20261026.Designer.cs" />
+    <Compile Remove="Migrations\20261026235423_SalesPaymentSourceCandidate20261026.cs" />
+    <Compile Remove="Migrations\20261026235423_SalesPaymentSourceCandidate20261026.Designer.cs" />
+    <None Include="Migrations\20261026235423_SalesPaymentSourceCandidate20261026.cs" />
+    <None Include="Migrations\20261026235423_SalesPaymentSourceCandidate20261026.Designer.cs" />
+  </ItemGroup>
+
 </Project>

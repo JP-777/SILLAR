@@ -82,6 +82,7 @@ public sealed class CrearPedidoPersistenciaTests(SalesDbFixture fixture)
             catalogo,
             new OrderCodeAllocator(db, new Dobles.AjustesDice(), new Sillar.Shared.Replication.NodeIdentity("principal"), new Dobles.RelojFijo(Ahora)),
             new Dobles.AjustesDice(),
+            new Dobles.MonedaDice("PEN"),
             new Dobles.RelojFijo(Ahora));
 
     private static async Task<long> SerieAsync(SalesDbContext db, CancellationToken ct)
@@ -125,6 +126,7 @@ public sealed class CrearPedidoPersistenciaTests(SalesDbFixture fixture)
         Assert.Equal(OrderStatus.PendingPayment, pedido.Status);
         Assert.Equal("Ana Quispe", pedido.CustomerFullName);     // cliente congelado (D1)
         Assert.Equal("dni", pedido.CustomerDocumentType);
+        Assert.Equal("PEN", pedido.CurrencyCode);                 // la que afirmó la autoridad
 
         var linea = await db.OrderLines.AsNoTracking().SingleAsync(l => l.OrderId == pedido.OrderId, ct);
         Assert.Equal(8.50m, linea.UnitPrice);                     // precio congelado

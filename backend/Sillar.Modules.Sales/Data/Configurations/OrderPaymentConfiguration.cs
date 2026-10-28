@@ -34,6 +34,22 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
             table.HasCheckConstraint(
                 "ck_order_payments_atribucion_home_node_no_vacio",
                 "btrim(registered_by_admin_user_home_node) <> ''");
+
+            // NULL pasa: es la moneda desconocida de los pagos anteriores, que no se
+            // rellena con ninguna supuesta.
+            table.HasCheckConstraint(
+                "ck_order_payments_currency_code_iso",
+                $"currency_code ~ '{CurrencyCode.CheckPattern}'");
+
+            // Solo lo ratificado: hoy, el personal. El proveedor entra con su propia
+            // migración cuando haya escritor, y no antes.
+            table.HasCheckConstraint(
+                "ck_order_payments_source",
+                $"source IN ({string.Join(", ", PaymentSource.Ratified.Select(s => $"'{s}'"))})");
+
+            // Que un pago nuevo traiga origen no es un CHECK: uno sobre la fila nueva
+            // bloquearía cualquier UPDATE de un histórico. Lo hace el trigger
+            // trg_order_payments_source_protegido de la migración, solo en INSERT.
         });
 
         builder.HasKey(x => x.OrderPaymentId).HasName("pk_order_payments");
@@ -50,6 +66,14 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
             .HasColumnName("amount")
             .HasColumnType("numeric(12,2)")
             .IsRequired();
+
+        builder.Property(x => x.CurrencyCode)
+            .HasColumnName("currency_code")
+            .HasColumnType("character(3)")
+            .UseCollation("C");
+
+        // Anulable solo para los históricos; sin valor por defecto, que sería un origen inventado.
+        builder.Property(x => x.Source).HasColumnName("source");
 
         builder.Property(x => x.Reference).HasColumnName("reference");
 
@@ -96,6 +120,9 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
             .WithMany()
             .HasForeignKey(x => x.OrderId)
             .HasConstraintName("fk_order_payments_order_id")
+            // Cascade, lo ratificado en SalesInitial. Restrict es una decisión candidata
+            // no ratificada: su migración existe pero está fuera de la compilación (ver
+            // el .csproj), y el modelo no se adelanta a ella.
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(x => x.OrderId).HasDatabaseName("idx_order_payments_order_id");

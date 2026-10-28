@@ -36,6 +36,7 @@ internal sealed class CreadorDePedidos(
     ICatalogService catalogo,
     OrderCodeAllocator numerador,
     ISettingsReader ajustes,
+    IAutoridadDeMoneda monedas,
     TimeProvider reloj)
 {
     /// <summary>Crea un pedido de recojo en tienda para el cliente indicado.</summary>
@@ -47,6 +48,16 @@ internal sealed class CreadorDePedidos(
         if (lineas.Count == 0)
         {
             return ResultadoDeCreacion.Rechaza(MotivoDeNoCreacion.SinLineas);
+        }
+
+        // 0 · La moneda, antes que nada que salga de M03. Sin autoridad que la afirme
+        // —o si lo que afirma no tiene forma ISO— no nace ningún pedido: un importe sin
+        // unidad se replica y ya no se puede corregir. Cerrar en falso, a propósito.
+        var moneda = monedas.MonedaDeVenta();
+
+        if (!CurrencyCode.TieneFormaIso(moneda))
+        {
+            return ResultadoDeCreacion.Rechaza(MotivoDeNoCreacion.MonedaSinAutoridad);
         }
 
         // 1 · El cliente. D1: instantánea sin dirección y R-07.
@@ -125,7 +136,9 @@ internal sealed class CreadorDePedidos(
             CustomerEmail = cliente.Instantanea.Email,
             Status = OrderStatus.PendingPayment,
             PaymentDueAt = ahora.AddHours(plazo),
-            TotalAmount = total
+            TotalAmount = total,
+            // La que afirmó la autoridad, congelada como el total.
+            CurrencyCode = moneda
         };
 
         cliente.Instantanea.Congelar(pedido);
