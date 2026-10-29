@@ -1,6 +1,4 @@
-#if SALES_MONETARY_CONTRACTS
 using Sillar.Modules.Sales.Contracts;
-#endif
 
 namespace Sillar.Modules.Reports.Orders;
 
@@ -9,47 +7,32 @@ namespace Sillar.Modules.Reports.Orders;
 /// firma pública de M03 y los puertos internos.
 /// </summary>
 /// <remarks>
-/// <para>
-/// <b>Por qué hay compilación condicional.</b> Los contratos
-/// <c>IOrderValueAggregateReader</c> e <c>IOrderPaymentAggregateReader</c> están en
-/// la rama de M03 (<c>30cb8c3</c>) y no en esta; las ramas no están integradas y M10
-/// no los copia. Los adaptadores se compilan con
-/// <c>-p:SalesMonetaryContracts=true</c> sobre un árbol que los tenga. Al integrar,
-/// la condición se retira y queda el código.
-/// </para>
-/// <para>
 /// Sin contrato de M03 en el contenedor, se usa el puerto interno, que solo
-/// registran las pruebas: en producción I02 e I05–I07 salen «no medible».
-/// </para>
+/// registran las pruebas: sin lector registrado, I02 e I05–I07 salen «no medible».
 /// </remarks>
 internal static class MonetarySources
 {
     /// <summary>Lector de I02, o null si ventas no lo publica.</summary>
     public static IOrderValueAggregatePort? Value(IServiceProvider services)
     {
-#if SALES_MONETARY_CONTRACTS
         if (services.GetService(typeof(IOrderValueAggregateReader)) is IOrderValueAggregateReader reader)
         {
             return new SalesOrderValueAdapter(reader);
         }
-#endif
         return services.GetService(typeof(IOrderValueAggregatePort)) as IOrderValueAggregatePort;
     }
 
     /// <summary>Lector de I05–I07, o null si ventas no lo publica.</summary>
     public static IOrderPaymentAggregatePort? Payments(IServiceProvider services)
     {
-#if SALES_MONETARY_CONTRACTS
         if (services.GetService(typeof(IOrderPaymentAggregateReader)) is IOrderPaymentAggregateReader reader)
         {
             return new SalesOrderPaymentAdapter(reader);
         }
-#endif
         return services.GetService(typeof(IOrderPaymentAggregatePort)) as IOrderPaymentAggregatePort;
     }
 }
 
-#if SALES_MONETARY_CONTRACTS
 /// <summary>I02: copia campo a campo; no decide nada que no decida M03.</summary>
 internal sealed class SalesOrderValueAdapter(IOrderValueAggregateReader reader) : IOrderValueAggregatePort
 {
@@ -123,4 +106,3 @@ internal sealed class SalesOrderPaymentAdapter(IOrderPaymentAggregateReader read
         _ => throw new SourceIncoherentException("Motivo desconocido."),
     };
 }
-#endif

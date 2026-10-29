@@ -1,4 +1,3 @@
-#if SALES_MONETARY_CONTRACTS
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -11,8 +10,7 @@ using Sillar.Modules.Sales.Contracts;
 namespace Sillar.Modules.Reports.Tests;
 
 /// <summary>
-/// La adaptación a los contratos públicos de M03 (candidato <c>30cb8c3</c>). Solo
-/// compila con <c>-p:SalesMonetaryContracts=true</c> sobre un árbol que los tenga.
+/// La adaptación a los contratos públicos de M03 (candidato <c>30cb8c3</c>).
 /// </summary>
 public sealed class SalesMonetaryAdapterTests
 {
@@ -220,4 +218,3 @@ public sealed class SalesMonetaryAdapterTests
             => Task.FromResult(respuesta);
     }
 }
-#endif

@@ -14,11 +14,4 @@
     <InternalsVisibleTo Include="Sillar.Modules.Reports.Tests" />
   </ItemGroup>
 
-  <!-- Adaptadores a los lectores monetarios de M03 (candidato 30cb8c3). Esta rama no
-       tiene esos contratos: compilan solo con -p:SalesMonetaryContracts=true sobre un
-       árbol que los tenga. Al integrar las ramas, se retira la condición. -->
-  <PropertyGroup Condition="'$(SalesMonetaryContracts)' == 'true'">
-    <DefineConstants>$(DefineConstants);SALES_MONETARY_CONTRACTS</DefineConstants>
-  </PropertyGroup>
-
 </Project>
