@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Sillar.Modules.Assistant.Endpoints;
+using Sillar.Modules.Assistant.Services;
 
 namespace Sillar.Host.AssistantBridge;
 
@@ -7,8 +9,10 @@ namespace Sillar.Host.AssistantBridge;
 public static class AssistantHostServiceCollectionExtensions
 {
     /// <summary>
-    /// Registra solo la foto denegada, su adaptador síncrono y CAS deny-all.
-    /// Es la composición segura cuando todavía no existe un productor CORE.
+    /// Registra la foto denegada y los contratos consumidores reales de M12.
+    /// El ámbito de instalación continúa fail-closed y CAS siempre deniega.
+    /// No registra política editorial, actor, autoridad revocable, commit gate,
+    /// persistencia ni rutas.
     /// </summary>
     public static IServiceCollection AddAssistantHostCandidates(this IServiceCollection services)
     {
@@ -16,7 +20,14 @@ public static class AssistantHostServiceCollectionExtensions
 
         services.TryAddScoped<AssistantHostEvidenceScope>();
         services.TryAddScoped<AssistantHostEvidenceAdapter>();
+        services.TryAddScoped<ITrustedAssistantHostEvidence>(provider =>
+            provider.GetRequiredService<AssistantHostEvidenceAdapter>());
+        services.TryAddScoped<HostAttestedAssistantInstallationScope>();
+        services.TryAddScoped<ITrustedAssistantInstallationScope>(provider =>
+            provider.GetRequiredService<HostAttestedAssistantInstallationScope>());
         services.TryAddScoped<DenyAllAssistantQuotaPolicyWriter>();
+        services.TryAddScoped<ITrustedAssistantQuotaPolicyWriter>(provider =>
+            provider.GetRequiredService<DenyAllAssistantQuotaPolicyWriter>());
         return services;
     }
 

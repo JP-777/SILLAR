@@ -28,9 +28,9 @@ public sealed record AssistantAuthorityTrace(
 /// Foto inmutable que alimentará los getters síncronos de M12 sin ejecutar E/S.
 /// </summary>
 /// <remarks>
-/// Sus cuatro propiedades públicas coinciden deliberadamente con la forma
-/// consumidora actual de M12, pero este tipo todavía no implementa esa interfaz:
-/// M12 no forma parte de esta base y sus contratos no están ratificados.
+/// Sus cuatro propiedades públicas conservan la forma consumidora de M12. La
+/// implementación del contrato vive en <see cref="AssistantHostEvidenceAdapter"/>,
+/// para no convertir la traza diagnóstica en una autoridad publicable.
 /// </remarks>
 public sealed record AssistantHostEvidenceSnapshot
 {

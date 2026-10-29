@@ -24,6 +24,10 @@
     <ProjectReference Include="..\Sillar.Modules.Portal\Sillar.Modules.Portal.csproj" />
     <ProjectReference Include="..\Sillar.Modules.B2B\Sillar.Modules.B2B.csproj" />
     <ProjectReference Include="..\Sillar.Modules.Reports\Sillar.Modules.Reports.csproj" />
+    <!-- Presencia binaria de M12 y de su puente Host. Ninguna de estas referencias
+         registra autoridades, monta rutas ni acredita licencia. -->
+    <ProjectReference Include="..\Sillar.Modules.Assistant\Sillar.Modules.Assistant.csproj" />
+    <ProjectReference Include="..\Sillar.Host.AssistantBridge\Sillar.Host.AssistantBridge.csproj" />
   </ItemGroup>
 
   <ItemGroup>

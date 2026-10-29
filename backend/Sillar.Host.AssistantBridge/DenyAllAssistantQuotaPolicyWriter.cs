@@ -1,3 +1,5 @@
+using Sillar.Modules.Assistant.Services;
+
 namespace Sillar.Host.AssistantBridge;
 
 /// <summary>
@@ -5,11 +7,10 @@ namespace Sillar.Host.AssistantBridge;
 /// política de cuota hasta que exista un protocolo de revocación ratificado.
 /// </summary>
 /// <remarks>
-/// La firma coincide con el consumidor actual de M12 para que la integración
-/// futura no cambie la semántica. Todavía no implementa su interfaz porque M12
-/// no está presente en esta base.
+/// Implementa el contrato consumidor real de M12 sin convertir la presencia del
+/// módulo, su activación o una identidad observada en permiso de escritura.
 /// </remarks>
-public sealed class DenyAllAssistantQuotaPolicyWriter
+public sealed class DenyAllAssistantQuotaPolicyWriter : ITrustedAssistantQuotaPolicyWriter
 {
     public bool CanWritePolicy(Guid installationId) => false;
 }

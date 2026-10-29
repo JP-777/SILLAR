@@ -1,3 +1,5 @@
+using Sillar.Modules.Assistant.Endpoints;
+
 namespace Sillar.Host.AssistantBridge;
 
 /// <summary>
@@ -19,6 +21,7 @@ public sealed class AssistantHostEvidenceScope
 /// la foto fail-closed del ámbito; sus getters no ejecutan E/S.
 /// </summary>
 public sealed class AssistantHostEvidenceAdapter(AssistantHostEvidenceScope scope)
+    : ITrustedAssistantHostEvidence
 {
     public bool IsInstallationConfigured => scope.Current.IsInstallationConfigured;
 
