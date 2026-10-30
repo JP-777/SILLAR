@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Sillar.Modules.Sales.Contracts;
 using Sillar.Modules.Sales.Data;
 
@@ -240,6 +241,33 @@ public static class CandidateSalesCommercialRegistration
         // Singleton porque una memoria de reintentos por petición no reconocería
         // ninguno. Sigue siendo volátil, y eso no la convierte en durable.
         services.AddSingleton<ISettlementCandidateJournal, InProcessSettlementCandidateJournal>();
+        return services;
+    }
+
+    /// <summary>
+    /// Registra <b>solo</b> la correlación de pedidos, sin pagabilidad, liquidación ni
+    /// memoria de reintentos.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>No pasa por <see cref="AddCandidateSalesCommerce"/>.</b> Aquel registra también
+    /// el aplicador de liquidación, que recuerda propuestas en memoria antes de
+    /// responder; quien solo necesita saber a qué pedido se refiere una declaración no
+    /// tiene por qué arrastrar eso.
+    /// </para>
+    /// <para>
+    /// <b>No registra <see cref="SalesDbContext"/></b>: lo pone
+    /// <c>SalesModule.RegisterServices</c>, y el lector solo lo usa para leer. Sin M03
+    /// registrado, resolver el contrato falla en vez de inventar una base.
+    /// </para>
+    /// <para>
+    /// Igual que el otro registro, <b>no se llama desde <c>SalesModule</c></b>: quien lo
+    /// quiera lo pide.
+    /// </para>
+    /// </remarks>
+    public static IServiceCollection AddCandidateSalesOrderCorrelation(this IServiceCollection services)
+    {
+        services.TryAddScoped<IOrderCorrelationCandidate, CandidateOrderCorrelationReader>();
         return services;
     }
 }
