@@ -10,6 +10,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Sillar.Modules.Payments\Sillar.Modules.Payments.csproj" />
+    <!-- Solo pruebas: permite acreditar el adaptador/evaluador real de M03.
+         Payments productivo continúa dependiendo únicamente de Sales.Contracts. -->
+    <ProjectReference Include="..\Sillar.Modules.Sales\Sillar.Modules.Sales.csproj" />
   </ItemGroup>
 
   <ItemGroup>
