@@ -15,6 +15,7 @@ namespace Sillar.Api.Tests;
 public sealed class AssistantQuarantineTests
 {
     private const string AssistantCode = "assistant";
+    private const string PaymentsCode = "payments";
 
     [Fact]
     public void T1_Assistant_esta_en_el_binario_pero_no_en_los_modulos_admitidos()
@@ -26,7 +27,25 @@ public sealed class AssistantQuarantineTests
         var admitted = Admit(discovered);
 
         Assert.Contains(discovered, module => module.Code == AssistantCode);
+        Assert.Contains(discovered, module => module.Code == PaymentsCode);
         Assert.DoesNotContain(admitted, module => module.Code == AssistantCode);
+
+        // Caso controlado "solo Assistant": el oráculo se construye con los
+        // módulos reales descubiertos, pero sin Payments. Así se conserva la
+        // cobertura original y el verde no depende de que falte su DLL.
+        var onlyAssistantQuarantined = discovered
+            .Where(module => module.Code != PaymentsCode)
+            .ToArray();
+        var admittedWithoutPayments = Admit(onlyAssistantQuarantined);
+        var expectedWithoutPayments = onlyAssistantQuarantined
+            .Where(module => module.Code != AssistantCode)
+            .Select(module => module.Code)
+            .ToArray();
+
+        Assert.Contains(onlyAssistantQuarantined, module => module.Code == AssistantCode);
+        Assert.DoesNotContain(onlyAssistantQuarantined, module => module.Code == PaymentsCode);
+        Assert.DoesNotContain(admittedWithoutPayments, module => module.Code == AssistantCode);
+        Assert.Equal(expectedWithoutPayments, admittedWithoutPayments.Select(module => module.Code));
     }
 
     [Fact]
@@ -40,8 +59,13 @@ public sealed class AssistantQuarantineTests
         Assert.True(completeGraph.IsValid, completeGraph.DescribeErrors());
         Assert.True(admittedGraph.IsValid, admittedGraph.DescribeErrors());
 
+        Assert.Contains(discovered, module => module.Code == AssistantCode);
+        Assert.Contains(discovered, module => module.Code == PaymentsCode);
+        Assert.DoesNotContain(admitted, module => module.Code == AssistantCode);
+        Assert.DoesNotContain(admitted, module => module.Code == PaymentsCode);
+
         var expectedCodes = completeGraph.InstallationOrder
-            .Where(module => module.Code != AssistantCode)
+            .Where(module => module.Code is not AssistantCode and not PaymentsCode)
             .Select(module => module.Code)
             .ToArray();
         var actualCodes = admittedGraph.InstallationOrder.Select(module => module.Code).ToArray();
@@ -119,7 +143,14 @@ public sealed class AssistantQuarantineTests
     {
         var discovered = Discover();
         var admitted = Admit(discovered);
-        var expected = discovered.Where(module => module.Code != AssistantCode).ToArray();
+        var expected = discovered
+            .Where(module => module.Code is not AssistantCode and not PaymentsCode)
+            .ToArray();
+
+        Assert.Contains(discovered, module => module.Code == AssistantCode);
+        Assert.Contains(discovered, module => module.Code == PaymentsCode);
+        Assert.DoesNotContain(admitted, module => module.Code == AssistantCode);
+        Assert.DoesNotContain(admitted, module => module.Code == PaymentsCode);
 
         Assert.Equal(expected.Select(module => module.Code), admitted.Select(module => module.Code));
 
@@ -232,12 +263,7 @@ public sealed class AssistantQuarantineTests
     }
 
     private static IReadOnlyList<IModule> Discover()
-    {
-        var type = ApiAssembly().GetType("Sillar.Api.Modularity.ModuleDiscovery", throwOnError: true)!;
-        var method = type.GetMethod("Discover", BindingFlags.Static | BindingFlags.Public)!;
-        return Assert.IsAssignableFrom<IReadOnlyList<IModule>>(
-            method.Invoke(null, [NullLogger.Instance, false]));
-    }
+        => QuarantineModuleDiscoveryFixture.Discover();
 
     private static IReadOnlyList<IModule> Admit(IReadOnlyList<IModule> discovered)
     {
