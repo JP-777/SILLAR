@@ -1326,7 +1326,10 @@ public sealed class M03CommercialReadOnlyEvaluationFidelityTests
         Assert.Equal(1, productor.Llamadas);
     }
 
-    /// <summary>Fuera de la pareja Inconsistent / ContradictoryFacts con hechos, la identidad degenerada sigue siendo imposible.</summary>
+    /// <summary>
+    /// Fuera de Inconsistent / ContradictoryFacts con hechos (B5) y de Inconsistent /
+    /// OrderChangedBetweenReads sin hechos (H3-F1), la identidad degenerada sigue siendo imposible.
+    /// </summary>
     private static readonly Dictionary<string, (CommercialReadOnlyEvaluationResult Dto, string Causa)> IdentidadesHostiles = new()
     {
         // Otras razones con identidad degenerada.
@@ -1341,8 +1344,9 @@ public sealed class M03CommercialReadOnlyEvaluationFidelityTests
         ["InactiveOrder con código vacío"] = (Inactivo() with { Correlation = ResueltaCon(Pedido, "") }, Corr),
         ["InvalidAmount con uuid nulo"] = (Con(CommercialReadOnlyEvaluationVerdict.Rejected,
             CommercialReadOnlyEvaluationReason.InvalidAmount, ResueltaCon(Guid.Empty, Codigo), Hechos(total: -5m)), Corr),
-        ["OrderChangedBetweenReads con uuid nulo"] = (Con(CommercialReadOnlyEvaluationVerdict.Inconsistent,
-            CommercialReadOnlyEvaluationReason.OrderChangedBetweenReads, ResueltaCon(Guid.Empty, Codigo), null), Corr),
+        // H3-F1: sin hechos es la carrera auténtica de M03 y ya no es hostil; con hechos sí.
+        ["OrderChangedBetweenReads con uuid nulo y hechos"] = (Con(CommercialReadOnlyEvaluationVerdict.Inconsistent,
+            CommercialReadOnlyEvaluationReason.OrderChangedBetweenReads, ResueltaCon(Guid.Empty, Codigo), Hechos()), Corr),
         ["UnexpectedPolicyAnswer con código en blanco"] = (Con(CommercialReadOnlyEvaluationVerdict.Inconsistent,
             CommercialReadOnlyEvaluationReason.UnexpectedPolicyAnswer, ResueltaCon(Pedido, " "), Hechos()), Corr),
         // ContradictoryFacts, pero con la pareja falsificada.
@@ -1515,6 +1519,485 @@ public sealed class M03CommercialReadOnlyEvaluationFidelityTests
         Assert.Equal(primera, segunda);
         Assert.Equal(6, k.Base.Consultas.Count);
         SinEfectos(k);
+    }
+
+    // ---------------------------------------------------------------------
+    // H3-F1 · el cambio entre lecturas con identidad degenerada conserva su diagnóstico
+    // ---------------------------------------------------------------------
+
+    /// <summary>
+    /// Las nueve familias degeneradas alcanzables por la ruta real (QA de H2-F1, Q18): el
+    /// código en blanco solo por identificador, el uuid nulo solo por código.
+    /// </summary>
+    private static readonly Dictionary<string, (Guid Id, string Codigo, OrderCorrelationRequest Solicitud)> FamiliasH3 = new()
+    {
+        ["I01 código vacío"] = (Pedido, "", new(null, Pedido)),
+        ["I02 código de espacios"] = (Pedido, "   ", new(null, Pedido)),
+        ["I03 código tabulador"] = (Pedido, "\t", new(null, Pedido)),
+        ["I04 código salto de línea"] = (Pedido, "\n", new(null, Pedido)),
+        ["I05 código U+00A0"] = (Pedido, " ", new(null, Pedido)),
+        ["I06 código CRLF"] = (Pedido, "\r\n", new(null, Pedido)),
+        ["I07 código mezcla de blancos con U+2003"] = (Pedido, " \t \r\n ", new(null, Pedido)),
+        ["I08 código U+0085"] = (Pedido, "\u0085", new(null, Pedido)),
+        ["I09 uuid nulo con código válido"] = (Guid.Empty, Codigo, new(Codigo, null)),
+    };
+
+    /// <summary>
+    /// Lo que le pasa a la fila tras la primera consulta, la de la correlación: o deja de
+    /// estar, o cambia de código. En ambos casos la relectura ya no habla del mismo pedido.
+    /// </summary>
+    private static readonly Dictionary<string, Action<BaseComercialSimulada, PedidoSimulado>> CarrerasH3 = new()
+    {
+        ["desaparece tras la correlación"] = (b, fila) => b.TrasConsulta = n =>
+        {
+            if (n == 1)
+            {
+                b.Pedidos.Remove(fila);
+            }
+        },
+        ["cambia de código entre lecturas"] = (b, fila) => b.TrasConsulta = n =>
+        {
+            if (n == 1)
+            {
+                b.Pedidos[b.Pedidos.IndexOf(fila)] = Cambiada(fila);
+            }
+        },
+    };
+
+    private static PedidoSimulado Cambiada(PedidoSimulado fila) => fila with { OrderCode = fila.OrderCode + "x" };
+
+    public static TheoryData<string, string> CasosH3()
+    {
+        var datos = new TheoryData<string, string>();
+        foreach (var familia in FamiliasH3.Keys)
+        {
+            foreach (var carrera in CarrerasH3.Keys)
+            {
+                datos.Add(familia, carrera);
+            }
+        }
+
+        return datos;
+    }
+
+    /// <summary>
+    /// Como <see cref="SinEfectos"/>, salvo la fila que la propia prueba quitó o cambió para
+    /// simular la carrera. El otro pedido y los pagos siguen exactamente como estaban.
+    /// </summary>
+    private static void SinEfectosSalvoLaCarrera(Composicion k)
+    {
+        Assert.Equal(0, k.Base.Guardados);
+        Assert.Equal(0, k.Base.ComandosProhibidos);
+        Assert.Equal(0, k.Base.Transacciones);
+        Assert.All(k.Base.Consultas, sql => Assert.StartsWith("SELECT", sql.TrimStart(), StringComparison.Ordinal));
+        Assert.Empty(k.Contexto.ChangeTracker.Entries());
+        Assert.Equal(0, k.Journal.Busquedas);
+        Assert.Equal(0, k.Journal.Recordados);
+        Assert.Equal(0, k.Aplicador.Llamadas);
+        Assert.Equal(0, k.Efecto.Llamadas);
+        Assert.DoesNotContain(k.PedidosAntes[0], k.Base.Pedidos);
+        Assert.Equal(k.PedidosAntes[1..], k.Base.Pedidos.Where(p => p != Cambiada(k.PedidosAntes[0])));
+        Assert.Equal(k.PagosAntes, k.Base.Pagos);
+    }
+
+    /// <summary>M03 por el contrato y M11 por el puerto, cada uno con su carrera gemela.</summary>
+    private static async Task<(CommercialReadOnlyEvaluationResult M03, M03CommercialReadOnlyEvaluationResult M11, Composicion K)>
+        RecorrerConCarrera(PedidoSimulado pedido, PagoSimulado[] pagos, OrderCorrelationRequest solicitud, string carrera)
+    {
+        var ka = Componer([pedido, ElOtro], pagos);
+        CarrerasH3[carrera](ka.Base, pedido);
+        var m03 = await ka.Contrato.EvaluateAsync(solicitud, CancellationToken.None);
+        SinEfectosSalvoLaCarrera(ka);
+
+        var kb = Componer([pedido, ElOtro], pagos);
+        CarrerasH3[carrera](kb.Base, pedido);
+        var m11 = await kb.Puerto.EvaluateAsync(new(solicitud.DeclaredOrderCode, solicitud.DeclaredOrderId), CancellationToken.None);
+        SinEfectosSalvoLaCarrera(kb);
+        Assert.Equal(ka.Base.Consultas, kb.Base.Consultas);
+        return (m03, m11, kb);
+    }
+
+    /// <summary>La salida H-3 escrita a mano: Indeterminate contractual, sin hechos y sin causa técnica.</summary>
+    private static M03CommercialReadOnlyEvaluationResult IndeterminadoPorCarrera(Guid? id, string? codigo) => new(
+        M03CommercialReadOnlyEvaluationOutcome.Indeterminate,
+        CommercialReadOnlyEvaluationVerdict.Inconsistent,
+        CommercialReadOnlyEvaluationReason.OrderChangedBetweenReads,
+        new(M03OrderCorrelationOutcome.Resolved, id, codigo, CandidateSources.CurrentDatabase),
+        null,
+        null);
+
+    private static void AfirmarIndeterminadoPorCarrera(M03CommercialReadOnlyEvaluationResult r, Guid? id, string? codigo)
+    {
+        Assert.Equal(M03CommercialReadOnlyEvaluationOutcome.Indeterminate, r.Outcome);
+        Assert.Equal(CommercialReadOnlyEvaluationVerdict.Inconsistent, r.SourceVerdict);
+        Assert.Equal(CommercialReadOnlyEvaluationReason.OrderChangedBetweenReads, r.SourceReason);
+        Assert.NotNull(r.Correlation);
+        Assert.Equal(M03OrderCorrelationOutcome.Resolved, r.Correlation.Outcome);
+        Assert.Equal(id, r.Correlation.OrderId);
+        Assert.Equal(codigo, r.Correlation.OrderCode);
+        Assert.Equal(CandidateSources.CurrentDatabase, r.Correlation.Source);
+        Assert.Null(r.Facts);
+        Assert.Null(r.TechnicalReason);
+        Assert.Equal(IndeterminadoPorCarrera(id, codigo), r);
+    }
+
+    [Theory]
+    [MemberData(nameof(CasosH3))]
+    public async Task H3_A_El_cambio_entre_lecturas_con_identidad_degenerada_llega_a_M11_como_Indeterminate_contractual(
+        string familia, string carrera)
+    {
+        var (id, codigo, solicitud) = FamiliasH3[familia];
+        var pedido = new PedidoSimulado(id, codigo, OrderStatus.Preparing, 100m, null, true);
+
+        var (m03, m11, k) = await RecorrerConCarrera(pedido, [], solicitud, carrera);
+
+        // M03 auténtico: la carrera precede a la guarda B5, sin hechos y con la correlación leída.
+        Assert.Equal(CommercialReadOnlyEvaluationVerdict.Inconsistent, m03.Verdict);
+        Assert.Equal(CommercialReadOnlyEvaluationReason.OrderChangedBetweenReads, m03.Reason);
+        Assert.Equal(new OrderCorrelationCandidate(OrderCorrelationOutcome.Resolved, id, codigo, CandidateSources.CurrentDatabase), m03.Correlation);
+        Assert.Null(m03.Facts);
+
+        // M11, campo a campo contra la tabla escrita a mano.
+        AfirmarIndeterminadoPorCarrera(m11, id, codigo);
+        Assert.Equal(Esperado(m03), m11);
+
+        // Sin reintento: exactamente las lecturas de una evaluación de M03.
+        Assert.Equal(carrera.StartsWith("desaparece", StringComparison.Ordinal) ? 2 : 3, k.Base.Consultas.Count);
+    }
+
+    public static TheoryData<string, string, string> CasosH3ConHechos()
+    {
+        var datos = new TheoryData<string, string, string>();
+        foreach (var familia in new[] { "I01 código vacío", "I07 código mezcla de blancos con U+2003", "I09 uuid nulo con código válido" })
+        {
+            foreach (var hechos in HechosBajoIdentidadDegenerada.Keys)
+            {
+                foreach (var carrera in CarrerasH3.Keys)
+                {
+                    datos.Add(familia, hechos, carrera);
+                }
+            }
+        }
+
+        return datos;
+    }
+
+    [Theory]
+    [MemberData(nameof(CasosH3ConHechos))]
+    public async Task H3_A_Estado_importe_moneda_y_pagos_no_adelantan_al_cambio_entre_lecturas(
+        string familia, string escenario, string carrera)
+    {
+        var (id, codigo, solicitud) = FamiliasH3[familia];
+        var (estado, total, moneda, activo, filas) = HechosBajoIdentidadDegenerada[escenario];
+        var pedido = new PedidoSimulado(id, codigo, estado, total, moneda, activo);
+        var pagos = filas.Select(f => new PagoSimulado(id, f.Monto, f.Origen, f.Moneda)).ToArray();
+
+        var (m03, m11, _) = await RecorrerConCarrera(pedido, pagos, solicitud, carrera);
+
+        Assert.Equal(CommercialReadOnlyEvaluationReason.OrderChangedBetweenReads, m03.Reason);
+        Assert.Null(m03.Facts);
+        AfirmarIndeterminadoPorCarrera(m11, id, codigo);
+    }
+
+    [Theory]
+    [InlineData("id", "desaparece tras la correlación")]
+    [InlineData("id", "cambia de código entre lecturas")]
+    [InlineData("código", "desaparece tras la correlación")]
+    [InlineData("código", "cambia de código entre lecturas")]
+    public async Task H3_A_Control_la_identidad_sana_con_cambio_entre_lecturas_sigue_fiel_por_ambas_rutas(
+        string ruta, string carrera)
+    {
+        OrderCorrelationRequest solicitud = ruta == "id" ? new(null, Pedido) : new(Codigo, null);
+
+        var (m03, m11, _) = await RecorrerConCarrera(P(), [Staff(10m)], solicitud, carrera);
+
+        Assert.Equal(CommercialReadOnlyEvaluationReason.OrderChangedBetweenReads, m03.Reason);
+        AfirmarIndeterminadoPorCarrera(m11, Pedido, Codigo);
+        Assert.Equal(Esperado(m03), m11);
+    }
+
+    [Theory]
+    [InlineData("código de espacios declarado en blanco", "desaparece tras la correlación")]
+    [InlineData("código de espacios declarado en blanco", "cambia de código entre lecturas")]
+    [InlineData("uuid nulo también declarado", "desaparece tras la correlación")]
+    [InlineData("uuid nulo también declarado", "cambia de código entre lecturas")]
+    public async Task H3_B_Las_rutas_adicionales_que_alcanzan_identidad_degenerada_tambien_conservan_el_diagnostico(
+        string ruta, string carrera)
+    {
+        var (id, codigo, solicitud) = ruta == "uuid nulo también declarado"
+            ? (Guid.Empty, Codigo, new OrderCorrelationRequest(Codigo, Guid.Empty))
+            : (Pedido, "   ", new OrderCorrelationRequest("   ", Pedido));
+
+        var (m03, m11, _) = await RecorrerConCarrera(
+            new PedidoSimulado(id, codigo, OrderStatus.PendingPayment, 100m, null, true), [], solicitud, carrera);
+
+        Assert.Equal(CommercialReadOnlyEvaluationReason.OrderChangedBetweenReads, m03.Reason);
+        AfirmarIndeterminadoPorCarrera(m11, id, codigo);
+    }
+
+    public static TheoryData<string> NombresFamiliasH3 => new(FamiliasH3.Keys);
+
+    [Theory]
+    [MemberData(nameof(NombresFamiliasH3))]
+    public void H3_B_Mapper_directo_conserva_el_cambio_entre_lecturas_con_identidad_degenerada(string familia)
+    {
+        var (id, codigo, _) = FamiliasH3[familia];
+
+        var r = M03CommercialReadOnlyEvaluationMapper.Map(new(CommercialReadOnlyEvaluationVerdict.Inconsistent,
+            CommercialReadOnlyEvaluationReason.OrderChangedBetweenReads, ResueltaCon(id, codigo), null));
+
+        AfirmarIndeterminadoPorCarrera(r, id, codigo);
+    }
+
+    [Fact]
+    public void H3_C_Solo_dos_formas_exactas_admiten_identidad_degenerada_y_ninguna_es_positiva()
+    {
+        // 3 veredictos × 12 razones × con o sin hechos × 9 familias. Fuera de B5 con hechos
+        // y del cambio entre lecturas sin hechos, la identidad degenerada es técnica.
+        var aceptadas = new List<string>();
+        foreach (var (id, codigo, _) in FamiliasH3.Values)
+        {
+            foreach (var veredicto in Enum.GetValues<CommercialReadOnlyEvaluationVerdict>())
+            {
+                foreach (var razon in Enum.GetValues<CommercialReadOnlyEvaluationReason>())
+                {
+                    var conHechos = razon is CommercialReadOnlyEvaluationReason.InvalidAmount ? Hechos(total: -5m) : Hechos();
+                    foreach (var hechos in new[] { conHechos, null })
+                    {
+                        var r = M03CommercialReadOnlyEvaluationMapper.Map(new(veredicto, razon, ResueltaCon(id, codigo), hechos));
+                        if (r.TechnicalReason is null)
+                        {
+                            aceptadas.Add($"{veredicto}/{razon}/{(hechos is null ? "sin" : "con")} hechos");
+                            Assert.Equal(razon is CommercialReadOnlyEvaluationReason.ContradictoryFacts
+                                ? M03CommercialReadOnlyEvaluationOutcome.Conflict
+                                : M03CommercialReadOnlyEvaluationOutcome.Indeterminate, r.Outcome);
+                            Assert.Equal((id, codigo), (r.Correlation!.OrderId, r.Correlation.OrderCode));
+                            Assert.Equal(hechos is null, r.Facts is null);
+                        }
+                        else
+                        {
+                            Assert.Equal(Corr, r.TechnicalReason);
+                            Assert.Null(r.Correlation);
+                            Assert.Null(r.Facts);
+                        }
+                    }
+                }
+            }
+        }
+
+        Assert.Equal(
+            new[] { "Inconsistent/ContradictoryFacts/con hechos", "Inconsistent/OrderChangedBetweenReads/sin hechos" },
+            aceptadas.Distinct().Order(StringComparer.Ordinal));
+        Assert.Equal(2 * FamiliasH3.Count, aceptadas.Count);
+    }
+
+    [Theory]
+    [MemberData(nameof(NombresFamiliasH3))]
+    public void H3_C_B5_sigue_en_Conflict_y_las_formas_invertidas_no_autorizan_respuesta(string familia)
+    {
+        var (id, codigo, _) = FamiliasH3[familia];
+        var correlacion = ResueltaCon(id, codigo);
+
+        var b5 = M03CommercialReadOnlyEvaluationMapper.Map(Contradictorio() with { Correlation = correlacion });
+        Assert.Equal(M03CommercialReadOnlyEvaluationOutcome.Conflict, b5.Outcome);
+        Assert.NotNull(b5.Facts);
+        Assert.Equal((id, codigo), (b5.Correlation!.OrderId, b5.Correlation.OrderCode));
+
+        var h3 = M03CommercialReadOnlyEvaluationMapper.Map(new(CommercialReadOnlyEvaluationVerdict.Inconsistent,
+            CommercialReadOnlyEvaluationReason.OrderChangedBetweenReads, correlacion, null));
+        AfirmarIndeterminadoPorCarrera(h3, id, codigo);
+
+        var contradiccionSinHechos = M03CommercialReadOnlyEvaluationMapper.Map(Contradictorio() with { Correlation = correlacion, Facts = null });
+        var carreraConHechos = M03CommercialReadOnlyEvaluationMapper.Map(new(CommercialReadOnlyEvaluationVerdict.Inconsistent,
+            CommercialReadOnlyEvaluationReason.OrderChangedBetweenReads, correlacion, Hechos()));
+        foreach (var r in new[] { contradiccionSinHechos, carreraConHechos })
+        {
+            Assert.Equal(M03CommercialReadOnlyEvaluationOutcome.Indeterminate, r.Outcome);
+            Assert.Equal(Corr, r.TechnicalReason);
+            Assert.Null(r.SourceVerdict);
+            Assert.Null(r.SourceReason);
+            Assert.Null(r.Correlation);
+            Assert.Null(r.Facts);
+        }
+    }
+
+    private static CommercialReadOnlyEvaluationResult Carrera(OrderCorrelationCandidate correlacion, CommercialReadOnlyOrderFacts? hechos = null) =>
+        new(CommercialReadOnlyEvaluationVerdict.Inconsistent, CommercialReadOnlyEvaluationReason.OrderChangedBetweenReads, correlacion, hechos);
+
+    /// <summary>Lo que ningún productor fiel emite alrededor de la excepción H-3. Sigue técnico.</summary>
+    private static readonly Dictionary<string, (CommercialReadOnlyEvaluationResult Dto, string Causa)> HostilesH3 = new()
+    {
+        // Hechos bajo el cambio entre lecturas: reconstruidos de la primera lectura o rotos.
+        ["con código vacío y hechos de la primera lectura"] = (Carrera(ResueltaCon(Pedido, ""), Hechos(OrderStatus.PendingPayment)), Corr),
+        ["con uuid nulo y hechos rotos"] = (Carrera(ResueltaCon(Guid.Empty, Codigo),
+            Moneda(Hechos("", -5m, false), CommercialReadOnlyCurrencyObservation.MalformedValue, "")), Corr),
+        ["con identidad sana y hechos"] = (Carrera(Resuelta(), Hechos()), Pair),
+        // Identidad nula o sin ancla útil.
+        ["con uuid ausente"] = (Carrera(ResueltaCon(null, Codigo)), Corr),
+        ["con código ausente"] = (Carrera(ResueltaCon(Pedido, null)), Corr),
+        ["con identidad ausente"] = (Carrera(ResueltaCon(null, null)), Corr),
+        ["con uuid nulo y código vacío"] = (Carrera(ResueltaCon(Guid.Empty, "")), Corr),
+        ["con uuid nulo y código de espacios"] = (Carrera(ResueltaCon(Guid.Empty, "   ")), Corr),
+        ["con uuid nulo y código U+0085"] = (Carrera(ResueltaCon(Guid.Empty, "\u0085")), Corr),
+        ["con uuid nulo y código ausente"] = (Carrera(ResueltaCon(Guid.Empty, null)), Corr),
+        // Fuente distinta de la base actual.
+        ["con código vacío y fuente nula"] = (Carrera(ResueltaCon(Pedido, "", null!)), Corr),
+        ["con código vacío y fuente vacía"] = (Carrera(ResueltaCon(Pedido, "", "")), Corr),
+        ["con código vacío y fuente de reglas"] = (Carrera(ResueltaCon(Pedido, "", CandidateSources.RatifiedRules)), Corr),
+        ["con uuid nulo y fuente ajena"] = (Carrera(ResueltaCon(Guid.Empty, Codigo, "proveedor")), Corr),
+        ["con uuid nulo y fuente con espacio delante"] = (Carrera(ResueltaCon(Guid.Empty, Codigo, " " + CandidateSources.CurrentDatabase)), Corr),
+        // Correlaciones negativas falsificadas.
+        ["con UnknownReference y código vacío"] = (Carrera(new(OrderCorrelationOutcome.UnknownReference, Pedido, "", CandidateSources.CurrentDatabase)), Corr),
+        ["con DivergentDeclaration y uuid nulo"] = (Carrera(new(OrderCorrelationOutcome.DivergentDeclaration, Guid.Empty, Codigo, CandidateSources.CurrentDatabase)), Corr),
+        ["con NotAuthoritative y código en blanco"] = (Carrera(new(OrderCorrelationOutcome.NotAuthoritative, Pedido, " ", CandidateSources.RatifiedRules)), Corr),
+        ["con UnknownReference sin identidad"] = (Carrera(new(OrderCorrelationOutcome.UnknownReference, null, null, CandidateSources.CurrentDatabase)), Pair),
+        ["con correlación desconocida"] = (Carrera(new((OrderCorrelationOutcome)9, Pedido, "", CandidateSources.CurrentDatabase)), Corr),
+        // Veredicto incompatible o enums desconocidos.
+        ["Rejected con código vacío"] = (Carrera(ResueltaCon(Pedido, "")) with { Verdict = CommercialReadOnlyEvaluationVerdict.Rejected }, Corr),
+        ["PendingDecision con uuid nulo"] = (Carrera(ResueltaCon(Guid.Empty, Codigo)) with { Verdict = CommercialReadOnlyEvaluationVerdict.PendingDecision }, Corr),
+        ["Rejected con identidad sana"] = (Carrera(Resuelta()) with { Verdict = CommercialReadOnlyEvaluationVerdict.Rejected }, Pair),
+        ["veredicto desconocido con código vacío"] = (Carrera(ResueltaCon(Pedido, "")) with { Verdict = (CommercialReadOnlyEvaluationVerdict)3 }, "m03_readonly_evaluation_unknown_verdict"),
+        ["razón desconocida con código vacío"] = (Carrera(ResueltaCon(Pedido, "")) with { Reason = (CommercialReadOnlyEvaluationReason)12 }, "m03_readonly_evaluation_unknown_reason"),
+        // La misma identidad degenerada sin hechos bajo otra razón.
+        ["UnexpectedPolicyAnswer con código vacío sin hechos"] = (Carrera(ResueltaCon(Pedido, "")) with { Reason = CommercialReadOnlyEvaluationReason.UnexpectedPolicyAnswer }, Corr),
+        ["ContradictoryFacts con uuid nulo sin hechos"] = (Carrera(ResueltaCon(Guid.Empty, Codigo)) with { Reason = CommercialReadOnlyEvaluationReason.ContradictoryFacts }, Corr),
+        ["InactiveOrder con código vacío sin hechos"] = (new(CommercialReadOnlyEvaluationVerdict.Rejected,
+            CommercialReadOnlyEvaluationReason.InactiveOrder, ResueltaCon(Pedido, ""), null), Corr),
+        ["CurrencyAuthorityMissing con uuid nulo sin hechos"] = (new(CommercialReadOnlyEvaluationVerdict.PendingDecision,
+            CommercialReadOnlyEvaluationReason.CurrencyAuthorityMissing, ResueltaCon(Guid.Empty, Codigo), null), Corr),
+    };
+
+    public static TheoryData<string> NombresHostilesH3 => new(HostilesH3.Keys);
+
+    [Theory]
+    [MemberData(nameof(NombresHostilesH3))]
+    public async Task H3_D_Alrededor_del_cambio_entre_lecturas_el_DTO_hostil_sigue_fallando_cerrado(string caso)
+    {
+        var (dto, causa) = HostilesH3[caso];
+        var productor = new Productor(dto);
+
+        var r = await new M03CommercialReadOnlyEvaluationPortAdapter(productor)
+            .EvaluateAsync(new(null, Pedido), CancellationToken.None);
+
+        Assert.Equal(M03CommercialReadOnlyEvaluationOutcome.Indeterminate, r.Outcome);
+        Assert.Equal(causa, r.TechnicalReason);
+        Assert.Null(r.SourceVerdict);
+        Assert.Null(r.SourceReason);
+        Assert.Null(r.Correlation);
+        Assert.Null(r.Facts);
+        Assert.Equal(1, productor.Llamadas);
+    }
+
+    private sealed class ProductorQueFalla : ICommercialReadOnlyEvaluationCandidate
+    {
+        public int Llamadas { get; private set; }
+
+        public Task<CommercialReadOnlyEvaluationResult> EvaluateAsync(OrderCorrelationRequest request, CancellationToken cancellationToken)
+        {
+            Llamadas++;
+            throw new InvalidOperationException("relectura imposible");
+        }
+    }
+
+    [Fact]
+    public async Task H3_D_Resultado_nulo_excepcion_fallo_de_relectura_y_cancelacion_en_plena_carrera_no_cambian()
+    {
+        // Resultado nulo y excepción del productor: técnico saneado, una sola llamada.
+        var nulo = new Productor(null);
+        var r = await new M03CommercialReadOnlyEvaluationPortAdapter(nulo).EvaluateAsync(new(null, Pedido), CancellationToken.None);
+        Assert.Equal("m03_readonly_evaluation_null_result", r.TechnicalReason);
+        Assert.Equal(1, nulo.Llamadas);
+
+        var falla = new ProductorQueFalla();
+        r = await new M03CommercialReadOnlyEvaluationPortAdapter(falla).EvaluateAsync(new(null, Pedido), CancellationToken.None);
+        Assert.Equal("m03_readonly_evaluation_call_failed", r.TechnicalReason);
+        Assert.Null(r.Correlation);
+        Assert.Equal(1, falla.Llamadas);
+
+        // Fallo de la relectura del pedido con identidad degenerada: técnico, no carrera.
+        var fila = new PedidoSimulado(Pedido, "", OrderStatus.Preparing, 100m, null, true);
+        var k = Componer([fila, ElOtro], []);
+        k.Base.FalloEnConsulta = 2;
+        r = await k.Puerto.EvaluateAsync(new(null, Pedido), CancellationToken.None);
+        Assert.Equal("m03_readonly_evaluation_call_failed", r.TechnicalReason);
+        Assert.Null(r.SourceReason);
+        Assert.Null(r.Correlation);
+        SinEfectos(k);
+
+        // Cancelación justo cuando la fila desaparece: se propaga, sin respuesta.
+        using var cancelacion = new CancellationTokenSource();
+        k = Componer([fila, ElOtro], []);
+        k.Base.TrasConsulta = n =>
+        {
+            if (n == 1)
+            {
+                k.Base.Pedidos.Remove(fila);
+                cancelacion.Cancel();
+            }
+        };
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+            await k.Puerto.EvaluateAsync(new(null, Pedido), cancelacion.Token));
+        Assert.Single(k.Base.Consultas);
+        SinEfectosSalvoLaCarrera(k);
+    }
+
+    [Fact]
+    public async Task H3_E_F1_y_B5_se_conservan_junto_a_la_excepcion_H3()
+    {
+        // H-1: la pagabilidad de M03 manda y M11 no la reclasifica.
+        CommercialReadOnlyEvaluationResult[] validas =
+        [
+            Inactivo(Hechos(total: -5m, activo: false)),
+            Contradictorio(Hechos("", -5m, false) with { StaffRecordedTotal = -1m, StaffPaymentCount = 1 }),
+            Contradictorio(Moneda(Hechos(), CommercialReadOnlyCurrencyObservation.MalformedValue, "")),
+            SinMoneda(Hechos(total: -5m)),
+            Contradictorio(Hechos(total: -5m)) with { Correlation = ResueltaCon(Pedido, "") },
+        ];
+        foreach (var dto in validas)
+        {
+            var r = await new M03CommercialReadOnlyEvaluationPortAdapter(new Productor(dto))
+                .EvaluateAsync(new(Codigo, null), CancellationToken.None);
+            Assert.Equal(Esperado(dto), r);
+            Assert.Null(r.TechnicalReason);
+        }
+
+        Assert.Equal(Facts_, M03CommercialReadOnlyEvaluationMapper.Map(new(CommercialReadOnlyEvaluationVerdict.Rejected,
+            CommercialReadOnlyEvaluationReason.InvalidAmount, Resuelta(), Hechos(total: 0m))).TechnicalReason);
+
+        // Staff, históricos y origen no ratificado siguen separados por el recorrido real.
+        var (m03, m11, _) = await RecorrerCon(P(), [Staff(10m), Historico(5m), Proveedor(7m)], new(Codigo, null));
+        Assert.Equal(Esperado(m03), m11);
+        Assert.Equal((10m, 1, 5m, 1, 7m, 1),
+            (m11.Facts!.StaffRecordedTotal, m11.Facts.StaffPaymentCount,
+             m11.Facts.UnattributedHistoricalTotal, m11.Facts.UnattributedHistoricalCount,
+             m11.Facts.UnratifiedSourceTotal, m11.Facts.UnratifiedSourceCount));
+    }
+
+    [Fact]
+    public async Task H3_F_Carreras_repetidas_no_acumulan_estado_ni_reintentan_ni_producen_efectos()
+    {
+        var fila = new PedidoSimulado(Guid.Empty, Codigo, OrderStatus.Delivered, -5m, "PEN", false);
+        var k = Componer([fila, ElOtro], [new(Guid.Empty, 30m, PaymentSource.Staff, "PEN")]);
+        // Cada evaluación lee dos veces: la primera consulta de cada una se lleva la fila.
+        k.Base.TrasConsulta = n =>
+        {
+            if (n % 2 == 1)
+            {
+                k.Base.Pedidos.Remove(fila);
+            }
+        };
+
+        var primera = await k.Puerto.EvaluateAsync(new(Codigo, null), CancellationToken.None);
+        k.Base.Pedidos.Insert(0, fila);
+        var segunda = await k.Puerto.EvaluateAsync(new(Codigo, null), CancellationToken.None);
+
+        AfirmarIndeterminadoPorCarrera(primera, Guid.Empty, Codigo);
+        Assert.Equal(primera, segunda);
+        Assert.Equal(4, k.Base.Consultas.Count);
+        Assert.DoesNotContain(k.Base.Consultas, sql => sql.Contains("order_payments", StringComparison.Ordinal));
+        SinEfectosSalvoLaCarrera(k);
+        Assert.Null(typeof(M03CommercialReadOnlyEvaluationResult).GetProperty("PaymentId"));
+        Assert.Null(typeof(M03CommercialReadOnlyEvaluationResult).GetProperty("Balance"));
     }
 
     // ---------------------------------------------------------------------

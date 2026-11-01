@@ -73,9 +73,17 @@ internal static class M03CommercialReadOnlyEvaluationMapper
             && source.Reason is CommercialReadOnlyEvaluationReason.ContradictoryFacts
             && source.Facts is not null;
 
+        // El cambio entre lecturas precede en M03 a esa declaración y devuelve la
+        // correlación tal como se leyó, sin hechos. Es otra forma exacta, no la misma
+        // relajada: con hechos, o bajo otra pareja, la identidad degenerada no vale.
+        var identityChangedBetweenReads =
+            source.Verdict is CommercialReadOnlyEvaluationVerdict.Inconsistent
+            && source.Reason is CommercialReadOnlyEvaluationReason.OrderChangedBetweenReads
+            && source.Facts is null;
+
         if (!TryValidateCorrelation(
                 source.Correlation,
-                identityDeclaredContradictory,
+                identityDeclaredContradictory || identityChangedBetweenReads,
                 out var correlation))
         {
             return Invalid("m03_readonly_evaluation_invalid_correlation");
@@ -189,7 +197,7 @@ internal static class M03CommercialReadOnlyEvaluationMapper
 
     private static bool TryValidateCorrelation(
         OrderCorrelationCandidate? source,
-        bool identityDeclaredContradictory,
+        bool degenerateIdentityDeclared,
         out M03OrderCorrelationResultSnapshot? result)
     {
         result = null;
@@ -214,9 +222,9 @@ internal static class M03CommercialReadOnlyEvaluationMapper
         };
 
         var resolved = outcome is M03OrderCorrelationOutcome.Resolved;
-        // Resuelta: ambos campos presentes y leídos de la base. Bien formados, salvo que
-        // M03 declare esa misma identidad contradictoria; aun entonces uno de los dos
-        // tiene que seguir siendo un ancla útil. Nulos nunca.
+        // Resuelta: ambos campos presentes y leídos de la base. Bien formados, salvo en
+        // las dos formas en que M03 devuelve esa misma identidad degenerada; aun entonces
+        // uno de los dos tiene que seguir siendo un ancla útil. Nulos nunca.
         var identityIsValid = resolved
             ? source.OrderId is { } id
                 && source.OrderCode is { } code
@@ -224,7 +232,7 @@ internal static class M03CommercialReadOnlyEvaluationMapper
                     source.Source,
                     CandidateSources.CurrentDatabase)
                 && (id != Guid.Empty && !string.IsNullOrWhiteSpace(code)
-                    || identityDeclaredContradictory
+                    || degenerateIdentityDeclared
                         && (id != Guid.Empty || !string.IsNullOrWhiteSpace(code)))
             : source.OrderId is null
                 && source.OrderCode is null
