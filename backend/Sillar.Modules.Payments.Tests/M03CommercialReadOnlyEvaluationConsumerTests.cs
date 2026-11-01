@@ -992,8 +992,10 @@ public sealed class M03CommercialReadOnlyEvaluationFidelityTests
         ["moneda desconocida bajo ContradictoryFacts"] = (Contradictorio(Hechos() with { OrderCurrency = (CommercialReadOnlyCurrencyObservation)7 }), Facts_),
         ["Malformed vacía bajo InactiveOrder"] = (Inactivo(Moneda(Hechos(activo: false), CommercialReadOnlyCurrencyObservation.MalformedValue, "")), Facts_),
         // Correlación inventada por un productor falso.
-        ["Conflict con identidad vacía"] = (Contradictorio() with { Correlation = Resuelta() with { OrderId = Guid.Empty } }, Corr),
-        ["Conflict con código en blanco"] = (Contradictorio() with { Correlation = Resuelta() with { OrderCode = " " } }, Corr),
+        // H2-F1 · B5: Conflict admite una identidad degenerada solo con un ancla útil y con
+        // los hechos leídos. Sin ninguna de las dos cosas sigue siendo imposible.
+        ["Conflict con identidad vacía y sin hechos"] = (Contradictorio() with { Correlation = Resuelta() with { OrderId = Guid.Empty }, Facts = null }, Corr),
+        ["Conflict con identidad vacía y código en blanco"] = (Contradictorio() with { Correlation = Resuelta() with { OrderId = Guid.Empty, OrderCode = " " } }, Corr),
         ["Conflict con fuente ajena"] = (Contradictorio() with { Correlation = Resuelta() with { Source = "proveedor" } }, Corr),
         ["rechazo de correlación con identidad fabricada"] = (new(CommercialReadOnlyEvaluationVerdict.Rejected,
             CommercialReadOnlyEvaluationReason.UnknownReference,
@@ -1080,6 +1082,431 @@ public sealed class M03CommercialReadOnlyEvaluationFidelityTests
     public async Task H1_D_Evaluaciones_repetidas_de_datos_rotos_no_acumulan_estado()
     {
         var k = Componer([P("", -5m, "", false), ElOtro], [Proveedor(10m)]);
+
+        var primera = await k.Puerto.EvaluateAsync(new(Codigo, null), CancellationToken.None);
+        var segunda = await k.Puerto.EvaluateAsync(new(Codigo, null), CancellationToken.None);
+
+        Assert.Equal(M03CommercialReadOnlyEvaluationOutcome.Conflict, primera.Outcome);
+        Assert.Equal(primera, segunda);
+        Assert.Equal(6, k.Base.Consultas.Count);
+        SinEfectos(k);
+    }
+
+    // ---------------------------------------------------------------------
+    // H2-F1 · B5: identidad degenerada que M03 declara contradictoria
+    // ---------------------------------------------------------------------
+
+    /// <summary>
+    /// Una fila con identidad degenerada y la declaración que la alcanza por la ruta real:
+    /// el código en blanco solo se alcanza por identificador, y el uuid nulo solo por código.
+    /// </summary>
+    private static readonly Dictionary<string, (Guid Id, string Codigo, OrderCorrelationRequest Solicitud)> IdentidadesDegeneradas = new()
+    {
+        ["por id · código vacío"] = (Pedido, "", new(null, Pedido)),
+        ["por id · código de espacios, declarado en blanco"] = (Pedido, "   ", new("   ", Pedido)),
+        ["por id · código tabulador"] = (Pedido, "\t", new(null, Pedido)),
+        ["por id · código salto de línea"] = (Pedido, "\r\n", new(null, Pedido)),
+        ["por código · uuid nulo"] = (Guid.Empty, Codigo, new(Codigo, null)),
+        ["por código · uuid nulo también declarado"] = (Guid.Empty, Codigo, new(Codigo, Guid.Empty)),
+    };
+
+    /// <summary>
+    /// Hechos que, con identidad sana, darían cada una de las razones comerciales. Con
+    /// identidad degenerada todos tienen que dar ContradictoryFacts y conservarse.
+    /// </summary>
+    private static readonly Dictionary<string, (string Estado, decimal Total, string? Moneda, bool Activo, (decimal Monto, string? Origen, string? Moneda)[] Pagos)> HechosBajoIdentidadDegenerada = new()
+    {
+        ["sano · sería CurrencyAuthorityMissing"] = (OrderStatus.PendingPayment, 100m, null, true, []),
+        ["inactivo con total -5 · sería InactiveOrder"] = (OrderStatus.PendingPayment, -5m, null, false, [(30m, PaymentSource.Staff, null)]),
+        ["total -5 · sería InvalidAmount"] = (OrderStatus.Preparing, -5m, "PEN", true, []),
+        ["cubierto por staff e históricos · sería AlreadySettledManually"] = (OrderStatus.PendingPayment, 100m, null, true,
+            [(30m, PaymentSource.Staff, null), (60m, null, null), (40m, null, null)]),
+        ["entregado · sería OrderLifecycleUnratified"] = (OrderStatus.Delivered, 100m, "PEN", true, [(10m, PaymentSource.Staff, "PEN")]),
+        ["todo roto · ya era ContradictoryFacts"] = ("", -5m, "", false,
+            [(10m, PaymentSource.Provider, null), (-1m, PaymentSource.Staff, null), (5m, null, null)]),
+    };
+
+    public static TheoryData<string, string> CombinacionesB5()
+    {
+        var datos = new TheoryData<string, string>();
+        foreach (var identidad in IdentidadesDegeneradas.Keys)
+        {
+            foreach (var hechos in HechosBajoIdentidadDegenerada.Keys)
+            {
+                datos.Add(identidad, hechos);
+            }
+        }
+
+        return datos;
+    }
+
+    private static async Task<(CommercialReadOnlyEvaluationResult M03, M03CommercialReadOnlyEvaluationResult M11, Composicion K)>
+        RecorrerCon(PedidoSimulado pedido, PagoSimulado[] pagos, OrderCorrelationRequest solicitud)
+    {
+        var ka = Componer([pedido, ElOtro], pagos);
+        var m03 = await ka.Contrato.EvaluateAsync(solicitud, CancellationToken.None);
+        SinEfectos(ka);
+
+        var kb = Componer([pedido, ElOtro], pagos);
+        var m11 = await kb.Puerto.EvaluateAsync(new(solicitud.DeclaredOrderCode, solicitud.DeclaredOrderId), CancellationToken.None);
+        SinEfectos(kb);
+        Assert.Equal(ka.Base.Consultas, kb.Base.Consultas);
+        return (m03, m11, kb);
+    }
+
+    [Theory]
+    [MemberData(nameof(CombinacionesB5))]
+    public async Task H2_A_B5_La_identidad_degenerada_que_M03_declara_contradictoria_llega_a_M11_como_Conflict_con_todo(
+        string identidad, string escenario)
+    {
+        var (id, codigo, solicitud) = IdentidadesDegeneradas[identidad];
+        var (estado, total, moneda, activo, filas) = HechosBajoIdentidadDegenerada[escenario];
+        var pedido = new PedidoSimulado(id, codigo, estado, total, moneda, activo);
+        var pagos = filas.Select(f => new PagoSimulado(id, f.Monto, f.Origen, f.Moneda)).ToArray();
+
+        var (m03, m11, k) = await RecorrerCon(pedido, pagos, solicitud);
+
+        // M03: la identidad degenerada precede a toda razón comercial.
+        Assert.Equal(CommercialReadOnlyEvaluationVerdict.Inconsistent, m03.Verdict);
+        Assert.Equal(CommercialReadOnlyEvaluationReason.ContradictoryFacts, m03.Reason);
+        Assert.Equal(new OrderCorrelationCandidate(OrderCorrelationOutcome.Resolved, id, codigo, CandidateSources.CurrentDatabase), m03.Correlation);
+        Assert.NotNull(m03.Facts);
+
+        // M11: lo mismo, traducido a Conflict, sin caer en técnico.
+        Assert.Equal(Esperado(m03), m11);
+        Assert.Equal(M03CommercialReadOnlyEvaluationOutcome.Conflict, m11.Outcome);
+        Assert.Equal(CommercialReadOnlyEvaluationVerdict.Inconsistent, m11.SourceVerdict);
+        Assert.Equal(CommercialReadOnlyEvaluationReason.ContradictoryFacts, m11.SourceReason);
+        Assert.Null(m11.TechnicalReason);
+        Assert.Equal(new M03OrderCorrelationResultSnapshot(M03OrderCorrelationOutcome.Resolved, id, codigo, CandidateSources.CurrentDatabase), m11.Correlation);
+
+        // Hechos calculados aquí a mano desde las filas, no desde la respuesta.
+        var h = Assert.IsType<M03CommercialReadOnlyOrderFactsSnapshot>(m11.Facts);
+        Assert.Equal((estado, total, activo, moneda), (h.Status, h.FrozenTotal, h.IsActive, h.OrderCurrencyCode));
+        var staff = filas.Where(f => f.Origen == PaymentSource.Staff).ToArray();
+        var historicos = filas.Where(f => f.Origen is null).ToArray();
+        var otros = filas.Where(f => f.Origen is not null && f.Origen != PaymentSource.Staff).ToArray();
+        Assert.Equal((staff.Sum(f => f.Monto), staff.Length), (h.StaffRecordedTotal, h.StaffPaymentCount));
+        Assert.Equal((historicos.Sum(f => f.Monto), historicos.Length), (h.UnattributedHistoricalTotal, h.UnattributedHistoricalCount));
+        Assert.Equal((otros.Sum(f => f.Monto), otros.Length), (h.UnratifiedSourceTotal, h.UnratifiedSourceCount));
+        Assert.Equal(filas.Count(f => f.Moneda is null), h.PaymentsWithoutCurrencyCount);
+
+        Assert.Equal(3, k.Base.Consultas.Count);
+    }
+
+    [Theory]
+    [InlineData("código", OrderStatus.PendingPayment, 100, true, CommercialReadOnlyEvaluationReason.CurrencyAuthorityMissing)]
+    [InlineData("id", OrderStatus.PendingPayment, 100, true, CommercialReadOnlyEvaluationReason.CurrencyAuthorityMissing)]
+    [InlineData("código", OrderStatus.PendingPayment, 100, false, CommercialReadOnlyEvaluationReason.InactiveOrder)]
+    [InlineData("id", OrderStatus.PendingPayment, -5, false, CommercialReadOnlyEvaluationReason.InactiveOrder)]
+    [InlineData("código", OrderStatus.Preparing, -5, true, CommercialReadOnlyEvaluationReason.InvalidAmount)]
+    [InlineData("id", OrderStatus.Preparing, -5, true, CommercialReadOnlyEvaluationReason.InvalidAmount)]
+    public async Task H2_A_Identidad_completa_conserva_su_razon_comercial_por_ambas_rutas(
+        string ruta, string estado, int total, bool activo, CommercialReadOnlyEvaluationReason razon)
+    {
+        var pedido = P(estado, total, activo: activo);
+        OrderCorrelationRequest solicitud = ruta == "id" ? new(null, Pedido) : new(Codigo, null);
+
+        var (m03, m11, _) = await RecorrerCon(pedido, [Staff(10m), Historico(5m)], solicitud);
+
+        Assert.Equal(razon, m03.Reason);
+        Assert.Equal(Esperado(m03), m11);
+        Assert.Equal(Desenlace(razon), m11.Outcome);
+        Assert.Equal(Pedido, m11.Correlation!.OrderId);
+        Assert.Equal(Codigo, m11.Correlation.OrderCode);
+        Assert.Equal((10m, 1, 5m, 1), (m11.Facts!.StaffRecordedTotal, m11.Facts.StaffPaymentCount,
+            m11.Facts.UnattributedHistoricalTotal, m11.Facts.UnattributedHistoricalCount));
+    }
+
+    [Theory]
+    [InlineData(null, true, OrderCorrelationOutcome.MalformedReference)]
+    [InlineData("", true, OrderCorrelationOutcome.MalformedReference)]
+    [InlineData("   ", false, OrderCorrelationOutcome.NotAuthoritative)]
+    public async Task H2_A_C06_La_identidad_doblemente_degenerada_no_se_alcanza_por_la_ruta_real(
+        string? codigo, bool conUuidNulo, OrderCorrelationOutcome correlacion)
+    {
+        var fila = new PedidoSimulado(Guid.Empty, "", OrderStatus.PendingPayment, 100m, null, true);
+
+        var (m03, m11, k) = await RecorrerCon(fila, [], new(codigo, conUuidNulo ? Guid.Empty : null));
+
+        Assert.Equal(correlacion, m03.Correlation.Outcome);
+        Assert.Equal(Esperado(m03), m11);
+        Assert.Equal(M03CommercialReadOnlyEvaluationOutcome.Rejected, m11.Outcome);
+        Assert.Null(m11.Correlation!.OrderId);
+        Assert.Null(m11.Facts);
+        Assert.Empty(k.Base.Consultas);
+    }
+
+    [Fact]
+    public async Task H2_A_Las_correlaciones_negativas_no_cambian_con_B5()
+    {
+        // Código válido y uuid nulo declarado frente a una fila sana: señalan pedidos distintos.
+        var (divergente, m11Divergente, _) = await RecorrerCon(P(), [], new(Codigo, Guid.Empty));
+        Assert.Equal(CommercialReadOnlyEvaluationReason.DivergentDeclaration, divergente.Reason);
+        Assert.Equal(Esperado(divergente), m11Divergente);
+        Assert.Null(m11Divergente.Facts);
+
+        var (desconocida, m11Desconocida, _) = await RecorrerCon(P(), [], new("P-2026-0999", null));
+        Assert.Equal(CommercialReadOnlyEvaluationReason.UnknownReference, desconocida.Reason);
+        Assert.Equal(Esperado(desconocida), m11Desconocida);
+
+        // El uuid nulo solo, sin código, sigue siendo malformado y no consulta.
+        var (malformada, m11Malformada, k) = await RecorrerCon(P(), [], new(null, Guid.Empty));
+        Assert.Equal(CommercialReadOnlyEvaluationReason.MalformedReference, malformada.Reason);
+        Assert.Equal(Esperado(malformada), m11Malformada);
+        Assert.Empty(k.Base.Consultas);
+    }
+
+    [Fact]
+    public async Task H2_A_Los_historicos_sin_origen_no_se_atribuyen_al_personal_bajo_identidad_degenerada()
+    {
+        var pedido = new PedidoSimulado(Guid.Empty, Codigo, OrderStatus.PendingPayment, 100m, null, false);
+        PagoSimulado[] pagos =
+        [
+            new(Guid.Empty, 30m, PaymentSource.Staff, null),
+            new(Guid.Empty, 60m, null, null),
+            new(Guid.Empty, 40m, null, "PEN"),
+            new(Guid.Empty, 7m, "pasarela", null),
+        ];
+
+        var (_, m11, _) = await RecorrerCon(pedido, pagos, new(Codigo, null));
+
+        Assert.Equal(M03CommercialReadOnlyEvaluationOutcome.Conflict, m11.Outcome);
+        Assert.False(m11.Facts!.IsActive);
+        Assert.Equal((30m, 1, 100m, 2, 7m, 1, 3),
+            (m11.Facts.StaffRecordedTotal, m11.Facts.StaffPaymentCount,
+             m11.Facts.UnattributedHistoricalTotal, m11.Facts.UnattributedHistoricalCount,
+             m11.Facts.UnratifiedSourceTotal, m11.Facts.UnratifiedSourceCount,
+             m11.Facts.PaymentsWithoutCurrencyCount));
+    }
+
+    private static OrderCorrelationCandidate ResueltaCon(Guid? id, string? codigo, string fuente = CandidateSources.CurrentDatabase)
+        => new(OrderCorrelationOutcome.Resolved, id, codigo, fuente);
+
+    private static CommercialReadOnlyEvaluationResult Con(
+        CommercialReadOnlyEvaluationVerdict veredicto,
+        CommercialReadOnlyEvaluationReason razon,
+        OrderCorrelationCandidate correlacion,
+        CommercialReadOnlyOrderFacts? hechos)
+        => new(veredicto, razon, correlacion, hechos);
+
+    /// <summary>
+    /// DTO que dicen Conflict con una identidad degenerada que M03 sí produce: ancla útil y
+    /// hechos leídos. Se transportan tal cual, también con hechos muy rotos.
+    /// </summary>
+    private static readonly Dictionary<string, CommercialReadOnlyEvaluationResult> ConflictosConIdentidadDegenerada = new()
+    {
+        ["uuid nulo con código"] = Contradictorio() with { Correlation = ResueltaCon(Guid.Empty, Codigo) },
+        ["código vacío con uuid"] = Contradictorio() with { Correlation = ResueltaCon(Pedido, "") },
+        ["código de espacios con uuid"] = Contradictorio() with { Correlation = ResueltaCon(Pedido, "   ") },
+        ["código tabulador con uuid"] = Contradictorio() with { Correlation = ResueltaCon(Pedido, "\t") },
+        ["código salto de línea con uuid"] = Contradictorio() with { Correlation = ResueltaCon(Pedido, "\r\n") },
+        ["uuid nulo con todo roto"] = Contradictorio(Moneda(Hechos("", -5m, false), CommercialReadOnlyCurrencyObservation.MalformedValue, "")
+            with { StaffRecordedTotal = -1m, StaffPaymentCount = 1, UnratifiedSourceTotal = 10m, UnratifiedSourceCount = 1 })
+            with { Correlation = ResueltaCon(Guid.Empty, Codigo) },
+    };
+
+    public static TheoryData<string> NombresConflictosDegenerados => new(ConflictosConIdentidadDegenerada.Keys);
+
+    [Theory]
+    [MemberData(nameof(NombresConflictosDegenerados))]
+    public async Task H2_B_Conflict_con_identidad_degenerada_y_ancla_util_se_transporta_tal_cual(string caso)
+    {
+        var dto = ConflictosConIdentidadDegenerada[caso];
+        var productor = new Productor(dto);
+
+        var r = await new M03CommercialReadOnlyEvaluationPortAdapter(productor)
+            .EvaluateAsync(new(Codigo, null), CancellationToken.None);
+
+        Assert.Equal(Esperado(dto), r);
+        Assert.Equal(M03CommercialReadOnlyEvaluationOutcome.Conflict, r.Outcome);
+        Assert.Equal(dto.Correlation.OrderId, r.Correlation!.OrderId);
+        Assert.Equal(dto.Correlation.OrderCode, r.Correlation.OrderCode);
+        Assert.Null(r.TechnicalReason);
+        Assert.Equal(1, productor.Llamadas);
+    }
+
+    /// <summary>Fuera de la pareja Inconsistent / ContradictoryFacts con hechos, la identidad degenerada sigue siendo imposible.</summary>
+    private static readonly Dictionary<string, (CommercialReadOnlyEvaluationResult Dto, string Causa)> IdentidadesHostiles = new()
+    {
+        // Otras razones con identidad degenerada.
+        ["CurrencyAuthorityMissing con uuid nulo"] = (SinMoneda() with { Correlation = ResueltaCon(Guid.Empty, Codigo) }, Corr),
+        ["CurrencyAuthorityMissing con código vacío"] = (SinMoneda() with { Correlation = ResueltaCon(Pedido, "") }, Corr),
+        ["OrderLifecycleUnratified con código vacío"] = (Con(CommercialReadOnlyEvaluationVerdict.PendingDecision,
+            CommercialReadOnlyEvaluationReason.OrderLifecycleUnratified, ResueltaCon(Pedido, ""), Hechos(OrderStatus.Delivered)), Corr),
+        ["AlreadySettledManually con código tabulador"] = (Con(CommercialReadOnlyEvaluationVerdict.PendingDecision,
+            CommercialReadOnlyEvaluationReason.AlreadySettledManually, ResueltaCon(Pedido, "\t"),
+            Hechos() with { StaffRecordedTotal = 100m, StaffPaymentCount = 1 }), Corr),
+        ["InactiveOrder con uuid nulo"] = (Inactivo() with { Correlation = ResueltaCon(Guid.Empty, Codigo) }, Corr),
+        ["InactiveOrder con código vacío"] = (Inactivo() with { Correlation = ResueltaCon(Pedido, "") }, Corr),
+        ["InvalidAmount con uuid nulo"] = (Con(CommercialReadOnlyEvaluationVerdict.Rejected,
+            CommercialReadOnlyEvaluationReason.InvalidAmount, ResueltaCon(Guid.Empty, Codigo), Hechos(total: -5m)), Corr),
+        ["OrderChangedBetweenReads con uuid nulo"] = (Con(CommercialReadOnlyEvaluationVerdict.Inconsistent,
+            CommercialReadOnlyEvaluationReason.OrderChangedBetweenReads, ResueltaCon(Guid.Empty, Codigo), null), Corr),
+        ["UnexpectedPolicyAnswer con código en blanco"] = (Con(CommercialReadOnlyEvaluationVerdict.Inconsistent,
+            CommercialReadOnlyEvaluationReason.UnexpectedPolicyAnswer, ResueltaCon(Pedido, " "), Hechos()), Corr),
+        // ContradictoryFacts, pero con la pareja falsificada.
+        ["ContradictoryFacts Rejected con uuid nulo"] = (Contradictorio() with
+            { Verdict = CommercialReadOnlyEvaluationVerdict.Rejected, Correlation = ResueltaCon(Guid.Empty, Codigo) }, Corr),
+        ["ContradictoryFacts PendingDecision con código vacío"] = (Contradictorio() with
+            { Verdict = CommercialReadOnlyEvaluationVerdict.PendingDecision, Correlation = ResueltaCon(Pedido, "") }, Corr),
+        ["ContradictoryFacts con veredicto desconocido y uuid nulo"] = (Contradictorio() with
+            { Verdict = (CommercialReadOnlyEvaluationVerdict)3, Correlation = ResueltaCon(Guid.Empty, Codigo) }, "m03_readonly_evaluation_unknown_verdict"),
+        ["razón desconocida con uuid nulo"] = (Contradictorio() with
+            { Reason = (CommercialReadOnlyEvaluationReason)12, Correlation = ResueltaCon(Guid.Empty, Codigo) }, "m03_readonly_evaluation_unknown_reason"),
+        // ContradictoryFacts con identidad nula o sin ancla.
+        ["ContradictoryFacts con uuid ausente"] = (Contradictorio() with { Correlation = ResueltaCon(null, Codigo) }, Corr),
+        ["ContradictoryFacts con código ausente"] = (Contradictorio() with { Correlation = ResueltaCon(Pedido, null) }, Corr),
+        ["ContradictoryFacts con identidad ausente"] = (Contradictorio() with { Correlation = ResueltaCon(null, null) }, Corr),
+        ["ContradictoryFacts con uuid nulo y código vacío"] = (Contradictorio() with { Correlation = ResueltaCon(Guid.Empty, "") }, Corr),
+        ["ContradictoryFacts con uuid nulo y código tabulador"] = (Contradictorio() with { Correlation = ResueltaCon(Guid.Empty, "\t") }, Corr),
+        ["ContradictoryFacts con uuid nulo y código ausente"] = (Contradictorio() with { Correlation = ResueltaCon(Guid.Empty, null) }, Corr),
+        // ContradictoryFacts con fuente ajena o sin hechos.
+        ["ContradictoryFacts con uuid nulo y fuente de reglas"] = (Contradictorio() with
+            { Correlation = ResueltaCon(Guid.Empty, Codigo, CandidateSources.RatifiedRules) }, Corr),
+        ["ContradictoryFacts con código vacío y fuente ajena"] = (Contradictorio() with
+            { Correlation = ResueltaCon(Pedido, "", "proveedor") }, Corr),
+        ["ContradictoryFacts con código vacío y sin hechos"] = (Contradictorio() with
+            { Correlation = ResueltaCon(Pedido, ""), Facts = null }, Corr),
+        // ContradictoryFacts con identidad degenerada y hechos estructuralmente imposibles.
+        ["ContradictoryFacts con uuid nulo y total de staff sin filas"] = (Contradictorio(Hechos() with { StaffRecordedTotal = 5m })
+            with { Correlation = ResueltaCon(Guid.Empty, Codigo) }, Facts_),
+        ["ContradictoryFacts con código vacío y estado nulo"] = (Contradictorio(Hechos() with { Status = null! })
+            with { Correlation = ResueltaCon(Pedido, "") }, Facts_),
+        ["ContradictoryFacts con uuid nulo y moneda Malformed nula"] = (Contradictorio(Moneda(Hechos(), CommercialReadOnlyCurrencyObservation.MalformedValue, null))
+            with { Correlation = ResueltaCon(Guid.Empty, Codigo) }, Facts_),
+        ["ContradictoryFacts con código vacío y contador negativo"] = (Contradictorio(Hechos() with { StaffPaymentCount = -1 })
+            with { Correlation = ResueltaCon(Pedido, "") }, Facts_),
+        // Correlaciones negativas con identidad inventada, también degenerada.
+        ["UnknownReference con uuid nulo y código"] = (Con(CommercialReadOnlyEvaluationVerdict.Rejected,
+            CommercialReadOnlyEvaluationReason.UnknownReference,
+            new(OrderCorrelationOutcome.UnknownReference, Guid.Empty, Codigo, CandidateSources.CurrentDatabase), null), Corr),
+        ["DivergentDeclaration con identidad degenerada"] = (Con(CommercialReadOnlyEvaluationVerdict.Rejected,
+            CommercialReadOnlyEvaluationReason.DivergentDeclaration,
+            new(OrderCorrelationOutcome.DivergentDeclaration, Guid.Empty, "", CandidateSources.CurrentDatabase), null), Corr),
+    };
+
+    public static TheoryData<string> NombresIdentidadesHostiles => new(IdentidadesHostiles.Keys);
+
+    [Theory]
+    [MemberData(nameof(NombresIdentidadesHostiles))]
+    public async Task H2_B_Identidad_degenerada_fuera_de_B5_sigue_fallando_cerrada_sin_reintento(string caso)
+    {
+        var (dto, causa) = IdentidadesHostiles[caso];
+        var productor = new Productor(dto);
+
+        var r = await new M03CommercialReadOnlyEvaluationPortAdapter(productor)
+            .EvaluateAsync(new(Codigo, null), CancellationToken.None);
+
+        Assert.Equal(M03CommercialReadOnlyEvaluationOutcome.Indeterminate, r.Outcome);
+        Assert.Equal(causa, r.TechnicalReason);
+        Assert.Null(r.SourceVerdict);
+        Assert.Null(r.SourceReason);
+        Assert.Null(r.Correlation);
+        Assert.Null(r.Facts);
+        Assert.Equal(1, productor.Llamadas);
+    }
+
+    [Fact]
+    public void H2_B_Solo_la_pareja_Inconsistent_ContradictoryFacts_admite_identidad_degenerada()
+    {
+        // Las 36 parejas del vocabulario, cada una con las dos formas de identidad degenerada
+        // y con hechos válidos. Si la excepción se ampliara a cualquier otra, esto lo dice.
+        OrderCorrelationCandidate[] degeneradas = [ResueltaCon(Guid.Empty, Codigo), ResueltaCon(Pedido, " ")];
+        var aceptadas = new List<string>();
+
+        foreach (var veredicto in Enum.GetValues<CommercialReadOnlyEvaluationVerdict>())
+        {
+            foreach (var razon in Enum.GetValues<CommercialReadOnlyEvaluationReason>())
+            {
+                foreach (var correlacion in degeneradas)
+                {
+                    var hechos = razon is CommercialReadOnlyEvaluationReason.InvalidAmount ? Hechos(total: -5m) : Hechos();
+                    var r = M03CommercialReadOnlyEvaluationMapper.Map(new(veredicto, razon, correlacion, hechos));
+
+                    if (r.TechnicalReason is null)
+                    {
+                        aceptadas.Add($"{veredicto}/{razon}");
+                        Assert.Equal(M03CommercialReadOnlyEvaluationOutcome.Conflict, r.Outcome);
+                        Assert.Equal(correlacion.OrderId, r.Correlation!.OrderId);
+                        Assert.Equal(correlacion.OrderCode, r.Correlation.OrderCode);
+                    }
+                    else
+                    {
+                        Assert.Equal(Corr, r.TechnicalReason);
+                        Assert.Null(r.Correlation);
+                    }
+                }
+            }
+        }
+
+        Assert.Equal(new[] { "Inconsistent/ContradictoryFacts", "Inconsistent/ContradictoryFacts" }, aceptadas);
+    }
+
+    [Fact]
+    public async Task H2_C_F1_se_conserva_con_correlacion_bien_formada()
+    {
+        // La pagabilidad de M03 manda: un total negativo bajo CurrencyAuthorityMissing o
+        // InactiveOrder no se reclasifica, y una moneda vacía viaja como Malformed en Conflict.
+        CommercialReadOnlyEvaluationResult[] validas =
+        [
+            SinMoneda(Hechos(total: -5m)),
+            Inactivo(Hechos(total: -5m, activo: false)),
+            Contradictorio(Moneda(Hechos(), CommercialReadOnlyCurrencyObservation.MalformedValue, "")),
+        ];
+
+        foreach (var dto in validas)
+        {
+            var r = await new M03CommercialReadOnlyEvaluationPortAdapter(new Productor(dto))
+                .EvaluateAsync(new(Codigo, null), CancellationToken.None);
+            Assert.Equal(Esperado(dto), r);
+        }
+
+        // Y la regla duplicada de H-1 sigue fuera: InvalidAmount exige su propio total.
+        var sinTotal = M03CommercialReadOnlyEvaluationMapper.Map(new(CommercialReadOnlyEvaluationVerdict.Rejected,
+            CommercialReadOnlyEvaluationReason.InvalidAmount, Resuelta(), Hechos(total: 0m)));
+        Assert.Equal(Facts_, sinTotal.TechnicalReason);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task H2_D_Cancelacion_entre_lecturas_con_identidad_degenerada_se_propaga_sin_respuesta(int trasConsulta)
+    {
+        using var cancelacion = new CancellationTokenSource();
+        var k = Componer([new(Guid.Empty, Codigo, OrderStatus.PendingPayment, 100m, null, false), ElOtro], []);
+        k.Base.TrasConsulta = n => { if (n == trasConsulta) { cancelacion.Cancel(); } };
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+            await k.Puerto.EvaluateAsync(new(Codigo, null), cancelacion.Token));
+
+        Assert.Equal(trasConsulta, k.Base.Consultas.Count);
+        SinEfectos(k);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public async Task H2_D_Fallo_de_lectura_con_identidad_degenerada_es_tecnico_saneado(int consulta)
+    {
+        var k = Componer([new(Pedido, "", OrderStatus.PendingPayment, 100m, null, true), ElOtro], [Staff(10m)]);
+        k.Base.FalloEnConsulta = consulta;
+
+        var r = await k.Puerto.EvaluateAsync(new(null, Pedido), CancellationToken.None);
+
+        Assert.Equal(M03CommercialReadOnlyEvaluationOutcome.Indeterminate, r.Outcome);
+        Assert.Equal("m03_readonly_evaluation_call_failed", r.TechnicalReason);
+        Assert.Null(r.Correlation);
+        Assert.Null(r.Facts);
+        SinEfectos(k);
+    }
+
+    [Fact]
+    public async Task H2_D_Evaluaciones_repetidas_con_identidad_degenerada_no_acumulan_estado_ni_efectos()
+    {
+        var k = Componer([new(Guid.Empty, Codigo, OrderStatus.Delivered, -5m, "PEN", false), ElOtro],
+            [new(Guid.Empty, 30m, PaymentSource.Staff, "PEN"), new(Guid.Empty, 20m, null, null)]);
 
         var primera = await k.Puerto.EvaluateAsync(new(Codigo, null), CancellationToken.None);
         var segunda = await k.Puerto.EvaluateAsync(new(Codigo, null), CancellationToken.None);

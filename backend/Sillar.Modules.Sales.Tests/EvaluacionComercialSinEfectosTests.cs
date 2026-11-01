@@ -722,6 +722,242 @@ public sealed class EvaluacionComercialSinEfectosTests
             || sql.Contains("reference", StringComparison.Ordinal));
     }
 
+    // ---------- H2-F1 · B5: identidad degenerada ----------
+
+    /// <summary>
+    /// Las formas de identidad degenerada que la ruta real alcanza: el código en blanco solo
+    /// por identificador, el uuid nulo solo por código.
+    /// </summary>
+    private static readonly Dictionary<string, (Guid Id, string Codigo, OrderCorrelationRequest Solicitud)> Degeneradas = new()
+    {
+        ["uuid nulo por código"] = (Guid.Empty, Codigo, new(Codigo, null)),
+        ["uuid nulo por código con uuid nulo declarado"] = (Guid.Empty, Codigo, new(Codigo, Guid.Empty)),
+        ["código vacío por id"] = (Pedido, "", new(null, Pedido)),
+        ["código de espacios por id declarado en blanco"] = (Pedido, "   ", new("  ", Pedido)),
+        ["código tabulador por id"] = (Pedido, "\t", new(null, Pedido)),
+        ["código salto de línea por id"] = (Pedido, "\n", new(null, Pedido)),
+        ["código retorno y salto por id"] = (Pedido, "\r\n", new(null, Pedido)),
+        ["código espacio duro por id"] = (Pedido, " ", new(null, Pedido)),
+    };
+
+    private static (PedidoSimulado Pedido, PagoSimulado[] Pagos) ConIdentidad(
+        PedidoSimulado pedido, PagoSimulado[] pagos, Guid id, string codigo)
+        => (pedido with { OrderId = id, OrderCode = codigo }, pagos.Select(p => p with { OrderId = id }).ToArray());
+
+    public static TheoryData<string> NombresDegeneradas => new(Degeneradas.Keys);
+
+    private static readonly (string Caso, PedidoSimulado Pedido, PagoSimulado[] Pagos)[] CasosCombinados =
+    [
+        ("de baja con total negativo", Sano(total: -5m, activo: false), [new(Pedido, 30m, PaymentSource.Staff, null)]),
+        ("total negativo cancelado", Sano(estado: OrderStatus.Cancelled, total: -5m), []),
+        ("de baja con origen desconocido", Sano(activo: false), [new(Pedido, 10m, "pasarela", null)]),
+        (
+            "staff, históricos y origen no ratificado", Sano(moneda: "PEN"),
+            [new(Pedido, 30m, PaymentSource.Staff, "PEN"), new(Pedido, 20m, null, null), new(Pedido, 7m, PaymentSource.Provider, null)]),
+    ];
+
+    private static IEnumerable<(string Caso, PedidoSimulado Pedido, PagoSimulado[] Pagos)> TodosLosHechos
+        => CasosCoherentes.Concat(CasosContradictorios).Concat(CasosCombinados);
+
+    public static TheoryData<string, string> DegeneradasPorHechos()
+    {
+        var datos = new TheoryData<string, string>();
+        foreach (var identidad in Degeneradas.Keys)
+        {
+            foreach (var (caso, _, _) in TodosLosHechos)
+            {
+                datos.Add(identidad, caso);
+            }
+        }
+
+        return datos;
+    }
+
+    [Theory]
+    [InlineData("código", OrderStatus.PendingPayment, 100, true, "PendingDecision", "CurrencyAuthorityMissing")]
+    [InlineData("id", OrderStatus.PendingPayment, 100, true, "PendingDecision", "CurrencyAuthorityMissing")]
+    [InlineData("código", OrderStatus.PendingPayment, 100, false, "Rejected", "InactiveOrder")]
+    [InlineData("id", OrderStatus.PendingPayment, -5, false, "Rejected", "InactiveOrder")]
+    [InlineData("código", OrderStatus.Preparing, -5, true, "Rejected", "InvalidAmount")]
+    [InlineData("id", OrderStatus.Cancelled, 100, true, "PendingDecision", "OrderLifecycleUnratified")]
+    public async Task H2_01_Una_identidad_completa_conserva_su_clasificacion_por_ambas_rutas(
+        string ruta, string estado, int total, bool activo, string veredicto, string motivo)
+    {
+        var (evaluador, base_, _) = Componer(Sano(estado, total, activo: activo));
+
+        var r = await evaluador.EvaluateAsync(ruta == "id" ? new(null, Pedido) : PorCodigo, CancellationToken.None);
+
+        Assert.Equal(veredicto, r.Verdict.ToString());
+        Assert.Equal(motivo, r.Reason.ToString());
+        Assert.Equal(new OrderCorrelationCandidate(OrderCorrelationOutcome.Resolved, Pedido, Codigo, CandidateSources.CurrentDatabase), r.Correlation);
+        Assert.NotNull(r.Payability);
+        Assert.Equal(3, base_.Consultas.Count);
+    }
+
+    [Theory]
+    [MemberData(nameof(NombresDegeneradas))]
+    public async Task H2_02_Una_identidad_degenerada_es_ContradictoryFacts_resuelta_y_con_hechos(string identidad)
+    {
+        var (id, codigo, solicitud) = Degeneradas[identidad];
+        var (evaluador, base_, _) = Componer(Sano() with { OrderId = id, OrderCode = codigo });
+
+        var r = await evaluador.EvaluateAsync(solicitud, CancellationToken.None);
+
+        Assert.Equal(CommercialEvaluationVerdict.Inconsistent, r.Verdict);
+        Assert.Equal(CommercialEvaluationReason.ContradictoryFacts, r.Reason);
+        Assert.Equal(new OrderCorrelationCandidate(OrderCorrelationOutcome.Resolved, id, codigo, CandidateSources.CurrentDatabase), r.Correlation);
+        Assert.Null(r.Payability);
+        var h = Assert.IsType<CommercialFactsObservation>(r.Facts);
+        Assert.Equal((id, codigo, OrderStatus.PendingPayment, 100m, true), (h.OrderId, h.OrderCode, h.Status, h.FrozenTotal, h.IsActive));
+        Assert.Equal(3, base_.Consultas.Count);
+    }
+
+    [Theory]
+    [MemberData(nameof(DegeneradasPorHechos))]
+    public async Task H2_03_La_identidad_degenerada_precede_a_toda_razon_comercial_y_conserva_los_hechos(string identidad, string caso)
+    {
+        var (id, codigo, solicitud) = Degeneradas[identidad];
+        var (_, sano, pagosSanos) = TodosLosHechos.Single(c => c.Caso == caso);
+        var (pedido, pagos) = ConIdentidad(sano, pagosSanos, id, codigo);
+
+        var (evaluador, base_, _) = Componer(pedido);
+        base_.Pagos.AddRange(pagos);
+        var r = await evaluador.EvaluateAsync(solicitud, CancellationToken.None);
+
+        Assert.Equal(CommercialEvaluationVerdict.Inconsistent, r.Verdict);
+        Assert.Equal(CommercialEvaluationReason.ContradictoryFacts, r.Reason);
+        Assert.Equal(OrderCorrelationOutcome.Resolved, r.Correlation.Outcome);
+        Assert.Null(r.Payability);
+
+        // Hechos calculados aquí a mano desde las filas.
+        var h = Assert.IsType<CommercialFactsObservation>(r.Facts);
+        Assert.Equal((id, codigo, pedido.Status, pedido.TotalAmount, pedido.IsActive, pedido.CurrencyCode),
+            (h.OrderId, h.OrderCode, h.Status, h.FrozenTotal, h.IsActive, h.OrderCurrencyCode));
+        var staff = pagos.Where(p => p.Source == PaymentSource.Staff).ToArray();
+        var historicos = pagos.Where(p => p.Source is null).ToArray();
+        var otros = pagos.Where(p => p.Source is not null && p.Source != PaymentSource.Staff).ToArray();
+        Assert.Equal((staff.Sum(p => p.Amount), staff.Length), (h.StaffRecordedTotal, h.StaffPaymentCount));
+        Assert.Equal((historicos.Sum(p => p.Amount), historicos.Length), (h.UnattributedHistoricalTotal, h.UnattributedHistoricalCount));
+        Assert.Equal((otros.Sum(p => p.Amount), otros.Length), (h.UnratifiedSourceTotal, h.UnratifiedSourceCount));
+        Assert.Equal(pagos.Count(p => p.CurrencyCode is null), h.PaymentsWithoutCurrencyCount);
+        Assert.Null(h.DerivableBalance);
+    }
+
+    [Fact]
+    public async Task H2_04_Con_identidad_degenerada_los_historicos_no_se_atribuyen_al_personal_ni_se_pierde_el_origen()
+    {
+        var (evaluador, base_, _) = Componer(new PedidoSimulado(Guid.Empty, Codigo, OrderStatus.PendingPayment, 100m, null, false));
+        base_.Pagos.Add(new PagoSimulado(Guid.Empty, 30m, PaymentSource.Staff, null));
+        base_.Pagos.Add(new PagoSimulado(Guid.Empty, 60m, null, null));
+        base_.Pagos.Add(new PagoSimulado(Guid.Empty, 40m, null, "PEN"));
+        base_.Pagos.Add(new PagoSimulado(Guid.Empty, 7m, "pasarela", null));
+
+        var r = await evaluador.EvaluateAsync(PorCodigo, CancellationToken.None);
+
+        Assert.Equal(CommercialEvaluationReason.ContradictoryFacts, r.Reason);
+        Assert.Equal((30m, 1, 100m, 2, 7m, 1, 3),
+            (r.Facts!.StaffRecordedTotal, r.Facts.StaffPaymentCount,
+             r.Facts.UnattributedHistoricalTotal, r.Facts.UnattributedHistoricalCount,
+             r.Facts.UnratifiedSourceTotal, r.Facts.UnratifiedSourceCount, r.Facts.PaymentsWithoutCurrencyCount));
+        Assert.False(r.Facts.IsActive);
+        Assert.Equal(137m, r.Facts.RecordedPaymentsTotal);
+    }
+
+    [Fact]
+    public void H2_05_Una_identidad_nula_conserva_el_tratamiento_previo_sin_hechos()
+    {
+        var pedido = new OrderFactsRecord(Pedido, Codigo, OrderStatus.PendingPayment, 100m, null, true);
+
+        foreach (var correlacion in new OrderCorrelationCandidate[]
+        {
+            new(OrderCorrelationOutcome.Resolved, Pedido, null, CandidateSources.CurrentDatabase),
+            new(OrderCorrelationOutcome.Resolved, null, Codigo, CandidateSources.CurrentDatabase),
+            new(OrderCorrelationOutcome.Resolved, null, null, CandidateSources.CurrentDatabase),
+        })
+        {
+            var r = CommercialEvaluationPolicy.Clasificar(correlacion, pedido, []);
+
+            Assert.Equal(CommercialEvaluationVerdict.Inconsistent, r.Verdict);
+            Assert.Equal(CommercialEvaluationReason.ContradictoryFacts, r.Reason);
+            Assert.Same(correlacion, r.Correlation);
+            Assert.Null(r.Facts);
+            Assert.Null(r.Payability);
+        }
+    }
+
+    [Fact]
+    public void H2_06_La_politica_declara_degenerada_la_identidad_aunque_el_pedido_releido_coincida()
+    {
+        // La regla es pura: sin base, el mismo pedido releído con identidad degenerada.
+        var pedido = new OrderFactsRecord(Guid.Empty, Codigo, OrderStatus.Cancelled, -5m, "PEN", false);
+        var correlacion = new OrderCorrelationCandidate(OrderCorrelationOutcome.Resolved, Guid.Empty, Codigo, CandidateSources.CurrentDatabase);
+
+        var r = CommercialEvaluationPolicy.Clasificar(correlacion, pedido, [new PaymentFactRecord(10m, PaymentSource.Staff, "PEN")]);
+
+        Assert.Equal(CommercialEvaluationReason.ContradictoryFacts, r.Reason);
+        Assert.Same(correlacion, r.Correlation);
+        Assert.Equal((OrderStatus.Cancelled, -5m, false, 10m, 1), (r.Facts!.Status, r.Facts.FrozenTotal, r.Facts.IsActive,
+            r.Facts.StaffRecordedTotal, r.Facts.StaffPaymentCount));
+
+        // Si el pedido releído no es el mismo, manda la regla anterior.
+        var otro = CommercialEvaluationPolicy.Clasificar(correlacion, pedido with { OrderCode = CodigoOtro }, []);
+        Assert.Equal(CommercialEvaluationReason.OrderChangedBetweenReads, otro.Reason);
+        Assert.Null(otro.Facts);
+    }
+
+    [Fact]
+    public async Task H2_07_Las_correlaciones_negativas_no_cambian_y_la_doble_degeneracion_no_se_alcanza()
+    {
+        // Código válido con uuid nulo declarado frente a una fila sana: pedidos distintos.
+        var (sano, _, _) = Componer(Sano());
+        var divergente = await sano.EvaluateAsync(new(Codigo, Guid.Empty), CancellationToken.None);
+        Assert.Equal(CommercialEvaluationReason.DivergentDeclaration, divergente.Reason);
+        Assert.Null(divergente.Facts);
+
+        // Una fila con uuid nulo y código vacío no la alcanza ninguna declaración.
+        var (doble, baseDoble, _) = Componer(new PedidoSimulado(Guid.Empty, "", OrderStatus.PendingPayment, 100m, null, true));
+        foreach (var (solicitud, motivo) in new (OrderCorrelationRequest, CommercialEvaluationReason)[]
+        {
+            (new(null, Guid.Empty), CommercialEvaluationReason.MalformedReference),
+            (new("", Guid.Empty), CommercialEvaluationReason.MalformedReference),
+            (new("  ", null), CommercialEvaluationReason.NotAuthoritative),
+        })
+        {
+            var r = await doble.EvaluateAsync(solicitud, CancellationToken.None);
+            Assert.Equal(motivo, r.Reason);
+            Assert.Null(r.Correlation.OrderId);
+            Assert.Null(r.Facts);
+        }
+
+        Assert.Empty(baseDoble.Consultas);
+    }
+
+    [Fact]
+    public async Task H2_08_Ninguna_identidad_degenerada_escribe_ni_produce_un_positivo()
+    {
+        foreach (var (id, codigo, solicitud) in Degeneradas.Values)
+        {
+            foreach (var (caso, sano, pagosSanos) in TodosLosHechos)
+            {
+                var (pedido, pagos) = ConIdentidad(sano, pagosSanos, id, codigo);
+                var (evaluador, base_, contexto) = Componer(pedido);
+                base_.Pagos.AddRange(pagos);
+
+                var r = await evaluador.EvaluateAsync(solicitud, CancellationToken.None);
+
+                Assert.True(r.Verdict == CommercialEvaluationVerdict.Inconsistent, caso);
+                Assert.False(r.AuthorizesSettlement, caso);
+                Assert.False(r.ProviderDeclarationAuthenticated, caso);
+                Assert.Null(r.Payability);
+                Assert.Equal(3, base_.Consultas.Count);
+                Assert.All(base_.Consultas, sql => Assert.StartsWith("SELECT", sql.TrimStart(), StringComparison.Ordinal));
+                Assert.Equal((0, 0, 0), (base_.Guardados, base_.ComandosProhibidos, base_.Transacciones));
+                Assert.Empty(contexto.ChangeTracker.Entries());
+                Assert.Equal(pedido, Assert.Single(base_.Pedidos));
+            }
+        }
+    }
+
     // ---------- montaje ----------
 
     private static bool EsDelEvaluador(ServiceDescriptor d)
