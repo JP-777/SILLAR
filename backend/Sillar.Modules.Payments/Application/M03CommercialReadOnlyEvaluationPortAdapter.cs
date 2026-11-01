@@ -251,8 +251,11 @@ internal static class M03CommercialReadOnlyEvaluationMapper
             return true;
         }
 
+        // Solo estructura del transporte: nulabilidad, contadores, agregados y la forma
+        // que el contrato atribuye a cada observación de moneda. Nada de esto depende
+        // del orden en que M03 aplica sus reglas.
         if (!Enum.IsDefined(source.OrderCurrency)
-            || string.IsNullOrWhiteSpace(source.Status)
+            || source.Status is null
             || source.StaffPaymentCount < 0
             || source.UnattributedHistoricalCount < 0
             || source.UnratifiedSourceCount < 0
@@ -277,18 +280,23 @@ internal static class M03CommercialReadOnlyEvaluationMapper
             return false;
         }
 
+        // La razón implica su propio hecho, pero un hecho no elige la razón: M03 decide
+        // qué regla prevalece (la baja lógica antes que el importe, la contradicción
+        // antes que todo). Un total negativo puede viajar con InactiveOrder o con
+        // ContradictoryFacts sin que M11 tenga que reclasificarlo.
         if (reason is CommercialReadOnlyEvaluationReason.InvalidAmount
-                ? source.FrozenTotal >= 0
-                : source.FrozenTotal < 0)
+            && source.FrozenTotal >= 0)
         {
             return false;
         }
 
-        // Datos contradictorios son justamente el contenido de Conflict. En los
-        // demás resultados, una fuente no ratificada o agregados negativos serían
-        // una contradicción encubierta y no una observación comercial ordinaria.
+        // Datos contradictorios son justamente el contenido de Conflict y viajan tal
+        // cual, también con estado vacío o moneda malformada. En los demás resultados,
+        // una fuente no ratificada, agregados negativos, un estado en blanco o una
+        // moneda malformada serían una contradicción encubierta.
         if (reason is not CommercialReadOnlyEvaluationReason.ContradictoryFacts
-            && (source.StaffRecordedTotal < 0
+            && (string.IsNullOrWhiteSpace(source.Status)
+                || source.StaffRecordedTotal < 0
                 || source.UnattributedHistoricalTotal < 0
                 || source.UnratifiedSourceTotal < 0
                 || source.UnratifiedSourceCount != 0
@@ -333,7 +341,7 @@ internal static class M03CommercialReadOnlyEvaluationMapper
         {
             CommercialReadOnlyCurrencyObservation.Absent => currency is null,
             CommercialReadOnlyCurrencyObservation.MalformedValue =>
-                !string.IsNullOrEmpty(currency) && !IsIsoShape(currency),
+                currency is not null && !IsIsoShape(currency),
             CommercialReadOnlyCurrencyObservation.PresentWithoutRatifiedAuthority =>
                 IsIsoShape(currency),
             _ => false
