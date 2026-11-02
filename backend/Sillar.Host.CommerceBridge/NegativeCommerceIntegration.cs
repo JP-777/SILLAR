@@ -123,6 +123,14 @@ public static class NegativeCommerceIntegration
         $"{Sales}.Pedidos.IAutoridadDeMoneda",
     ];
 
+    /// <summary>Servicios de plataforma que no se duplican si el destino ya los registra.</summary>
+    private static readonly string[] SharedPlatform =
+    [
+        "System.TimeProvider",
+        "Sillar.Shared.Replication.NodeIdentity",
+        $"{Ef}.Infrastructure.ServiceProviderAccessor",
+    ];
+
     /// <summary>Servicios de M03 admitidos que pueden sustituirse en pruebas: solo infraestructura.</summary>
     private static readonly string[] Substitutable = [$"{Sales}.Data.SalesDbContext"];
 
@@ -172,6 +180,14 @@ public static class NegativeCommerceIntegration
 
         foreach (var descriptor in composed)
         {
+            // Servicios de plataforma que el Host ya puede traer (CORE registra reloj, nodo e
+            // infraestructura EF): no se duplican. Ninguno es de M03, M10 ni M11.
+            if (SharedPlatform.Contains(NegativeCompositionInventory.NameOf(descriptor.ServiceType), StringComparer.Ordinal)
+                && services.Any(d => d.ServiceType == descriptor.ServiceType))
+            {
+                continue;
+            }
+
             services.Add(descriptor);
         }
 
