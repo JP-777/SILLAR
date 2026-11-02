@@ -13,6 +13,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Solo para las pruebas de sabotaje: inyectar fuentes de registro alteradas. -->
+    <InternalsVisibleTo Include="Sillar.Host.CommerceBridge.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Sillar.Modules.Sales\Sillar.Modules.Sales.csproj" />
     <ProjectReference Include="..\Sillar.Modules.Reports\Sillar.Modules.Reports.csproj" />
     <ProjectReference Include="..\Sillar.Modules.Payments\Sillar.Modules.Payments.csproj" />

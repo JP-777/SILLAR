@@ -1,14 +1,17 @@
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using Sillar.Modules.Payments;
 using Sillar.Modules.Payments.Application;
 using Sillar.Modules.Payments.Application.Contracts;
 using Sillar.Modules.Payments.Domain;
 using Sillar.Modules.Payments.Tests;
 using Sillar.Modules.Reports.Orders;
+using Sillar.Modules.Sales;
 using Sillar.Modules.Sales.Commercial;
 using Sillar.Modules.Sales.Contracts;
 using Sillar.Modules.Sales.Data;
@@ -19,11 +22,10 @@ using PaymentSource = Sillar.Modules.Sales.Contracts.PaymentSource;
 namespace Sillar.Host.CommerceBridge.Tests;
 
 /// <summary>
-/// P1-POST-G6-R5 (Claude A): la composición vertical negativa M03–M10–M11 construida por
-/// DI con los servicios reales de los tres módulos. Solo se sustituye infraestructura:
-/// PostgreSQL de M03 (por <see cref="BaseVentasSimulada"/>) y de M11 (por el inbox en
-/// memoria y un almacén de lo ya persistido). Ninguna autoridad, ningún productor de
-/// módulo y ningún puerto entre módulos se sustituye.
+/// P1-POST-G6-R5 y R5.1 (Claude A): la composición vertical negativa M03–M10–M11 construida
+/// por DI con los servicios reales, admitida por inventario cerrado. Solo se sustituye
+/// infraestructura: PostgreSQL de M03 (por <see cref="BaseVentasSimulada"/>) y de M11 (por el
+/// inbox en memoria y un almacén de lo ya persistido).
 /// </summary>
 public sealed class ComposicionVerticalTests
 {
@@ -31,13 +33,12 @@ public sealed class ComposicionVerticalTests
     private static readonly DateTimeOffset Inicio = DateTimeOffset.Parse("2026-10-01T00:00:00Z");
     private static readonly DateTimeOffset Fin = Inicio.AddDays(1);
     private static readonly Guid Pedido = Guid.Parse("01999f3a-0000-7000-8000-0000000000f1");
-    private static readonly Guid Otro = Guid.Parse("01999f3a-0000-7000-8000-0000000000f2");
     private const string Codigo = "P-2026-0501";
 
     internal static readonly string Salida =
         Environment.GetEnvironmentVariable("R5_SALIDA") ?? Path.Combine(AppContext.BaseDirectory, "r5-salida");
 
-    private sealed class Entorno(string nombre) : IHostEnvironment
+    internal sealed class Entorno(string nombre) : IHostEnvironment
     {
         public string EnvironmentName { get; set; } = nombre;
         public string ApplicationName { get; set; } = "Sillar.Host.CommerceBridge.Tests";
@@ -45,12 +46,15 @@ public sealed class ComposicionVerticalTests
         public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 
-    private static IConfiguration Config(string? optIn = NegativeCommerceIntegration.OptInValue)
+    internal static IConfiguration Config(string? optIn = NegativeCommerceIntegration.OptInValue)
         => new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["ConnectionStrings:Default"] = CadenaSinBase,
             [NegativeCommerceIntegration.OptInKey] = optIn,
         }).Build();
+
+    internal static IServiceCollection Componer()
+        => new ServiceCollection().AddNegativeCommerceIntegration(Config(), new Entorno(Environments.Development));
 
     /// <summary>Lo que M11 ya tendría persistido para un evento; vacío si no hay nada.</summary>
     private sealed class HechosPersistidos(ProviderSettlementFacts? hechos) : IProviderSettlementFactsSource
@@ -82,15 +86,14 @@ public sealed class ComposicionVerticalTests
         ProviderInboxCommercialState.NotRequested, null, 0, null, null, null, null, null, 1);
 
     /// <summary>
-    /// La composición real, con la infraestructura aislada y validada al construir: si falta
-    /// una dependencia de cualquier servicio registrado, esto lanza.
+    /// La composición real con la infraestructura aislada, construida por la propia barrera:
+    /// <see cref="NegativeCommerceIntegration.BuildNegativeServiceProvider"/> vuelve a verificar
+    /// la colección, valida al construir y comprueba lo que resuelven los puertos guardados.
     /// </summary>
-    private static Integracion Montar(
-        PedidoSimulado[]? pedidos = null, PagoSimulado[]? pagos = null, bool persistido = false)
+    private static Integracion Montar(PedidoSimulado[]? pedidos = null, PagoSimulado[]? pagos = null, bool persistido = false)
     {
-        var s = new ServiceCollection().AddNegativeCommerceIntegration(Config(), new Entorno(Environments.Development));
+        var s = Componer();
 
-        // Aislamiento de infraestructura, solo en la prueba.
         var b = new BaseVentasSimulada();
         b.Pedidos.AddRange(pedidos ?? []);
         b.Pagos.AddRange(pagos ?? []);
@@ -111,7 +114,7 @@ public sealed class ComposicionVerticalTests
         s.RemoveAll<IProviderVerifiedEvidenceReferenceSource>();
         s.AddSingleton<IProviderVerifiedEvidenceReferenceSource>(new ReferenciasPersistidas(referencia));
 
-        var raiz = s.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        var raiz = s.BuildNegativeServiceProvider();
         return new(raiz, raiz.CreateScope(), b, c, inbox);
     }
 
@@ -124,10 +127,21 @@ public sealed class ComposicionVerticalTests
         Assert.Empty(k.Ctx.ChangeTracker.Entries());
     }
 
-    private static void Escribir(string archivo, IEnumerable<string> lineas)
+    internal static void Escribir(string archivo, IEnumerable<string> lineas)
     {
         Directory.CreateDirectory(Salida);
         File.WriteAllLines(Path.Combine(Salida, archivo), lineas);
+    }
+
+    private static readonly List<string> Registro = [];
+
+    private static void Anotar(string linea)
+    {
+        lock (Registro)
+        {
+            Registro.Add(linea);
+            Escribir("flujos-ejecutados.txt", Registro.Order(StringComparer.Ordinal));
+        }
     }
 
     private static PedidoSimulado P(string estado = OrderStatus.PendingPayment, decimal total = 100m, string? moneda = null,
@@ -138,40 +152,38 @@ public sealed class ComposicionVerticalTests
         => new(id ?? Pedido, importe, origen, moneda, PaymentMethod.Cash, false, cuando ?? Inicio.AddHours(2));
 
     // ---------------------------------------------------------------------
-    // Construcción, barrera y servicios resueltos
+    // Construcción, barrera, inventario y alcance
     // ---------------------------------------------------------------------
 
     [Fact]
-    public void R5_La_composicion_construye_y_valida_todas_sus_dependencias()
+    public void R5_La_composicion_construye_y_resuelve_cada_servicio_admitido()
     {
         using var k = Montar();
-        var s = new ServiceCollection().AddNegativeCommerceIntegration(Config(), new Entorno(Environments.Development));
+        var s = Componer();
         var lineas = new List<string>
         {
-            "# R5 · servicios de la composición AddNegativeCommerceIntegration, resueltos en un ámbito (ValidateOnBuild=true)",
-            $"descriptores={s.Count}",
+            "# R5.1 · servicios admitidos en la composición, resueltos en un ámbito (BuildNegativeServiceProvider, ValidateOnBuild=true)",
+            $"descriptores={s.Count} tipos={s.Select(d => d.ServiceType).Distinct().Count()}",
         };
         var fallos = 0;
-        foreach (var d in s.Where(d => !d.ServiceType.IsGenericTypeDefinition).DistinctBy(d => d.ServiceType)
-                     .OrderBy(d => d.ServiceType.FullName, StringComparer.Ordinal))
+        foreach (var d in s.DistinctBy(d => d.ServiceType).OrderBy(d => NegativeCompositionInventory.NameOf(d.ServiceType), StringComparer.Ordinal))
         {
             try
             {
                 var instancia = k.Servicios.GetRequiredService(d.ServiceType);
-                lineas.Add($"{d.ServiceType.FullName} | {d.Lifetime} | {instancia.GetType().FullName}");
+                lineas.Add($"{NegativeCompositionInventory.NameOf(d.ServiceType)} | {d.Lifetime} | {NegativeCompositionInventory.NameOf(instancia.GetType())}");
             }
             catch (Exception e)
             {
                 fallos++;
-                lineas.Add($"{d.ServiceType.FullName} | {d.Lifetime} | FALLO: {e.Message}");
+                lineas.Add($"{NegativeCompositionInventory.NameOf(d.ServiceType)} | {d.Lifetime} | FALLO: {e.Message}");
             }
         }
 
         lineas.Add($"fallos={fallos}");
-        lineas.Add("== excluidos a propósito (servicio | razón)");
-        lineas.AddRange(NegativeCommerceIntegration.Excluded.Select(x => $"{x.Service} | {x.Reason}"));
         Escribir("servicios-resueltos.txt", lineas);
         Assert.Equal(0, fallos);
+        Assert.Equal(NegativeCommerceIntegration.Inventory.Count(x => x.Entry.Admitted), s.Count);
     }
 
     [Fact]
@@ -199,43 +211,119 @@ public sealed class ComposicionVerticalTests
         using var k = Montar();
         var sp = k.Servicios;
 
-        // M03 → M11: productores reales.
         Assert.Equal("Sillar.Modules.Sales.Commercial.CandidateCommercialReadOnlyEvaluationAdapter",
-            sp.GetRequiredService<ICommercialReadOnlyEvaluationCandidate>().GetType().FullName);
-        Assert.Equal("Sillar.Modules.Sales.Commercial.CandidateOrderCorrelationReader",
-            sp.GetRequiredService<IOrderCorrelationCandidate>().GetType().FullName);
+            Assert.Single(sp.GetServices<ICommercialReadOnlyEvaluationCandidate>()).GetType().FullName);
         Assert.IsType<M03CommercialReadOnlyEvaluationPortAdapter>(sp.GetRequiredService<IM03CommercialReadOnlyEvaluationPort>());
-        Assert.IsType<M03OrderCorrelationCandidatePortAdapter>(sp.GetRequiredService<IM03OrderCorrelationCandidatePort>());
-        Assert.IsType<M03ReadOnlyNegativeEffectPortAdapter>(sp.GetRequiredService<IProviderCommercialEffectPort>());
+        Assert.IsType<M03ReadOnlyNegativeEffectPortAdapter>(Assert.Single(sp.GetServices<IProviderCommercialEffectPort>()));
         Assert.IsType<ProviderInboxProcessor>(sp.GetRequiredService<IProviderInboxProcessingService>());
         Assert.IsType<HoldIndeterminateCommercialRetryPolicy>(sp.GetRequiredService<IProviderCommercialRetryPolicy>());
-        // La correlación autorizada del inbox sigue siendo la barrera de FASE A: no hay productor real.
         Assert.IsType<UnavailableProviderAuthorizedOrderCorrelationSource>(sp.GetRequiredService<IProviderAuthorizedOrderCorrelationSource>());
-
-        // M03 → M10: lectores reales; I02 retirado por la barrera monetaria.
         Assert.Equal("Sillar.Modules.Sales.Pedidos.LectorAgregadoDePedidos", sp.GetRequiredService<IOrderAggregateReader>().GetType().FullName);
         Assert.Equal("Sillar.Modules.Sales.Pedidos.LectorAgregadoDePagos", sp.GetRequiredService<IOrderPaymentAggregateReader>().GetType().FullName);
-        Assert.Null(sp.GetService<IOrderValueAggregateReader>());
         Assert.IsType<OrderIndicatorsReport>(sp.GetRequiredService<IOrderIndicatorsReport>());
 
-        // Lo que no se conecta: aplicador, journal, lector pagable, autoridades y recepción.
+        // Nada de aplicación comercial, autoridades, recepción, I02, escritores de M03 ni lo no alcanzable.
         Assert.Null(sp.GetService<IExternalSettlementCandidate>());
         Assert.Null(sp.GetService<ISettlementCandidateJournal>());
         Assert.Null(sp.GetService<IPayableOrderCandidate>());
+        Assert.Null(sp.GetService<IOrderValueAggregateReader>());
         Assert.Null(sp.GetService<IProviderAuthenticatedOrderDeclarationSource>());
         Assert.Null(sp.GetService<IProviderEvidenceVerifier>());
         Assert.Null(sp.GetService<IProviderReceptionService>());
-        Assert.Equal(
-            new[]
+        Assert.Null(sp.GetService<IProviderReceptionLedger>());
+        Assert.Null(sp.GetService<IProviderSettlementFactRepository>());
+        Assert.Null(sp.GetService<ProviderCommercialRecoveryService>());
+        Assert.Null(sp.GetService<IOrderCorrelationCandidate>());
+        Assert.Null(sp.GetService<IM03OrderCorrelationCandidatePort>());
+        Assert.Null(sp.GetService<ICustomerOrderHistory>());
+        var s = Componer();
+        Assert.DoesNotContain(s, d => d.ServiceType.Name is "OrderCodeAllocator" or "CongeladorDeCliente" or "CreadorDePedidos"
+            or "VencimientoDePlazos" or "IAutoridadDeMoneda");
+        Assert.DoesNotContain(s, d => d.ServiceType == typeof(DbContextOptions));
+        Assert.Single(s, d => d.ServiceType.Name == "ServiceProviderAccessor");
+    }
+
+    /// <summary>
+    /// Registrado frente a alcanzable: el grafo de constructores desde las entradas de los flujos
+    /// de CommerceBridge. Lo registrado que puede escribir se declara; lo alcanzable no incluye
+    /// ningún escritor comercial de M03.
+    /// </summary>
+    [Fact]
+    public void R5_Lo_alcanzable_desde_los_flujos_se_distingue_de_lo_registrado_y_no_incluye_escritores_comerciales()
+    {
+        var s = Componer();
+        var porServicio = s.GroupBy(d => d.ServiceType).ToDictionary(g => g.Key, g => g.Single());
+        // Las factorías no exponen dependencias: se declaran sus reenvíos (PaymentsModule.cs:66-87,
+        // CommercialReadOnlyEvaluationContract.cs:208-214) y los informes M10 que leen del contenedor
+        // (OrderValueReport.cs:67-71, OrderPaymentReport.cs:112-118, MonetarySources.cs:16-33).
+        var reenvios = new Dictionary<string, string[]>(StringComparer.Ordinal)
+        {
+            ["IProviderCommercialCandidateSource"] = ["ProviderCommercialCandidateSource"],
+            ["IProviderInboxProcessingService"] = ["ProviderInboxProcessor"],
+            ["IProviderInboxRepository"] = ["EfProviderInboxRepository"],
+            ["IProviderSettlementFactsSource"] = ["EfProviderInboxRepository"],
+            ["IProviderVerifiedEvidenceReferenceSource"] = ["EfProviderInboxRepository"],
+            ["ICommercialReadOnlyEvaluationCandidate"] = ["SalesDbContext"],
+            ["OrderValueReport"] = ["IOrderAggregateReader", "IOrderValueAggregateReader"],
+            ["OrderPaymentReport"] = ["IOrderAggregateReader", "IOrderPaymentAggregateReader"],
+        };
+        var entradas = new Dictionary<string, string[]>(StringComparer.Ordinal)
+        {
+            ["M03→M11 evaluación"] = ["IM03CommercialReadOnlyEvaluationPort"],
+            ["inbox→procesador"] = ["IProviderInboxProcessingService"],
+            ["M03→M10 indicadores"] = ["IOrderIndicatorsReport", "OrderValueReport", "OrderPaymentReport"],
+        };
+        IEnumerable<string> Dependencias(string nombre)
+        {
+            if (reenvios.TryGetValue(nombre, out var r)) return r;
+            var d = porServicio.Values.FirstOrDefault(x => x.ServiceType.Name == nombre);
+            var impl = d?.ImplementationType;
+            if (impl is null) return [];
+            var ctor = impl.GetConstructors(BindingFlags.Public | BindingFlags.Instance).OrderByDescending(c => c.GetParameters().Length).FirstOrDefault();
+            return ctor?.GetParameters().Select(p => p.ParameterType.Name) ?? [];
+        }
+
+        var alcanzables = new Dictionary<string, SortedSet<string>>(StringComparer.Ordinal);
+        foreach (var (flujo, raices) in entradas)
+        {
+            var pila = new Stack<string>(raices);
+            while (pila.Count > 0)
             {
-                nameof(IOrderValueAggregateReader), "IProviderReceptionService", "ProviderReceptionOrchestrator",
-                "OrderCodeAllocator", "CongeladorDeCliente", "CreadorDePedidos", "VencimientoDePlazos",
-            },
-            NegativeCommerceIntegration.Excluded.Select(x => x.Service));
-        // Ningún escritor de M03 queda registrado.
-        var s = new ServiceCollection().AddNegativeCommerceIntegration(Config(), new Entorno(Environments.Development));
-        Assert.DoesNotContain(s, d => d.ServiceType.Namespace is "Sillar.Modules.Sales.Pedidos" or "Sillar.Modules.Sales.Data"
-            && d.ServiceType.Name is "OrderCodeAllocator" or "CongeladorDeCliente" or "CreadorDePedidos" or "VencimientoDePlazos");
+                var n = pila.Pop();
+                if (!alcanzables.TryGetValue(n, out var flujos)) alcanzables[n] = flujos = new(StringComparer.Ordinal);
+                if (!flujos.Add(flujo)) continue;
+                foreach (var dep in Dependencias(n)) pila.Push(dep);
+            }
+        }
+
+        var lineas = new List<string> { "# R5.1 · registrado frente a alcanzable (fuente | servicio | admitido | escribe | alcanzable desde | papel)" };
+        foreach (var (fuente, e) in NegativeCommerceIntegration.Inventory)
+        {
+            var corto = e.Service.Contains('<') ? e.Service : e.Service[(e.Service.LastIndexOf('.') + 1)..];
+            var desde = alcanzables.TryGetValue(corto, out var f) ? string.Join(", ", f) : "—";
+            lineas.Add($"{fuente} | {e.Service} | {(e.Admitted ? "sí" : "no")} | {e.Writes} | {desde} | {e.Role}");
+        }
+
+        lineas.Add("== alcanzables sin descriptor propio (resueltos por reenvío o por los informes M10)");
+        lineas.AddRange(alcanzables.Keys.Where(n => NegativeCommerceIntegration.Inventory.All(x => !x.Entry.Service.EndsWith("." + n, StringComparison.Ordinal)))
+            .Select(n => $"{n} | {string.Join(", ", alcanzables[n])}"));
+        Escribir("registrado-frente-a-alcanzable.txt", lineas);
+
+        // Ningún escritor comercial de M03 está admitido ni es alcanzable.
+        foreach (var (_, e) in NegativeCommerceIntegration.Inventory.Where(x => x.Entry.Role.StartsWith("escritor comercial", StringComparison.Ordinal)))
+        {
+            Assert.False(e.Admitted);
+            Assert.False(alcanzables.ContainsKey(e.Service[(e.Service.LastIndexOf('.') + 1)..]));
+        }
+
+        // Lo admitido que puede escribir es el inbox de M11 y el contexto técnico de M03; se declara.
+        var escriben = NegativeCommerceIntegration.Inventory.Where(x => x.Entry.Admitted && x.Entry.Writes != "no").Select(x => x.Entry.Service).ToArray();
+        Assert.Contains("Sillar.Modules.Payments.Infrastructure.Persistence.EfProviderInboxRepository", escriben);
+        Assert.Contains("Sillar.Modules.Sales.Data.SalesDbContext", escriben);
+        Assert.DoesNotContain(escriben, n => n.Contains("Sales.Pedidos", StringComparison.Ordinal) || n.Contains("Sales.Commercial", StringComparison.Ordinal));
+        // El valor I02 es alcanzable desde M10, pero no tiene descriptor: OrderValueReport lo encuentra ausente.
+        Assert.True(alcanzables.ContainsKey("IOrderValueAggregateReader"));
+        Assert.DoesNotContain(s, d => d.ServiceType == typeof(IOrderValueAggregateReader));
     }
 
     // ---------------------------------------------------------------------
@@ -282,14 +370,11 @@ public sealed class ComposicionVerticalTests
         Assert.Equal(codigo, razon);
         Assert.NotEmpty(k.Base.Consultas);
         SinEfectos(k);
-        lock (Registro) { Registro.Add($"M03→M11 · {caso} | {r.Outcome} {r.SourceVerdict}/{r.SourceReason} | código={razon} | consultas={k.Base.Consultas.Count}"); }
-        Escribir("flujos-ejecutados.txt", Registro.Order(StringComparer.Ordinal));
+        Anotar($"M03→M11 · {caso} | {r.Outcome} {r.SourceVerdict}/{r.SourceReason} | código={razon} | consultas={k.Base.Consultas.Count}");
     }
 
-    private static readonly List<string> Registro = [];
-
     // ---------------------------------------------------------------------
-    // Ruta inbox → procesador real, con los servicios reales disponibles
+    // Ruta inbox → procesador real
     // ---------------------------------------------------------------------
 
     [Theory]
@@ -313,7 +398,8 @@ public sealed class ComposicionVerticalTests
         Assert.False(M03ReadOnlyNegativeReason.IsM03ReadOnly(st.HoldReason));
         Assert.Null(st.CommercialEffectReference);
         Assert.Null(st.NextAttemptAt);
-        // La barrera está antes del puerto: ni el adaptador negativo ni M03 llegan a leer.
+        Assert.NotEqual(ProviderInboxProcessOutcome.Applied, r.Outcome);
+        Assert.NotEqual(ProviderInboxProcessOutcome.AlreadyApplied, r.Outcome);
         Assert.Empty(k.Base.Consultas);
 
         var otra = await procesador.ProcessAsync(evento, PaymentTestData.VerifiedAt.AddMinutes(30),
@@ -321,12 +407,11 @@ public sealed class ComposicionVerticalTests
         Assert.Equal(ProviderInboxProcessOutcome.NotReady, otra.Outcome);
         Assert.Equal(st, k.Inbox.Status);
         SinEfectos(k);
-        lock (Registro) { Registro.Add($"inbox→procesador · persistido={persistido} | {r.Outcome} | inbox={st.ProcessingState}/{st.CommercialState} | razón={st.HoldReason} | consultas_M03=0 | reproceso={otra.Outcome}"); }
-        Escribir("flujos-ejecutados.txt", Registro.Order(StringComparer.Ordinal));
+        Anotar($"inbox→procesador · persistido={persistido} | {r.Outcome} | inbox={st.ProcessingState}/{st.CommercialState} | razón={st.HoldReason} | consultas_M03=0 | reproceso={otra.Outcome}");
     }
 
     // ---------------------------------------------------------------------
-    // Flujo M03 → M10: lectores reales, I02 retenido, I05–I07 no medibles
+    // Flujo M03 → M10
     // ---------------------------------------------------------------------
 
     private static PedidoSimulado[] Cohorte() =>
@@ -336,7 +421,6 @@ public sealed class ComposicionVerticalTests
         P(OrderStatus.Delivered, 80m, "PEN", true, Guid.Parse("01999f3a-0000-7000-8000-000000000103"), "P-2026-0603"),
         P(OrderStatus.Cancelled, 30m, null, false, Guid.Parse("01999f3a-0000-7000-8000-000000000104"), "P-2026-0604"),
         P(OrderStatus.Expired, 20m, "PEN", true, Guid.Parse("01999f3a-0000-7000-8000-000000000105"), "P-2026-0605"),
-        // Fuera de la ventana: no cuenta.
         P(OrderStatus.PendingPayment, 999m, "PEN", true, Guid.Parse("01999f3a-0000-7000-8000-000000000106"), "P-2026-0606", Fin.AddHours(1)),
     ];
 
@@ -348,7 +432,7 @@ public sealed class ComposicionVerticalTests
     ];
 
     [Fact]
-    public async Task R5_M10_lee_a_M03_real_I01_I03_medidos_I02_retenido_e_I05_I07_no_medibles()
+    public async Task R5_M10_lee_a_M03_real_I01_I03_I04_medidos_I02_retenido_e_I05_I07_no_medibles()
     {
         using var k = Montar(Cohorte(), PagosDeLaVentana());
         var sp = k.Servicios;
@@ -359,15 +443,14 @@ public sealed class ComposicionVerticalTests
         Assert.Equal((4L, 1L), (indicadores.ActiveOrders!.Value, indicadores.InactiveOrders!.Value));
         Assert.Equal(2, indicadores.I03CurrentStatusCounts!.Single(x => x.Status == OrderStatus.PendingPayment).Count);
         Assert.Equal(1, indicadores.I03CurrentStatusCounts!.Single(x => x.Status == OrderStatus.Expired).Count);
+        Assert.Equal(1, indicadores.I04CurrentlyExpiredOrders);
 
-        // I02: hay pedidos con moneda en la ventana, y aun así ningún importe se publica.
         var valor = await new OrderValueReport(sp).ReadAsync(Inicio, Fin, CancellationToken.None);
         Assert.Equal(IndicatorStatus.NotMeasurable, valor.Status);
         Assert.Null(valor.ByCurrency);
         Assert.Null(valor.CreatedCount);
 
-        // I05–I07: el lector real dice que ningún escritor está acreditado. En M03 ese motivo
-        // precede al histórico sin origen (LectoresMonetarios.cs:126-128); el histórico se cuenta aparte.
+        // En M03 «escritor no acreditado» precede al histórico sin origen (LectoresMonetarios.cs:126-128).
         var pagos = await new OrderPaymentReport(sp).ReadAsync(Inicio, Fin, CancellationToken.None);
         Assert.Equal(IndicatorStatus.NotMeasurable, pagos.I05.Status);
         Assert.Equal(IndicatorStatus.NotMeasurable, pagos.I06.Status);
@@ -380,15 +463,10 @@ public sealed class ComposicionVerticalTests
 
         Assert.Equal(2, k.Base.Consultas.Count(sql => sql.Contains("GROUP BY", StringComparison.Ordinal)));
         SinEfectos(k);
-        lock (Registro)
-        {
-            Registro.Add($"M03→M10 · I01={indicadores.I01CreatedOrders} activos={indicadores.ActiveOrders} bajas={indicadores.InactiveOrders} "
-                + $"I03={string.Join(",", indicadores.I03CurrentStatusCounts!.Where(x => x.Count > 0).Select(x => $"{x.Status}:{x.Count}"))} I04={indicadores.I04CurrentlyExpiredOrders}");
-            Registro.Add($"M03→M10 · I02 status={valor.Status} importes={(valor.ByCurrency is null ? "ninguno" : "PUBLICADOS")}");
-            Registro.Add($"M03→M10 · I05={pagos.I05.Status} I06={pagos.I06.Status} I07={pagos.I07.Status} motivo={pagos.NotMeasurableReason}");
-        }
-
-        Escribir("flujos-ejecutados.txt", Registro.Order(StringComparer.Ordinal));
+        Anotar($"M03→M10 · I01={indicadores.I01CreatedOrders} activos={indicadores.ActiveOrders} bajas={indicadores.InactiveOrders} "
+            + $"I03={string.Join(",", indicadores.I03CurrentStatusCounts!.Where(x => x.Count > 0).Select(x => $"{x.Status}:{x.Count}"))} I04={indicadores.I04CurrentlyExpiredOrders}");
+        Anotar($"M03→M10 · I02 status={valor.Status} importes={(valor.ByCurrency is null ? "ninguno" : "PUBLICADOS")}");
+        Anotar($"M03→M10 · I05={pagos.I05.Status} I06={pagos.I06.Status} I07={pagos.I07.Status} motivo={pagos.NotMeasurableReason} históricos_sin_origen={pagos.HistoricalWithoutSource!.Count}");
     }
 
     [Fact]
@@ -404,10 +482,7 @@ public sealed class ComposicionVerticalTests
         SinEfectos(k);
     }
 
-    /// <summary>
-    /// Caracterización, fuera de la composición: si el lector de valor estuviera registrado,
-    /// M10 publicaría importes I02 sin ninguna autoridad monetaria. Es la razón de la barrera.
-    /// </summary>
+    /// <summary>Caracterización, fuera de la composición: sin la barrera, I02 publicaría importes sin autoridad monetaria.</summary>
     [Fact]
     public async Task R5_Caracterizacion_sin_la_barrera_I02_publicaria_importes_sin_autoridad_monetaria()
     {
@@ -423,7 +498,6 @@ public sealed class ComposicionVerticalTests
 
         Assert.Equal(IndicatorStatus.WithData, valor.Status);
         Assert.Equal(MonetaryFacts.Format(100m + 80m + 20m), Assert.Single(valor.ByCurrency!).ActiveAmount);
-        lock (Registro) { Registro.Add($"CARACTERIZACIÓN sin barrera I02 · status={valor.Status} PEN activos={valor.ByCurrency!.Single().ActiveAmount} (por esto se retira el lector)"); }
-        Escribir("flujos-ejecutados.txt", Registro.Order(StringComparer.Ordinal));
+        Anotar($"CARACTERIZACIÓN sin barrera I02 · status={valor.Status} PEN activos={valor.ByCurrency!.Single().ActiveAmount} (por esto no se admite el lector)");
     }
 }
