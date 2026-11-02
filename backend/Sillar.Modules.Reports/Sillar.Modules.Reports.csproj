@@ -12,6 +12,7 @@
        pruebas los sustituyen por dobles sin que M10 publique una firma propia. -->
   <ItemGroup>
     <InternalsVisibleTo Include="Sillar.Modules.Reports.Tests" />
+    <InternalsVisibleTo Include="Sillar.Host.CommerceBridge.Tests" />
   </ItemGroup>
 
 </Project>

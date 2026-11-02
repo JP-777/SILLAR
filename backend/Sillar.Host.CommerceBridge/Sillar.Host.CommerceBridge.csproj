@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ==========================================================================
+       Composición de Host aislada M03–M10–M11 (P1-POST-G6-R5), solo negativa.
+
+       Sillar.Api NO referencia este proyecto: el despliegue normal no puede
+       cargarlo. Además, AddNegativeCommerceIntegration falla en Production y sin
+       la clave de opt-in. No registra autoridades, aplicador comercial ni rutas.
+       ========================================================================== -->
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sillar.Modules.Sales\Sillar.Modules.Sales.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Reports\Sillar.Modules.Reports.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Payments\Sillar.Modules.Payments.csproj" />
+  </ItemGroup>
+
+</Project>
