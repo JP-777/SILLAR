@@ -144,11 +144,11 @@ public sealed class ComposicionVerticalTests
         }
     }
 
-    private static PedidoSimulado P(string estado = OrderStatus.PendingPayment, decimal total = 100m, string? moneda = null,
+    internal static PedidoSimulado P(string estado = OrderStatus.PendingPayment, decimal total = 100m, string? moneda = null,
         bool activo = true, Guid? id = null, string codigo = Codigo, DateTimeOffset? creado = null)
         => new(id ?? Pedido, codigo, estado, total, moneda, activo, creado ?? Inicio.AddHours(1));
 
-    private static PagoSimulado Pago(decimal importe, string? origen, string? moneda = null, Guid? id = null, DateTimeOffset? cuando = null)
+    internal static PagoSimulado Pago(decimal importe, string? origen, string? moneda = null, Guid? id = null, DateTimeOffset? cuando = null)
         => new(id ?? Pedido, importe, origen, moneda, PaymentMethod.Cash, false, cuando ?? Inicio.AddHours(2));
 
     // ---------------------------------------------------------------------
@@ -351,6 +351,24 @@ public sealed class ComposicionVerticalTests
             M03CommercialReadOnlyEvaluationOutcome.Indeterminate, "m03ro:indeterminate/order_changed_between_reads"),
     };
 
+    private static (string, (string, object)[]) PorCodigo(string codigo) => (SqlEsperado.CorrelacionPorCodigo, [("@codigo", codigo)]);
+    private static (string, (string, object)[]) PorId(Guid id) => (SqlEsperado.CorrelacionPorId, [("@plan_DeclaredOrderId_Value", id)]);
+    private static (string, (string, object)[]) Releer(Guid id) => (SqlEsperado.Relectura, [("@orderId", id)]);
+    private static (string, (string, object)[]) PagosDe(Guid id) => (SqlEsperado.PagosDelPedido, [("@orderId", id)]);
+
+    /// <summary>Lo que el evaluador real de M03 lee en cada escenario (CommercialReadOnlyEvaluation.cs:478-517).</summary>
+    private static readonly Dictionary<string, (string, (string, object)[])[]> ConsultasEsperadas = new()
+    {
+        ["pendiente sin moneda"] = [PorCodigo(Codigo), Releer(Pedido), PagosDe(Pedido)],
+        ["inactivo con total negativo (H-1)"] = [PorCodigo(Codigo), Releer(Pedido), PagosDe(Pedido)],
+        ["pago de proveedor no ratificado"] = [PorCodigo(Codigo), Releer(Pedido), PagosDe(Pedido)],
+        ["pedido desconocido"] = [PorCodigo("P-2026-0599")],
+        ["código en blanco por id (B5)"] = [PorId(Pedido), Releer(Pedido), PagosDe(Pedido)],
+        ["uuid nulo por código (B5)"] = [PorCodigo(Codigo), Releer(Guid.Empty), PagosDe(Guid.Empty)],
+        // La fila desaparece tras la correlación: la relectura no la encuentra y no se leen pagos.
+        ["código en blanco por id, desaparece entre lecturas (H-3)"] = [PorId(Pedido), Releer(Pedido)],
+    };
+
     [Theory]
     [MemberData(nameof(EscenariosM03M11))]
     public async Task R5_El_puerto_M11_resuelto_por_DI_evalua_con_M03_real_y_solo_da_negativos(string caso)
@@ -368,7 +386,8 @@ public sealed class ComposicionVerticalTests
         Assert.Null(r.TechnicalReason);
         Assert.True(M03ReadOnlyNegativeReason.TryFormat(r, out var razon));
         Assert.Equal(codigo, razon);
-        Assert.NotEmpty(k.Base.Consultas);
+        // C09: exactamente las consultas del evaluador, con sus filtros y valores.
+        SqlEsperado.Afirmar(k.Base, ConsultasEsperadas[caso]);
         SinEfectos(k);
         Anotar($"M03→M11 · {caso} | {r.Outcome} {r.SourceVerdict}/{r.SourceReason} | código={razon} | consultas={k.Base.Consultas.Count}");
     }
@@ -414,7 +433,7 @@ public sealed class ComposicionVerticalTests
     // Flujo M03 → M10
     // ---------------------------------------------------------------------
 
-    private static PedidoSimulado[] Cohorte() =>
+    internal static PedidoSimulado[] Cohorte() =>
     [
         P(OrderStatus.PendingPayment, 100m, "PEN", true, Guid.Parse("01999f3a-0000-7000-8000-000000000101"), "P-2026-0601"),
         P(OrderStatus.PendingPayment, 50m, null, true, Guid.Parse("01999f3a-0000-7000-8000-000000000102"), "P-2026-0602"),
@@ -424,26 +443,51 @@ public sealed class ComposicionVerticalTests
         P(OrderStatus.PendingPayment, 999m, "PEN", true, Guid.Parse("01999f3a-0000-7000-8000-000000000106"), "P-2026-0606", Fin.AddHours(1)),
     ];
 
-    private static PagoSimulado[] PagosDeLaVentana() =>
+    internal static PagoSimulado[] PagosDeLaVentana() =>
     [
         Pago(30m, PaymentSource.Staff, "PEN", Guid.Parse("01999f3a-0000-7000-8000-000000000101")),
         Pago(20m, null, null, Guid.Parse("01999f3a-0000-7000-8000-000000000103")),
         Pago(5m, PaymentSource.Staff, "PEN", Guid.Parse("01999f3a-0000-7000-8000-000000000101"), Fin.AddHours(2)),
     ];
 
+    /// <summary>
+    /// La cohorte R6: la de R5 más el caso adversarial de C11, un pedido vencido y dado de
+    /// baja, sin moneda, que I04 tiene que contar (LectorAgregadoDePedidos.cs:51-66).
+    /// </summary>
+    internal static PedidoSimulado[] CohorteR6() =>
+    [
+        .. Cohorte(),
+        P(OrderStatus.Expired, 15m, null, false, Guid.Parse("01999f3a-0000-7000-8000-000000000107"), "P-2026-0607"),
+    ];
+
+    internal static PagoSimulado[] PagosR6() => PagosDeLaVentana();
+
+    /// <summary>I03 completo, en el orden de OrderStatus.All, escrito a mano para CohorteR6.</summary>
+    internal static (string, long)[] I03Esperado =>
+    [
+        .. OrderStatus.All.Select(estado => (estado, estado switch
+        {
+            OrderStatus.PendingPayment => 2L,
+            OrderStatus.Delivered => 1L,
+            OrderStatus.Expired => 2L,
+            OrderStatus.Cancelled => 1L,
+            _ => 0L,
+        })),
+    ];
+
     [Fact]
     public async Task R5_M10_lee_a_M03_real_I01_I03_I04_medidos_I02_retenido_e_I05_I07_no_medibles()
     {
-        using var k = Montar(Cohorte(), PagosDeLaVentana());
+        using var k = Montar(CohorteR6(), PagosR6());
         var sp = k.Servicios;
 
         var indicadores = await sp.GetRequiredService<IOrderIndicatorsReport>().ReadAsync(Inicio, Fin, CancellationToken.None);
         Assert.Equal(OrderIndicatorsSourceStatus.Available, indicadores.SourceStatus);
-        Assert.Equal(5, indicadores.I01CreatedOrders);
-        Assert.Equal((4L, 1L), (indicadores.ActiveOrders!.Value, indicadores.InactiveOrders!.Value));
-        Assert.Equal(2, indicadores.I03CurrentStatusCounts!.Single(x => x.Status == OrderStatus.PendingPayment).Count);
-        Assert.Equal(1, indicadores.I03CurrentStatusCounts!.Single(x => x.Status == OrderStatus.Expired).Count);
-        Assert.Equal(1, indicadores.I04CurrentlyExpiredOrders);
+        Assert.Equal(6, indicadores.I01CreatedOrders);
+        Assert.Equal((4L, 2L), (indicadores.ActiveOrders!.Value, indicadores.InactiveOrders!.Value));
+        // C11: los siete estados, con los cuatro presentes; I04 cuenta también el vencido de baja.
+        Assert.Equal(I03Esperado, indicadores.I03CurrentStatusCounts!.Select(x => (x.Status, x.Count)));
+        Assert.Equal(2, indicadores.I04CurrentlyExpiredOrders);
 
         var valor = await new OrderValueReport(sp).ReadAsync(Inicio, Fin, CancellationToken.None);
         Assert.Equal(IndicatorStatus.NotMeasurable, valor.Status);
@@ -461,7 +505,12 @@ public sealed class ComposicionVerticalTests
         Assert.Equal(NotMeasurableReasons.WriterNotAccredited, pagos.NotMeasurableReason);
         Assert.Equal(1, pagos.HistoricalWithoutSource!.Count);
 
-        Assert.Equal(2, k.Base.Consultas.Count(sql => sql.Contains("GROUP BY", StringComparison.Ordinal)));
+        // C08: la secuencia exacta. Una agregada de pedidos, ninguna para I02 y una agregada de pagos.
+        var inicio = Inicio.UtcDateTime;
+        var fin = Fin.UtcDateTime;
+        SqlEsperado.Afirmar(k.Base,
+            (SqlEsperado.I01I03I04, [("@startUtc", inicio), ("@endUtc", fin)]),
+            (SqlEsperado.I05I07, [("@inicio", inicio), ("@fin", fin)]));
         SinEfectos(k);
         Anotar($"M03→M10 · I01={indicadores.I01CreatedOrders} activos={indicadores.ActiveOrders} bajas={indicadores.InactiveOrders} "
             + $"I03={string.Join(",", indicadores.I03CurrentStatusCounts!.Where(x => x.Count > 0).Select(x => $"{x.Status}:{x.Count}"))} I04={indicadores.I04CurrentlyExpiredOrders}");

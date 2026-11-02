@@ -251,17 +251,7 @@ public static class NegativeCommerceIntegration
         var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
         try
         {
-            using (var scope = provider.CreateScope())
-            {
-                var evaluation = scope.ServiceProvider.GetServices<ICommercialReadOnlyEvaluationCandidate>().ToArray();
-                if (evaluation is not [var only] || only.GetType().FullName != $"{Sales}.Commercial.CandidateCommercialReadOnlyEvaluationAdapter")
-                {
-                    throw new InvalidOperationException(
-                        "ICommercialReadOnlyEvaluationCandidate debe resolver solo al adaptador sin efectos de M03.");
-                }
-            }
-
-            PaymentsNegativeM03Composition.EnsureNegativePaymentsResolves(provider);
+            EnsureResolves(provider);
             return provider;
         }
         catch
@@ -269,6 +259,23 @@ public static class NegativeCommerceIntegration
             provider.Dispose();
             throw;
         }
+    }
+
+    /// <summary>Comprueba, ya construido el contenedor, lo que resuelven los puertos guardados.</summary>
+    public static void EnsureResolves(IServiceProvider provider)
+    {
+        ArgumentNullException.ThrowIfNull(provider);
+        using (var scope = provider.CreateScope())
+        {
+            var evaluation = scope.ServiceProvider.GetServices<ICommercialReadOnlyEvaluationCandidate>().ToArray();
+            if (evaluation is not [var only] || only.GetType().FullName != $"{Sales}.Commercial.CandidateCommercialReadOnlyEvaluationAdapter")
+            {
+                throw new InvalidOperationException(
+                    "ICommercialReadOnlyEvaluationCandidate debe resolver solo al adaptador sin efectos de M03.");
+            }
+        }
+
+        PaymentsNegativeM03Composition.EnsureNegativePaymentsResolves(provider);
     }
 
     private static void RegisterM03(IServiceCollection services, IConfiguration configuration)

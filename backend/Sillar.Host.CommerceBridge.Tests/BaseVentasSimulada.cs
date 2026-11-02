@@ -51,6 +51,9 @@ public sealed class BaseVentasSimulada
 
     public List<string> Consultas { get; } = [];
 
+    /// <summary>Los parámetros de cada consulta, en el mismo orden que <see cref="Consultas"/>.</summary>
+    public List<IReadOnlyList<(string Nombre, object? Valor)>> Parametros { get; } = [];
+
     public int ComandosProhibidos { get; private set; }
 
     public int Guardados { get; private set; }
@@ -148,6 +151,7 @@ public sealed class BaseVentasSimulada
         }
 
         Consultas.Add(sql);
+        Parametros.Add([.. command.Parameters.Cast<DbParameter>().Select(p => (p.ParameterName, p.Value))]);
         var tabla = sql.Contains("GROUP BY", StringComparison.Ordinal) ? Agregada(command, sql) : PorFila(command, sql);
         var lector = tabla.CreateDataReader();
         TrasConsulta?.Invoke(Consultas.Count);
