@@ -41,6 +41,9 @@ public sealed class InstalacionRealR7 : IAsyncLifetime
     public string CookieAdmin { get; private set; } = "";
     public string CookieEditor { get; private set; } = "";
     public string CookieRevocada { get; private set; } = "";
+    public string HostAntesDelReinicio { get; private set; } = "";
+    public string HostTrasElReinicio { get; private set; } = "";
+    public long SesionesAntesDelReinicio { get; private set; }
 
     public IConfiguration Configuracion(string? cadena = null) => new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
     {
@@ -151,6 +154,23 @@ public sealed class InstalacionRealR7 : IAsyncLifetime
         Evidencia.Add($"fase3 POST /api/admin/auth/logout (sesión a revocar) → {(int)salir.StatusCode}");
         Assert.True(salir.IsSuccessStatusCode);
         CookieRevocada = revocable;
+        // Fase 4 · R8 (D): reinicio del Host. Las cookies emitidas antes tienen que seguir valiendo
+        // —o seguir revocadas— porque la sesión vive en PostgreSQL, no en el proceso.
+        HostAntesDelReinicio = string.Join(",", Direcciones(Host.App));
+        SesionesAntesDelReinicio = long.Parse((await Consultar(Cadena, "select count(*) from core.admin_sessions"))[0]);
+        Http.Dispose();
+        await Host.App.StopAsync();
+        await Host.App.DisposeAsync();
+        Host = await NegativeCommerceAuthenticatedHost.BuildAsync(Configuracion(), Environments.Development, s =>
+        {
+            s.RemoveAll<SalesDbContext>();
+            s.AddSingleton(Ctx);
+        }, CancellationToken.None);
+        await Host.App.StartAsync();
+        Http = Cliente(Host.App);
+        HostTrasElReinicio = string.Join(",", Direcciones(Host.App));
+        Evidencia.Add($"fase4 reinicio: host_antes={HostAntesDelReinicio} host_despues={HostTrasElReinicio} sesiones_en_base={SesionesAntesDelReinicio} (las cookies son las de la fase 3)");
+
         Evidencia.AddRange(await Consultar(Cadena,
             "select 'cuentas=' || string_agg(email || ':' || role || ':' || is_active, ',' order by email) from core.admin_users",
             "select 'sesiones=' || count(*) || ' revocadas=' || count(revoked_at) from core.admin_sessions",
@@ -210,7 +230,7 @@ public sealed class InstalacionRealR7 : IAsyncLifetime
         return await http.SendAsync(peticion);
     }
 
-    private static async Task Ejecutar(string cadena, string sql)
+    public static async Task Ejecutar(string cadena, string sql)
     {
         await using var c = new NpgsqlConnection(cadena);
         await c.OpenAsync();
@@ -218,7 +238,7 @@ public sealed class InstalacionRealR7 : IAsyncLifetime
         await cmd.ExecuteNonQueryAsync();
     }
 
-    private static async Task<List<string>> Consultar(string cadena, params string[] consultas)
+    public static async Task<List<string>> Consultar(string cadena, params string[] consultas)
     {
         var salida = new List<string>();
         await using var c = new NpgsqlConnection(cadena);

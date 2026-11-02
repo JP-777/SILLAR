@@ -98,7 +98,9 @@ public static class NegativeCommerceAuthenticatedHost
         if (reporting)
         {
             builder.Services.AddNegativeCommerceIntegration(builder.Configuration, builder.Environment);
+            var criticos = builder.Services.Where(IsCoreCritical).ToArray();
             isolateInfrastructure?.Invoke(builder.Services);
+            EnsureCoreCriticalUntouched(criticos, builder.Services);
             NegativeCommerceIntegration.EnsureIntact(builder.Services);
         }
 
@@ -119,6 +121,49 @@ public static class NegativeCommerceAuthenticatedHost
 
         return new(app, [.. activeCodes.Order(StringComparer.Ordinal)], reporting);
     }
+
+    /// <summary>
+    /// Servicios que la sustitución de infraestructura nunca puede tocar: todo lo de CORE y
+    /// todo lo de autenticación y autorización de ASP.NET, también como argumento genérico
+    /// (opciones, configuradores, manejadores de esquema).
+    /// </summary>
+    internal static bool IsCoreCritical(ServiceDescriptor d)
+    {
+        var implementation = d.ImplementationType ?? d.ImplementationInstance?.GetType();
+        return IsCritical(d.ServiceType) || implementation is not null && IsCritical(implementation);
+    }
+
+    private static readonly System.Reflection.Assembly[] CoreAssemblies =
+        [typeof(CoreModule).Assembly, typeof(Sillar.Core.Contracts.AdminRole).Assembly];
+
+    private static bool IsCritical(Type type)
+        => CoreAssemblies.Contains(type.Assembly)
+            || type.Namespace is { } ns && (ns.StartsWith("Microsoft.AspNetCore.Authentication", StringComparison.Ordinal)
+                || ns.StartsWith("Microsoft.AspNetCore.Authorization", StringComparison.Ordinal))
+            || type.IsGenericType && type.GetGenericArguments().Any(IsCritical);
+
+    /// <summary>
+    /// Los descriptores críticos tienen que seguir siendo exactamente los mismos objetos, en el
+    /// mismo orden: ni uno quitado, ni uno añadido, ni uno sustituido.
+    /// </summary>
+    private static void EnsureCoreCriticalUntouched(IReadOnlyList<ServiceDescriptor> before, IServiceCollection services)
+    {
+        var after = services.Where(IsCoreCritical).ToArray();
+        if (after.Length == before.Count && after.Zip(before).All(par => ReferenceEquals(par.First, par.Second)))
+        {
+            return;
+        }
+
+        var quitados = before.Where(d => !after.Contains(d)).Select(Describe);
+        var añadidos = after.Where(d => !before.Contains(d)).Select(Describe);
+        throw new InvalidOperationException(
+            "La sustitución de infraestructura no puede tocar servicios críticos de CORE ni de autenticación. "
+            + $"Quitados o sustituidos: [{string.Join("; ", quitados)}]. Añadidos: [{string.Join("; ", añadidos)}].");
+    }
+
+    private static string Describe(ServiceDescriptor d)
+        => $"{Sillar.Modules.Payments.Application.NegativeCompositionInventory.NameOf(d.ServiceType)} → "
+            + Sillar.Modules.Payments.Application.NegativeCompositionInventory.ImplementationOf(d);
 
     private static WebApplicationBuilder NewBuilder(IConfiguration configuration, string environmentName)
     {
