@@ -602,7 +602,7 @@ public sealed class ProviderInboxProcessorTests
             port,
             retryPolicy ?? new ConfiguredCommercialRetryPolicy(3));
 
-    private sealed class MemoryInboxRepository(ProviderInboxStatus status)
+    internal sealed class MemoryInboxRepository(ProviderInboxStatus status)
         : IProviderInboxRepository
     {
         private readonly object _gate = new();

@@ -592,7 +592,7 @@ public sealed class M03CommercialReadOnlyEvaluationConsumerTests
 /// solo valida el transporte. Recorrido real: puerto M11 → contrato público M03 →
 /// adaptador M03 → evaluador G6-1A → transporte EF simulado, sin PostgreSQL.
 /// </summary>
-public sealed class M03CommercialReadOnlyEvaluationFidelityTests
+public sealed partial class M03CommercialReadOnlyEvaluationFidelityTests
 {
     private static readonly Guid Pedido = Guid.Parse("01999f3a-0000-7000-8000-0000000000c1");
     private static readonly Guid Otro = Guid.Parse("01999f3a-0000-7000-8000-0000000000c2");
