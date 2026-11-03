@@ -132,7 +132,8 @@ public sealed class R8FisicaTests(InstalacionRealR7 f) : IClassFixture<Instalaci
         Requiere();
         var nombre = $"sillar_r8_sales_{Guid.NewGuid():N}";
         var cadena = new NpgsqlConnectionStringBuilder(f.Cadena) { Database = nombre }.ConnectionString;
-        await InstalacionRealR7.Ejecutar(f.Servidor, $"CREATE DATABASE \"{nombre}\"");
+        const string Duena = "r8-bloqueo";
+        await AislamientoPostgresTemporal.CrearBasePropiaAsync(f.Entrada, f.Esperada!, nombre, Duena, CancellationToken.None);
         var lineas = new List<string> { $"base={nombre} servidor={new NpgsqlConnectionStringBuilder(cadena).Host}:{new NpgsqlConnectionStringBuilder(cadena).Port}" };
         try
         {
@@ -163,8 +164,7 @@ public sealed class R8FisicaTests(InstalacionRealR7 f) : IClassFixture<Instalaci
         }
         finally
         {
-            NpgsqlConnection.ClearAllPools();
-            await InstalacionRealR7.Ejecutar(f.Servidor, $"DROP DATABASE IF EXISTS \"{nombre}\" WITH (FORCE)");
+            await AislamientoPostgresTemporal.EliminarBasePropiaAsync(f.Entrada, f.Esperada!, nombre, Duena, CancellationToken.None);
             lineas.Add("base_eliminada=" + nombre);
             Escribir("r8-bloqueo-migraciones-sales.txt", lineas);
         }

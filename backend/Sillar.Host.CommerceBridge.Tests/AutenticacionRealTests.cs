@@ -33,6 +33,11 @@ public sealed class InstalacionRealR7 : IAsyncLifetime
     public string Base { get; } = $"sillar_r7_{Guid.NewGuid():N}";
     public string Cadena { get; private set; } = "";
     public List<string> Evidencia { get; } = [];
+    /// <summary>R8-01: identidad esperada del contenedor desechable y cadena de entrada verificada.</summary>
+    public IdentidadEsperadaPg? Esperada { get; private set; }
+    public string Entrada { get; private set; } = "";
+    /// <summary>Nombre con el que esta fixture se registra como dueña de su base.</summary>
+    public string Fixture { get; } = $"r7-{Guid.NewGuid():N}"[..11];
     public AuthenticatedHost? Host { get; private set; }
     public HttpClient Http { get; private set; } = null!;
     public BaseVentasSimulada Ventas { get; } = new();
@@ -59,22 +64,24 @@ public sealed class InstalacionRealR7 : IAsyncLifetime
             return;
         }
 
-        var cs = new NpgsqlConnectionStringBuilder(servidor);
-        if (cs.Host is not ("127.0.0.1" or "localhost"))
-        {
-            throw new InvalidOperationException($"R7 solo usa una instancia de bucle local; la cadena apunta a {cs.Host}.");
-        }
+        // R8-01: con cadena presente, nada se conecta ni se crea hasta superar la barrera común
+        // (cadena completa sin red; identidad contra la del canal independiente). Falla, no omite.
+        Esperada = AislamientoPostgresTemporal.LeerIdentidad(Environment.GetEnvironmentVariable(AislamientoPostgresTemporal.VariableIdentidad));
+        var verificada = await AislamientoPostgresTemporal.VerificarAsync(servidor, Esperada);
+        Entrada = servidor;
+        var cs = new NpgsqlConnectionStringBuilder(verificada.Cadena);
 
         Servidor = new NpgsqlConnectionStringBuilder(servidor) { Database = "postgres" }.ConnectionString;
         Cadena = new NpgsqlConnectionStringBuilder(servidor) { Database = Base }.ConnectionString;
         Disponible = true;
+        Evidencia.Add($"R8-01 barrera superada: contenedor={Esperada.Contenedor} system_identifier={Esperada.SystemIdentifier} cluster_name={Esperada.ClusterName} puerto={verificada.Puerto}");
         Evidencia.Add($"servidor={cs.Host}:{cs.Port} usuario={cs.Username} base_de_la_prueba={Base}");
         Evidencia.AddRange(await Consultar(Servidor,
             "select 'version=' || version()",
             "select 'postmaster_inicio=' || pg_postmaster_start_time()",
             "select 'bases_antes=' || string_agg(datname, ',' order by datname) from pg_database"));
-        await Ejecutar(Servidor, $"CREATE DATABASE \"{Base}\"");
-        Evidencia.Add($"base_creada={Base}");
+        await AislamientoPostgresTemporal.CrearBasePropiaAsync(Entrada, Esperada, Base, Fixture);
+        Evidencia.Add($"base_creada={Base} por {Fixture}");
 
         // Fase 1 · modo instalación: POST /api/setup aplica las migraciones de CORE y crea la super administración.
         await using (var instalacion = NegativeCommerceAuthenticatedHost.BuildSetupHost(Configuracion(), Environments.Development))
@@ -192,8 +199,8 @@ public sealed class InstalacionRealR7 : IAsyncLifetime
             await Host.App.DisposeAsync();
         }
 
-        NpgsqlConnection.ClearAllPools();
-        await Ejecutar(Servidor, $"DROP DATABASE IF EXISTS \"{Base}\" WITH (FORCE)");
+        // Solo la base que esta fixture creó, y solo tras reverificar la identidad del servidor.
+        await AislamientoPostgresTemporal.EliminarBasePropiaAsync(Entrada, Esperada!, Base, Fixture);
         Evidencia.AddRange(await Consultar(Servidor, "select 'bases_despues=' || string_agg(datname, ',' order by datname) from pg_database"));
         Escribir("r7-instalacion-real.txt", Evidencia);
     }

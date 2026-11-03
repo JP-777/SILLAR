@@ -55,6 +55,10 @@ public sealed class InstalacionFisicaR8 : IAsyncLifetime
     public string Cadena { get; private set; } = "";
     public string CadenaHost { get; private set; } = "";
     public List<string> Evidencia { get; } = [];
+    public IdentidadEsperadaPg? Esperada { get; private set; }
+    public string Entrada { get; private set; } = "";
+    /// <summary>Nombre con el que esta fixture se registra como dueña de su base.</summary>
+    public string Fixture { get; } = "r8a";
     public List<string> InventarioPrevio { get; } = [];
     public AuthenticatedHost? Host { get; private set; }
     public HttpClient Http { get; private set; } = null!;
@@ -97,15 +101,20 @@ public sealed class InstalacionFisicaR8 : IAsyncLifetime
             return;
         }
 
-        var cs = new NpgsqlConnectionStringBuilder(servidor);
-        if (cs.Host is not ("127.0.0.1" or "localhost"))
-        {
-            throw new InvalidOperationException($"R8 solo usa una instancia de bucle local; la cadena apunta a {cs.Host}.");
-        }
+        // R8-01: con cadena presente, la barrera decide antes de cualquier SQL. Primero sin red
+        // (cadena completa y puerto del contenedor esperado); después, identidad del servidor
+        // contra la que dio el canal independiente. Un fallo aquí no es omisión: falla la fixture.
+        Esperada = AislamientoPostgresTemporal.LeerIdentidad(Environment.GetEnvironmentVariable(AislamientoPostgresTemporal.VariableIdentidad));
+        AislamientoPostgresTemporal.ValidarCadena(servidor, Esperada);
+        Entrada = servidor;
+        var verificada = await AislamientoPostgresTemporal.VerificarAsync(servidor, Esperada);
+        Evidencia.Add($"R8-01 barrera superada: contenedor={Esperada.Contenedor} system_identifier={Esperada.SystemIdentifier} cluster_name={Esperada.ClusterName} puerto={verificada.Puerto}");
+        var cs = new NpgsqlConnectionStringBuilder(verificada.Cadena);
 
         Servidor = new NpgsqlConnectionStringBuilder(servidor) { Database = "postgres", ApplicationName = AppPreparacion }.ConnectionString;
         Cadena = new NpgsqlConnectionStringBuilder(servidor) { Database = Base, ApplicationName = AppPreparacion }.ConnectionString;
         CadenaHost = new NpgsqlConnectionStringBuilder(servidor) { Database = Base, ApplicationName = AppHost }.ConnectionString;
+        // Disponible solo ahora, tras la barrera: si la identidad se rechaza, la limpieza no hace nada.
         Disponible = true;
 
         // Identidad de la instancia antes de crear nada: si no registra sentencias, no es la de R8.
@@ -122,8 +131,8 @@ public sealed class InstalacionFisicaR8 : IAsyncLifetime
             throw new InvalidOperationException("La instancia no registra sentencias en log/r8a.log: no es la instancia desechable de la ampliación R8.");
         }
 
-        await InstalacionRealR7.Ejecutar(Servidor, $"CREATE DATABASE \"{Base}\"");
-        Evidencia.Add($"base_creada={Base}");
+        await AislamientoPostgresTemporal.CrearBasePropiaAsync(Entrada, Esperada, Base, Fixture);
+        Evidencia.Add($"base_creada={Base} por {Fixture}");
 
         // Fase 1 · instalación real: POST /api/setup aplica las migraciones de CORE.
         await using (var instalacion = NegativeCommerceAuthenticatedHost.BuildSetupHost(Configuracion(), Environments.Development))
@@ -312,8 +321,8 @@ public sealed class InstalacionFisicaR8 : IAsyncLifetime
             await Host.App.DisposeAsync();
         }
 
-        NpgsqlConnection.ClearAllPools();
-        await InstalacionRealR7.Ejecutar(Servidor, $"DROP DATABASE IF EXISTS \"{Base}\" WITH (FORCE)");
+        // Solo la base que esta fixture creó, y solo tras reverificar la identidad del servidor.
+        await AislamientoPostgresTemporal.EliminarBasePropiaAsync(Entrada, Esperada!, Base, Fixture);
         Evidencia.AddRange(await InstalacionRealR7.Consultar(Servidor, "select 'bases_despues=' || string_agg(datname, ',' order by datname) from pg_database"));
         Escribir("r8a-instalacion-fisica.txt", Evidencia);
     }
