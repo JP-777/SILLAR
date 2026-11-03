@@ -7,10 +7,12 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using Sillar.Core;
+using Sillar.Core.Auditing;
 using Sillar.Core.Authentication;
 using Sillar.Core.Data;
 using Sillar.Core.Endpoints;
 using Sillar.Core.Modularity;
+using Sillar.Core.Settings;
 using Sillar.Modules.Reports;
 using Sillar.Shared.Modularity;
 using Sillar.Shared.Replication;
@@ -36,6 +38,13 @@ public sealed record AuthenticatedHost(WebApplication App, IReadOnlyList<string>
 /// por la composición negativa cerrada, y solo cuando CORE ha dado Reporting por activo. El
 /// instalador de CORE solo migra módulos con migraciones, así que aplica las de CORE y ninguna
 /// otra: ni Sales ni Payments.
+/// </para>
+/// <para>
+/// <b>Costura con CORE (R9).</b> Con Reporting activo se registran los productores candidatos de
+/// CORE que consumen <c>/installation-zone</c> y <c>/orders/export-audit</c>:
+/// <c>AddCandidateInstallationTimeZone</c> y <c>AddCandidateExportAudit</c>. Son los de CORE, sin
+/// cambios: la zona nunca sale verificada y la acción <c>export</c> no está en el vocabulario de
+/// auditoría, así que la exportación sigue cerrada.
 /// </para>
 /// </remarks>
 public static class NegativeCommerceAuthenticatedHost
@@ -97,6 +106,11 @@ public static class NegativeCommerceAuthenticatedHost
         new CoreModule().RegisterServices(builder.Services, builder.Configuration);
         if (reporting)
         {
+            // R9: la costura M10 ↔ CORE (CoreSeamEndpoints) con los productores candidatos de CORE,
+            // por sus registros públicos y sin cambiarlos. Se registran antes de fotografiar los
+            // servicios críticos: la sustitución de infraestructura no puede tocarlos.
+            builder.Services.AddCandidateInstallationTimeZone();
+            builder.Services.AddCandidateExportAudit();
             builder.Services.AddNegativeCommerceIntegration(builder.Configuration, builder.Environment);
             var criticos = builder.Services.Where(IsCoreCritical).ToArray();
             isolateInfrastructure?.Invoke(builder.Services);
