@@ -133,6 +133,41 @@ public sealed class ComposicionVerticalTests
         File.WriteAllLines(Path.Combine(Salida, archivo), lineas);
     }
 
+    /// <summary>
+    /// R10 (O-1): identificador de esta corrida de pruebas. La puerta lo entrega en
+    /// <c>SILLAR_EVIDENCIA_EJECUCION</c> (el nombre de su base efímera, que también nombra el TRX);
+    /// sin él, se genera uno por proceso. Va en la cabecera de cada evidencia y en el índice.
+    /// </summary>
+    internal static string Ejecucion { get; } = LeerEjecucion(Environment.GetEnvironmentVariable("SILLAR_EVIDENCIA_EJECUCION"));
+
+    internal static string LeerEjecucion(string? valor)
+        => valor is { Length: > 0 } v && System.Text.RegularExpressions.Regex.IsMatch(v, "^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$")
+            ? v
+            : $"local-{DateTime.UtcNow:yyyyMMddTHHmmssfffZ}-p{Environment.ProcessId}";
+
+    /// <summary>Primera línea de toda evidencia ligada a una fixture: ejecución, instancia y base.</summary>
+    internal static string Cabecera(string instancia, string baseTemporal)
+        => $"# ejecucion={Ejecucion} fixture={instancia} base={baseTemporal}";
+
+    /// <summary>Nombre de archivo propio de una instancia de fixture: nunca lo comparte otra.</summary>
+    internal static string ArchivoDe(string instancia, string nombre) => $"{instancia}-{nombre}";
+
+    private static readonly List<string> Indice = [];
+
+    /// <summary>Índice de la corrida: qué fixture, con qué base, escribió qué archivo.</summary>
+    internal static void RegistrarEvidencia(string tipo, string instancia, string baseTemporal, string archivo)
+    {
+        lock (Indice)
+        {
+            var linea = $"ejecucion={Ejecucion} | tipo={tipo} | fixture={instancia} | base={baseTemporal} | archivo={archivo}";
+            if (!Indice.Contains(linea))
+            {
+                Indice.Add(linea);
+                Escribir("indice-de-evidencias.txt", Indice);
+            }
+        }
+    }
+
     private static readonly List<string> Registro = [];
 
     private static void Anotar(string linea)

@@ -47,13 +47,16 @@ public sealed class R8FisicaTests(InstalacionRealR7 f) : IClassFixture<Instalaci
         }
     }
 
-    private static void Anotar(string archivo, string linea)
+    /// <summary>R10 (O-1): cada archivo es de la instancia de fixture que lo produjo, con su cabecera.</summary>
+    private void Anotar(string archivo, string linea)
     {
         lock (Registro)
         {
-            if (!Registro.TryGetValue(archivo, out var lineas)) Registro[archivo] = lineas = [];
+            var propio = ArchivoDe(f.Fixture, archivo);
+            if (!Registro.TryGetValue(propio, out var lineas)) Registro[propio] = lineas = [Cabecera(f.Fixture, f.Base)];
             lineas.Add(linea);
-            Escribir(archivo, lineas);
+            Escribir(propio, lineas);
+            RegistrarEvidencia(nameof(R8FisicaTests), f.Fixture, f.Base, propio);
         }
     }
 
@@ -132,9 +135,10 @@ public sealed class R8FisicaTests(InstalacionRealR7 f) : IClassFixture<Instalaci
         Requiere();
         var nombre = $"sillar_r8_sales_{Guid.NewGuid():N}";
         var cadena = new NpgsqlConnectionStringBuilder(f.Cadena) { Database = nombre }.ConnectionString;
-        const string Duena = "r8-bloqueo";
+        // R10 (O-2): dueña única por ejecución de la prueba, no un literal compartido.
+        var Duena = $"r8-bloqueo-{Guid.NewGuid():N}"[..19];
         await AislamientoPostgresTemporal.CrearBasePropiaAsync(f.Entrada, f.Esperada!, nombre, Duena, CancellationToken.None);
-        var lineas = new List<string> { $"base={nombre} servidor={new NpgsqlConnectionStringBuilder(cadena).Host}:{new NpgsqlConnectionStringBuilder(cadena).Port}" };
+        var lineas = new List<string> { Cabecera(Duena, nombre), $"base={nombre} servidor={new NpgsqlConnectionStringBuilder(cadena).Host}:{new NpgsqlConnectionStringBuilder(cadena).Port}" };
         try
         {
             // Inventario previo, desde los propios contextos.
@@ -166,7 +170,8 @@ public sealed class R8FisicaTests(InstalacionRealR7 f) : IClassFixture<Instalaci
         {
             await AislamientoPostgresTemporal.EliminarBasePropiaAsync(f.Entrada, f.Esperada!, nombre, Duena, CancellationToken.None);
             lineas.Add("base_eliminada=" + nombre);
-            Escribir("r8-bloqueo-migraciones-sales.txt", lineas);
+            Escribir(ArchivoDe(Duena, "r8-bloqueo-migraciones-sales.txt"), lineas);
+            RegistrarEvidencia(nameof(R8FisicaTests), Duena, nombre, ArchivoDe(Duena, "r8-bloqueo-migraciones-sales.txt"));
         }
     }
 }

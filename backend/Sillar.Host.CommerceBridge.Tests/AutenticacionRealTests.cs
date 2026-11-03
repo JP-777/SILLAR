@@ -74,6 +74,7 @@ public sealed class InstalacionRealR7 : IAsyncLifetime
         Servidor = new NpgsqlConnectionStringBuilder(servidor) { Database = "postgres" }.ConnectionString;
         Cadena = new NpgsqlConnectionStringBuilder(servidor) { Database = Base }.ConnectionString;
         Disponible = true;
+        Evidencia.Add(Cabecera(Fixture, Base));
         Evidencia.Add($"R8-01 barrera superada: contenedor={Esperada.Contenedor} system_identifier={Esperada.SystemIdentifier} cluster_name={Esperada.ClusterName} puerto={verificada.Puerto}");
         Evidencia.Add($"servidor={cs.Host}:{cs.Port} usuario={cs.Username} base_de_la_prueba={Base}");
         Evidencia.AddRange(await Consultar(Servidor,
@@ -98,7 +99,7 @@ public sealed class InstalacionRealR7 : IAsyncLifetime
             if (setup.StatusCode != HttpStatusCode.Created)
             {
                 Evidencia.Add("fase1 cuerpo=" + await setup.Content.ReadAsStringAsync());
-                Escribir("r7-instalacion-real.txt", Evidencia);
+                EscribirEvidencia();
             }
 
             Assert.Equal(HttpStatusCode.Created, setup.StatusCode);
@@ -182,7 +183,7 @@ public sealed class InstalacionRealR7 : IAsyncLifetime
             "select 'cuentas=' || string_agg(email || ':' || role || ':' || is_active, ',' order by email) from core.admin_users",
             "select 'sesiones=' || count(*) || ' revocadas=' || count(revoked_at) from core.admin_sessions",
             "select 'modulos_activos=' || string_agg(m.code, ',' order by m.code) from core.modules m join core.module_activations a on a.module_id = m.module_id where a.is_active"));
-        Escribir("r7-instalacion-real.txt", Evidencia);
+        EscribirEvidencia();
     }
 
     public async ValueTask DisposeAsync()
@@ -202,7 +203,15 @@ public sealed class InstalacionRealR7 : IAsyncLifetime
         // Solo la base que esta fixture creó, y solo tras reverificar la identidad del servidor.
         await AislamientoPostgresTemporal.EliminarBasePropiaAsync(Entrada, Esperada!, Base, Fixture);
         Evidencia.AddRange(await Consultar(Servidor, "select 'bases_despues=' || string_agg(datname, ',' order by datname) from pg_database"));
-        Escribir("r7-instalacion-real.txt", Evidencia);
+        EscribirEvidencia();
+    }
+
+    /// <summary>R10 (O-1): la evidencia de esta instancia, en su propio archivo e indexada.</summary>
+    private void EscribirEvidencia()
+    {
+        var archivo = ArchivoDe(Fixture, "instalacion-real.txt");
+        Escribir(archivo, Evidencia);
+        RegistrarEvidencia(nameof(InstalacionRealR7), Fixture, Base, archivo);
     }
 
     public static IEnumerable<string> Direcciones(WebApplication app)
@@ -277,6 +286,16 @@ public sealed class AutenticacionRealTests(InstalacionRealR7 f) : IClassFixture<
         }
     }
 
+    /// <summary>R10 (O-1): el archivo de la clase lleva la fixture que lo produjo y queda indexado.</summary>
+    private void EscribirCasos()
+    {
+        var cabecera = Cabecera(f.Fixture, f.Base);
+        if (Registro.Count == 0 || Registro[0] != cabecera) Registro.Insert(0, cabecera);
+        var archivo = ArchivoDe(f.Fixture, "r7-casos-http.txt");
+        Escribir(archivo, Registro);
+        RegistrarEvidencia(nameof(AutenticacionRealTests), f.Fixture, f.Base, archivo);
+    }
+
     private async Task<(HttpStatusCode Codigo, string Cuerpo, int ConsultasM03)> Get(string ruta, string? cookie, string quien)
     {
         var antes = f.Ventas.Consultas.Count;
@@ -286,7 +305,7 @@ public sealed class AutenticacionRealTests(InstalacionRealR7 f) : IClassFixture<
         lock (Registro)
         {
             Registro.Add($"{quien} · GET {ruta} → {(int)r.StatusCode} · consultas_M03={consultas}");
-            Escribir("r7-casos-http.txt", Registro);
+            EscribirCasos();
         }
 
         return (r.StatusCode, cuerpo, consultas);
@@ -411,7 +430,7 @@ public sealed class AutenticacionRealTests(InstalacionRealR7 f) : IClassFixture<
             lock (Registro)
             {
                 Registro.Add($"H4 R7 · {caso} → rechazado al construir: {e.GetType().Name}");
-                Escribir("r7-casos-http.txt", Registro);
+                EscribirCasos();
             }
         }
     }

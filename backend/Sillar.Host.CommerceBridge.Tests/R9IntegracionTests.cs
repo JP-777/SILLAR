@@ -43,8 +43,6 @@ public sealed class R9IntegracionTests(InstalacionFisicaR8 f) : IClassFixture<In
     private static readonly Dictionary<string, List<string>> Notas = [];
     private static readonly Regex Ventas = new(@"\bsales\.", RegexOptions.CultureInvariant);
     private static readonly Regex Auditoria = new(@"\baudit_log\b", RegexOptions.CultureInvariant);
-    private static readonly Regex Mutante = new(@"^\s*(INSERT|UPDATE|DELETE|MERGE|TRUNCATE|CREATE|DROP|ALTER|GRANT|REVOKE|COPY)\b",
-        RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     private void Requiere()
     {
@@ -54,32 +52,26 @@ public sealed class R9IntegracionTests(InstalacionFisicaR8 f) : IClassFixture<In
         }
     }
 
-    private static void Anotar(string archivo, params string[] lineas)
+    /// <summary>R10 (O-1): archivos de la clase, propios de la instancia de fixture que usa, con cabecera e índice.</summary>
+    private void Anotar(string archivo, params string[] lineas)
     {
         lock (Notas)
         {
-            if (!Notas.TryGetValue(archivo, out var l)) Notas[archivo] = l = [];
+            var propio = ArchivoDe(f.Fixture, archivo);
+            if (!Notas.TryGetValue(propio, out var l)) Notas[propio] = l = [Cabecera(f.Fixture, f.Base)];
             l.AddRange(lineas);
-            Escribir(archivo, l);
+            Escribir(propio, l);
+            RegistrarEvidencia(nameof(R9IntegracionTests), f.Fixture, f.Base, propio);
         }
     }
 
-    /// <summary>La sentencia de una entrada del registro, sin el prefijo de PostgreSQL.</summary>
-    private static string Texto(string entrada)
-    {
-        var i = entrada.IndexOf("statement: ", StringComparison.Ordinal);
-        if (i >= 0) return entrada[(i + "statement: ".Length)..];
-        var j = entrada.IndexOf("execute ", StringComparison.Ordinal);
-        if (j >= 0 && entrada.IndexOf(": ", j, StringComparison.Ordinal) is var k and > 0) return entrada[(k + 2)..];
-        return entrada;
-    }
+    /// <summary>
+    /// R10 (O-3): todo lo que se intentó —exitoso o fallido—, para que ninguna afirmación pase por
+    /// alto una sentencia rechazada. La separación queda en <see cref="ClasificadorDeRegistroPg"/>.
+    /// </summary>
+    private static List<string> Sentencias(SentenciasClasificadas c) => [.. c.Intentadas];
 
-    private static List<string> Sentencias(IEnumerable<string> entradas)
-        => [.. entradas.Where(e => e.Contains("statement: ", StringComparison.Ordinal) || e.Contains("execute ", StringComparison.Ordinal)).Select(Texto)
-            // El reinicio de una conexión devuelta al pool de Npgsql no es una sentencia del Host.
-            .Where(s => !s.StartsWith("DISCARD ALL", StringComparison.Ordinal))];
-
-    private static bool EsMutante(string sql) => Mutante.IsMatch(sql);
+    private static bool EsMutante(string sql) => ClasificadorDeRegistroPg.EsMutante(sql);
 
     private async Task<(HttpStatusCode Codigo, string Cuerpo, List<string> Sql)> Llamar(
         HttpMethod metodo, string ruta, string? cookie, string? csrf, object? cuerpo, string quien)
@@ -92,9 +84,13 @@ public sealed class R9IntegracionTests(InstalacionFisicaR8 f) : IClassFixture<In
             codigo = r.StatusCode;
             texto = await r.Content.ReadAsStringAsync();
         });
-        var sql = Sentencias(entradas);
+        var c = ClasificadorDeRegistroPg.Clasificar(entradas);
+        var sql = Sentencias(c);
         Anotar("r9-rutas-http.txt",
-            $"{quien} · {metodo} {ruta}{(cuerpo is null ? "" : " " + JsonSerializer.Serialize(cuerpo))} → {(int)codigo} · sentencias_del_host={sql.Count} · M03={sql.Count(s => Ventas.IsMatch(s))} · audit_log={sql.Count(s => Auditoria.IsMatch(s))} · mutantes={sql.Count(EsMutante)}");
+            $"{quien} · {metodo} {ruta}{(cuerpo is null ? "" : " " + JsonSerializer.Serialize(cuerpo))} → {(int)codigo} · {c.Resumen} · M03={sql.Count(s => Ventas.IsMatch(s))} · audit_log={sql.Count(s => Auditoria.IsMatch(s))}");
+        Anotar("r9-sentencias-fallidas.txt", [$"--- {quien} · {metodo} {ruta} → {(int)codigo} · fallidas={c.Fallidas.Count}", .. c.Fallidas.Zip(c.Errores, (f, e) => $"{e} ⇐ {f.Replace("\n", " ", StringComparison.Ordinal)}")]);
+        // Ningún flujo de R9 envía sentencias que PostgreSQL rechace: si aparece una, se ve y es rojo.
+        Assert.Empty(c.Fallidas);
         Anotar("r9-sentencias-http.txt", [$"--- {quien} · {metodo} {ruta} → {(int)codigo}", .. sql.Select(s => s.Replace("\n", " ", StringComparison.Ordinal))]);
         Anotar("r9-respuestas-http.txt", $"{quien} · {metodo} {ruta} → {(int)codigo}", texto);
         return (codigo, texto, sql);
@@ -447,7 +443,10 @@ public sealed class R9IntegracionTests(InstalacionFisicaR8 f) : IClassFixture<In
                 var puerto = ambito.ServiceProvider.GetRequiredService<IM03CommercialReadOnlyEvaluationPort>();
                 resultados.Add(await puerto.EvaluateAsync(peticion, TestContext.Current.CancellationToken));
             });
-            porVuelta.Add(Sentencias(entradas).ToList());
+            var c = ClasificadorDeRegistroPg.Clasificar(entradas);
+            Assert.Empty(c.Fallidas);
+            Assert.Empty(c.Mutantes);
+            porVuelta.Add(Sentencias(c));
         }
 
         var r = resultados[0];
@@ -467,7 +466,7 @@ public sealed class R9IntegracionTests(InstalacionFisicaR8 f) : IClassFixture<In
         Assert.Equal(huella, await f.Huella());
 
         Anotar("r9-m03-m11-fisico.txt",
-            $"{caso} | {r.Outcome} {r.SourceVerdict}/{r.SourceReason} | código={razon} | lecturas_sales={sql.Count} (2.ª vuelta {porVuelta[1].Count}) | mutantes=0 | pedidos sin cambios");
+            $"{caso} | {r.Outcome} {r.SourceVerdict}/{r.SourceReason} | código={razon} | lecturas_sales={sql.Count} (2.ª vuelta {porVuelta[1].Count}) | fallidas=0 | mutantes=0 | pedidos sin cambios");
         Anotar("r9-m03-m11-sentencias.txt", [$"--- {caso}", .. sql.Select(s => s.Replace("\n", " ", StringComparison.Ordinal))]);
     }
 
@@ -574,10 +573,12 @@ public sealed class R9IntegracionTests(InstalacionFisicaR8 f) : IClassFixture<In
         Assert.Null(st.CommercialEffectReference);
         Assert.Null(st.NextAttemptAt);
         Assert.Equal(ProviderInboxProcessOutcome.NotReady, otra!.Outcome);
-        var sql = Sentencias(entradas);
+        var clasificadas = ClasificadorDeRegistroPg.Clasificar(entradas);
+        var sql = Sentencias(clasificadas);
         Assert.Empty(sql);
+        Assert.Empty(clasificadas.Fallidas);
         Assert.Equal(huella, await f.Huella());
         Anotar("r9-inbox-fisico.txt",
-            $"inbox→procesador real (Host físico) | {r.Outcome} | inbox={st.ProcessingState}/{st.CommercialState} | razón={st.HoldReason} | próximo_intento={(st.NextAttemptAt is null ? "ninguno" : st.NextAttemptAt)} | referencia={(st.CommercialEffectReference ?? "ninguna")} | sentencias_del_host={sql.Count} | reproceso={otra.Outcome}");
+            $"inbox→procesador real (Host físico) | {r.Outcome} | inbox={st.ProcessingState}/{st.CommercialState} | razón={st.HoldReason} | próximo_intento={(st.NextAttemptAt is null ? "ninguno" : st.NextAttemptAt)} | referencia={(st.CommercialEffectReference ?? "ninguna")} | {clasificadas.Resumen} | reproceso={otra.Outcome}");
     }
 }

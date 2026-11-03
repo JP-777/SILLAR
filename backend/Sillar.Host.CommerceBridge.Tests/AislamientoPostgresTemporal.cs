@@ -213,6 +213,10 @@ public static class AislamientoPostgresTemporal
     private static readonly System.Text.RegularExpressions.Regex NombrePropio =
         new("^sillar_r(7|8a|8_sales)_[0-9a-f]{32}$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
+    /// <summary>R10 (O-2): forma de una dueña. Cada instancia de fixture usa la suya, única.</summary>
+    private static readonly System.Text.RegularExpressions.Regex DuenaValida =
+        new("^[a-z0-9][a-z0-9-]{1,40}$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
     private static readonly Dictionary<string, string> Propias = new(StringComparer.Ordinal);
     private static readonly List<string> Bitacora = [];
 
@@ -245,16 +249,40 @@ public static class AislamientoPostgresTemporal
             throw new InvalidOperationException($"R8-01: «{nombre}» no es un nombre de base temporal propio.");
         }
 
-        var (verificada, conexion) = await AbrirVerificadaAsync(entrada, esperada, $"{fixture}-bases", ct);
-        await using (conexion)
+        if (!DuenaValida.IsMatch(fixture))
         {
-            await using var cmd = new NpgsqlCommand($"CREATE DATABASE \"{nombre}\"", conexion);
-            await cmd.ExecuteNonQueryAsync(ct);
+            throw new InvalidOperationException($"R8-01: «{fixture}» no es una dueña válida; no se crea ninguna base.");
         }
 
+        // R10 (O-2): una base tiene una sola dueña. El nombre se reserva antes de conectar; si ya
+        // es de otra, nadie más lo reclama. Si la creación falla, la reserva se libera.
         lock (Bitacora)
         {
-            Propias[nombre] = fixture;
+            if (!Propias.TryAdd(nombre, fixture))
+            {
+                throw new InvalidOperationException($"R8-01: «{nombre}» ya es de {Propias[nombre]}; {fixture} no puede crearla ni reclamarla.");
+            }
+        }
+
+        CadenaVerificadaPg verificada;
+        try
+        {
+            NpgsqlConnection conexion;
+            (verificada, conexion) = await AbrirVerificadaAsync(entrada, esperada, $"{fixture}-bases", ct);
+            await using (conexion)
+            {
+                await using var cmd = new NpgsqlCommand($"CREATE DATABASE \"{nombre}\"", conexion);
+                await cmd.ExecuteNonQueryAsync(ct);
+            }
+        }
+        catch
+        {
+            lock (Bitacora)
+            {
+                Propias.Remove(nombre);
+            }
+
+            throw;
         }
 
         Registrar($"creada · fixture={fixture} base={nombre} servidor={verificada.Host}:{verificada.Puerto} contenedor={esperada.Contenedor} system_identifier={esperada.SystemIdentifier} cluster_name={esperada.ClusterName}");

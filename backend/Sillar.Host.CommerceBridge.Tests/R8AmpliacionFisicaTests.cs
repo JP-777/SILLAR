@@ -57,8 +57,11 @@ public sealed class InstalacionFisicaR8 : IAsyncLifetime
     public List<string> Evidencia { get; } = [];
     public IdentidadEsperadaPg? Esperada { get; private set; }
     public string Entrada { get; private set; } = "";
-    /// <summary>Nombre con el que esta fixture se registra como dueña de su base.</summary>
-    public string Fixture { get; } = "r8a";
+    /// <summary>
+    /// Nombre con el que esta instancia se registra como dueña de su base. R10 (O-2): único por
+    /// instancia, no el literal «r8a» que compartían dos instancias del mismo tipo.
+    /// </summary>
+    public string Fixture { get; } = $"r8a-{Guid.NewGuid():N}"[..12];
     public List<string> InventarioPrevio { get; } = [];
     public AuthenticatedHost? Host { get; private set; }
     public HttpClient Http { get; private set; } = null!;
@@ -108,6 +111,8 @@ public sealed class InstalacionFisicaR8 : IAsyncLifetime
         AislamientoPostgresTemporal.ValidarCadena(servidor, Esperada);
         Entrada = servidor;
         var verificada = await AislamientoPostgresTemporal.VerificarAsync(servidor, Esperada);
+        Evidencia.Add(Cabecera(Fixture, Base));
+        InventarioPrevio.Add(Cabecera(Fixture, Base));
         Evidencia.Add($"R8-01 barrera superada: contenedor={Esperada.Contenedor} system_identifier={Esperada.SystemIdentifier} cluster_name={Esperada.ClusterName} puerto={verificada.Puerto}");
         var cs = new NpgsqlConnectionStringBuilder(verificada.Cadena);
 
@@ -168,7 +173,8 @@ public sealed class InstalacionFisicaR8 : IAsyncLifetime
         }
 
         Assert.Contains("sales=" + string.Join(",", SalesEjecutables), InventarioPrevio);
-        Escribir("r8a-inventario-previo.txt", InventarioPrevio);
+        Escribir(ArchivoDe(Fixture, "inventario-previo.txt"), InventarioPrevio);
+        RegistrarEvidencia(nameof(InstalacionFisicaR8), Fixture, Base, ArchivoDe(Fixture, "inventario-previo.txt"));
 
         // Orden de dependencias: Sales depende de CRM y Catalog (SalesModule: dependencias duras).
         foreach (var (codigo, aplicar) in new (string, Func<Task>)[]
@@ -257,7 +263,15 @@ public sealed class InstalacionFisicaR8 : IAsyncLifetime
         var salir = await InstalacionRealR7.Pedir(Http, HttpMethod.Post, "/api/admin/auth/logout", revocable, csrfRevocable);
         Assert.True(salir.IsSuccessStatusCode);
         CookieRevocada = revocable;
-        Escribir("r8a-instalacion-fisica.txt", Evidencia);
+        EscribirEvidencia();
+    }
+
+    /// <summary>R10 (O-1): la evidencia de esta instancia, en su propio archivo e indexada.</summary>
+    private void EscribirEvidencia()
+    {
+        var archivo = ArchivoDe(Fixture, "instalacion-fisica.txt");
+        Escribir(archivo, Evidencia);
+        RegistrarEvidencia(nameof(InstalacionFisicaR8), Fixture, Base, archivo);
     }
 
     /// <summary>Cada pedido con su versión de fila física (<c>xmin</c>): cambia si alguien lo escribe.</summary>
@@ -324,7 +338,7 @@ public sealed class InstalacionFisicaR8 : IAsyncLifetime
         // Solo la base que esta fixture creó, y solo tras reverificar la identidad del servidor.
         await AislamientoPostgresTemporal.EliminarBasePropiaAsync(Entrada, Esperada!, Base, Fixture);
         Evidencia.AddRange(await InstalacionRealR7.Consultar(Servidor, "select 'bases_despues=' || string_agg(datname, ',' order by datname) from pg_database"));
-        Escribir("r8a-instalacion-fisica.txt", Evidencia);
+        EscribirEvidencia();
     }
 }
 
@@ -346,13 +360,16 @@ public sealed class R8AmpliacionFisicaTests(InstalacionFisicaR8 f) : IClassFixtu
         }
     }
 
-    private static void Anotar(string archivo, params string[] lineas)
+    /// <summary>R10 (O-1): archivos de la clase, propios de la instancia de fixture que usa, con cabecera e índice.</summary>
+    private void Anotar(string archivo, params string[] lineas)
     {
         lock (Notas)
         {
-            if (!Notas.TryGetValue(archivo, out var l)) Notas[archivo] = l = [];
+            var propio = ArchivoDe(f.Fixture, archivo);
+            if (!Notas.TryGetValue(propio, out var l)) Notas[propio] = l = [Cabecera(f.Fixture, f.Base)];
             l.AddRange(lineas);
-            Escribir(archivo, l);
+            Escribir(propio, l);
+            RegistrarEvidencia(nameof(R8AmpliacionFisicaTests), f.Fixture, f.Base, propio);
         }
     }
 
