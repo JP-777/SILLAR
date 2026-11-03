@@ -55,6 +55,8 @@ public sealed class InstalacionFisicaR8 : IAsyncLifetime
     public string Cadena { get; private set; } = "";
     public string CadenaHost { get; private set; } = "";
     public List<string> Evidencia { get; } = [];
+    public IdentidadEsperadaR8? Esperada { get; private set; }
+    public string Entrada { get; private set; } = "";
     public List<string> InventarioPrevio { get; } = [];
     public AuthenticatedHost? Host { get; private set; }
     public HttpClient Http { get; private set; } = null!;
@@ -97,11 +99,15 @@ public sealed class InstalacionFisicaR8 : IAsyncLifetime
             return;
         }
 
-        var cs = new NpgsqlConnectionStringBuilder(servidor);
-        if (cs.Host is not ("127.0.0.1" or "localhost"))
-        {
-            throw new InvalidOperationException($"R8 solo usa una instancia de bucle local; la cadena apunta a {cs.Host}.");
-        }
+        // R8-01: con cadena presente, la barrera decide antes de cualquier SQL. Primero sin red
+        // (cadena completa y puerto del contenedor esperado); después, identidad del servidor
+        // contra la que dio el canal independiente. Un fallo aquí no es omisión: falla la fixture.
+        Esperada = AislamientoR8.LeerIdentidad(Environment.GetEnvironmentVariable(AislamientoR8.VariableIdentidad));
+        AislamientoR8.ValidarCadena(servidor, Esperada);
+        Entrada = servidor;
+        var verificada = await AislamientoR8.VerificarAsync(servidor, Esperada);
+        Evidencia.Add($"R8-01 barrera superada: contenedor={Esperada.Contenedor} system_identifier={Esperada.SystemIdentifier} cluster_name={Esperada.ClusterName} puerto={verificada.Puerto}");
+        var cs = new NpgsqlConnectionStringBuilder(verificada.Cadena);
 
         Servidor = new NpgsqlConnectionStringBuilder(servidor) { Database = "postgres", ApplicationName = AppPreparacion }.ConnectionString;
         Cadena = new NpgsqlConnectionStringBuilder(servidor) { Database = Base, ApplicationName = AppPreparacion }.ConnectionString;
