@@ -40,7 +40,9 @@ internal static partial class InstallationCurrencyAuditText
         return match.Success ? match.Groups["new"].Value : null;
     }
 
-    [GeneratedRegex(@"^Moneda de la instalación: anterior=(?<old>[A-Z_\-]{1,40}); nueva=(?<new>[A-Z]{3}); lista=(?<list>[a-z0-9\-]{1,40})\.$", RegexOptions.CultureInvariant)]
+    // El valor anterior solo puede ser lo que escribe Compose: un código de tres
+    // letras, el marcador de pendiente o el de no admitido. Nada más.
+    [GeneratedRegex(@"^Moneda de la instalación: anterior=(?<old>[A-Z]{3}|PENDIENTE_DEFINIR|valor-no-admitido); nueva=(?<new>[A-Z]{3}); lista=(?<list>[a-z0-9\-]{1,40})\.$", RegexOptions.CultureInvariant)]
     private static partial Regex Pattern();
 }
 
@@ -77,6 +79,53 @@ internal static class InstallationCurrencyEvaluator
             ? Read(InstallationCurrencyStatus.Accredited, check.Currency)
             : Read(InstallationCurrencyStatus.NotAttested);
     }
+}
+
+/// <summary>Qué hacer con un valor válido, dado lo que hay guardado.</summary>
+internal enum CurrencyWriteDecision
+{
+    /// <summary>Ya es ese valor y está acreditado: no se escribe nada.</summary>
+    Unchanged,
+
+    /// <summary>Es otro valor: se cambia, con su registro.</summary>
+    Change,
+
+    /// <summary>
+    /// Ya es ese valor pero sin comprobante (escrito por fuera): se registra el acto
+    /// explícito de super_admin que lo establece. No es automático: es esta operación.
+    /// </summary>
+    Reattest,
+}
+
+/// <summary>La regla de escritura, sin base.</summary>
+internal static class InstallationCurrencyWriteRule
+{
+    public static CurrencyWriteDecision Decide(string previous, string requested, string? latestAuditSummary)
+    {
+        if (!string.Equals(previous, requested, StringComparison.Ordinal))
+        {
+            return CurrencyWriteDecision.Change;
+        }
+
+        return string.Equals(InstallationCurrencyAuditText.NewValue(latestAuditSummary), previous, StringComparison.Ordinal)
+            ? CurrencyWriteDecision.Unchanged
+            : CurrencyWriteDecision.Reattest;
+    }
+}
+
+/// <summary>
+/// El último registro de auditoría de la clave de moneda, para la escritura. El lector
+/// lleva el mismo filtro en línea; una prueba compara los dos.
+/// </summary>
+internal static class InstallationCurrencyAuditQuery
+{
+    public static IQueryable<string?> LatestSummary(CoreDbContext database)
+        => database.AuditLogs
+            .Where(log => log.EntityType == InstallationCurrencyService.AuditEntityType
+                && log.EntityId == InstallationCurrency.SettingKey
+                && log.Action == AuditAction.Update)
+            .OrderByDescending(log => log.AuditLogId)
+            .Select(log => log.Summary);
 }
 
 /// <summary>Una fila de hechos: el valor guardado y el último registro de auditoría de la clave.</summary>
@@ -119,6 +168,8 @@ internal sealed class InstallationCurrencyAuthority(
             .Where(setting => setting.SettingKey == InstallationCurrency.SettingKey)
             .Select(setting => new InstallationCurrencyFacts(
                 setting.SettingValue,
+                // En línea a propósito: un método estático aquí EF lo ejecutaría aparte,
+                // como consulta propia. Mismo filtro que InstallationCurrencyAuditQuery.
                 database.AuditLogs
                     .Where(log => log.EntityType == InstallationCurrencyService.AuditEntityType
                         && log.EntityId == InstallationCurrency.SettingKey
@@ -134,7 +185,10 @@ internal enum CurrencyChangeOutcome
     /// <summary>Guardada, con su auditoría.</summary>
     Changed,
 
-    /// <summary>Ya era esa. No se escribió nada.</summary>
+    /// <summary>Ya tenía ese valor sin comprobante; ahora tiene el registro de este acto.</summary>
+    Reattested,
+
+    /// <summary>Ya era esa y estaba acreditada. No se escribió nada.</summary>
     Unchanged,
 
     /// <summary>Hace falta <c>super_admin</c>.</summary>
@@ -233,6 +287,7 @@ internal sealed class InstallationCurrencyService(
         SiteSetting? setting = null;
         AuditLog? staged = null;
         string? previous = null;
+        var decision = CurrencyWriteDecision.Change;
         try
         {
             await using var transaction = await database.Database.BeginTransactionAsync(cancellationToken);
@@ -254,7 +309,11 @@ internal sealed class InstallationCurrencyService(
             await database.Entry(setting).ReloadAsync(cancellationToken);
             previous = setting.SettingValue;
 
-            if (string.Equals(previous, value, StringComparison.Ordinal))
+            // Igual al pedido no basta: tiene que estar acreditado. Si no lo está, se
+            // registra este acto en vez de responder que ya estaba.
+            var latest = await InstallationCurrencyAuditQuery.LatestSummary(database).FirstOrDefaultAsync(cancellationToken);
+            decision = InstallationCurrencyWriteRule.Decide(previous, value!, latest);
+            if (decision == CurrencyWriteDecision.Unchanged)
             {
                 return new(CurrencyChangeOutcome.Unchanged, null, check.Currency);
             }
@@ -288,9 +347,32 @@ internal sealed class InstallationCurrencyService(
                 "No se guardó la moneda: no se pudo registrar su auditoría junto al cambio. Inténtalo de nuevo.");
         }
 
+        await AnnounceAsync(cancellationToken);
+        return new(
+            decision == CurrencyWriteDecision.Reattest ? CurrencyChangeOutcome.Reattested : CurrencyChangeOutcome.Changed,
+            null,
+            check.Currency);
+    }
+
+    /// <summary>
+    /// Lo que viene después del commit. <b>No lanza:</b> la moneda ya está guardada, y
+    /// un fallo al avisar —o una cancelación que llega tarde— no puede hacer creer
+    /// que no se guardó. El aviso se intenta una vez con el token del llamador, como
+    /// en el resto de la configuración; si no llega, queda en el registro.
+    /// </summary>
+    internal async Task AnnounceAsync(CancellationToken cancellationToken)
+    {
         cache.Invalidate();
-        await events.PublishAsync(new SettingChanged(InstallationCurrency.SettingKey, false, clock.GetUtcNow()), cancellationToken);
-        return new(CurrencyChangeOutcome.Changed, null, check.Currency);
+
+        try
+        {
+            await events.PublishAsync(new SettingChanged(InstallationCurrency.SettingKey, false, clock.GetUtcNow()), cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception,
+                "La moneda de la instalación se guardó, pero no se pudo avisar de {Evento}.", nameof(SettingChanged));
+        }
     }
 
     private async Task<MonetaryRecordsState> ProbeRecordsAsync(CancellationToken cancellationToken)

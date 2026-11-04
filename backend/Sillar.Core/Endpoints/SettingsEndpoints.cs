@@ -218,7 +218,7 @@ public static class SettingsEndpoints
 
         return result.Outcome switch
         {
-            CurrencyChangeOutcome.Changed or CurrencyChangeOutcome.Unchanged
+            CurrencyChangeOutcome.Changed or CurrencyChangeOutcome.Reattested or CurrencyChangeOutcome.Unchanged
                 => Results.Ok(ToResponse(await authority.ReadAsync(cancellationToken))),
             CurrencyChangeOutcome.Invalid => Results.ValidationProblem(
                 new Dictionary<string, string[]> { ["valor"] = [result.Message!] },

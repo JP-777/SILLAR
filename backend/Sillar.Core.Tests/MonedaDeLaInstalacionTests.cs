@@ -177,6 +177,21 @@ public sealed class MonedaDeLaInstalacionTests
     }
 
     [Fact]
+    public void La_escritura_y_la_lectura_buscan_el_comprobante_con_el_mismo_filtro()
+    {
+        using var contexto = Contexto(CadenaSinServidor);
+        var lectura = new InstallationCurrencyAuthority(contexto, TimeProvider.System, NullLogger<InstallationCurrencyAuthority>.Instance)
+            .FactsQuery().ToQueryString();
+        var escritura = InstallationCurrencyAuditQuery.LatestSummary(contexto).Take(1).ToQueryString();
+
+        foreach (var parte in new[] { "entity_type = 'setting'", "entity_id = 'installation.currency_iso4217'", "action = 'update'", "audit_log_id DESC" })
+        {
+            Assert.Contains(parte, lectura);
+            Assert.Contains(parte, escritura);
+        }
+    }
+
+    [Fact]
     public async Task Si_la_base_no_responde_la_moneda_no_esta_disponible()
     {
         await using var contexto = Contexto(CadenaSinServidor);
@@ -191,7 +206,7 @@ public sealed class MonedaDeLaInstalacionTests
 
     private sealed record Montaje(InstallationCurrencyService Servicio, CoreDbContext Contexto, SondaFalsa? Sonda);
 
-    private static Montaje Servicio(SondaFalsa? sonda = null, CoreDbContext? contextoDelEscritor = null)
+    private static Montaje Servicio(SondaFalsa? sonda = null, CoreDbContext? contextoDelEscritor = null, IEventPublisher? bus = null)
     {
         var contexto = Contexto(CadenaSinServidor);
         var proveedor = new ServiceCollection();
@@ -206,7 +221,7 @@ public sealed class MonedaDeLaInstalacionTests
             contexto,
             escritor,
             new SettingsCache(services.GetRequiredService<IServiceScopeFactory>()),
-            new BusVacio(),
+            bus ?? new BusVacio(),
             services,
             new RelojFijo(Ahora),
             NullLogger<InstallationCurrencyService>.Instance);
@@ -319,6 +334,96 @@ public sealed class MonedaDeLaInstalacionTests
         await using var _ = m.Contexto;
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Establecer(m, "PEN", ct: new CancellationToken(canceled: true)));
+    }
+
+    // ── O-1 · El comprobante se reconoce venga de donde venga el valor anterior ──
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("USD")]
+    [InlineData("pen")]
+    [InlineData("S/")]
+    [InlineData("; nueva=PEN")]
+    [InlineData("valor-no-admitido")]
+    [InlineData("PENDIENTE_DEFINIR")]
+    [InlineData("PEN")]
+    public void Un_cambio_legitimo_desde_cualquier_valor_anterior_queda_acreditado(string anterior)
+    {
+        var registro = InstallationCurrencyAuditText.Compose(anterior, "PEN");
+
+        Assert.Equal("PEN", InstallationCurrencyAuditText.NewValue(registro));
+        Assert.True(InstallationCurrencyEvaluator.Evaluate(true, "PEN", registro, Ahora).IsAccredited);
+    }
+
+    [Fact]
+    public void Un_valor_anterior_muy_largo_tampoco_rompe_el_comprobante()
+    {
+        var registro = InstallationCurrencyAuditText.Compose(new string('X', 500), "PEN");
+
+        Assert.True(registro.Length <= 300);
+        Assert.Equal("PEN", InstallationCurrencyAuditText.NewValue(registro));
+    }
+
+    [Theory]
+    [InlineData("Moneda de la instalación: anterior=usd; nueva=PEN; lista=sillar-iso4217-v1.")]
+    [InlineData("Moneda de la instalación: anterior=Pen; nueva=PEN; lista=sillar-iso4217-v1.")]
+    [InlineData("Moneda de la instalación: anterior=valor-no-admitidoX; nueva=PEN; lista=sillar-iso4217-v1.")]
+    [InlineData("Moneda de la instalación: anterior=VALOR-NO-ADMITIDO; nueva=PEN; lista=sillar-iso4217-v1.")]
+    [InlineData("Moneda de la instalación: anterior=PENDIENTE; nueva=PEN; lista=sillar-iso4217-v1.")]
+    [InlineData("Moneda de la instalación: anterior=; nueva=PEN; lista=sillar-iso4217-v1.")]
+    public void El_valor_anterior_solo_admite_lo_que_el_propio_registro_puede_escribir(string texto)
+        => Assert.Null(InstallationCurrencyAuditText.NewValue(texto));
+
+    // ── O-2 · Igual al guardado no es lo mismo que acreditado ─────────────
+
+    private static readonly string RegistroDePen = InstallationCurrencyAuditText.Compose("PENDIENTE_DEFINIR", "PEN");
+
+    [Fact]
+    public void Si_ya_es_PEN_y_esta_acreditado_no_se_escribe_nada()
+        => Assert.Equal(CurrencyWriteDecision.Unchanged, InstallationCurrencyWriteRule.Decide("PEN", "PEN", RegistroDePen));
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("Configuración 'installation.currency_iso4217' actualizada.")]
+    [InlineData("Moneda de la instalación: anterior=PEN; nueva=USD; lista=sillar-iso4217-v1.")]
+    public void Si_ya_es_PEN_pero_sin_comprobante_se_registra_el_acto_y_no_se_responde_que_ya_estaba(string? ultimo)
+        => Assert.Equal(CurrencyWriteDecision.Reattest, InstallationCurrencyWriteRule.Decide("PEN", "PEN", ultimo));
+
+    [Theory]
+    [InlineData("PENDIENTE_DEFINIR")]
+    [InlineData("USD")]
+    [InlineData("pen")]
+    public void Si_el_guardado_es_otro_valor_se_cambia(string guardado)
+        => Assert.Equal(CurrencyWriteDecision.Change, InstallationCurrencyWriteRule.Decide(guardado, "PEN", RegistroDePen));
+
+    [Fact]
+    public void El_registro_de_un_reestablecimiento_acredita_el_valor()
+    {
+        var registro = InstallationCurrencyAuditText.Compose("PEN", "PEN");
+
+        Assert.True(InstallationCurrencyEvaluator.Evaluate(true, "PEN", registro, Ahora).IsAccredited);
+        Assert.Equal(CurrencyWriteDecision.Unchanged, InstallationCurrencyWriteRule.Decide("PEN", "PEN", registro));
+    }
+
+    // ── O-3 · Después del commit, avisar no cambia el resultado ───────────
+
+    [Fact]
+    public async Task Si_un_publicador_falla_despues_del_commit_no_sale_ninguna_excepcion()
+    {
+        var m = Servicio(bus: new BusQueFalla(new InvalidOperationException("manejador roto")));
+        await using var _ = m.Contexto;
+
+        await m.Servicio.AnnounceAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task Si_la_cancelacion_llega_despues_del_commit_no_sale_ninguna_excepcion()
+    {
+        var m = Servicio(bus: new BusQueFalla(new OperationCanceledException("tarde")));
+        await using var _ = m.Contexto;
+
+        await m.Servicio.AnnounceAsync(new CancellationToken(canceled: true));
     }
 
     // ── La ruta genérica no la toca ────────────────────────────────────────
@@ -447,6 +552,12 @@ public sealed class MonedaDeLaInstalacionTests
             Llamadas++;
             return falla ? throw new InvalidOperationException("ventas caído") : Task.FromResult(estado);
         }
+    }
+
+    private sealed class BusQueFalla(Exception excepcion) : IEventPublisher
+    {
+        public Task PublishAsync<TEvent>(TEvent domainEvent, CancellationToken cancellationToken) where TEvent : notnull
+            => throw excepcion;
     }
 
     private sealed class BusVacio : IEventPublisher

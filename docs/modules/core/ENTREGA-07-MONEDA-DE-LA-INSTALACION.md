@@ -92,3 +92,31 @@ Nada de esto se ha ejecutado contra una base:
 Ventas e `IAutoridadDeMoneda`, el host, CommerceBridge, M08, E2E, M10, M11 y M12. La pantalla de
 configuración muestra la clave en el grupo genérico; guardarla desde ahí devuelve 403 con su
 mensaje. Un control propio en la interfaz queda pendiente.
+
+---
+
+## 8 · Corrección E5.1 (sobre `61089ae`)
+
+- **O-1 · Comprobante.** `Compose` podía escribir `anterior=valor-no-admitido` y el patrón no
+  aceptaba minúsculas: un cambio legítimo desde un valor no reconocido quedaba `NotAttested`. El
+  patrón admite ahora **exactamente** lo que `Compose` puede escribir como valor anterior —un
+  código de tres letras, `PENDIENTE_DEFINIR` o `valor-no-admitido`— y nada más; es más estricto que
+  el de E5, no más laxo.
+- **O-2 · Igual no es acreditado.** Si el valor guardado ya es el pedido, la operación mira el
+  último registro de auditoría. Si lo acredita: `Unchanged`, sin escribir. Si no: registra este acto
+  explícito de super_admin (`Reattested`, `anterior=PEN; nueva=PEN`), con los mismos requisitos que
+  un cambio —incluido el informe de pedidos—. Nunca responde «ya estaba» con la moneda `NotAttested`.
+- **O-3 · Después del commit.** El bus en proceso se traga los fallos de los manejadores, pero deja
+  pasar `OperationCanceledException`, y otro publicador podría lanzar cualquier cosa: la operación
+  salía con excepción con la moneda ya guardada. Ahora `AnnounceAsync` invalida la caché e intenta el
+  aviso una vez, con el token del llamador como el resto de la configuración, y **no lanza**: la
+  respuesta dice lo que pasó en la base. El contrato de `IEventPublisher` y la semántica del aviso no
+  cambian; ver §9.
+
+## 9 · Propuesta a JP sobre el aviso (no implementada)
+
+Con el diseño actual, un `SettingChanged` que no llega —cancelación tardía o publicador roto— se
+pierde: queda en el log, no se reintenta. Hoy no hay ningún manejador de `SettingChanged` fuera de
+CORE, así que no hay consecuencia. Si algún módulo llegara a depender de ese aviso para la moneda, las
+salidas serían publicar con un token propio en vez del del llamador, o un aviso durable; las dos
+cambian la semántica de eventos y quedan para decisión.
