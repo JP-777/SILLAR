@@ -2,7 +2,7 @@
 
 - **Código:** `core`
 - **Schema:** `core`
-- **Versión:** 1.1.0 — nodo de las cuentas, autor de medios sin FK y `ICurrentAdmin` ampliado (`ENTREGA-05-NODO-Y-AUTORIA.md`)
+- **Versión:** 1.1.0 — nodo de las cuentas, autor de medios sin FK y `ICurrentAdmin` ampliado (`ENTREGA-05-NODO-Y-AUTORIA.md`). Candidata: moneda de la instalación (`ENTREGA-07-MONEDA-DE-LA-INSTALACION.md`)
 - **Estado:** Aprobado
 - **Fase:** 0 y 1 — es lo primero que se construye
 
@@ -278,6 +278,8 @@ No hay relaciones cruzadas con otros schemas. CORE no conoce a nadie; todos lo c
 
 Marcar como públicos únicamente: `business_name`, `main_message`, `whatsapp_number`, `contact_email`, `contact_phone`, `business_address`, `business_reference`, `google_maps_url`, `business_hours`, `currency_code`, `currency_symbol`.
 
+Además, privada y sin moneda: `installation.currency_iso4217` (`PENDIENTE_DEFINIR`). Es la autoridad monetaria de la instalación, no un dato de presentación: `currency_code` sigue siendo público y solo sirve para mostrar precios, y de él no se deduce ninguna moneda. La misma fila la prepara la migración `CoreInstallationCurrency` en instalaciones existentes.
+
 **El seed no crea usuarios.** El primer administrador se crea en el modo instalación, con una contraseña que elige la persona. Nunca una credencial por defecto.
 
 ---
@@ -368,6 +370,8 @@ Ejemplo de respuesta de capacidades:
 | POST | `/api/admin/modules/{code}/deactivate` | super_admin |
 | GET | `/api/admin/settings` | admin |
 | PUT | `/api/admin/settings/{key}` | admin |
+| GET | `/api/admin/settings/installation-currency` | admin |
+| PUT | `/api/admin/settings/installation-currency` | super_admin |
 | GET · POST | `/api/admin/users` | super_admin |
 | PUT · DELETE | `/api/admin/users/{id}` | super_admin |
 | GET | `/api/admin/sessions` | super_admin |
@@ -433,6 +437,7 @@ Base vacía o instalación sin completar: el API solo expone `/api/setup*` y el 
 13. Al desinstalar un módulo, sus archivos **no se borran**: se marcan como huérfanos.
 14. Toda acción administrativa que modifica datos se registra en auditoría.
 15. Los registros de auditoría **no se editan ni se borran** desde el API.
+18. La moneda de la instalación (`installation.currency_iso4217`) solo la establece un `super_admin`, solo con un código de la lista cerrada `SupportedCurrencies`, y su cambio se guarda en la misma transacción que su auditoría con el valor anterior y el nuevo, o no se guarda. No se establece mientras no se pueda comprobar que no hay pedidos. La ruta genérica `PUT /api/admin/settings/{key}` la rechaza. Ver `ENTREGA-07-MONEDA-DE-LA-INSTALACION.md`.
 
 ---
 
