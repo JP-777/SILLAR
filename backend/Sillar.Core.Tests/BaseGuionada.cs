@@ -18,8 +18,8 @@ namespace Sillar.Core.Tests;
 /// perdida en el primer comando y seguiría sin ella—; la transacción y los comandos
 /// también son falsos, y cada paso queda anotado en <see cref="Pasos"/> en el orden en que
 /// ocurre: <c>BEGIN</c>, el texto de cada comando, lo que añada la prueba (la
-/// sonda, por ejemplo) y <c>COMMIT</c> o <c>ROLLBACK</c>. Toda lectura devuelve cero
-/// filas.
+/// sonda, por ejemplo) y <c>COMMIT</c> o <c>ROLLBACK</c>. Una lectura devuelve las
+/// filas que diga <see cref="FilasAlLeer"/>, o ninguna.
 /// </para>
 /// <para>
 /// <b>No prueba exclusión mutua.</b> Prueba que las sentencias salen en el orden
@@ -34,6 +34,9 @@ internal sealed class BaseGuionada
 
     /// <summary>Si devuelve una excepción para un comando, el comando la lanza en vez de ejecutarse.</summary>
     public Func<string, Exception?> FallaAlEjecutar { get; set; } = _ => null;
+
+    /// <summary>Las filas que devuelve una lectura, según su texto. Las columnas, en el orden del SELECT.</summary>
+    public Func<string, DataTable?> FilasAlLeer { get; set; } = _ => null;
 
     public CoreDbContext Contexto()
     {
@@ -189,7 +192,7 @@ internal sealed class BaseGuionada
         protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
         {
             Anotar();
-            return new DataTable().CreateDataReader();
+            return (base_.FilasAlLeer(CommandText) ?? new DataTable()).CreateDataReader();
         }
 
         private void Anotar()

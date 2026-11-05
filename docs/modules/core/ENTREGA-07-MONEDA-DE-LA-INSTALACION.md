@@ -207,3 +207,55 @@ que la sonda real no lo pide (revisión de código y una prueba en M03).
    sesión, no. Nunca usar `pg_advisory_lock` con esta identidad.
 7. **Misma base.** Si algún día CORE y Ventas usaran cadenas distintas, la barrera dejaría de existir sin
    avisar: conviene una prueba en M03 que lo vigile.
+
+---
+
+## 13 · E9 · O-1 — Alias de la clave monetaria bajo la colación ICU
+
+**Condición.** `PUT /api/admin/settings/{key}` comprobaba la clave **pedida** con `OrdinalIgnoreCase`
+y luego buscaba la fila con `core.es_ci`, ICU `es-PE-u-ks-level2` no determinista. Para esa colación son
+iguales, además de las mayúsculas, los anchos completos, las variantes de compatibilidad y los
+caracteres ignorables (guion suave, espacios y uniones de anchura cero, marca de orden, selectores de
+variante). Un alias así superaba el filtro, encontraba la fila protegida y la cambiaba por la ruta
+genérica: moneda alterada sin la operación de super_admin, y un registro genérico que dejaba la moneda
+`NotAttested`.
+
+**Reparación.** Tras recuperar la fila, y antes de tocar nada, se compara **la clave de la fila**
+—la que guarda la base, única bajo `uq_site_settings_setting_key`— con `InstallationCurrency.SettingKey`
+en ordinal. El filtro sobre la clave pedida se queda como atajo sin base. Las demás escrituras de
+`site_settings` en CORE no aceptan claves de fuera: `SetupService` escribe la fija `business_name` en
+modo instalación, y `InstallationCurrencyService` la exacta.
+
+**Pruebas sin PostgreSQL** (`ClaveMonetariaColacionTests`): la base guionada devuelve la fila canónica
+ante cualquier lectura, como haría PostgreSQL con un alias. 14 alias, con y sin cambio de visibilidad:
+`403`, sin `UPDATE`, sin auditoría, sin aviso, sin transacción, sin `pg_advisory` y la entidad sin
+cambios. Sin la guarda nueva, 12 de los 14 alias escriben.
+
+**Reproducción física preparada (NO ejecutada).** PostgreSQL 16, clúster ICU `es-PE`, CORE migrado y la
+clave preparada:
+
+```sql
+-- 1. ¿Qué alias da ICU por iguales? Una fila = alias efectivo.
+SELECT a.caso, count(s.*) AS filas
+FROM (VALUES
+  ('guion suave',       U&'installation.curr\00ADency_iso4217'),
+  ('anchura cero',      U&'installation.currency\200B_iso4217'),
+  ('unión anchura cero',U&'\200Dinstallation.currency_iso4217'),
+  ('marca de orden',    U&'\FEFFinstallation.currency_iso4217'),
+  ('i ancho completo',  U&'\FF49nstallation.currency_iso4217'),
+  ('dígitos ancho comp.',U&'installation.currency_iso\FF14\FF12\FF11\FF17'),
+  ('s larga',           U&'in\017Ftallation.currency_i\017Fo4217'),
+  ('mayúsculas',        'INSTALLATION.CURRENCY_ISO4217')
+) AS a(caso, clave)
+LEFT JOIN core.site_settings s ON s.setting_key = a.clave
+GROUP BY a.caso ORDER BY a.caso;
+
+-- 2. Unicidad: ningún alias puede existir como fila aparte (se espera 23505).
+INSERT INTO core.site_settings (setting_key, setting_value, value_type)
+VALUES (U&'installation.curr\00ADency_iso4217', 'USD', 'text');
+```
+
+3. Por la API, con sesión de `admin` y de `super_admin`: `PUT /api/admin/settings/<alias codificado en URL>`
+   con `{"value":"USD","isPublic":true}` para cada alias efectivo del paso 1. Esperado: `403`; valor e
+   `is_public` sin cambios; ningún registro nuevo en `core.audit_log` para la clave; la lectura sigue en
+   el mismo estado; ningún bloqueo `advisory` en `pg_locks`.
