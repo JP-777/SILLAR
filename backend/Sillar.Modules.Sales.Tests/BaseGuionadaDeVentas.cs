@@ -163,6 +163,7 @@ internal sealed class BaseGuionadaDeVentas
     {
         private readonly NpgsqlCommand parametros = new();
 
+        [System.Diagnostics.CodeAnalysis.AllowNull]
         public override string CommandText { get; set; } = "";
 
         public override int CommandTimeout { get; set; }

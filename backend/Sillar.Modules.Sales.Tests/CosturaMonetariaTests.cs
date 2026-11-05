@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure.Internal;
 using Sillar.Core.Contracts;
 using Sillar.Modules.Sales.Data;
 using Sillar.Modules.Sales.Dtos;
@@ -395,10 +394,9 @@ public sealed class CosturaMonetariaTests
 
         using var proveedor = servicios.BuildServiceProvider();
         using var ambito = proveedor.CreateScope();
-        var opciones = ambito.ServiceProvider.GetRequiredService<DbContextOptions<SalesDbContext>>();
-        var npgsql = opciones.Extensions.OfType<NpgsqlOptionsExtension>().Single();
+        var contexto = ambito.ServiceProvider.GetRequiredService<SalesDbContext>();
 
-        Assert.Equal(CadenaSinBase, npgsql.ConnectionString);
+        Assert.Equal(CadenaSinBase, contexto.Database.GetConnectionString());
     }
 
     // ================================================================== escritores de sales.orders
