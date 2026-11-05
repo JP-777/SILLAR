@@ -233,7 +233,15 @@ internal sealed record CurrencyChangeResult(CurrencyChangeOutcome Outcome, strin
 /// <para>
 /// <b>No cambia la moneda si no puede comprobar que no hay pedidos.</b> Eso lo sabe
 /// el dueño de los pedidos, no CORE: se pregunta a <see cref="IMonetaryRecordsProbe"/>,
-/// y sin ninguno registrado la respuesta es no.
+/// y sin ninguno registrado, o sin respuesta firme, la respuesta es no.
+/// </para>
+/// <para>
+/// <b>Pedir la moneda que ya hay no es cambiarla</b> (O-2, ratificada). Si el valor
+/// guardado es exactamente el pedido y el último comprobante de auditoría lo acredita,
+/// el resultado es <see cref="CurrencyChangeOutcome.Unchanged"/> aunque existan pedidos:
+/// no se escribe, no se acredita de nuevo y no se avisa. Se decide bajo el bloqueo
+/// exclusivo, con la fila releída tras <c>FOR UPDATE</c>. Con pedidos sigue rechazándose
+/// todo lo que escribiría: cambiar de moneda y acreditar un valor sin comprobante.
 /// </para>
 /// <para>
 /// <b>Barrera con Ventas.</b> Orden fijo dentro de la transacción: tiempo de espera de
@@ -306,15 +314,11 @@ internal sealed class InstallationCurrencyService(
             await database.Database.ExecuteSqlRawAsync(LockTimeoutSql, cancellationToken);
             await database.Database.ExecuteSqlAsync(MonetaryAuthorityLock.AcquireExclusive(), cancellationToken);
 
-            // 2. Con el bloqueo puesto: ningún pedido puede estar a medio crear.
+            // 2. Con el bloqueo puesto: ningún pedido puede estar a medio crear. Sin una
+            //    respuesta firme de Ventas no se sigue. Con ella, el veredicto sobre los
+            //    pedidos se aplica después de mirar la fila (O-2, ratificada por JP).
             var records = await ProbeRecordsAsync(probe, cancellationToken);
-            if (records == MonetaryRecordsState.Present)
-            {
-                return new(CurrencyChangeOutcome.RecordsPresent,
-                    "Ya hay pedidos registrados con importe: la moneda de la instalación no se cambia.");
-            }
-
-            if (records != MonetaryRecordsState.None)
+            if (records is not (MonetaryRecordsState.None or MonetaryRecordsState.Present))
             {
                 return Unverifiable();
             }
@@ -327,23 +331,38 @@ internal sealed class InstallationCurrencyService(
             setting = await database.SiteSettings
                 .FirstOrDefaultAsync(candidate => candidate.SettingKey == InstallationCurrency.SettingKey, cancellationToken);
 
+            if (setting is not null)
+            {
+                // Si la fila ya estaba en el contexto, se relee: bajo el bloqueo manda la base.
+                await database.Entry(setting).ReloadAsync(cancellationToken);
+                previous = setting.SettingValue;
+
+                // Igual al pedido no basta: tiene que estar acreditado. Si no lo está, se
+                // registra este acto en vez de responder que ya estaba.
+                var latest = await InstallationCurrencyAuditQuery.LatestSummary(database).FirstOrDefaultAsync(cancellationToken);
+                decision = InstallationCurrencyWriteRule.Decide(previous, value!, latest);
+
+                // 4. Ya es esa moneda y su comprobante lo dice: no hay nada que escribir,
+                //    ni acreditación nueva, ni aviso. Vale también con pedidos, porque no
+                //    cambia lo que esos pedidos dieron por moneda.
+                if (decision == CurrencyWriteDecision.Unchanged)
+                {
+                    return new(CurrencyChangeOutcome.Unchanged, null, check.Currency);
+                }
+            }
+
+            // 5. Todo lo demás escribe —cambiar, o acreditar un valor sin comprobante— y
+            //    con pedidos no se escribe.
+            if (records == MonetaryRecordsState.Present)
+            {
+                return new(CurrencyChangeOutcome.RecordsPresent,
+                    "Ya hay pedidos registrados con importe: la moneda de la instalación no se cambia.");
+            }
+
             if (setting is null)
             {
                 return new(CurrencyChangeOutcome.NotPrepared,
                     "La clave de la moneda no está preparada en esta instalación: falta aplicar la migración CoreInstallationCurrency.");
-            }
-
-            // Si la fila ya estaba en el contexto, se relee: bajo el bloqueo manda la base.
-            await database.Entry(setting).ReloadAsync(cancellationToken);
-            previous = setting.SettingValue;
-
-            // Igual al pedido no basta: tiene que estar acreditado. Si no lo está, se
-            // registra este acto en vez de responder que ya estaba.
-            var latest = await InstallationCurrencyAuditQuery.LatestSummary(database).FirstOrDefaultAsync(cancellationToken);
-            decision = InstallationCurrencyWriteRule.Decide(previous, value!, latest);
-            if (decision == CurrencyWriteDecision.Unchanged)
-            {
-                return new(CurrencyChangeOutcome.Unchanged, null, check.Currency);
             }
 
             setting.SettingValue = value!;
@@ -355,7 +374,8 @@ internal sealed class InstallationCurrencyService(
                 ModuleCode = CoreModule.ModuleCode,
                 EntityType = AuditEntityType,
                 EntityId = InstallationCurrency.SettingKey,
-                Summary = InstallationCurrencyAuditText.Compose(previous, value!),
+                // Hay fila, así que el valor anterior se leyó arriba, bajo el bloqueo.
+                Summary = InstallationCurrencyAuditText.Compose(previous!, value!),
             });
 
             await database.SaveChangesAsync(cancellationToken);

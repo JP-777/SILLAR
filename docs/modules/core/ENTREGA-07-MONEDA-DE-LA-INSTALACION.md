@@ -207,3 +207,104 @@ que la sonda real no lo pide (revisión de código y una prueba en M03).
    sesión, no. Nunca usar `pg_advisory_lock` con esta identidad.
 7. **Misma base.** Si algún día CORE y Ventas usaran cadenas distintas, la barrera dejaría de existir sin
    avisar: conviene una prueba en M03 que lo vigile.
+
+---
+
+## 13 · E9 · O-1 — Alias de la clave monetaria bajo la colación ICU
+
+**Condición.** `PUT /api/admin/settings/{key}` comprobaba la clave **pedida** con `OrdinalIgnoreCase`
+y luego buscaba la fila con `core.es_ci`, ICU `es-PE-u-ks-level2` no determinista. Para esa colación son
+iguales, además de las mayúsculas, los anchos completos, las variantes de compatibilidad y los
+caracteres ignorables (guion suave, espacios y uniones de anchura cero, marca de orden, selectores de
+variante). Un alias así superaba el filtro, encontraba la fila protegida y la cambiaba por la ruta
+genérica: moneda alterada sin la operación de super_admin, y un registro genérico que dejaba la moneda
+`NotAttested`.
+
+**Reparación.** Tras recuperar la fila, y antes de tocar nada, se compara **la clave de la fila**
+—la que guarda la base, única bajo `uq_site_settings_setting_key`— con `InstallationCurrency.SettingKey`
+en ordinal. El filtro sobre la clave pedida se queda como atajo sin base. Las demás escrituras de
+`site_settings` en CORE no aceptan claves de fuera: `SetupService` escribe la fija `business_name` en
+modo instalación, y `InstallationCurrencyService` la exacta.
+
+**Pruebas sin PostgreSQL** (`ClaveMonetariaColacionTests`): la base guionada devuelve la fila canónica
+ante cualquier lectura, como haría PostgreSQL con un alias. 14 alias, con y sin cambio de visibilidad:
+`403`, sin `UPDATE`, sin auditoría, sin aviso, sin transacción, sin `pg_advisory` y la entidad sin
+cambios. Sin la guarda nueva, 12 de los 14 alias escriben.
+
+**Reproducción física preparada (NO ejecutada).** PostgreSQL 16, clúster ICU `es-PE`, CORE migrado y la
+clave preparada:
+
+```sql
+-- 1. ¿Qué alias da ICU por iguales? Una fila = alias efectivo.
+SELECT a.caso, count(s.*) AS filas
+FROM (VALUES
+  ('guion suave',       U&'installation.curr\00ADency_iso4217'),
+  ('anchura cero',      U&'installation.currency\200B_iso4217'),
+  ('unión anchura cero',U&'\200Dinstallation.currency_iso4217'),
+  ('marca de orden',    U&'\FEFFinstallation.currency_iso4217'),
+  ('i ancho completo',  U&'\FF49nstallation.currency_iso4217'),
+  ('dígitos ancho comp.',U&'installation.currency_iso\FF14\FF12\FF11\FF17'),
+  ('s larga',           U&'in\017Ftallation.currency_i\017Fo4217'),
+  ('mayúsculas',        'INSTALLATION.CURRENCY_ISO4217')
+) AS a(caso, clave)
+LEFT JOIN core.site_settings s ON s.setting_key = a.clave
+GROUP BY a.caso ORDER BY a.caso;
+
+-- 2. Unicidad: ningún alias puede existir como fila aparte (se espera 23505).
+INSERT INTO core.site_settings (setting_key, setting_value, value_type)
+VALUES (U&'installation.curr\00ADency_iso4217', 'USD', 'text');
+```
+
+3. Por la API, con sesión de `admin` y de `super_admin`: `PUT /api/admin/settings/<alias codificado en URL>`
+   con `{"value":"USD","isPublic":true}` para cada alias efectivo del paso 1. Esperado: `403`; valor e
+   `is_public` sin cambios; ningún registro nuevo en `core.audit_log` para la clave; la lectura sigue en
+   el mismo estado; ningún bloqueo `advisory` en `pg_locks`.
+
+## 14 · E9 · O-2 ratificada — Pedir la moneda que ya hay no es cambiarla
+
+**Decisión de JP (adenda a R10-E9).** Si la moneda pedida ya está acreditada y coincide exactamente con la
+vigente, la operación responde `200` (`Unchanged`) **aunque existan pedidos**. Sustituye, solo en ese
+punto, lo dicho en §8 (O-2 de E5.1) y §10: hasta aquí, con pedidos se respondía `409` antes de mirar la fila.
+
+**Cómo queda** (`InstallationCurrencyService.SetAsync`), con el orden de §10 intacto:
+
+| Sonda (bajo el bloqueo) | Fila releída tras `FOR UPDATE` y último comprobante | Resultado |
+|---|---|---|
+| Sin sonda | — (no se abre transacción) | `409` `RecordsUnverifiable` |
+| `Unknown` o falla | — (no se llega a la fila) | `409` `RecordsUnverifiable` |
+| `None` o `Present` | igual al pedido **y** acreditado | `200` `Unchanged`: sin escritura, sin acreditación nueva, sin aviso; la transacción se deshace |
+| `Present` | sin comprobante válido, o distinto del pedido, o sin fila | `409` `RecordsPresent`, sin escribir |
+| `None` | sin comprobante válido | `200` `Reattested` (como en E5.1) |
+| `None` | distinto del pedido | `200` `Changed` (como en E5.1) |
+| `None` | sin fila | `409` `NotPrepared` |
+
+«Exactamente» es ordinal: `pen` o `PEN ` guardados no coinciden con `PEN`. «Acreditada» es la regla de
+§4 y §8: el último registro de la clave, con la forma exacta de `Compose`, dice ese mismo valor.
+
+**Por qué la sonda sigue siendo obligatoria para `Unchanged`.** La adenda autoriza `Unchanged` cuando
+existen pedidos, no cuando no se sabe si existen. Sin respuesta firme de Ventas la operación no sigue,
+como hasta ahora; eso conserva sin cambios las negativas de E5 y E5.2 (sin sonda, sin tocar la base).
+
+**Pruebas sin PostgreSQL** (`MonedaSinCambioConPedidosTests`, 20): `Unchanged` con y sin pedidos; orden
+bajo la barrera (fila y comprobante leídos después del bloqueo y del `FOR UPDATE`); ni `UPDATE`, ni
+`INSERT`, ni `COMMIT`, ni auditoría preparada, ni aviso; nueve variantes que escribirían, todas `409`;
+idempotencia (tres peticiones, tres `Unchanged`, nada escrito); bloqueo ocupado sin decisión
+adelantada; una vista vieja del contexto no da un `Unchanged` falso; un segundo super_admin lee lo
+que confirmó el primero; si no se puede leer el comprobante no hay `Unchanged`. Volver a la semántica
+anterior hace fallar 5; aceptar igualdad sin comprobante, otras 5.
+`BarreraMonetariaTests`: la prueba «con pedidos se rechaza» mantiene `409`, sin escritura y bajo el
+bloqueo, pero ahora llega a la fila.
+
+**Reproducción física preparada (NO ejecutada).** Como en §11, con sesiones **V** y **C** y una sonda de
+prueba registrada solo en el arnés físico que responda `Present`:
+
+1. Moneda acreditada: `PUT /api/admin/settings/installation-currency {"value":"PEN"}` con sonda `None`
+   → `200`, un registro `anterior=PENDIENTE_DEFINIR; nueva=PEN`.
+2. Sonda `Present`. Repetir el mismo `PUT` tres veces → `200` con `Accredited`/`PEN` las tres; el número de
+   filas de `core.audit_log` para la clave no cambia; `updated_at` de la fila no cambia; `pg_locks` sin
+   bloqueo `advisory` al terminar.
+3. Con V reteniendo `pg_advisory_xact_lock_shared(1397312588, 1)` más de 5 s, el mismo `PUT` → `409`
+   `MonetaryLockBusy`: no se responde `Unchanged` sin la barrera.
+4. En otra base recién migrada, sin ningún registro de la clave: `UPDATE` directo de la fila a `PEN`
+   (queda `NotAttested`). Sonda `Present`, el mismo `PUT` → `409` `RecordsPresent`; sin registro nuevo.
+5. Sonda `Present`, fila en `PENDIENTE_DEFINIR` → `409` `RecordsPresent`; sin cambios.

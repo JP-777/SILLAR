@@ -77,7 +77,8 @@ internal sealed class SiteSettingService(
     {
         // La moneda de la instalación es una autoridad, no un ajuste más: tiene su
         // propia operación, solo para super_admin y con auditoría en la misma
-        // transacción. Ignorando mayúsculas, como la colación de la clave.
+        // transacción. Este filtro es solo el atajo barato, sin tocar la base; la
+        // barrera es la comprobación sobre la fila recuperada, más abajo.
         if (string.Equals(key, InstallationCurrency.SettingKey, StringComparison.OrdinalIgnoreCase))
         {
             return new SettingOperation(
@@ -95,6 +96,19 @@ internal sealed class SiteSettingService(
         if (setting is null)
         {
             return new SettingOperation(SettingOutcome.NotFound);
+        }
+
+        // La comprobación de arriba mira la clave pedida; esta mira la fila que la
+        // base devolvió. core.es_ci es ICU de nivel 2 y no determinista: además de
+        // mayúsculas, da por iguales anchos completos, variantes de compatibilidad y
+        // caracteres ignorables (guion suave, espacios de anchura cero…). Un alias así
+        // pasa la comparación ordinal y aun así encuentra la fila protegida. La
+        // identidad que cuenta es la de la fila, y se mira antes de tocar nada.
+        if (string.Equals(setting.SettingKey, InstallationCurrency.SettingKey, StringComparison.Ordinal))
+        {
+            return new SettingOperation(
+                SettingOutcome.Forbidden,
+                "La moneda de la instalación se establece en su propia operación y exige el rol super_admin.");
         }
 
         var wantsVisibilityChange = request.IsPublic is { } requested && requested != setting.IsPublic;

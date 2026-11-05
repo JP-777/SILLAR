@@ -74,7 +74,8 @@ public static class SettingsEndpoints
             .WithDescription(
                 "Solo super_admin. El valor es un código ISO 4217 exacto de la lista cerrada. El cambio y su " +
                 "auditoría, con los valores anterior y nuevo, se guardan en la misma transacción: si la " +
-                "auditoría falla, no se guarda nada. Se rechaza mientras no se pueda comprobar que no hay pedidos.")
+                "auditoría falla, no se guarda nada. Se rechaza mientras no se pueda comprobar que no hay pedidos. " +
+                "Pedir la moneda que ya está acreditada responde 200 sin escribir nada, aunque haya pedidos.")
             .Produces<InstallationCurrencyResponse>(StatusCodes.Status200OK)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -199,7 +200,8 @@ public static class SettingsEndpoints
     /// <param name="currentUser">Quién lo pide.</param>
     /// <param name="cancellationToken">Cancelación de la petición.</param>
     /// <returns>
-    /// 200 con la moneda; 400 si el valor no es de la lista; 403 sin super_admin; 409 si hay pedidos,
+    /// 200 con la moneda, también si ya era esa y estaba acreditada aunque haya pedidos; 400 si el valor
+    /// no es de la lista; 403 sin super_admin; 409 si hay pedidos y habría que cambiarla o acreditarla,
     /// no se puede comprobar, la clave no está preparada o una venta retiene el bloqueo de moneda;
     /// 503 si no se pudo guardar con su auditoría.
     /// </returns>

@@ -113,14 +113,22 @@ public sealed class BarreraMonetariaTests
     // ── Cierre ante la duda, bajo el bloqueo ───────────────────────────────
 
     [Fact]
-    public async Task Con_pedidos_se_rechaza_bajo_el_bloqueo_y_no_se_llega_a_la_fila()
+    public async Task Con_pedidos_se_rechaza_bajo_el_bloqueo_tras_mirar_la_fila_y_sin_escribir()
     {
+        // Desde la O-2 ratificada, con pedidos hay que mirar la fila: si ya es esa
+        // moneda y está acreditada, la respuesta es Unchanged. Aquí no hay fila, así
+        // que habría que escribir, y con pedidos no se escribe.
         var (m, base_) = Montar(MonetaryRecordsState.Present);
         await using var _ = m.Contexto;
 
         Assert.Equal(CurrencyChangeOutcome.RecordsPresent, (await Establecer(m)).Outcome);
         Assert.Equal(["BEGIN", InstallationCurrencyService.LockTimeoutSql], base_.Pasos.Take(2));
-        Assert.Equal(["SONDA", "ROLLBACK"], base_.Pasos.Skip(3));
+        Assert.Equal("SONDA", base_.Pasos[3]);
+        Assert.Contains("FOR UPDATE", base_.Pasos[4]);
+        Assert.Contains("FROM core.site_settings", base_.Pasos[5]);
+        Assert.Equal("ROLLBACK", base_.Pasos[^1]);
+        Assert.DoesNotContain(base_.Pasos, p => p.Contains("UPDATE core.") || p.Contains("INSERT"));
+        Assert.DoesNotContain("COMMIT", base_.Pasos);
     }
 
     [Fact]
