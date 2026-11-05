@@ -125,8 +125,8 @@ public class Order : IReplicatedEntity
     /// registró, y no se podría distinguir después de uno real.
     /// </para>
     /// <para>
-    /// Hoy <b>ningún escritor la pone</b>, porque no existe autoridad de moneda
-    /// ratificada. Cuando exista, se congela al confirmar, como el total.
+    /// La pone <c>CreadorDePedidos</c>: la que CORE da por acreditada, leída bajo el
+    /// bloqueo de moneda, y se congela al confirmar, como el total.
     /// </para>
     /// </remarks>
     public string? CurrencyCode { get; set; }

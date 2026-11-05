@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Sillar.Core.Contracts;
 using Sillar.Modules.Catalog.Contracts;
 using Sillar.Modules.Sales.Contracts;
@@ -53,9 +54,12 @@ internal sealed class CreadorDePedidos(
         // 0 · La moneda, antes que nada que salga de M03. Sin autoridad que la afirme
         // —o si lo que afirma no tiene forma ISO— no nace ningún pedido: un importe sin
         // unidad se replica y ya no se puede corregir. Cerrar en falso, a propósito.
-        var moneda = monedas.MonedaDeVenta();
-
-        if (!CurrencyCode.TieneFormaIso(moneda))
+        //
+        // ESTA LECTURA SOLO SIRVE PARA RECHAZAR. Va antes de tocar la base de Ventas para
+        // que una tienda sin moneda no abra transacciones ni bloqueos por nada (D20-A).
+        // La moneda que se congela en el pedido es la del paso 4, leída otra vez bajo el
+        // bloqueo de moneda: entre esta lectura y aquella, CORE pudo cambiarla.
+        if (!CurrencyCode.TieneFormaIso(await monedas.MonedaDeVentaAsync(cancellationToken)))
         {
             return ResultadoDeCreacion.Rechaza(MotivoDeNoCreacion.MonedaSinAutoridad);
         }
@@ -122,12 +126,38 @@ internal sealed class CreadorDePedidos(
         var horas = ajustes.Get<int>(SalesSettingsKeys.PaymentDueHours);
         var plazo = horas > 0 ? horas : SalesSettingsKeys.PaymentDueHoursDefault;
 
-        // 4 · La transacción. Dentro van el pedido, sus líneas, su primer asiento de
-        // estado y el número: o está todo o no está nada. Se une a la del llamador si
-        // ya hay una — ver TransaccionDeOperacion, que existe porque este defecto
-        // apareció dos veces.
+        // 4 · La transacción. Dentro van la barrera y la lectura de moneda, el pedido,
+        // sus líneas, su primer asiento de estado y el número: o está todo o no está
+        // nada. Se une a la del llamador si ya hay una — ver TransaccionDeOperacion, que
+        // existe porque este defecto apareció dos veces. Unida a la del llamador, la
+        // barrera dura lo que dure esa transacción, y si el bloqueo no llega a tiempo
+        // la deja abortada: el llamador tiene que deshacerla.
         await using var transaccion =
             await TransaccionDeOperacion.AbrirSiHaceFaltaAsync(database, cancellationToken);
+
+        // 4a · La barrera de moneda, PRIMER bloqueo de la transacción: antes de leer la
+        // moneda, antes de numerar y antes de insertar. Mientras CORE la cambia, esto
+        // espera; mientras esto la tiene, CORE espera. Se suelta sola al confirmar o
+        // deshacer. Ver BarreraMonetariaDeVentas y MonetaryAuthorityLock.
+        try
+        {
+            await BarreraMonetariaDeVentas.AdquirirCompartidaAsync(database, cancellationToken);
+        }
+        catch (PostgresException excepcion) when (excepcion.SqlState == PostgresErrorCodes.LockNotAvailable)
+        {
+            // La transacción quedó abortada; la propia se deshace al salir. El número
+            // no se pidió, así que la serie no tiene hueco.
+            return ResultadoDeCreacion.Rechaza(MotivoDeNoCreacion.MonedaEnCambio);
+        }
+
+        // 4b · La moneda AUTÉNTICA: la que CORE da por acreditada ahora, con el bloqueo
+        // puesto. Si dejó de estarlo desde el paso 0, no nace el pedido.
+        var moneda = await monedas.MonedaDeVentaAsync(cancellationToken);
+
+        if (!CurrencyCode.TieneFormaIso(moneda))
+        {
+            return ResultadoDeCreacion.Rechaza(MotivoDeNoCreacion.MonedaSinAutoridad);
+        }
 
         var pedido = new Order
         {

@@ -46,7 +46,17 @@ public enum MotivoDeNoCreacion
     /// <b>No es culpa del cliente y no lo arregla él.</b> Es la tienda la que todavía
     /// no puede cobrar en una moneda afirmada; la frase lo dice así.
     /// </remarks>
-    MonedaSinAutoridad
+    MonedaSinAutoridad,
+
+    /// <summary>
+    /// La moneda se está estableciendo o cambiando en este momento y el pedido no pudo
+    /// esperar a que terminara. Ver <c>BarreraMonetariaDeVentas</c>.
+    /// </summary>
+    /// <remarks>
+    /// Tampoco es culpa del cliente, pero <b>sí se arregla solo</b>: en unos segundos se
+    /// puede volver a confirmar. Por eso no se funde con <see cref="MonedaSinAutoridad"/>.
+    /// </remarks>
+    MonedaEnCambio
 }
 
 /// <summary>El resultado de intentar crear un pedido.</summary>

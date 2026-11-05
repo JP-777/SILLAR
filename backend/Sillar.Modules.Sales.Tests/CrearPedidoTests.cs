@@ -96,7 +96,8 @@ internal static class Dobles
     /// </summary>
     internal sealed class MonedaDice(string? moneda) : IAutoridadDeMoneda
     {
-        public string? MonedaDeVenta() => moneda;
+        public Task<string?> MonedaDeVentaAsync(CancellationToken cancellationToken)
+            => Task.FromResult(moneda);
     }
 
     internal static CustomerOrderContactSnapshot Cliente(Guid id, bool verificado = true)

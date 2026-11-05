@@ -461,8 +461,8 @@ public sealed class MonedaYAgregadosMonetariosTests
     // ------------------------------------------------------------------ guarda de moneda
 
     [Fact]
-    public void Sin_autoridad_de_moneda_no_hay_moneda_de_venta()
-        => Assert.Null(new SinAutoridadDeMoneda().MonedaDeVenta());
+    public async Task Sin_autoridad_de_moneda_no_hay_moneda_de_venta()
+        => Assert.Null(await new SinAutoridadDeMoneda().MonedaDeVentaAsync(TestContext.Current.CancellationToken));
 
     [Theory]
     [InlineData(null)]

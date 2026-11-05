@@ -54,10 +54,12 @@ public static class PedidosDelClienteEndpoints
                 "El cliente envía variantes y cantidades; nunca precios. El precio de " +
                 "cada línea y el total los resuelve el servidor contra M01 en el " +
                 "momento de confirmar. Un producto cuyo precio es «a consultar» no " +
-                "entra: se cotiza.")
+                "entra: se cotiza. Sin moneda acreditada por CORE, o mientras CORE la " +
+                "está cambiando, el pedido no nace y la respuesta es 503.")
             .Produces<PedidoCreadoRespuesta>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
-            .ProducesProblem(StatusCodes.Status409Conflict);
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         propios.MapGet("", (Delegate)ListarPropios)
             .WithName("SalesMyOrdersList")
@@ -152,6 +154,12 @@ public static class PedidosDelClienteEndpoints
                 detail:
                     "Falta configurar la moneda en que cobra la tienda. Tu carrito se " +
                     "conserva: escríbenos y te avisamos cuando puedas confirmarlo.",
+                statusCode: StatusCodes.Status503ServiceUnavailable),
+
+            MotivoDeNoCreacion.MonedaEnCambio => Results.Problem(
+                title: "La tienda está actualizando la moneda en que cobra",
+                detail:
+                    "Tu carrito se conserva. Vuelve a confirmar el pedido en unos segundos.",
                 statusCode: StatusCodes.Status503ServiceUnavailable),
 
             _ => Results.Problem(statusCode: StatusCodes.Status409Conflict)

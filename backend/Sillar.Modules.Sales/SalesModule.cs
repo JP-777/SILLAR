@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Sillar.Core.Contracts;
 using Sillar.Modules.Sales.Contracts;
 using Sillar.Modules.Sales.Data;
 using Sillar.Modules.Sales.Endpoints;
@@ -99,9 +100,13 @@ public sealed class SalesModule : IModule, IModuleMigrations
         services.AddScoped<VencimientoDePlazos>();
         services.AddScoped<CreadorDePedidos>();
 
-        // Sin autoridad de moneda ratificada, ningún pedido monetario nace. Cuando
-        // exista, se sustituye esta línea y nada más.
-        services.AddSingleton<IAutoridadDeMoneda, SinAutoridadDeMoneda>();
+        // La moneda de venta es la que CORE da por acreditada, leída en cada pedido y
+        // bajo el bloqueo de moneda. Por petición: el lector de CORE lo es.
+        services.AddScoped<IAutoridadDeMoneda, AutoridadDeMonedaDeCore>();
+
+        // Lo que CORE pregunta antes de cambiar la moneda: si ya hay pedidos. CORE no
+        // implementa este puerto (no lee el schema de otro módulo); lo implementa M03.
+        services.AddScoped<IMonetaryRecordsProbe, SondaDeRegistrosMonetarios>();
 
         // El hueco que M04 declara en su ficha de cliente. Se registra el contrato,
         // no la clase: M04 lo pide al contenedor y comprueba si vino, así que sin M03
