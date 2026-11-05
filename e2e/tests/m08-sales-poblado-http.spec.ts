@@ -9,7 +9,7 @@
 import { randomUUID } from 'node:crypto';
 import type { APIRequestContext, Browser, Page } from '@playwright/test';
 import { expect, test } from '../fixtures/base.js';
-import { loginAsE2eAdmin } from '../fixtures/auth.js';
+import { loginAsE2eAdmin, loginComoAdminMenor } from '../fixtures/auth.js';
 import { capacidadesActivas, cambiarModulo } from '../fixtures/grafoDeModulos.js';
 import { psql } from '../setup/docker.js';
 
@@ -27,6 +27,13 @@ type Overview = {
   profile: { email: string };
   orders: { state: 'available' | 'empty' | 'unavailable' | 'error'; items: OrderSummary[] };
   work: { state: string; items: unknown[] };
+};
+type InstallationCurrency = {
+  status: string;
+  code: string | null;
+  minorUnits: number | null;
+  listVersion: string;
+  observedAt: string;
 };
 
 function q(value: string): string {
@@ -87,6 +94,49 @@ async function adminCsrf(api: APIRequestContext): Promise<Record<string, string>
   const body = (await response.json()) as { csrfToken: string };
   expect(body.csrfToken).toBeTruthy();
   return { 'X-CSRF-Token': body.csrfToken };
+}
+
+async function ensureInstallationCurrency(api: APIRequestContext): Promise<void> {
+  const before = await api.get('/api/admin/settings/installation-currency');
+  const beforeRaw = await before.text();
+  expect(before.status(), `leer moneda de instalación: ${beforeRaw}`).toBe(200);
+  const current = JSON.parse(beforeRaw) as InstallationCurrency;
+
+  // El arnés canónico comparte una instalación entre specs. Si otra prueba ya
+  // acreditó PEN por esta misma operación administrativa, no la reescribimos:
+  // con pedidos históricos presentes la barrera debe seguir pudiendo rechazar
+  // cualquier intento que realmente requiera establecimiento o reacreditación.
+  if (current.status === 'Accredited') {
+    expect(current).toMatchObject({ code: 'PEN', minorUnits: 2 });
+    return;
+  }
+
+  const configured = await api.put('/api/admin/settings/installation-currency', {
+    headers: await adminCsrf(api),
+    data: { value: 'PEN' },
+  });
+  const raw = await configured.text();
+  expect(configured.status(), `acreditar moneda de instalación: ${raw}`).toBe(200);
+  expect(JSON.parse(raw) as InstallationCurrency).toMatchObject({
+    status: 'Accredited', code: 'PEN', minorUnits: 2,
+  });
+}
+
+async function verifyInstallationCurrencyHttpNegatives(
+  superAdmin: APIRequestContext,
+  admin: APIRequestContext,
+): Promise<void> {
+  const unsupported = await superAdmin.put('/api/admin/settings/installation-currency', {
+    headers: await adminCsrf(superAdmin),
+    data: { value: 'USD' },
+  });
+  expect(unsupported.status(), `USD debe rechazarse: ${await unsupported.text()}`).toBe(400);
+
+  const forbidden = await admin.put('/api/admin/settings/installation-currency', {
+    headers: await adminCsrf(admin),
+    data: { value: 'PEN' },
+  });
+  expect(forbidden.status(), `admin sin super_admin debe rechazarse: ${await forbidden.text()}`).toBe(403);
 }
 
 async function createProduct(api: APIRequestContext): Promise<{ itemId: string; price: number }> {
@@ -237,11 +287,17 @@ test('[M08-SALES-POBLADO] A/B reales por API y PostgreSQL; propiedad y privacida
   let ctxA: Awaited<ReturnType<Browser['newContext']>> | undefined;
   let ctxB: Awaited<ReturnType<Browser['newContext']>> | undefined;
   let ctxN: Awaited<ReturnType<Browser['newContext']>> | undefined;
+  let ctxAdmin: Awaited<ReturnType<Browser['newContext']>> | undefined;
   try {
     await setSalesSeriesFixture();
     await cambiarModulo(page, 'sales', 'Activar');
     await cambiarModulo(page, 'portal', 'Activar');
     const origin = new URL(page.url()).origin;
+    ctxAdmin = await browser.newContext({ baseURL: origin });
+    const adminPage = await ctxAdmin.newPage();
+    await loginComoAdminMenor(adminPage);
+    await verifyInstallationCurrencyHttpNegatives(page.request, adminPage.request);
+    await ensureInstallationCurrency(page.request);
     ctxA = await browser.newContext({ baseURL: origin });
     ctxB = await browser.newContext({ baseURL: origin });
     ctxN = await browser.newContext({ baseURL: origin });
@@ -303,6 +359,7 @@ test('[M08-SALES-POBLADO] A/B reales por API y PostgreSQL; propiedad y privacida
     await ctxA?.close();
     await ctxB?.close();
     await ctxN?.close();
+    await ctxAdmin?.close();
     // Devolver el grafo al estado inicial, aunque Playwright falle.
     const active = await capacidadesActivas(page);
     for (const moduleCode of ['portal', 'sales'] as const) {
