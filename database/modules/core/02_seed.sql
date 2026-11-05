@@ -59,6 +59,24 @@ UPDATE core.site_settings
 SET is_public = false
 WHERE setting_key IN ('smtp_server', 'smtp_port', 'smtp_from');
 
+-- ----------------------------------------------------------------------------
+-- Moneda de la instalación (autoridad monetaria)
+--
+-- Privada y sin moneda: nace en PENDIENTE_DEFINIR y solo super_admin la
+-- establece, con auditoría. No se deduce de currency_code, que es público y
+-- solo sirve para mostrar precios. Misma fila que la migración
+-- CoreInstallationCurrency.
+-- ----------------------------------------------------------------------------
+INSERT INTO core.site_settings (setting_key, setting_value, value_type, description, is_public, is_active)
+VALUES
+    ('installation.currency_iso4217', 'PENDIENTE_DEFINIR', 'text',
+     'Moneda de la instalación (ISO 4217). Autoridad monetaria; solo super_admin', false, true)
+ON CONFLICT (setting_key) DO NOTHING;
+
+UPDATE core.site_settings
+SET is_public = false
+WHERE setting_key = 'installation.currency_iso4217';
+
 COMMIT;
 
 -- ----------------------------------------------------------------------------
@@ -67,5 +85,6 @@ COMMIT;
 --   SELECT setting_key, setting_value, is_public FROM core.site_settings
 --   ORDER BY setting_key;
 --
--- Deben aparecer 14 filas: 11 públicas y las 3 smtp_* privadas.
+-- Deben aparecer 15 filas: 11 públicas, las 3 smtp_* privadas y
+-- installation.currency_iso4217, privada.
 -- ----------------------------------------------------------------------------

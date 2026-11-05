@@ -21,7 +21,24 @@ internal sealed class AuditWriter(
     /// </remarks>
     public async Task WriteAsync(AuditEntry entry, CancellationToken cancellationToken)
     {
-        database.AuditLogs.Add(new AuditLog
+        Stage(entry);
+        await database.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>El contexto en el que este escritor deja sus filas.</summary>
+    /// <remarks>
+    /// Quien prepara un registro con <see cref="Stage"/> para guardarlo junto a su
+    /// propio cambio comprueba con esto que los dos van en el mismo contexto.
+    /// </remarks>
+    internal CoreDbContext Context => database;
+
+    /// <summary>
+    /// Deja el registro en el contexto <b>sin guardar</b>, para que se confirme en
+    /// el mismo <c>SaveChanges</c> que el cambio que audita: o los dos o ninguno.
+    /// </summary>
+    internal AuditLog Stage(AuditEntry entry)
+    {
+        var log = new AuditLog
         {
             OccurredAt = clock.GetUtcNow(),
             Action = entry.Action,
@@ -32,9 +49,10 @@ internal sealed class AuditWriter(
             EntityId = entry.EntityId,
             Summary = Truncate(entry.Summary, 300),
             IpAddress = accessor.HttpContext?.Connection.RemoteIpAddress?.ToString()
-        });
+        };
 
-        await database.SaveChangesAsync(cancellationToken);
+        database.AuditLogs.Add(log);
+        return log;
     }
 
     /// <summary>

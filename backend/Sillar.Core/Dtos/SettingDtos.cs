@@ -29,3 +29,23 @@ public sealed record SettingResponse(
 /// omitirlo deja el valor actual.
 /// </param>
 public sealed record UpdateSettingRequest(string? Value, bool? IsPublic);
+
+/// <summary>Moneda que se quiere establecer para la instalación.</summary>
+/// <param name="Value">Código ISO 4217 exacto, por ejemplo <c>PEN</c>.</param>
+public sealed record SetInstallationCurrencyRequest(string? Value);
+
+/// <summary>La moneda de la instalación tal como la acredita CORE.</summary>
+/// <param name="Status">
+/// <c>Accredited</c>, <c>NotPrepared</c>, <c>NotEstablished</c>, <c>Unsupported</c>,
+/// <c>NotAttested</c> o <c>Unavailable</c>. Solo <c>Accredited</c> es una moneda utilizable.
+/// </param>
+/// <param name="Code">Código ISO 4217, solo si está acreditada.</param>
+/// <param name="MinorUnits">Decimales, solo si está acreditada.</param>
+/// <param name="ListVersion">Versión de la lista cerrada con la que se evaluó.</param>
+/// <param name="ObservedAt">Instante de la lectura.</param>
+public sealed record InstallationCurrencyResponse(
+    string Status,
+    string? Code,
+    int? MinorUnits,
+    string ListVersion,
+    DateTimeOffset ObservedAt);

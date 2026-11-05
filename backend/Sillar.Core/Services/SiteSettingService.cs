@@ -75,6 +75,16 @@ internal sealed class SiteSettingService(
         string actingEmail,
         CancellationToken cancellationToken)
     {
+        // La moneda de la instalación es una autoridad, no un ajuste más: tiene su
+        // propia operación, solo para super_admin y con auditoría en la misma
+        // transacción. Ignorando mayúsculas, como la colación de la clave.
+        if (string.Equals(key, InstallationCurrency.SettingKey, StringComparison.OrdinalIgnoreCase))
+        {
+            return new SettingOperation(
+                SettingOutcome.Forbidden,
+                "La moneda de la instalación se establece en su propia operación y exige el rol super_admin.");
+        }
+
         // La colación core.es_ci hace que esta igualdad no distinga mayúsculas.
         var setting = await database.SiteSettings
             .FirstOrDefaultAsync(candidate => candidate.SettingKey == key, cancellationToken);
