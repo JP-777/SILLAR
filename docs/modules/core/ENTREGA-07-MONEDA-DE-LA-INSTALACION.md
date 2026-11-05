@@ -120,3 +120,90 @@ pierde: queda en el log, no se reintenta. Hoy no hay ningún manejador de `Setti
 CORE, así que no hay consecuencia. Si algún módulo llegara a depender de ese aviso para la moneda, las
 salidas serían publicar con un token propio en vez del del llamador, o un aviso durable; las dos
 cambian la semántica de eventos y quedan para decisión.
+
+---
+
+## 10 · Barrera transaccional CORE–Ventas (E5.2, sobre `5ce4e02`)
+
+**Problema (R10-E6).** CORE consultaba los pedidos antes de abrir su transacción, y Ventas podía
+leer y usar la moneda antes de confirmar un pedido: un pedido a medio crear no se veía, y un cambio
+de moneda a medio confirmar tampoco.
+
+**Contrato** — `Sillar.Core.Contracts.MonetaryAuthorityLock`:
+
+| | |
+|---|---|
+| Identidad | `pg_advisory_xact_lock*(1397312588, 1)`: `Namespace = 0x53494C4C` (`'SILL'`), `CurrencyAuthority = 1` |
+| Forma | Dos claves `int4`. Los demás bloqueos consultivos del producto usan una clave `bigint` (`ModuleActivationService.cs:77,143`; `hashtextextended` en `ServiceOrderApplicationService.cs:65` y `TrackingApplicationService.cs:485`); PostgreSQL no mezcla los dos espacios |
+| Por instalación | Los bloqueos consultivos son de cada base, y en una base cabe una sola instalación (`ck_installation_singleton`). Ventas no necesita leer `core.installation` |
+| Misma base | CORE y Ventas se conectan con la cadena `Default` (`CoreModule.cs:24,82`; `SalesModule.cs:22,87`) |
+| Duración | Solo variantes `_xact_`: se sueltan al confirmar o deshacer |
+
+**Orden de adquisición:**
+
+| Quién | Modo | Orden dentro de su transacción |
+|---|---|---|
+| CORE, establecer o cambiar la moneda | `AcquireExclusive` | `BEGIN` → `SET LOCAL lock_timeout = '5s'` → **bloqueo** → `IMonetaryRecordsProbe` → `FOR UPDATE` de la fila → auditoría y cambio en un `SaveChanges` → `COMMIT` |
+| Ventas, crear un pedido (pendiente) | `AcquireShared` | `BEGIN` → **bloqueo**, antes que cualquier otro → leer la moneda con `IInstallationCurrencyAuthority` → numerar → insertar → `COMMIT` |
+| Sonda de Ventas | **ninguno** | Solo lee, sin `FOR SHARE` ni `FOR UPDATE` |
+
+Sin sonda registrada, CORE responde sin abrir transacción ni pedir el bloqueo. Si el bloqueo no
+queda libre en 5 s: `MonetaryLockBusy` (409, «Hay una venta en curso usando la moneda…»), sin cambios.
+
+**Lo que se mantiene de E5.1:** roles, validación, auditoría en el mismo contexto, `Unchanged` solo con
+comprobante, `Reattested`, `Accredited`/`NotAttested` y el aviso posterior al commit que no lanza.
+
+**Pruebas sin PostgreSQL.** `BaseGuionada` sustituye conexión, transacción y comandos por dobles que
+anotan cada paso en orden. Prueba el orden y la vuelta atrás, **no** la exclusión mutua.
+
+## 11 · Escenarios físicos preparados (NO ejecutados)
+
+Base PostgreSQL desechable con CORE migrado. Dos sesiones `psql`: **V** (hace de Ventas) y **C** (hace
+de CORE, o la API con una sonda de prueba registrada **solo** en el arnés físico). En cada paso:
+
+```sql
+SELECT pid, locktype, classid, objid, objsubid, mode, granted
+FROM pg_locks WHERE locktype = 'advisory';
+-- Esperado mientras hay bloqueo: classid = 1397312588, objid = 1, objsubid = 2 (forma de dos claves).
+```
+
+**A · Ventas primero.**
+1. V: `BEGIN; SELECT pg_advisory_xact_lock_shared(1397312588, 1);` y una fila de pedido sin confirmar.
+2. C: `BEGIN; SET LOCAL lock_timeout = '5s'; SELECT pg_advisory_xact_lock(1397312588, 1);` → **espera**
+   (`granted = false`).
+3. V: `COMMIT;` → C obtiene el bloqueo; la sonda ve el pedido → `RecordsPresent`; C deshace.
+4. Esperado: moneda sin cambiar, sin registro de auditoría nuevo, ningún bloqueo en `pg_locks`.
+
+**A′ · Ventas retiene más de 5 s.** Como A, sin el paso 3 → C recibe `55P03` → `MonetaryLockBusy`; nada escrito.
+
+**B · CORE primero.**
+1. C: `BEGIN; SET LOCAL lock_timeout = '5s'; SELECT pg_advisory_xact_lock(1397312588, 1);` (sonda: sin pedidos).
+2. V: `BEGIN; SELECT pg_advisory_xact_lock_shared(1397312588, 1);` → **espera**.
+3. C: cambio y auditoría; `COMMIT;` → V obtiene el bloqueo y lee `Accredited` con la moneda nueva.
+4. Esperado: V nunca lee el valor anterior después de haber obtenido el bloqueo.
+
+**C · Dos CORE a la vez.** El segundo espera; tras el primero, lee `Unchanged` si el valor ya está acreditado.
+
+**D · Liberación.** Tras `COMMIT` o `ROLLBACK` de cada sesión, `pg_locks` no muestra el bloqueo.
+
+**E · Regla de la sonda.** Una sonda que pidiera el bloqueo compartido en su propia conexión se
+quedaría esperando a C, y C esperando a la sonda: PostgreSQL no lo detecta como interbloqueo. Se comprueba
+que la sonda real no lo pide (revisión de código y una prueba en M03).
+
+## 12 · Riesgos para la implementación de Ventas
+
+1. **El bloqueo compartido va primero**, antes de numerar (`OrderCodeAllocator`) y de insertar. Si va
+   después, un pedido retendría filas propias mientras espera a CORE.
+2. **La moneda se lee después de obtener el bloqueo**, con `IInstallationCurrencyAuthority` (lee la base,
+   no la caché), y el pedido se rechaza si no está `Accredited`.
+3. **La sonda no pide el bloqueo** (§11 E) y cuenta solo filas confirmadas. Falta decidir qué registros
+   cuentan: estados de pedido, y si entran cotizaciones (M07) u órdenes de servicio (M05b).
+4. **Agotamiento del pool.** CORE y Ventas comparten pool (misma cadena). CORE, con su conexión retenida,
+   pide otra para la sonda; Ventas, con la suya, pide otra para leer la moneda. Con el pool agotado,
+   ambos esperan conexión: hace falta tamaño de pool y tiempo de espera suficientes.
+5. **Tiempo de espera propio en Ventas.** Si su `lock_timeout` vence, el pedido se rechaza con una frase,
+   no con «error».
+6. **Agrupadores de conexiones** en modo transacción (PgBouncer): las variantes `_xact_` funcionan; las de
+   sesión, no. Nunca usar `pg_advisory_lock` con esta identidad.
+7. **Misma base.** Si algún día CORE y Ventas usaran cadenas distintas, la barrera dejaría de existir sin
+   avisar: conviene una prueba en M03 que lo vigile.

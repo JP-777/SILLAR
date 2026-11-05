@@ -206,9 +206,13 @@ public sealed class MonedaDeLaInstalacionTests
 
     private sealed record Montaje(InstallationCurrencyService Servicio, CoreDbContext Contexto, SondaFalsa? Sonda);
 
-    private static Montaje Servicio(SondaFalsa? sonda = null, CoreDbContext? contextoDelEscritor = null, IEventPublisher? bus = null)
+    private static Montaje Servicio(
+        SondaFalsa? sonda = null,
+        CoreDbContext? contextoDelEscritor = null,
+        IEventPublisher? bus = null,
+        CoreDbContext? baseDeDatos = null)
     {
-        var contexto = Contexto(CadenaSinServidor);
+        var contexto = baseDeDatos ?? Contexto(CadenaSinServidor);
         var proveedor = new ServiceCollection();
         if (sonda is not null)
         {
@@ -277,7 +281,9 @@ public sealed class MonedaDeLaInstalacionTests
     [Fact]
     public async Task Con_pedidos_registrados_la_moneda_no_se_establece()
     {
-        var m = Servicio(new SondaFalsa(MonetaryRecordsState.Present));
+        // Desde E5.2 la sonda se consulta dentro de la transacción, bajo el bloqueo:
+        // hace falta una base que deje llegar hasta ella. Mismo resultado esperado.
+        var m = Servicio(new SondaFalsa(MonetaryRecordsState.Present), baseDeDatos: new BaseGuionada().Contexto());
         await using var _ = m.Contexto;
 
         Assert.Equal(CurrencyChangeOutcome.RecordsPresent, (await Establecer(m, "PEN")).Outcome);
@@ -286,7 +292,9 @@ public sealed class MonedaDeLaInstalacionTests
     [Fact]
     public async Task Si_ventas_no_sabe_si_hay_pedidos_la_moneda_no_se_establece()
     {
-        var m = Servicio(new SondaFalsa(MonetaryRecordsState.Unknown));
+        // Desde E5.2 la sonda se consulta dentro de la transacción, bajo el bloqueo:
+        // hace falta una base que deje llegar hasta ella. Mismo resultado esperado.
+        var m = Servicio(new SondaFalsa(MonetaryRecordsState.Unknown), baseDeDatos: new BaseGuionada().Contexto());
         await using var _ = m.Contexto;
 
         Assert.Equal(CurrencyChangeOutcome.RecordsUnverifiable, (await Establecer(m, "PEN")).Outcome);
@@ -295,7 +303,9 @@ public sealed class MonedaDeLaInstalacionTests
     [Fact]
     public async Task Si_el_informe_de_pedidos_falla_la_moneda_no_se_establece()
     {
-        var m = Servicio(new SondaFalsa(MonetaryRecordsState.None, falla: true));
+        // Desde E5.2 la sonda se consulta dentro de la transacción, bajo el bloqueo:
+        // hace falta una base que deje llegar hasta ella. Mismo resultado esperado.
+        var m = Servicio(new SondaFalsa(MonetaryRecordsState.None, falla: true), baseDeDatos: new BaseGuionada().Contexto());
         await using var _ = m.Contexto;
 
         Assert.Equal(CurrencyChangeOutcome.RecordsUnverifiable, (await Establecer(m, "PEN")).Outcome);

@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 using Sillar.Core.Auditing;
 using Sillar.Core.Contracts;
 using Sillar.Core.Contracts.Events;
@@ -211,6 +212,9 @@ internal enum CurrencyChangeOutcome
 
     /// <summary>No se pudo guardar el cambio con su auditoría. No quedó nada.</summary>
     NotSaved,
+
+    /// <summary>Hay una operación de venta en curso con el bloqueo de moneda; no se esperó más.</summary>
+    MonetaryLockBusy,
 }
 
 /// <summary>Resultado del intento.</summary>
@@ -231,6 +235,13 @@ internal sealed record CurrencyChangeResult(CurrencyChangeOutcome Outcome, strin
 /// el dueño de los pedidos, no CORE: se pregunta a <see cref="IMonetaryRecordsProbe"/>,
 /// y sin ninguno registrado la respuesta es no.
 /// </para>
+/// <para>
+/// <b>Barrera con Ventas.</b> Orden fijo dentro de la transacción: tiempo de espera de
+/// bloqueos, <see cref="MonetaryAuthorityLock.AcquireExclusive"/>, la sonda, y solo
+/// entonces <c>FOR UPDATE</c> de la fila. Un pedido que tenga el bloqueo compartido
+/// termina antes de que CORE lo obtenga, y la sonda ya lo ve; uno que llegue después
+/// espera a que CORE confirme o deshaga. El bloqueo se suelta al terminar la transacción.
+/// </para>
 /// </remarks>
 internal sealed class InstallationCurrencyService(
     CoreDbContext database,
@@ -243,6 +254,12 @@ internal sealed class InstallationCurrencyService(
 {
     /// <summary>Tipo de entidad en <c>core.audit_log</c>, el mismo que el resto de la configuración.</summary>
     internal const string AuditEntityType = "setting";
+
+    /// <summary>
+    /// Cuánto espera CORE el bloqueo de moneda (y cualquier otro de su transacción).
+    /// Si una venta lo retiene más, la operación se rechaza y se puede reintentar.
+    /// </summary>
+    internal const string LockTimeoutSql = "SET LOCAL lock_timeout = '5s'";
 
     public async Task<CurrencyChangeResult> SetAsync(
         string? value,
@@ -270,18 +287,11 @@ internal sealed class InstallationCurrencyService(
                 "No se guardó la moneda: su auditoría no iría en la misma transacción que el cambio.");
         }
 
-        var records = await ProbeRecordsAsync(cancellationToken);
-        if (records == MonetaryRecordsState.Present)
+        // Dependencia blanda: sin nadie que informe de los pedidos no se puede saber,
+        // y no hace falta ni tocar la base para responder que no.
+        if (services.GetService<IMonetaryRecordsProbe>() is not { } probe)
         {
-            return new(CurrencyChangeOutcome.RecordsPresent,
-                "Ya hay pedidos registrados con importe: la moneda de la instalación no se cambia.");
-        }
-
-        if (records != MonetaryRecordsState.None)
-        {
-            return new(CurrencyChangeOutcome.RecordsUnverifiable,
-                "No se puede establecer la moneda: todavía no hay forma de comprobar si existen pedidos. " +
-                "Hace falta que el módulo de ventas lo informe.");
+            return Unverifiable();
         }
 
         SiteSetting? setting = null;
@@ -292,6 +302,24 @@ internal sealed class InstallationCurrencyService(
         {
             await using var transaction = await database.Database.BeginTransactionAsync(cancellationToken);
 
+            // 1. Barrera con Ventas, antes de mirar nada.
+            await database.Database.ExecuteSqlRawAsync(LockTimeoutSql, cancellationToken);
+            await database.Database.ExecuteSqlAsync(MonetaryAuthorityLock.AcquireExclusive(), cancellationToken);
+
+            // 2. Con el bloqueo puesto: ningún pedido puede estar a medio crear.
+            var records = await ProbeRecordsAsync(probe, cancellationToken);
+            if (records == MonetaryRecordsState.Present)
+            {
+                return new(CurrencyChangeOutcome.RecordsPresent,
+                    "Ya hay pedidos registrados con importe: la moneda de la instalación no se cambia.");
+            }
+
+            if (records != MonetaryRecordsState.None)
+            {
+                return Unverifiable();
+            }
+
+            // 3. La fila, siempre después de la barrera.
             await database.Database.ExecuteSqlAsync(
                 $"SELECT 1 FROM core.site_settings WHERE setting_key = {InstallationCurrency.SettingKey} FOR UPDATE",
                 cancellationToken);
@@ -339,6 +367,13 @@ internal sealed class InstallationCurrencyService(
             throw exception as OperationCanceledException
                 ?? new OperationCanceledException("Cambio de moneda cancelado por el llamador.", exception, cancellationToken);
         }
+        catch (PostgresException exception) when (exception.SqlState == PostgresErrorCodes.LockNotAvailable)
+        {
+            Forget(setting, previous, staged);
+            logger.LogInformation(exception, "El bloqueo de moneda no quedó libre a tiempo; no se cambió nada.");
+            return new(CurrencyChangeOutcome.MonetaryLockBusy,
+                "Hay una venta en curso usando la moneda: no se cambió nada. Inténtalo de nuevo en unos segundos.");
+        }
         catch (Exception exception)
         {
             Forget(setting, previous, staged);
@@ -375,14 +410,13 @@ internal sealed class InstallationCurrencyService(
         }
     }
 
-    private async Task<MonetaryRecordsState> ProbeRecordsAsync(CancellationToken cancellationToken)
-    {
-        // Dependencia blanda: si nadie lo informa, no se puede saber.
-        if (services.GetService<IMonetaryRecordsProbe>() is not { } probe)
-        {
-            return MonetaryRecordsState.Unknown;
-        }
+    private static CurrencyChangeResult Unverifiable()
+        => new(CurrencyChangeOutcome.RecordsUnverifiable,
+            "No se puede establecer la moneda: todavía no hay forma de comprobar si existen pedidos. " +
+            "Hace falta que el módulo de ventas lo informe.");
 
+    private async Task<MonetaryRecordsState> ProbeRecordsAsync(IMonetaryRecordsProbe probe, CancellationToken cancellationToken)
+    {
         try
         {
             return await probe.ProbeAsync(cancellationToken);

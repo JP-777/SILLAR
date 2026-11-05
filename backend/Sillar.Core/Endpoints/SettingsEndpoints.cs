@@ -200,7 +200,8 @@ public static class SettingsEndpoints
     /// <param name="cancellationToken">Cancelación de la petición.</param>
     /// <returns>
     /// 200 con la moneda; 400 si el valor no es de la lista; 403 sin super_admin; 409 si hay pedidos,
-    /// no se puede comprobar o la clave no está preparada; 503 si no se pudo guardar con su auditoría.
+    /// no se puede comprobar, la clave no está preparada o una venta retiene el bloqueo de moneda;
+    /// 503 si no se pudo guardar con su auditoría.
     /// </returns>
     private static async Task<IResult> SetInstallationCurrency(
         SetInstallationCurrencyRequest request,
