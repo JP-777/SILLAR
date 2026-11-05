@@ -259,3 +259,52 @@ VALUES (U&'installation.curr\00ADency_iso4217', 'USD', 'text');
    con `{"value":"USD","isPublic":true}` para cada alias efectivo del paso 1. Esperado: `403`; valor e
    `is_public` sin cambios; ningún registro nuevo en `core.audit_log` para la clave; la lectura sigue en
    el mismo estado; ningún bloqueo `advisory` en `pg_locks`.
+
+## 14 · E9 · O-2 ratificada — Pedir la moneda que ya hay no es cambiarla
+
+**Decisión de JP (adenda a R10-E9).** Si la moneda pedida ya está acreditada y coincide exactamente con la
+vigente, la operación responde `200` (`Unchanged`) **aunque existan pedidos**. Sustituye, solo en ese
+punto, lo dicho en §8 (O-2 de E5.1) y §10: hasta aquí, con pedidos se respondía `409` antes de mirar la fila.
+
+**Cómo queda** (`InstallationCurrencyService.SetAsync`), con el orden de §10 intacto:
+
+| Sonda (bajo el bloqueo) | Fila releída tras `FOR UPDATE` y último comprobante | Resultado |
+|---|---|---|
+| Sin sonda | — (no se abre transacción) | `409` `RecordsUnverifiable` |
+| `Unknown` o falla | — (no se llega a la fila) | `409` `RecordsUnverifiable` |
+| `None` o `Present` | igual al pedido **y** acreditado | `200` `Unchanged`: sin escritura, sin acreditación nueva, sin aviso; la transacción se deshace |
+| `Present` | sin comprobante válido, o distinto del pedido, o sin fila | `409` `RecordsPresent`, sin escribir |
+| `None` | sin comprobante válido | `200` `Reattested` (como en E5.1) |
+| `None` | distinto del pedido | `200` `Changed` (como en E5.1) |
+| `None` | sin fila | `409` `NotPrepared` |
+
+«Exactamente» es ordinal: `pen` o `PEN ` guardados no coinciden con `PEN`. «Acreditada» es la regla de
+§4 y §8: el último registro de la clave, con la forma exacta de `Compose`, dice ese mismo valor.
+
+**Por qué la sonda sigue siendo obligatoria para `Unchanged`.** La adenda autoriza `Unchanged` cuando
+existen pedidos, no cuando no se sabe si existen. Sin respuesta firme de Ventas la operación no sigue,
+como hasta ahora; eso conserva sin cambios las negativas de E5 y E5.2 (sin sonda, sin tocar la base).
+
+**Pruebas sin PostgreSQL** (`MonedaSinCambioConPedidosTests`, 20): `Unchanged` con y sin pedidos; orden
+bajo la barrera (fila y comprobante leídos después del bloqueo y del `FOR UPDATE`); ni `UPDATE`, ni
+`INSERT`, ni `COMMIT`, ni auditoría preparada, ni aviso; nueve variantes que escribirían, todas `409`;
+idempotencia (tres peticiones, tres `Unchanged`, nada escrito); bloqueo ocupado sin decisión
+adelantada; una vista vieja del contexto no da un `Unchanged` falso; un segundo super_admin lee lo
+que confirmó el primero; si no se puede leer el comprobante no hay `Unchanged`. Volver a la semántica
+anterior hace fallar 5; aceptar igualdad sin comprobante, otras 5.
+`BarreraMonetariaTests`: la prueba «con pedidos se rechaza» mantiene `409`, sin escritura y bajo el
+bloqueo, pero ahora llega a la fila.
+
+**Reproducción física preparada (NO ejecutada).** Como en §11, con sesiones **V** y **C** y una sonda de
+prueba registrada solo en el arnés físico que responda `Present`:
+
+1. Moneda acreditada: `PUT /api/admin/settings/installation-currency {"value":"PEN"}` con sonda `None`
+   → `200`, un registro `anterior=PENDIENTE_DEFINIR; nueva=PEN`.
+2. Sonda `Present`. Repetir el mismo `PUT` tres veces → `200` con `Accredited`/`PEN` las tres; el número de
+   filas de `core.audit_log` para la clave no cambia; `updated_at` de la fila no cambia; `pg_locks` sin
+   bloqueo `advisory` al terminar.
+3. Con V reteniendo `pg_advisory_xact_lock_shared(1397312588, 1)` más de 5 s, el mismo `PUT` → `409`
+   `MonetaryLockBusy`: no se responde `Unchanged` sin la barrera.
+4. En otra base recién migrada, sin ningún registro de la clave: `UPDATE` directo de la fila a `PEN`
+   (queda `NotAttested`). Sonda `Present`, el mismo `PUT` → `409` `RecordsPresent`; sin registro nuevo.
+5. Sonda `Present`, fila en `PENDIENTE_DEFINIR` → `409` `RecordsPresent`; sin cambios.

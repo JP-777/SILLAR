@@ -145,23 +145,9 @@ public sealed class ClaveMonetariaColacionTests
         return (servicio, base_, contexto, auditoria, bus);
     }
 
-    /// <summary>La fila tal como la devuelve PostgreSQL: columnas en el orden del SELECT de EF.</summary>
+    /// <summary>La fila canónica que devolvería PostgreSQL para la clave.</summary>
     private static DataTable Fila(string clave)
-    {
-        var tabla = new DataTable();
-        tabla.Columns.Add("site_setting_id", typeof(int));
-        tabla.Columns.Add("created_at", typeof(DateTimeOffset));
-        tabla.Columns.Add("description", typeof(string));
-        tabla.Columns.Add("is_active", typeof(bool));
-        tabla.Columns.Add("is_public", typeof(bool));
-        tabla.Columns.Add("setting_key", typeof(string));
-        tabla.Columns.Add("setting_value", typeof(string));
-        tabla.Columns.Add("updated_at", typeof(DateTimeOffset));
-        tabla.Columns.Add("value_type", typeof(string));
-        var cuando = new DateTimeOffset(2026, 11, 5, 12, 0, 0, TimeSpan.Zero);
-        tabla.Rows.Add(15, cuando, "Moneda", true, false, clave, clave == Clave ? "PEN" : "Mi negocio", cuando, "text");
-        return tabla;
-    }
+        => BaseGuionada.FilaDeAjuste(clave, clave == Clave ? "PEN" : "Mi negocio");
 
     private sealed class AuditoriaQueCuenta : IAuditWriter
     {

@@ -38,6 +38,40 @@ internal sealed class BaseGuionada
     /// <summary>Las filas que devuelve una lectura, según su texto. Las columnas, en el orden del SELECT.</summary>
     public Func<string, DataTable?> FilasAlLeer { get; set; } = _ => null;
 
+    /// <summary>
+    /// Una fila de <c>core.site_settings</c> tal como la devuelve PostgreSQL: columnas en
+    /// el orden del SELECT que genera EF para <see cref="Domain.SiteSetting"/>.
+    /// </summary>
+    public static DataTable FilaDeAjuste(string clave, string valor, int id = 15)
+    {
+        var tabla = new DataTable();
+        tabla.Columns.Add("site_setting_id", typeof(int));
+        tabla.Columns.Add("created_at", typeof(DateTimeOffset));
+        tabla.Columns.Add("description", typeof(string));
+        tabla.Columns.Add("is_active", typeof(bool));
+        tabla.Columns.Add("is_public", typeof(bool));
+        tabla.Columns.Add("setting_key", typeof(string));
+        tabla.Columns.Add("setting_value", typeof(string));
+        tabla.Columns.Add("updated_at", typeof(DateTimeOffset));
+        tabla.Columns.Add("value_type", typeof(string));
+        var cuando = new DateTimeOffset(2026, 11, 5, 12, 0, 0, TimeSpan.Zero);
+        tabla.Rows.Add(id, cuando, "Ajuste", true, false, clave, valor, cuando, "text");
+        return tabla;
+    }
+
+    /// <summary>Una lectura de una sola columna de texto con un valor, o sin filas si es <c>null</c>.</summary>
+    public static DataTable Texto(string? valor)
+    {
+        var tabla = new DataTable();
+        tabla.Columns.Add("valor", typeof(string));
+        if (valor is not null)
+        {
+            tabla.Rows.Add(valor);
+        }
+
+        return tabla;
+    }
+
     public CoreDbContext Contexto()
     {
         var opciones = new DbContextOptionsBuilder<CoreDbContext>()
