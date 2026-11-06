@@ -23,7 +23,7 @@
 3. Transacción: propia en `READ COMMITTED` explícito, o la del llamador si su aislamiento declarado es `ReadCommitted` o sin especificar. Con otro, se rechaza **sin tomar el bloqueo** y sin tocarla.
 4. **Bloqueo compartido**, primer bloqueo de la transacción.
 5. **Lectura acreditada en la misma transacción y conexión** (`Database.CurrentTransaction.GetDbTransaction()`). CORE comprueba ahí aislamiento real, base y bloqueo concedido.
-6. Líneas, asiento, número, inserción, `COMMIT`.
+6. Líneas, asiento, número, inserción, `COMMIT`. Un fallo transitorio antes del `COMMIT` es `ServicioNoDisponible`; en el `COMMIT`, no.
 
 **Desde el paso 4 hasta el 6 no se pide ninguna otra conexión al pool** (D-1, R10-E12). Ya no hay segunda llamada a `MonedaDeVentaAsync` bajo el bloqueo.
 
@@ -33,10 +33,10 @@
 |---|---|---|---|
 | `MonedaSinAutoridad` | CORE dice que no hay moneda acreditada | 503 | «Falta configurar la moneda en que cobra la tienda…» |
 | `MonedaEnCambio` | El bloqueo no llegó en 5 s (`55P03`) | 503 | «La tienda está actualizando la moneda…» |
-| `ServicioNoDisponible` | No se pudo leer la moneda, o la base no dio conexión o la cortó (fallo transitorio) | 503 | «No pudimos confirmar tu pedido en este momento…» — no nombra la moneda |
+| `ServicioNoDisponible` | No se pudo leer la moneda, o la base no dio conexión o la cortó (fallo transitorio) al abrir, al tomar el bloqueo, al leer, al numerar o al guardar, siempre **antes** del `COMMIT` | 503 | «No pudimos confirmar tu pedido en este momento…» — no nombra la moneda |
 | `CosturaMonetariaDefectuosa` | Uso fuera de contrato (aislamiento, bloqueo, base, transacción) | 500 | «No pudimos registrar tu pedido…» — ningún detalle interno |
 
-En los cuatro casos el pedido no nace y no se consume número. Una transacción prestada nunca se confirma ni se deshace aquí: si queda abortada, la deshace su dueño.
+En los cuatro casos el pedido no nace y no se consume número. Un fallo **en** el `COMMIT` no se traduce: no se sabe si el pedido quedó, y pedir que se vuelva a confirmar podría duplicarlo. Una transacción prestada nunca se confirma ni se deshace aquí: si queda abortada, la deshace su dueño.
 
 ## Escritores de `sales.orders`
 

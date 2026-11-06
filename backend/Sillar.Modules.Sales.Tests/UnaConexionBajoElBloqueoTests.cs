@@ -326,6 +326,46 @@ public sealed class UnaConexionBajoElBloqueoTests
     }
 
     [Fact]
+    public async Task Si_la_conexion_se_corta_al_numerar_antes_del_COMMIT_no_esta_disponible_y_se_deshace()
+    {
+        var m = Montar(falla: sql => sql.Contains("order_series", StringComparison.Ordinal)
+            ? new NpgsqlException("Exception while reading from stream", new IOException())
+            : null);
+
+        var r = await m.CrearAsync();
+
+        Assert.Equal(MotivoDeNoCreacion.ServicioNoDisponible, r.Motivo);
+        Assert.Null(r.OrderCode);
+        Assert.DoesNotContain("COMMIT", m.Base.Pasos);
+        Assert.Equal("ROLLBACK", m.Base.Pasos[^1]);
+    }
+
+    [Fact]
+    public void El_COMMIT_queda_fuera_de_la_captura_de_fallos_transitorios()
+    {
+        // Si el COMMIT falla no se sabe si el pedido quedó: decir «vuelve a confirmarlo»
+        // podría duplicarlo. Por eso la captura termina en SaveChanges.
+        var fuente = Fuente("Sillar.Modules.Sales/Pedidos/CreadorDePedidos.cs");
+        var guardado = fuente.IndexOf("await database.SaveChangesAsync(cancellationToken);", StringComparison.Ordinal);
+        var captura = fuente.IndexOf("catch (Exception excepcion)", guardado, StringComparison.Ordinal);
+        var confirmacion = fuente.IndexOf("await transaccion.CompletarAsync(cancellationToken);", StringComparison.Ordinal);
+
+        Assert.True(guardado > 0 && captura > guardado && confirmacion > captura);
+        Assert.DoesNotContain("catch", fuente[confirmacion..fuente.IndexOf("return new ResultadoDeCreacion(", confirmacion, StringComparison.Ordinal)], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Un_fallo_transitorio_envuelto_por_SaveChanges_tambien_es_transitorio()
+    {
+        Assert.True(FallosDeInfraestructura.EsTransitorio(
+            new DbUpdateException("guardando", new NpgsqlException("Exception while reading from stream", new IOException()))));
+        Assert.False(FallosDeInfraestructura.EsTransitorio(
+            new DbUpdateException("guardando", new PostgresException("simulado", "ERROR", "ERROR", "23505"))));
+        Assert.False(FallosDeInfraestructura.EsEsperaDelBloqueoAgotada(
+            new PostgresException("simulado", "ERROR", "ERROR", "40001")));
+    }
+
+    [Fact]
     public void El_agotamiento_del_pool_que_lanza_Npgsql_se_clasifica_como_transitorio()
     {
         // Npgsql agota el pool con una NpgsqlException cuya causa es un TimeoutException

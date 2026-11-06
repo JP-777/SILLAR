@@ -265,10 +265,24 @@ internal sealed class CreadorDePedidos(
         // 5 · El número, AL FINAL y dentro de esta transacción. Pedirlo antes gastaría
         // uno en cada intento que no llega a confirmarse; el numerador además se niega
         // a trabajar fuera de transacción, así que esto no es una convención.
-        pedido.OrderCode = await numerador.SiguienteAsync(cancellationToken);
-        database.Orders.Add(pedido);
+        //
+        // Si la conexión se corta aquí, todavía no hay COMMIT: el pedido no nació y se
+        // puede decir. El COMMIT queda fuera a propósito: si falla, no se sabe si el
+        // pedido quedó confirmado, y pedir «vuelve a confirmarlo» podría duplicarlo.
+        try
+        {
+            pedido.OrderCode = await numerador.SiguienteAsync(cancellationToken);
+            database.Orders.Add(pedido);
 
-        await database.SaveChangesAsync(cancellationToken);
+            await database.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception excepcion) when (FallosDeInfraestructura.EsTransitorio(excepcion) && !cancellationToken.IsCancellationRequested)
+        {
+            registro.LogWarning(AutoridadDeMonedaDeCore.MonedaIlegible, excepcion,
+                "Se perdió la conexión del pedido antes de confirmarlo; no nace ningún pedido.");
+            return ResultadoDeCreacion.Rechaza(MotivoDeNoCreacion.ServicioNoDisponible);
+        }
+
         await transaccion.CompletarAsync(cancellationToken);
 
         return new ResultadoDeCreacion(
