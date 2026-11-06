@@ -101,7 +101,10 @@ public sealed class SalesModule : IModule, IModuleMigrations
         services.AddScoped<CreadorDePedidos>();
 
         // La moneda de venta es la que CORE da por acreditada, leída en cada pedido y
-        // bajo el bloqueo de moneda. Por petición: el lector de CORE lo es.
+        // bajo el bloqueo de moneda, en la transacción del pedido (R10-E13-B). Usa los dos
+        // lectores de CORE —IInstallationCurrencyAuthority e
+        // IInstallationCurrencyTransactionalAuthority—, que registra CORE y no M03. Por
+        // petición: los de CORE lo son.
         services.AddScoped<IAutoridadDeMoneda, AutoridadDeMonedaDeCore>();
 
         // Lo que CORE pregunta antes de cambiar la moneda: si ya hay pedidos. CORE no

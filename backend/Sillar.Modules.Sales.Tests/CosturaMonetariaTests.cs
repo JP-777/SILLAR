@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -27,7 +28,9 @@ public sealed class CosturaMonetariaTests
     private const string CadenaSinBase =
         "Host=127.0.0.1;Port=1;Database=sin_base;Username=x;Password=x;Timeout=1";
 
-    private const string LecturaDeMoneda = "LECTURA-DE-MONEDA";
+    private const string LecturaPrevia = "LECTURA-DE-MONEDA-PREVIA";
+
+    private const string LecturaEnTransaccion = "LECTURA-DE-MONEDA-EN-TRANSACCION";
 
     private static readonly DateTimeOffset Ahora = new(2026, 11, 4, 12, 0, 0, TimeSpan.Zero);
 
@@ -43,14 +46,23 @@ public sealed class CosturaMonetariaTests
     [InlineData(InstallationCurrencyStatus.NotEstablished)]
     [InlineData(InstallationCurrencyStatus.Unsupported)]
     [InlineData(InstallationCurrencyStatus.NotAttested)]
-    [InlineData(InstallationCurrencyStatus.Unavailable)]
     public async Task Sin_lectura_acreditada_de_CORE_no_hay_moneda_de_venta(InstallationCurrencyStatus estado)
     {
         // Aunque CORE trajera una moneda en la lectura, sin Accredited no vale.
+        // Unavailable ya no está aquí: desde R10-E13-B es «no disponible», no «sin
+        // autoridad» (ver Si_CORE_no_pudo_leer_la_moneda_no_esta_disponible_y_no_falta_configurarla).
         var core = new CoreDice(new(estado, new SupportedCurrency("PEN", 2), SupportedCurrencies.Version, Ahora));
 
-        Assert.Null(await Adaptador(core).MonedaDeVentaAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(LecturaDeMonedaDeVenta.SinAutoridad, await Adaptador(core).MonedaDeVentaAsync(TestContext.Current.CancellationToken));
         Assert.Equal(1, core.Lecturas);
+    }
+
+    [Fact]
+    public async Task Si_CORE_no_pudo_leer_la_moneda_no_esta_disponible_y_no_falta_configurarla()
+    {
+        var core = new CoreDice(new(InstallationCurrencyStatus.Unavailable, new SupportedCurrency("PEN", 2), SupportedCurrencies.Version, Ahora));
+
+        Assert.Equal(LecturaDeMonedaDeVenta.NoDisponible, await Adaptador(core).MonedaDeVentaAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -58,7 +70,7 @@ public sealed class CosturaMonetariaTests
     {
         var core = new CoreDice(new(InstallationCurrencyStatus.Accredited, null, SupportedCurrencies.Version, Ahora));
 
-        Assert.Null(await Adaptador(core).MonedaDeVentaAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(LecturaDeMonedaDeVenta.SinAutoridad, await Adaptador(core).MonedaDeVentaAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -66,7 +78,7 @@ public sealed class CosturaMonetariaTests
     {
         var core = new CoreDice(new(InstallationCurrencyStatus.Accredited, new SupportedCurrency("PEN", 2), SupportedCurrencies.Version, Ahora));
 
-        Assert.Equal("PEN", await Adaptador(core).MonedaDeVentaAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(LecturaDeMonedaDeVenta.Acreditada("PEN"), await Adaptador(core).MonedaDeVentaAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -97,13 +109,15 @@ public sealed class CosturaMonetariaTests
             .Select(p => p.ParameterType)
             .ToArray();
 
-        Assert.Equal([typeof(IInstallationCurrencyAuthority), typeof(ILogger<AutoridadDeMonedaDeCore>)], parametros);
+        Assert.Equal(
+            [typeof(IInstallationCurrencyAuthority), typeof(IInstallationCurrencyTransactionalAuthority), typeof(ILogger<AutoridadDeMonedaDeCore>)],
+            parametros);
     }
 
     [Fact]
     public async Task Sin_autoridad_sigue_sin_haber_moneda_y_respeta_la_cancelacion()
     {
-        Assert.Null(await new SinAutoridadDeMoneda().MonedaDeVentaAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(LecturaDeMonedaDeVenta.SinAutoridad, await new SinAutoridadDeMoneda().MonedaDeVentaAsync(TestContext.Current.CancellationToken));
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => new SinAutoridadDeMoneda().MonedaDeVentaAsync(new CancellationToken(canceled: true)));
     }
@@ -238,10 +252,10 @@ public sealed class CosturaMonetariaTests
         Assert.Null(r.OrderCode);
 
         var pasos = base_.Pasos;
-        Assert.Equal(LecturaDeMoneda, pasos[0]);
+        Assert.Equal(LecturaPrevia, pasos[0]);
         Assert.Equal("BEGIN", pasos[1]);
         var bloqueo = pasos.FindIndex(p => p.Contains("pg_advisory_xact_lock_shared(", StringComparison.Ordinal));
-        var autentica = pasos.FindLastIndex(p => p == LecturaDeMoneda);
+        var autentica = pasos.FindIndex(p => p == LecturaEnTransaccion);
         Assert.True(bloqueo > 1, string.Join(" | ", pasos));
         Assert.True(autentica > bloqueo, string.Join(" | ", pasos));
         Assert.Equal("ROLLBACK", pasos[^1]);
@@ -291,7 +305,8 @@ public sealed class CosturaMonetariaTests
 
         Assert.Equal(MotivoDeNoCreacion.MonedaEnCambio, r.Motivo);
         Assert.Null(r.OrderCode);
-        Assert.Single(base_.Pasos, p => p == LecturaDeMoneda); // la auténtica ya no se pide
+        Assert.Single(base_.Pasos, p => p == LecturaPrevia);
+        Assert.DoesNotContain(LecturaEnTransaccion, base_.Pasos); // la auténtica ya no se pide
         Assert.DoesNotContain(base_.Pasos, p => p.Contains("order_series", StringComparison.Ordinal));
         Assert.Equal("ROLLBACK", base_.Pasos[^1]);
     }
@@ -303,8 +318,28 @@ public sealed class CosturaMonetariaTests
             ? new PostgresException("simulado", "ERROR", "ERROR", "57P01")
             : null);
 
+        // R10-E13-B: 57P01 (el servidor se apaga) es transitorio. Ya no sale como
+        // excepción —que acababa en un 500 genérico—, sino como ServicioNoDisponible.
+        // Lo que esta prueba vigila sigue igual: no se presenta como moneda en cambio.
+        var r = await creador.CrearAsync(Guid.CreateVersion7(), [new LineaPedida(Item, 1)], TestContext.Current.CancellationToken);
+
+        Assert.NotEqual(MotivoDeNoCreacion.MonedaEnCambio, r.Motivo);
+        Assert.Equal(MotivoDeNoCreacion.ServicioNoDisponible, r.Motivo);
+    }
+
+    [Fact]
+    public async Task Un_error_no_transitorio_al_pedir_el_bloqueo_sale_tal_cual_y_no_se_disfraza()
+    {
+        // 42501, sin permiso: no se arregla reintentando. No es moneda en cambio ni
+        // servicio no disponible; sale como lo que es.
+        var (base_, creador) = Montaje(["PEN", "PEN"], falla: sql => sql.Contains("pg_advisory_xact_lock_shared(", StringComparison.Ordinal)
+            ? new PostgresException("simulado", "ERROR", "ERROR", "42501")
+            : null);
+
         await Assert.ThrowsAsync<PostgresException>(
             () => creador.CrearAsync(Guid.CreateVersion7(), [new LineaPedida(Item, 1)], TestContext.Current.CancellationToken));
+        Assert.DoesNotContain(LecturaEnTransaccion, base_.Pasos);
+        Assert.Equal("ROLLBACK", base_.Pasos[^1]);
     }
 
     [Fact]
@@ -363,6 +398,8 @@ public sealed class CosturaMonetariaTests
         var servicios = ServiciosDeM03();
         servicios.AddLogging();
         servicios.AddScoped<IInstallationCurrencyAuthority>(_ => new CoreDice(
+            new(InstallationCurrencyStatus.NotEstablished, null, SupportedCurrencies.Version, Ahora)));
+        servicios.AddScoped<IInstallationCurrencyTransactionalAuthority>(_ => new CoreEnTransaccionDice(
             new(InstallationCurrencyStatus.NotEstablished, null, SupportedCurrencies.Version, Ahora)));
 
         using var proveedor = servicios.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = false });
@@ -450,15 +487,20 @@ public sealed class CosturaMonetariaTests
 
         var transaccion = fuente.IndexOf("TransaccionDeOperacion.AbrirSiHaceFaltaAsync", StringComparison.Ordinal);
         var barrera = fuente.IndexOf("BarreraMonetariaDeVentas.AdquirirCompartidaAsync", StringComparison.Ordinal);
-        var autentica = fuente.LastIndexOf("monedas.MonedaDeVentaAsync", StringComparison.Ordinal);
+        var previa = fuente.IndexOf("monedas.MonedaDeVentaAsync", StringComparison.Ordinal);
+        var autentica = fuente.IndexOf("monedas.LeerEnTransaccionAsync", StringComparison.Ordinal);
         var numero = fuente.IndexOf("numerador.SiguienteAsync", StringComparison.Ordinal);
         var insercion = fuente.IndexOf("database.Orders.Add", StringComparison.Ordinal);
         var guardado = fuente.IndexOf("database.SaveChangesAsync", StringComparison.Ordinal);
 
+        Assert.True(previa > 0 && previa < transaccion, "la lectura con la conexión de CORE va antes de abrir la transacción");
         Assert.True(transaccion > 0 && transaccion < barrera, "la barrera va dentro de la transacción");
         Assert.True(barrera < autentica, "la lectura auténtica va después de la barrera");
         Assert.True(autentica < numero && numero < insercion && insercion < guardado, "numerar e insertar van después");
-        Assert.Equal(2, Regex.Matches(fuente, @"monedas\.MonedaDeVentaAsync").Count);
+        // R10-E13-B: una sola lectura con la conexión de CORE, y es la previa. La de
+        // después del bloqueo va en la transacción del pedido (D-1).
+        Assert.Single(Regex.Matches(fuente, @"monedas\.MonedaDeVentaAsync"));
+        Assert.Single(Regex.Matches(fuente, @"monedas\.LeerEnTransaccionAsync"));
         Assert.Contains("CurrencyCode = moneda", fuente, StringComparison.Ordinal);
     }
 
@@ -502,19 +544,44 @@ public sealed class CosturaMonetariaTests
             new OrderCodeAllocator(contexto, new Dobles.AjustesDice(), new NodeIdentity("prueba"), TimeProvider.System),
             new Dobles.AjustesDice(),
             new MonedaEnSecuencia(base_, lecturas),
-            new Dobles.RelojFijo(Ahora));
+            new Dobles.RelojFijo(Ahora),
+            NullLogger<CreadorDePedidos>.Instance);
         return (base_, creador);
     }
 
-    /// <summary>Responde, por orden, una lectura de la lista cada vez, y anota cuándo.</summary>
+    /// <summary>
+    /// Responde, por orden, una lectura de la lista cada vez —la primera es la previa y la
+    /// segunda la de la transacción—, y anota cuál y cuándo.
+    /// </summary>
     private sealed class MonedaEnSecuencia(BaseGuionadaDeVentas base_, string?[] lecturas) : IAutoridadDeMoneda
     {
         private int siguiente;
 
-        public Task<string?> MonedaDeVentaAsync(CancellationToken cancellationToken)
+        public Task<LecturaDeMonedaDeVenta> MonedaDeVentaAsync(CancellationToken cancellationToken)
         {
-            base_.Pasos.Add(LecturaDeMoneda);
-            return Task.FromResult(lecturas[siguiente++]);
+            base_.Pasos.Add(LecturaPrevia);
+            return Task.FromResult(Siguiente());
+        }
+
+        public Task<LecturaDeMonedaDeVenta> LeerEnTransaccionAsync(DbTransaction transaccion, CancellationToken cancellationToken)
+        {
+            base_.Pasos.Add(LecturaEnTransaccion);
+            return Task.FromResult(Siguiente());
+        }
+
+        private LecturaDeMonedaDeVenta Siguiente()
+            => lecturas[siguiente++] is { } moneda ? LecturaDeMonedaDeVenta.Acreditada(moneda) : LecturaDeMonedaDeVenta.SinAutoridad;
+    }
+
+    private sealed class CoreEnTransaccionDice(InstallationCurrencyReading? lectura = null, Exception? lanza = null)
+        : IInstallationCurrencyTransactionalAuthority
+    {
+        public List<DbTransaction> Transacciones { get; } = [];
+
+        public Task<InstallationCurrencyReading> ReadInTransactionAsync(DbTransaction transaction, CancellationToken cancellationToken)
+        {
+            Transacciones.Add(transaction);
+            return lanza is not null ? Task.FromException<InstallationCurrencyReading>(lanza) : Task.FromResult(lectura!);
         }
     }
 
@@ -531,7 +598,7 @@ public sealed class CosturaMonetariaTests
     }
 
     private static AutoridadDeMonedaDeCore Adaptador(IInstallationCurrencyAuthority core)
-        => new(core, NullLogger<AutoridadDeMonedaDeCore>.Instance);
+        => new(core, new CoreEnTransaccionDice(lanza: new InvalidOperationException("no debía llamarse")), NullLogger<AutoridadDeMonedaDeCore>.Instance);
 
     private static SondaDeRegistrosMonetarios Sonda(SalesDbContext contexto)
         => new(contexto, NullLogger<SondaDeRegistrosMonetarios>.Instance);

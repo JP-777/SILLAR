@@ -83,7 +83,8 @@ public sealed class CrearPedidoPersistenciaTests(SalesDbFixture fixture)
             new OrderCodeAllocator(db, new Dobles.AjustesDice(), new Sillar.Shared.Replication.NodeIdentity("principal"), new Dobles.RelojFijo(Ahora)),
             new Dobles.AjustesDice(),
             new Dobles.MonedaDice("PEN"),
-            new Dobles.RelojFijo(Ahora));
+            new Dobles.RelojFijo(Ahora),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<CreadorDePedidos>.Instance);
 
     private static async Task<long> SerieAsync(SalesDbContext db, CancellationToken ct)
     {

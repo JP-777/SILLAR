@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Data.Common;
 using Npgsql;
+using NpgsqlTypes;
 using Sillar.Core.Contracts;
 using Sillar.Modules.Sales.Data;
 using Sillar.Modules.Sales.Dtos;
@@ -67,12 +69,23 @@ public sealed class CosturaMonetariaPersistenciaTests(SalesDbFixture fixture)
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         await TablaDePedidosVaciaAsync(db, ct);
 
+        // D-2 (R10-E12): EF Core 10 no sabe a qué tipo de la base corresponde DBNull.Value
+        // suelto y falla antes de llegar a PostgreSQL. La moneda va como parámetro de
+        // Npgsql con su tipo declarado, text, y entonces el nulo es un NULL de verdad.
+        var monedaOVacia = new NpgsqlParameter("moneda", NpgsqlDbType.Text) { Value = (object?)moneda ?? DBNull.Value };
         await db.Database.ExecuteSqlRawAsync(
             "INSERT INTO sales.orders (order_id, order_code, customer_id, customer_full_name, customer_email, " +
             "status, payment_due_at, total_amount, is_active, origin_node, currency_code, created_at) " +
             "VALUES ({0}, 'P-2026-9901', {1}, 'Ana Quispe', 'ana@ejemplo.pe', {2}, now(), 10, {3}, 'principal', {4}, now())",
-            [Guid.CreateVersion7(), Guid.CreateVersion7(), estado, activo, (object?)moneda ?? DBNull.Value],
+            [Guid.CreateVersion7(), Guid.CreateVersion7(), estado, activo, monedaOVacia],
             ct);
+
+        // Que la fila quedó como dice el caso, y no con otra moneda o sin la baja.
+        var fila = (await db.Database.SqlQueryRaw<string>(
+                "SELECT coalesce(currency_code, '<nulo>') || '|' || is_active::text || '|' || status AS \"Value\" " +
+                "FROM sales.orders WHERE order_code = 'P-2026-9901'")
+            .ToListAsync(ct)).Single();
+        Assert.Equal($"{moneda ?? "<nulo>"}|{(activo ? "true" : "false")}|{estado}", fila);
 
         Assert.Equal(MonetaryRecordsState.Present, await SondaDeRegistrosMonetarios.ClasificarAsync(db, ct));
 
@@ -134,6 +147,7 @@ public sealed class CosturaMonetariaPersistenciaTests(SalesDbFixture fixture)
         Assert.Equal(2, moneda.Lecturas.Count);
         Assert.False(moneda.Lecturas[0], "el rechazo rápido va antes de la transacción y sin bloqueo");
         Assert.True(moneda.Lecturas[1], "la lectura auténtica va con el compartido concedido");
+        Assert.Equal(pid, moneda.PidDeLaTransaccion);    // y por la conexión del pedido (D-1)
         Assert.Equal("PEN", await db.Orders.Where(o => o.OrderCode == r.OrderCode).Select(o => o.CurrencyCode).SingleAsync(ct));
 
         await tx.RollbackAsync(ct);
@@ -193,13 +207,15 @@ public sealed class CosturaMonetariaPersistenciaTests(SalesDbFixture fixture)
 
         await EsperarAsync(async () => (await BloqueosAsync(ct)).Any(b => b.Mode == "ShareLock" && !b.Granted), ct);
         Assert.False(creacion.IsCompleted);
-        Assert.Equal(1, moneda.Lecturas);              // solo el rechazo rápido: la auténtica espera
+        Assert.Equal(1, moneda.Previas);               // solo el rechazo rápido: la auténtica espera
+        Assert.Equal(0, moneda.EnTransaccion);
 
         await txCore.CommitAsync(ct);                  // CORE termina
         var r = await creacion.WaitAsync(TimeSpan.FromSeconds(10), ct);
 
         Assert.True(r.Creado);
-        Assert.Equal(2, moneda.Lecturas);
+        Assert.Equal(1, moneda.Previas);
+        Assert.Equal(1, moneda.EnTransaccion);
         await tx.RollbackAsync(ct);
         Assert.Empty(await BloqueosAsync(ct));
     }
@@ -221,7 +237,8 @@ public sealed class CosturaMonetariaPersistenciaTests(SalesDbFixture fixture)
 
         Assert.Equal(MotivoDeNoCreacion.MonedaEnCambio, r.Motivo);
         Assert.Null(r.OrderCode);
-        Assert.Equal(1, moneda.Lecturas);
+        Assert.Equal(1, moneda.Previas);
+        Assert.Equal(0, moneda.EnTransaccion);
 
         await tx.RollbackAsync(ct);
         await txCore.RollbackAsync(ct);
@@ -294,7 +311,8 @@ public sealed class CosturaMonetariaPersistenciaTests(SalesDbFixture fixture)
             new OrderCodeAllocator(db, new Dobles.AjustesDice(), new NodeIdentity("principal"), new Dobles.RelojFijo(Ahora)),
             new Dobles.AjustesDice(),
             moneda,
-            new Dobles.RelojFijo(Ahora));
+            new Dobles.RelojFijo(Ahora),
+            NullLogger<CreadorDePedidos>.Instance);
 
     /// <summary>
     /// Dentro de la transacción de la prueba, <c>sales.orders</c> pasa a ser una tabla
@@ -379,17 +397,26 @@ public sealed class CosturaMonetariaPersistenciaTests(SalesDbFixture fixture)
         }
     }
 
-    /// <summary>Responde PEN y anota cuántas veces se le preguntó.</summary>
+    /// <summary>Responde la moneda dada y anota cuántas veces se le preguntó, por lectura.</summary>
     private sealed class MonedaContada(string moneda) : IAutoridadDeMoneda
     {
-        private int lecturas;
+        private int previas;
+        private int enTransaccion;
 
-        public int Lecturas => Volatile.Read(ref lecturas);
+        public int Previas => Volatile.Read(ref previas);
 
-        public Task<string?> MonedaDeVentaAsync(CancellationToken cancellationToken)
+        public int EnTransaccion => Volatile.Read(ref enTransaccion);
+
+        public Task<LecturaDeMonedaDeVenta> MonedaDeVentaAsync(CancellationToken cancellationToken)
         {
-            Interlocked.Increment(ref lecturas);
-            return Task.FromResult<string?>(moneda);
+            Interlocked.Increment(ref previas);
+            return Task.FromResult(LecturaDeMonedaDeVenta.Acreditada(moneda));
+        }
+
+        public Task<LecturaDeMonedaDeVenta> LeerEnTransaccionAsync(DbTransaction transaccion, CancellationToken cancellationToken)
+        {
+            Interlocked.Increment(ref enTransaccion);
+            return Task.FromResult(LecturaDeMonedaDeVenta.Acreditada(moneda));
         }
     }
 
@@ -401,15 +428,34 @@ public sealed class CosturaMonetariaPersistenciaTests(SalesDbFixture fixture)
     {
         public List<bool> Lecturas { get; } = [];
 
-        public async Task<string?> MonedaDeVentaAsync(CancellationToken cancellationToken)
+        /// <summary>El proceso del servidor detrás de la transacción que recibió la lectura transaccional.</summary>
+        public int? PidDeLaTransaccion { get; private set; }
+
+        public async Task<LecturaDeMonedaDeVenta> MonedaDeVentaAsync(CancellationToken cancellationToken)
+        {
+            Lecturas.Add(await CompartidoConcedidoAsync(cancellationToken));
+            return LecturaDeMonedaDeVenta.Acreditada("PEN");
+        }
+
+        public async Task<LecturaDeMonedaDeVenta> LeerEnTransaccionAsync(DbTransaction transaccion, CancellationToken cancellationToken)
+        {
+            Lecturas.Add(await CompartidoConcedidoAsync(cancellationToken));
+
+            await using var comando = transaccion.Connection!.CreateCommand();
+            comando.Transaction = transaccion;
+            comando.CommandText = "SELECT pg_backend_pid()";
+            PidDeLaTransaccion = Convert.ToInt32(await comando.ExecuteScalarAsync(cancellationToken));
+            return LecturaDeMonedaDeVenta.Acreditada("PEN");
+        }
+
+        private async Task<bool> CompartidoConcedidoAsync(CancellationToken cancellationToken)
         {
             await using var conexion = new NpgsqlConnection(cadena);
             await conexion.OpenAsync(cancellationToken);
             await using var comando = new NpgsqlCommand(
                 BloqueosDeMoneda + " AND mode = 'ShareLock' AND granted AND pid = $1", conexion);
             comando.Parameters.Add(new NpgsqlParameter { Value = pidDelPedido });
-            Lecturas.Add(await comando.ExecuteScalarAsync(cancellationToken) is not null);
-            return "PEN";
+            return await comando.ExecuteScalarAsync(cancellationToken) is not null;
         }
     }
 }

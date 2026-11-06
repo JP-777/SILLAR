@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -43,6 +44,22 @@ internal sealed class TransaccionDeOperacion : IAsyncDisposable
         CancellationToken cancellationToken)
         => new(database.Database.CurrentTransaction is null
             ? await database.Database.BeginTransactionAsync(cancellationToken)
+            : null);
+
+    /// <summary>
+    /// Igual, pero la propia se abre con el aislamiento indicado, explícito en el
+    /// <c>BEGIN</c>: no depende de <c>default_transaction_isolation</c> del servidor.
+    /// </summary>
+    /// <remarks>
+    /// La del llamador no se toca, tampoco su aislamiento: comprobar si sirve le toca a
+    /// quien la necesita (R10-E13-B, <c>CreadorDePedidos</c>).
+    /// </remarks>
+    public static async Task<TransaccionDeOperacion> AbrirSiHaceFaltaAsync(
+        SalesDbContext database,
+        IsolationLevel aislamiento,
+        CancellationToken cancellationToken)
+        => new(database.Database.CurrentTransaction is null
+            ? await database.Database.BeginTransactionAsync(aislamiento, cancellationToken)
             : null);
 
     /// <summary>

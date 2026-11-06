@@ -20,6 +20,11 @@
   <ItemGroup>
     <ProjectReference Include="..\Sillar.Modules.Sales\Sillar.Modules.Sales.csproj" />
     <ProjectReference Include="..\Sillar.Modules.Sales.Contracts\Sillar.Modules.Sales.Contracts.csproj" />
+    <!-- R10-E13-B: solo para las pruebas físicas de UnaConexionBajoElBloqueoPersistenciaTests,
+         que componen los lectores REALES de CORE por su registro público
+         (AddCoreEssentials + AddCoreAuthentication) en vez de simularlos. Ninguna prueba
+         usa tipos internos de CORE. El módulo Sillar.Modules.Sales no gana esta referencia. -->
+    <ProjectReference Include="..\Sillar.Core\Sillar.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

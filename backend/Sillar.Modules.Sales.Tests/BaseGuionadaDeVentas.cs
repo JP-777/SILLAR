@@ -41,10 +41,23 @@ internal sealed class BaseGuionadaDeVentas
     /// <summary>La tabla que devuelve una lectura, según el texto del comando; <c>null</c> es cero filas.</summary>
     public Func<string, DataTable?> Responde { get; set; } = _ => null;
 
+    /// <summary>Si devuelve una excepción, el <c>BEGIN</c> la lanza en vez de abrir la transacción.</summary>
+    public Func<Exception?> FallaAlEmpezar { get; set; } = () => null;
+
+    /// <summary>El aislamiento que se pidió en cada <c>BEGIN</c>, en orden.</summary>
+    public List<IsolationLevel> Aislamientos { get; } = [];
+
+    /// <summary>Las transacciones abiertas, en orden: las mismas instancias que ve EF.</summary>
+    public List<DbTransaction> Transacciones { get; } = [];
+
+    /// <summary>La conexión del último contexto creado.</summary>
+    public DbConnection? Conexion { get; private set; }
+
     public SalesDbContext Contexto()
     {
+        Conexion = new ConexionFalsa(this);
         var opciones = new DbContextOptionsBuilder<SalesDbContext>()
-            .UseNpgsql(new ConexionFalsa())
+            .UseNpgsql(Conexion)
             .AddInterceptors(new TransaccionFalsaAlEmpezar(this), new ComandoFalsoAlCrear(this));
         return new SalesDbContext(opciones.Options, new NodeIdentity("prueba"), TimeProvider.System);
     }
@@ -59,7 +72,11 @@ internal sealed class BaseGuionadaDeVentas
     }
 
     /// <summary>Siempre abierta, sin servidor detrás.</summary>
-    private sealed class ConexionFalsa : DbConnection
+    /// <remarks>
+    /// Quien crea comandos directamente sobre la conexión —el numerador, por ejemplo— recibe
+    /// el mismo comando falso que EF, y su sentencia también queda anotada.
+    /// </remarks>
+    private sealed class ConexionFalsa(BaseGuionadaDeVentas base_) : DbConnection
     {
         [System.Diagnostics.CodeAnalysis.AllowNull]
         public override string ConnectionString { get; set; } = "";
@@ -93,8 +110,7 @@ internal sealed class BaseGuionadaDeVentas
         protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
             => throw new InvalidOperationException("La transacción la da el interceptor.");
 
-        protected override DbCommand CreateDbCommand()
-            => throw new InvalidOperationException("Los comandos los da el interceptor.");
+        protected override DbCommand CreateDbCommand() => new ComandoFalso(base_);
     }
 
     private sealed class TransaccionFalsaAlEmpezar(BaseGuionadaDeVentas base_) : DbTransactionInterceptor
@@ -102,8 +118,16 @@ internal sealed class BaseGuionadaDeVentas
         public override InterceptionResult<DbTransaction> TransactionStarting(
             DbConnection connection, TransactionStartingEventData eventData, InterceptionResult<DbTransaction> result)
         {
+            if (base_.FallaAlEmpezar() is { } excepcion)
+            {
+                throw excepcion;
+            }
+
             base_.Pasos.Add("BEGIN");
-            return InterceptionResult<DbTransaction>.SuppressWithResult(new TransaccionFalsa(base_, connection));
+            base_.Aislamientos.Add(eventData.IsolationLevel);
+            var transaccion = new TransaccionFalsa(base_, connection, eventData.IsolationLevel);
+            base_.Transacciones.Add(transaccion);
+            return InterceptionResult<DbTransaction>.SuppressWithResult(transaccion);
         }
 
         public override ValueTask<InterceptionResult<DbTransaction>> TransactionStartingAsync(
@@ -118,13 +142,15 @@ internal sealed class BaseGuionadaDeVentas
             => InterceptionResult<DbCommand>.SuppressWithResult(new ComandoFalso(base_));
     }
 
-    private sealed class TransaccionFalsa(BaseGuionadaDeVentas base_, DbConnection connection) : DbTransaction
+    private sealed class TransaccionFalsa(BaseGuionadaDeVentas base_, DbConnection connection, IsolationLevel aislamiento) : DbTransaction
     {
         private bool terminada;
 
-        public override IsolationLevel IsolationLevel => IsolationLevel.ReadCommitted;
+        /// <summary>El que se pidió; sin pedir ninguno, read committed, el de PostgreSQL por defecto.</summary>
+        public override IsolationLevel IsolationLevel
+            => aislamiento == IsolationLevel.Unspecified ? IsolationLevel.ReadCommitted : aislamiento;
 
-        protected override DbConnection DbConnection => connection;
+        protected override DbConnection? DbConnection => terminada ? null : connection;
 
         public override void Commit() => Terminar("COMMIT");
 

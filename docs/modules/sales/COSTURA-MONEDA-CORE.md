@@ -1,29 +1,42 @@
 # M03 · Costura con la autoridad monetaria de CORE
 
-**Creación:** 04/11/2026, America/Lima
-**Encargo:** P1-POST-G6-R10-E6.1 (Chat 3), con D1–D8 y N1–N5 ratificadas por JP
+**Creación:** 04/11/2026, America/Lima · **Revisión:** 06/11/2026 (R10-E13-B)
+**Encargos:** P1-POST-G6-R10-E6.1 (D1–D8 y N1–N5) y P1-POST-G6-R10-E13-B (D1–D5 de R10-E13), ratificados por JP
 **Estado:** candidata, **sin acreditación física**. HOLD MAIN vigente.
-**Contraparte:** CORE `ENTREGA-07-MONEDA-DE-LA-INSTALACION.md` §10–§12 (E5.2, `05938966`)
+**Contraparte:** CORE `ENTREGA-07-MONEDA-DE-LA-INSTALACION.md` §10–§12 (E5.2) y §15 (E13-A, `IInstallationCurrencyTransactionalAuthority`)
 
 ## Qué pone M03
 
 | Pieza | Dónde | Qué hace |
 |---|---|---|
-| Adaptador de lectura | `Pedidos/AutoridadDeMoneda.cs` → `AutoridadDeMonedaDeCore` | Devuelve la moneda solo si `IInstallationCurrencyAuthority` dice `Accredited`. Cualquier otro estado da `null`, y el resultado es `MonedaSinAutoridad` (503), como en D20-A. Nunca lee `currency_code`, `currency_symbol` ni la caché |
-| Contrato interno | `IAutoridadDeMoneda.MonedaDeVentaAsync` | Ahora es asíncrono, porque la lectura de CORE lo es. Lo consumen `CreadorDePedidos` y los dobles de prueba. `SinAutoridadDeMoneda` queda como ausencia explícita y deja de estar registrada |
-| Barrera | `Data/BarreraMonetariaDeVentas.cs` | `MonetaryAuthorityLock.AcquireShared()` dentro de la transacción del pedido, con `lock_timeout` de 5 s solo para esa sentencia (luego se restaura el anterior) |
-| Sonda | `Pedidos/SondaDeRegistrosMonetarios.cs` | `IMonetaryRecordsProbe`. Hace `EXISTS` sobre **todo** `sales.orders`. Responde `None` o `Present`; `Unknown` ante cualquier fallo o si hay una transacción ya abierta en su contexto. La cancelación se propaga. No pide el bloqueo |
-| Registro | `SalesModule.cs` | `IAutoridadDeMoneda → AutoridadDeMonedaDeCore` y `IMonetaryRecordsProbe → SondaDeRegistrosMonetarios`, las dos *scoped* |
-| Motivo nuevo | `MotivoDeNoCreacion.MonedaEnCambio` | El bloqueo no llegó a tiempo porque CORE estaba cambiando la moneda. 503 con una frase propia |
+| Adaptador | `Pedidos/AutoridadDeMoneda.cs` → `AutoridadDeMonedaDeCore` | Dos lecturas. `MonedaDeVentaAsync` usa `IInstallationCurrencyAuthority` (conexión de CORE) y **solo sirve para rechazar** antes de abrir nada. `LeerEnTransaccionAsync` usa `IInstallationCurrencyTransactionalAuthority` sobre la transacción del pedido: es la que se congela. Nunca lee `currency_code`, `currency_symbol`, la caché ni tablas de CORE |
+| Estados | `EstadoDeMonedaDeVenta` | `Acreditada`, `SinAutoridad` (CORE dice que no hay), `NoDisponible` (no se pudo leer: `Unavailable` o fallo), `UsoIndebido` (CORE rechazó la transacción por contrato; se registra como error, evento `31301`) |
+| Barrera | `Data/BarreraMonetariaDeVentas.cs` | `MonetaryAuthorityLock.AcquireShared()` dentro de la transacción del pedido, con `lock_timeout` de 5 s solo para esa sentencia |
+| Sonda | `Pedidos/SondaDeRegistrosMonetarios.cs` | `IMonetaryRecordsProbe` sobre **todo** `sales.orders`. `None`, `Present` o `Unknown`. No pide el bloqueo |
+| Clasificador | `Pedidos/FallosDeInfraestructura.cs` | Qué fallo es «el bloqueo no llegó» (`55P03`) y cuál «no se puede ahora» (`IsTransient` de Npgsql), vengan **sin envolver o envueltos por EF Core** en `InvalidOperationException` |
+| Registro | `SalesModule.cs` | Sin cambios desde E6.1: `IAutoridadDeMoneda → AutoridadDeMonedaDeCore` e `IMonetaryRecordsProbe → SondaDeRegistrosMonetarios`, *scoped*. Los dos lectores de CORE los registra CORE |
 
 ## Orden en `CreadorDePedidos`
 
-1. Rechazo rápido. Una primera lectura de la moneda, **solo para rechazar**: sin moneda no se abre ninguna transacción (D20-A). Esa moneda no se usa.
-2. Cliente y artículos. Lecturas de M04 y M01, fuera de la transacción, como antes.
-3. `BEGIN`, o unirse a la transacción del llamador.
-4. **Bloqueo compartido**: el primer bloqueo de la transacción. Si vence (`55P03`), devuelve `MonedaEnCambio` y deshace.
-5. **Lectura auténtica** de la moneda, con el bloqueo puesto. Si no está acreditada, devuelve `MonedaSinAutoridad` y deshace.
-6. Líneas, asiento, número (`OrderCodeAllocator`), inserción, `COMMIT`. El bloqueo se suelta solo.
+1. **Rechazo rápido** con la conexión de CORE. Ventas todavía no retiene ninguna. Sin moneda acreditada no se abre nada (D20-A); si no se pudo leer, tampoco, pero el motivo es otro.
+2. Cliente y artículos: lecturas de M04 y M01, fuera de la transacción.
+3. Transacción: propia en `READ COMMITTED` explícito, o la del llamador si su aislamiento declarado es `ReadCommitted` o sin especificar. Con otro, se rechaza **sin tomar el bloqueo** y sin tocarla.
+4. **Bloqueo compartido**, primer bloqueo de la transacción.
+5. **Lectura acreditada en la misma transacción y conexión** (`Database.CurrentTransaction.GetDbTransaction()`). CORE comprueba ahí aislamiento real, base y bloqueo concedido.
+6. Líneas, asiento, número, inserción, `COMMIT`.
+
+**Desde el paso 4 hasta el 6 no se pide ninguna otra conexión al pool** (D-1, R10-E12). Ya no hay segunda llamada a `MonedaDeVentaAsync` bajo el bloqueo.
+
+## Respuestas HTTP de `POST /api/sales/orders`
+
+| Motivo | Cuándo | HTTP | Frase |
+|---|---|---|---|
+| `MonedaSinAutoridad` | CORE dice que no hay moneda acreditada | 503 | «Falta configurar la moneda en que cobra la tienda…» |
+| `MonedaEnCambio` | El bloqueo no llegó en 5 s (`55P03`) | 503 | «La tienda está actualizando la moneda…» |
+| `ServicioNoDisponible` | No se pudo leer la moneda, o la base no dio conexión o la cortó (fallo transitorio) | 503 | «No pudimos confirmar tu pedido en este momento…» — no nombra la moneda |
+| `CosturaMonetariaDefectuosa` | Uso fuera de contrato (aislamiento, bloqueo, base, transacción) | 500 | «No pudimos registrar tu pedido…» — ningún detalle interno |
+
+En los cuatro casos el pedido no nace y no se consume número. Una transacción prestada nunca se confirma ni se deshace aquí: si queda abortada, la deshace su dueño.
 
 ## Escritores de `sales.orders`
 
@@ -33,5 +46,5 @@
 
 ## Lo que no está acreditado
 
-- La exclusión mutua con PostgreSQL físico. Las pruebas de `CosturaMonetariaPersistenciaTests` están preparadas y **no se han ejecutado**.
-- La composición del Host. `NegativeCommerceIntegration` sigue declarando `SinAutoridadDeMoneda`, singleton, y no conoce la sonda; ver el inventario de pendientes del expediente R10-E6.1.
+- Nada de lo físico. `CosturaMonetariaPersistenciaTests` (14) y `UnaConexionBajoElBloqueoPersistenciaTests` (8, con los lectores reales de CORE y pools de 1 y 2 conexiones) están preparadas y **no se han ejecutado** en esta entrega.
+- La primera acreditación concurrente y la ausencia de sonda se prueban por la API real (escenarios del expediente R10-E13-B), porque la escritura de CORE no tiene contrato público.

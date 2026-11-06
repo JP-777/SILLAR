@@ -462,7 +462,9 @@ public sealed class MonedaYAgregadosMonetariosTests
 
     [Fact]
     public async Task Sin_autoridad_de_moneda_no_hay_moneda_de_venta()
-        => Assert.Null(await new SinAutoridadDeMoneda().MonedaDeVentaAsync(TestContext.Current.CancellationToken));
+        => Assert.Equal(
+            LecturaDeMonedaDeVenta.SinAutoridad,
+            await new SinAutoridadDeMoneda().MonedaDeVentaAsync(TestContext.Current.CancellationToken));
 
     [Theory]
     [InlineData(null)]
@@ -482,7 +484,8 @@ public sealed class MonedaYAgregadosMonetariosTests
             new OrderCodeAllocator(contexto, new Dobles.AjustesDice(), new NodeIdentity("prueba"), TimeProvider.System),
             new Dobles.AjustesDice(),
             new Dobles.MonedaDice(moneda),
-            TimeProvider.System);
+            TimeProvider.System,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<CreadorDePedidos>.Instance);
 
         var r = await creador.CrearAsync(Guid.CreateVersion7(), [new LineaPedida(item, 1)], CancellationToken.None);
 

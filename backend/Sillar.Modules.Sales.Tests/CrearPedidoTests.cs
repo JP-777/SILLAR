@@ -94,10 +94,27 @@ internal static class Dobles
     /// La autoridad de moneda, fijada por la prueba. Es dato de prueba, no una moneda
     /// del producto: el producto no tiene ninguna mientras JP no ratifique su autoridad.
     /// </summary>
+    /// <remarks>
+    /// Responde lo mismo en las dos lecturas: <c>null</c> es sin autoridad, y cualquier otro
+    /// texto se da por acreditado tal cual, para que el creador tenga que comprobar su forma.
+    /// </remarks>
     internal sealed class MonedaDice(string? moneda) : IAutoridadDeMoneda
     {
-        public Task<string?> MonedaDeVentaAsync(CancellationToken cancellationToken)
-            => Task.FromResult(moneda);
+        /// <summary>Las transacciones con que se pidió la lectura transaccional, en orden.</summary>
+        public List<System.Data.Common.DbTransaction> Transacciones { get; } = [];
+
+        public Task<LecturaDeMonedaDeVenta> MonedaDeVentaAsync(CancellationToken cancellationToken)
+            => Task.FromResult(Lectura());
+
+        public Task<LecturaDeMonedaDeVenta> LeerEnTransaccionAsync(
+            System.Data.Common.DbTransaction transaccion, CancellationToken cancellationToken)
+        {
+            Transacciones.Add(transaccion);
+            return Task.FromResult(Lectura());
+        }
+
+        private LecturaDeMonedaDeVenta Lectura()
+            => moneda is null ? LecturaDeMonedaDeVenta.SinAutoridad : LecturaDeMonedaDeVenta.Acreditada(moneda);
     }
 
     internal static CustomerOrderContactSnapshot Cliente(Guid id, bool verificado = true)
