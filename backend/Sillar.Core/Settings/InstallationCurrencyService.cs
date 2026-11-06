@@ -139,14 +139,32 @@ internal sealed class InstallationCurrencyAuthority(
     ILogger<InstallationCurrencyAuthority> logger) : IInstallationCurrencyAuthority
 {
     /// <inheritdoc />
-    public async Task<InstallationCurrencyReading> ReadAsync(CancellationToken cancellationToken)
+    public Task<InstallationCurrencyReading> ReadAsync(CancellationToken cancellationToken)
+        => InstallationCurrencyRead.ReadAsync(database, clock, logger, cancellationToken);
+
+    /// <summary>La consulta de la lectura, sobre el contexto de CORE.</summary>
+    internal IQueryable<InstallationCurrencyFacts> FactsQuery() => InstallationCurrencyRead.FactsQuery(database);
+}
+
+/// <summary>
+/// La lectura acreditada, escrita una sola vez: la usan el lector de CORE sobre su
+/// propio contexto y el lector transaccional sobre la conexión del llamador.
+/// </summary>
+internal static class InstallationCurrencyRead
+{
+    /// <summary>Lee y evalúa. La cancelación se propaga; cualquier otro fallo es <c>Unavailable</c>.</summary>
+    public static async Task<InstallationCurrencyReading> ReadAsync(
+        CoreDbContext database,
+        TimeProvider clock,
+        ILogger logger,
+        CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         InstallationCurrencyFacts? facts;
         try
         {
-            facts = await FactsQuery().SingleOrDefaultAsync(cancellationToken);
+            facts = await FactsQuery(database).SingleOrDefaultAsync(cancellationToken);
         }
         catch (Exception exception) when (cancellationToken.IsCancellationRequested)
         {
@@ -163,7 +181,7 @@ internal sealed class InstallationCurrencyAuthority(
     }
 
     /// <summary>Una sola sentencia: la fila de la clave y, como subconsulta, su último registro de auditoría.</summary>
-    internal IQueryable<InstallationCurrencyFacts> FactsQuery()
+    public static IQueryable<InstallationCurrencyFacts> FactsQuery(CoreDbContext database)
         => database.SiteSettings
             .AsNoTracking()
             .Where(setting => setting.SettingKey == InstallationCurrency.SettingKey)
@@ -495,6 +513,7 @@ internal static class InstallationCurrencyRegistration
     {
         services.AddScoped<InstallationCurrencyService>();
         services.AddScoped<IInstallationCurrencyAuthority, InstallationCurrencyAuthority>();
+        services.AddScoped<IInstallationCurrencyTransactionalAuthority, InstallationCurrencyTransactionalAuthority>();
         return services;
     }
 }

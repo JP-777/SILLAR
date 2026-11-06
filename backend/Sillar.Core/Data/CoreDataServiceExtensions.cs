@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Sillar.Shared.Data.Modularity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,4 +25,21 @@ public static class CoreDataServiceExtensions
     public static DbContextOptions<CoreDbContext> BuildOptions(string connectionString)
         => PersistenciaDeModulo.Opciones<CoreDbContext>(
             connectionString, CoreDbContext.Schema, CoreDbContext.MigrationsHistoryTable);
+
+    /// <summary>
+    /// Las mismas opciones sobre una conexión <b>ajena y ya abierta</b>, para leer
+    /// dentro de la transacción de quien la abrió.
+    /// </summary>
+    /// <remarks>
+    /// El contexto no es dueño de la conexión (<c>contextOwnsConnection: false</c>): al
+    /// desecharse no la cierra ni la libera, y como ya está abierta tampoco la abre. Es la
+    /// única conexión que ese contexto puede usar: no hay cadena con la que pedir otra.
+    /// </remarks>
+    internal static DbContextOptions<CoreDbContext> BuildOptions(DbConnection borrowedConnection)
+        => new DbContextOptionsBuilder<CoreDbContext>()
+            .UseNpgsql(
+                borrowedConnection,
+                contextOwnsConnection: false,
+                npgsql => npgsql.MigrationsHistoryTable(CoreDbContext.MigrationsHistoryTable, CoreDbContext.Schema))
+            .Options;
 }

@@ -308,3 +308,107 @@ prueba registrada solo en el arnés físico que responda `Present`:
 4. En otra base recién migrada, sin ningún registro de la clave: `UPDATE` directo de la fila a `PEN`
    (queda `NotAttested`). Sonda `Present`, el mismo `PUT` → `409` `RecordsPresent`; sin registro nuevo.
 5. Sonda `Present`, fila en `PENDIENTE_DEFINIR` → `409` `RecordsPresent`; sin cambios.
+
+## 15 · R10-E13-A — Lectura acreditada dentro de la transacción comercial (D-1)
+
+**Defecto (R10-E12, D-1).** Ventas toma `AcquireShared` en la conexión del pedido y después lee la
+moneda con `IInstallationCurrencyAuthority`, que va por el `CoreDbContext` de CORE: **otra conexión
+del pool mientras la primera retiene el bloqueo**. Con un pool corto, N pedidos simultáneos tienen las
+N conexiones y esperan una más; la lectura acaba en `Unavailable` (y el pedido en «sin moneda») o en
+un error de tiempo agotado.
+
+**Contrato nuevo** — `Sillar.Core.Contracts.IInstallationCurrencyTransactionalAuthority`:
+
+```csharp
+Task<InstallationCurrencyReading> ReadInTransactionAsync(DbTransaction transaction, CancellationToken ct);
+```
+
+Recibe solo `System.Data.Common.DbTransaction` (de la BCL): ni EF ni `CoreDbContext` en el contrato, y
+Ventas no recibe acceso a tablas de CORE. Es **aditivo**: `IInstallationCurrencyAuthority`,
+`InstallationCurrencyReading`, `InstallationCurrencyStatus` y `MonetaryAuthorityLock` no cambian (este
+último solo en su documentación). Se registra *scoped* junto al lector de CORE (`AddInstallationCurrency`).
+
+**Cómo lee sin segunda conexión.** Un `CoreDbContext` de vida corta con opciones construidas sobre
+`transaction.Connection` y `contextOwnsConnection: false` (`CoreDataServiceExtensions.BuildOptions(DbConnection)`),
+unido a la transacción con `UseTransaction`. No tiene cadena con la que pedir otra conexión; como la
+recibida ya está abierta, EF no la abre ni la cierra, y una transacción externa no la confirma ni la
+deshace. El `CoreDbContext` del ámbito solo se consulta para saber el nombre de la base, sin abrirlo.
+
+**Misma lectura.** `InstallationCurrencyRead` contiene la consulta y la evaluación que antes vivían en
+`InstallationCurrencyAuthority`; los dos lectores las llaman. Acreditada solo con valor de la lista
+cerrada y su comprobante exacto; nunca `currency_code` ni la caché. La sentencia es idéntica (prueba).
+
+**Comprobación previa**, una sola lectura en la propia transacción (`CheckSql`):
+
+| Exige | Por qué |
+|---|---|
+| conexión abierta, transacción viva | CORE no abre lo ajeno; una transacción terminada no tiene conexión |
+| `transaction_isolation = read committed` | con `repeatable read` o `serializable` la instantánea se toma en la primera sentencia de Ventas, **antes** del bloqueo: se leería la moneda anterior a un cambio que el bloqueo ya esperó |
+| bloqueo de moneda concedido a esta sesión (`pg_locks`: advisory, `classid = 1397312588`, `objid = 1`, `objsubid = 2`, `ShareLock` o `ExclusiveLock`, `granted`) | sin él nada impide que la moneda cambie después de leerla |
+| `current_database()` = base de la cadena de CORE (ordinal) | la moneda es la de esta instalación |
+
+Incumplir cualquiera es **error de uso** (`InvalidOperationException`) y no se lee nada. Un fallo de
+lectura es `Unavailable`, como en el lector de CORE; la cancelación se propaga.
+
+**Pruebas sin PostgreSQL** (`LecturaMonetariaTransaccionalTests`, 47): conexión y transacción de Ventas
+dobles que cuentan aperturas, cierres, desechos, transacciones pedidas, confirmaciones y reversiones, y
+**rechazan cualquier comando que no lleve la transacción comercial**. Cubren: lectura acreditada en esa
+conexión y esa transacción (dos sentencias, comprobación primero); el contexto de CORE del ámbito no
+abre su conexión; diez estados con el mismo resultado que el lector de CORE sobre los mismos datos;
+misma sentencia que el lector de CORE; ninguna escritura, `FOR UPDATE`, `pg_advisory` ni `set_config`;
+seis transacciones incompatibles (tres aislamientos, sin bloqueo, otra base, base con otras mayúsculas);
+conexión cerrada, transacción terminada, sin transacción, CORE sin base conocida; cancelación antes y
+durante cada sentencia; fallo de cada sentencia → `Unavailable`; tres lecturas seguidas; treinta
+conexiones sin multiplicar los proveedores de EF; registro *scoped* y resolución desde el contenedor
+sin abrir la conexión de CORE; y un examen del código que no contiene `BeginTransaction`, `Commit`,
+`Rollback`, `Open`, `Close`, `SaveChanges`, `new NpgsqlConnection(` ni `NpgsqlDataSource`.
+Mutaciones: leer con el contexto de CORE → 29 fallan; sin exigencias → 7; sin `UseTransaction` → 35;
+contexto dueño de la conexión → 13; sin comprobar que esté abierta → 1; sin caché de proveedores de EF → 1.
+
+**Para Claude A (E13-B, Ventas; no implementado aquí):**
+
+1. En la lectura bajo el bloqueo (`CreadorDePedidos` paso 4b, hoy `monedas.MonedaDeVentaAsync`), pedir
+   `IInstallationCurrencyTransactionalAuthority` y llamar
+   `ReadInTransactionAsync(database.Database.CurrentTransaction!.GetDbTransaction(), ct)` **después** de
+   `BarreraMonetariaDeVentas.AdquirirCompartidaAsync` y antes de numerar. Usar la moneda solo si
+   `IsAccredited` y `Currency` no es nula, como hoy.
+2. La comprobación del paso 0 (antes de abrir la transacción) puede seguir con `IInstallationCurrencyAuthority`:
+   no retiene el bloqueo.
+3. La transacción tiene que ser `read committed`. `BeginTransactionAsync()` usa el aislamiento por
+   defecto del servidor; abrirla con `IsolationLevel.ReadCommitted` lo deja explícito. Si se une a la de
+   un llamador (`TransaccionDeOperacion`), esa transacción tiene que cumplirlo.
+4. `InvalidOperationException` es un defecto de integración (sin bloqueo, aislamiento, base), no «sin
+   moneda»; `Unavailable` deja la transacción posiblemente abortada y hay que deshacerla. Cómo se
+   traduce cada caso a HTTP es de E13-B.
+5. No hace falta registrar nada en Ventas: CORE lo registra. Ventas ya depende de CORE y de
+   `Sillar.Core.Contracts`.
+
+**Reproducción física preparada (NO ejecutada).** PostgreSQL 16, CORE y Ventas migrados, moneda acreditada:
+
+```sql
+-- 1. Forma de pg_locks y comprobación positiva.
+BEGIN;
+SELECT pg_advisory_xact_lock_shared(1397312588, 1);
+SELECT locktype, classid, objid, objsubid, mode, granted FROM pg_locks
+ WHERE locktype = 'advisory' AND pid = pg_backend_pid();   -- 1397312588 | 1 | 2 | ShareLock | t
+-- pegar CheckSql con 1397312588 y 1 → read committed | <base> | t
+ROLLBACK;
+-- 2. Sin bloqueo → LockHeld = f.   3. BEGIN ISOLATION LEVEL REPEATABLE READ → 'repeatable read'.
+```
+
+4. Con Ventas adoptando el contrato y `Maximum Pool Size=1` en la cadena: crear un pedido → nace, sin
+   espera ni `Unavailable`; `pg_stat_activity` muestra una sola conexión de la aplicación durante el pedido.
+5. Con `Maximum Pool Size=N` y N+k pedidos simultáneos: todos nacen o esperan su turno, ninguno falla
+   por la moneda.
+6. Repetir los escenarios A, A′, B y C de §11: el comportamiento del bloqueo no cambia.
+
+**Riesgos y límites.**
+
+- `pg_locks` no distingue un bloqueo consultivo de sesión de uno de transacción con la misma identidad;
+  el contrato del bloqueo ya prohíbe el de sesión.
+- Cancelar un comando en Npgsql envía un *CancelRequest* por una conexión de protocolo aparte, fuera del
+  pool. Es lo mismo que ocurre con cualquier comando de Ventas.
+- Si la lectura falla, PostgreSQL deja abortada la transacción de Ventas: la pierde el pedido, no la
+  moneda. Deshacerla es del dueño.
+- Una sentencia más por pedido (la comprobación).
+- D-1 **no está resuelto** hasta que Ventas adopte el contrato y QA lo compruebe físicamente.

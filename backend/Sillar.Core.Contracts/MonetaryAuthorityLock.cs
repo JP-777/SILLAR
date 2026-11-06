@@ -31,8 +31,11 @@ namespace Sillar.Core.Contracts;
 /// configuración.</item>
 /// <item><b>Ventas, al crear un pedido (pendiente de implementar):</b>
 /// <see cref="AcquireShared"/>, primer bloqueo de su transacción: antes de leer la
-/// moneda con <see cref="IInstallationCurrencyAuthority"/>, antes de numerar y antes
-/// de insertar. Se mantiene hasta confirmar o deshacer el pedido.</item>
+/// moneda, antes de numerar y antes de insertar. Se mantiene hasta confirmar o deshacer
+/// el pedido. Con el bloqueo puesto, la moneda se lee con
+/// <see cref="IInstallationCurrencyTransactionalAuthority"/> en esa misma transacción:
+/// <see cref="IInstallationCurrencyAuthority"/> usaría otra conexión mientras esta
+/// retiene el bloqueo (R10-E13, D-1).</item>
 /// </list>
 /// <para>
 /// <b>Solo las variantes de transacción</b> (<c>_xact_</c>): se liberan solas al
