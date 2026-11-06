@@ -80,7 +80,7 @@ public sealed class CrearPedidoPersistenciaTests(SalesDbFixture fixture)
             db,
             new CongeladorDeCliente(new Dobles.M04Dice(Dobles.Cliente(cliente, verificado))),
             catalogo,
-            new OrderCodeAllocator(db, new Dobles.AjustesDice(), new Sillar.Shared.Replication.NodeIdentity("principal"), new Dobles.RelojFijo(Ahora)),
+            new OrderCodeAllocator(db, new Sillar.Shared.Replication.NodeIdentity("principal"), new Dobles.RelojFijo(Ahora)),
             new Dobles.AjustesDice(),
             new Dobles.MonedaDice("PEN"),
             new Dobles.RelojFijo(Ahora),

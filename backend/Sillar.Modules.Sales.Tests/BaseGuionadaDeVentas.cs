@@ -41,6 +41,15 @@ internal sealed class BaseGuionadaDeVentas
     /// <summary>La tabla que devuelve una lectura, según el texto del comando; <c>null</c> es cero filas.</summary>
     public Func<string, DataTable?> Responde { get; set; } = _ => null;
 
+    /// <summary>
+    /// Lo que devuelve un escalar —el <c>RETURNING</c> del numerador—, según el texto del
+    /// comando; por defecto <c>null</c>, como antes de R10-E13-D.
+    /// </summary>
+    public Func<string, object?> RespondeEscalar { get; set; } = _ => null;
+
+    /// <summary>Cada comando con los valores de sus parámetros, en orden.</summary>
+    public List<(string Texto, IReadOnlyDictionary<string, object?> Valores)> Comandos { get; } = [];
+
     /// <summary>Si devuelve una excepción, el <c>BEGIN</c> la lanza en vez de abrir la transacción.</summary>
     public Func<Exception?> FallaAlEmpezar { get; set; } = () => null;
 
@@ -225,7 +234,7 @@ internal sealed class BaseGuionadaDeVentas
         public override object? ExecuteScalar()
         {
             Anotar();
-            return null;
+            return base_.RespondeEscalar(CommandText);
         }
 
         protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
@@ -237,6 +246,7 @@ internal sealed class BaseGuionadaDeVentas
         private void Anotar()
         {
             base_.Pasos.Add(CommandText.Trim());
+            base_.Comandos.Add((CommandText, parametros.Parameters.ToDictionary(p => p.ParameterName, p => (object?)p.Value)));
             if (base_.FallaAlEjecutar(CommandText) is { } excepcion)
             {
                 throw excepcion;

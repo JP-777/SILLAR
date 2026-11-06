@@ -41,6 +41,12 @@ namespace Sillar.Modules.Sales.Pedidos;
 /// con un pool corto, cada pedido retendría una y esperaría otra, y se bloquearían entre
 /// ellos.
 /// </para>
+/// <para>
+/// <b>Nada de la configuración se lee en ese tramo</b> (R10-E13-D, R-1). El plazo de pago
+/// y la etiqueta de serie se leen en el paso 3, antes de abrir la transacción: la caché de
+/// configuración, si está invalidada, recarga con su propio ámbito y su propia conexión.
+/// La etiqueta capturada se congela para esta operación y se le pasa al numerador.
+/// </para>
 /// </remarks>
 internal sealed class CreadorDePedidos(
     SalesDbContext database,
@@ -141,6 +147,14 @@ internal sealed class CreadorDePedidos(
         var ahora = reloj.GetUtcNow();
         var horas = ajustes.Get<int>(SalesSettingsKeys.PaymentDueHours);
         var plazo = horas > 0 ? horas : SalesSettingsKeys.PaymentDueHoursDefault;
+
+        // 3b · La etiqueta de serie, AQUÍ y no al numerar (R-1). El numerador corre con el
+        // bloqueo de moneda puesto, y leerla allí podía recargar la caché de configuración,
+        // que abre su propio ámbito y pide otra conexión al pool mientras la del pedido
+        // retiene el bloqueo. Se valida con la regla del numerador: sin etiqueta no se abre
+        // transacción, no se toma el bloqueo y no se consume número. Queda congelada para
+        // este pedido; un cambio de configuración posterior sirve al siguiente.
+        var etiquetaDeSerie = numerador.EtiquetaValida(ajustes.Get(SalesSettingsKeys.OrderSeriesLabel));
 
         // 4 · La transacción. Dentro van la barrera y la lectura de moneda, el pedido,
         // sus líneas, su primer asiento de estado y el número: o está todo o no está
@@ -264,14 +278,15 @@ internal sealed class CreadorDePedidos(
 
         // 5 · El número, AL FINAL y dentro de esta transacción. Pedirlo antes gastaría
         // uno en cada intento que no llega a confirmarse; el numerador además se niega
-        // a trabajar fuera de transacción, así que esto no es una convención.
+        // a trabajar fuera de transacción, así que esto no es una convención. Recibe la
+        // etiqueta capturada en 3b: no consulta la configuración bajo el bloqueo.
         //
         // Si la conexión se corta aquí, todavía no hay COMMIT: el pedido no nació y se
         // puede decir. El COMMIT queda fuera a propósito: si falla, no se sabe si el
         // pedido quedó confirmado, y pedir «vuelve a confirmarlo» podría duplicarlo.
         try
         {
-            pedido.OrderCode = await numerador.SiguienteAsync(cancellationToken);
+            pedido.OrderCode = await numerador.SiguienteAsync(etiquetaDeSerie, cancellationToken);
             database.Orders.Add(pedido);
 
             await database.SaveChangesAsync(cancellationToken);

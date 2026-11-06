@@ -655,7 +655,7 @@ public sealed class UnaConexionBajoElBloqueoTests
             contexto,
             new CongeladorDeCliente(new Dobles.M04Dice(Dobles.Cliente(Guid.CreateVersion7()))),
             new Dobles.CatalogoDice().Con(Item, activo: true, precio: 8.50m),
-            new OrderCodeAllocator(contexto, new Dobles.AjustesDice(), new NodeIdentity("prueba"), TimeProvider.System),
+            new OrderCodeAllocator(contexto, new NodeIdentity("prueba"), TimeProvider.System),
             new Dobles.AjustesDice(),
             new AutoridadDeMonedaDeCore(core, coreEnTransaccion, registro.Para<AutoridadDeMonedaDeCore>()),
             new Dobles.RelojFijo(Ahora),

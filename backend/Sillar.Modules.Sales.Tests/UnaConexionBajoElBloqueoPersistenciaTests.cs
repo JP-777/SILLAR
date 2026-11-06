@@ -365,7 +365,7 @@ public sealed class UnaConexionBajoElBloqueoPersistenciaTests(SalesDbFixture fix
             db,
             new CongeladorDeCliente(new Dobles.M04Dice(Dobles.Cliente(cliente))),
             new Dobles.CatalogoDice().Con(item, activo: true, precio: 8.50m),
-            new OrderCodeAllocator(db, new Dobles.AjustesDice(), new NodeIdentity("principal"), new Dobles.RelojFijo(Ahora)),
+            new OrderCodeAllocator(db, new NodeIdentity("principal"), new Dobles.RelojFijo(Ahora)),
             new Dobles.AjustesDice(),
             moneda,
             new Dobles.RelojFijo(Ahora),

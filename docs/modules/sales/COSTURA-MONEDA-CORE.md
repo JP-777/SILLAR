@@ -19,13 +19,13 @@
 ## Orden en `CreadorDePedidos`
 
 1. **Rechazo rápido** con la conexión de CORE. Ventas todavía no retiene ninguna. Sin moneda acreditada no se abre nada (D20-A); si no se pudo leer, tampoco, pero el motivo es otro.
-2. Cliente y artículos: lecturas de M04 y M01, fuera de la transacción.
+2. Cliente y artículos: lecturas de M04 y M01, fuera de la transacción. Después, **los ajustes**: plazo de pago y etiqueta de serie (`sales.order_series_label`), también fuera. La etiqueta se valida con la regla del numerador (`OrderCodeAllocator.EtiquetaValida`): sin ella no se abre transacción, no se toma el bloqueo y no se consume número. Queda congelada para ese pedido; el siguiente lee la vigente al empezar el suyo (R10-E13-D, R-1).
 3. Transacción: propia en `READ COMMITTED` explícito, o la del llamador si su aislamiento declarado es `ReadCommitted` o sin especificar. Con otro, se rechaza **sin tomar el bloqueo** y sin tocarla.
 4. **Bloqueo compartido**, primer bloqueo de la transacción.
 5. **Lectura acreditada en la misma transacción y conexión** (`Database.CurrentTransaction.GetDbTransaction()`). CORE comprueba ahí aislamiento real, base y bloqueo concedido.
 6. Líneas, asiento, número, inserción, `COMMIT`. Un fallo transitorio antes del `COMMIT` es `ServicioNoDisponible`; en el `COMMIT`, no.
 
-**Desde el paso 4 hasta el 6 no se pide ninguna otra conexión al pool** (D-1, R10-E12). Ya no hay segunda llamada a `MonedaDeVentaAsync` bajo el bloqueo.
+**Desde el paso 4 hasta el 6 no se pide ninguna otra conexión al pool** (D-1, R10-E12). Ya no hay segunda llamada a `MonedaDeVentaAsync` bajo el bloqueo, y el numerador recibe la etiqueta como argumento: no consulta la caché de configuración, que al recargarse abre su propio ámbito y su propia conexión (R-1). Lo vigilan `SerieCapturadaAntesDelBloqueoTests`.
 
 ## Respuestas HTTP de `POST /api/sales/orders`
 
