@@ -123,6 +123,7 @@ public static class NegativeCommerceIntegration
         $"{Sales}.Contracts.IPayableOrderCandidate",
         $"{Sales}.Contracts.IOrderValueAggregateReader",
         $"{Sales}.Pedidos.IAutoridadDeMoneda",
+        "Sillar.Core.Contracts.IMonetaryRecordsProbe",
     ];
 
     /// <summary>Servicios de plataforma que no se duplican si el destino ya los registra.</summary>

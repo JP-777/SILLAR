@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Sillar.Core.Contracts;
 using Sillar.Modules.Payments;
 using Sillar.Modules.Payments.Application;
 using Sillar.Modules.Payments.Application.Contracts;
@@ -144,7 +145,15 @@ public sealed class SabotajesDiTests
     }
 
     [Fact]
-    public void S02h_Un_destino_con_registros_previos_de_M03_rechaza_la_composicion()
+    public void S02h_La_sonda_monetaria_de_CORE_añadida_despues_de_componer_impide_construir()
+    {
+        var s = Componer();
+        s.AddScoped<IMonetaryRecordsProbe>(_ => throw new InvalidOperationException("nunca"));
+        Rechazado("S02h IMonetaryRecordsProbe tras componer", () => s.BuildNegativeServiceProvider(), "servicio prohibido");
+    }
+
+    [Fact]
+    public void S02i_Un_destino_con_registros_previos_de_M03_rechaza_la_composicion()
     {
         var s = new ServiceCollection();
         new SalesModule().RegisterServices(s, Config());

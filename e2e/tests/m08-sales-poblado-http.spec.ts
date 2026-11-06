@@ -184,6 +184,39 @@ async function createOrder(page: Page, itemId: string, quantity: number): Promis
   return created;
 }
 
+async function expectOrderRejectedWithoutAccreditedCurrency(
+  api: APIRequestContext,
+  page: Page,
+  itemId: string,
+  customer: Customer,
+): Promise<void> {
+  const authority = await api.get('/api/admin/settings/installation-currency');
+  const authorityRaw = await authority.text();
+  expect(authority.status(), `leer moneda antes del negativo 503: ${authorityRaw}`).toBe(200);
+  expect((JSON.parse(authorityRaw) as InstallationCurrency).status,
+    'el negativo 503 exige una instalación efímera aún sin autoridad monetaria acreditada')
+    .not.toBe('Accredited');
+
+  const csrfCookie = (await page.context().cookies()).find(c => c.name === 'sillar_tienda_csrf');
+  expect(csrfCookie?.value, 'cookie CSRF del cliente ausente en negativo 503').toBeTruthy();
+  const rejected = await page.request.post('/api/sales/orders', {
+    headers: { ...SAME_ORIGIN, 'X-CSRF-Token': csrfCookie!.value },
+    data: { lines: [{ itemId, quantity: 1 }] },
+  });
+  const rejectedRaw = await rejected.text();
+  expect(rejected.status(), `sin autoridad monetaria debe responder 503: ${rejectedRaw}`).toBe(503);
+  expect(JSON.parse(rejectedRaw) as Record<string, unknown>).toMatchObject({
+    status: 503,
+    title: 'La tienda todavía no está recibiendo pedidos en línea',
+  });
+
+  const rows = await psql(`
+    SELECT count(*) FROM sales.orders
+     WHERE customer_id = ${q(customer.customerId)}::uuid;
+  `);
+  expect(rows, 'el intento rechazado por falta de autoridad no debe crear pedidos').toBe('0');
+}
+
 async function orderCodes(page: Page): Promise<string[]> {
   const response = await page.request.get('/api/sales/my-orders');
   const raw = await response.text();
@@ -297,7 +330,6 @@ test('[M08-SALES-POBLADO] A/B reales por API y PostgreSQL; propiedad y privacida
     const adminPage = await ctxAdmin.newPage();
     await loginComoAdminMenor(adminPage);
     await verifyInstallationCurrencyHttpNegatives(page.request, adminPage.request);
-    await ensureInstallationCurrency(page.request);
     ctxA = await browser.newContext({ baseURL: origin });
     ctxB = await browser.newContext({ baseURL: origin });
     ctxN = await browser.newContext({ baseURL: origin });
@@ -324,6 +356,8 @@ test('[M08-SALES-POBLADO] A/B reales por API y PostgreSQL; propiedad y privacida
     expect(emptyB.value.orders.items).toEqual([]);
 
     const { itemId } = await createProduct(page.request);
+    await expectOrderRejectedWithoutAccreditedCurrency(page.request, aPage, itemId, a);
+    await ensureInstallationCurrency(page.request);
     const orderA = await createOrder(aPage, itemId, 2);
     const orderB = await createOrder(bPage, itemId, 3);
     expect(orderA.orderCode).not.toBe(orderB.orderCode);

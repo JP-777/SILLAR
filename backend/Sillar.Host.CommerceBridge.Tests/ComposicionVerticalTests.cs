@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using Sillar.Core.Contracts;
 using Sillar.Modules.Payments;
 using Sillar.Modules.Payments.Application;
 using Sillar.Modules.Payments.Application.Contracts;
@@ -271,9 +272,10 @@ public sealed class ComposicionVerticalTests
         Assert.Null(sp.GetService<IOrderCorrelationCandidate>());
         Assert.Null(sp.GetService<IM03OrderCorrelationCandidatePort>());
         Assert.Null(sp.GetService<ICustomerOrderHistory>());
+        Assert.Null(sp.GetService<IMonetaryRecordsProbe>());
         var s = Componer();
         Assert.DoesNotContain(s, d => d.ServiceType.Name is "OrderCodeAllocator" or "CongeladorDeCliente" or "CreadorDePedidos"
-            or "VencimientoDePlazos" or "IAutoridadDeMoneda");
+            or "VencimientoDePlazos" or "IAutoridadDeMoneda" or "IMonetaryRecordsProbe");
         Assert.DoesNotContain(s, d => d.ServiceType == typeof(DbContextOptions));
         Assert.Single(s, d => d.ServiceType.Name == "ServiceProviderAccessor");
     }
