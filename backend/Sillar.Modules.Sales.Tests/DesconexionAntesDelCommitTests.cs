@@ -50,6 +50,7 @@ public sealed class DesconexionAntesDelCommitTests
     [InlineData("bloqueo")]
     [InlineData("moneda")]
     [InlineData("numero")]
+    [InlineData("insercion")]
     public async Task Un_corte_57P01_antes_del_COMMIT_es_servicio_no_disponible_aunque_la_transaccion_ya_este_desechada(string donde)
     {
         var corte = Terminada();
@@ -80,7 +81,10 @@ public sealed class DesconexionAntesDelCommitTests
         var pasos = m.Base.Pasos;
         Assert.Contains(BaseGuionadaDeVentas.ConexionRota, pasos);
         Assert.DoesNotContain("COMMIT", pasos);
-        Assert.Equal(BaseGuionadaDeVentas.ConexionRota, pasos[^1]);
+        // Tras el corte no llega nada al servidor: ni ROLLBACK, ni savepoints, ni COMMIT.
+        var corteEn = pasos.IndexOf(BaseGuionadaDeVentas.ConexionRota);
+        Assert.All(pasos.Skip(corteEn + 1), p => Assert.StartsWith(BaseGuionadaDeVentas.NoEnviado, p, StringComparison.Ordinal));
+        Assert.DoesNotContain("ROLLBACK", pasos);
         Assert.Null(Assert.Single(m.Base.Transacciones).Connection);
         if (donde is "bloqueo" or "moneda")
         {
@@ -332,6 +336,24 @@ public sealed class DesconexionAntesDelCommitTests
     [InlineData("XX000", "ERROR", false)]
     public void Una_conexion_rota_se_reconoce_por_su_codigo_o_su_gravedad(string codigo, string gravedad, bool rota)
         => Assert.Equal(rota, FallosDeInfraestructura.EsConexionRota(new PostgresException("simulado", gravedad, gravedad, codigo)));
+
+    [Fact]
+    public void Un_corte_al_guardar_que_EF_envuelve_dos_veces_sigue_siendo_transitorio_y_conexion_rota()
+    {
+        // D-4 (R10-E13-G): la estrategia de ejecución de Npgsql envuelve el DbUpdateException
+        // de SaveChanges en un InvalidOperationException «transient failure», también dentro
+        // de una transacción. Es la forma con que llega un corte durante el INSERT.
+        var dobleEnvoltura = new InvalidOperationException(
+            "An exception has been raised that is likely due to a transient failure.",
+            new DbUpdateException("An error occurred while saving the entity changes.", Terminada()));
+
+        Assert.True(FallosDeInfraestructura.EsTransitorio(dobleEnvoltura));
+        Assert.True(FallosDeInfraestructura.EsConexionRota(dobleEnvoltura));
+        Assert.False(FallosDeInfraestructura.EsTransitorio(new InvalidOperationException(
+            "otra cosa", new DbUpdateException("guardando", new PostgresException("simulado", "ERROR", "ERROR", "23505")))));
+        Assert.False(FallosDeInfraestructura.EsTransitorio(new InvalidOperationException(
+            "otra cosa", new DbUpdateException("guardando", new InvalidOperationException("sin Npgsql")))));
+    }
 
     [Fact]
     public void Una_conexion_rota_del_lado_del_cliente_o_envuelta_tambien_se_reconoce()

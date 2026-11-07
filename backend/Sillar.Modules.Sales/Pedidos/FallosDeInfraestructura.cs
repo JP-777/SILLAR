@@ -15,7 +15,10 @@ namespace Sillar.Modules.Sales.Pedidos;
 /// due to a transient failure»), con la <see cref="NpgsqlException"/> dentro. Así llegó
 /// el pool agotado al abrir la transacción del pedido en R10-E12, y por eso acabó en un
 /// 500 genérico. Dentro de la transacción llega sin envolver. El guardado de EF lo
-/// envuelve en <see cref="DbUpdateException"/>. Se aceptan las tres formas.
+/// envuelve en <see cref="DbUpdateException"/>, y la estrategia de ejecución vuelve a
+/// envolver ese <see cref="DbUpdateException"/> en el <see cref="InvalidOperationException"/>
+/// «transient failure», también dentro de la transacción: así llega un corte durante el
+/// <c>INSERT</c> (R10-E13-G, D-4). Se aceptan las cuatro formas.
 /// </para>
 /// <para>
 /// <b>El orden importa.</b> Para Npgsql, <c>55P03</c> (<c>lock_timeout</c> agotado) también
@@ -60,6 +63,7 @@ internal static class FallosDeInfraestructura
 
     private static Exception Desenvuelta(Exception excepcion) => excepcion switch
     {
+        InvalidOperationException { InnerException: DbUpdateException { InnerException: NpgsqlException interna } } => interna,
         InvalidOperationException { InnerException: NpgsqlException interna } => interna,
         DbUpdateException { InnerException: NpgsqlException interna } => interna,
         _ => excepcion,

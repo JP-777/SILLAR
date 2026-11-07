@@ -65,6 +65,15 @@ internal sealed class BaseGuionadaDeVentas
     /// </summary>
     public bool SuprimirGuardado { get; set; }
 
+    /// <summary>
+    /// El motivo del corte, si la conexión se rompió. Desde entonces ningún comando llega al
+    /// servidor: cada uno se anota como no enviado y lanza, como Npgsql con el conector roto.
+    /// </summary>
+    public Exception? MotivoDelCorte { get; private set; }
+
+    /// <summary>Prefijo de un comando que ya no se envió porque la conexión estaba rota.</summary>
+    public const string NoEnviado = "NO ENVIADO (conexión rota): ";
+
     /// <summary>Lo que se anota cuando el servidor cierra la conexión.</summary>
     public const string ConexionRota = "CONEXIÓN ROTA";
 
@@ -77,6 +86,7 @@ internal sealed class BaseGuionadaDeVentas
     /// </summary>
     public void Romper(Exception motivo)
     {
+        MotivoDelCorte ??= motivo;
         foreach (var transaccion in Transacciones.OfType<TransaccionFalsa>())
         {
             transaccion.Romper(motivo);
@@ -251,6 +261,30 @@ internal sealed class BaseGuionadaDeVentas
             Terminar("ROLLBACK");
         }
 
+        /// <summary>
+        /// Como <c>NpgsqlTransaction</c>: los savepoints con que EF envuelve el guardado dentro
+        /// de una transacción van por la transacción, y desechada también fallan.
+        /// </summary>
+        public override bool SupportsSavepoints => true;
+
+        public override void Save(string savepointName)
+        {
+            SiDesechada();
+            base_.Pasos.Add($"SAVEPOINT {savepointName}");
+        }
+
+        public override void Rollback(string savepointName)
+        {
+            SiDesechada();
+            base_.Pasos.Add($"ROLLBACK TO SAVEPOINT {savepointName}");
+        }
+
+        public override void Release(string savepointName)
+        {
+            SiDesechada();
+            base_.Pasos.Add($"RELEASE SAVEPOINT {savepointName}");
+        }
+
         private void SiDesechada()
         {
             if (rota is not null)
@@ -344,6 +378,13 @@ internal sealed class BaseGuionadaDeVentas
 
         private void Anotar()
         {
+            if (base_.MotivoDelCorte is not null)
+            {
+                // Modelado, no acreditado: con el conector roto la conexión ya no está abierta.
+                base_.Pasos.Add(NoEnviado + CommandText.Trim());
+                throw new InvalidOperationException("Connection is not open");
+            }
+
             base_.Pasos.Add(CommandText.Trim());
             base_.Comandos.Add((CommandText, parametros.Parameters.ToDictionary(p => p.ParameterName, p => (object?)p.Value)));
             if (base_.FallaAlEjecutar(CommandText) is { } excepcion)
