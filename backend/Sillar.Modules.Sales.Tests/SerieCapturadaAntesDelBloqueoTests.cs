@@ -294,11 +294,11 @@ public sealed class SerieCapturadaAntesDelBloqueoTests
         Assert.Equal(
             [typeof(string), typeof(CancellationToken)],
             siguiente.GetParameters().Select(p => p.ParameterType));
-        Assert.Empty(typeof(OrderCodeAllocator)
-            .GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-            .Where(f => typeof(ISettingsReader).IsAssignableFrom(f.FieldType)
+        Assert.DoesNotContain(
+            typeof(OrderCodeAllocator).GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public),
+            f => typeof(ISettingsReader).IsAssignableFrom(f.FieldType)
                 || f.FieldType == typeof(IServiceProvider)
-                || f.FieldType.Name.Contains("ScopeFactory", StringComparison.Ordinal)));
+                || f.FieldType.Name.Contains("ScopeFactory", StringComparison.Ordinal));
     }
 
     [Fact]
