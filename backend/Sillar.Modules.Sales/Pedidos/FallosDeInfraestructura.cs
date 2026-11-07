@@ -32,6 +32,32 @@ internal static class FallosDeInfraestructura
     public static bool EsTransitorio(Exception excepcion)
         => Desenvuelta(excepcion) is NpgsqlException { IsTransient: true };
 
+    /// <summary>
+    /// Un fallo que <b>rompe la conexión</b>: el servidor cerró la sesión o se perdió el
+    /// canal. Con la sesión cerrada, PostgreSQL ya deshizo la transacción abierta (R10-E13-G).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Más estrecho que <see cref="EsTransitorio"/> a propósito: <c>55P03</c> o
+    /// <c>40001</c> son transitorios pero dejan la conexión viva, y ahí deshacer sí es
+    /// posible y necesario.
+    /// </para>
+    /// <list type="bullet">
+    /// <item>Del servidor: <c>57P01</c>, <c>57P02</c>, <c>57P03</c>, clase <c>08</c>, o
+    /// gravedad <c>FATAL</c> o <c>PANIC</c>, con la que el servidor cierra la sesión.</item>
+    /// <item>Del cliente, sin respuesta del servidor (E/S, socket o tiempo de espera): las
+    /// <see cref="NpgsqlException"/> transitorias, que rompen el conector.</item>
+    /// </list>
+    /// </remarks>
+    public static bool EsConexionRota(Exception? excepcion) => excepcion is not null && Desenvuelta(excepcion) switch
+    {
+        PostgresException p => p.SqlState is PostgresErrorCodes.AdminShutdown or PostgresErrorCodes.CrashShutdown or PostgresErrorCodes.CannotConnectNow
+            || p.SqlState.StartsWith("08", StringComparison.Ordinal)
+            || p.InvariantSeverity is "FATAL" or "PANIC",
+        NpgsqlException { IsTransient: true } => true,
+        _ => false,
+    };
+
     private static Exception Desenvuelta(Exception excepcion) => excepcion switch
     {
         InvalidOperationException { InnerException: NpgsqlException interna } => interna,

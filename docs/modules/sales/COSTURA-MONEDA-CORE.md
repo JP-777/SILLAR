@@ -36,6 +36,8 @@
 | `ServicioNoDisponible` | No se pudo leer la moneda, o la base no dio conexión o la cortó (fallo transitorio) al abrir, al tomar el bloqueo, al leer, al numerar o al guardar, siempre **antes** del `COMMIT` | 503 | «No pudimos confirmar tu pedido en este momento…» — no nombra la moneda |
 | `CosturaMonetariaDefectuosa` | Uso fuera de contrato (aislamiento, bloqueo, base, transacción) | 500 | «No pudimos registrar tu pedido…» — ningún detalle interno |
 
+Si el servidor cierra la sesión antes del `COMMIT`, Npgsql desecha la transacción y deshacerla al salir lanza `ObjectDisposedException`. `TransaccionDeOperacion` tolera solo ese caso, cuando el motivo que Npgsql guardó es una conexión rota, y lo registra con el evento `31303`: la causa original y su 503 se conservan. Cualquier otro fallo al deshacer se propaga (R10-E13-G, D-3).
+
 En los cuatro casos el pedido no nace y no se consume número. Un fallo **en** el `COMMIT` no se traduce: no se sabe si el pedido quedó, y pedir que se vuelva a confirmar podría duplicarlo. Una transacción prestada nunca se confirma ni se deshace aquí: si queda abortada, la deshace su dueño.
 
 ## Escritores de `sales.orders`

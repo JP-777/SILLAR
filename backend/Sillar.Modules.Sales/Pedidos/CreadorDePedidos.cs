@@ -181,7 +181,7 @@ internal sealed class CreadorDePedidos(
         try
         {
             transaccion = await TransaccionDeOperacion.AbrirSiHaceFaltaAsync(
-                database, IsolationLevel.ReadCommitted, cancellationToken);
+                database, IsolationLevel.ReadCommitted, registro, cancellationToken);
         }
         catch (Exception excepcion) when (FallosDeInfraestructura.EsTransitorio(excepcion) && !cancellationToken.IsCancellationRequested)
         {
@@ -192,6 +192,9 @@ internal sealed class CreadorDePedidos(
             return ResultadoDeCreacion.Rechaza(MotivoDeNoCreacion.ServicioNoDisponible);
         }
 
+        // Al salir, la propia se deshace si no se confirmó. Si la conexión ya se rompió,
+        // deshacer no sustituye al motivo que se devuelve (R10-E13-G, D-3; ver
+        // TransaccionDeOperacion.DisposeAsync).
         await using var alSalir = transaccion;
 
         // 4a · La barrera de moneda, PRIMER bloqueo de la transacción: antes de leer la
