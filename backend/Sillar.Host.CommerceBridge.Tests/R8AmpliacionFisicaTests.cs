@@ -400,7 +400,7 @@ public sealed class R8AmpliacionFisicaTests(InstalacionFisicaR8 f) : IClassFixtu
     // -----------------------------------------------------------------
 
     [Fact]
-    public async Task R8A_Las_migraciones_aplicadas_son_CORE_4_Catalog_1_CRM_2_Sales_3_y_ninguna_de_Payments()
+    public async Task R8A_Las_migraciones_aplicadas_son_CORE_5_Catalog_1_CRM_2_Sales_3_y_ninguna_de_Payments()
     {
         Requiere();
         var l = await InstalacionRealR7.Consultar(f.Cadena,
@@ -415,7 +415,7 @@ public sealed class R8AmpliacionFisicaTests(InstalacionFisicaR8 f) : IClassFixtu
             $"core={l[0]}", $"catalog={l[1]}", $"crm={l[2]}", $"sales={l[3]}", $"schemas={l[4]}",
             $"tablas_payments={l[5]}", $"candidatas_de_pagos_aplicadas={l[6]}");
 
-        Assert.Equal(4, l[0].Split(',').Length);
+        Assert.Equal(5, l[0].Split(',').Length);
         Assert.Equal("20260816073647_CatalogInitial", l[1]);
         Assert.Equal("20260824190200_CrmInitial,20260922115958_CrmCustomersEmailTrimAuthority", l[2]);
         Assert.Equal(string.Join(",", InstalacionFisicaR8.SalesEjecutables), l[3]);
