@@ -102,7 +102,8 @@ public sealed class SalesDbFixture
         ArgumentNullException.ThrowIfNull(escenario);
 
         var entrada = new NpgsqlConnectionStringBuilder(ConnectionString);
-        AcreditarServidorDesechable(entrada);
+        AcreditarServidorDesechable(ConnectionString, entrada);
+        var identidadInicial = await ObtenerIdentidadPostgresEsperadaAsync(entrada, cancellationToken);
 
         var sufijo = checked((long)Environment.ProcessId * 1000 + Interlocked.Increment(ref secuenciaDeBases));
         var nombre = $"sillar_verify_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}_{sufijo}";
@@ -128,7 +129,11 @@ public sealed class SalesDbFixture
             await using (var admin = new NpgsqlConnection(mantenimiento))
             {
                 await admin.OpenAsync(cancellationToken);
-                await AcreditarConexionAdministrativaAsync(admin, entrada, cancellationToken);
+                await AcreditarConexionAdministrativaAsync(
+                    admin,
+                    entrada,
+                    identidadInicial,
+                    cancellationToken);
                 await using (var existe = new NpgsqlCommand(
                                  "SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1)", admin))
                 {
@@ -160,9 +165,17 @@ public sealed class SalesDbFixture
             {
                 AcreditarNombrePropio(nombre);
                 NpgsqlConnection.ClearAllPools();
+                var identidadAntesDeBorrar = await ObtenerIdentidadPostgresEsperadaAsync(
+                    entrada,
+                    CancellationToken.None);
+                AcreditarMismaInstancia(identidadInicial, identidadAntesDeBorrar);
                 await using var admin = new NpgsqlConnection(mantenimiento);
                 await admin.OpenAsync(CancellationToken.None);
-                await AcreditarConexionAdministrativaAsync(admin, entrada, CancellationToken.None);
+                await AcreditarConexionAdministrativaAsync(
+                    admin,
+                    entrada,
+                    identidadAntesDeBorrar,
+                    CancellationToken.None);
                 await using var borrar = new NpgsqlCommand($"DROP DATABASE IF EXISTS \"{nombre}\" WITH (FORCE)", admin);
                 await borrar.ExecuteNonQueryAsync(CancellationToken.None);
             }
@@ -183,7 +196,9 @@ public sealed class SalesDbFixture
         }
     }
 
-    private static void AcreditarServidorDesechable(NpgsqlConnectionStringBuilder entrada)
+    private static void AcreditarServidorDesechable(
+        string cadenaOriginal,
+        NpgsqlConnectionStringBuilder entrada)
     {
         var declarada = Environment.GetEnvironmentVariable("SILLAR_VERIFY_DATABASE");
         if (string.IsNullOrWhiteSpace(declarada)
@@ -200,19 +215,288 @@ public sealed class SalesDbFixture
             throw new InvalidOperationException(
                 $"F9.9.2 rechazó el servidor PostgreSQL '{entrada.Host}': solo se admite loopback desechable.");
         }
+
+        if (!TieneClaveExplicita(cadenaOriginal, "Port") || entrada.Port is < 1024 or > 65535)
+        {
+            throw new InvalidOperationException(
+                "F9.9.2 exige un puerto PostgreSQL explícito y no privilegiado; no admite el valor implícito de Npgsql.");
+        }
     }
 
     private static async Task AcreditarConexionAdministrativaAsync(
         NpgsqlConnection conexion,
         NpgsqlConnectionStringBuilder entrada,
+        IdentidadPostgresEsperada esperada,
         CancellationToken cancellationToken)
     {
         await using var comando = new NpgsqlCommand(
-            "SELECT current_database(), current_user", conexion);
+            "SELECT current_database(), current_user, system_identifier::text, current_setting('cluster_name') " +
+            "FROM pg_control_system()", conexion);
         await using var lector = await comando.ExecuteReaderAsync(cancellationToken);
         Assert.True(await lector.ReadAsync(cancellationToken));
         Assert.Equal("postgres", lector.GetString(0));
         Assert.Equal(entrada.Username, lector.GetString(1));
+        Assert.Equal(esperada.SystemIdentifier, lector.GetString(2));
+        Assert.Equal(esperada.ClusterName, lector.GetString(3));
+        Assert.False(await lector.ReadAsync(cancellationToken));
+    }
+
+    /// <summary>
+    /// Identidad física obtenida sin usar la conexión Npgsql que después ejecutará CREATE/DROP.
+    /// Docker acredita el contenedor Compose propio por etiquetas, directorio y publicación; luego
+    /// <c>docker exec</c> lee el clúster por el socket interno del contenedor.
+    /// </summary>
+    private sealed record IdentidadPostgresEsperada(
+        string ContainerId,
+        string ContainerName,
+        string ComposeProject,
+        string WorkingDirectory,
+        int Port,
+        string Username,
+        string SystemIdentifier,
+        string ClusterName);
+
+    private sealed record ResultadoDocker(int ExitCode, string StandardOutput, string StandardError);
+
+    private static async Task<IdentidadPostgresEsperada> ObtenerIdentidadPostgresEsperadaAsync(
+        NpgsqlConnectionStringBuilder entrada,
+        CancellationToken cancellationToken)
+    {
+        var raiz = Path.GetFullPath(Environment.CurrentDirectory)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (!File.Exists(Path.Combine(raiz, "docker-compose.yml"))
+            || !Directory.Exists(Path.Combine(raiz, "backend")))
+        {
+            throw new InvalidOperationException(
+                $"F9.9.2 no pudo acreditar que el directorio actual sea la raíz del candidato: {raiz}.");
+        }
+
+        var listado = await EjecutarDockerAsync(
+            ["ps", "--filter", "label=com.docker.compose.service=db", "--format", "{{.ID}}"],
+            cancellationToken);
+        ExigirDockerCorrecto(listado, "listar los PostgreSQL Compose candidatos");
+
+        var candidatos = new List<IdentidadPostgresEsperada>();
+        foreach (var id in listado.StandardOutput
+                     .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var candidato = await InspeccionarContenedorPropioAsync(id, raiz, entrada, cancellationToken);
+            if (candidato is not null)
+            {
+                candidatos.Add(candidato);
+            }
+        }
+
+        if (candidatos.Count != 1)
+        {
+            throw new InvalidOperationException(
+                $"F9.9.2 esperaba exactamente un contenedor PostgreSQL Compose propio en " +
+                $"127.0.0.1:{entrada.Port}, pero encontró {candidatos.Count}. No se crea ni elimina ninguna base.");
+        }
+
+        return candidatos[0];
+    }
+
+    private static async Task<IdentidadPostgresEsperada?> InspeccionarContenedorPropioAsync(
+        string id,
+        string raiz,
+        NpgsqlConnectionStringBuilder entrada,
+        CancellationToken cancellationToken)
+    {
+        var inspeccion = await EjecutarDockerAsync(["inspect", id], cancellationToken);
+        if (inspeccion.ExitCode != 0)
+        {
+            return null;
+        }
+
+        using var json = JsonDocument.Parse(inspeccion.StandardOutput);
+        if (json.RootElement.ValueKind != JsonValueKind.Array || json.RootElement.GetArrayLength() != 1)
+        {
+            return null;
+        }
+
+        var contenedor = json.RootElement[0];
+        var containerId = contenedor.GetProperty("Id").GetString();
+        var containerName = contenedor.GetProperty("Name").GetString()?.TrimStart('/');
+        var config = contenedor.GetProperty("Config");
+        var labels = config.GetProperty("Labels");
+        var composeProject = Etiqueta(labels, "com.docker.compose.project");
+        var composeService = Etiqueta(labels, "com.docker.compose.service");
+        var composeWorkingDirectory = Etiqueta(labels, "com.docker.compose.project.working_dir");
+        var composeOneOff = Etiqueta(labels, "com.docker.compose.oneoff");
+        var image = config.GetProperty("Image").GetString();
+        var running = contenedor.GetProperty("State").GetProperty("Running").GetBoolean();
+
+        if (!running
+            || containerId is null || containerId.Length != 64 || !containerId.All(Uri.IsHexDigit)
+            || string.IsNullOrWhiteSpace(composeProject)
+            || !string.Equals(composeService, "db", StringComparison.Ordinal)
+            || !string.Equals(composeOneOff, "False", StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(image, "postgres:16", StringComparison.Ordinal)
+            || !string.Equals(containerName, $"{composeProject}_db", StringComparison.Ordinal)
+            || !MismaRuta(composeWorkingDirectory, raiz))
+        {
+            return null;
+        }
+
+        var bindings = contenedor.GetProperty("NetworkSettings").GetProperty("Ports");
+        if (!bindings.TryGetProperty("5432/tcp", out var postgresBindings)
+            || postgresBindings.ValueKind != JsonValueKind.Array
+            || postgresBindings.GetArrayLength() != 1)
+        {
+            return null;
+        }
+
+        var binding = postgresBindings[0];
+        var hostIp = binding.GetProperty("HostIp").GetString();
+        var hostPortText = binding.GetProperty("HostPort").GetString();
+        if (!string.Equals(hostIp, "127.0.0.1", StringComparison.Ordinal)
+            || !int.TryParse(hostPortText, out var hostPort)
+            || hostPort != entrada.Port)
+        {
+            return null;
+        }
+
+        var postgresUser = config.GetProperty("Env")
+            .EnumerateArray()
+            .Select(value => value.GetString())
+            .FirstOrDefault(value => value?.StartsWith("POSTGRES_USER=", StringComparison.Ordinal) is true)?["POSTGRES_USER=".Length..];
+        if (string.IsNullOrWhiteSpace(postgresUser)
+            || !string.Equals(postgresUser, entrada.Username, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var identidad = await EjecutarDockerAsync(
+            [
+                "exec", containerId,
+                "psql", "-X", "-U", postgresUser, "-d", "postgres", "-At", "-F", "\t",
+                "-v", "ON_ERROR_STOP=1", "-c",
+                "select system_identifier::text, current_setting('cluster_name') from pg_control_system()"
+            ],
+            cancellationToken);
+        ExigirDockerCorrecto(identidad, $"leer la identidad interna de {containerName}");
+
+        var campos = identidad.StandardOutput.TrimEnd('\r', '\n').Split('\t');
+        if (campos.Length != 2 || !ulong.TryParse(campos[0], out _))
+        {
+            throw new InvalidOperationException(
+                $"F9.9.2 recibió una identidad de clúster indeterminada desde {containerName}. No se crea ni elimina ninguna base.");
+        }
+
+        return new(
+            containerId,
+            containerName!,
+            composeProject,
+            composeWorkingDirectory!,
+            hostPort,
+            postgresUser,
+            campos[0],
+            campos[1]);
+    }
+
+    private static void AcreditarMismaInstancia(
+        IdentidadPostgresEsperada inicial,
+        IdentidadPostgresEsperada actual)
+    {
+        if (inicial != actual)
+        {
+            throw new InvalidOperationException(
+                "F9.9.2 detectó que el contenedor, su propiedad o la identidad del clúster cambió " +
+                "entre CREATE y DROP. No se elimina ninguna base.");
+        }
+    }
+
+    private static string? Etiqueta(JsonElement labels, string nombre)
+        => labels.ValueKind == JsonValueKind.Object && labels.TryGetProperty(nombre, out var value)
+            ? value.GetString()
+            : null;
+
+    private static bool MismaRuta(string? izquierda, string derecha)
+    {
+        if (string.IsNullOrWhiteSpace(izquierda))
+        {
+            return false;
+        }
+
+        try
+        {
+            return string.Equals(
+                Path.GetFullPath(izquierda).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                derecha,
+                OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+        }
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return false;
+        }
+    }
+
+    private static bool TieneClaveExplicita(string cadena, string clave)
+        => cadena.Split(';', StringSplitOptions.RemoveEmptyEntries)
+            .Select(par => par.Split('=', 2))
+            .Any(par => par.Length == 2 && string.Equals(par[0].Trim(), clave, StringComparison.OrdinalIgnoreCase));
+
+    private static async Task<ResultadoDocker> EjecutarDockerAsync(
+        IReadOnlyCollection<string> argumentos,
+        CancellationToken cancellationToken)
+    {
+        var inicio = new ProcessStartInfo("docker")
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            WorkingDirectory = Environment.CurrentDirectory
+        };
+        foreach (var argumento in argumentos)
+        {
+            inicio.ArgumentList.Add(argumento);
+        }
+
+        using var proceso = new Process { StartInfo = inicio };
+        try
+        {
+            if (!proceso.Start())
+            {
+                throw new InvalidOperationException("F9.9.2 no pudo iniciar Docker para acreditar PostgreSQL.");
+            }
+        }
+        catch (Exception exception) when (exception is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            throw new InvalidOperationException(
+                "F9.9.2 no pudo usar el canal Docker independiente. No se crea ni elimina ninguna base.",
+                exception);
+        }
+
+        var stdout = proceso.StandardOutput.ReadToEndAsync(cancellationToken);
+        var stderr = proceso.StandardError.ReadToEndAsync(cancellationToken);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(15));
+        try
+        {
+            await proceso.WaitForExitAsync(timeout.Token);
+        }
+        catch
+        {
+            if (!proceso.HasExited)
+            {
+                proceso.Kill(entireProcessTree: true);
+            }
+
+            throw;
+        }
+
+        return new(proceso.ExitCode, await stdout, await stderr);
+    }
+
+    private static void ExigirDockerCorrecto(ResultadoDocker resultado, string operacion)
+    {
+        if (resultado.ExitCode != 0)
+        {
+            throw new InvalidOperationException(
+                $"F9.9.2 no pudo {operacion} por el canal Docker independiente " +
+                $"(código {resultado.ExitCode}): {resultado.StandardError.Trim()}. No se crea ni elimina ninguna base.");
+        }
     }
 
     private static bool EsHostLoopback(string? host)
