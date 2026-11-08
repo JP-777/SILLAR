@@ -2,6 +2,14 @@
 # Este archivo no se carga con `docker compose` normal y no forma parte
 # del despliegue de producción.
 services:
+  db:
+    ports: !override
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+
+  api:
+    ports: !override
+      - "127.0.0.1:${API_PORT:-5080}:8080"
+
   mailpit:
     image: axllent/mailpit:v1.31.1
     container_name: ${COMPOSE_PROJECT_NAME:-sillar}_mailpit
