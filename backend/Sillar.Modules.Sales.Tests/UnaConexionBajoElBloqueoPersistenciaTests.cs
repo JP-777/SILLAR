@@ -67,51 +67,12 @@ public sealed class UnaConexionBajoElBloqueoPersistenciaTests(SalesDbFixture fix
     public async Task Con_un_pool_de_una_sola_conexion_el_pedido_nace_y_CORE_lee_por_la_conexion_del_bloqueo()
     {
         var ct = TestContext.Current.CancellationToken;
-        var cadena = Pool(maximo: 1, espera: 3);
-        var moneda = await MonedaAcreditadaAsync(ct);
-
-        await using var core = Core(cadena);
-        await using var ambito = core.CreateAsyncScope();
-        await using var db = Ventas(cadena);
-        var (cliente, item) = (Guid.CreateVersion7(), Guid.CreateVersion7());
-        var autoridad = new PrestaLaTransaccionTrasLaPrevia(Adaptador(ambito.ServiceProvider), db, cliente, item);
-
-        var r = await Creador(db, cliente, item, autoridad).CrearAsync(cliente, [new LineaPedida(item, 1)], ct);
-
-        Assert.True(r.Creado, $"motivo: {r.Motivo}");
-        Assert.Equal(moneda, await db.Orders.Where(o => o.OrderCode == r.OrderCode).Select(o => o.CurrencyCode).SingleAsync(ct));
-        Assert.Equal(autoridad.PidDeLaPrestada, autoridad.PidEnLaLectura);   // la misma conexión
-        Assert.True(autoridad.CompartidoConcedidoEnLaLectura);
-        Assert.Equal(1, await ConexionesDelPoolAsync(cadena, ct));
-
-        await db.Database.CurrentTransaction!.RollbackAsync(ct);
-        Assert.Empty(await BloqueosAsync(ct));
-        Assert.Equal(0, await PedidosAsync(r.OrderCode!, ct));               // nada a medias
-    }
-
-    [Fact]
-    public async Task Con_un_pool_reducido_y_pedidos_a_la_vez_ninguno_se_queda_sin_conexion()
-    {
-        var ct = TestContext.Current.CancellationToken;
-        var cadena = Pool(maximo: 2, espera: 15);
-        await MonedaAcreditadaAsync(ct);
-
-        await using var core = Core(cadena);
-        var maximo = 0;
-        using var vigilancia = new CancellationTokenSource();
-        var vigia = Task.Run(async () =>
+        await fixture.EnBasePropiaConMonedaAcreditadaAsync(async cadenaBase =>
         {
-            while (!vigilancia.IsCancellationRequested)
-            {
-                var ahora = await ConexionesDelPoolAsync(cadena, CancellationToken.None);
-                InterlockedMax(ref maximo, ahora);
-                await Task.Delay(20, CancellationToken.None);
-            }
-        }, CancellationToken.None);
+            var cadena = Pool(cadenaBase, maximo: 1, espera: 3);
+            var moneda = await MonedaAcreditadaAsync(cadenaBase, ct);
 
-        var codigos = new ConcurrentBag<string>();
-        var pedidos = Enumerable.Range(0, 6).Select(_ => Task.Run(async () =>
-        {
+            await using var core = Core(cadena);
             await using var ambito = core.CreateAsyncScope();
             await using var db = Ventas(cadena);
             var (cliente, item) = (Guid.CreateVersion7(), Guid.CreateVersion7());
@@ -119,27 +80,72 @@ public sealed class UnaConexionBajoElBloqueoPersistenciaTests(SalesDbFixture fix
 
             var r = await Creador(db, cliente, item, autoridad).CrearAsync(cliente, [new LineaPedida(item, 1)], ct);
 
-            if (db.Database.CurrentTransaction is { } tx)
-            {
-                await tx.RollbackAsync(ct);
-            }
-
             Assert.True(r.Creado, $"motivo: {r.Motivo}");
-            Assert.Equal(autoridad.PidDeLaPrestada, autoridad.PidEnLaLectura);
-            codigos.Add(r.OrderCode!);
-        }, ct)).ToArray();
+            Assert.Equal(moneda, await db.Orders.Where(o => o.OrderCode == r.OrderCode).Select(o => o.CurrencyCode).SingleAsync(ct));
+            Assert.Equal(autoridad.PidDeLaPrestada, autoridad.PidEnLaLectura);   // la misma conexión
+            Assert.True(autoridad.CompartidoConcedidoEnLaLectura);
+            Assert.Equal(1, await ConexionesDelPoolAsync(cadenaBase, cadena, ct));
 
-        await Task.WhenAll(pedidos).WaitAsync(TimeSpan.FromSeconds(60), ct);
-        await vigilancia.CancelAsync();
-        await vigia;
+            await db.Database.CurrentTransaction!.RollbackAsync(ct);
+            Assert.Empty(await BloqueosAsync(cadenaBase, ct));
+            Assert.Equal(0, await PedidosAsync(cadenaBase, r.OrderCode!, ct));   // nada a medias
+        }, ct);
+    }
 
-        Assert.Equal(6, codigos.Count);
-        Assert.InRange(maximo, 1, 2);                                        // nunca más que el pool
-        Assert.Empty(await BloqueosAsync(ct));
-        foreach (var codigo in codigos)
+    [Fact]
+    public async Task Con_un_pool_reducido_y_pedidos_a_la_vez_ninguno_se_queda_sin_conexion()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await fixture.EnBasePropiaConMonedaAcreditadaAsync(async cadenaBase =>
         {
-            Assert.Equal(0, await PedidosAsync(codigo, ct));
-        }
+            var cadena = Pool(cadenaBase, maximo: 2, espera: 15);
+            await MonedaAcreditadaAsync(cadenaBase, ct);
+
+            await using var core = Core(cadena);
+            var maximo = 0;
+            using var vigilancia = new CancellationTokenSource();
+            var vigia = Task.Run(async () =>
+            {
+                while (!vigilancia.IsCancellationRequested)
+                {
+                    var ahora = await ConexionesDelPoolAsync(cadenaBase, cadena, CancellationToken.None);
+                    InterlockedMax(ref maximo, ahora);
+                    await Task.Delay(20, CancellationToken.None);
+                }
+            }, CancellationToken.None);
+
+            var codigos = new ConcurrentBag<string>();
+            var pedidos = Enumerable.Range(0, 6).Select(_ => Task.Run(async () =>
+            {
+                await using var ambito = core.CreateAsyncScope();
+                await using var db = Ventas(cadena);
+                var (cliente, item) = (Guid.CreateVersion7(), Guid.CreateVersion7());
+                var autoridad = new PrestaLaTransaccionTrasLaPrevia(Adaptador(ambito.ServiceProvider), db, cliente, item);
+
+                var r = await Creador(db, cliente, item, autoridad).CrearAsync(cliente, [new LineaPedida(item, 1)], ct);
+
+                if (db.Database.CurrentTransaction is { } tx)
+                {
+                    await tx.RollbackAsync(ct);
+                }
+
+                Assert.True(r.Creado, $"motivo: {r.Motivo}");
+                Assert.Equal(autoridad.PidDeLaPrestada, autoridad.PidEnLaLectura);
+                codigos.Add(r.OrderCode!);
+            }, ct)).ToArray();
+
+            await Task.WhenAll(pedidos).WaitAsync(TimeSpan.FromSeconds(60), ct);
+            await vigilancia.CancelAsync();
+            await vigia;
+
+            Assert.Equal(6, codigos.Count);
+            Assert.InRange(maximo, 1, 2);                                        // nunca más que el pool
+            Assert.Empty(await BloqueosAsync(cadenaBase, ct));
+            foreach (var codigo in codigos)
+            {
+                Assert.Equal(0, await PedidosAsync(cadenaBase, codigo, ct));
+            }
+        }, ct);
     }
 
     [Fact]
@@ -171,44 +177,50 @@ public sealed class UnaConexionBajoElBloqueoPersistenciaTests(SalesDbFixture fix
         // El cliente no declara aislamiento (pasa el filtro de Ventas); el servidor sí lo
         // tiene. Lo caza la comprobación de CORE en la propia transacción.
         var ct = TestContext.Current.CancellationToken;
-        var cadena = Pool(maximo: 3, espera: 5);
-        await MonedaAcreditadaAsync(ct);
+        await fixture.EnBasePropiaConMonedaAcreditadaAsync(async cadenaBase =>
+        {
+            var cadena = Pool(cadenaBase, maximo: 3, espera: 5);
+            await MonedaAcreditadaAsync(cadenaBase, ct);
 
-        await using var core = Core(cadena);
-        await using var ambito = core.CreateAsyncScope();
-        await using var db = Ventas(cadena);
-        var (cliente, item) = (Guid.CreateVersion7(), Guid.CreateVersion7());
-        var autoridad = new PrestaLaTransaccionTrasLaPrevia(
-            Adaptador(ambito.ServiceProvider), db, cliente, item, primeraSentencia: "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
+            await using var core = Core(cadena);
+            await using var ambito = core.CreateAsyncScope();
+            await using var db = Ventas(cadena);
+            var (cliente, item) = (Guid.CreateVersion7(), Guid.CreateVersion7());
+            var autoridad = new PrestaLaTransaccionTrasLaPrevia(
+                Adaptador(ambito.ServiceProvider), db, cliente, item, primeraSentencia: "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
 
-        var r = await Creador(db, cliente, item, autoridad).CrearAsync(cliente, [new LineaPedida(item, 1)], ct);
+            var r = await Creador(db, cliente, item, autoridad).CrearAsync(cliente, [new LineaPedida(item, 1)], ct);
 
-        Assert.Equal(MotivoDeNoCreacion.CosturaMonetariaDefectuosa, r.Motivo);
-        Assert.Null(r.OrderCode);
-        await db.Database.CurrentTransaction!.RollbackAsync(ct);
-        Assert.Empty(await BloqueosAsync(ct));
+            Assert.Equal(MotivoDeNoCreacion.CosturaMonetariaDefectuosa, r.Motivo);
+            Assert.Null(r.OrderCode);
+            await db.Database.CurrentTransaction!.RollbackAsync(ct);
+            Assert.Empty(await BloqueosAsync(cadenaBase, ct));
+        }, ct);
     }
 
     [Fact]
     public async Task Una_transaccion_prestada_declarada_repeatable_read_se_rechaza_sin_tomar_el_bloqueo()
     {
         var ct = TestContext.Current.CancellationToken;
-        var cadena = Pool(maximo: 3, espera: 5);
-        await MonedaAcreditadaAsync(ct);
+        await fixture.EnBasePropiaConMonedaAcreditadaAsync(async cadenaBase =>
+        {
+            var cadena = Pool(cadenaBase, maximo: 3, espera: 5);
+            await MonedaAcreditadaAsync(cadenaBase, ct);
 
-        await using var core = Core(cadena);
-        await using var ambito = core.CreateAsyncScope();
-        await using var db = Ventas(cadena);
-        var (cliente, item) = (Guid.CreateVersion7(), Guid.CreateVersion7());
-        var autoridad = new PrestaLaTransaccionTrasLaPrevia(
-            Adaptador(ambito.ServiceProvider), db, cliente, item, aislamiento: IsolationLevel.RepeatableRead);
+            await using var core = Core(cadena);
+            await using var ambito = core.CreateAsyncScope();
+            await using var db = Ventas(cadena);
+            var (cliente, item) = (Guid.CreateVersion7(), Guid.CreateVersion7());
+            var autoridad = new PrestaLaTransaccionTrasLaPrevia(
+                Adaptador(ambito.ServiceProvider), db, cliente, item, aislamiento: IsolationLevel.RepeatableRead);
 
-        var r = await Creador(db, cliente, item, autoridad).CrearAsync(cliente, [new LineaPedida(item, 1)], ct);
+            var r = await Creador(db, cliente, item, autoridad).CrearAsync(cliente, [new LineaPedida(item, 1)], ct);
 
-        Assert.Equal(MotivoDeNoCreacion.CosturaMonetariaDefectuosa, r.Motivo);
-        Assert.Empty(await BloqueosAsync(ct));                               // ni siquiera se pidió
-        Assert.NotNull(db.Database.CurrentTransaction);                      // sigue siendo del llamador
-        await db.Database.CurrentTransaction!.RollbackAsync(ct);
+            Assert.Equal(MotivoDeNoCreacion.CosturaMonetariaDefectuosa, r.Motivo);
+            Assert.Empty(await BloqueosAsync(cadenaBase, ct));               // ni siquiera se pidió
+            Assert.NotNull(db.Database.CurrentTransaction);                  // sigue siendo del llamador
+            await db.Database.CurrentTransaction!.RollbackAsync(ct);
+        }, ct);
     }
 
     [Fact]
@@ -326,7 +338,10 @@ public sealed class UnaConexionBajoElBloqueoPersistenciaTests(SalesDbFixture fix
     /// aplicación separa el pool de los demás y permite contarlo en <c>pg_stat_activity</c>.
     /// </summary>
     private string Pool(int maximo, int espera)
-        => new NpgsqlConnectionStringBuilder(fixture.ConnectionString)
+        => Pool(fixture.ConnectionString, maximo, espera);
+
+    private static string Pool(string cadenaBase, int maximo, int espera)
+        => new NpgsqlConnectionStringBuilder(cadenaBase)
         {
             MaxPoolSize = maximo,
             MinPoolSize = 0,
@@ -372,9 +387,9 @@ public sealed class UnaConexionBajoElBloqueoPersistenciaTests(SalesDbFixture fix
             NullLogger<CreadorDePedidos>.Instance);
 
     /// <summary>La moneda que CORE da por acreditada en esta base, o un fallo que lo dice.</summary>
-    private async Task<string> MonedaAcreditadaAsync(CancellationToken ct)
+    private static async Task<string> MonedaAcreditadaAsync(string cadenaBase, CancellationToken ct)
     {
-        await using var core = Core(fixture.ConnectionString);
+        await using var core = Core(cadenaBase);
         await using var ambito = core.CreateAsyncScope();
         var lectura = await ambito.ServiceProvider.GetRequiredService<IInstallationCurrencyAuthority>().ReadAsync(ct);
 
@@ -403,19 +418,22 @@ public sealed class UnaConexionBajoElBloqueoPersistenciaTests(SalesDbFixture fix
             [item, producto], ct);
     }
 
-    private async Task<int> ConexionesDelPoolAsync(string cadena, CancellationToken ct)
+    private static async Task<int> ConexionesDelPoolAsync(
+        string cadenaBase,
+        string cadenaDelPool,
+        CancellationToken ct)
     {
-        var nombre = new NpgsqlConnectionStringBuilder(cadena).ApplicationName;
-        await using var conexion = new NpgsqlConnection(fixture.ConnectionString);
+        var nombre = new NpgsqlConnectionStringBuilder(cadenaDelPool).ApplicationName;
+        await using var conexion = new NpgsqlConnection(cadenaBase);
         await conexion.OpenAsync(ct);
         await using var comando = new NpgsqlCommand("SELECT count(*)::int FROM pg_stat_activity WHERE application_name = $1", conexion);
         comando.Parameters.Add(new NpgsqlParameter { Value = nombre });
         return (int)(await comando.ExecuteScalarAsync(ct))!;
     }
 
-    private async Task<int> PedidosAsync(string codigo, CancellationToken ct)
+    private static async Task<int> PedidosAsync(string cadenaBase, string codigo, CancellationToken ct)
     {
-        await using var conexion = new NpgsqlConnection(fixture.ConnectionString);
+        await using var conexion = new NpgsqlConnection(cadenaBase);
         await conexion.OpenAsync(ct);
         await using var comando = new NpgsqlCommand("SELECT count(*)::int FROM sales.orders WHERE order_code = $1", conexion);
         comando.Parameters.Add(new NpgsqlParameter { Value = codigo });
@@ -423,8 +441,13 @@ public sealed class UnaConexionBajoElBloqueoPersistenciaTests(SalesDbFixture fix
     }
 
     private async Task<List<(int Pid, string Mode, bool Granted)>> BloqueosAsync(CancellationToken ct)
+        => await BloqueosAsync(fixture.ConnectionString, ct);
+
+    private static async Task<List<(int Pid, string Mode, bool Granted)>> BloqueosAsync(
+        string cadenaBase,
+        CancellationToken ct)
     {
-        await using var conexion = new NpgsqlConnection(fixture.ConnectionString);
+        await using var conexion = new NpgsqlConnection(cadenaBase);
         await conexion.OpenAsync(ct);
         await using var comando = new NpgsqlCommand(BloqueosDeMoneda, conexion);
         await using var lector = await comando.ExecuteReaderAsync(ct);
