@@ -268,17 +268,11 @@ public sealed class SalesDbFixture
         NpgsqlConnectionStringBuilder entrada,
         CancellationToken cancellationToken)
     {
-        var raiz = Path.GetFullPath(Environment.CurrentDirectory)
-            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        if (!File.Exists(Path.Combine(raiz, "docker-compose.yml"))
-            || !Directory.Exists(Path.Combine(raiz, "backend")))
-        {
-            throw new InvalidOperationException(
-                $"F9.9.2 no pudo acreditar que el directorio actual sea la raíz del candidato: {raiz}.");
-        }
+        var raiz = RaizDelCandidato();
 
         var listado = await EjecutarDockerAsync(
             ["ps", "--filter", "label=com.docker.compose.service=db", "--format", "{{.ID}}"],
+            raiz,
             cancellationToken);
         ExigirDockerCorrecto(listado, "listar los PostgreSQL Compose candidatos");
 
@@ -309,7 +303,7 @@ public sealed class SalesDbFixture
         NpgsqlConnectionStringBuilder entrada,
         CancellationToken cancellationToken)
     {
-        var inspeccion = await EjecutarDockerAsync(["inspect", id], cancellationToken);
+        var inspeccion = await EjecutarDockerAsync(["inspect", id], raiz, cancellationToken);
         if (inspeccion.ExitCode != 0)
         {
             return null;
@@ -380,6 +374,7 @@ public sealed class SalesDbFixture
                 "-v", "ON_ERROR_STOP=1", "-c",
                 "select system_identifier::text, current_setting('cluster_name') from pg_control_system()"
             ],
+            raiz,
             cancellationToken);
         ExigirDockerCorrecto(identidad, $"leer la identidad interna de {containerName}");
 
@@ -443,8 +438,60 @@ public sealed class SalesDbFixture
             .Select(par => par.Split('=', 2))
             .Any(par => par.Length == 2 && string.Equals(par[0].Trim(), clave, StringComparison.OrdinalIgnoreCase));
 
+    private static string RaizDelCandidato()
+    {
+        var tfm = new DirectoryInfo(AppContext.BaseDirectory.TrimEnd(
+            Path.DirectorySeparatorChar,
+            Path.AltDirectorySeparatorChar));
+        var configuracion = tfm.Parent
+            ?? throw new InvalidOperationException("F9.9.5: la salida de pruebas no tiene directorio de configuración.");
+        var bin = configuracion.Parent
+            ?? throw new InvalidOperationException("F9.9.5: la salida de pruebas no pertenece a bin.");
+        var proyecto = bin.Parent
+            ?? throw new InvalidOperationException("F9.9.5: bin no pertenece a un proyecto.");
+        var backend = proyecto.Parent
+            ?? throw new InvalidOperationException("F9.9.5: el proyecto no pertenece a backend.");
+        var raiz = backend.Parent
+            ?? throw new InvalidOperationException("F9.9.5: backend no pertenece a un candidato.");
+
+        if (!NombreEs(bin, "bin")
+            || !NombreEs(proyecto, "Sillar.Modules.Sales.Tests")
+            || !NombreEs(backend, "backend"))
+        {
+            throw new InvalidOperationException(
+                $"F9.9.5 rechazó la estructura de salida '{tfm.FullName}': no corresponde al proyecto Sales.Tests.");
+        }
+
+        var ruta = Path.GetFullPath(raiz.FullName)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var tieneGit = Directory.Exists(Path.Combine(ruta, ".git"))
+                       || File.Exists(Path.Combine(ruta, ".git"));
+        if (!tieneGit
+            || !File.Exists(Path.Combine(ruta, "docker-compose.yml"))
+            || !File.Exists(Path.Combine(ruta, "scripts", "verificar.mjs"))
+            || !File.Exists(Path.Combine(ruta, "backend", "Sillar.sln"))
+            || !File.Exists(Path.Combine(
+                ruta,
+                "backend",
+                "Sillar.Modules.Sales.Tests",
+                "Sillar.Modules.Sales.Tests.csproj")))
+        {
+            throw new InvalidOperationException(
+                $"F9.9.5 no pudo acreditar la raíz Git y estructural del candidato derivada de '{tfm.FullName}'.");
+        }
+
+        return ruta;
+    }
+
+    private static bool NombreEs(DirectoryInfo directorio, string esperado)
+        => string.Equals(
+            directorio.Name,
+            esperado,
+            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+
     private static async Task<ResultadoDocker> EjecutarDockerAsync(
         IReadOnlyCollection<string> argumentos,
+        string raiz,
         CancellationToken cancellationToken)
     {
         var inicio = new ProcessStartInfo("docker")
@@ -452,7 +499,7 @@ public sealed class SalesDbFixture
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
-            WorkingDirectory = Environment.CurrentDirectory
+            WorkingDirectory = raiz
         };
         foreach (var argumento in argumentos)
         {
