@@ -210,6 +210,12 @@ public sealed class SalesDbFixture
                 "efímera declarada por SILLAR_VERIFY_DATABASE con formato sillar_verify_<timestamp>_<pid>.");
         }
 
+        if (!TieneClaveExplicita(cadenaOriginal, "Host"))
+        {
+            throw new InvalidOperationException(
+                "F9.9.2 exige un Host PostgreSQL explícito; no admite el valor implícito de Npgsql.");
+        }
+
         if (!EsHostLoopback(entrada.Host))
         {
             throw new InvalidOperationException(
