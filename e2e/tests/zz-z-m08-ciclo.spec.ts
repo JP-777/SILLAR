@@ -15,6 +15,7 @@ import { migrate, seed } from '../setup/migrate.js';
 
 const PASSWORD = 'Q7!vZ2#pL9@xR4';
 const PORTAL_ROOT = '/mi-portal';
+const PORTAL_SHELL = 'main.portal-page nav[aria-label="Navegación de Mi portal"]';
 const PRIVATE_NOTE = `M08 nota interna ${Date.now()}-${randomUUID()}`;
 const PRIVATE_RECEIVED = `M08 recibido interno ${Date.now()}-${randomUUID()}`;
 
@@ -439,14 +440,41 @@ async function trackingSentinel(serviceOrderId: string): Promise<string> {
   `);
 }
 
+function portalRouteIsMounted(pathname: string, route: string, shellVisible: boolean): boolean {
+  const routeMatches = pathname === route || pathname.startsWith(`${route}/`);
+  return routeMatches && shellVisible;
+}
+
 async function routeAlive(page: Page, route = PORTAL_ROOT): Promise<boolean> {
   await page.goto(route);
   // Estas páginas nacen en contextos de navegador creados dentro de la spec,
   // no en el fixture `page` que envuelve goto. Esperamos la navegación de la
-  // SPA para no confundir el URL inicial con una ruta realmente montada.
+  // SPA para no confundir el URL inicial con una ruta realmente montada. La
+  // permanencia del URL no acredita nada: el shell visible es la evidencia DOM.
   await page.waitForLoadState('networkidle');
+
+  await page.waitForFunction(
+    ({ expectedRoute, shellSelector }) => {
+      const pathname = window.location.pathname;
+      const routeMatches = pathname === expectedRoute || pathname.startsWith(`${expectedRoute}/`);
+      if (!routeMatches) return true;
+
+      const shell = document.querySelector(shellSelector);
+      if (!(shell instanceof HTMLElement)) return false;
+      const style = window.getComputedStyle(shell);
+      const bounds = shell.getBoundingClientRect();
+      return style.display !== 'none'
+        && style.visibility !== 'hidden'
+        && bounds.width > 0
+        && bounds.height > 0;
+    },
+    { expectedRoute: route, shellSelector: PORTAL_SHELL },
+    { timeout: 5_000 },
+  ).catch(() => undefined);
+
   const pathname = new URL(page.url()).pathname;
-  return pathname === route || pathname.startsWith(`${route}/`);
+  const shellVisible = await page.locator(PORTAL_SHELL).isVisible();
+  return portalRouteIsMounted(pathname, route, shellVisible);
 }
 
 async function portalHrefs(page: Page): Promise<string[]> {
@@ -501,6 +529,11 @@ test('[M08-CICLO] OFF/ON, Sales y Tracking reales, preservación, paridad y rest
   browser,
 }) => {
   test.setTimeout(1_200_000);
+
+  // Controles del detector: conservar el URL con DOM vacío debe ser negativo;
+  // la misma ruta solo está viva cuando el shell estable del Portal es visible.
+  expect(portalRouteIsMounted(PORTAL_ROOT, PORTAL_ROOT, false)).toBe(false);
+  expect(portalRouteIsMounted(PORTAL_ROOT, PORTAL_ROOT, true)).toBe(true);
 
   const initial = [...(await capacidadesActivas(page))].sort();
   expect(initial, 'el arnés debe partir con CRM activo').toContain('crm');
