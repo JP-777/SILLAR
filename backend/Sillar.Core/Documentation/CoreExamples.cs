@@ -72,6 +72,12 @@ public sealed class CoreExamples : ISchemaExamples
             }
             """,
 
+        [typeof(SetInstallationCurrencyRequest)] = """
+            {
+              "value": "PEN"
+            }
+            """,
+
         [typeof(TestEmailRequest)] = """
             {
               "recipient": "administracion@ejemplo.test"
