@@ -48,6 +48,8 @@ interface InstallationCurrency {
   observedAt: string;
 }
 
+type PortalRouteState = 'mounted' | 'absent' | 'indeterminate';
+
 async function customer(page: Page, email: string, fullName: string): Promise<AuthenticatedCustomer> {
   // Estas dos escrituras son anónimas todavía: el filtro CSRF exige la misma
   // señal que añade un navegador para una petición originada en la SPA.
@@ -440,17 +442,24 @@ async function trackingSentinel(serviceOrderId: string): Promise<string> {
   `);
 }
 
-function portalRouteIsMounted(pathname: string, route: string, shellVisible: boolean): boolean {
+function classifyPortalRoute(
+  pathname: string,
+  route: string,
+  shellVisible: boolean,
+): PortalRouteState {
   const routeMatches = pathname === route || pathname.startsWith(`${route}/`);
-  return routeMatches && shellVisible;
+  if (!routeMatches) return 'absent';
+  return shellVisible ? 'mounted' : 'indeterminate';
 }
 
-async function routeAlive(page: Page, route = PORTAL_ROOT): Promise<boolean> {
+async function portalRouteState(page: Page, route = PORTAL_ROOT): Promise<PortalRouteState> {
   await page.goto(route);
   // Estas páginas nacen en contextos de navegador creados dentro de la spec,
   // no en el fixture `page` que envuelve goto. Esperamos la navegación de la
   // SPA para no confundir el URL inicial con una ruta realmente montada. La
   // permanencia del URL no acredita nada: el shell visible es la evidencia DOM.
+  // Si vence la espera y el URL sigue dentro de Portal sin shell, el resultado
+  // queda indeterminado; nunca se convierte en una prueba de ausencia.
   await page.waitForLoadState('networkidle');
 
   await page.waitForFunction(
@@ -474,7 +483,7 @@ async function routeAlive(page: Page, route = PORTAL_ROOT): Promise<boolean> {
 
   const pathname = new URL(page.url()).pathname;
   const shellVisible = await page.locator(PORTAL_SHELL).isVisible();
-  return portalRouteIsMounted(pathname, route, shellVisible);
+  return classifyPortalRoute(pathname, route, shellVisible);
 }
 
 async function portalHrefs(page: Page): Promise<string[]> {
@@ -503,7 +512,9 @@ async function portalRemains(page: Page): Promise<string[]> {
   const remains: string[] = [];
   if ((await capacidadesActivas(page)).includes('portal')) remains.push('capability:portal');
   if ((await page.request.get('/api/portal/overview')).status() !== 404) remains.push('api:/api/portal/overview');
-  if (await routeAlive(page)) remains.push('route:/mi-portal');
+  const routeState = await portalRouteState(page);
+  if (routeState === 'mounted') remains.push('route:/mi-portal');
+  if (routeState === 'indeterminate') remains.push('route:/mi-portal:indeterminate');
   if ((await portalHrefs(page)).length > 0) remains.push('links:/mi-portal');
   return remains;
 }
@@ -530,10 +541,11 @@ test('[M08-CICLO] OFF/ON, Sales y Tracking reales, preservación, paridad y rest
 }) => {
   test.setTimeout(1_200_000);
 
-  // Controles del detector: conservar el URL con DOM vacío debe ser negativo;
-  // la misma ruta solo está viva cuando el shell estable del Portal es visible.
-  expect(portalRouteIsMounted(PORTAL_ROOT, PORTAL_ROOT, false)).toBe(false);
-  expect(portalRouteIsMounted(PORTAL_ROOT, PORTAL_ROOT, true)).toBe(true);
+  // Controles del detector: un URL conservado sin shell (incluido un timeout)
+  // es indeterminado, no ausencia. Solo una redirección acredita ausencia.
+  expect(classifyPortalRoute(PORTAL_ROOT, PORTAL_ROOT, false)).toBe('indeterminate');
+  expect(classifyPortalRoute(PORTAL_ROOT, PORTAL_ROOT, true)).toBe('mounted');
+  expect(classifyPortalRoute('/', PORTAL_ROOT, false)).toBe('absent');
 
   const initial = [...(await capacidadesActivas(page))].sort();
   expect(initial, 'el arnés debe partir con CRM activo').toContain('crm');
@@ -565,7 +577,7 @@ test('[M08-CICLO] OFF/ON, Sales y Tracking reales, preservación, paridad y rest
 
     // 1 · Portal apagado: no endpoint, ruta ni navegación; CRM sigue operativo.
     expect((await pageA.request.get('/api/portal/overview')).status()).toBe(404);
-    expect(await routeAlive(pageA), 'Portal apagado dejó viva /mi-portal').toBe(false);
+    expect(await portalRouteState(pageA), 'Portal apagado no redirigió /mi-portal').toBe('absent');
     expect(await portalHrefs(pageA), 'Portal apagado dejó navegación propia').toEqual([]);
     expect((await pageA.request.get('/api/customer/profile')).status(), 'CRM dejó de responder').toBe(200);
     await portalSchemaAbsent();
@@ -580,7 +592,7 @@ test('[M08-CICLO] OFF/ON, Sales y Tracking reales, preservación, paridad y rest
     expect(crmOnly.parsed.work.items).toEqual([]);
     privateDataAbsent(crmOnly.raw);
 
-    expect(await routeAlive(pageA), 'Portal activo no montó /mi-portal').toBe(true);
+    expect(await portalRouteState(pageA), 'Portal activo no montó /mi-portal').toBe('mounted');
     const activeHrefs = await portalHrefs(pageA);
     expect(activeHrefs).toEqual(expect.arrayContaining([
       '/mi-portal',
