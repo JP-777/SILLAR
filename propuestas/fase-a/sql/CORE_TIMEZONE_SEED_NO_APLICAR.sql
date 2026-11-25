@@ -1,0 +1,9 @@
+-- FASE A CANDIDATE ONLY: DO NOT APPLY TO POSTGRESQL.
+-- Requires JP decision for administrator, visibility, accepted IANA aliases.
+-- No default timezone is fabricated and no client field is authoritative.
+-- Candidate key: installation.timezone_iana; private, initially absent.
+-- Illustrative seed after JP chooses an authoritative IANA id:
+-- INSERT INTO core.site_settings
+-- (setting_key, setting_value, value_type, description, is_public, is_active)
+-- VALUES ('installation.timezone_iana', '<JP-approved-IANA-id>', 'string',
+--         'Zona horaria IANA autoritativa de la instalación', false, true);
