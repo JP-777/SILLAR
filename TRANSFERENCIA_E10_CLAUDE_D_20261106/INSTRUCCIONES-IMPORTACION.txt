@@ -1,0 +1,38 @@
+SILLAR P1-POST-G6-R10-E13-T — IMPORTACION E10
+
+Bundle:
+R10-E10-7b7e6a73.bundle
+
+Identidad obligatoria:
+HEAD 7b7e6a73a0143c3f2416746ab693c7addbb871dd
+TREE a16c89180da9247a96655010ac81ecfc6b2ccc6d
+Rama incluida fix/p1-post-g6-r10-e10-e9-on-e7-20261105
+
+El bundle registra historia completa y no requiere objetos Git externos.
+No define una rama predeterminada para checkout; hay que importar su ref de forma explicita.
+
+Importacion recomendada en un repositorio aislado vacio:
+
+  mkdir -p /ruta/aislada/e10
+  cd /ruta/aislada/e10
+  git init
+  git bundle verify /ruta/R10-E10-7b7e6a73.bundle
+  git fetch /ruta/R10-E10-7b7e6a73.bundle \
+    refs/heads/fix/p1-post-g6-r10-e10-e9-on-e7-20261105:refs/heads/e10
+  git switch e10
+  git rev-parse HEAD HEAD^{tree}
+  git fsck --full --strict
+
+La salida de rev-parse debe ser exactamente:
+
+  7b7e6a73a0143c3f2416746ab693c7addbb871dd
+  a16c89180da9247a96655010ac81ecfc6b2ccc6d
+
+Alternativa con clone:
+
+  git clone /ruta/R10-E10-7b7e6a73.bundle /ruta/aislada/e10
+  git -C /ruta/aislada/e10 switch -c e10 \
+    --track origin/fix/p1-post-g6-r10-e10-e9-on-e7-20261105
+
+El aviso "remote HEAD refers to nonexistent ref" durante clone es esperado: el bundle contiene
+la rama con nombre completo, pero no una referencia HEAD simbolica. Los objetos no faltan.

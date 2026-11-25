@@ -13,6 +13,18 @@ public enum AssistantHostDenialReason
 }
 
 /// <summary>
+/// Evidencia diagnóstica conservada sin convertirla en permiso de M12.
+/// </summary>
+public sealed record AssistantAuthorityTrace(
+    AssistantAuthorityVerdict Verdict,
+    AssistantInstallationIdentityEvidence InstallationIdentity,
+    string Reason,
+    string Source,
+    DateTimeOffset ObservedAt,
+    DateTimeOffset? ValidUntil,
+    Guid? AuthorityInstallationKey);
+
+/// <summary>
 /// Foto inmutable que alimentará los getters síncronos de M12 sin ejecutar E/S.
 /// </summary>
 /// <remarks>
@@ -22,8 +34,13 @@ public enum AssistantHostDenialReason
 /// </remarks>
 public sealed record AssistantHostEvidenceSnapshot
 {
-    private AssistantHostEvidenceSnapshot(AssistantHostDenialReason denialReason)
-        => DenialReason = denialReason;
+    private AssistantHostEvidenceSnapshot(
+        AssistantHostDenialReason denialReason,
+        AssistantAuthorityTrace? authorityTrace)
+    {
+        DenialReason = denialReason;
+        AuthorityTrace = authorityTrace;
+    }
 
     public bool IsInstallationConfigured => false;
 
@@ -39,6 +56,14 @@ public sealed record AssistantHostEvidenceSnapshot
     /// </summary>
     public AssistantHostDenialReason DenialReason { get; }
 
-    public static AssistantHostEvidenceSnapshot Denied(AssistantHostDenialReason reason)
-        => new(reason);
+    /// <summary>
+    /// Traza CORE para diagnóstico y revalidación futura. Su presencia nunca
+    /// concede licencia, activación, identidad M12 ni autorización del actor.
+    /// </summary>
+    public AssistantAuthorityTrace? AuthorityTrace { get; }
+
+    public static AssistantHostEvidenceSnapshot Denied(
+        AssistantHostDenialReason reason,
+        AssistantAuthorityTrace? authorityTrace = null)
+        => new(reason, authorityTrace);
 }

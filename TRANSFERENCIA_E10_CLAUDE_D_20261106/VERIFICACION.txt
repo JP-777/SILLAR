@@ -1,0 +1,23 @@
+Fecha: 2026-11-06, America/Lima
+
+Fuente original:
+/home/JP777/sillar-fase-a-host-20261023/EVIDENCIA_R10_E10_20261105/R10-E10-7b7e6a73.bundle
+
+SHA-256 verificado:
+d8438f8a37efce5b35f4a4a019d70af7893ba244260320939e7504b55a91f899
+
+git bundle verify:
+PASS. El bundle registra historia completa y usa SHA-1 como algoritmo de objetos Git.
+
+Ref incluida:
+7b7e6a73a0143c3f2416746ab693c7addbb871dd refs/heads/fix/p1-post-g6-r10-e10-e9-on-e7-20261105
+
+Importacion de prueba:
+PASS en un repositorio temporal inicialmente vacio.
+Objetos alcanzables importados: 7492.
+git fsck --full --strict: PASS.
+HEAD reproducido: 7b7e6a73a0143c3f2416746ab693c7addbb871dd.
+TREE reproducido: a16c89180da9247a96655010ac81ecfc6b2ccc6d.
+
+Worktree E10 original:
+No modificada; estado limpio al verificar.

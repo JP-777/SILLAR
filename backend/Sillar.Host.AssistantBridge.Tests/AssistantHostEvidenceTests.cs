@@ -30,7 +30,7 @@ public sealed class AssistantHostEvidenceTests
         services.AddAssistantHostAuthorityProbe(_ =>
         {
             Interlocked.Increment(ref calls);
-            return ValueTask.FromResult(new AssistantAuthorityObservation(
+            return ValueTask.FromResult(Observation(
                 AssistantAuthorityVerdict.Denied,
                 AssistantInstallationIdentityEvidence.Missing));
         });
@@ -54,7 +54,7 @@ public sealed class AssistantHostEvidenceTests
         AssistantHostDenialReason expectedReason)
     {
         await using var provider = Provider(_ =>
-            ValueTask.FromResult(new AssistantAuthorityObservation(
+            ValueTask.FromResult(Observation(
                 verdict,
                 AssistantInstallationIdentityEvidence.InternalKeyObservedButUnattested)));
         await using var scope = provider.CreateAsyncScope();
@@ -70,7 +70,7 @@ public sealed class AssistantHostEvidenceTests
     public async Task Identidad_ausente_se_deniega()
     {
         await using var provider = Provider(_ => ValueTask.FromResult(
-            new AssistantAuthorityObservation(
+            Observation(
                 AssistantAuthorityVerdict.Allowed,
                 AssistantInstallationIdentityEvidence.Missing)));
         await using var scope = provider.CreateAsyncScope();
@@ -86,7 +86,7 @@ public sealed class AssistantHostEvidenceTests
     public async Task Clave_interna_observada_no_se_convierte_en_identidad_M12()
     {
         await using var provider = Provider(_ => ValueTask.FromResult(
-            new AssistantAuthorityObservation(
+            Observation(
                 AssistantAuthorityVerdict.Allowed,
                 AssistantInstallationIdentityEvidence.InternalKeyObservedButUnattested)));
         await using var scope = provider.CreateAsyncScope();
@@ -131,7 +131,7 @@ public sealed class AssistantHostEvidenceTests
     {
         var services = new ServiceCollection();
         services.AddAssistantHostAuthorityProbe(_ => ValueTask.FromResult(
-            new AssistantAuthorityObservation(
+            Observation(
                 AssistantAuthorityVerdict.Denied,
                 AssistantInstallationIdentityEvidence.Missing)));
         await using var provider = services.BuildServiceProvider();
@@ -159,7 +159,7 @@ public sealed class AssistantHostEvidenceTests
         {
             Interlocked.Increment(ref calls);
             await release.Task;
-            return new AssistantAuthorityObservation(
+            return Observation(
                 AssistantAuthorityVerdict.Denied,
                 AssistantInstallationIdentityEvidence.Missing);
         });
@@ -176,11 +176,86 @@ public sealed class AssistantHostEvidenceTests
         Assert.Same(results[0], results[1]);
     }
 
+    [Fact]
+    public async Task La_denegacion_conserva_causa_fuente_vigencia_e_identidad_CORE()
+    {
+        var observedAt = new DateTimeOffset(2026, 10, 26, 15, 0, 0, TimeSpan.Zero);
+        var validUntil = observedAt.AddMinutes(5);
+        var internalKey = Guid.NewGuid();
+        var observation = new AssistantAuthorityObservation(
+            AssistantAuthorityVerdict.PendingDecision,
+            AssistantInstallationIdentityEvidence.InternalKeyObservedButUnattested,
+            "EntitlementPolicyUnratified",
+            "core.installation",
+            observedAt,
+            validUntil,
+            internalKey);
+        await using var provider = Provider(_ => ValueTask.FromResult(observation));
+        await using var scope = provider.CreateAsyncScope();
+
+        var snapshot = await scope.ServiceProvider
+            .GetRequiredService<AssistantHostEvidenceResolver>()
+            .ResolveAsync(TestContext.Current.CancellationToken);
+
+        AssertDenied(snapshot, AssistantHostDenialReason.PendingDecision);
+        Assert.Equal(new AssistantAuthorityTrace(
+            observation.Verdict,
+            observation.InstallationIdentity,
+            observation.Reason,
+            observation.Source,
+            observation.ObservedAt,
+            observation.ValidUntil,
+            observation.AuthorityInstallationKey), snapshot.AuthorityTrace);
+        Assert.Null(snapshot.InstallationId);
+    }
+
+    [Theory]
+    [InlineData("", "core.installation")]
+    [InlineData("EntitlementPolicyUnratified", "")]
+    public async Task Traza_incompleta_no_se_convierte_en_evidencia_utilizable(
+        string reason,
+        string source)
+    {
+        var observation = new AssistantAuthorityObservation(
+            AssistantAuthorityVerdict.PendingDecision,
+            AssistantInstallationIdentityEvidence.InternalKeyObservedButUnattested,
+            reason,
+            source,
+            new DateTimeOffset(2026, 10, 26, 15, 0, 0, TimeSpan.Zero),
+            null,
+            Guid.NewGuid());
+        await using var provider = Provider(_ => ValueTask.FromResult(observation));
+        await using var scope = provider.CreateAsyncScope();
+
+        var snapshot = await scope.ServiceProvider
+            .GetRequiredService<AssistantHostEvidenceResolver>()
+            .ResolveAsync(TestContext.Current.CancellationToken);
+
+        AssertDenied(snapshot, AssistantHostDenialReason.AuthorityUnavailable);
+    }
+
     private static ServiceProvider Provider(AssistantAuthorityProbe probe)
     {
         var services = new ServiceCollection();
         services.AddAssistantHostAuthorityProbe(probe);
         return services.BuildServiceProvider();
+    }
+
+    private static AssistantAuthorityObservation Observation(
+        AssistantAuthorityVerdict verdict,
+        AssistantInstallationIdentityEvidence identity)
+    {
+        var observedAt = new DateTimeOffset(2026, 10, 26, 15, 0, 0, TimeSpan.Zero);
+        return new AssistantAuthorityObservation(
+            verdict,
+            identity,
+            verdict.ToString(),
+            "core.installation",
+            observedAt,
+            verdict == AssistantAuthorityVerdict.PendingDecision ? observedAt.AddMinutes(5) : null,
+            identity == AssistantInstallationIdentityEvidence.InternalKeyObservedButUnattested
+                ? Guid.Parse("6f4ee098-aaab-4f4c-839d-b4bb784d7a91")
+                : null);
     }
 
     private static void AssertDenied(

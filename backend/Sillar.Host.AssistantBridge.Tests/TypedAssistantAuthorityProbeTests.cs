@@ -70,7 +70,14 @@ public sealed class TypedAssistantAuthorityProbeTests
             },
             decision.HasInternalKey
                 ? AssistantInstallationIdentityEvidence.InternalKeyObservedButUnattested
-                : AssistantInstallationIdentityEvidence.Missing);
+                : AssistantInstallationIdentityEvidence.Missing,
+            decision.Result.ToString(),
+            "core.installation",
+            evaluatedAt,
+            decision.Result == DecisionResultado.Pending ? evaluatedAt.AddMinutes(5) : null,
+            decision.HasInternalKey
+                ? Guid.Parse("43edee59-2893-461f-8167-5944d5fd3983")
+                : null);
     }
 
     public enum DecisionResultado

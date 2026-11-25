@@ -55,28 +55,57 @@ public sealed class AssistantHostEvidenceResolver(
                 AssistantHostDenialReason.AuthorityUnavailable);
         }
 
+        var trace = new AssistantAuthorityTrace(
+            observation.Verdict,
+            observation.InstallationIdentity,
+            observation.Reason,
+            observation.Source,
+            observation.ObservedAt,
+            observation.ValidUntil,
+            observation.AuthorityInstallationKey);
+
+        if (!ValidTrace(observation))
+        {
+            return AssistantHostEvidenceSnapshot.Denied(
+                AssistantHostDenialReason.AuthorityUnavailable,
+                trace);
+        }
+
         if (observation.Verdict == AssistantAuthorityVerdict.PendingDecision)
         {
             return AssistantHostEvidenceSnapshot.Denied(
-                AssistantHostDenialReason.PendingDecision);
+                AssistantHostDenialReason.PendingDecision,
+                trace);
         }
 
         if (observation.Verdict != AssistantAuthorityVerdict.Allowed)
         {
             return AssistantHostEvidenceSnapshot.Denied(
-                AssistantHostDenialReason.AuthorityDenied);
+                AssistantHostDenialReason.AuthorityDenied,
+                trace);
         }
 
         if (observation.InstallationIdentity == AssistantInstallationIdentityEvidence.Missing)
         {
             return AssistantHostEvidenceSnapshot.Denied(
-                AssistantHostDenialReason.InstallationIdentityInvalid);
+                AssistantHostDenialReason.InstallationIdentityInvalid,
+                trace);
         }
 
         // CORE puede haber observado una clave interna, pero JP todavía no ha
         // atestado una identidad consumible por M12. Nunca se renombra esa clave
         // como InstallationId ni se produce evidencia positiva en FASE A.
         return AssistantHostEvidenceSnapshot.Denied(
-            AssistantHostDenialReason.InstallationIdentityUnattested);
+            AssistantHostDenialReason.InstallationIdentityUnattested,
+            trace);
     }
+
+    private static bool ValidTrace(AssistantAuthorityObservation observation)
+        => !string.IsNullOrWhiteSpace(observation.Reason)
+           && !string.IsNullOrWhiteSpace(observation.Source)
+           && observation.ObservedAt != default
+           && (observation.ValidUntil is null || observation.ValidUntil > observation.ObservedAt)
+           && (observation.InstallationIdentity == AssistantInstallationIdentityEvidence.Missing
+               ? observation.AuthorityInstallationKey is null
+               : observation.AuthorityInstallationKey is { } key && key != Guid.Empty);
 }
