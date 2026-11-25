@@ -272,15 +272,6 @@ internal static class CommercialEvaluationPolicy
 
         var hechos = Hechos(pedido, pagos);
 
-        // Una identidad presente pero degenerada —el uuid nulo, que ninguna fila v7
-        // lleva (ADR-016), o un código en blanco— es un dato roto del propio pedido.
-        // Precede a toda regla comercial, también a la baja lógica, y conserva la
-        // correlación y los hechos tal como se leyeron.
-        if (IdentidadDegenerada(orderId, codigo))
-        {
-            return Incoherente(correlacion, CommercialEvaluationReason.ContradictoryFacts, null, hechos);
-        }
-
         if (SeContradicen(pedido, pagos))
         {
             return Incoherente(correlacion, CommercialEvaluationReason.ContradictoryFacts, null, hechos);
@@ -355,9 +346,6 @@ internal static class CommercialEvaluationPolicy
             otros.Length,
             pagos.Count(p => p.CurrencyCode is null));
     }
-
-    private static bool IdentidadDegenerada(Guid orderId, string codigo)
-        => orderId == Guid.Empty || string.IsNullOrWhiteSpace(codigo);
 
     private static CurrencyObservation Moneda(string? codigo) => codigo switch
     {

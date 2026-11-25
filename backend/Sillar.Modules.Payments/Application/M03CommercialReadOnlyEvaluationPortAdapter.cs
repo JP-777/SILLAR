@@ -66,17 +66,7 @@ internal static class M03CommercialReadOnlyEvaluationMapper
             return Invalid("m03_readonly_evaluation_unknown_reason");
         }
 
-        // Solo M03 puede declarar contradictoria su propia identidad, y solo lo hace
-        // con la pareja completa y los hechos leídos. Una razón suelta no basta.
-        var identityDeclaredContradictory =
-            source.Verdict is CommercialReadOnlyEvaluationVerdict.Inconsistent
-            && source.Reason is CommercialReadOnlyEvaluationReason.ContradictoryFacts
-            && source.Facts is not null;
-
-        if (!TryValidateCorrelation(
-                source.Correlation,
-                identityDeclaredContradictory,
-                out var correlation))
+        if (!TryValidateCorrelation(source.Correlation, out var correlation))
         {
             return Invalid("m03_readonly_evaluation_invalid_correlation");
         }
@@ -189,7 +179,6 @@ internal static class M03CommercialReadOnlyEvaluationMapper
 
     private static bool TryValidateCorrelation(
         OrderCorrelationCandidate? source,
-        bool identityDeclaredContradictory,
         out M03OrderCorrelationResultSnapshot? result)
     {
         result = null;
@@ -214,18 +203,13 @@ internal static class M03CommercialReadOnlyEvaluationMapper
         };
 
         var resolved = outcome is M03OrderCorrelationOutcome.Resolved;
-        // Resuelta: ambos campos presentes y leídos de la base. Bien formados, salvo que
-        // M03 declare esa misma identidad contradictoria; aun entonces uno de los dos
-        // tiene que seguir siendo un ancla útil. Nulos nunca.
         var identityIsValid = resolved
             ? source.OrderId is { } id
-                && source.OrderCode is { } code
+                && id != Guid.Empty
+                && !string.IsNullOrWhiteSpace(source.OrderCode)
                 && StringComparer.Ordinal.Equals(
                     source.Source,
                     CandidateSources.CurrentDatabase)
-                && (id != Guid.Empty && !string.IsNullOrWhiteSpace(code)
-                    || identityDeclaredContradictory
-                        && (id != Guid.Empty || !string.IsNullOrWhiteSpace(code)))
             : source.OrderId is null
                 && source.OrderCode is null
                 && ExpectedNegativeSource(outcome, source.Source);
