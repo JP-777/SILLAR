@@ -411,3 +411,5 @@ export function Spinner({
     </span>
   );
 }
+
+export { NoPhoto } from './NoPhoto';

@@ -97,42 +97,6 @@
 
 .ti-card__desc { font-size: 13px; color: var(--text-muted); flex: 1; }
 
-/* --- El cuadrado sin foto ----------------------------------------------- */
-
-/* Misma altura que una foto y lleno: la mezcla de tarjetas con y sin imagen
-   se tiene que leer como variedad, no como catálogo a medio llenar. */
-.ti-nophoto {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: var(--s1);
-  padding: var(--s4);
-  background: var(--bg-sunken);
-  border-bottom: 1px solid var(--border);
-}
-
-.ti-nophoto--square { aspect-ratio: 1; }
-
-/* En la ficha pasa a 16:9: sin nada que encuadrar, un cuadrado grande solo
-   estira la página y aleja el precio. */
-.ti-nophoto--wide { aspect-ratio: 16 / 9; }
-
-.ti-nophoto__context {
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--text-subtle);
-}
-
-.ti-nophoto__name {
-  font-size: 20px;
-  font-weight: 620;
-  line-height: 1.2;
-  color: var(--text-muted);
-  overflow-wrap: anywhere;
-}
-
 /* --- Precio ------------------------------------------------------------- */
 
 .ti-price { display: flex; flex-direction: column; gap: 2px; margin-top: var(--s1); }

@@ -425,6 +425,32 @@ no se escribe «M11 no antes que M09» como restricción en ningún otro documen
 
 ---
 
+
+## 26 · La puerta no vigila las fronteras entre módulos del frontend
+
+**Detectado:** 25 de septiembre de 2026, America/Lima.
+
+La puerta dejó pasar M02 con una importación directa desde
+`modules/catalog/components/ProductCard.tsx`. M02 llegó
+a 33/33 y a puerta verde con un cruce prohibido.
+
+**Disparador:** antes de comenzar el código de M03, que
+tocará M01 y M04 simultáneamente.
+
+**Pendiente sin implementar:** comprobar automáticamente
+las importaciones desde `frontend/src/modules/<X>/`
+hacia `frontend/src/modules/<Y>/`. Solo se permiten
+las vías declaradas por los contratos correspondientes.
+
+La futura barrera debe acreditar las tres direcciones:
+pasa una importación legal, falla una ilegal y
+detecta una rotura deliberada de su propia prueba.
+
+La guarda específica de `NoPhoto` del criterio C21
+no sustituye esta comprobación arquitectónica general.
+
+---
+
 ## Resueltos recientemente
 
 *(se borran de arriba y se anotan aquí solo hasta que entren en la bitácora del módulo)*

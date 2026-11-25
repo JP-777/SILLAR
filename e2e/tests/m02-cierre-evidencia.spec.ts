@@ -438,6 +438,65 @@ test('[M02-C19] editar precio de presentación llega al destacado', async ({ pag
 });
 
 test('[M02-C21] destacado sin foto compara nombre y categoría con tarjeta Catálogo', async ({ page }) => {
+  // Barrera arquitectónica específica: ambos consumidores utilizan
+  // exactamente la misma implementación de shared/ui.
+  const frontendRoot = fileURLToPath(
+    new URL('../../frontend/src/', import.meta.url),
+  );
+
+  const readSource = (relative: string) =>
+    readFile(path.join(frontendRoot, relative), 'utf8');
+
+  const [productSource, detailSource, cmsSource, sharedIndex,
+    sharedComponent, sharedStyles, catalogStyles] = await Promise.all([
+    readSource('modules/catalog/components/ProductCard.tsx'),
+    readSource('modules/catalog/pages/ProductPage.tsx'),
+    readSource('modules/cms/cmsHome.tsx'),
+    readSource('shared/ui/index.tsx'),
+    readSource('shared/ui/NoPhoto.tsx'),
+    readSource('shared/ui/ui.css'),
+    readSource('modules/catalog/components/tienda.css'),
+  ]);
+
+  expect(productSource).toMatch(
+    /import\s*\{\s*NoPhoto\s*\}\s*from\s*['"]\.\.\/\.\.\/\.\.\/shared\/ui['"]/,
+  );
+  expect(detailSource).toMatch(
+    /import\s*\{\s*NoPhoto\s*\}\s*from\s*['"]\.\.\/\.\.\/\.\.\/shared\/ui['"]/,
+  );
+  expect(cmsSource).toMatch(
+    /import\s*\{[^}]*\bNoPhoto\b[^}]*\}\s*from\s*['"]\.\.\/\.\.\/shared\/ui['"]/s,
+  );
+  expect(sharedIndex).toContain(
+    "export { NoPhoto } from './NoPhoto';",
+  );
+  expect(sharedComponent).toContain('export function NoPhoto(');
+  expect(sharedStyles).toContain('.ti-nophoto {');
+  expect(catalogStyles).not.toContain('.ti-nophoto');
+
+  const declarations: string[] = [];
+  const scan = async (dir: string): Promise<void> => {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await scan(full);
+      } else if (entry.isFile() && /\.tsx?$/.test(entry.name)) {
+        const text = await readFile(full, 'utf8');
+        if (/\b(?:function|const|class)\s+NoPhoto\b/.test(text)) {
+          declarations.push(
+            path.relative(frontendRoot, full).replaceAll('\\', '/'),
+          );
+        }
+      }
+    }
+  };
+
+  await scan(frontendRoot);
+  expect(
+    declarations.sort(),
+    'NoPhoto debe tener una sola declaración en shared/ui',
+  ).toEqual(['shared/ui/NoPhoto.tsx']);
+
   await loginAsE2eAdmin(page);
   const catName = `Escolar sin foto ${SELLO}`;
   const catSlug = `escolar-sin-foto-m02-${SELLO}`;

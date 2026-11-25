@@ -1,12 +1,11 @@
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
-import { NoPhoto } from '../catalog/components/ProductCard';
 import { useAporteDePortada } from '../../platform/homeState';
 import type { EstadoAporte } from '../../platform/surfaceState';
 import type { HomeSection } from '../../platform/homeSections';
 import type { AuditEntityVocabulary } from '../../platform/auditEntityVocabulary';
 import { useDelayedFlag } from '../../shared/hooks/useDelayedFlag';
-import { Alert, Badge, Button, Spinner } from '../../shared/ui';
+import { Alert, Badge, Button, NoPhoto, Spinner } from '../../shared/ui';
 import { formatFeaturedProductPrice } from './components/featuredProductPresentation';
 import { publicBannersService, type PublicBanner } from './services/banners';
 import {
