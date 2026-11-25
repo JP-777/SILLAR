@@ -27,9 +27,38 @@ export const test = base.extend({
     const collector: Collector = { errors: [], paused: false, crashed: false };
     collectors.set(page, collector);
 
+    // Infra QA es OPTATIVA: la suite canónica no cambia de comportamiento.
+    const infraQa = process.env.SILLAR_INFRA_QA === '1';
+    const fallosHttp: Array<{
+      hora: string; url: string; metodo: string; tipo: string;
+      causa: string | null; duranteCorteEsperado: boolean;
+    }> = [];
+    let fallosOmitidos = 0;
+
+    if (infraQa) {
+      page.on('requestfailed', (request) => {
+        // Solo evidencia; no se silencian errores ni se altera la aserción.
+        if (fallosHttp.length >= 500) {
+          fallosOmitidos += 1;
+          return;
+        }
+        fallosHttp.push({
+          hora: new Date().toISOString(),
+          // Excluir query y fragment: pueden contener tokens/credenciales.
+          url: sinConsulta(request.url()).slice(0, 500),
+          metodo: request.method(),
+          tipo: request.resourceType(),
+          causa: request.failure()?.errorText ?? null,
+          duranteCorteEsperado: collector.paused,
+        });
+      });
+    }
+
     page.on('console', (message) => {
       if (message.type() === 'error' && !collector.paused) {
-        collector.errors.push(`[consola] ${message.text()}`);
+        const origen = infraQa && message.location().url
+          ? ` [origen: ${sinConsulta(message.location().url).slice(0, 500)}]` : '';
+        collector.errors.push(`[consola] ${message.text()}${origen}`);
       }
     });
 
@@ -104,6 +133,16 @@ export const test = base.extend({
       };
 
     await use(page);
+
+    if (infraQa) {
+      await testInfo.attach('infra-qa-recursos-http.json', {
+        body: JSON.stringify({
+          prueba: testInfo.title,
+          fallosHttp, fallosOmitidos,
+        }, null, 2),
+        contentType: 'application/json',
+      });
+    }
 
     if (collector.errors.length > 0) {
       await testInfo.attach('errores-de-consola.txt', {

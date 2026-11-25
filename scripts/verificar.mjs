@@ -65,6 +65,14 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ENV_FILE = path.join(RAIZ, '.env');
 const ENV_EJEMPLO = path.join(RAIZ, '.env.example');
 
+// Infra QA se ejecuta solo desde focal.mjs: la puerta canónica debe ser
+// reproducible y no heredar un modo de instrumentación exportado por accidente.
+if (Object.hasOwn(process.env, 'SILLAR_INFRA_QA')) {
+  console.error('STOP: SILLAR_INFRA_QA no está permitido en la puerta canónica.');
+  console.error('Ejecuta la focal desde e2e/infra-qa/focal.mjs o desexporta la variable.');
+  process.exit(2);
+}
+
 /**
  * Las pruebas que **se espera** que se salten, por su nombre completo.
  *
