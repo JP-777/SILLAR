@@ -46,7 +46,7 @@ public static class AssistantInternalServices
                 new EfAssistantEditorialAdministration(new EfEditorialArticleStore(
                     provider.GetRequiredService<AssistantDbContext>(), editorialPolicy,
                     provider.GetRequiredService<TimeProvider>())),
-                provider.GetService<IAssistantAccessAuthority>(),
+                provider.GetService<IAssistantEditorialAuthority>(),
                 provider.GetService<IRevocableAssistantEditorialAuthority>()));
         services.AddScoped<IAsyncPublishedFaqReader>(provider => new EfPublishedFaqReader(
             provider.GetRequiredService<AssistantDbContext>(),
