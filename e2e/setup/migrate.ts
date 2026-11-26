@@ -76,6 +76,8 @@ export async function migrate(): Promise<void> {
   // aparece arriba. Esta línea es el mismo arreglo aplicado a M07, no su
   // repetición.
   await applyMigrations('Sillar.Modules.B2B');
+  // M08: historial local de instalación, sin tablas de negocio.
+  await applyMigrations('Sillar.Modules.Portal');
 }
 
 /** Los seeds del producto. Ninguno lleva datos de negocio (SPEC de M01 §6.9, de M02 §6.6). */
@@ -83,7 +85,7 @@ export async function seed(): Promise<void> {
   // `ON_ERROR_STOP=1` en todos: sin él, `psql` se come el error de un
   // seed y el arnés sigue con la base a medio preparar, fallando después en
   // una prueba que no tiene la culpa.
-  for (const modulo of ['core', 'catalog', 'cms', 'crm', 'services', 'service_orders', 'tracking', 'sales', 'b2b']) {
+  for (const modulo of ['core', 'catalog', 'cms', 'crm', 'services', 'service_orders', 'tracking', 'sales', 'b2b', 'portal']) {
     // Los de `crm`, `service_orders`, `sales` y `b2b` están hoy intencionalmente vacíos, y se
     // aplican igual: no aplicarlos sería una asimetría que solo se nota el día
     // que dejen de estar vacíos.

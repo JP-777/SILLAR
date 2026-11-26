@@ -2095,6 +2095,7 @@ function correrPasosDelFrontend() {
     ['vitrina de servicios', 'test:services'],
     ['solicitudes B2B', 'test:b2b'],
     ['seguimiento', 'test:tracking'],
+    ['fechas del negocio', 'test:fechas'],
     ['reportes', 'test:reporting'],
     // ADR-005: un módulo nunca importa de otro. Antes de los tipos porque no
     // compila nada, y porque un import cruzado compila perfectamente.
@@ -2175,6 +2176,8 @@ const etapas = [
         // cruzadas apuntan a catalog y a crm (dependencias duras declaradas en
         // B2BModule.cs:57), así que esas tablas tienen que existir antes.
         'Sillar.Modules.B2B',
+        // M08 conserva solo historial local, pero su instalación debe ser real.
+        'Sillar.Modules.Portal',
       ];
       let salida = '';
       for (const modulo of modulos) {

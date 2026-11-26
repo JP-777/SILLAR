@@ -1,11 +1,18 @@
-# SILLAR — M08 Portal del Cliente · SPEC de Paso 1
+# SILLAR — M08 Portal del Cliente · SPEC
 
-**Estado vigente 10/10/2026:** D1–D6 ratificadas; contratos M05b/M06 publicados en rama `963e0f1`, con 82/82 regresiones focales PASS y ensayo VERDE→ROJO→VERDE acreditado internamente. **Pendientes:** QA independiente, puerta canónica, merge a `main` e implementación de M08.
-**Fecha:** 2026-10-09 · America/Lima. **Base verificada:** `main` `4a3fd1ef12fc2226bad185f003acea9168b9a4c9`.
-**Preparación:** Chat 2 (Integración). **Ejecución prevista:** Agente A, cuando vuelva a disponer de capacidad.
-**Ámbito:** SILLAR WEB, no SILLAR ERP. La preparación de contratos M05b/M06 es una candidata separada; no implica código incorporado a main, ni migraciones ni API de Portal.
+**Fecha de creación:** 9 de octubre de 2026, America/Lima.
+**Fecha de última verificación:** 26 de noviembre de 2026, America/Lima.
+**Commit contrastado:** `5799bd7dd5b9b56099b182d5b82aeb980be6724c`.
+**Estado:** integrado en la rama de cierre; persistencia de instalación y acreditación en curso.
+**Ámbito:** SILLAR WEB. Sin cambios en main ni ejecución mediante agentes adicionales.
 
-> **Actualización del 10/10/2026:** `ICustomerServiceOrderReader` y `ICustomerTrackingProgress` están materializados en `963e0f1d12b131c4296cd836c88c3334fc22288e`, no en `main` `4a3fd1e`. Su publicación no crea endpoints HTTP públicos. M08 debe exigir `crm:customer` y tomar `CustomerId` de `ICurrentCustomer`, nunca del navegador. Este avance habilita preparación/desarrollo en rama aislada, **no** QA independiente, integración ni exposición del Portal. Consultar acta 03.
+El mandato de JP del 26/11 autoriza completar el ciclo persistente. Se conserva D1:
+M08 no duplica tablas de negocio. Se añade únicamente schema `portal` con historial
+local `__migrations`, propiedad del instalador y no replicado. El panel comprueba
+su presencia; nunca migra. La baja elimina solo ese historial y schema con RESTRICT,
+transaccionalmente. §4 concreta esta decisión y reemplaza «sin esquema propio» de
+las actas históricas. Los contratos M05b/M06 y la interfaz ya están en este árbol;
+las referencias a su ausencia en main describen la historia, no un impedimento actual.
 
 ## 0. Autoridad, evidencia y decisiones
 
@@ -67,7 +74,7 @@ Un proveedor activo sin registros responde «Todavía no tienes…»; no es lo m
 
 ## 4. Replicación y modelo de datos ANTES de primera migración
 
-**D1 ratificada:** M08 v1 es un **agregador de lecturas**, y no tiene tablas de negocio propias. M04 ya guarda cuentas y perfiles, M03 pedidos y M05b/M06 seguimiento. Por tanto: **cero tablas nuevas, cero identificadores persistidos, cero FK y cero nuevas migraciones de dominio en v1**. No se crea `portal.users` ni `portal.customer_profiles` por copia del esquema histórico.
+**D1 ratificada:** M08 v1 es un **agregador de lecturas**, y no tiene tablas de negocio propias. M04 ya guarda cuentas y perfiles, M03 pedidos y M05b/M06 seguimiento. Por tanto: **cero tablas de negocio nuevas, cero identificadores de cliente persistidos, cero FK y cero migraciones de dominio en v1**. La migración de instalación crea el schema y su historial técnico local; no inventa datos de negocio. No se crea `portal.users` ni `portal.customer_profiles` por copia del esquema histórico.
 
 | Objeto | Dueño real | Clasificación | Regla en M08 |
 |---|---|---|---|
@@ -75,11 +82,18 @@ Un proveedor activo sin registros responde «Todavía no tienes…»; no es lo m
 | Pedidos e ítems | M03 Sales | Replicados, UUID v7 de aplicación según SPEC | Solo lectura por contrato/autorización |
 | Órdenes de servicio | M05b ServiceOrders | Replicadas, UUID v7 de aplicación | Solo vinculadas al cliente, sin FK de portal |
 | Seguimiento y notas | M06 Tracking | Replicadas, UUID v7 de aplicación | Solo proyección apta para cliente; **notas jamás expuestas** |
-| Tablas propias `portal.*` | **Ninguna propuesta para v1** | No aplica | Cualquier propuesta nueva vuelve a D1/ADR-016/018 antes de DDL |
+| `portal.__migrations` | M08 / instalador EF | Local, no replicada; clave técnica de migración | Solo evidencia de instalación; sin FK ni identidad de negocio |
+| Otras tablas propias `portal.*` | **Ninguna en v1** | No aplica | Cualquier propuesta de negocio vuelve a D1/ADR-016/018 antes de DDL |
 
 Si JP requiere persistir preferencias nuevas en `portal`, D1 deja de ser válido: precisar tabla por tabla si una fila nace en nodo y se necesita en otro; usar UUID v7 + `origin_node` + `row_version` si replica, o `integer identity` si es local; aplicar ADR-018 al conjunto de FK. Ninguna fila replicada referencia una fila local. La autoría administrativa de una futura tabla replicada congela los **tres** componentes desde `ICurrentAdmin` y nunca tiene FK a `core.admin_users`. Ningún dato de identidad administrativa se extrae de una cookie/token/DbContext de CORE.
 
-**Barrera de arnés:** incluso si M08 no posee schema ni migración, su presencia en host/setup/activación/e2e debe estar cubierta y documentada con la misma exhaustividad; `migrate()`/`seed()` deben reflejar honestamente «sin esquema propio», no declararse aplicados inventando un seed. Si se aprueba DDL, son obligatorios proyecto de migraciones, scripts `02_seed.sql`/`99_drop.sql`, registro en la etapa 4 y reconstrucción por `migrate()+seed()`. La implementación exacta del módulo sin schema se ratifica antes del Paso 2, no por inferencia de cómo funcionan los otros nueve.
+**Barrera de arnés:** Portal implementa IModuleMigrations y participa en etapa 4,
+instalación HTTP y migrate() E2E. Su seed es vacío y explícito. La prueba física
+exige historial aplicado sin migrar por su cuenta: quitar M08 de etapa 4 debe
+fallar. El ciclo E2E retira portal con su 99_drop.sql, exige rechazo al activarlo
+sin schema y comprueba que la negativa no lo creó. migrate()+seed() lo reinstala,
+no cambia activaciones y preserva filas y FK de sus proveedores. Sin omisiones.
+Un objeto no contemplado por la baja provoca error y rollback, nunca CASCADE.
 
 ## 5. Identidad, visibilidad y seguridad
 
@@ -92,7 +106,7 @@ Si JP requiere persistir preferencias nuevas en `portal`, D1 deja de ser válido
 7. El portal v1 es **solo lectura**. Si posteriormente contiene escrituras, exigir filtro CSRF de M04 *por la sesión de cliente*, y auditoría/triple administrativa donde exista actor administrativo; jamás simular `ICurrentAdmin` con `ICurrentCustomer`.
 8. No hacer endpoint que devuelva un inventario global y después filtre en el frontend. No poner nombres personales, tokens o cookies en logs de error.
 
-## 6. Fronteras de contratos — materializadas en rama `963e0f1`, NO integradas en `main`
+## 6. Fronteras de contratos — materializadas en `963e0f1` e integradas en la rama de cierre
 
 ### 6.1 M03 — interfaz REAL, suficiente para tarjetas
 
@@ -236,7 +250,7 @@ D1–D6 se ratificaron el 09/10/2026; para cierre funcional futuro exigir:
 
 | ID | Decisión ratificada | Valor aprobado por JP | Consecuencia de una modificación futura |
 |---|---|---|---|
-| **D1** | ¿M08 guarda `portal.users`/`customer_profiles` propios? | **No**: M04 ya es dueño; Portal 1.0 sin persistencia | Rehacer §4, clasificar cada nueva tabla y crear migraciones |
+| **D1** | ¿M08 guarda `portal.users`/`customer_profiles` propios? | **No**: M04 ya es dueño; Portal sin datos de negocio propios, solo historial local | Rehacer §4, clasificar cada nueva tabla y crear migraciones |
 | **D2** | ¿Qué trabajos puede ver una cuenta? | Solo M05b con `customer_id == CustomerId` verificado por contrato; nulos invisibles. Sin reclamación por código, correo o teléfono | Si quieren recuperación/vinculación, definir flujo explícito de propiedad y auditoría |
 | **D3** | ¿Qué publica M06 exactamente a un cliente? | Estado/hitos públicos mínimos sin notas ni fechas internas; nuevo `Tracking.Contracts` | Cambiar DTO y pruebas negativas; dueño M06 conserva frontera |
 | **D4** | ¿Sin M06 pero con M05b se muestran trabajos? | Portal informa «Seguimiento no disponible», **sin acceso directo a M05b** en v1 | Si sí, hace falta contrato de M05b visible, producto y matriz adicional |

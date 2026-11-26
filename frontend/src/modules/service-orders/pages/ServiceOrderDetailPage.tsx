@@ -196,7 +196,7 @@ export function ServiceOrderDetailPage() {
             <label>Teléfono<input className="ui-input" disabled={form.customerId !== null} value={form.customerPhone ?? ''} onChange={e => setForm({ ...form, customerPhone: e.target.value || null })} /></label>
             <label>Correo<input className="ui-input" type="email" disabled={form.customerId !== null} value={form.customerEmail ?? ''} onChange={e => setForm({ ...form, customerEmail: e.target.value || null })} /></label>
           </div>
-          <label>Compromiso<input className="ui-input" type="datetime-local" value={promisedAtDraft} onChange={e => setPromisedAtDraft(e.target.value)} /></label>
+          <label>Compromiso (America/Lima)<input className="ui-input" type="datetime-local" value={promisedAtDraft} onChange={e => setPromisedAtDraft(e.target.value)} /></label>
           <label>Notas de recepción<textarea className="ui-input so5-textarea" value={form.receivedNotes ?? ''} onChange={e => setForm({ ...form, receivedNotes: e.target.value || null })} /></label>
           {showcaseError && <p role="alert">{showcaseError}</p>}
           <p className="so5-hint">Los servicios ya confirmados son históricos: pueden editarse o reordenarse, pero nunca borrarse ni sustituirse por otro servicio. Solo las líneas nuevas pueden quitarse antes de guardar.</p>

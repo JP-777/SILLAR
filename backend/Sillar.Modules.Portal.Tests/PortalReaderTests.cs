@@ -14,11 +14,12 @@ public sealed class PortalReaderTests
     private static readonly Guid Customer = Guid.Parse("0199a113-6b18-7a11-a111-c02e00ea1b00");
 
     [Fact]
-    public void Module_declara_schema_nulo_y_dependencias_ratificadas()
+    public void Module_declara_historial_local_y_dependencias_ratificadas()
     {
         var module = new PortalModule();
         Assert.Equal("portal", module.Code);
-        Assert.Null(module.Schema);
+        Assert.Equal("portal", module.Schema);
+        Assert.IsAssignableFrom<Sillar.Shared.Data.Modularity.IModuleMigrations>(module);
         Assert.Equal(["core", "crm"], module.HardDependencies);
         Assert.Equal(["sales", "tracking"], module.SoftDependencies);
     }

@@ -453,8 +453,15 @@ function TrackingDetail({
   }
 
   async function saveDue() {
+    let internalDueAt: string | null;
+    try { internalDueAt = fromDateTimeLocal(due); }
+    catch {
+      setFailure({ kind: 'validation', message: 'El plazo interno debe ser una fecha válida de America/Lima.',
+        fieldErrors: { internalDueAt: 'Revisa la fecha y hora.' }, blockedBy: null });
+      return;
+    }
     await execute(
-      () => trackingService.setDue(serviceOrderId, { internalDueAt: fromDateTimeLocal(due) }),
+      () => trackingService.setDue(serviceOrderId, { internalDueAt }),
       'guardar el plazo interno',
       'Plazo interno guardado.',
     );
@@ -517,7 +524,7 @@ function TrackingDetail({
                   Guardar prioridad
                 </Button>
 
-                <Field label="Plazo interno" hint={`Recibida: ${formatDateTime(current.order.receivedAt)} · Prometida al cliente: ${formatDateTime(current.order.promisedAt)}`} error={failure?.fieldErrors?.internalDueAt}>
+                <Field label="Plazo interno (America/Lima)" hint={`Recibida: ${formatDateTime(current.order.receivedAt)} · Prometida al cliente: ${formatDateTime(current.order.promisedAt)}`} error={failure?.fieldErrors?.internalDueAt}>
                   {(props) => (
                     <Input {...props} type="datetime-local" value={due} onChange={(event) => setDue(event.target.value)} />
                   )}

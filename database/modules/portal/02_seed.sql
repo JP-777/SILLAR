@@ -1,0 +1,2 @@
+-- M08 no necesita datos iniciales. El historial de instalación lo escribe EF.
+-- No se duplican cuentas, pedidos ni trabajos de otros módulos.

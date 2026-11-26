@@ -1,3 +1,7 @@
+import { asZonedInstant, wallClock } from '../../../shared/zonedDate.ts';
+
+// El tablero usa la zona del negocio, igual que las órdenes de servicio.
+const TRACKING_TIME_ZONE = 'America/Lima';
 import type { TrackingBoardColumn, TrackingBoardCard } from '../services/contracts';
 
 /** Mueve un identificador dentro de una lista sin duplicarlo ni perder pares. */
@@ -26,21 +30,21 @@ export function statusName(columns: readonly TrackingBoardColumn[], status: stri
 
 export function formatDateTime(value: string | null): string {
   if (!value) return 'Sin fecha';
+  if (!Number.isFinite(Date.parse(value))) return 'Fecha no disponible';
   return new Intl.DateTimeFormat('es-PE', {
+    timeZone: TRACKING_TIME_ZONE,
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));
 }
 
 export function toDateTimeLocal(value: string | null): string {
-  if (!value) return '';
-  const date = new Date(value);
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-  return local.toISOString().slice(0, 16);
+  if (!value || !Number.isFinite(Date.parse(value))) return '';
+  return wallClock(Date.parse(value), TRACKING_TIME_ZONE).slice(0, 16);
 }
 
 export function fromDateTimeLocal(value: string): string | null {
-  return value.trim() ? new Date(value).toISOString() : null;
+  return value.trim() ? asZonedInstant(value.trim(), TRACKING_TIME_ZONE) : null;
 }
 
 export function shiftId(ids: readonly string[], moving: string, delta: -1 | 1): string[] {

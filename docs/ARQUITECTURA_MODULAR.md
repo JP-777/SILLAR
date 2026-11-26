@@ -7,7 +7,7 @@
 
 **Fecha de creación:** 13 de agosto de 2026, 22:12:40 -05:00 (primer commit del documento).
 **Última verificación:** 26 de noviembre de 2026 (America/Lima).
-**Commit contrastado:** `0982560d53f6dee03bd3fd22a9fdfce5c00f0efa`.
+**Commit contrastado:** `5799bd7dd5b9b56099b182d5b82aeb980be6724c`.
 
 La revisión de noviembre corrige las reglas de WEB indicadas abajo. La tabla
 incluye también módulos futuros de ERP, fuera del cierre WEB. El filtrado por
@@ -193,7 +193,7 @@ Leyenda: flecha continua = dependencia dura · flecha marcada como blanda = opci
 
 ### Reparto de las tablas ya diseñadas
 
-Las 17 tablas del diseño original se reparten así. **Ninguna se pierde**; solo cambian de schema.
+La tabla siguiente conserva el reparto del diseño inicial; **no es un inventario del DDL instalado**. Los nombres y clasificaciones vigentes se contrastan en el SPEC y migraciones de cada módulo. Portal se corrige aquí porque el diseño inicial duplicaba identidad ya resuelta por M04.
 
 | Schema | Tablas existentes | Tablas nuevas a crear |
 |---|---|---|
@@ -206,7 +206,7 @@ Las 17 tablas del diseño original se reparten así. **Ninguna se pierde**; solo
 | `service_orders` | — | `service_orders`, `service_order_items`, `service_order_statuses`, `service_order_status_history` (historial autoritativo de estados) |
 | `b2b` | `special_order_leads`, `institution_requests` | `quotes` (fase 2) |
 | `tracking` | — | Las del tablero: prioridad y orden operativo, plazos internos y notas de seguimiento. **Sin historial de estados**, que es de M05b |
-| `portal` | — | `users`, `customer_profiles` |
+| `portal` | Historial local `__migrations` | Ninguna tabla de negocio: identidad de M04 por contrato |
 | `inventory` | — | `inventory_movements` |
 
 Decisión sobre `social_links`: pasa a `cms` en lugar de `core`, porque es contenido editable de la web y no configuración de plataforma.
@@ -229,13 +229,7 @@ b2b.special_order_leads.customer_id → crm.customers             (cruzada, M07�
 b2b.institution_requests.customer_id→ crm.customers             (cruzada, M07→M04)
 ```
 
-**Prohibidas en el script base (dependencia blanda, van en script de integración):**
-
-```
-portal.customer_profiles.customer_id→ crm.customers             (M08 ⟶ M04, dura pero cross-schema)
-```
-
-Estas columnas se crean **nullable y sin FK**. La restricción se añade después mediante:
+**Portal no tiene FK:** no existe `portal.customer_profiles`; la identidad procede del contrato de M04, dependencia dura. Que una FK cruce schemas no la vuelve blanda: manda la dependencia declarada y la compatibilidad de replicación (ADR-018).
 
 Hoy no queda ninguno vivo en el plan. El mecanismo sigue siendo el de siempre: **un script por
 pareja, en `database/integrations/<a>_<b>.sql`, que solo se ejecuta si los dos módulos están
@@ -456,7 +450,7 @@ servicios visibles, colegios y empresas, pedidos especiales y panel básico de a
 > verbal: «cubre» decía que ya estaba resuelto, y de estos cuatro solo uno lo está — y ese, a medias,
 > porque el dato existe y el sitio donde se enseña no.
 
-Quedan fuera de la primera entrega, por decisión explícita: órdenes de servicio, seguimiento kanban, portal del cliente, inventario, reportes y pagos.
+**Alcance vigente del cierre WEB, 26/11/2026:** órdenes de servicio, seguimiento, Portal, Reportes, Asistente y Campaña Escolar sí están incluidos. Inventario pertenece a ERP y queda fuera; M11 Pagos está aplazado. Esta decisión sustituye el recorte de la primera entrega histórica.
 
 ---
 

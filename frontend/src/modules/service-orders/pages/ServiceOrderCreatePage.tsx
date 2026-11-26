@@ -163,7 +163,7 @@ export function ServiceOrderCreatePage() {
           <label>Teléfono<input className="ui-input" type="tel" value={customerPhone} disabled={customerId !== null} onChange={e => setCustomerPhone(e.target.value)} /></label>
           <label>Correo<input className="ui-input" type="email" value={customerEmail} disabled={customerId !== null} onChange={e => setCustomerEmail(e.target.value)} /></label>
         </div>
-        <label>Fecha comprometida<input className="ui-input" type="datetime-local" value={promisedAt} onChange={e => setPromisedAt(e.target.value)} /></label>
+        <label>Fecha comprometida (America/Lima)<input className="ui-input" type="datetime-local" value={promisedAt} onChange={e => setPromisedAt(e.target.value)} /></label>
         <label>Notas<textarea className="ui-input so5-textarea" value={receivedNotes} onChange={e => setReceivedNotes(e.target.value)} /></label>
         <p className="so5-hint">El contacto manual requiere al menos teléfono o correo. El contacto manual funciona sin CRM. Cuando CRM esté activo, usuarios admin+ también pueden vincular un cliente existente.</p>
       </section>

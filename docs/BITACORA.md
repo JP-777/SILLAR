@@ -1,13 +1,13 @@
 # Bitácora de SILLAR
 
 **Fecha de creación:** 14 de agosto de 2026, 23:25:09 -05:00 (America/Lima).
-**Última verificación de esta continuación:** 26 de noviembre de 2026, 13:15 -05:00.
-**Commit verificado:** `0982560d53f6dee03bd3fd22a9fdfce5c00f0efa` (tercera corrida).
+**Última verificación de esta continuación:** 26 de noviembre de 2026, 18:18 -05:00.
+**Commit verificado:** `5799bd7dd5b9b56099b182d5b82aeb980be6724c` (cuarta corrida).
 
 ## Continuación: cierre único de SILLAR WEB — 26 de noviembre de 2026
 
 **Estado actual: EN TRABAJO, sin 6/6.** Las dos primeras corridas pasaron 1–4
-y fallaron en 5. La tercera pasó 1–3 y falló por conexión en 4; no ejecutó 5–6. Los cierres
+y fallaron en 5. La tercera pasó 1–3 y falló por conexión en 4. La cuarta pasó 1–4 y falló en 5 por una expectativa de migraciones desactualizada; 6 sigue sin ejecutar. Los cierres
 históricos que siguen más abajo corresponden a sus árboles y fechas; no se
 transfieren al conjunto pendiente de integrar. No se afirma 6/6 ni se sustituye
 «sin comprobar» por cero fallos.
@@ -286,6 +286,82 @@ del 26/11 sustituye las antiguas restricciones de aprobación por etapas de
 - **Pendiente:** guardas de licencia/permisos, módulos sin cierre y la puerta
   íntegra. La barrera de referencias no pretende inspeccionar SQL dinámico ni
   demostrar por sí sola toda la arquitectura. Sin dependencias nuevas.
+
+---
+
+### 2026-11-26 · 13:16–13:31 -05:00 · M03 físico y ciclo persistente de Portal
+
+- **Cuarta puerta:** HEAD limpio `5799bd7dd5b9b56099b182d5b82aeb980be6724c`.
+  Etapas 1–4 verdes; 5 roja, 2.208 aprobadas y 1 fallida entre los 12 proyectos
+  ejecutados, cero omitidas. Los cinco proyectos posteriores no se ejecutaron;
+  etapa 6 tampoco. Código 1; log y rc en tmp/cierre-web/puerta-04.*.
+- **M03 observado:** 745/746. Los cuatro escenarios del fixture monetario con base
+  propia pasaron; desaparece su bloqueo original. Los cinco casos nuevos de
+  idempotencia también pasaron sobre PostgreSQL: duplicado por SQL directo
+  rechazado, blancos rechazados y varios pagos manuales nulos admitidos.
+- **Error propio y corrección:** añadí la migración de idempotencia pero olvidé
+  actualizar la enumeración exacta de MonedaYAgregadosMonetariosTests.cs:161.
+  La puerta lo detectó. Se incorpora su nombre a la lista; no se elimina la
+  prueba ni se transforma en un Contains que dejase pasar migraciones extra.
+- **Respaldo observado:** rama trabajo/cierre-web-20261126 enviada a origin en
+  5799bd7. El primer intento usó Git dentro del contenedor, cuyo helper gh no
+  existía; el envío mediante el puente del anfitrión sí terminó con código 0.
+  Main sigue en 58bb93a6f3021490a14c9144afd31fc7c02458a0.
+- **M05b/M06:** se extrae la conversión IANA de M10 a shared/zonedDate.ts y ambos
+  módulos usan America/Lima para editar y mostrar fechas. Los campos dicen la
+  zona. M10 conserva su propia guarda de admisión de zona acreditada. El plazo
+  inválido de Tracking se rechaza antes de llamar HTTP, con error de campo.
+  Ficheros: format.ts, board.ts, period.ts y páginas de órdenes/seguimiento;
+  fechasDelNegocio.test.mjs se incorpora a la puerta. Cinco pruebas preparadas
+  verdes, incluidas zonas de máquina distintas y horas inexistentes/ambiguas.
+  La validación del árbol integrado está en curso, no acreditada aún.
+- **Error propio:** al extraer la función sustituí también parte del identificador
+  isReportZone y las pruebas dieron cuatro rojas por ReferenceError. Se corrigió
+  antes de incorporar el borrador. No se presenta ese rojo accidental como la
+  prueba deliberada de una barrera. La lectura anterior que suponía que Create
+  no validaba su fecha era incompleta: ServiceOrderCreatePage.tsx:104 ya lo hace.
+- **M08, decisión:** historial local de instalación en portal.__migrations, sin
+  cuentas, pedidos ni preferencias duplicadas. Contexto/factory, contrato de
+  migraciones, seed vacío y drop transaccional RESTRICT. No hay filas de negocio
+  ni FK nuevas; el historial técnico no replica. SPEC actualizado antes del DDL.
+  Pruebas preparadas de etapa 4 real, ciclo físico, negativa sin schema y
+  conservación de proveedores. Su ejecución sigue pendiente. Se descarta crear
+  tablas vacías de negocio solo para afirmar que existe persistencia.
+- **M10:** SPEC redactado desde el candidato como excepción autorizada por JP;
+  fija indicadores, incertidumbre, tiempos, permisos y exportación del servidor
+  con auditoría durable. Sustituye el borrador perdido de /tmp. No acredita aún
+  las costuras CORE ni su persistencia. No elige proveedor ni cambia precios.
+- **Dependencias:** ninguna biblioteca nueva. Portal referencia Shared.Data,
+  infraestructura ya distribuida en la misma solución; no aumenta versiones
+  ni añade paquetes externos. Pendientes M05b/M06 completos, M08/M10/M12/M18,
+  licencia/permisos CORE y superficies de M03. No hay entrega ni cierre parcial.
+
+---
+
+### 2026-11-26 · 18:11–18:18 -05:00 · validación focal y Portal persistente
+
+- **Base de los cambios:** 5799bd7. JP volvió a indicar disponibilidad y continuar;
+  se recuperaron las salidas conservadas, sin atribuir un resultado al lapso sin ejecución.
+- **Observado:** tipos frontend y E2E verdes. Fechas 5, Reportes frontend 67 y
+  fronteras frontend 34 aprobadas, sin omisiones. Prueba negativa deliberada:
+  reintroducir new Date(local) en M05b vuelve roja la suite; restauración en finally.
+  MonedaYAgregadosMonetariosTests: 65/65; PortalReaderTests: 6/6.
+- **Portal físico:** migración 20261126182929_HistorialDeInstalacionPortal generada
+  y revisada. En base exclusiva creada en el contenedor de este checkout,
+  PortalPersistenciaTests falla sin migración y pasa después de instalarla.
+  Un objeto desconocido impide el drop y conserva el historial por rollback;
+  al retirarlo, baja repetida y reinstalación pasan. Un schema centinela ajeno
+  conserva su fila. La base temporal se retira en finally. Log portal-fisico.log
+  en tmp/cierre-web. Esto acredita el ciclo SQL, no todavía su ciclo HTTP/E2E.
+- **Documentación corregida:** ARQUITECTURA_MODULAR ya no propone cuentas propias
+  de Portal ni excluye del cierre los módulos que JP incluyó. Su reparto inicial
+  se etiqueta histórico, no inventario actual. SPEC M08 clasifica el historial;
+  SPEC M10 queda incorporado como contrato, con costuras pendientes explícitas.
+- **Errores/límites:** una consulta de procesos demasiado amplia incluyó argumentos
+  del escritorio; no era necesaria para diagnosticar el build. En adelante se
+  limitará por nombre de ejecutable. No se incorporó esa salida al producto.
+  No hay paquetes nuevos, no hay cambio de precios, main no se toca. La siguiente
+  puerta debe acreditar este conjunto y ejecutar por primera vez sus ciclos E2E.
 
 ---
 

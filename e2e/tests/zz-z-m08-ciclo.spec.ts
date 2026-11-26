@@ -1,21 +1,20 @@
 /**
  * M08 Portal — ciclo integral de composición, activación y preservación.
  *
- * Territorio autorizado: esta spec solamente. Portal v1 no tiene schema propio:
- * el ciclo acredita alta/baja funcional, preservación de los dueños y paridad
- * migrate()+seed() sin inventar DDL de Portal.
+ * El ciclo acredita alta/baja funcional y física del historial local,
+ * preservación de los dueños y reconstrucción por migrate()+seed().
  */
 import { randomUUID } from 'node:crypto';
 import type { APIRequestContext, Page } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
 import { expect, test } from '../fixtures/ciclo.js';
 import { cambiarModulo, capacidadesActivas } from '../fixtures/grafoDeModulos.js';
-import { psql } from '../setup/docker.js';
+import { psql, psqlArchivo } from '../setup/docker.js';
 import { migrate, seed } from '../setup/migrate.js';
 
 test.use({ aislamientoDeNavegador: import.meta.url });
 
-const PASSWORD = 'Q7!vZ2#pL9@xR4';
+const PASSWORD = `Clave-de-prueba-${randomUUID()}-aA!7`;
 const PORTAL_ROOT = '/mi-portal';
 const PORTAL_SHELL = 'main.portal-page nav[aria-label="Navegación de Mi portal"]';
 const PRIVATE_NOTE = `M08 nota interna ${Date.now()}-${randomUUID()}`;
@@ -340,13 +339,14 @@ async function workDetail(page: Page, code: string, expected: number): Promise<s
   return raw;
 }
 
-async function portalSchemaAbsent(): Promise<void> {
+async function portalSchemaInstalled(): Promise<void> {
   expect(
     await psql("SELECT count(*) FROM information_schema.schemata WHERE schema_name='portal'"),
-  ).toBe('0');
+  ).toBe('1');
   expect(
-    await psql("SELECT count(*) FROM information_schema.tables WHERE table_schema='portal'"),
-  ).toBe('0');
+    await psql("SELECT string_agg(table_name, ',' ORDER BY table_name) FROM information_schema.tables WHERE table_schema='portal'"),
+  ).toBe('__migrations');
+  expect(await psql('SELECT count(*) FROM portal.__migrations')).toBe('1');
   expect(
     await psql(`
       SELECT count(*)
@@ -582,7 +582,7 @@ test('[M08-CICLO] OFF/ON, Sales y Tracking reales, preservación, paridad y rest
     expect(await portalRouteState(pageA), 'Portal apagado no redirigió /mi-portal').toBe('absent');
     expect(await portalHrefs(pageA), 'Portal apagado dejó navegación propia').toEqual([]);
     expect((await pageA.request.get('/api/customer/profile')).status(), 'CRM dejó de responder').toBe(200);
-    await portalSchemaAbsent();
+    await portalSchemaInstalled();
 
     // 2 · Portal activo con solo CRM: perfil útil y proveedores honestamente ausentes.
     await cambiarModulo(page, 'portal', 'Activar');
@@ -708,7 +708,7 @@ test('[M08-CICLO] OFF/ON, Sales y Tracking reales, preservación, paridad y rest
     expect(missingFks([...REQUIRED_CROSS_FKS, fakeFk], fksBefore)).toEqual([fakeFk]);
 
     const inventoryBefore = await ownerInventory();
-    await portalSchemaAbsent();
+    await portalSchemaInstalled();
 
     // 5 · M08 OFF: desaparecen sus superficies, pero los dueños y sus datos quedan.
     await cambiarModulo(page, 'portal', 'Desactivar');
@@ -721,11 +721,29 @@ test('[M08-CICLO] OFF/ON, Sales y Tracking reales, preservación, paridad y rest
     expect(await trackingSentinel(workA.serviceOrderId)).toBe(trackingASentinel);
     expect(await ownerInventory(), 'apagar M08 alteró inventario/filas de módulos propietarios').toEqual(inventoryBefore);
     expect(await crossOwnerFks(), 'apagar M08 alteró FK propietarias').toEqual(fksBefore);
-    await portalSchemaAbsent();
+    await portalSchemaInstalled();
 
-    // 6 · Portal v1 no tiene DROP. La vía migrate()+seed() debe ser idempotente,
-    //     conservar los dueños y no activar Portal por accidente.
+    // 6 · Baja real: únicamente historial local. Activar sin schema debe fallar
+    //     sin migrar desde el panel. La reconstrucción corresponde al instalador.
     const capabilitiesBeforeMigrate = [...(await capacidadesActivas(page))].sort();
+    try {
+      await psqlArchivo('/scripts/modules/portal/99_drop.sql');
+      await psqlArchivo('/scripts/modules/portal/99_drop.sql');
+      expect(await psql("SELECT count(*) FROM pg_namespace WHERE nspname='portal'")).toBe('0');
+      const denied = await page.request.post('/api/admin/modules/portal/activate', {
+        headers: await adminCsrf(page.request),
+      });
+      const rejection = await denied.text();
+      expect(denied.status(), rejection).toBe(409);
+      expect(rejection).toContain('portal');
+      expect(await psql("SELECT count(*) FROM pg_namespace WHERE nspname='portal'"), 'el panel migró por su cuenta').toBe('0');
+      expect(await ownerInventory(), 'desinstalar Portal alteró a sus proveedores').toEqual(inventoryBefore);
+      expect(await crossOwnerFks()).toEqual(fksBefore);
+    } finally {
+      await migrate();
+      await seed();
+    }
+    // Repetir instalación/seed es idempotente y no activa módulos.
     await migrate();
     await seed();
     expect([...(await capacidadesActivas(page))].sort(), 'migrate()+seed() cambió activaciones').toEqual(
@@ -737,9 +755,9 @@ test('[M08-CICLO] OFF/ON, Sales y Tracking reales, preservación, paridad y rest
     expect(await workSentinel(workA.visibleCode)).toBe(workASentinel);
     expect(await trackingSentinel(workA.serviceOrderId)).toBe(trackingASentinel);
     expect((await pageA.request.get('/api/portal/overview')).status()).toBe(404);
-    await portalSchemaAbsent();
+    await portalSchemaInstalled();
 
-    // Reactivar M08 recupera composición e identidad sin DDL propio.
+    // Reactivar M08 recupera composición e identidad tras reconstruir su historial local.
     await cambiarModulo(page, 'portal', 'Activar');
     const reactivatedA = await overview(pageA);
     expect(reactivatedA.parsed.profile.email.toLowerCase()).toBe(a.email.toLowerCase());
@@ -755,7 +773,7 @@ test('[M08-CICLO] OFF/ON, Sales y Tracking reales, preservación, paridad y rest
     expect(reactivatedB.raw).not.toContain(orderA.orderCode);
     expect(reactivatedB.raw).toContain(workB.visibleCode);
     expect(reactivatedB.raw).not.toContain(workA.visibleCode);
-    await portalSchemaAbsent();
+    await portalSchemaInstalled();
 
     // 7 · Proveedores blandos ON/OFF después de reactivar Portal.
     await cambiarModulo(page, 'tracking', 'Desactivar');
@@ -785,5 +803,5 @@ test('[M08-CICLO] OFF/ON, Sales y Tracking reales, preservación, paridad y rest
   }
 
   expect([...(await capacidadesActivas(page))].sort(), 'el ciclo no restauró el grafo inicial').toEqual(initial);
-  await portalSchemaAbsent();
+  await portalSchemaInstalled();
 });

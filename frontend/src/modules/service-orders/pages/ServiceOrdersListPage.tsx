@@ -96,8 +96,8 @@ export function ServiceOrdersListPage() {
             </select></label>
             <label className="so5-inline"><input type="checkbox" checked={onlyMine} disabled={!user}
               onChange={e => setOnlyMine(e.target.checked)} /> Solo mis órdenes</label>
-            <label>Recibida desde<input className="ui-input" type="datetime-local" value={from} onChange={e => setFrom(e.target.value)} /></label>
-            <label>Recibida hasta<input className="ui-input" type="datetime-local" value={to} onChange={e => setTo(e.target.value)} /></label>
+            <label>Recibida desde (America/Lima)<input className="ui-input" type="datetime-local" value={from} onChange={e => setFrom(e.target.value)} /></label>
+            <label>Recibida hasta (America/Lima)<input className="ui-input" type="datetime-local" value={to} onChange={e => setTo(e.target.value)} /></label>
           </div>
           {filterError && <p role="alert">{filterError}</p>}
           <div className="so5-row"><Button type="submit">Aplicar filtros</Button>

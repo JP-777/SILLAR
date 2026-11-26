@@ -163,6 +163,7 @@ public sealed class MonedaYAgregadosMonetariosTests
                 "20260930185029_SalesInitial",
                 "20261026235312_SalesCurrencyCandidate20261026",
                 "20261027145605_SalesPaymentSourceNullableCandidate20261027",
+                "20261126114656_IdempotenciaDeLiquidacionExterna",
             ],
             contexto.Database.GetMigrations());
     }
