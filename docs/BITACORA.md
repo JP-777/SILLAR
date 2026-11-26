@@ -1,5 +1,73 @@
 # Bitácora de SILLAR
 
+**Fecha de creación:** 14 de agosto de 2026, 23:25:09 -05:00 (America/Lima).
+**Última verificación de esta continuación:** 26 de noviembre de 2026, 05:54 -05:00.
+**Commit de partida verificado:** `58bb93a6f3021490a14c9144afd31fc7c02458a0`.
+
+## Continuación: cierre único de SILLAR WEB — 26 de noviembre de 2026
+
+**Estado actual: EN TRABAJO, sin acreditación nueva.** La puerta completa del
+producto integrado todavía no se ha ejecutado en esta continuación. Los cierres
+históricos que siguen más abajo corresponden a sus árboles y fechas; no se
+transfieren al conjunto pendiente de integrar. No se afirma 6/6 ni se sustituye
+«sin comprobar» por cero fallos.
+
+**Mandato vigente de JP:** un solo ejecutor y una rama de integración; terminar
+SILLAR WEB y entregar esta bitácora completa. ERP fuera de alcance. M11 Pagos
+aplazado y excluido del árbol integrado: Yape manual en M03 cubre v1. No fusionar
+ni rebasar `main`. Se permiten commits y empujes de la rama de trabajo. El encargo
+del 26/11 sustituye las antiguas restricciones de aprobación por etapas de
+`CLAUDE.md`; las decisiones reversibles se toman y se registran.
+
+### 2026-11-26 · 01:09–05:54 -05:00 · recepción, entorno y rescate
+
+- **Artefacto observado:** checkout limpio sobre `main`, HEAD
+  `58bb93a6f3021490a14c9144afd31fc7c02458a0`, TREE
+  `319b88aad723179c1f10a8351f755994170a6fe5`. `git status`, `git rev-parse`
+  y `git ls-remote --heads origin 'rescate/20261125/*'` confirman el punto de
+  partida y las 164 referencias públicas. Las referencias ya están disponibles
+  localmente bajo `refs/remotes/origin/rescate/20261125/`.
+- **Decisión:** reutilizar este clon correcto y crear
+  `trabajo/cierre-web-20261126`, sin mover `main`. Descartado un clon adicional:
+  duplicaría el mismo rescate y su entorno. No se ha descartado todavía ninguna
+  referencia de rescate; la disposición se registrará al seleccionar las piezas.
+- **Ficheros tocados:** `docs/BITACORA.md` (esta continuación). Ningún cambio de
+  producto todavía. No se agregaron dependencias.
+- **Obstáculo de entorno observado:** el aislamiento del ejecutor falla antes
+  de arrancar comandos (`bwrap`, creación de directorio del daemon). Las
+  consultas se ejecutaron con revisión de permisos fuera de ese aislamiento.
+  Una revisión posterior no pudo completarse por cuota de uso; la acción no se
+  ejecutó. JP indicó que la cuota se restableció y ordenó continuar.
+- **Diagnóstico y corrección de criterio:** inicialmente `node`, `dotnet` y
+  `docker` no se resolvían en el contenedor del ejecutor. No significaba que
+  faltaran en la máquina. La ruta correcta es el puente instalado
+  `distrobox-host-exec`: observados Node 26.13.1, .NET SDK 10.0.114, pnpm 11.24.0
+  y Docker cliente/servidor 29.10.0. El intento con `flatpak-spawn` falló porque
+  no existe; ejecutar directamente el Node del anfitrión falló por bibliotecas
+  compartidas, y Docker directo por permisos del socket. No se alteraron
+  permisos ni se instalaron herramientas para resolverlo.
+- **Precondición TLS:** no hay variables de proxy en el entorno del anfitrión.
+  Esto no demuestra aún confianza TLS dentro de Docker. Pendiente ejecutar la
+  compilación de la API con restauración NuGet real. No se relajará TLS.
+- **Lectura de código:** la candidata `2b3a702cec84` desciende exactamente del
+  punto de partida (comprobado con `git merge-base`). Incluye la cadena R10 y
+  referencias a M10, M11 y M12 en `backend/Sillar.Api/Sillar.Api.csproj:26-36`.
+  M11 deberá retirarse antes de considerar integrado ese árbol. El rescate
+  `f50a96a66645` contiene una preparación de base propia para los cuatro
+  escenarios monetarios; `ce6908102bd5` corrige cómo localiza la raíz. Pendientes
+  de revisión y ejecución, no acreditados por existir.
+- **Contradicción documental:** el encabezado histórico de esta bitácora y el
+  roadmap declaran cierres 6/6 sobre árboles anteriores. La afirmación recibida
+  de que la puerta nunca pasó no puede aplicarse a toda la historia sin
+  contrastarla con esas evidencias. Para este cierre se exige una corrida nueva
+  sobre el HEAD único; no se altera ni se borra el registro histórico.
+- **Puerta en esta entrada:** etapas 1–6 NO EJECUTADAS. Sin pruebas omitidas
+  contadas porque no hubo corrida. Sin porcentaje de avance inferido.
+
+---
+
+## Registro histórico conservado
+
 Registro vivo para continuar el trabajo. Los documentos de `docs/` dicen **qué** construir; esto dice **con qué criterio** y **qué toca ahora**.
 
 Si retomas el proyecto sin haber estado en la conversación: lee las secciones 1 a 4 antes de decidir nada.
