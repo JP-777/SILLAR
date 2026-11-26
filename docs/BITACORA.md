@@ -1,13 +1,13 @@
 # Bitácora de SILLAR
 
 **Fecha de creación:** 14 de agosto de 2026, 23:25:09 -05:00 (America/Lima).
-**Última verificación de esta continuación:** 26 de noviembre de 2026, 05:54 -05:00.
-**Commit de partida verificado:** `58bb93a6f3021490a14c9144afd31fc7c02458a0`.
+**Última verificación de esta continuación:** 26 de noviembre de 2026, 06:38 -05:00.
+**Commit verificado:** `650bbd83a5b83b4637cee371896c9e723ee27c55` (primera corrida).
 
 ## Continuación: cierre único de SILLAR WEB — 26 de noviembre de 2026
 
-**Estado actual: EN TRABAJO, sin acreditación nueva.** La puerta completa del
-producto integrado todavía no se ha ejecutado en esta continuación. Los cierres
+**Estado actual: EN TRABAJO, puerta detenida en etapa 5.** La primera corrida
+pasó etapas 1–4, falló en 5 y no ejecutó 6. Los cierres
 históricos que siguen más abajo corresponden a sus árboles y fechas; no se
 transfieren al conjunto pendiente de integrar. No se afirma 6/6 ni se sustituye
 «sin comprobar» por cero fallos.
@@ -91,7 +91,7 @@ del 26/11 sustituye las antiguas restricciones de aprobación por etapas de
   exigir el proyecto retirado y conserva cero omisiones esperadas y seis etapas.
 - **Seguridad:** la contraseña fija del fixture recuperado se sustituyó por una
   generada en memoria. No se agregaron secretos ni configuración de máquina al
-  producto. `docker-compose.yml:40,94,123` publica PostgreSQL, API y pgAdmin
+  producto. `docker-compose.yml:34,86,111` publica PostgreSQL, API y pgAdmin
   únicamente en loopback. Se creó el contenedor propio con esta configuración;
   Docker confirmó la publicación en loopback. Los demás stacks no se tocaron.
 - **Entorno:** ya existía `.env`, creado antes de este trabajo. `estrenar.mjs`
@@ -119,6 +119,58 @@ del 26/11 sustituye las antiguas restricciones de aprobación por etapas de
   JP pidió continuar tras restablecerla; se recogieron los resultados anteriores.
 - **Puerta:** etapas 1–6 aún NO EJECUTADAS. Las dos compilaciones focales no
   sustituyen una corrida canónica ni certifican módulos.
+
+---
+
+### 2026-11-26 · 06:15–06:38 -05:00 · primera puerta y recuperación de ciclos
+
+- **Artefacto:** `650bbd83a5b83b4637cee371896c9e723ee27c55`, árbol limpio al
+  lanzar `node scripts/verificar.mjs`. **Observado:** etapas 1, 2, 3 y 4 verdes;
+  etapa 5 roja, API 26 aprobadas y 1 fallida, sin omitidas; los demás proyectos
+  no llegaron a ejecutarse. Etapa 6 no ejecutada. Salida 1. La puerta completó
+  su bloque de limpieza sin informar un error; una consulta posterior a
+  `pg_database` confirmó que la base propia ya no existía. Log local `/tmp/sillar-web-puerta-01.log`.
+- **Fallo y corrección:** `ModulosEnElDespliegueTests.cs:48` enumeraba carpetas
+  aunque solo contuvieran residuos ignorados `bin/obj`. Al retirar M11, esa
+  carpeta seguía presente y se exigía su DLL. Ahora el inventario exige el
+  `.csproj` correspondiente. Se conserva la barrera para módulos reales y se
+  añade control de un proyecto real frente a residuos. El rojo observado
+  acredita que la barrera de despliegue sí impide un supuesto módulo ausente;
+  la corrección pasó las dos pruebas focales, cero fallidas y cero omitidas.
+- **Recuperado:** `3068a5583f01`, interfaz ratificada de M05b (15 archivos en
+  `frontend/src/modules/service-orders`, rutas, navegación y dos registros
+  históricos). No se modifica su diseño de producto. `5dce2398f04d`, solo
+  `e2e/tests/zz-z-m05b-ciclo.spec.ts`; su versión de drop queda sustituida por
+  la confirmada `d9c4a91` incluida en `df2c94798a15`.
+- **Recuperado de `df2c94798a15`:** fixture, pruebas y proyecto de Services,
+  más `database/modules/services/99_drop.sql`. Incluye `8125b68`, `1d18fce`,
+  `50eb499` y `d9c4a91`: base destructiva propia, retirada aun con cancelación,
+  nombre con timestamp reconocido por el barrido, rechazo de baja ante
+  dependientes sin borrar sus datos. Ejecución física pendiente.
+- **Recuperado del arnés:** `5c1434c` (esperar la SPA después del reinicio),
+  `b910182` y `99b715f` (navegadores aislados por archivo de ciclo), `3220989`
+  y `21e3358` (Portal distingue ruta montada, ausente e indeterminada).
+  Se adapta M05b al mismo aislamiento. `fa3182d` aporta el ejemplo OpenAPI de
+  moneda; `527185e`, publicaciones E2E explícitas en loopback.
+- **Puerta reforzada:** etapa 1 ejecutará también las pruebas existentes de
+  B2B, Seguimiento y Reportes, antes excluidas de su lista. No se añadieron
+  dependencias ni se redujeron aserciones para lograr un verde.
+- **Errores propios:** primero recuperé `99b715f` sin su fixture precursor;
+  la inspección detectó la importación inexistente y se incorporó `b910182`
+  antes de compilar. El inventario inicial del rescate asumió que todas las
+  puntas tenían `frontend/src/modules`; falló al llegar a cuatro referencias
+  de diseño. Se repitió distinguiendo esas cuatro, sin interpretar el fallo
+  como ausencia global. Corregidas también tres referencias de línea erróneas
+  a los puertos Docker en la entrada anterior.
+- **Lectura e inventario:** 164 referencias, 133 puntas únicas; 69 puntas son
+  ascendientes de este HEAD y 64 requieren disposición individual. Ninguna de
+  las 129 puntas con frontend contiene carpetas `sales`, `assistant` o de campaña
+  escolar en `frontend/src/modules`. Esto acredita solo esa búsqueda concreta;
+  no equivale a probar que no haya prototipos o material en otras rutas.
+- **Validación focal observada:** tipos E2E y 12 pruebas unitarias del arnés
+  verdes, cero omisiones.
+- **Sin comprobar todavía:** cierre de M05b/M06, prueba monetaria propia M03,
+  resto de suites, persistencia e integración M08/M10/M12 y M18. No hay 6/6.
 
 ---
 

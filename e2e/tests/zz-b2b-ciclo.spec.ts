@@ -1,8 +1,10 @@
 import type { Browser, Page } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
-import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
+import { duringExpectedOutage, expect, test } from '../fixtures/ciclo.js';
 import { psql } from '../setup/docker.js';
 import { API_URL, FRONTEND_URL } from '../setup/env.js';
+
+test.use({ aislamientoDeNavegador: import.meta.url });
 
 /**
  * **El ciclo real de M07: activo → usado → desactivado → reactivado.**

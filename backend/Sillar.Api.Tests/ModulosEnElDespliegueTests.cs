@@ -47,9 +47,36 @@ public sealed class ModulosEnElDespliegueTests
     /// </summary>
     private static string[] ProyectosDeModulo(DirectoryInfo backend)
         => [.. backend.EnumerateDirectories("Sillar.Modules.*")
+            // Un proyecto retirado puede dejar bin/obj ignorados por Git.
+            // Su carpeta residual no declara un módulo del producto.
+            .Where(d => File.Exists(Path.Combine(d.FullName, $"{d.Name}.csproj")))
             .Select(d => d.Name)
             .Where(n => n.Count(c => c == '.') == 2 && n != Mentira)
             .Order(StringComparer.Ordinal)];
+
+    [Fact]
+    public void El_barrido_exige_proyecto_y_no_confunde_residuos_con_modulos()
+    {
+        var raiz = Directory.CreateTempSubdirectory("sillar-despliegue-");
+        try
+        {
+            var real = raiz.CreateSubdirectory("Sillar.Modules.Real");
+            File.WriteAllText(Path.Combine(real.FullName, "Sillar.Modules.Real.csproj"), "<Project />");
+            raiz.CreateSubdirectory("Sillar.Modules.Retirado/bin");
+            var contratos = raiz.CreateSubdirectory("Sillar.Modules.Real.Contracts");
+            File.WriteAllText(Path.Combine(contratos.FullName, "Sillar.Modules.Real.Contracts.csproj"), "<Project />");
+
+            Assert.Equal(["Sillar.Modules.Real"], ProyectosDeModulo(raiz));
+            // Control negativo: retirar la declaración elimina el módulo del
+            // inventario aunque su directorio siga existiendo.
+            File.Delete(Path.Combine(real.FullName, "Sillar.Modules.Real.csproj"));
+            Assert.Empty(ProyectosDeModulo(raiz));
+        }
+        finally
+        {
+            raiz.Delete(recursive: true);
+        }
+    }
 
     [Fact]
     public void Cada_modulo_del_repositorio_tiene_su_ensamblado_junto_al_host()

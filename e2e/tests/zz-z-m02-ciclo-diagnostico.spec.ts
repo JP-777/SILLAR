@@ -5,10 +5,12 @@
 import path from 'node:path';
 import type { APIRequestContext, Page, TestInfo } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
-import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
+import { duringExpectedOutage, expect, test } from '../fixtures/ciclo.js';
 import { psql, psqlArchivo } from '../setup/docker.js';
 import { CONNECTION_STRING, ROOT } from '../setup/env.js';
 import { run } from '../setup/shell.js';
+
+test.use({ aislamientoDeNavegador: import.meta.url });
 
 const sello = Date.now();
 const nombre = `Producto ciclo M02 ${sello}`;

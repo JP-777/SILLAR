@@ -44,7 +44,9 @@
  */
 import type { APIRequestContext, Browser, Page, TestInfo } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
-import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
+import { duringExpectedOutage, expect, test } from '../fixtures/ciclo.js';
+
+test.use({ aislamientoDeNavegador: import.meta.url });
 
 const sello = Date.now();
 const servicio = `Anillado espiral ciclo M05a ${sello}`;

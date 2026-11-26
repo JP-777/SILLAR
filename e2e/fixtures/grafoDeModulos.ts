@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { duringExpectedOutage, expect } from './base.js';
+import { navegarUnaVezYEsperarVisibilidad } from './esperaSpa.js';
 import { psql } from '../setup/docker.js';
 
 /**
@@ -89,16 +90,20 @@ export async function cambiarModulo(
       catch { return 0; }
     }, { message: 'el servidor web no volvió a servir tras cambiar un módulo', timeout: 90_000 }).toBe(200);
 
-    await expect.poll(async () => {
-      try {
-        const r = await page.goto('/admin/modulos', { waitUntil: 'domcontentloaded', timeout: 15_000 });
-        if (!r?.ok()) return false;
-        return await page.locator(`#modulo-${codigo}`).isVisible();
-      } catch { return false; }
-    }, {
-      message: `la SPA no volvió a montar tras ${accion.toLowerCase()} ${codigo}`,
-      timeout: 90_000,
-    }).toBe(true);
+    // Los sondeos anteriores solo acreditan HTTP. Se navega una única vez
+    // después de que ambos servidores responden y se espera el elemento
+    // concreto del módulo: la navegación nunca vive dentro de `poll`.
+    await navegarUnaVezYEsperarVisibilidad(
+      async () => {
+        await page.goto('/admin/modulos');
+      },
+      async () => {
+        await expect(
+          page.locator(`#modulo-${codigo}`),
+          `la SPA no volvió a pintar #modulo-${codigo} tras cambiar el módulo`,
+        ).toBeVisible({ timeout: 90_000 });
+      },
+    );
   });
 }
 

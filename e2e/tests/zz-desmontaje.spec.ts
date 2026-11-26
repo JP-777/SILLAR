@@ -1,6 +1,8 @@
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
-import { duringExpectedOutage, expect, test } from '../fixtures/base.js';
+import { duringExpectedOutage, expect, test } from '../fixtures/ciclo.js';
 import { sinB2B } from '../fixtures/grafoDeModulos.js';
+
+test.use({ aislamientoDeNavegador: import.meta.url });
 
 /**
  * **El criterio de terminado, con datos dentro.**

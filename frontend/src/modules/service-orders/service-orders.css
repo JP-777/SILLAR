@@ -1,0 +1,44 @@
+.so5-stack{display:grid;gap:1rem}
+.so5-panel{border:1px solid color-mix(in srgb,currentColor 20%,transparent);border-radius:.75rem;padding:1rem;min-width:0}
+.so5-panel h2{margin:0 0 .8rem;font-size:1.1rem}
+.so5-panel h3{margin:1rem 0 .3rem;font-size:1rem}
+.so5-filters{display:grid;grid-template-columns:minmax(160px,2fr) minmax(130px,1fr) auto;gap:.8rem;align-items:end}
+.so5-grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem}
+.so5-stack label,.so5-panel label{display:grid;gap:.3rem}
+.so5-panel input,.so5-panel textarea,.so5-panel select{max-width:100%;font:inherit}
+.so5-textarea{width:100%;min-height:5rem}
+.so5-inline{display:flex!important;align-items:center;gap:.6rem}
+.so5-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.7rem;margin:.6rem 0}
+.so5-align-end{align-self:end}
+.so5-line{border-top:1px solid color-mix(in srgb,currentColor 15%,transparent);padding:1rem 0}
+.so5-line:first-of-type{border-top:0}
+.so5-table-scroll{overflow-x:auto;max-width:100%}
+.so5-table{width:100%;border-collapse:collapse;min-width:680px}
+.so5-table th,.so5-table td{border-bottom:1px solid color-mix(in srgb,currentColor 13%,transparent);padding:.75rem .55rem;text-align:left;vertical-align:top}
+.so5-table th{font-size:.85rem}
+.so5-pagination{display:flex;justify-content:space-between;gap:1rem;align-items:center;margin-top:1rem}
+.so5-meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}
+.so5-meta dt{font-size:.8rem;opacity:.75}
+.so5-meta dd{margin:.3rem 0;font-weight:600}
+.so5-hint{font-size:.9rem;opacity:.8}
+.so5-link{display:inline-flex;align-items:center;text-decoration:underline;text-underline-offset:.25rem}
+.so5-panel a:focus-visible,.so5-panel input:focus-visible,.so5-panel button:focus-visible,.so5-panel select:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+@media(max-width:850px){.so5-grid3,.so5-filters,.so5-meta{grid-template-columns:1fr 1fr}}
+@media(max-width:540px){.so5-grid3,.so5-filters,.so5-meta{grid-template-columns:1fr}.so5-panel{padding:.75rem}}
+
+.so5-fieldset{min-width:0;margin:0;padding:0;border:0;display:grid;gap:1rem}
+.so5-fieldset:disabled{opacity:.75}
+.so5-fieldset:disabled input,.so5-fieldset:disabled textarea,.so5-fieldset:disabled select{cursor:not-allowed}
+
+/* A1 móvil: tarjetas reales en vez de tabla que obliga al desplazamiento horizontal. */
+.so5-mobile-orders{display:none}
+.so5-order-card{border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:.7rem;padding:.85rem;min-width:0}
+.so5-order-card h3{margin:.25rem 0 .75rem;font-size:1rem;overflow-wrap:anywhere}
+.so5-order-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem;margin:0 0 .9rem}
+.so5-order-meta dt{font-size:.8rem;opacity:.75}
+.so5-order-meta dd{margin:.25rem 0;overflow-wrap:anywhere}
+@media(max-width:760px){
+  .so5-desktop-orders{display:none}
+  .so5-mobile-orders{display:grid;gap:.75rem}
+}
+@media(max-width:480px){.so5-order-meta{grid-template-columns:1fr}}

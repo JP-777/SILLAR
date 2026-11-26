@@ -13,6 +13,7 @@ import { coreRoutes } from '../modules/core/routes';
 import { crmAdminRoutes, crmPublicRoutes, RequireCustomerAuth } from '../modules/crm/routes';
 import { portalPublicRoutes } from '../modules/portal/routes';
 import { servicesAdminRoutes, servicesPublicRoutes } from '../modules/services/routes';
+import { serviceOrdersAdminRoutes } from '../modules/service-orders/routes';
 import { trackingRoutes } from '../modules/tracking/routes';
 import { reportingRoutes } from '../modules/reporting/routes';
 
@@ -65,6 +66,7 @@ export function AppRoutes() {
           {has('catalog') && catalogRoutes}
           {has('cms') && cmsRoutes}
           {has('services') && servicesAdminRoutes}
+          {has('service_orders') && serviceOrdersAdminRoutes}
           {has('crm') && crmAdminRoutes}
           {has('b2b') && b2bRoutes}
           {has('tracking') && trackingRoutes}

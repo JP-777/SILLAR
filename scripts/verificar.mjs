@@ -2093,6 +2093,9 @@ function correrPasosDelFrontend() {
     ['higiene del frontend', 'test:frontend-hygiene'],
     // M05a: validación editorial y orden de la vitrina de servicios.
     ['vitrina de servicios', 'test:services'],
+    ['solicitudes B2B', 'test:b2b'],
+    ['seguimiento', 'test:tracking'],
+    ['reportes', 'test:reporting'],
     // ADR-005: un módulo nunca importa de otro. Antes de los tipos porque no
     // compila nada, y porque un import cruzado compila perfectamente.
     ['fronteras entre módulos', 'test:fronteras'],
