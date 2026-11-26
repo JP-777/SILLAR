@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Security.Cryptography;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
@@ -308,74 +307,16 @@ public sealed class PaymentsQuarantineTests
     }
 }
 
-/// <summary>
-/// Prepara una fotografía inmutable del despliegue real para las dos clases de
-/// cuarentena. La publicación es atómica y nunca elimina DLL preexistentes.
-/// </summary>
+/// <summary>Descubre el despliegue real del host sin copiarlo a otro artefacto.</summary>
 internal static class QuarantineModuleDiscoveryFixture
 {
-    private static readonly Lazy<bool> DeploymentPrepared = new(
-        PrepareDeployment,
-        LazyThreadSafetyMode.ExecutionAndPublication);
-
     internal static IReadOnlyList<IModule> Discover()
     {
-        _ = DeploymentPrepared.Value;
-
-        var api = Assembly.LoadFrom(HostDePrueba.RutaDelBinario());
+        var host = HostDePrueba.RutaDelBinario();
+        var api = Assembly.LoadFrom(host);
         var type = api.GetType("Sillar.Api.Modularity.ModuleDiscovery", throwOnError: true)!;
-        var method = type.GetMethod("Discover", BindingFlags.Static | BindingFlags.Public)!;
+        var method = type.GetMethod("DiscoverInDirectory", BindingFlags.Static | BindingFlags.NonPublic)!;
         return Assert.IsAssignableFrom<IReadOnlyList<IModule>>(
-            method.Invoke(null, [NullLogger.Instance, false]));
-    }
-
-    private static bool PrepareDeployment()
-    {
-        var hostDeployment = Path.GetDirectoryName(HostDePrueba.RutaDelBinario())!;
-        foreach (var source in Directory.EnumerateFiles(hostDeployment, "Sillar.Modules.*.dll"))
-        {
-            PublishIfMissing(source, Path.Combine(AppContext.BaseDirectory, Path.GetFileName(source)));
-        }
-
-        return true;
-    }
-
-    private static void PublishIfMissing(string source, string destination)
-    {
-        if (File.Exists(destination))
-        {
-            AssertSameAssembly(source, destination);
-            return;
-        }
-
-        var temporary = $"{destination}.g5e-{Environment.ProcessId}-{Guid.NewGuid():N}.tmp";
-        try
-        {
-            File.Copy(source, temporary, overwrite: false);
-            try
-            {
-                File.Move(temporary, destination, overwrite: false);
-            }
-            catch (IOException) when (File.Exists(destination))
-            {
-                // Otro proceso publicó primero una DLL completa mediante rename.
-            }
-
-            AssertSameAssembly(source, destination);
-        }
-        finally
-        {
-            if (File.Exists(temporary))
-            {
-                File.Delete(temporary);
-            }
-        }
-    }
-
-    private static void AssertSameAssembly(string source, string destination)
-    {
-        Assert.Equal(
-            SHA256.HashData(File.ReadAllBytes(source)),
-            SHA256.HashData(File.ReadAllBytes(destination)));
+            method.Invoke(null, [Path.GetDirectoryName(host)!, NullLogger.Instance, false]));
     }
 }

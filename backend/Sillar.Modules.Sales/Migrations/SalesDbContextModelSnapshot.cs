@@ -319,6 +319,12 @@ namespace Sillar.Modules.Sales.Migrations
                         .HasColumnName("currency_code")
                         .UseCollation("C");
 
+                    b.Property<string>("ExternalSettlementId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("external_settlement_id")
+                        .UseCollation("C");
+
                     b.Property<string>("Method")
                         .IsRequired()
                         .HasColumnType("text")
@@ -378,6 +384,11 @@ namespace Sillar.Modules.Sales.Migrations
                     b.HasKey("OrderPaymentId")
                         .HasName("pk_order_payments");
 
+                    b.HasIndex("ExternalSettlementId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_order_payments_external_settlement_id")
+                        .HasFilter("external_settlement_id IS NOT NULL");
+
                     b.HasIndex("OrderId")
                         .HasDatabaseName("idx_order_payments_order_id");
 
@@ -394,6 +405,8 @@ namespace Sillar.Modules.Sales.Migrations
                             t.HasCheckConstraint("ck_order_payments_atribucion_local_positiva", "registered_by_admin_user_local_id > 0");
 
                             t.HasCheckConstraint("ck_order_payments_currency_code_iso", "currency_code ~ '^[A-Z]{3}$'");
+
+                            t.HasCheckConstraint("ck_order_payments_external_settlement_id_no_vacio", "external_settlement_id IS NULL OR external_settlement_id ~ '[^[:space:]]'");
 
                             t.HasCheckConstraint("ck_order_payments_method", "method IN ('yape', 'efectivo')");
 

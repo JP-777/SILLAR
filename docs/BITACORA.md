@@ -1,13 +1,13 @@
 # Bitácora de SILLAR
 
 **Fecha de creación:** 14 de agosto de 2026, 23:25:09 -05:00 (America/Lima).
-**Última verificación de esta continuación:** 26 de noviembre de 2026, 06:38 -05:00.
-**Commit verificado:** `650bbd83a5b83b4637cee371896c9e723ee27c55` (primera corrida).
+**Última verificación de esta continuación:** 26 de noviembre de 2026, 06:48 -05:00.
+**Commit verificado:** `483bcac54e1baaddd3b2500ac9726b518e175d93` (segunda corrida).
 
 ## Continuación: cierre único de SILLAR WEB — 26 de noviembre de 2026
 
-**Estado actual: EN TRABAJO, puerta detenida en etapa 5.** La primera corrida
-pasó etapas 1–4, falló en 5 y no ejecutó 6. Los cierres
+**Estado actual: EN TRABAJO, puerta detenida en etapa 5.** Las dos corridas
+pasaron etapas 1–4, fallaron en 5 y no ejecutaron 6. Los cierres
 históricos que siguen más abajo corresponden a sus árboles y fechas; no se
 transfieren al conjunto pendiente de integrar. No se afirma 6/6 ni se sustituye
 «sin comprobar» por cero fallos.
@@ -171,6 +171,79 @@ del 26/11 sustituye las antiguas restricciones de aprobación por etapas de
   verdes, cero omisiones.
 - **Sin comprobar todavía:** cierre de M05b/M06, prueba monetaria propia M03,
   resto de suites, persistencia e integración M08/M10/M12 y M18. No hay 6/6.
+
+---
+
+### 2026-11-26 · 06:38–06:48 -05:00 · segunda puerta, artefacto correcto e idempotencia
+
+- **Artefacto:** `483bcac54e1baaddd3b2500ac9726b518e175d93`, limpio durante
+  toda la segunda corrida canónica. **Observado:** 1, 2, 3 y 4 verdes; 5 roja
+  en API, 19 aprobadas y 9 fallidas de 28, cero omitidas; 6 no ejecutada.
+  Salida 1, log local `/tmp/sillar-web-puerta-02.log`. Los demás proyectos
+  backend no llegaron a ejecutarse. El nuevo conjunto de pruebas frontend sí
+  quedó incluido en la etapa 1. No se transfiere ese resultado a cambios posteriores.
+- **Obstáculo leído:** el fixture de cuarentena copiaba DLL del host a su propia
+  carpeta solo cuando no existían. Tras recompilar, comparaba hashes nuevos del
+  host con residuos antiguos de la primera corrida y fallaba antes de descubrir.
+  **Decisión:** descubrir directamente en la carpeta compilada del host.
+  `ModuleDiscovery.cs` conserva su entrada de producción sobre
+  `AppContext.BaseDirectory` y delega a una operación con directorio explícito;
+  `PaymentsQuarantineTests.cs` usa esa operación sobre el despliegue real.
+  Descartado borrar residuos a mano o sobrescribirlos en cada prueba: mantendría
+  dos artefactos y permitiría volver a acreditar el equivocado.
+  **Observado después de corregir:** 23 pruebas focales de cuarentena e inventario
+  aprobadas, cero fallidas y cero omitidas.
+- **M03:** se añade `ExternalSettlementId` a `Domain/OrderPayment.cs`, su
+  configuración, snapshot y migración `20261126114656_IdempotenciaDeLiquidacionExterna`.
+  Columna nullable, sin relleno de históricos; índice único parcial para valores
+  presentes, colación ordinal C y rechazo de blancos. Límite técnico de 256
+  caracteres para una clave durable e indexable, sin escoger proveedor ni
+  montar M11. Un futuro adaptador deberá aportar identidad global, distinta del
+  evento y de la referencia declarada por el cliente. El pago manual usa null.
+- **Prueba preparada:** `IdempotenciaExternaPersistenciaTests.cs` comprueba
+  varios pagos manuales sin identidad, duplicación entre pedidos por SQL directo
+  y rechazo de blancos. **Todavía sin acreditación física** en esta entrada.
+  Generación EF observada con salida 0; no se migró ninguna base de desarrollo.
+- **Cero omisiones E2E:** nuevo `e2e/reporters/cero-omisiones.ts`, conectado en
+  Playwright. Un resultado omitido, no ejecutado o inventario vacío produce fallo.
+  `e2e/unit/ceroOmisiones.test.mjs` ejecuta Playwright real en carpetas temporales:
+  prueba ejecutada verde, omitida roja, fallo normal conservado. 15 pruebas del
+  arnés verdes, cero omisiones. Falsificación deliberada: sustituir el rechazo
+  por el resultado verde del runner vuelve roja la prueba; observado código 1.
+  Guarda restaurada en finally. Log local de mutación conservado en /tmp.
+  La etapa 2 ahora ejecuta estas pruebas antes de los tipos.
+- **Hallazgos leídos, pendientes:** M03 no monta operaciones del personal
+  (`SalesModule.cs:141`), aunque `ICurrentAdmin.cs:31–42` ya da nombre y nodo.
+  Su comentario de bloqueo quedó obsoleto. Los formatos de fecha de M05b y M06
+  dependen todavía de la zona del navegador. Reportes tiene exportación de
+  servidor escrita pero no montada y productores CORE no registrados. Se
+  preparó un borrador de SPEC M10 fuera del árbol mientras corría la puerta;
+  no se presenta como código integrado ni cierre acreditado.
+- **Errores propios y límites:** la primera reparación de despliegue corrigió
+  el inventario, pero no detecté antes este segundo problema de copias antiguas;
+  la segunda puerta lo hizo visible. No se sustituyeron esas pruebas por mocks.
+  Sin dependencias nuevas. Main intacto. Cierres de módulos y 6/6 pendientes.
+
+---
+
+### 2026-11-26 · 13:06 -05:00 · recuperación tras interrupción de entorno
+
+- **Base:** `483bcac54e1baaddd3b2500ac9726b518e175d93`, con los cambios de la
+  entrada anterior todavía sin confirmar. La revisión automática de permisos
+  agotó su cuota antes de la última consulta; JP restableció la disponibilidad
+  y pidió continuar. No fue una decisión de parar ni un resultado de pruebas.
+- **Observado al retomar:** las sesiones de compilación de Sales.Tests y tipos
+  E2E ya no existen y sus salidas temporales no se conservan en `/tmp`. No se
+  les atribuye un verde. PostgreSQL propio está sano y publicado en loopback.
+  Los cambios de código y esta bitácora sí siguen en la rama de trabajo.
+- **Decisión:** guardar las siguientes salidas locales en `tmp/cierre-web/`,
+  ignorado por Git dentro del checkout, para conservarlas entre reinicios del
+  entorno. Los resultados efectivamente observados antes de la interrupción
+  permanecen en las entradas anteriores; sus logs efímeros ya no están disponibles.
+  La siguiente puerta repetirá las comprobaciones cuyo resultado no se recogió.
+- **Límite:** el borrador de SPEC M10 preparado solo en `/tmp` no quedó integrado;
+  no se cuenta como entregable. Se reconstruirá desde las lecturas registradas,
+  distinguiéndolo de una evidencia de ejecución. Sin cambios en main.
 
 ---
 

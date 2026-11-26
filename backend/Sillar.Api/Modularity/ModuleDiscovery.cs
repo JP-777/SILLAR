@@ -43,10 +43,18 @@ internal static class ModuleDiscovery
     /// desarrollo y cuando alguien lo pide expresamente.
     /// </param>
     public static IReadOnlyList<IModule> Discover(ILogger logger, bool allowDemoModules)
+        => DiscoverInDirectory(AppContext.BaseDirectory, logger, allowDemoModules);
+
+    /// <summary>
+    /// Descubre un despliegue concreto. El host siempre entrega su propia carpeta;
+    /// las pruebas entregan la del host compilado, nunca su carpeta de pruebas.
+    /// </summary>
+    internal static IReadOnlyList<IModule> DiscoverInDirectory(
+        string deploymentDirectory, ILogger logger, bool allowDemoModules)
     {
         var modules = new List<IModule>();
 
-        foreach (var file in Directory.EnumerateFiles(AppContext.BaseDirectory, AssemblyPattern).Order())
+        foreach (var file in Directory.EnumerateFiles(deploymentDirectory, AssemblyPattern).Order())
         {
             Assembly assembly;
 

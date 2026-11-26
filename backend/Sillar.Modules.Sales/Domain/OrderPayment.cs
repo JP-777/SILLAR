@@ -78,6 +78,13 @@ public class OrderPayment : IReplicatedEntity
     public string? Reference { get; set; }
 
     /// <summary>
+    /// Identidad durable y global de una liquidación externa. Única si existe;
+    /// los pagos manuales conservan null. No es el identificador de un evento
+    /// ni el código de operación que escribe el cliente en Reference.
+    /// </summary>
+    public string? ExternalSettlementId { get; set; }
+
+    /// <summary>
     /// Nombre del trabajador que registró el pago, congelado al actuar.
     /// </summary>
     /// <remarks>

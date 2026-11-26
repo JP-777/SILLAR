@@ -16,7 +16,7 @@ export default defineConfig({
   // escribiendo el mismo grafo de módulos a la vez se pisarían.
   workers: 1,
   retries: 0,
-  reporter: [['html', { outputFolder: './playwright-report', open: 'never' }], ['list']],
+  reporter: [['html', { outputFolder: './playwright-report', open: 'never' }], ['list'], ['./reporters/cero-omisiones.ts']],
   globalSetup: './setup/global-setup.ts',
   globalTeardown: './setup/global-teardown.ts',
   timeout: 60_000,

@@ -21,6 +21,9 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
 
             table.HasCheckConstraint("ck_order_payments_amount_no_negativo", "amount >= 0");
             table.HasCheckConstraint("ck_order_payments_registered_by_no_vacio", "btrim(registered_by) <> ''");
+            table.HasCheckConstraint(
+                "ck_order_payments_external_settlement_id_no_vacio",
+                "external_settlement_id IS NULL OR external_settlement_id ~ '[^[:space:]]'");
 
             // La atribución de un pago es completa SIEMPRE, con sus tres datos: un
             // pago lo registra una persona, no el sistema. Cada CHECK prohíbe un
@@ -76,6 +79,14 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
         builder.Property(x => x.Source).HasColumnName("source");
 
         builder.Property(x => x.Reference).HasColumnName("reference");
+        builder.Property(x => x.ExternalSettlementId)
+            .HasColumnName("external_settlement_id")
+            .HasMaxLength(256)
+            .UseCollation("C");
+        builder.HasIndex(x => x.ExternalSettlementId)
+            .HasDatabaseName("uq_order_payments_external_settlement_id")
+            .IsUnique()
+            .HasFilter("external_settlement_id IS NOT NULL");
 
         // La atribución son TRES datos que forman una unidad, y en un pago los tres
         // son obligatorios porque un pago lo registra siempre una persona:

@@ -1,5 +1,33 @@
 # SPEC — M03 Ventas Online
 
+## Mandato vigente de cierre — 26 de noviembre de 2026
+
+**Última verificación de esta revisión:** 26/11/2026, America/Lima.
+
+**Commit contrastado:** `483bcac54e1baaddd3b2500ac9726b518e175d93`.
+La fecha de creación histórica se conserva debajo.
+
+JP autorizó completar WEB y resolver la implementación en la rama de trabajo.
+Las paradas y prohibiciones de código del texto histórico quedan superadas por
+ese mandato; no se afirma que M03 esté cerrado. En caso de contradicción manda:
+recojo en tienda, sin inventario ni garantía de existencias, artículos a consultar
+por M07, código visible año-correlativo (`2026-0147`), siete estados y plazo de
+48 horas naturales configurable. Vencer no cancela. El personal puede registrar
+un pago vencido y su atribución conserva nombre, identificador local y nodo.
+CORE ya publica los tres datos; su ausencia dejó de ser bloqueo.
+
+M11 está aplazado y fuera del producto integrado. Se completa ahora la mitad M03
+de idempotencia mediante `sales.order_payments.external_settlement_id`: null
+para pagos manuales e históricos, identidad global única cuando existe, hasta
+256 caracteres, comparación ordinal y rechazo de blancos. No es una referencia
+escrita por el cliente ni el identificador de un evento. La prueba física y la
+migración deben acreditarse antes del cierre; no se elige proveedor.
+
+El formato antiguo con prefijo de nodo y las condiciones pendientes que siguen
+abajo se conservan como historial de decisiones. El código y las pruebas se
+alinearán al mandato actual y cada diferencia se registrará en la bitácora.
+
+
 - **Creación:** 26 de septiembre de 2026 — America/Lima
 - **Última verificación:** 26 de septiembre de 2026 — America/Lima
 - **Commit verificado:** `ef8cec2ad42e566c722fd640325948f9492f6cc0`

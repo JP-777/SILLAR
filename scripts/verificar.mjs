@@ -2130,7 +2130,13 @@ const etapas = [
   },
   {
     nombre: 'tipos del arnés e2e',
-    correr: () => correr('pnpm', ['typecheck'], { cwd: path.join(RAIZ, 'e2e') }),
+    correr: () => {
+      const opciones = { cwd: path.join(RAIZ, 'e2e') };
+      const pruebas = correr('pnpm', ['test:unit'], opciones);
+      if (pruebas.codigo !== 0) return pruebas;
+      const tipos = correr('pnpm', ['typecheck'], opciones);
+      return { ...tipos, salida: `${pruebas.salida}\n${tipos.salida}` };
+    },
   },
   {
     nombre: 'compilación del backend',
