@@ -5,6 +5,15 @@
 **Versión:** 1.1 · **Fecha:** 15 de agosto de 2026 · **Responsable:** JP
 **Estado:** Aprobado como base de desarrollo
 
+**Fecha de creación:** 13 de agosto de 2026, 22:12:40 -05:00 (primer commit del documento).
+**Última verificación:** 26 de noviembre de 2026 (America/Lima).
+**Commit contrastado:** `0982560d53f6dee03bd3fd22a9fdfce5c00f0efa`.
+
+La revisión de noviembre corrige las reglas de WEB indicadas abajo. La tabla
+incluye también módulos futuros de ERP, fuera del cierre WEB. El filtrado por
+licencia descrito en este documento es un requisito pendiente de completar en
+el commit contrastado, no una función acreditada por esta cabecera.
+
 > **Dos productos, una plataforma (ADR-015, enmendada por la ADR-017).** SILLAR es la plataforma
 > y el código común. Sobre ella se publican **SILLAR WEB** —servicio web, en la nube, una
 > instancia por cliente— y **SILLAR ERP** —escritorio, base interna del negocio, varias
@@ -62,15 +71,15 @@ No es vendible ni desmontable. Es la base sobre la que se enchufa todo lo demás
 | **M06** | Seguimiento de Servicios | `tracking` | M05b (dura) | Fase 2 |
 | **M07** | Solicitudes B2B y Especiales | `b2b` | **M01 (dura), M04 (dura)** | MVP |
 | **M08** | Portal del Cliente | `portal` | M04 (dura), M03/M06 (blandas) | Fase 3 |
-| **M09** | Inventario | `inventory` | M01 (dura) | Fase 4 |
-| **M10** | Reportes y Analítica | `reporting` | consume eventos | Fase 4 |
-| **M11** | Pagos en línea | `payments` | M03 (dura) | Futuro |
+| **M09** | Inventario | `inventory` | M01 (dura) | **ERP** |
+| **M10** | Reportes y Analítica | `reporting` | CORE (dura), M03 (blanda, por Contracts) | WEB |
+| **M11** | Pagos en línea | `payments` | M03 (dura) | **Aplazado, excluido de WEB** |
 | **M13** | Punto de Venta — incluye caja y turnos | `pos` | M01 (dura) · M04, M09, M14 (blandas) | **ERP** |
 | **M14** | Comprobantes Electrónicos | `billing` | CORE | **ERP** |
 | **M15** | Compras y Proveedores | `purchasing` | M01, M09 (duras) | **ERP** |
 | **M16** | Sincronización entre nodos | `sync` | CORE | **ERP** |
 | **M17** | Sucursales | `branches` | CORE (dura) · M09, M13 (blandas) | **ERP** |
-| **M12** | Asistente conversacional | `assistant` | ninguna dura | Futuro |
+| **M12** | Asistente conversacional | `assistant` | CORE (dura) | WEB |
 | **M18** | Campaña Escolar | `school_campaign` | M01 (dura) · M03, M04 | Fase 2 |
 
 > **Tres filas de esta tabla cambiaron el 24 de agosto de 2026, y el porqué no está aquí.**
@@ -97,17 +106,17 @@ No es vendible ni desmontable. Es la base sobre la que se enchufa todo lo demás
 
 **M03 — Ventas Online.** Carrito, pedidos, detalle de pedido, estados de pedido, checkout y confirmación. Depende duro de M01 porque no se vende lo que no está catalogado.
 
-**Y depende duro de M04, desde el 21 de agosto de 2026.** Estaba declarado como blando —«si Clientes no está instalado, el pedido guarda los datos de contacto como snapshot y funciona igual»— y **la cuenta obligatoria para comprar lo convierte en duro**: si hay que tener cuenta, el módulo que guarda al cliente tiene que estar. Lo que sigue siendo cierto es el snapshot: el pedido conserva nombre y dirección de entrega del momento, porque un cliente que se muda no cambia adónde se entregó lo de antes.
+**Y depende duro de M04, desde el 21 de agosto de 2026.** La cuenta obligatoria para comprar lo convierte en duro. El pedido conserva una fotografía del contacto y de las líneas compradas. WEB v1 solo admite recojo en tienda: no guarda dirección de envío ni reserva existencias.
 
 > **La identidad del cliente vive en M04, no en CORE.** `core.admin_users` es del personal: su rol es obligatorio y la base lo restringe a los tres de administración (`ck_admin_users_role`), la tabla se llama así, y no hay registro propio ni recuperación de contraseña. Meter clientela ahí exige una migración y hace que «usuarios» signifique dos cosas en el panel.
 
-> Nota: los campos snapshot que ya se añadieron en la v2 del script (`customer_full_name`, `customer_phone`, `customer_email`, `delivery_address`, `delivery_reference`) son exactamente lo que hace posible esta independencia. Ese ajuste, hecho por otra razón, resultó ser la pieza clave del desacople.
+> El contacto congelado sobrevive a la edición del cliente. Los antiguos campos de dirección de envío del diseño inicial no forman parte de WEB v1.
 
 **M04 — Clientes y Contacto.** Registro de clientes y mensajes del formulario de contacto. Vendible solo, como módulo de captación de contactos.
 
 **M05a — Servicios (Vitrina).** Catálogo de servicios permanentes (anillado, fotocopiado, manualidades) para mostrarlos en la web. Es lo que pide el PRD para el MVP.
 
-**M05b — Servicios (Órdenes).** Registro real de órdenes de servicio: qué se encargó, quién, cuándo, con qué características y a qué precio. **Esto no existe en el diseño actual y hay que construirlo.**
+**M05b — Servicios (Órdenes).** Registro de órdenes: qué se encargó, quién, cuándo, con qué características y a qué precio. Backend, migraciones e interfaz ratificada están reunidos en la rama de cierre; falta acreditar su ciclo completo.
 
 **M06 — Seguimiento de Servicios.** Tablero tipo kanban de las órdenes de servicio, con su prioridad y orden operativo, plazos internos y notas propias de seguimiento. **El estado no es suyo:** el estado actual, la máquina de estados y el historial autoritativo de estados pertenecen a M05b. M06 depende duro de M05b, lee estado e historial por sus Contracts y provoca las transiciones llamando la operación de M05b; no tiene otra máquina ni mantiene otro historial autoritativo. Es la funcionalidad de trazabilidad que pidió la cliente en la entrevista.
 
@@ -117,7 +126,7 @@ No es vendible ni desmontable. Es la base sobre la que se enchufa todo lo demás
 
 **M09 — Inventario.** Movimientos de stock. **Deja de ser fase 4:** es pieza central de SILLAR ERP, porque sin existencias fiables no hay punto de venta que valga. Cuenta contra `catalog.product_items` —la variante—, no contra el producto: si el verde y el azul comparten existencia, la tienda con 3 verdes y 0 azules diría «hay 3».
 
-**M10 — Reportes.** Analítica comercial construida sobre eventos publicados por los demás módulos.
+**M10 — Reportes.** Lee agregados autoritativos mediante Contracts. Una fuente ausente o fallida no produce un cero. No mantiene hechos obligatorios mediante el bus de eventos, que no garantiza entrega.
 
 **M13 — Punto de Venta.** Mostrador, caja y turnos. **Depende de M14 de forma blanda**: sin Comprobantes instalado registra la venta sin documento fiscal, que es lo que permite venderlo fuera de Perú. Caja no es un módulo aparte: apertura, cierre y arqueo viven aquí, porque no existe un negocio que quiera control de caja sin punto de venta.
 
@@ -335,10 +344,10 @@ El host descubre los módulos, **valida el grafo de dependencias**, filtra por l
 
 ### Reglas de código innegociables
 
-1. Un módulo **solo** puede referenciar `Sillar.Shared`, `Sillar.Core.Contracts` y los `Contracts` de los módulos de los que depende. Nunca `Domain` ni `Data` ajenos.
+1. Un módulo **solo** puede referenciar `Sillar.Shared`, la infraestructura común `Sillar.Shared.Data`, `Sillar.Core.Contracts` y los `Contracts` propios y de sus dependencias declaradas. Nunca `Domain` ni `Data` ajenos. Los contratos no referencian implementaciones ni infraestructura EF. La composición entre implementaciones corresponde al host; las referencias de pruebas se auditan por separado.
 2. Cada módulo tiene **su propio `DbContext`** con `HasDefaultSchema("<modulo>")`. Ningún `DbContext` mapea tablas de otro schema; para leer datos ajenos se usa el contrato del otro módulo.
 3. Las dependencias blandas se resuelven pidiendo el contrato al contenedor y comprobando si existe. Si no está, el módulo degrada su comportamiento sin fallar.
-4. Los eventos de dominio se publican al bus interno. M10 Reportes se alimenta de ahí, nunca de las tablas ajenas.
+4. El bus interno sirve para avisos: captura fallos de manejadores y continúa, sin entrega garantizada. Un hecho obligatorio se escribe transaccionalmente en su propietario y se consulta por contrato. Reportes nunca lee tablas ajenas ni deduce que recibió todos los hechos por el bus.
 5. Todo endpoint documentado en Swagger con XML comments, como ya se había definido.
 
 ---

@@ -1,13 +1,13 @@
 # Bitácora de SILLAR
 
 **Fecha de creación:** 14 de agosto de 2026, 23:25:09 -05:00 (America/Lima).
-**Última verificación de esta continuación:** 26 de noviembre de 2026, 06:48 -05:00.
-**Commit verificado:** `483bcac54e1baaddd3b2500ac9726b518e175d93` (segunda corrida).
+**Última verificación de esta continuación:** 26 de noviembre de 2026, 13:15 -05:00.
+**Commit verificado:** `0982560d53f6dee03bd3fd22a9fdfce5c00f0efa` (tercera corrida).
 
 ## Continuación: cierre único de SILLAR WEB — 26 de noviembre de 2026
 
-**Estado actual: EN TRABAJO, puerta detenida en etapa 5.** Las dos corridas
-pasaron etapas 1–4, fallaron en 5 y no ejecutaron 6. Los cierres
+**Estado actual: EN TRABAJO, sin 6/6.** Las dos primeras corridas pasaron 1–4
+y fallaron en 5. La tercera pasó 1–3 y falló por conexión en 4; no ejecutó 5–6. Los cierres
 históricos que siguen más abajo corresponden a sus árboles y fechas; no se
 transfieren al conjunto pendiente de integrar. No se afirma 6/6 ni se sustituye
 «sin comprobar» por cero fallos.
@@ -244,6 +244,48 @@ del 26/11 sustituye las antiguas restricciones de aprobación por etapas de
 - **Límite:** el borrador de SPEC M10 preparado solo en `/tmp` no quedó integrado;
   no se cuenta como entregable. Se reconstruirá desde las lecturas registradas,
   distinguiéndolo de una evidencia de ejecución. Sin cambios en main.
+
+---
+
+### 2026-11-26 · 13:07–13:15 -05:00 · red propia y barrera de referencias
+
+- **Tercera puerta, árbol limpio:** `0982560d53f6dee03bd3fd22a9fdfce5c00f0efa`.
+  Etapas 1, 2 y 3 verdes; etapa 4 roja al abrir conexión desde CORE, antes de
+  aplicar sus migraciones. Etapas 5 y 6 no ejecutadas. Código 1; evidencia local
+  persistente `tmp/cierre-web/puerta-03.log`. No se atribuye a esta corrida
+  ninguna prueba física de idempotencia.
+- **Observado:** PostgreSQL aceptaba consultas dentro del contenedor, pero el
+  puerto publicado cortaba o agotaba la conexión. Recrear solamente el contenedor
+  conservando el volumen no resolvió el fallo. `ip route get` mostró que la
+  subred Docker coincidía con la Wi-Fi actual: la ruta más específica enviaba el
+  tráfico hacia la red física. No era un error del SQL ni del certificado NuGet.
+- **Resolución:** retirada y recreación de la red exclusiva `sillarweb_default`
+  y su único contenedor, sin borrar el volumen ni tocar otros proyectos. Docker
+  eligió una subred sin colisión. La petición de protocolo SSLRequest obtuvo
+  la respuesta esperada de PostgreSQL por loopback; el contenedor está sano y
+  sigue publicado exclusivamente en 127.0.0.1. Las direcciones de esa máquina
+  no se agregaron a ningún fichero de producto. Autenticación/migraciones se
+  volverán a acreditar en la siguiente puerta.
+- **Barrera nueva:** `backend/Sillar.Api.Tests/FronterasDeProyectosTests.cs`
+  inspecciona los ProjectReference XML, incluidos los condicionados, de todos
+  los proyectos de producto. Rechaza implementaciones ajenas, contratos no
+  declarados como dependencia, referencias fuera del backend, contratos hacia
+  EF y dependencias invertidas de Shared/CORE. La composición del host y las
+  pruebas se distinguen explícitamente; no hay lista silenciosa de módulos omitidos.
+  Usa los módulos del despliegue real para contrastar sus declaraciones.
+- **Verificación:** 33 pruebas focales de fronteras, cuarentena e inventario
+  verdes, cero omitidas. Se añadió temporalmente al proyecto Sales una referencia
+  real a la implementación Crm; el inventario devolvió rojo. El primer ensayo
+  usó verbosidad quiet y no conservó el motivo, por lo que no lo di por acreditado.
+  Se repitió con salida detallada para exigir el mensaje que nombra la referencia
+  prohibida. El proyecto se restaura siempre en finally. No se altera main.
+- **Documentación:** `ARQUITECTURA_MODULAR.md` corrige M10 como lector por
+  contratos, M09 exclusivo de ERP, M11 aplazado, dependencia CORE de M12 y
+  referencias obsoletas a envíos/reservas. Distingue el requisito de licencia
+  del estado todavía incompleto. Conserva fecha real de creación tomada de Git.
+- **Pendiente:** guardas de licencia/permisos, módulos sin cierre y la puerta
+  íntegra. La barrera de referencias no pretende inspeccionar SQL dinámico ni
+  demostrar por sí sola toda la arquitectura. Sin dependencias nuevas.
 
 ---
 
