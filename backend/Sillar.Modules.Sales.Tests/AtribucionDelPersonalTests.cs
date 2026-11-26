@@ -149,6 +149,7 @@ public sealed class AtribucionDelPersonalTests
         var pago = new OrderPayment
         {
             Method = "yape",
+            Source = "staff",
             RegisteredBy = "Ana Quispe",
             RegisteredByAdminUserLocalId = 7,
             RegisteredByAdminUserHomeNode = "A",   // la cuenta vive en A

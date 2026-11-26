@@ -66,6 +66,62 @@ del 26/11 sustituye las antiguas restricciones de aprobación por etapas de
 
 ---
 
+### 2026-11-26 · 05:54–06:15 -05:00 · candidata única y entorno ejecutable
+
+- **Commit previo:** `875a58f1a653cc8a8fc14733fa97b2d89af6d53f`. Integración en
+  preparación de `2b3a702cec84`, descendiente de la base e integrante de la cadena
+  R10. Se conserva su ascendencia. `main` permanece en el commit original.
+- **Selección:** candidata R10 más los dos archivos de pruebas de Ventas de
+  `ce6908102bd5` (incluye `f50a96a66645` y acreditación independiente del servidor).
+  Ficheros: `SalesDbFixture.cs` y `UnaConexionBajoElBloqueoPersistenciaTests.cs`,
+  en `backend/Sillar.Modules.Sales.Tests/`. El fixture exige nombre efímero,
+  loopback, puerto explícito y etiquetas/identidad Docker coincidentes; crea
+  su base, instala por HTTP, acredita PEN por CORE y retira la base tras fallo.
+  Leído en `SalesDbFixture.cs:100-197`; ejecución pendiente.
+- **Descartado del árbol, conservado en el rescate `2b3a702cec84`:**
+  `Sillar.Modules.Payments`, sus pruebas, `Sillar.Host.CommerceBridge` y sus
+  pruebas. Motivo: JP aplazó M11 y prohibió incluirlo. El puente experimental
+  mezcla M03/M10/M11 y no forma parte del host productivo. Sus pruebas de M10
+  no se contarán como ejecutadas ni como omitidas: esa cobertura queda pendiente
+  de acreditar contra el host real. No se eligió proveedor.
+- **Costuras modificadas:** `backend/Sillar.sln`, el proyecto API, el proyecto
+  Reports y las pruebas de cuarentena de API. Ahora se exige ausencia del binario
+  Payments. Se mantiene la guarda que rechaza huellas de una instalación
+  experimental de M11, sin borrar sus datos. `scripts/verificar.mjs` deja de
+  exigir el proyecto retirado y conserva cero omisiones esperadas y seis etapas.
+- **Seguridad:** la contraseña fija del fixture recuperado se sustituyó por una
+  generada en memoria. No se agregaron secretos ni configuración de máquina al
+  producto. `docker-compose.yml:40,94,123` publica PostgreSQL, API y pgAdmin
+  únicamente en loopback. Se creó el contenedor propio con esta configuración;
+  Docker confirmó la publicación en loopback. Los demás stacks no se tocaron.
+- **Entorno:** ya existía `.env`, creado antes de este trabajo. `estrenar.mjs`
+  se negó correctamente a sobrescribirlo. Se comprobó su coherencia sin imprimir
+  secretos y se reutilizó. Su puerto propio evita una colisión que habría
+  producido el desplazamiento derivado con otro árbol todavía activo.
+- **Dependencias:** restauradas desde los lockfiles, sin versiones cambiadas ni
+  paquetes nuevos. **Observado:** `dotnet build backend/Sillar.sln` terminó
+  `rc=0`, 0 errores y 191 advertencias. `docker build` con NuGet real terminó
+  `rc=0` y publicó la API en la imagen local de preflight. La confianza TLS dentro
+  del build funciona en este entorno; no se deshabilitaron certificados ni se
+  cambiaron feeds. Esta máquina puede ejecutar la corrida que acredita.
+- **Corrección del contexto recibido:** M12 contiene dos migraciones
+  (`AssistantInitial20261020.cs:10` y `AssistantQuotaLedger20261020.cs:17`);
+  su existencia no acredita ejecución ni integración. M08 SPEC §4 ratifica cero
+  tablas de negocio propias: se conserva esa frontera y se completará el
+  esquema/historial de instalación para comprobar su ciclo persistente. M10
+  obtendrá su SPEC desde la candidata, como excepción autorizada por JP.
+- **Errores propios:** `git rm` se negó inicialmente por tratarse de archivos
+  recién preparados por el merge; se verificó su procedencia y se retiraron con
+  `git rm -f`. Las búsquedas de SPEC de M10/M12 por rutas supuestas no encontraron
+  archivos: no se interpretan como ausencia de documentación en todo el rescate.
+- **Interrupción externa:** la revisión automática agotó su cuota antes de
+  guardar esta entrada y confirmar la integración. No ejecutó esas dos acciones.
+  JP pidió continuar tras restablecerla; se recogieron los resultados anteriores.
+- **Puerta:** etapas 1–6 aún NO EJECUTADAS. Las dos compilaciones focales no
+  sustituyen una corrida canónica ni certifican módulos.
+
+---
+
 ## Registro histórico conservado
 
 Registro vivo para continuar el trabajo. Los documentos de `docs/` dicen **qué** construir; esto dice **con qué criterio** y **qué toca ahora**.

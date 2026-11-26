@@ -52,11 +52,17 @@
  *
  * Playwright sigue siendo dueño de sillar_e2e; la BD backend y la e2e son
  * deliberadamente distintas.
+ *
+ * **PostgreSQL físico propio.** Los proyectos de `PROYECTOS_POSTGRES_FISICO` reciben
+ * una instancia exclusiva con identidad independiente y limpieza propia. El arnés
+ * experimental M03–M10–M11 se retiró del producto al aplazar M11; su rescate y la
+ * cobertura que queda por acreditar se registran en docs/BITACORA.md.
  */
 
 import { spawn, spawnSync } from 'node:child_process';
 import { closeSync, existsSync, mkdtempSync, openSync, readFileSync, rmSync } from 'node:fs';
 import { tomarCerrojo } from './cerrojo.mjs';
+import * as fisico from './pg-temporal-fisico.mjs';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -73,6 +79,19 @@ const ENV_EJEMPLO = path.join(RAIZ, '.env.example');
  * nuevo significa que la puerta dejó de comprobar algo y por eso es rojo.
  */
 const OMITIDAS_ESPERADAS = [];
+
+/**
+ * Proyectos de prueba que necesitan un PostgreSQL físico propio en vez de la base efímera.
+ * Precondición declarada, no exclusión: si uno de estos no aparece en la solución, la etapa es roja.
+ */
+const PROYECTOS_POSTGRES_FISICO = [];
+
+/**
+ * Dónde se conservan las evidencias de las instancias físicas: `SILLAR_VERIFY_EVIDENCIAS` o, si no
+ * se da, un directorio fuera del árbol. Una carpeta por corrida, con el nombre de su base efímera.
+ */
+const EVIDENCIAS_FISICAS = process.env.SILLAR_VERIFY_EVIDENCIAS
+  || path.join(os.tmpdir(), 'sillar-verificar-evidencias');
 
 /**
  * **Autoprueba de la limpieza.**
@@ -1025,7 +1044,7 @@ const AMBITO_DE_ETAPA = {
   'tipos del arnés e2e': ['e2e/'],
   'compilación del backend': ['backend/'],
   'migraciones backend (BD efímera)': ['backend/'],
-  'pruebas del backend': ['backend/'],
+  'pruebas del backend': ['backend/', 'scripts/pg-temporal-fisico.mjs'],
 };
 
 /**
@@ -2194,17 +2213,53 @@ const etapas = [
       let salida = `--- proyectos backend (${proyectos.length}) ---\n`
         + `${proyectos.join('\n')}\n`;
 
+      const ausentes = PROYECTOS_POSTGRES_FISICO.filter((p) => !proyectos.includes(p));
+      if (ausentes.length > 0) {
+        return {
+          codigo: 1,
+          salida: `${salida}\nFaltan en la solución proyectos con PostgreSQL físico declarado:\n${ausentes.join('\n')}\n`,
+          fallóAlLanzar: false,
+        };
+      }
+
       for (const proyecto of proyectos) {
-        const resultado = correr('dotnet', [
-          'test', proyecto, '--nologo', '--no-build',
-          '-m:1',
-          '--logger', 'console;verbosity=normal',
-        ], {
-          env: {
-            ConnectionStrings__Default: CADENA_EFÍMERA,
-            SILLAR_VERIFY_DATABASE: NOMBRE_BASE,
-          },
-        });
+        // El proyecto físico recibe su propia instancia y nada de la base efímera; los demás, igual
+        // que siempre. Si la instancia no se puede crear, la etapa es roja: nunca se omite.
+        let instancia = null;
+        let resultado;
+        const evidencias = path.join(EVIDENCIAS_FISICAS, NOMBRE_BASE);
+        try {
+          if (PROYECTOS_POSTGRES_FISICO.includes(proyecto)) {
+            try {
+              instancia = fisico.crearInstancia({ ejecucion: NOMBRE_BASE, evidencias });
+            } catch (error) {
+              return { codigo: 1, salida: `${salida}\n--- ${proyecto} ---\nNo se pudo preparar el PostgreSQL físico:\n${error.message}\n`, fallóAlLanzar: false };
+            }
+            salida += `\n--- ${proyecto}: PostgreSQL físico propio ${instancia.nombre} (127.0.0.1:${instancia.puerto}); evidencias en ${evidencias} ---\n`;
+          }
+
+          resultado = correr('dotnet', [
+            'test', proyecto, '--nologo', '--no-build',
+            '-m:1',
+            '--logger', 'console;verbosity=normal',
+            ...(instancia ? ['--logger', `trx;LogFileName=${NOMBRE_BASE}.trx`, '--results-directory', evidencias] : []),
+          ], {
+            env: instancia
+              ? instancia.env
+              : {
+                ConnectionStrings__Default: CADENA_EFÍMERA,
+                SILLAR_VERIFY_DATABASE: NOMBRE_BASE,
+              },
+          });
+        } finally {
+          if (instancia) {
+            const limpieza = instancia.destruir();
+            salida += `\n${limpieza.resumen}\n`;
+            if (limpieza.codigo !== 0 && resultado) {
+              resultado = { ...resultado, codigo: resultado.codigo || 1 };
+            }
+          }
+        }
 
         salida += `\n--- ${proyecto} ---\n${resultado.salida}`;
 
@@ -2348,6 +2403,14 @@ try {
     for (const n of barrido.conservadas) console.log(color.gris(`  + ${n}`));
   }
 
+  // Lo mismo para los PostgreSQL físicos de CommerceBridge: solo los de esta etiqueta y > 12 h.
+  try {
+    const huerfanos = fisico.barrerHuerfanos();
+    console.log(color.gris(`Barrido físico: eliminados ${huerfanos.eliminados.length}, conservados ${huerfanos.conservados.length}.`));
+  } catch (error) {
+    abortar('barrido de huérfanos', error.message);
+  }
+
   // Crear la base dentro del try: si queda a medias, el finally la intenta
   // destruir igualmente.
   try {
@@ -2393,6 +2456,12 @@ try {
 } finally {
   soltarInhibidores();
   soltarCerrojo();
+
+  // Una instancia física que siga viva (abortar a mitad de etapa) se destruye aquí.
+  for (const r of fisico.destruirTodas()) {
+    console.error(r.resumen);
+    if (r.codigo !== 0) process.exitCode = 1;
+  }
 
   // **La limpieza es incondicional cuando hubo base.** Incluso si migración,
   // pruebas o revisión de skips fallan, la base efímera se intenta eliminar

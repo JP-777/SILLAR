@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Sillar.Core.Contracts;
 using Sillar.Modules.Sales.Contracts;
 using Sillar.Modules.Sales.Data;
 using Sillar.Modules.Sales.Endpoints;
@@ -99,10 +100,24 @@ public sealed class SalesModule : IModule, IModuleMigrations
         services.AddScoped<VencimientoDePlazos>();
         services.AddScoped<CreadorDePedidos>();
 
+        // La moneda de venta es la que CORE da por acreditada, leída en cada pedido y
+        // bajo el bloqueo de moneda, en la transacción del pedido (R10-E13-B). Usa los dos
+        // lectores de CORE —IInstallationCurrencyAuthority e
+        // IInstallationCurrencyTransactionalAuthority—, que registra CORE y no M03. Por
+        // petición: los de CORE lo son.
+        services.AddScoped<IAutoridadDeMoneda, AutoridadDeMonedaDeCore>();
+
+        // Lo que CORE pregunta antes de cambiar la moneda: si ya hay pedidos. CORE no
+        // implementa este puerto (no lee el schema de otro módulo); lo implementa M03.
+        services.AddScoped<IMonetaryRecordsProbe, SondaDeRegistrosMonetarios>();
+
         // El hueco que M04 declara en su ficha de cliente. Se registra el contrato,
         // no la clase: M04 lo pide al contenedor y comprueba si vino, así que sin M03
         // instalado el hueco se explica y no falla.
         services.AddScoped<ICustomerOrderHistory, HistorialDePedidos>();
+        // D1: lectura agregada de la cohorte de pedidos para M10.
+        // Se registra solo cuando M03 está activo, sin exponer sales.orders.
+        services.AddScoped<IOrderAggregateReader, LectorAgregadoDePedidos>();
     }
 
     /// <inheritdoc />

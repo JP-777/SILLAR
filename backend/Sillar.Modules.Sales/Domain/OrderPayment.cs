@@ -33,18 +33,46 @@ public class OrderPayment : IReplicatedEntity
     public Guid OrderId { get; set; }
 
     /// <summary>
-    /// Cómo se cobró. Hoy solo <c>yape</c>.
+    /// Cómo se cobró: <c>yape</c> o <c>efectivo</c>, los dos de <c>PaymentMethod.All</c>.
     /// </summary>
     /// <remarks>
-    /// El <c>CHECK</c> contiene solo lo ratificado. El efectivo que el registro
-    /// histórico menciona <b>no está autorizado ni eliminado</b>: está escalado, y
-    /// añadir un valor después es una migración barata mientras quitar uno con
-    /// filas dentro no lo es.
+    /// El <c>CHECK</c> contiene solo lo ratificado. Añadir un valor después es una
+    /// migración barata mientras quitar uno con filas dentro no lo es.
     /// </remarks>
     public required string Method { get; set; }
 
     /// <summary>Importe cobrado. <c>CHECK &gt;= 0</c>.</summary>
     public decimal Amount { get; set; }
+
+    /// <summary>
+    /// Moneda ISO 4217 de <see cref="Amount"/>. <b><c>null</c> significa DESCONOCIDA</b>,
+    /// nunca PEN implícito.
+    /// </summary>
+    /// <remarks>
+    /// Va en el pago y no solo en el pedido porque es un hecho propio: lo que se
+    /// cobró, en lo que se cobró. Que coincida con la del pedido lo tendrá que exigir el
+    /// escritor; un <c>CHECK</c> no puede mirar otra fila.
+    /// </remarks>
+    public string? CurrencyCode { get; set; }
+
+    /// <summary>
+    /// Quién asienta el pago: hoy solo <c>staff</c>. Ver <c>PaymentSource</c>.
+    /// <b><c>null</c> solo en pagos históricos</b>, anteriores a la columna.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>No es <see cref="Method"/>.</b> El medio dice cómo pagó el cliente; el origen,
+    /// quién registró el hecho. Se guarda explícito y no se deduce de que la atribución
+    /// humana esté o no: deducirlo es lo que haría pasar un hueco por un proveedor.
+    /// </para>
+    /// <para>
+    /// Anulable por la opción B ratificada: un histórico sin origen acreditado conserva
+    /// <c>null</c> y nadie lo reclasifica. <c>required</c> obliga a cada escritor a
+    /// nombrarlo, y <c>OrigenDePagoObligatorio</c> y el trigger
+    /// <c>trg_order_payments_source_protegido</c> rechazan un pago nuevo que lo traiga vacío.
+    /// </para>
+    /// </remarks>
+    public required string? Source { get; set; }
 
     /// <summary>Código de operación que el cliente dio, si lo hay.</summary>
     public string? Reference { get; set; }

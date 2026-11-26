@@ -37,7 +37,47 @@ public enum MotivoDeNoCreacion
     /// <remarks>
     /// <b>Nulo es «a consultar», no «sin precio» ni «gratis».</b> Cero sí se vende.
     /// </remarks>
-    ItemAConsultar
+    ItemAConsultar,
+
+    /// <summary>
+    /// No hay autoridad que afirme la moneda de venta. Ver <c>IAutoridadDeMoneda</c>.
+    /// </summary>
+    /// <remarks>
+    /// <b>No es culpa del cliente y no lo arregla él.</b> Es la tienda la que todavía
+    /// no puede cobrar en una moneda afirmada; la frase lo dice así.
+    /// </remarks>
+    MonedaSinAutoridad,
+
+    /// <summary>
+    /// La moneda se está estableciendo o cambiando en este momento y el pedido no pudo
+    /// esperar a que terminara. Ver <c>BarreraMonetariaDeVentas</c>.
+    /// </summary>
+    /// <remarks>
+    /// Tampoco es culpa del cliente, pero <b>sí se arregla solo</b>: en unos segundos se
+    /// puede volver a confirmar. Por eso no se funde con <see cref="MonedaSinAutoridad"/>.
+    /// </remarks>
+    MonedaEnCambio,
+
+    /// <summary>
+    /// No se pudo comprobar ahora lo necesario para crear el pedido: la lectura de la
+    /// moneda no se pudo hacer, o la base no dio conexión o la cortó (R10-E13-B).
+    /// </summary>
+    /// <remarks>
+    /// <b>No afirma que falte configurar la moneda</b>: no se sabe. Se arregla solo o
+    /// reintentando, como <see cref="MonedaEnCambio"/>, pero la causa no es un cambio de
+    /// moneda y la frase no puede decir que lo es.
+    /// </remarks>
+    ServicioNoDisponible,
+
+    /// <summary>
+    /// La costura monetaria con CORE se usó fuera de su contrato: aislamiento, bloqueo,
+    /// base o transacción (R10-E13-B). Es un defecto de integración.
+    /// </summary>
+    /// <remarks>
+    /// Queda registrado como error por <c>AutoridadDeMonedaDeCore</c> o por el propio
+    /// creador. Al cliente no se le da ningún detalle interno.
+    /// </remarks>
+    CosturaMonetariaDefectuosa
 }
 
 /// <summary>El resultado de intentar crear un pedido.</summary>

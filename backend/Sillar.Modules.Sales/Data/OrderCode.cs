@@ -102,4 +102,86 @@ public static class OrderCode
 
         return $"{seriesLabel.Trim()}-{year.ToString(CultureInfo.InvariantCulture)}-{numero}";
     }
+
+    /// <summary>
+    /// Si un texto tiene la forma de un código visible de pedido.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>El resumen de este tipo decía «compone y reconoce» desde el principio, y
+    /// reconocer no estaba.</b> Está aquí y no en quien correlaciona porque la forma
+    /// es una sola, y tenerla dos veces es tenerla distinta el día que cambie.
+    /// </para>
+    /// <para>
+    /// <b>No valida la etiqueta, y no puede.</b> La etiqueta se fija en la instalación
+    /// (<see cref="SalesSettingsKeys.OrderSeriesLabel"/>) y esta función es pura: solo
+    /// exige que exista. Reconocer la forma <b>no</b> afirma que el pedido exista.
+    /// </para>
+    /// <para>
+    /// <b>Las reglas salen de <see cref="Componer"/>, no de una suposición:</b> se lee
+    /// por la derecha —así una etiqueta con guiones sigue funcionando—, el correlativo
+    /// lleva al menos <see cref="CorrelativeDigits"/> dígitos y nunca es cero porque
+    /// la serie empieza en 1, y los dígitos son los ASCII que emite
+    /// <see cref="CultureInfo.InvariantCulture"/>: <c>char.IsDigit</c> aceptaría
+    /// también los dígitos índicos, que esta serie no produce jamás.
+    /// </para>
+    /// <para>
+    /// <b>Distingue mayúsculas, a propósito.</b> La columna <c>order_code</c> se
+    /// declaró sin colación —migración inicial, «ninguna colación no determinista»—,
+    /// así que <c>p-2026-0001</c> y <c>P-2026-0001</c> son dos códigos distintos en la
+    /// base. Plegar aquí lo que la base no pliega es cómo se correlaciona un pago con
+    /// el pedido de otro.
+    /// </para>
+    /// </remarks>
+    /// <param name="codigo">El texto a reconocer. <c>null</c> no es una forma válida.</param>
+    public static bool ReconocerForma(string? codigo)
+    {
+        // Componer nunca deja espacio en los extremos: la etiqueta se recorta y el
+        // resto son dígitos. Un código con envoltura no salió de aquí.
+        if (string.IsNullOrEmpty(codigo) || codigo.Length != codigo.Trim().Length)
+        {
+            return false;
+        }
+
+        var ultimo = codigo.LastIndexOf('-');
+        if (ultimo <= 0)
+        {
+            return false;
+        }
+
+        var penultimo = codigo.LastIndexOf('-', ultimo - 1);
+        if (penultimo <= 0)
+        {
+            // <= 0 cubre las dos: no hay segundo guion, o la etiqueta está vacía.
+            return false;
+        }
+
+        var correlativo = codigo.AsSpan(ultimo + 1);
+        var anio = codigo.AsSpan(penultimo + 1, ultimo - penultimo - 1);
+        var etiqueta = codigo.AsSpan(0, penultimo);
+
+        return !etiqueta.IsWhiteSpace()
+            && SoloDigitosAscii(anio)
+            && SoloDigitosAscii(correlativo)
+            && correlativo.Length >= CorrelativeDigits
+            && correlativo.IndexOfAnyExcept('0') >= 0;
+    }
+
+    private static bool SoloDigitosAscii(ReadOnlySpan<char> texto)
+    {
+        if (texto.IsEmpty)
+        {
+            return false;
+        }
+
+        foreach (var c in texto)
+        {
+            if (c is < '0' or > '9')
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }

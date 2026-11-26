@@ -80,9 +80,11 @@ public sealed class CrearPedidoPersistenciaTests(SalesDbFixture fixture)
             db,
             new CongeladorDeCliente(new Dobles.M04Dice(Dobles.Cliente(cliente, verificado))),
             catalogo,
-            new OrderCodeAllocator(db, new Dobles.AjustesDice(), new Sillar.Shared.Replication.NodeIdentity("principal"), new Dobles.RelojFijo(Ahora)),
+            new OrderCodeAllocator(db, new Sillar.Shared.Replication.NodeIdentity("principal"), new Dobles.RelojFijo(Ahora)),
             new Dobles.AjustesDice(),
-            new Dobles.RelojFijo(Ahora));
+            new Dobles.MonedaDice("PEN"),
+            new Dobles.RelojFijo(Ahora),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<CreadorDePedidos>.Instance);
 
     private static async Task<long> SerieAsync(SalesDbContext db, CancellationToken ct)
     {
@@ -125,6 +127,7 @@ public sealed class CrearPedidoPersistenciaTests(SalesDbFixture fixture)
         Assert.Equal(OrderStatus.PendingPayment, pedido.Status);
         Assert.Equal("Ana Quispe", pedido.CustomerFullName);     // cliente congelado (D1)
         Assert.Equal("dni", pedido.CustomerDocumentType);
+        Assert.Equal("PEN", pedido.CurrencyCode);                 // la que afirmó la autoridad
 
         var linea = await db.OrderLines.AsNoTracking().SingleAsync(l => l.OrderId == pedido.OrderId, ct);
         Assert.Equal(8.50m, linea.UnitPrice);                     // precio congelado

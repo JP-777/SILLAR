@@ -114,6 +114,23 @@ public class Order : IReplicatedEntity
     /// </remarks>
     public decimal TotalAmount { get; set; }
 
+    /// <summary>
+    /// Moneda ISO 4217 en la que está expresado <see cref="TotalAmount"/>.
+    /// <b><c>null</c> significa DESCONOCIDA.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Jamás PEN implícito.</b> Los pedidos anteriores a la columna no tienen moneda
+    /// guardada y no se les deduce una: rellenarla sería afirmar un hecho que nadie
+    /// registró, y no se podría distinguir después de uno real.
+    /// </para>
+    /// <para>
+    /// La pone <c>CreadorDePedidos</c>: la que CORE da por acreditada, leída bajo el
+    /// bloqueo de moneda, y se congela al confirmar, como el total.
+    /// </para>
+    /// </remarks>
+    public string? CurrencyCode { get; set; }
+
     /// <summary>Baja lógica. Nunca <c>DELETE</c> físico en una tabla de negocio.</summary>
     public bool IsActive { get; set; } = true;
 

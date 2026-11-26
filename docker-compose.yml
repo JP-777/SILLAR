@@ -31,7 +31,7 @@ services:
       # de locales del sistema operativo. Se fija al crear el clúster.
       POSTGRES_INITDB_ARGS: "--locale-provider=icu --icu-locale=es-PE --encoding=UTF8 --locale=C.UTF-8"
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./database:/scripts:ro
@@ -83,7 +83,7 @@ services:
       Sillar__Proxy__ForwardedHeadersEnabled: ${Sillar__Proxy__ForwardedHeadersEnabled:-false}
       Sillar__Proxy__KnownProxies__0: ${Sillar__Proxy__KnownProxies__0:-127.0.0.1}
     ports:
-      - "${API_PORT:-5080}:8080"
+      - "127.0.0.1:${API_PORT:-5080}:8080"
     volumes:
       # Carpeta del host, no volumen con nombre, para que respaldarla sea copiar
       # una carpeta que se ve desde el explorador de archivos.
@@ -108,7 +108,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?define PGADMIN_PASSWORD en .env}
       PGADMIN_CONFIG_SERVER_MODE: "False"
     ports:
-      - "${PGADMIN_PORT:-5050}:80"
+      - "127.0.0.1:${PGADMIN_PORT:-5050}:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:

@@ -86,50 +86,37 @@ public sealed class NumeracionTests
         var db = new SalesDbContext(
             opciones, new NodeIdentity("principal"), TimeProvider.System);
 
-        return new OrderCodeAllocator(
-            db, new EtiquetaConfigurada("P"), new NodeIdentity("principal"), TimeProvider.System);
+        return new OrderCodeAllocator(db, new NodeIdentity("principal"), TimeProvider.System);
     }
 
     [Fact]
     public async Task Fuera_de_una_transaccion_el_numerador_se_niega_a_numerar()
     {
         var error = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => SinTransaccion().SiguienteAsync(TestContext.Current.CancellationToken));
+            () => SinTransaccion().SiguienteAsync("P", TestContext.Current.CancellationToken));
 
         Assert.Contains("transacción", error.Message, StringComparison.Ordinal);
         Assert.Contains("hueco", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task La_guarda_de_transaccion_actua_antes_de_mirar_la_configuracion()
+    public async Task La_guarda_de_transaccion_actua_antes_de_mirar_la_etiqueta()
     {
         // Sin etiqueta de serie Y sin transacción, gana la transacción: la guarda va
         // primero a propósito, para que el mensaje señale la causa que el llamador
-        // puede arreglar sin tocar la instalación.
+        // puede arreglar sin tocar la instalación. Desde R10-E13-D la etiqueta llega como
+        // argumento —el numerador ya no lee la configuración—, y el orden se mantiene.
         var opciones = new DbContextOptionsBuilder<SalesDbContext>()
             .UseNpgsql("Host=localhost;Database=no_se_usa;Username=nadie;Password=nada")
             .Options;
 
         var db = new SalesDbContext(opciones, new NodeIdentity("principal"), TimeProvider.System);
-        var sinEtiqueta = new OrderCodeAllocator(
-            db, new EtiquetaConfigurada(null), new NodeIdentity("principal"), TimeProvider.System);
+        var numerador = new OrderCodeAllocator(db, new NodeIdentity("principal"), TimeProvider.System);
 
         var error = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => sinEtiqueta.SiguienteAsync(TestContext.Current.CancellationToken));
+            () => numerador.SiguienteAsync(null, TestContext.Current.CancellationToken));
 
         Assert.Contains("transacción", error.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(SalesSettingsKeys.OrderSeriesLabel, error.Message, StringComparison.Ordinal);
-    }
-
-    /// <summary>Lector de configuración mínimo: solo la etiqueta de serie.</summary>
-    private sealed class EtiquetaConfigurada(string? etiqueta) : ISettingsReader
-    {
-        public string? Get(string key)
-            => key == SalesSettingsKeys.OrderSeriesLabel ? etiqueta : null;
-
-        public T? Get<T>(string key) => default;
-
-        public IReadOnlyDictionary<string, string> GetPublic()
-            => new Dictionary<string, string>();
     }
 }

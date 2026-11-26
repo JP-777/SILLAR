@@ -49,7 +49,10 @@ public static class CoreServices
         var workFactor = configuration.GetValue<int?>(WorkFactorSetting) ?? BCryptPasswordHasher.MinimumWorkFactor;
         services.AddSingleton<IPasswordHasher>(_ => new BCryptPasswordHasher(workFactor));
 
-        services.AddScoped<IAuditWriter, AuditWriter>();
+        // El escritor concreto también se resuelve por sí mismo: quien necesita
+        // guardar su cambio y su auditoría en el mismo SaveChanges lo pide así.
+        services.AddScoped<AuditWriter>();
+        services.AddScoped<IAuditWriter>(provider => provider.GetRequiredService<AuditWriter>());
         services.AddScoped<IEmailSender, SmtpEmailSender>();
         services.AddScoped<SetupService>();
         services.AddScoped<InstaladorDeModulos>();
@@ -106,6 +109,7 @@ public static class CoreServices
         services.AddScoped<AdminAuthenticationService>();
         services.AddScoped<AdminUserService>();
         services.AddScoped<SiteSettingService>();
+        services.AddInstallationCurrency();
         services.AddScoped<AuditQueryService>();
         services.AddScoped<ModuleActivationService>();
         services.AddScoped<MediaService>();

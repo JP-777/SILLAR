@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Sillar.Core.Contracts;
 using Sillar.Shared.Data.Numbering;
 using Sillar.Shared.Replication;
 
@@ -45,10 +44,17 @@ namespace Sillar.Modules.Sales.Data;
 /// consume ninguno. <b>No se promete continuidad</b> ante borrados, correcciones
 /// manuales ni repartición entre nodos.
 /// </para>
+/// <para>
+/// <b>No lee la configuración</b> (R10-E13-D, R-1). La etiqueta de serie la captura
+/// quien llama <b>antes</b> de abrir la transacción y la pasa como argumento: este método
+/// se ejecuta con el bloqueo compartido de moneda puesto, y leerla aquí podía recargar la
+/// caché de configuración, que abre su propio ámbito y pide <b>otra conexión</b> al pool
+/// mientras la del pedido retiene el bloqueo. La regla de qué etiqueta vale sigue aquí,
+/// en <see cref="EtiquetaValida"/>, y se aplica dos veces: al capturarla y al numerar.
+/// </para>
 /// </remarks>
 internal sealed class OrderCodeAllocator(
     SalesDbContext database,
-    ISettingsReader settings,
     NodeIdentity node,
     TimeProvider clock)
 {
@@ -77,14 +83,20 @@ internal sealed class OrderCodeAllocator(
     /// por el que dos transacciones obtendrían el mismo número.
     /// </para>
     /// </remarks>
+    /// <param name="etiquetaDeSerie">
+    /// La etiqueta capturada por el llamador al empezar su operación, antes de la
+    /// transacción. <b>Congelada para esta operación:</b> un cambio de configuración
+    /// posterior no la altera.
+    /// </param>
+    /// <param name="cancellationToken">Cancelación del llamador.</param>
     /// <exception cref="InvalidOperationException">
-    /// Si la etiqueta de serie no está configurada. <b>Es la guarda de arranque en
-    /// la operación</b>: sin etiqueta no se compone un código, y componerlo con una
-    /// letra inventada dejaría pedidos que nadie puede dictar.
+    /// Si no hay transacción abierta, o si la etiqueta de serie no está configurada. <b>Es
+    /// la guarda de arranque en la operación</b>: sin etiqueta no se compone un código, y
+    /// componerlo con una letra inventada dejaría pedidos que nadie puede dictar.
     /// </exception>
-    public async Task<string> SiguienteAsync(CancellationToken cancellationToken)
+    public async Task<string> SiguienteAsync(string? etiquetaDeSerie, CancellationToken cancellationToken)
     {
-        // Lo primero, y antes de tocar la configuración o la base: sin transacción
+        // Lo primero, y antes de mirar la etiqueta o tocar la base: sin transacción
         // abierta este método NO numera.
         //
         // Hasta ahora esto estaba documentado y no impuesto, que es la definición de
@@ -106,17 +118,9 @@ internal sealed class OrderCodeAllocator(
                 "quedaría consumido y la serie tendría un hueco permanente.");
         }
 
-        var label = settings.Get(SalesSettingsKeys.OrderSeriesLabel);
-
-        if (string.IsNullOrWhiteSpace(label))
-        {
-            throw new InvalidOperationException(
-                "No se puede numerar un pedido: la etiqueta de serie de este nodo no " +
-                $"está configurada. Se fija en la instalación, en el ajuste " +
-                $"'{SalesSettingsKeys.OrderSeriesLabel}', derivándola del código del " +
-                $"nodo ('{node.Code}'). No tiene valor por defecto a propósito: una " +
-                "letra igual en dos nodos produce dos pedidos con el mismo código.");
-        }
+        // La etiqueta llega capturada; aquí solo se vuelve a exigir. Nada de este método
+        // consulta la configuración: corre con el bloqueo de moneda puesto (R-1).
+        var label = EtiquetaValida(etiquetaDeSerie);
 
         // El año es el de Lima, no el de UTC: el 31 de diciembre a las 20:00 de Lima
         // ya es el 1 de enero en UTC, y el pedido de esa tarde pertenece a la serie
@@ -128,5 +132,36 @@ internal sealed class OrderCodeAllocator(
             database, Series, node.Code, year, cancellationToken);
 
         return OrderCode.Componer(label, year, correlative);
+    }
+
+    /// <summary>
+    /// La etiqueta de serie, si vale para numerar; si no, la misma negativa de siempre.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// No lee nada: valida lo que recibe. Quien llama la obtiene de
+    /// <see cref="SalesSettingsKeys.OrderSeriesLabel"/> <b>antes</b> de abrir la
+    /// transacción y la valida aquí, para que una instalación sin etiqueta no abra
+    /// transacción ni tome el bloqueo de moneda por nada.
+    /// </para>
+    /// <para>
+    /// Sin valor por defecto, a propósito: una letra igual en dos nodos produce dos
+    /// pedidos con el mismo código.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">Si la etiqueta falta o está en blanco.</exception>
+    public string EtiquetaValida(string? etiquetaDeSerie)
+    {
+        if (string.IsNullOrWhiteSpace(etiquetaDeSerie))
+        {
+            throw new InvalidOperationException(
+                "No se puede numerar un pedido: la etiqueta de serie de este nodo no " +
+                $"está configurada. Se fija en la instalación, en el ajuste " +
+                $"'{SalesSettingsKeys.OrderSeriesLabel}', derivándola del código del " +
+                $"nodo ('{node.Code}'). No tiene valor por defecto a propósito: una " +
+                "letra igual en dos nodos produce dos pedidos con el mismo código.");
+        }
+
+        return etiquetaDeSerie;
     }
 }

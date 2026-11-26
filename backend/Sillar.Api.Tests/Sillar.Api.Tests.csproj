@@ -38,6 +38,12 @@
          la cadena igual que la lee el host, y `Npgsql` por transitividad, para
          crear y destruir la base de la prueba. -->
     <ProjectReference Include="..\Sillar.Core\Sillar.Core.csproj" />
+    <ProjectReference Include="..\Sillar.Modules.Assistant\Sillar.Modules.Assistant.csproj" />
+    <ProjectReference Include="..\Sillar.Host.AssistantBridge\Sillar.Host.AssistantBridge.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>

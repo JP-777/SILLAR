@@ -8,6 +8,7 @@ using Sillar.Core.Contracts;
 using Sillar.Core.Contracts.Email;
 using Sillar.Core.Dtos;
 using Sillar.Core.Services;
+using Sillar.Core.Settings;
 
 namespace Sillar.Core.Endpoints;
 
@@ -56,6 +57,30 @@ public static class SettingsEndpoints
                 "El resultado queda persistido en audit_log y puede consultarse en /email/status.")
             .Produces<TestEmailResponse>(StatusCodes.Status200OK)
             .ProducesValidationProblem();
+
+        admin.MapGet("/installation-currency", GetInstallationCurrency)
+            .WithName("GetInstallationCurrency")
+            .WithSummary("Devuelve la moneda de la instalación tal como la acredita CORE.")
+            .WithDescription(
+                "Lee la base en cada llamada. Solo 'Accredited' es una moneda utilizable: valor en la lista " +
+                "cerrada de monedas soportadas y con el registro de auditoría que lo estableció. " +
+                "El ajuste público 'currency_code' no interviene.")
+            .Produces<InstallationCurrencyResponse>(StatusCodes.Status200OK);
+
+        admin.MapPut("/installation-currency", SetInstallationCurrency)
+            .RequireAuthorization(AdminRole.SuperAdmin)
+            .WithName("SetInstallationCurrency")
+            .WithSummary("Establece o cambia la moneda de la instalación.")
+            .WithDescription(
+                "Solo super_admin. El valor es un código ISO 4217 exacto de la lista cerrada. El cambio y su " +
+                "auditoría, con los valores anterior y nuevo, se guardan en la misma transacción: si la " +
+                "auditoría falla, no se guarda nada. Se rechaza mientras no se pueda comprobar que no hay pedidos. " +
+                "Pedir la moneda que ya está acreditada responde 200 sin escribir nada, aunque haya pedidos.")
+            .Produces<InstallationCurrencyResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         admin.MapPut("/{key}", Update)
             .WithName("UpdateSetting")
@@ -158,6 +183,58 @@ public static class SettingsEndpoints
                     ? "Correo de prueba enviado."
                     : result.Error ?? "El servidor SMTP rechazó el envío."));
     }
+
+    /// <summary>Devuelve la moneda de la instalación.</summary>
+    /// <param name="authority">Lector de la autoridad monetaria.</param>
+    /// <param name="cancellationToken">Cancelación de la petición.</param>
+    /// <returns>200 con el estado de la moneda.</returns>
+    private static async Task<IResult> GetInstallationCurrency(
+        IInstallationCurrencyAuthority authority,
+        CancellationToken cancellationToken)
+        => Results.Ok(ToResponse(await authority.ReadAsync(cancellationToken)));
+
+    /// <summary>Establece o cambia la moneda de la instalación.</summary>
+    /// <param name="request">Código ISO 4217.</param>
+    /// <param name="currency">Operación de moneda.</param>
+    /// <param name="authority">Lector, para devolver el estado resultante.</param>
+    /// <param name="currentUser">Quién lo pide.</param>
+    /// <param name="cancellationToken">Cancelación de la petición.</param>
+    /// <returns>
+    /// 200 con la moneda, también si ya era esa y estaba acreditada aunque haya pedidos; 400 si el valor
+    /// no es de la lista; 403 sin super_admin; 409 si hay pedidos y habría que cambiarla o acreditarla,
+    /// no se puede comprobar, la clave no está preparada o una venta retiene el bloqueo de moneda;
+    /// 503 si no se pudo guardar con su auditoría.
+    /// </returns>
+    private static async Task<IResult> SetInstallationCurrency(
+        SetInstallationCurrencyRequest request,
+        InstallationCurrencyService currency,
+        IInstallationCurrencyAuthority authority,
+        CurrentAdmin currentUser,
+        CancellationToken cancellationToken)
+    {
+        var result = await currency.SetAsync(
+            request.Value,
+            currentUser.IsInRole(AdminRole.SuperAdmin),
+            currentUser.AdminUserId!.Value,
+            currentUser.Email!,
+            cancellationToken);
+
+        return result.Outcome switch
+        {
+            CurrencyChangeOutcome.Changed or CurrencyChangeOutcome.Reattested or CurrencyChangeOutcome.Unchanged
+                => Results.Ok(ToResponse(await authority.ReadAsync(cancellationToken))),
+            CurrencyChangeOutcome.Invalid => Results.ValidationProblem(
+                new Dictionary<string, string[]> { ["valor"] = [result.Message!] },
+                title: "La moneda no es válida."),
+            CurrencyChangeOutcome.Forbidden => Results.Problem(title: result.Message, statusCode: StatusCodes.Status403Forbidden),
+            CurrencyChangeOutcome.AuditNotAtomic or CurrencyChangeOutcome.NotSaved
+                => Results.Problem(title: result.Message, statusCode: StatusCodes.Status503ServiceUnavailable),
+            _ => Results.Problem(title: result.Message, statusCode: StatusCodes.Status409Conflict),
+        };
+    }
+
+    private static InstallationCurrencyResponse ToResponse(InstallationCurrencyReading reading)
+        => new(reading.Status.ToString(), reading.Currency?.Code, reading.Currency?.MinorUnits, reading.ListVersion, reading.ObservedAt);
 
     /// <summary>Cambia una configuración.</summary>
     /// <param name="key">Clave a modificar. Debe existir.</param>

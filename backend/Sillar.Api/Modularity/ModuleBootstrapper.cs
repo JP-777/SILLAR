@@ -45,16 +45,29 @@ internal static class ModuleBootstrapper
             builder.Environment.IsDevelopment()
             && builder.Configuration.GetValue<bool>(ModuleDiscovery.IncludeDemoSetting);
 
-        var modules = ModuleDiscovery.Discover(logger, allowDemoModules);
+        var discoveredModules = ModuleDiscovery.Discover(logger, allowDemoModules);
         logger.LogInformation(
             "Módulos descubiertos: {Count} ({Codes}).",
-            modules.Count,
-            string.Join(", ", modules.Select(module => module.Code).Order()));
+            discoveredModules.Count,
+            string.Join(", ", discoveredModules.Select(module => module.Code).Order()));
+
+        // Presencia binaria no significa admisión operativa. M12 permanece en
+        // el despliegue para que sus contratos y la composición negativa sean
+        // verificables, pero una lista compilada —no configuración— lo excluye
+        // de instalación, activación, servicios y rutas.
+        var admittedModules = QuarantinedModules.Admit(discoveredModules);
+
+        foreach (var module in discoveredModules.Except(admittedModules))
+        {
+            logger.LogWarning(
+                "Módulo '{Code}' presente en el binario pero en cuarentena compilada: no se instala ni se activa.",
+                module.Code);
+        }
 
         // --- Paso 2: validar el grafo en memoria --------------------------
         // Un fallo aquí no depende de la instalación: es un error de cómo está
         // escrito el producto, así que se aborta sin llegar a la base de datos.
-        var graph = ModuleGraph.Validate(modules);
+        var graph = ModuleGraph.Validate(admittedModules);
 
         foreach (var warning in graph.Warnings)
         {
@@ -73,7 +86,7 @@ internal static class ModuleBootstrapper
         // en el paso 7—. Lo necesitan dos consumidores: el endpoint de activación,
         // que razona sobre el grafo entero, y el instalador, que en modo
         // instalación tiene que saber qué módulos desplegados tienen migraciones.
-        builder.Services.AddSingleton(new DeclaredModules(modules));
+        builder.Services.AddSingleton(new DeclaredModules(admittedModules));
 
         // --- Paso 3: conectar con la base de datos ------------------------
         var connectionString = builder.Configuration.GetConnectionString(CoreModule.ConnectionStringName);
@@ -159,6 +172,11 @@ internal static class ModuleBootstrapper
                 "('docker compose up -d') y que ConnectionStrings__Default apunta al puerto correcto.");
         }
 
+        // Antes de cualquier migración o sincronización. La comprobación es de
+        // solo lectura y fail-closed: una huella de un módulo en cuarentena no
+        // se corrige, desactiva ni oculta; requiere conciliación autorizada.
+        await QuarantinedModules.EnsureSafeAsync(database, cancellationToken);
+
         await ApplyMigrationsIfAllowedAsync(builder, database, logger, cancellationToken);
 
         // --- Paso 3 bis: ¿modo instalación? -------------------------------
@@ -171,7 +189,7 @@ internal static class ModuleBootstrapper
             // autenticar, ni installation_key de la que derivar la clave CSRF.
             builder.Services.AddCoreEssentials(builder.Configuration, connectionString);
 
-            return new ModuleBootstrapResult(modules, [], IsSetupMode: true);
+            return new ModuleBootstrapResult(admittedModules, [], IsSetupMode: true);
         }
 
         // La clave CSRF se deriva aquí y no antes: su origen es la fila de
@@ -181,7 +199,7 @@ internal static class ModuleBootstrapper
 
         // --- Pasos 4 y 5: sincronizar catálogo y activaciones -------------
         var synchronizer = new ModuleSynchronizer(database, loggerFactory.CreateLogger<ModuleSynchronizer>());
-        var sync = await synchronizer.SynchronizeAsync(modules, cancellationToken);
+        var sync = await synchronizer.SynchronizeAsync(admittedModules, cancellationToken);
         var activeModules = sync.Active;
         var activeCodes = activeModules.Select(module => module.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -190,7 +208,7 @@ internal static class ModuleBootstrapper
         // aviso del arranque no basta —es un número entre otros, exige que
         // alguien lo lea, y desaparece solo si se sube el nivel de registro—,
         // así que se aborta con el mismo mecanismo que ya usa el paso 6.
-        var missingActive = ModuleGraph.ActiveButUndeclared(modules, sync.ActiveCodesInDatabase);
+        var missingActive = ModuleGraph.ActiveButUndeclared(admittedModules, sync.ActiveCodesInDatabase);
         if (missingActive.Count > 0)
         {
             throw new StartupAbortedException(
@@ -201,7 +219,7 @@ internal static class ModuleBootstrapper
         }
 
         // --- Paso 6: las dependencias duras de lo activo, activas ---------
-        var problems = ModuleGraph.ValidateActivations(modules, activeCodes);
+        var problems = ModuleGraph.ValidateActivations(admittedModules, activeCodes);
         if (problems.Count > 0)
         {
             throw new StartupAbortedException(
@@ -225,7 +243,7 @@ internal static class ModuleBootstrapper
             "Módulos activos: {Codes}.",
             string.Join(", ", active.Select(module => module.Code)));
 
-        var inactive = modules.Select(module => module.Code).Except(activeCodes).ToList();
+        var inactive = admittedModules.Select(module => module.Code).Except(activeCodes).ToList();
         if (inactive.Count > 0)
         {
             logger.LogInformation(
@@ -233,7 +251,7 @@ internal static class ModuleBootstrapper
                 string.Join(", ", inactive));
         }
 
-        return new ModuleBootstrapResult(modules, active, IsSetupMode: false);
+        return new ModuleBootstrapResult(admittedModules, active, IsSetupMode: false);
     }
 
     /// <summary>

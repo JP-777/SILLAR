@@ -54,10 +54,15 @@ public static class PedidosDelClienteEndpoints
                 "El cliente envía variantes y cantidades; nunca precios. El precio de " +
                 "cada línea y el total los resuelve el servidor contra M01 en el " +
                 "momento de confirmar. Un producto cuyo precio es «a consultar» no " +
-                "entra: se cotiza.")
+                "entra: se cotiza. Sin moneda acreditada por CORE, mientras CORE la está " +
+                "cambiando, o si no se puede comprobar en ese momento, el pedido no nace " +
+                "y la respuesta es 503, con una frase distinta para cada caso. Un fallo " +
+                "de integración con CORE es 500, sin detalles internos.")
             .Produces<PedidoCreadoRespuesta>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
-            .ProducesProblem(StatusCodes.Status409Conflict);
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         propios.MapGet("", (Delegate)ListarPropios)
             .WithName("SalesMyOrdersList")
@@ -109,7 +114,17 @@ public static class PedidosDelClienteEndpoints
                     r.OrderCode!, OrderStatus.PendingPayment, r.TotalAmount, r.PaymentDueAt!.Value));
         }
 
-        return r.Motivo switch
+        return RespuestaDeRechazo(r.Motivo);
+    }
+
+    /// <summary>La respuesta HTTP de un pedido que no nació, por su motivo.</summary>
+    /// <remarks>
+    /// Aparte para que las pruebas lean el código y la frase de cada motivo sin servidor.
+    /// Los tres 503 de moneda son frases distintas a propósito: «falta configurar la
+    /// moneda» solo se dice cuando CORE lo afirma, nunca porque no se pudo leer.
+    /// </remarks>
+    internal static IResult RespuestaDeRechazo(MotivoDeNoCreacion motivo)
+        => motivo switch
         {
             MotivoDeNoCreacion.SinLineas => Results.Problem(
                 title: "El carrito está vacío",
@@ -147,9 +162,36 @@ public static class PedidosDelClienteEndpoints
                     "decimos el precio.",
                 statusCode: StatusCodes.Status409Conflict),
 
+            MotivoDeNoCreacion.MonedaSinAutoridad => Results.Problem(
+                title: "La tienda todavía no está recibiendo pedidos en línea",
+                detail:
+                    "Falta configurar la moneda en que cobra la tienda. Tu carrito se " +
+                    "conserva: escríbenos y te avisamos cuando puedas confirmarlo.",
+                statusCode: StatusCodes.Status503ServiceUnavailable),
+
+            MotivoDeNoCreacion.MonedaEnCambio => Results.Problem(
+                title: "La tienda está actualizando la moneda en que cobra",
+                detail:
+                    "Tu carrito se conserva. Vuelve a confirmar el pedido en unos segundos.",
+                statusCode: StatusCodes.Status503ServiceUnavailable),
+
+            // No se sabe si hay moneda: no se dice que falte configurarla.
+            MotivoDeNoCreacion.ServicioNoDisponible => Results.Problem(
+                title: "No pudimos confirmar tu pedido en este momento",
+                detail:
+                    "Tu carrito se conserva. Vuelve a confirmarlo en unos minutos.",
+                statusCode: StatusCodes.Status503ServiceUnavailable),
+
+            // Un defecto nuestro, ya registrado. Ningún detalle interno sale de aquí.
+            MotivoDeNoCreacion.CosturaMonetariaDefectuosa => Results.Problem(
+                title: "No pudimos registrar tu pedido",
+                detail:
+                    "Tu carrito se conserva. El problema es nuestro y ya quedó anotado; " +
+                    "escríbenos si vuelve a pasar.",
+                statusCode: StatusCodes.Status500InternalServerError),
+
             _ => Results.Problem(statusCode: StatusCodes.Status409Conflict)
         };
-    }
 
     /// <summary>Los pedidos del cliente de la sesión.</summary>
     private static async Task<IResult> ListarPropios(

@@ -17,6 +17,9 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="BCrypt.Net-Next" />
     <PackageReference Include="MailKit" />
+    <!-- Fija la versión parcheada de una dependencia transitiva de MailKit.
+         El porqué, en Directory.Packages.props. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
 
   <ItemGroup>

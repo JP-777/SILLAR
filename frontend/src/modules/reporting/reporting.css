@@ -1,0 +1,21 @@
+/* M10: únicamente tokens del sistema de diseño. */
+.rp-stack { display: grid; gap: var(--s4); }
+.rp-filters { display: flex; flex-wrap: wrap; align-items: end; gap: var(--s3); padding: var(--s4); background: var(--bg-raised); border: 1px solid var(--border); border-radius: var(--r-md); }
+.rp-field { display: grid; gap: var(--s2); font-weight: 600; min-width: 12rem; flex: 1 1 12rem; }
+.rp-note { color: var(--text-muted); }
+.rp-warning { color: var(--danger); font-weight: 600; }
+.rp-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: var(--s3); }
+.rp-panel { background: var(--bg-raised); padding: var(--s4); border: 1px solid var(--border); border-radius: var(--r-md); }
+.rp-panel h2 { font-size: 1.05rem; margin: 0 0 var(--s3); }
+.rp-panel > strong { font-size: 2rem; font-variant-numeric: tabular-nums; }
+
+/* Períodos rápidos D5: visibles en escritorio y móvil sin CSS de otro módulo. */
+.rp-presets { display: flex; flex: 1 1 100%; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+.rp-presets__label { margin-right: var(--s2); color: var(--text-muted); font-weight: 600; }
+
+/* Ciclo 3 · responsive: en móvil cada campo y cada acción ocupan su línea. */
+@media (max-width: 640px) {
+  .rp-field { min-width: 0; flex: 1 1 100%; }
+  .rp-filters > .ui-button { flex: 1 1 100%; }
+  .rp-panel > strong { font-size: 1.6rem; }
+}

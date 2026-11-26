@@ -39,6 +39,14 @@ interface PortalResponse {
   work: { state: string; items: { visibleCode: string }[] };
 }
 
+interface InstallationCurrency {
+  status: string;
+  code: string | null;
+  minorUnits: number | null;
+  listVersion: string;
+  observedAt: string;
+}
+
 async function customer(page: Page, email: string, fullName: string): Promise<AuthenticatedCustomer> {
   // Estas dos escrituras son anónimas todavía: el filtro CSRF exige la misma
   // señal que añade un navegador para una petición originada en la SPA.
@@ -96,6 +104,32 @@ async function adminCsrf(api: APIRequestContext): Promise<Record<string, string>
   expect(response.ok(), `CSRF admin: ${response.status()} ${await response.text()}`).toBe(true);
   const data = (await response.json()) as { csrfToken: string };
   return { 'X-CSRF-Token': data.csrfToken };
+}
+
+async function ensureInstallationCurrency(api: APIRequestContext): Promise<void> {
+  const before = await api.get('/api/admin/settings/installation-currency');
+  const beforeRaw = await before.text();
+  expect(before.status(), `leer moneda de instalación: ${beforeRaw}`).toBe(200);
+  const current = JSON.parse(beforeRaw) as InstallationCurrency;
+
+  // El ciclo puede ejecutarse después de otro escenario que ya acreditó PEN.
+  // No se fuerza una escritura redundante: repetir PEN puede ser Unchanged,
+  // pero si existen pedidos CORE debe conservar su barrera para operaciones
+  // que necesiten establecer o reacreditar la autoridad.
+  if (current.status === 'Accredited') {
+    expect(current).toMatchObject({ code: 'PEN', minorUnits: 2 });
+    return;
+  }
+
+  const configured = await api.put('/api/admin/settings/installation-currency', {
+    headers: await adminCsrf(api),
+    data: { value: 'PEN' },
+  });
+  const raw = await configured.text();
+  expect(configured.status(), `acreditar moneda de instalación: ${raw}`).toBe(200);
+  expect(JSON.parse(raw) as InstallationCurrency).toMatchObject({
+    status: 'Accredited', code: 'PEN', minorUnits: 2,
+  });
 }
 
 async function configureSetting(
@@ -539,6 +573,7 @@ test('[M08-CICLO] OFF/ON, Sales y Tracking reales, preservación, paridad y rest
     await configureSalesSeries();
     const itemId = await createCatalogItem(page.request);
     await cambiarModulo(page, 'sales', 'Activar');
+    await ensureInstallationCurrency(page.request);
 
     const beforeOrders = await overview(pageA);
     expect(beforeOrders.parsed.orders.state).toBe('empty');
