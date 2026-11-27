@@ -348,9 +348,11 @@ test('[M04-CICLO] desactivar, desinstalar, reinstalar y activar M04 sin romper C
     'M03 no debe estar activado globalmente: el arnés solo lo migra, y eso es la decisión de M03',
   ).not.toContain('sales');
   expect(
-    await psql("SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('sales', 'b2b')"),
-    'faltan los schemas de M03 y M07: la instalación del arnés los crea porque están en el binario',
-  ).toBe('2');
+    await psql("SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('sales', 'b2b', 'portal')"),
+    'faltan los schemas de M03, M07 y M08: la instalación del arnés los crea porque están en el binario',
+  ).toBe('3');
+
+  expect(iniciales, 'Portal debe empezar apagado en el ciclo de CRM').not.toContain('portal');
 
   // M04 se apaga aquí, pero M07 **también**: depende duro de `crm`
   // (`B2BModule.cs:57`), así que con él activo la plataforma impide desactivar
@@ -411,12 +413,15 @@ test('[M04-CICLO] desactivar, desinstalar, reinstalar y activar M04 sin romper C
   // `b2b` con sus claves foráneas hacia `crm`, se niega — y hace bien, porque
   // un `DROP SCHEMA ... CASCADE` se llevaría esas claves en silencio y
   // reinstalar M04 no las devolvería.
+  // Portal depende duro de CRM aunque su única tabla sea el historial.
+  // Se retira con su baja restringida; desactivarlo no desinstala su esquema.
+  await psqlArchivo('/scripts/modules/portal/99_drop.sql');
   await psqlArchivo('/scripts/modules/sales/99_drop.sql');
   await psqlArchivo('/scripts/modules/b2b/99_drop.sql');
 
   expect(
-    await psql("SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('sales', 'b2b')"),
-    'sales o b2b siguen ahí: la guarda de crm se va a negar',
+    await psql("SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('sales', 'b2b', 'portal')"),
+    'sales, b2b o portal siguen ahí: la guarda de crm se va a negar',
   ).toBe('0');
 
   // Y ahora sí: el esquema de M04, dos veces (idempotente), con el módulo ya
@@ -444,8 +449,8 @@ test('[M04-CICLO] desactivar, desinstalar, reinstalar y activar M04 sin romper C
 
   // 4b · Y los dependientes vuelven **con la infraestructura canónica**, no con
   //      otra lista de migraciones escrita aquí: `migrate()` ya enumera los
-  //      siete módulos y `seed()` sus semillas. Para los cinco que no se
-  //      tocaron es un no-op; para `sales` y `b2b` es la reconstrucción.
+  //      módulos instalables y `seed()` sus semillas. Para los que no se
+  //      tocaron es un no-op; para `sales`, `b2b` y `portal` es la reconstrucción.
   //
   //      Reconstruir no es activar: `migrate()` crea el schema de M03 y no
   //      toca su activación, así que M03 sigue sin estar en capacidades.
@@ -453,9 +458,9 @@ test('[M04-CICLO] desactivar, desinstalar, reinstalar y activar M04 sin romper C
   await seed();
 
   expect(
-    await psql("SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('sales', 'b2b')"),
-    'migrate()+seed() no devolvió los schemas de M03 y M07',
-  ).toBe('2');
+    await psql("SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('sales', 'b2b', 'portal')"),
+    'migrate()+seed() no devolvió los schemas de M03, M07 y M08',
+  ).toBe('3');
 
   // 5 · Activar: el proceso se reinicia y tiene que arrancar limpio.
   //     **M04 primero, M07 después**: dependencias antes que dependiente, que es
@@ -487,9 +492,9 @@ test('[M04-CICLO] desactivar, desinstalar, reinstalar y activar M04 sin romper C
   //     volvieron. Esa última es la que importa de verdad: un CASCADE se las
   //     lleva en silencio y nada avisa.
   expect(
-    await psql("SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('sales', 'b2b')"),
-    'al cerrar el ciclo faltan los schemas de M03 o M07',
-  ).toBe('2');
+    await psql("SELECT count(*) FROM information_schema.schemata WHERE schema_name IN ('sales', 'b2b', 'portal')"),
+    'al cerrar el ciclo faltan los schemas de M03, M07 o M08',
+  ).toBe('3');
   expect(
     await capacidades(page.request),
     'M03 acabó activado globalmente: reconstruir no es activar',

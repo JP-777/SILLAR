@@ -1,13 +1,13 @@
 # Bitácora de SILLAR
 
 **Fecha de creación:** 14 de agosto de 2026, 23:25:09 -05:00 (America/Lima).
-**Última verificación de esta continuación:** 27 de noviembre de 2026, 12:17 -05:00.
-**Commit verificado:** `3b5a6971a55d4cb1928c0190ad2ae35ef9df0b33` (séptima corrida).
+**Última verificación de esta continuación:** 27 de noviembre de 2026, 17:42 -05:00.
+**Commit verificado:** `8a3481f402460bb32c887b3d203cb2100ee8fc36` (octava corrida).
 
 ## Continuación: cierre único de SILLAR WEB — 26 de noviembre de 2026
 
 **Estado actual: EN TRABAJO, sin 6/6.** Las dos primeras corridas pasaron 1–4
-y fallaron en 5. La tercera pasó 1–3 y falló por conexión en 4. La cuarta pasó 1–4 y falló en 5 por una expectativa de migraciones desactualizada. La quinta pasó 1–5 y ejecutó E2E, que falló y fue interrumpida; no hay 6/6. La sexta se detuvo en etapa 1 por F4 y la séptima por tipos del formulario; ambos errores se corrigieron después. Los cierres
+y fallaron en 5. La tercera pasó 1–3 y falló por conexión en 4. La cuarta pasó 1–4 y falló en 5 por una expectativa de migraciones desactualizada. La quinta pasó 1–5 y ejecutó E2E, que falló y fue interrumpida; no hay 6/6. La sexta se detuvo en etapa 1 por F4 y la séptima por tipos del formulario; ambos errores se corrigieron después. La octava pasó 1–5 y terminó E2E con 198 aprobadas y una fallida, sin omitidas. Los cierres
 históricos que siguen más abajo corresponden a sus árboles y fechas; no se
 transfieren al conjunto pendiente de integrar. No se afirma 6/6 ni se sustituye
 «sin comprobar» por cero fallos.
@@ -18,6 +18,14 @@ aplazado y excluido del árbol integrado: Yape manual en M03 cubre v1. No fusion
 ni rebasar `main`. Se permiten commits y empujes de la rama de trabajo. El encargo
 del 26/11 sustituye las antiguas restricciones de aprobación por etapas de
 `CLAUDE.md`; las decisiones reversibles se toman y se registran.
+
+### 2026-11-27 · 17:42 -05:00 · octava puerta y baja física de M04
+
+- **Artefacto observado:** `8a3481f402460bb32c887b3d203cb2100ee8fc36`, limpio durante la corrida. **Puerta 8:** etapas 1–5 aprobadas; etapa 6 fallida, 198/199 aprobadas, una fallida, ninguna omitida; salida 1. Evidencia local: `tmp/cierre-web/puerta-08.log` y `.rc`. Los ciclos M05b, M06 y M08 terminaron correctamente en esta corrida; esto no acredita todavía el producto completo.
+- **Causa leída y observada:** `crm/99_drop.sql` rechazó la baja porque `portal` seguía instalado como dependiente duro. El ciclo de M04 retiraba Sales y B2B, pero no había incorporado la nueva persistencia de Portal. La barrera funcionó: no se debilitó ni se quitó el historial para forzar verde.
+- **Corrección:** `e2e/tests/zz-z-m04-ciclo.spec.ts` comprueba Portal inicialmente apagado, retira su esquema con la baja canónica restringida antes de CRM, y exige restaurar los tres esquemas dependientes. Se conserva la reinstalación por el instalador y la paridad de capacidades final. La corrección está pendiente de su repetición focal.
+- **Interrupción:** se agotó la cuota durante la preparación de permisos. La escritura de `interfaz.py` fue rechazada por la revisión automática y no ocurrió; los borradores anteriores permanecen ignorados, sin integrar ni acreditar. Se recuperó el resultado real de la puerta al reanudar. No se dedujo éxito de la interrupción.
+- **Decisión en curso:** CORE conservará por separado licencias y permisos locales. La provisión manual de derechos se hará desde la configuración confiable del despliegue, sin concederlos desde el interruptor del panel ni elegir precios o firma comercial. Los permisos se comprobarán dentro de cada operación; no bastará con esconder enlaces. Diseño todavía pendiente de integración y pruebas.
 
 ### 2026-11-27 · 12:16 -05:00 · séptima puerta, contrato de formulario
 
