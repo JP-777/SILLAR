@@ -1,4 +1,4 @@
-import { reportingAuditEntityVocabulary } from '../modules/reporting/auditEntityVocabulary';
+import { reportingAuditEntityVocabulary } from '../modules/reporting/routes';
 import { catalogAuditEntityVocabulary } from '../modules/catalog/routes';
 import { cmsAuditEntityVocabulary } from '../modules/cms/cmsHome';
 import { coreAuditEntityVocabulary } from '../modules/core/auditEntityVocabulary';

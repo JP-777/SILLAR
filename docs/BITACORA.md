@@ -1,13 +1,13 @@
 # Bitácora de SILLAR
 
 **Fecha de creación:** 14 de agosto de 2026, 23:25:09 -05:00 (America/Lima).
-**Última verificación de esta continuación:** 27 de noviembre de 2026, 12:12 -05:00.
-**Commit verificado:** `1c34bd53d016ac0db6b94d9d0bc8b439166609db` (quinta corrida).
+**Última verificación de esta continuación:** 27 de noviembre de 2026, 12:14 -05:00.
+**Commit verificado:** `58f9870666272cda265bb1cb703dffd4a9b2582d` (sexta corrida).
 
 ## Continuación: cierre único de SILLAR WEB — 26 de noviembre de 2026
 
 **Estado actual: EN TRABAJO, sin 6/6.** Las dos primeras corridas pasaron 1–4
-y fallaron en 5. La tercera pasó 1–3 y falló por conexión en 4. La cuarta pasó 1–4 y falló en 5 por una expectativa de migraciones desactualizada. La quinta pasó 1–5 y ejecutó E2E, que falló y fue interrumpida; no hay 6/6. Los cierres
+y fallaron en 5. La tercera pasó 1–3 y falló por conexión en 4. La cuarta pasó 1–4 y falló en 5 por una expectativa de migraciones desactualizada. La quinta pasó 1–5 y ejecutó E2E, que falló y fue interrumpida; no hay 6/6. La sexta se detuvo en etapa 1 por F4, corregida después. Los cierres
 históricos que siguen más abajo corresponden a sus árboles y fechas; no se
 transfieren al conjunto pendiente de integrar. No se afirma 6/6 ni se sustituye
 «sin comprobar» por cero fallos.
@@ -18,6 +18,24 @@ aplazado y excluido del árbol integrado: Yape manual en M03 cubre v1. No fusion
 ni rebasar `main`. Se permiten commits y empujes de la rama de trabajo. El encargo
 del 26/11 sustituye las antiguas restricciones de aprobación por etapas de
 `CLAUDE.md`; las decisiones reversibles se toman y se registran.
+
+### 2026-11-27 · 12:14 -05:00 · sexta puerta, barrera F4
+
+- **Artefacto:** `58f9870666272cda265bb1cb703dffd4a9b2582d`, limpio al iniciar.
+  Empuje autorizado a la rama de trabajo confirmado correctamente.
+- **Puerta 6:** etapa 1 fallida; 2–6 no ejecutadas; salida 1. Los tipos y suites
+  funcionales frontend pasaron hasta la barrera de fronteras. F4 detectó que
+  `platform/auditEntityVocabularies.ts:1` importaba directamente un fichero
+  interno de M10. Evidencia local completa: `tmp/cierre-web/puerta-06.log`.
+- **Error propio:** omití pasar esa contribución por la entrada pública de M10.
+  Corregido en el registro y `modules/reporting/routes.tsx`, que reexporta el
+  vocabulario. Se conserva la lista de excepciones de la barrera: no hace falta
+  ampliarla. No se inició ninguna modificación de licencias durante la corrida.
+- **Verificación de la corrección:** barrera real y sus 34 pruebas verdes;
+  vocabulario 15/15, sin omitidas. La próxima corrida irá sobre un nuevo commit
+  limpio. Se corrigió la hora de esta entrada contra el reloj UTC convertido a Lima.
+- **Sin acreditar:** se mantiene el cierre pendiente y ninguna conclusión
+  sobre preview o restauración B2B, porque esta corrida no alcanzó E2E.
 
 ### 2026-11-27 · 12:12 -05:00 · artefacto para la sexta puerta
 

@@ -10,3 +10,5 @@ export const reportingRoutes = (
 );
 
 export { reportingNavigation } from './navegacion';
+
+export { reportingAuditEntityVocabulary } from './auditEntityVocabulary';
