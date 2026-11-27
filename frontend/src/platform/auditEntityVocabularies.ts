@@ -1,3 +1,4 @@
+import { reportingAuditEntityVocabulary } from '../modules/reporting/auditEntityVocabulary';
 import { catalogAuditEntityVocabulary } from '../modules/catalog/routes';
 import { cmsAuditEntityVocabulary } from '../modules/cms/cmsHome';
 import { coreAuditEntityVocabulary } from '../modules/core/auditEntityVocabulary';
@@ -20,6 +21,7 @@ import {
  */
 export const AUDIT_ENTITY_VOCABULARIES: readonly AuditEntityVocabulary[] = [
   coreAuditEntityVocabulary,
+  reportingAuditEntityVocabulary,
   catalogAuditEntityVocabulary,
   cmsAuditEntityVocabulary,
   servicesAuditEntityVocabulary,

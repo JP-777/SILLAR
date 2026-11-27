@@ -59,7 +59,9 @@ internal sealed class AuditQueryService(CoreDbContext database)
                 entry.EntityId,
                 entry.Action,
                 entry.Summary,
-                entry.IpAddress))
+                entry.IpAddress,
+                entry.AdminUserName,
+                entry.AdminUserHomeNode))
             .ToListAsync(cancellationToken);
 
         return PagedResult<AuditEntryResponse>.From(page, items, total);

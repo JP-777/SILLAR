@@ -19,8 +19,8 @@ internal sealed record TimeZoneFacts(
     Guid? InstallationKey);
 
 /// <summary>
-/// La regla de zona y verificación, sin base ni reloj propios. Como mucho llega a
-/// <see cref="TimeZoneVerificationReason.AttestationAuthorityUnratified"/>.
+/// La regla de zona y verificación, sin base ni reloj propios.
+/// Acepta únicamente la evidencia completa de la autoridad CORE.
 /// </summary>
 internal static class InstallationTimeZoneEvaluator
 {
@@ -102,9 +102,15 @@ internal static class InstallationTimeZoneEvaluator
             return With(TimeZoneVerificationStatus.Stale, TimeZoneVerificationReason.StaleSourceChanged, id);
         }
 
-        // Todos los hechos coinciden. Sin fuente ni autoridad de atestación
-        // ratificadas, eso no es todavía una verificación.
-        return With(TimeZoneVerificationStatus.Unverified, TimeZoneVerificationReason.AttestationAuthorityUnratified, id);
+        // Solo la operación de CORE y el instalador producen esta autoridad.
+        // Las pruebas candidatas o una atestación incompleta no se promueven.
+        if (id.Version != 7 || attestation.AttestedByAdminUserId <= 0
+            || string.IsNullOrWhiteSpace(attestation.AttestedByName)
+            || string.IsNullOrWhiteSpace(attestation.AttestedByHomeNode)
+            || attestation.AuthorityVersion != InstallationTimeZoneService.AuthorityVersion
+            || attestation.AttestedAt > observedAt)
+            return With(TimeZoneVerificationStatus.Unverified, TimeZoneVerificationReason.AttestationAuthorityUnratified, id);
+        return With(TimeZoneVerificationStatus.Verified, TimeZoneVerificationReason.AttestationAccepted, id);
     }
 
     private static InstallationTimeZoneResolution Zone(

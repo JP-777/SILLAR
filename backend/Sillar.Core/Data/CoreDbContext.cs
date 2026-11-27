@@ -88,6 +88,9 @@ public class CoreDbContext(
     /// <summary>Registro de auditoría.</summary>
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    /// <summary>Evidencia local e inmutable de zona horaria.</summary>
+    public DbSet<InstallationTimeZoneAttestation> TimeZoneAttestations => Set<InstallationTimeZoneAttestation>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

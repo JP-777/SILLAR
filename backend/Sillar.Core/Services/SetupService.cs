@@ -239,6 +239,9 @@ internal sealed class SetupService(
             return new SetupResult(SetupOutcome.AlreadyInstalled);
         }
 
+        Sillar.Core.Settings.InstallationTimeZoneService.StageInitial(
+            database, database.Installations.Local.Single().InstallationKey, user, now);
+
         await audit.WriteAsync(
             new AuditEntry(AuditAction.Setup)
             {

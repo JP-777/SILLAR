@@ -20,6 +20,10 @@ export default defineConfig({
       '/media': apiOrigin,
     },
   },
+  preview: {
+    host: '127.0.0.1',
+    proxy: { '/api': apiOrigin, '/media': apiOrigin },
+  },
   build: {
     outDir: 'dist',
     sourcemap: true,

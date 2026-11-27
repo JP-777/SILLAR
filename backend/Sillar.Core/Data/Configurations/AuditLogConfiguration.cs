@@ -12,6 +12,10 @@ internal sealed class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
         builder.ToTable("audit_log", table =>
         {
             table.HasCheckConstraint("ck_audit_log_action", Check.OneOf("action", AuditAction.All));
+            table.HasCheckConstraint("ck_audit_log_actor_snapshot",
+                "(admin_user_id IS NULL AND admin_user_name IS NULL AND admin_user_home_node IS NULL) OR " +
+                "(admin_user_id IS NOT NULL AND admin_user_id > 0 AND admin_user_name IS NOT NULL AND btrim(admin_user_name) <> '' " +
+                "AND admin_user_home_node IS NOT NULL AND btrim(admin_user_home_node) <> '')");
         });
 
         builder.HasKey(x => x.AuditLogId).HasName("pk_audit_log");
@@ -59,11 +63,9 @@ internal sealed class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
             .HasColumnName("ip_address")
             .HasMaxLength(45);
 
-        builder.HasOne(x => x.AdminUser)
-            .WithMany()
-            .HasForeignKey(x => x.AdminUserId)
-            .HasConstraintName("fk_audit_log_admin_user_id")
-            .OnDelete(DeleteBehavior.SetNull);
+        // Sin relación con admin_users: la atribución sobrevive a renombrados y bajas.
+        builder.Property(x => x.AdminUserName).HasColumnName("admin_user_name").HasMaxLength(200);
+        builder.Property(x => x.AdminUserHomeNode).HasColumnName("admin_user_home_node").HasMaxLength(80);
 
         builder.HasIndex(x => x.OccurredAt)
             .HasDatabaseName("idx_audit_log_occurred_at");

@@ -16,7 +16,7 @@ using static Sillar.Modules.Reports.Tests.ZonaDeCore;
 namespace Sillar.Modules.Reports.Tests;
 
 /// <summary>
-/// La exportación generada en el servidor, montada solo aquí: ningún byte del
+/// La exportación generada en el servidor, montada por el módulo real: ningún byte del
 /// archivo sale sin zona verificada, CSRF y un registro <c>Recorded</c> con uuid
 /// v7, y las filas auditadas son las del archivo.
 /// </summary>
@@ -28,11 +28,12 @@ public sealed class OrderIndicatorsExportTests
     private static readonly object Pedido = new { startInclusive = "2026-10-01T00:00:00-05:00", endExclusive = "2026-10-08T00:00:00-05:00", zone = Bogota };
 
     [Fact]
-    public void El_modulo_no_monta_la_exportacion_generada_en_el_servidor()
+    public void El_modulo_monta_la_exportacion_real_y_no_el_recibo_de_filas_del_cliente()
     {
-        var app = Aplicacion(Siempre(Verificada(Bogota)), AuditoriaDeCore.Registra(), new Ventas(5), montarExportacion: false);
+        var app = Aplicacion(Siempre(Verificada(Bogota)), AuditoriaDeCore.Registra(), new Ventas(5));
 
-        Assert.DoesNotContain(Rutas(app), r => r.RoutePattern.RawText == Ruta);
+        Assert.Single(Rutas(app), r => r.RoutePattern.RawText == Ruta);
+        Assert.DoesNotContain(Rutas(app), r => r.RoutePattern.RawText == "/api/admin/reporting/orders/export-audit");
     }
 
     [Fact]
@@ -135,7 +136,7 @@ public sealed class OrderIndicatorsExportTests
     }
 
     public static TheoryData<string> RegistrosNoLegitimos =>
-        ["sin_productor", "no_disponible", "uuid_v4", "uuid_vacio", "sin_actor", "actor_sin_nodo", "accion_no_admitida", "no_durable"];
+        ["sin_productor", "no_disponible", "uuid_v4", "uuid_vacio", "sin_actor", "actor_sin_nodo", "actor_sin_nombre", "actor_nombre_blanco", "accion_no_admitida", "no_durable"];
 
     [Theory]
     [MemberData(nameof(RegistrosNoLegitimos))]
@@ -148,6 +149,8 @@ public sealed class OrderIndicatorsExportTests
             "uuid_v4" => new AuditoriaDeCore(ExportAuditResult.Recorded(Guid.Parse("0199a6f0-0000-4000-8000-000000000001"), AuditoriaDeCore.Actor)),
             "sin_actor" => new AuditoriaDeCore(ExportAuditResult.Recorded(Guid.CreateVersion7(), null!)),
             "actor_sin_nodo" => new AuditoriaDeCore(ExportAuditResult.Recorded(Guid.CreateVersion7(), AuditoriaDeCore.Actor with { HomeNode = "" })),
+            "actor_sin_nombre" => new AuditoriaDeCore(ExportAuditResult.Recorded(Guid.CreateVersion7(), AuditoriaDeCore.Actor with { DisplayName = null })),
+            "actor_nombre_blanco" => new AuditoriaDeCore(ExportAuditResult.Recorded(Guid.CreateVersion7(), AuditoriaDeCore.Actor with { DisplayName = "  " })),
             "accion_no_admitida" => new AuditoriaDeCore(ExportAuditResult.Rejected(ExportAuditFailure.ExportActionNotAdmitted)),
             "no_durable" => new AuditoriaDeCore(ExportAuditResult.Rejected(ExportAuditFailure.AuditNotDurable)),
             _ => new AuditoriaDeCore(ExportAuditResult.Recorded(Guid.Empty, AuditoriaDeCore.Actor)),
@@ -319,7 +322,7 @@ public sealed class OrderIndicatorsExportTests
         if (auditoria is not null) Assert.Empty(auditoria.Pedidos);
     }
 
-    private static WebApplication Aplicacion(ZonaDeCore? zona, AuditoriaDeCore? auditoria, Ventas? ventas, bool montarExportacion = true)
+    private static WebApplication Aplicacion(ZonaDeCore? zona, AuditoriaDeCore? auditoria, Ventas? ventas)
     {
         var builder = WebApplication.CreateSlimBuilder();
         builder.Services.AddRouting();
@@ -329,7 +332,6 @@ public sealed class OrderIndicatorsExportTests
         new ReportsModule().RegisterServices(builder.Services, new ConfigurationBuilder().Build());
         var app = builder.Build();
         new ReportsModule().MapEndpoints(app);
-        if (montarExportacion) app.MapOrderIndicatorsCsvExport();
         return app;
     }
 

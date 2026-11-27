@@ -9,14 +9,12 @@ using Sillar.Core.Domain;
 namespace Sillar.Core.Auditing;
 
 /// <summary>
-/// Productor candidato de <see cref="IExportAudit"/>.
+/// Productor durable de <see cref="IExportAudit"/>.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <c>AuditAction.cs</c> no se toca aquí: el código de acción se declara local y
-/// solo se usa si <see cref="AuditAction.All"/> ya lo admite. Cuando la acción
-/// entre en el vocabulario —con su migración—, este productor empieza a escribir
-/// sin cambios. Hasta entonces se niega antes de llegar a la base.
+/// La acción export forma parte del vocabulario y de la restricción física.
+/// Si una instalación no admite esa acción, el productor no entrega un recibo.
 /// </para>
 /// <para>
 /// El resumen lo compone CORE con metadatos validados; nada de quien llama entra
@@ -25,7 +23,7 @@ namespace Sillar.Core.Auditing;
 /// </remarks>
 internal sealed partial class ExportAudit : IExportAudit
 {
-    /// <summary>Código de acción. Debe coincidir con el de <c>AuditAction</c> cuando exista.</summary>
+    /// <summary>Código de la acción que se guarda antes de entregar el archivo.</summary>
     internal const string ExportActionCode = "export";
 
     /// <summary>Longitudes de las columnas de <c>core.audit_log</c> que reciben cada metadato.</summary>
@@ -44,7 +42,7 @@ internal sealed partial class ExportAudit : IExportAudit
     {
     }
 
-    /// <summary>Con otro vocabulario. Solo para probar el camino que hoy está cerrado.</summary>
+    /// <summary>Con otro vocabulario. Permite provocar el rechazo por vocabulario incompleto.</summary>
     internal ExportAudit(
         IAuditWriter writer,
         ICurrentAdmin admin,
@@ -66,7 +64,8 @@ internal sealed partial class ExportAudit : IExportAudit
 
         if (admin.AdminUserId is not { } adminUserId
             || string.IsNullOrEmpty(admin.Email)
-            || string.IsNullOrEmpty(admin.HomeNode))
+            || string.IsNullOrEmpty(admin.HomeNode)
+            || string.IsNullOrWhiteSpace(admin.DisplayName))
         {
             return ExportAuditResult.Rejected(ExportAuditFailure.ActorMissing);
         }
@@ -86,12 +85,14 @@ internal sealed partial class ExportAudit : IExportAudit
             return ExportAuditResult.Rejected(ExportAuditFailure.AuditNotDurable);
         }
 
-        var actor = new ExportActor(adminUserId, admin.Email, admin.HomeNode);
+        var actor = new ExportActor(adminUserId, admin.Email, admin.HomeNode, admin.DisplayName);
         var exportId = Guid.CreateVersion7();
         var entry = new AuditEntry(ExportActionCode)
         {
             AdminUserId = actor.AdminUserId,
             AdminUserEmail = actor.Email,
+            AdminUserName = actor.DisplayName,
+            AdminUserHomeNode = actor.HomeNode,
             ModuleCode = request.ModuleCode,
             EntityType = request.ExportKind,
             EntityId = exportId.ToString(),

@@ -1,8 +1,8 @@
 # M10 — Reportes de SILLAR WEB
 
 **Fecha de creación:** 26 de noviembre de 2026, America/Lima.
-**Fecha de última verificación:** 26 de noviembre de 2026, America/Lima.
-**Commit contrastado:** `5799bd7`.
+**Fecha de última verificación:** 27 de noviembre de 2026, America/Lima.
+**Commit contrastado:** `1c34bd53d016ac0db6b94d9d0bc8b439166609db` más los cambios locales de cierre de M10 descritos en BITACORA.
 **Estado:** contrato de cierre; implementación y acreditación en curso.
 
 ## 1. Autoridad y alcance
@@ -140,15 +140,22 @@ La interfaz ofrece consulta, períodos rápidos, comparación y descarga cuando
 están acreditadas sus condiciones; estados de carga, vacío y error distinguibles.
 Teclado, foco, móvil y ambos temas forman parte del cierre.
 
-## 9. Brechas leídas en el artefacto contrastado
+## 9. Estado de implementación contrastado
 
-`ReportsModule.cs:20` todavía declara schema nulo. `ReportsModule.cs:45–50`
-monta lecturas y la costura CORE, pero no la exportación de servidor.
-`OrderIndicatorsExportEndpoints.cs:43–62` contiene ese montaje pendiente.
-`CoreSeamEndpoints.cs:46–55` ofrece auditoría de filas declaradas por el cliente;
-se retirará esa superficie al conectar la descarga del servidor.
-Estos son hechos leídos, no cierres acreditados. La candidata de zona permanece
-cerrada ante falta de autoridad; no se resolverá borrando esa guarda.
+La continuación incorpora el historial de `reporting`, su migración, seed vacío
+y baja con RESTRICT. `ReportsModule` monta la descarga CSV del servidor y retira
+la recepción de un número de filas declarado por el navegador. CORE conserva
+la evidencia de zona, contrastada con la versión y SHA-256 de la fuente horaria
+del runtime, y la fotografía de autoría sin FK a la cuenta. El panel ofrece la
+acreditación de zona al superadministrador y conecta la descarga al servidor.
+
+Las pruebas físicas han demostrado migración, desinstalación repetida,
+reinstalación y rechazo de objetos desconocidos sin borrado parcial. La prueba
+de autoridad falla al retirar deliberadamente su guarda y vuelve a verde al
+restaurarla. Estos hechos no cierran M10: siguen pendientes los permisos por
+operación y licencia, el recorrido HTTP e interfaz completo, la cobertura
+monetaria del escritor manual de M03 y la puerta canónica 6/6. La evidencia y sus
+límites están en la entrada de continuación del 27/11 de BITACORA.
 
 ## 10. Acreditación obligatoria
 

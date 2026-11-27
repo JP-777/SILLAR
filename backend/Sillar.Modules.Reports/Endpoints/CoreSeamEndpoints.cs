@@ -12,10 +12,9 @@ namespace Sillar.Modules.Reports.Endpoints;
 /// exportación, leídas de los contratos candidatos de CORE.
 /// </summary>
 /// <remarks>
-/// Los dos productores son opcionales y el host no los registra todavía: sin
-/// ellos, M10 dice «sin conexión» o «auditoría no disponible», nunca inventa una
-/// zona ni un registro. La exportación queda cerrada mientras la zona no esté
-/// verificada, y hoy CORE nunca la verifica.
+/// Los contratos son opcionales para una composición sin CORE; la composición
+/// productiva registra sus productores persistentes. No inventa una zona cuando
+/// no hay productor ni convierte un fallo de lectura en falta de datos.
 /// </remarks>
 public static class CoreSeamEndpoints
 {
@@ -41,17 +40,8 @@ public static class CoreSeamEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden);
 
-        admin.MapPost("/orders/export-audit", RecordExport)
-            .WithName("ReportingAdminOrderIndicatorsExportAudit")
-            .WithSummary("Registra en la auditoría de CORE una exportación de indicadores de pedidos, antes de entregar el archivo.")
-            .WithDescription("Solo se registra con la zona de la instalación verificada, y la zona del archivo tiene que ser esa o UTC. La zona se revalida antes y después del registro. No se guarda el contenido, ni los filtros, ni el nombre del archivo.")
-            .AddEndpointFilter<CsrfEndpointFilter>()
-            .Produces<ExportAuditDecisionView>(StatusCodes.Status200OK)
-            .ProducesValidationProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status409Conflict)
-            .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
-            .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status403Forbidden);
+        // El servidor calcula las filas y audita en /orders/export. No se publica
+        // un recibo de auditoría basado en cantidades aportadas por el cliente.
 
         return endpoints;
     }
@@ -91,66 +81,9 @@ public static class CoreSeamEndpoints
         };
     }
 
-    /// <summary>Exige zona verificada y registra la exportación con la acción <c>export</c> de CORE.</summary>
-    private static async Task<IResult> RecordExport(
-        [FromBody] ExportAuditBody? body,
-        IServiceProvider services,
-        ILoggerFactory loggerFactory,
-        CancellationToken cancellationToken)
-    {
-        if (body is not { DataRows: >= 0 } || string.IsNullOrEmpty(body.Zone))
-        {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["exportacion"] = ["Indica la zona del archivo y cuántas filas de datos lleva."]
-            });
-        }
-
-        // Primero la zona: sin ella no se audita nada, para no dejar registros
-        // de exportaciones que no podían salir.
-        var read = await InstallationZoneGate.ReadAsync(services, loggerFactory, cancellationToken);
-        if (read.Failed) return InstallationZoneGate.Unreadable();
-        if (InstallationZoneGate.Verified(read.Resolution) is not { } zone)
-        {
-            return InstallationZoneGate.NotVerified();
-        }
-        if (body.Zone != zone.Id && body.Zone != "UTC")
-        {
-            return Results.Problem(
-                statusCode: StatusCodes.Status409Conflict,
-                title: "La zona horaria pedida no es la de la instalación ni UTC, así que no se generó el archivo.");
-        }
-
-        if (services.GetService(typeof(IExportAudit)) is not IExportAudit audit)
-        {
-            return Unavailable();
-        }
-
-        var result = await audit.RecordAsync(
-            new ExportAuditRequest(ReportsModule.ModuleCode, OrderIndicatorsExportKind, CsvFormat, body.DataRows),
-            cancellationToken);
-
-        if (LegitimateRecord(result) is not { } exportId)
-        {
-            // Sin autor o con metadatos que CORE no admite: CORE se niega a registrarla.
-            // Acción todavía no admitida, registro no durable o base caída: no está disponible.
-            return result is { IsRecorded: false, Failure: ExportAuditFailure.ActorMissing or ExportAuditFailure.MetadataInvalid }
-                ? Results.Ok(new ExportAuditDecisionView("denied", null))
-                : Unavailable();
-        }
-
-        // La zona tiene que seguir siendo la misma, con la misma atestación, después
-        // del registro: si no, queda un registro sin archivo, nunca al revés.
-        var after = await InstallationZoneGate.ReadAsync(services, loggerFactory, cancellationToken);
-        if (after.Failed) return InstallationZoneGate.Unreadable();
-        if (!InstallationZoneGate.StillSame(zone, after.Resolution)) return InstallationZoneGate.Changed();
-
-        return Results.Ok(new ExportAuditDecisionView("recorded", exportId));
-    }
-
     /// <summary>
     /// El identificador de un registro legítimo, o null. Legítimo es lo que promete
-    /// CORE: registrado, sin causa de rechazo, uuid v7 y un actor con id, correo y
+    /// CORE: registrado, sin causa de rechazo, uuid v7 y un actor con nombre, id, correo y
     /// nodo. Un registro dudoso no es un registro.
     /// </summary>
     internal static Guid? LegitimateRecord(ExportAuditResult? result)
@@ -159,8 +92,8 @@ public static class CoreSeamEndpoints
             IsRecorded: true,
             Failure: null,
             ExportId: { Version: 7 } exportId,
-            Actor: { AdminUserId: > 0, Email.Length: > 0, HomeNode.Length: > 0 },
-        }
+            Actor: { AdminUserId: > 0, Email.Length: > 0 } actor,
+        } && !string.IsNullOrWhiteSpace(actor.HomeNode) && !string.IsNullOrWhiteSpace(actor.DisplayName)
             ? exportId
             : null;
 

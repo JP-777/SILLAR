@@ -79,6 +79,10 @@ internal sealed class SiteSettingService(
         // propia operación, solo para super_admin y con auditoría en la misma
         // transacción. Este filtro es solo el atajo barato, sin tocar la base; la
         // barrera es la comprobación sobre la fila recuperada, más abajo.
+        if (string.Equals(key, IanaZoneCandidate.SettingKey, StringComparison.OrdinalIgnoreCase))
+            return new SettingOperation(SettingOutcome.Forbidden,
+                "La zona de la instalación se acredita en su propia operación por un superadministrador.");
+
         if (string.Equals(key, InstallationCurrency.SettingKey, StringComparison.OrdinalIgnoreCase))
         {
             return new SettingOperation(
@@ -104,6 +108,10 @@ internal sealed class SiteSettingService(
         // caracteres ignorables (guion suave, espacios de anchura cero…). Un alias así
         // pasa la comparación ordinal y aun así encuentra la fila protegida. La
         // identidad que cuenta es la de la fila, y se mira antes de tocar nada.
+        if (string.Equals(setting.SettingKey, IanaZoneCandidate.SettingKey, StringComparison.OrdinalIgnoreCase))
+            return new SettingOperation(SettingOutcome.Forbidden,
+                "La zona de la instalación se acredita en su propia operación por un superadministrador.");
+
         if (string.Equals(setting.SettingKey, InstallationCurrency.SettingKey, StringComparison.Ordinal))
         {
             return new SettingOperation(

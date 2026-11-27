@@ -1,3 +1,4 @@
+import { capacidadesActivas, restaurarB2BTrasFallo } from '../fixtures/grafoDeModulos.js';
 import type { Browser, Page } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
 import { duringExpectedOutage, expect, test } from '../fixtures/ciclo.js';
@@ -5,6 +6,11 @@ import { psql } from '../setup/docker.js';
 import { API_URL, FRONTEND_URL } from '../setup/env.js';
 
 test.use({ aislamientoDeNavegador: import.meta.url });
+
+test.afterEach(async ({}, info) => {
+  if (info.status !== info.expectedStatus) await restaurarB2BTrasFallo(false);
+});
+
 
 /**
  * **El ciclo real de M07: activo → usado → desactivado → reactivado.**
@@ -154,11 +160,13 @@ async function cambiarModulo(page: Page, codigo: string, accion: 'Activar' | 'De
   await page.goto('/admin/modulos');
 
   await duringExpectedOutage(page, async () => {
-    await page.locator(`#modulo-${codigo}`).getByRole('switch').click();
+    const interruptor = page.locator(`#modulo-${codigo}`).getByRole('switch');
+    await expect(interruptor, 'El interruptor no coincide con el estado esperado antes del cambio.').toHaveAttribute('aria-checked', String(accion === 'Desactivar'));
+    await interruptor.click({ timeout: 10_000 });
     await page
       .getByRole('alertdialog')
       .getByRole('button', { name: new RegExp(`^${accion}`) })
-      .click();
+      .click({ timeout: 10_000 });
 
     const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
     await expect(overlay).toBeVisible();
@@ -279,6 +287,7 @@ test('M07 se usa, se apaga y vuelve: sin enlace roto, sin ruta muerta y sin perd
   // Dos reinicios reales del proceso, más el ciclo entero de una cotización.
   test.setTimeout(420_000);
   await loginAsE2eAdmin(page);
+  expect(await capacidadesActivas(page), 'El escenario inicial debe tener M07 activo.').toContain('b2b');
 
   // =======================================================================
   // 1 · USAR

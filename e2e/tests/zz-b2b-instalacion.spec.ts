@@ -1,3 +1,4 @@
+import { capacidadesActivas, restaurarB2BTrasFallo } from '../fixtures/grafoDeModulos.js';
 import type { Page } from '@playwright/test';
 import { loginAsE2eAdmin } from '../fixtures/auth.js';
 import { duringExpectedOutage, expect, test } from '../fixtures/ciclo.js';
@@ -6,6 +7,11 @@ import { FK_CRUZADAS_DE_B2B, fkCruzadasDeB2b } from '../fixtures/grafoDeModulos.
 import { migrate, seed } from '../setup/migrate.js';
 
 test.use({ aislamientoDeNavegador: import.meta.url });
+
+test.afterEach(async ({}, info) => {
+  if (info.status !== info.expectedStatus) await restaurarB2BTrasFallo(true);
+});
+
 
 /**
  * **Instalar, desinstalar y reinstalar M07 — los dos niveles a la vez.**
@@ -108,11 +114,13 @@ async function cambiarModulo(page: Page, codigo: string, accion: 'Activar' | 'De
   await page.goto('/admin/modulos');
 
   await duringExpectedOutage(page, async () => {
-    await page.locator(`#modulo-${codigo}`).getByRole('switch').click();
+    const interruptor = page.locator(`#modulo-${codigo}`).getByRole('switch');
+    await expect(interruptor, 'El interruptor no coincide con el estado esperado antes del cambio.').toHaveAttribute('aria-checked', String(accion === 'Desactivar'));
+    await interruptor.click({ timeout: 10_000 });
     await page
       .getByRole('alertdialog')
       .getByRole('button', { name: new RegExp(`^${accion}`) })
-      .click();
+      .click({ timeout: 10_000 });
 
     const overlay = page.getByRole('alertdialog', { name: 'Aplicando el cambio' });
     await expect(overlay).toBeVisible();
@@ -126,6 +134,7 @@ test('M07 se instala, se suelta y se reinstala sin tocar a nadie, y sus claves c
   // Dos reinicios reales, dos migraciones completas y cirugía de dos schemas.
   test.setTimeout(600_000);
   await loginAsE2eAdmin(page);
+  expect(await capacidadesActivas(page), 'El escenario inicial debe tener M07 activo.').toContain('b2b');
 
   // =======================================================================
   // 5.1 · El schema está, con sus tablas y su historial DENTRO

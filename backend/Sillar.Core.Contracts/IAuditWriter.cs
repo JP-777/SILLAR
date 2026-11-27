@@ -7,6 +7,12 @@ public sealed record AuditEntry(string Action)
     /// <summary>Quién actuó. Nulo si fue el sistema o si el correo no existe.</summary>
     public int? AdminUserId { get; init; }
 
+    /// <summary>Nombre congelado al actuar; junto con id local y nodo, sin FK.</summary>
+    public string? AdminUserName { get; init; }
+
+    /// <summary>Nodo de pertenencia de la cuenta, congelado al actuar.</summary>
+    public string? AdminUserHomeNode { get; init; }
+
     /// <summary>Correo de quien actuó, guardado como snapshot.</summary>
     public string? AdminUserEmail { get; init; }
 

@@ -4,6 +4,7 @@ import { PageContainer } from '../../../layout/PageContainer';
 import { ForbiddenPage } from '../../../platform/ForbiddenPage';
 import { type Failure } from '../../../shared/errors/messages';
 import { FailureAlert } from '../../../shared/ui/patterns';
+import { OrderCsvDownload } from '../components/OrderCsvDownload';
 import { MonetaryIndicators } from '../components/MonetaryIndicators';
 import { OrderDistribution } from '../components/OrderDistribution';
 import { OrderPeriodComparison } from '../components/OrderPeriodComparison';
@@ -347,6 +348,7 @@ function ReportsView({ link, installationZone }: { link: ReportLinkRead; install
                 )}
               </section>
             )}
+            <OrderCsvDownload key={`${data.startInclusive}|${data.endExclusive}|${data.observedAtUtc}|${zone}`} start={data.startInclusive} end={data.endExclusive} zone={zone} />
             {distribution && <OrderDistribution {...distribution} />}
             {/* I02 e I05–I07 de la misma cohorte. La clave anula lo que siga en
                 vuelo de una consulta anterior (D4); sin medición, «No medible». */}

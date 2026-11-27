@@ -60,7 +60,7 @@ internal sealed class ZonaDeCore(params Func<InstallationTimeZoneResolution>[] r
 /// <summary>Auditoría de exportaciones que responde lo que se le pide y anota lo que recibe.</summary>
 internal sealed class AuditoriaDeCore(ExportAuditResult respuesta) : IExportAudit
 {
-    public static readonly ExportActor Actor = new(7, "admin@tienda.test", "nodo-1");
+    public static readonly ExportActor Actor = new(7, "admin@tienda.test", "nodo-1", "Administradora de prueba");
 
     public List<ExportAuditRequest> Pedidos { get; } = [];
     public Action? AlRegistrar { get; init; }

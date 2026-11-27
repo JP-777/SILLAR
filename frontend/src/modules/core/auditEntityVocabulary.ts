@@ -8,6 +8,7 @@ export const coreAuditEntityVocabulary: AuditEntityVocabulary = {
     ['admin_user', 'Usuario'],
     ['email', 'Correo'],
     ['installation', 'Instalación'],
+    ['installation_time_zone', 'Zona horaria del negocio'],
     ['media_asset', 'Archivo'],
     ['module', 'Módulo'],
     ['setting', 'Ajuste'],

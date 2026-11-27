@@ -1,13 +1,13 @@
 # Bitácora de SILLAR
 
 **Fecha de creación:** 14 de agosto de 2026, 23:25:09 -05:00 (America/Lima).
-**Última verificación de esta continuación:** 26 de noviembre de 2026, 18:18 -05:00.
-**Commit verificado:** `5799bd7dd5b9b56099b182d5b82aeb980be6724c` (cuarta corrida).
+**Última verificación de esta continuación:** 27 de noviembre de 2026, 12:12 -05:00.
+**Commit verificado:** `1c34bd53d016ac0db6b94d9d0bc8b439166609db` (quinta corrida).
 
 ## Continuación: cierre único de SILLAR WEB — 26 de noviembre de 2026
 
 **Estado actual: EN TRABAJO, sin 6/6.** Las dos primeras corridas pasaron 1–4
-y fallaron en 5. La tercera pasó 1–3 y falló por conexión en 4. La cuarta pasó 1–4 y falló en 5 por una expectativa de migraciones desactualizada; 6 sigue sin ejecutar. Los cierres
+y fallaron en 5. La tercera pasó 1–3 y falló por conexión en 4. La cuarta pasó 1–4 y falló en 5 por una expectativa de migraciones desactualizada. La quinta pasó 1–5 y ejecutó E2E, que falló y fue interrumpida; no hay 6/6. Los cierres
 históricos que siguen más abajo corresponden a sus árboles y fechas; no se
 transfieren al conjunto pendiente de integrar. No se afirma 6/6 ni se sustituye
 «sin comprobar» por cero fallos.
@@ -18,6 +18,139 @@ aplazado y excluido del árbol integrado: Yape manual en M03 cubre v1. No fusion
 ni rebasar `main`. Se permiten commits y empujes de la rama de trabajo. El encargo
 del 26/11 sustituye las antiguas restricciones de aprobación por etapas de
 `CLAUDE.md`; las decisiones reversibles se toman y se registran.
+
+### 2026-11-27 · 12:12 -05:00 · artefacto para la sexta puerta
+
+- **Base:** `1c34bd53d016ac0db6b94d9d0bc8b439166609db`; se fija a continuación
+  el conjunto de cambios descrito arriba en un commit de la rama de trabajo.
+- **Autoría de exportación:** el consumidor también exige nombre no vacío en
+  el recibo. `CoreSeamEndpoints.cs:89` y dobles de Reportes actualizados;
+  comentarios de los contratos dejan de afirmar que exportación está desconectada.
+  Reportes focales: **145/145**, cero omitidas. Al retirar deliberadamente la
+  guarda de nombre: **2 rojas/10** (nombre ausente y blanco). Restaurada con
+  SHA-256 idéntico: **10/10**. Evidencia `m10-autor-*.log` en el directorio local.
+- **Arnés:** tipos E2E correctos y **15/15** pruebas propias, cero omitidas.
+  `git diff --check` limpio. `main` permanece en `58bb93a6`.
+- **Puerta siguiente:** se ejecutará completa sobre ese commit, sin editar su
+  árbol mientras corre. Esta anotación no anticipa resultados ni acredita M10:
+  permisos, licencias y recorrido HTTP completo siguen pendientes.
+
+### 2026-11-27 · 12:07 -05:00 · CORE verde y aislamiento E2E
+
+- **Artefacto:** `1c34bd5` más cambios locales. CORE repetido en base propia:
+  **483 aprobadas, 0 fallidas, 0 omitidas**; limpieza terminada. La advertencia
+  de nulabilidad de `BaseGuionada.cs:188` permanece, sin error de compilación.
+- **E2E:** ambos ciclos B2B carecían de restauración tras fallo. Se incorpora
+  `restaurarB2BTrasFallo` en `grafoDeModulos.ts`, usada desde `afterEach`, con
+  migración previa solo en el ciclo físico. Usa la API soportada y una sesión
+  nueva, sin depender del navegador que pudo fallar. Se comprueba el estado
+  inicial y el interruptor antes de pulsarlo; diálogo con plazo propio de 10 s.
+  Un fallo de restauración no se silencia ni convierte el caso en aprobado.
+- **Decisión de arnés:** `playwright.config.ts` sirve el frontend compilado con
+  preview; `vite.config.ts` mantiene explícito su proxy y escucha loopback.
+  Se ejerce así el artefacto publicable y se evita descargar el grafo de módulos
+  de desarrollo en cada navegación. No se afirma que esto explique todos los
+  errores de recursos de la quinta corrida: se comprobará al repetirla. No se
+  quitan casos, vigilancia de consola ni el requisito de cero omisiones.
+- **Documentación:** README del arnés deja de prometer 40–60 s para una suite
+  que ya incluye muchos ciclos. Sin dependencias nuevas. Puerta canónica aún
+  no repetida; restauración B2B y preview pendientes de ejecución.
+
+### 2026-11-27 · 06:16–12:06 -05:00 · persistencia y autoridad de M10
+
+- **Artefacto:** `1c34bd53d016ac0db6b94d9d0bc8b439166609db` más cambios locales;
+  no es un nuevo cierre canónico. `main` no se modifica.
+- **Cambios:** CORE incorpora `InstallationTimeZoneService`, fuente `SystemTzdbSource`,
+  resolvedor durable, evidencia persistente y migración
+  `20261127111438_EvidenciaDeZonaYAutoriaInmutable`. La misma transacción conserva
+  configuración, acreditación y auditoría. La autoridad se relee desde la sesión
+  y cuenta, sin confiar solo en sus claims. La configuración genérica no puede
+  modificar la zona. El instalador conserva America/Lima cuando puede acreditarla.
+- **Autoría:** `AuditWriter`, modelo, configuración, consultas y panel conservan
+  nombre, id y nodo congelados. Se retira la FK al administrador. El histórico
+  incompleto permanece identificado, sin inventar nombres. Restricción NOT VALID
+  preserva ese histórico y rechaza nuevas fotografías incompletas; triggers
+  impiden reescribir las fotografías. Acciones de sistema: los tres nulos.
+- **M10:** `ReportsDbContext`, migración `20261127111557_HistorialDeInstalacionReportes`,
+  scripts de instalación/baja, arnés y `ReportsPersistenciaTests`. Solo historial,
+  sin copias de pedidos. Se conecta `OrderIndicatorsExportEndpoints` al módulo y
+  `OrderCsvDownload` a la descarga del servidor. Se retira la ruta de auditoría
+  de filas declaradas por el navegador; se descarta como prueba de una descarga
+  porque no acredita ni contenido ni filas. Queda preservada en el commit base.
+- **Observado físicamente:** ausencia de migración produce prueba roja; instalar
+  la vuelve verde. Un objeto ajeno impide la baja sin perder historial. Baja
+  repetida y reinstalación conservan el centinela externo. CORE verifica
+  establecimiento de zona, rechazo de un alias por la vía genérica, reversión
+  completa si falla auditoría, revocación de sesión/rol, nombre congelado tras
+  renombrar y eliminar la cuenta, e inmutabilidad por SQL. Bases propias eliminadas.
+  Evidencia local ignorada: `tmp/cierre-web/m10-fisico.log`.
+- **Pruebas focales observadas:** lógica CORE 52/52; reportes 143/143; vocabulario
+  de auditoría 15/15; interfaz reportes 67/67; tipos frontend y E2E y compilación
+  backend correctos. La mutación deliberada de la guarda de zona produjo 6 rojas
+  y 6 verdes; restaurada y contrastada por SHA-256, 12/12 verdes. Evidencia en
+  `m10-logica-02.log`, `m10-reportes-logica-02.log`, `m10-vocabulario-03.log`,
+  `m10-front-reportes-03.log`, `m10-zona-mutacion.log` y `m10-zona-restaurada.log`
+  bajo el mismo directorio local. No son una puerta canónica nueva.
+- **Suite CORE completa:** 482 aprobadas, 1 fallida, 0 omitidas. La única roja
+  es el inventario de bloqueos: faltó declarar el nuevo bloqueo bigint de zona.
+  Se corrige `BarreraMonetariaTests` para incluirlo y exigir que no choque con
+  activación. Su repetición queda pendiente en el momento de esta anotación.
+- **Errores propios corregidos:** expectativas de auditoría, vocabulario y ruta
+  de exportación seguían el prototipo anterior; se actualizaron al contrato real.
+  Un primer intento usó Python ausente en el contenedor; se retomó con el puente
+  del anfitrión. El preciclo Portal aún exigía ausencia de esquema y se corrige
+  a historial sin tablas de negocio. No se descarta ninguna rama adicional aquí.
+- **Obstáculo:** la revisión automática agotó su cuota antes de guardar esta
+  entrada y corregir el inventario. Esa acción no ocurrió; JP reanudó y se leyó
+  nuevamente el árbol antes de aplicarla. La pausa no se registra como progreso.
+- **Dependencias nuevas:** ninguna. **Puerta:** conserva quinta corrida 1–5
+  aprobadas y 6 fallida/interrumpida. **Sin comprobar:** permisos/licencia,
+  exportación HTTP real y ciclo E2E de M10, cobertura monetaria M03 y cierre
+  restante. Las pruebas focales no acreditan esos puntos.
+
+### 2026-11-27 · 06:09–06:15 -05:00 · quinta puerta y continuación de M10
+
+- **Artefacto observado:** `1c34bd53d016ac0db6b94d9d0bc8b439166609db`, árbol
+  limpio al recuperar la corrida. El empuje a `trabajo/cierre-web-20261126`
+  terminó correctamente; `main` permanece intacto.
+- **Puerta 5:** etapas 1–5 aprobadas; etapa 6 ejecutada y fallida. El arnés
+  anunció 199 casos; no produjo resumen final completo, por lo que no se
+  inventa un total aprobado ni omitido. El proceso recibió SIGTERM y la
+  limpieza no pudo contactar con Docker (EOF). No hay archivo de retorno
+  final de la envoltura. Evidencia local: `tmp/cierre-web/puerta-05.log` y
+  trazas de `e2e/test-results`.
+- **Observado en trazas:** `m08-portal-preciclo-api.spec.ts:144` aún esperaba
+  ausencia de esquema Portal. Es un error mío: actualicé el ciclo integral
+  pero omití esta expectativa del preciclo. Se cambia a exigir historial y
+  cero tablas de negocio, conservando la frontera del SPEC.
+- **Otros fallos:** H29 registra `ERR_NETWORK_CHANGED`; M07 ciclo registra
+  `ERR_INSUFFICIENT_RESOURCES`; su ciclo de instalación se queda esperando
+  el diálogo de desactivación. M01 y M04 encuentran M07 ya apagado, una
+  contaminación de escenario. M05b termina su ciclo verde; eso no acredita
+  la suite completa. La atribución global a saturación es una hipótesis del
+  veredicto, no una explicación demostrada para cada caso. Pendiente corregir
+  restauración y repetir sin dejar esperas interminables.
+- **Interrupción:** la revisión automática agotó cuota el 26/11 antes de crear
+  dos componentes y una suite de zona; esa escritura no ocurrió. JP reanudó
+  el 27/11. Los borradores anteriores permanecían en el directorio ignorado;
+  ahora se aplican para completar M10, aún sin migración ni pruebas propias.
+- **Decisiones M10/CORE:** fuente horaria del runtime Linux `tzdata.zi`, con
+  versión y SHA-256 para detectar alteraciones; autoridad de acreditación
+  del superadministrador, comprobada en la operación. El instalador acredita
+  America/Lima con la identidad real de su primera cuenta si dispone de
+  fuente canónica. Ausencia de fuente o discrepancia conserva estado sin
+  verificar. No se añade paquete ni se relaja TLS.
+- **Persistencia en preparación:** Reports tendrá únicamente historial de
+  instalación; los datos de negocio siguen en los dueños. CORE conservará
+  evidencia de zona y fotografía de auditoría sin FK a administradores.
+  No se rellenarán fotografías históricas con nombres actuales. Exportación
+  se conecta al generador servidor; se retira la ruta que aceptaba un número
+  de filas declarado por el navegador.
+- **Ficheros:** cambios en `backend/Sillar.Core{,.Contracts}`, Reports, arnés de
+  migraciones y preciclo Portal; se detallará la acreditación al terminar.
+  **Sin comprobar todavía:** nuevas migraciones, persistencia M10, autoridad
+  positiva, exportación real, permisos por operación y siguientes módulos.
+
 
 ### 2026-11-26 · 01:09–05:54 -05:00 · recepción, entorno y rescate
 

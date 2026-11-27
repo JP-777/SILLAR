@@ -33,7 +33,10 @@ public static class AuditAction
     /// <summary>Intento de envío de correo.</summary>
     public const string EmailSend = "email_send";
 
+    /// <summary>Exportación preparada y autorizada; no acredita recepción del archivo.</summary>
+    public const string Export = "export";
+
     /// <summary>Todos los valores admitidos.</summary>
     public static readonly string[] All =
-        [Create, Update, Delete, Activate, Deactivate, Login, LoginFailed, Logout, Setup, EmailSend];
+        [Create, Update, Delete, Activate, Deactivate, Login, LoginFailed, Logout, Setup, EmailSend, Export];
 }

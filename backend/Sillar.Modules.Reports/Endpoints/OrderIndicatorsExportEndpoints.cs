@@ -15,10 +15,8 @@ namespace Sillar.Modules.Reports.Endpoints;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>No está montada.</b> <see cref="ReportsModule.MapEndpoints"/> no la llama y
-/// la extensión es interna, así que ni el host puede activarla sin cambiar M10.
-/// La descarga positiva sigue sin habilitar: CORE no produce zonas verificadas y
-/// la migración <c>CoreAuditExport</c> está diferida.
+/// Se monta desde ReportsModule. CORE acredita la zona y confirma la auditoría
+/// persistente; una ausencia o un fallo de esos productores impide el archivo.
 /// </para>
 /// <para>
 /// El registro es de una exportación <b>autorizada y preparada</b>, no de una
@@ -29,13 +27,13 @@ namespace Sillar.Modules.Reports.Endpoints;
 /// </remarks>
 internal static class OrderIndicatorsExportEndpoints
 {
-    /// <summary>Ruta de la exportación, cuando se monte.</summary>
+    /// <summary>Ruta productiva de exportación.</summary>
     public const string Route = "/orders/export";
 
     /// <summary>Cabecera con el identificador que CORE dio al registro.</summary>
     public const string ExportIdHeader = "X-Export-Id";
 
-    /// <summary>Monta la exportación. Solo la llaman las pruebas.</summary>
+    /// <summary>Monta la exportación que declara ReportsModule.</summary>
     public static IEndpointRouteBuilder MapOrderIndicatorsCsvExport(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapGroup("/api/admin/reporting")
@@ -131,7 +129,7 @@ internal static class OrderIndicatorsExportEndpoints
         var result = await audit.RecordAsync(
             new ExportAuditRequest(ReportsModule.ModuleCode, CoreSeamEndpoints.OrderIndicatorsExportKind, CoreSeamEndpoints.CsvFormat, file.DataRows),
             cancellationToken);
-        // Legítimo: registrado, uuid v7 y un actor con id, correo y nodo.
+        // Legítimo: registrado, uuid v7 y un actor con nombre, id, correo y nodo.
         if (CoreSeamEndpoints.LegitimateRecord(result) is not { } exportId)
         {
             return result is { IsRecorded: false, Failure: ExportAuditFailure.ActorMissing or ExportAuditFailure.MetadataInvalid }

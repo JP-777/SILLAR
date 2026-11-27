@@ -78,6 +78,10 @@ public sealed class CoreExamples : ISchemaExamples
             }
             """,
 
+        [typeof(Sillar.Core.Endpoints.SettingsEndpoints.TimeZoneRequest)] = """
+            { "zoneId": "America/Lima" }
+            """,
+
         [typeof(TestEmailRequest)] = """
             {
               "recipient": "administracion@ejemplo.test"

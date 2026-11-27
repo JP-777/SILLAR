@@ -12,7 +12,7 @@ import { psql } from '../setup/docker.js';
 import { migrate, seed } from '../setup/migrate.js';
 
 
-const PASSWORD = 'bosque-cobalto-dieciseis-lunas';
+const PASSWORD = `Prueba-${randomUUID()}-aA9`;
 const SAME_ORIGIN = { 'Sec-Fetch-Site': 'same-origin' };
 
 interface AuthenticatedCustomer { customerId: string; email: string; }
@@ -137,22 +137,13 @@ function privateDataAbsent(raw: string): void {
  * No es [M08-CICLO] integral: frontend, sabotajes y puerta canónica pendientes.
  */
 
-async function portalSchemaAusente(): Promise<void> {
-  const result = await psql(`
-    SELECT count(*) FROM information_schema.schemata WHERE schema_name='portal'
-  `);
-  expect(result, 'M08 v1 tiene prohibido crear schema portal').toBe('0');
-  const tables = await psql(`
-    SELECT count(*) FROM information_schema.tables WHERE table_schema='portal'
-  `);
-  expect(tables).toBe('0');
-  const fks = await psql(`
-    SELECT count(*) FROM pg_constraint c
-    JOIN pg_class d ON d.oid = c.conrelid
-    JOIN pg_namespace n ON n.oid = d.relnamespace
-    WHERE c.contype='f' AND n.nspname='portal'
-  `);
-  expect(fks).toBe('0');
+async function portalSchemaInstalado(): Promise<void> {
+  const result = await psql("SELECT count(*) FROM information_schema.tables WHERE table_schema = 'portal' AND table_name = '__migrations'");
+  expect(result, 'Portal conserva su historial local de instalación').toBe('1');
+  expect(await psql("SELECT count(*) FROM information_schema.tables WHERE table_schema = 'portal' AND table_name <> '__migrations'"), 'Portal no duplica datos de negocio').toBe('0');
+  expect(await psql(`SELECT count(*) FROM pg_constraint c
+    JOIN pg_class d ON d.oid=c.conrelid JOIN pg_namespace n ON n.oid=d.relnamespace
+    WHERE c.contype='f' AND n.nspname='portal'`)).toBe('0');
 }
 
 async function crossFK(): Promise<string> {
@@ -228,7 +219,7 @@ test('[M08-PRECICLO-API] composición OFF/ON, migrate+seed y preservación de CR
   try {
   expect(before).toContain('crm');
   for(const code of ['portal','sales','tracking','service_orders','services']) expect(before).not.toContain(code);
-  await portalSchemaAusente();
+  await portalSchemaInstalado();
   expect((await page.request.get('/api/portal/overview')).status()).toBe(404);
   await loginAsE2eAdmin(page);
   await cambiarModulo(page,'portal','Activar');
@@ -278,13 +269,13 @@ test('[M08-PRECICLO-API] composición OFF/ON, migrate+seed y preservación de CR
     expect((await page.request.get(`/api/admin/service-orders/${ownA.serviceOrderId}`)).status()).toBe(200);
     expect(await crossFK()).toBe('1');
     expect(await snapshotDuenos()).toEqual(baseline);
-    await portalSchemaAusente();
+    await portalSchemaInstalado();
 
-    // En v1 sin schema no existe DROP de portal. migrate()+seed() deben ser
-    // idempotentes sobre los módulos verdaderos y no alterar sus datos.
+    // Este preciclo comprueba idempotencia; el ciclo integral también prueba
+    // la baja del historial Portal y su reinstalación, sin alterar a sus dueños.
     await migrate();
     await seed();
-    await portalSchemaAusente();
+    await portalSchemaInstalado();
     expect(await crossFK()).toBe('1');
     expect(await snapshotDuenos(),'migrate+seed alteró filas ajenas a Portal').toEqual(baseline);
 
@@ -313,8 +304,8 @@ test('[M08-PRECICLO-API] composición OFF/ON, migrate+seed y preservación de CR
     expect((await pageA.request.get('/api/portal/overview')).status()).toBe(404);
     expect(await crossFK()).toBe('1');
     expect(await snapshotDuenos()).toEqual(baseline);
-    await portalSchemaAusente();
-    console.log('[M08-PRECICLO] PASS: montaje y degradación, DB intacta, sin schema portal');
+    await portalSchemaInstalado();
+    console.log('[M08-PRECICLO] PASS: montaje y degradación, datos ajenos intactos e historial Portal instalado');
   } finally {
     await ctxA.close();
     await ctxB.close();

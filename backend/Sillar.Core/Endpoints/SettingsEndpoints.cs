@@ -82,6 +82,22 @@ public static class SettingsEndpoints
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
+        admin.MapGet("/installation-time-zone", async (IInstallationTimeZoneResolver resolver, CancellationToken ct) =>
+            Results.Ok(ToTimeZoneResponse(await resolver.ResolveAsync(ct))))
+            .WithName("GetInstallationTimeZone")
+            .WithSummary("Consulta la zona y su evidencia actual.");
+
+        admin.MapPut("/installation-time-zone", async (TimeZoneRequest body, InstallationTimeZoneService service,
+            IInstallationTimeZoneResolver resolver, CancellationToken ct) =>
+        {
+            var result = await service.EstablishAsync(body.ZoneId, ct);
+            return result.Changed
+                ? Results.Ok(ToTimeZoneResponse(await resolver.ResolveAsync(ct)))
+                : Results.Problem(statusCode: result.Status, title: result.Error);
+        }).RequireAuthorization(AdminRole.SuperAdmin)
+            .WithName("SetInstallationTimeZone")
+            .WithSummary("Acredita una zona IANA conservando la fuente y la atribución de quien la establece.");
+
         admin.MapPut("/{key}", Update)
             .WithName("UpdateSetting")
             .WithSummary("Cambia el valor de una configuración.")
@@ -95,6 +111,13 @@ public static class SettingsEndpoints
 
         return endpoints;
     }
+
+    private static object ToTimeZoneResponse(InstallationTimeZoneResolution value) => new
+    {
+        value.ZoneId, Status = value.Status.ToString(), Reason = value.Reason.ToString(),
+        value.AttestationId, value.ObservedAt,
+    };
+    public sealed record TimeZoneRequest(string? ZoneId);
 
     /// <summary>Devuelve las configuraciones públicas.</summary>
     /// <param name="settings">Lector de configuración, servido desde la caché.</param>

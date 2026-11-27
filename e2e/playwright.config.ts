@@ -23,19 +23,19 @@ export default defineConfig({
   expect: {
     timeout: 10_000,
   },
-  // Vite, no la API: es lo que un navegador real ve. Su proxy
+  // El frontend compilado es lo que un navegador real ve. Su proxy
   // (frontend/vite.config.ts) reenvía /api y /media a la API del stack e2e,
   // así que la cookie de sesión viaja sin fricción de CORS, igual que en
-  // desarrollo. Playwright lo arranca y lo destruye solo; docker no sabe que
+  // producción. Playwright lo compila, arranca y destruye solo; docker no sabe que
   // existe.
   webServer: {
-    command: `pnpm dev --port ${FRONTEND_PORT} --strictPort`,
+    command: `pnpm build && pnpm preview --host 127.0.0.1 --port ${FRONTEND_PORT} --strictPort`,
     cwd: FRONTEND_DIR,
     url: FRONTEND_URL,
     reuseExistingServer: false,
     stdout: 'pipe',
     stderr: 'pipe',
-    timeout: 30_000,
+    timeout: 120_000,
     env: {
       SILLAR_API_ORIGIN: API_URL,
     },

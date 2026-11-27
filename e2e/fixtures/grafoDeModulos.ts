@@ -2,6 +2,9 @@ import type { Page } from '@playwright/test';
 import { duringExpectedOutage, expect } from './base.js';
 import { navegarUnaVezYEsperarVisibilidad } from './esperaSpa.js';
 import { psql } from '../setup/docker.js';
+import { activateModule, login, waitApiReady } from '../setup/api.js';
+import { API_URL } from '../setup/env.js';
+import { migrate, seed } from '../setup/migrate.js';
 
 /**
  * **El grafo de módulos, para las pruebas que necesitan apagar uno.**
@@ -193,3 +196,21 @@ export const FK_CRUZADAS_DE_B2B = [
   'crm.customers',
   'crm.customers',
 ] as const;
+
+/** Restaura el escenario después de un rojo sin depender de un renderizador averiado. */
+export async function restaurarB2BTrasFallo(reinstalar = false): Promise<void> {
+  if (reinstalar) {
+    await migrate();
+    await seed();
+  }
+  await waitApiReady();
+  const session = await login();
+  async function activas(): Promise<string[]> {
+    const response = await fetch(`${API_URL}/api/capabilities`, { signal: AbortSignal.timeout(10_000) });
+    if (!response.ok) throw new Error(`No se pudo comprobar la restauración de M07: ${response.status}.`);
+    const body = await response.json() as { modules: { code: string }[] };
+    return body.modules.map(m => m.code);
+  }
+  if (!(await activas()).includes(B2B)) await activateModule(session, B2B);
+  expect(await activas(), 'La restauración tras el fallo no devolvió M07 al escenario.').toContain(B2B);
+}

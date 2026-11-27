@@ -1,7 +1,7 @@
 namespace Sillar.Core.Contracts;
 
 /// <summary>
-/// Auditoría obligatoria de exportaciones, antes del archivo. Fase A, candidato.
+/// Auditoría obligatoria de exportaciones, antes del archivo.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -11,14 +11,12 @@ namespace Sillar.Core.Contracts;
 /// <see cref="ExportAuditDelivery.DeliverAuditedAsync{T}"/> lo hace cumplir.
 /// </para>
 /// <para>
-/// <b>Hoy no se registra ninguna.</b> La acción <c>export</c> no está en
-/// <see cref="AuditAction.All"/> ni en el CHECK <c>ck_audit_log_action</c>
-/// (la migración <c>CoreAuditExport</c> sigue diferida), así que todo intento sale
-/// <see cref="ExportAuditFailure.ExportActionNotAdmitted"/> sin tocar la base.
+/// La acción export está admitida por el vocabulario y su migración física.
+/// Sin esquema compatible o sin confirmación durable no se devuelve un recibo.
 /// </para>
 /// <para>
 /// <b>Actor real:</b> sale de la sesión validada en la petición
-/// (<see cref="ICurrentAdmin"/>), nunca de quien llama, y exige id, correo y nodo.
+/// (<see cref="ICurrentAdmin"/>), nunca de quien llama, y exige nombre, id, correo y nodo.
 /// <b>Durabilidad:</b> el registro se confirma en su propio guardado; si el
 /// contexto de auditoría está dentro de una transacción ajena, se rechaza, porque
 /// esa transacción podría deshacerlo después de entregado el archivo.
@@ -68,7 +66,7 @@ public enum ExportAuditFailure
 }
 
 /// <summary>Quién exporta, tal como lo validó la sesión.</summary>
-public sealed record ExportActor(int AdminUserId, string Email, string HomeNode);
+public sealed record ExportActor(int AdminUserId, string Email, string HomeNode, string? DisplayName = null);
 
 /// <summary>El resultado, con el identificador y el actor si se registró.</summary>
 /// <param name="Outcome">Registrado o rechazado.</param>

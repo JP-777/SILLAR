@@ -829,7 +829,8 @@ test('56 · el puerto de auditoría por HTTP solo confirma con recorded y el ide
   assert.equal(zonas.installationZoneObservation, null);
   const servicio = codigo(fuente('src/modules/reporting/services/reporting.ts'));
   assert.match(servicio, /'\/admin\/reporting\/installation-zone'/);
-  assert.match(servicio, /'\/admin\/reporting\/orders\/export-audit'/);
+  assert.doesNotMatch(servicio, /export-audit/);
+  assert.match(servicio, /'\/admin\/reporting\/orders\/export'/);
 });
 
 test('57 · la pantalla adopta la zona de CORE antes de montarse: inicial sin verificar, o bloqueo si la lectura falla', async () => {
@@ -872,43 +873,31 @@ test('57 · la pantalla adopta la zona de CORE antes de montarse: inicial sin ve
   assert.match(pagina, /loadInstallationZoneObservation\(\)\.then\(\(observation\) => \{\s*if \(!current\) return;\s*adoptInstallationZone\(observation\);/);
 });
 
-test('58 · con el puerto HTTP real conectado solo en pruebas, ni 409, ni 503, ni denegada, ni red caída dan archivo', () => {
+test('58 · la descarga real solo acepta CSV: errores HTTP, recibos JSON y red caída no dan archivo', () => {
   const composicion = resolve(frontend, 'tests/soporte/composicionAuditoriaHttp.mjs');
-  const correr = (ESCENARIO, INSTALACION, extra = { SILLAR_COMPOSICION_PRUEBAS: '1' }) => {
+  const correr = (ESCENARIO, optIn = '1') => {
     const salida = spawnSync(process.execPath, ['--no-warnings', composicion], {
-      env: { ...process.env, ESCENARIO, INSTALACION, ...extra }, encoding: 'utf8', timeout: 20_000,
+      env: { ...process.env, ESCENARIO, SILLAR_COMPOSICION_PRUEBAS: optIn }, encoding: 'utf8', timeout: 20_000,
     });
     return { status: salida.status, stderr: salida.stderr, datos: salida.status === 0 ? JSON.parse(salida.stdout) : null };
   };
-  const PETICION = { url: '/api/admin/reporting/orders/export-audit', method: 'POST', csrf: 'token-de-prueba', body: { zone: 'America/Lima', dataRows: 6 } };
-
-  // Con la zona de prueba verificada, el puerto llega al servidor; solo «recorded» con identificador da archivo.
-  for (const [escenario, esperado] of [['conflicto', 'audit_failed'], ['no_disponible', 'audit_failed'], ['denegada', 'audit_denied'],
-    ['sin_identificador', 'audit_failed'], ['red_caida', 'audit_failed']]) {
-    const { status, stderr, datos } = correr(escenario, 'verificada_de_prueba');
+  const peticion = { url: '/api/admin/reporting/orders/export', method: 'POST', csrf: 'token-de-prueba', body: {
+    startInclusive: '2026-10-01T05:00:00.000Z', endExclusive: '2026-10-08T05:00:00.000Z', zone: 'America/Lima',
+  } };
+  for (const escenario of ['conflicto', 'no_disponible', 'denegada', 'recibo_sin_archivo', 'texto_ajeno', 'red_caida']) {
+    const { status, stderr, datos } = correr(escenario);
     assert.equal(status, 0, stderr);
-    assert.equal(datos.kind, esperado, escenario);
+    assert.equal(datos.kind, 'failed', escenario);
     assert.equal(datos.conArchivo, false, escenario);
-    // A CORE solo van la zona y las filas, con el token CSRF.
-    assert.deepEqual(datos.peticiones, [PETICION], escenario);
+    assert.deepEqual(datos.peticiones, [peticion], escenario);
   }
-  const control = correr('registrada', 'verificada_de_prueba');
+  const control = correr('registrada');
   assert.equal(control.status, 0, control.stderr);
   assert.deepEqual([control.datos.kind, control.datos.conArchivo], ['ready', true]);
-
-  // Sin zona verificada no sale ni la petición, aunque el servidor fuera a confirmar.
-  for (const instalacion of ['hoy', 'inicial', 'configurada']) {
-    const { status, stderr, datos } = correr('registrada', instalacion);
-    assert.equal(status, 0, stderr);
-    assert.deepEqual([datos.kind, datos.conArchivo, datos.peticiones.length], ['blocked', false, 0], instalacion);
-  }
-
-  // Opt-in: sin la variable no compone nada. Y la aplicación no la usa.
-  assert.equal(correr('registrada', 'verificada_de_prueba', { SILLAR_COMPOSICION_PRUEBAS: '' }).status, 2);
+  assert.equal(correr('registrada', '').status, 2);
   for (const archivo of archivos()) {
     assert.doesNotMatch(readFileSync(archivo, 'utf8'), /composicionAuditoriaHttp|SILLAR_COMPOSICION_PRUEBAS|tests\/soporte/, archivo);
   }
-  assert.match(codigo(fuente('src/modules/reporting/services/reportExport.ts')), /exportAuditPort[^=;]*= null;/);
 });
 
 test('59 · «recorded» solo cuenta con un identificador uuid v7 de CORE; con otro no hay archivo', async () => {

@@ -4,7 +4,7 @@ import { http } from '../../../shared/http/client';
 export interface AuditEntry {
   id: number;
   occurredAt: string;
-  /** Nulo si la cuenta fue eliminada, o si actuó el sistema. */
+  /** Identificador local congelado. Nulo si no hay atribución humana. */
   adminUserId: number | null;
   /**
    * Correo de quien actuó, guardado como snapshot.
@@ -13,6 +13,8 @@ export interface AuditEntry {
    * identidad de quien actuó no sirve de nada.
    */
   adminUserEmail: string | null;
+  adminUserName?: string | null;
+  adminUserHomeNode?: string | null;
   moduleCode: string | null;
   entityType: string | null;
   entityId: string | null;
@@ -52,6 +54,7 @@ export const AUDIT_ACTIONS: readonly { value: string; label: string }[] = [
   { value: 'login_failed', label: 'Acceso fallido' },
   { value: 'logout', label: 'Cierre de sesión' },
   { value: 'setup', label: 'Instalación' },
+  { value: 'export', label: 'Exportación' },
 ];
 
 /** Nombre visible de una acción, o el código si no se reconoce. */

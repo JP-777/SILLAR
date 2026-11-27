@@ -1,3 +1,5 @@
+using Sillar.Modules.Reports.Data;
+using Sillar.Shared.Data.Modularity;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,9 +9,20 @@ using Sillar.Shared.Modularity;
 
 namespace Sillar.Modules.Reports;
 
-/// <summary>M10 — Reportes; solo lectura, sin schema ni migraciones.</summary>
-public sealed class ReportsModule : IModule
+/// <summary>M10 — Reportes; solo lectura, con historial local de instalación.</summary>
+public sealed class ReportsModule : IModule, IModuleMigrations
 {
+    private static readonly MigracionesDeContexto<ReportsDbContext> Migrations = new(
+        connection => new ReportsDbContext(PersistenciaDeModulo.Opciones<ReportsDbContext>(
+            connection, ReportsDbContext.Schema, ReportsDbContext.MigrationsHistoryTable)),
+        ReportsDbContext.MigrationsHistoryTable);
+    public string MigrationsHistoryTable => Migrations.MigrationsHistoryTable;
+    public IReadOnlyList<string> KnownMigrations(string connectionString) => Migrations.KnownMigrations(connectionString);
+    public Task<IReadOnlyList<string>> AppliedMigrationsAsync(string connectionString, CancellationToken ct)
+        => Migrations.AppliedMigrationsAsync(connectionString, ct);
+    public Task ApplyMigrationsAsync(string connectionString, CancellationToken ct)
+        => Migrations.ApplyMigrationsAsync(connectionString, ct);
+
     /// <summary>Código público del módulo.</summary>
     public const string ModuleCode = "reporting";
 
@@ -17,7 +30,7 @@ public sealed class ReportsModule : IModule
     public string Code => ModuleCode;
 
     /// <inheritdoc />
-    public string? Schema => null;
+    public string? Schema => ReportsDbContext.Schema;
 
     /// <inheritdoc />
     public string DisplayName => "Reportes";
@@ -47,5 +60,6 @@ public sealed class ReportsModule : IModule
         endpoints.MapOrderIndicatorsEndpoints();
         endpoints.MapMonetaryIndicatorsEndpoints();
         endpoints.MapCoreSeamEndpoints();
+        endpoints.MapOrderIndicatorsCsvExport();
     }
 }

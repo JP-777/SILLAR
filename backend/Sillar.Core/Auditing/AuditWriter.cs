@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using Sillar.Core.Contracts;
 using Sillar.Core.Data;
@@ -21,13 +22,13 @@ internal sealed class AuditWriter(
     /// </remarks>
     public async Task WriteAsync(AuditEntry entry, CancellationToken cancellationToken)
     {
-        Stage(entry);
+        await StageAsync(entry, cancellationToken);
         await database.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>El contexto en el que este escritor deja sus filas.</summary>
     /// <remarks>
-    /// Quien prepara un registro con <see cref="Stage"/> para guardarlo junto a su
+    /// Quien prepara un registro con <see cref="StageAsync"/> para guardarlo junto a su
     /// propio cambio comprueba con esto que los dos van en el mismo contexto.
     /// </remarks>
     internal CoreDbContext Context => database;
@@ -36,13 +37,36 @@ internal sealed class AuditWriter(
     /// Deja el registro en el contexto <b>sin guardar</b>, para que se confirme en
     /// el mismo <c>SaveChanges</c> que el cambio que audita: o los dos o ninguno.
     /// </summary>
-    internal AuditLog Stage(AuditEntry entry)
+    internal async Task<AuditLog> StageAsync(AuditEntry entry, CancellationToken cancellationToken)
     {
+        // Se lee únicamente CORE y por este mismo contexto/conexión: también vale
+        // dentro de una transacción monetaria con un pool de una sola conexión.
+        var name = entry.AdminUserName;
+        var homeNode = entry.AdminUserHomeNode;
+        if (entry.AdminUserId is { } id)
+        {
+            if (id < 1) throw new InvalidOperationException("La atribución requiere un identificador local positivo.");
+            if (name is null && homeNode is null)
+            {
+                var actor = database.AdminUsers.Local.FirstOrDefault(u => u.AdminUserId == id)
+                    ?? await database.AdminUsers.AsNoTracking().SingleOrDefaultAsync(u => u.AdminUserId == id, cancellationToken);
+                name = actor?.FullName;
+                homeNode = actor?.HomeNode;
+            }
+            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(homeNode))
+                throw new InvalidOperationException("No se puede auditar una acción humana sin nombre, identificador local y nodo.");
+        }
+        else if (name is not null || homeNode is not null)
+        {
+            throw new InvalidOperationException("Una acción sin actor conserva los tres componentes de atribución nulos.");
+        }
         var log = new AuditLog
         {
             OccurredAt = clock.GetUtcNow(),
             Action = entry.Action,
             AdminUserId = entry.AdminUserId,
+            AdminUserName = name,
+            AdminUserHomeNode = homeNode,
             AdminUserEmail = Truncate(entry.AdminUserEmail, 150),
             ModuleCode = entry.ModuleCode,
             EntityType = entry.EntityType,

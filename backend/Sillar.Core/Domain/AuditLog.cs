@@ -9,7 +9,7 @@ public class AuditLog
     /// <summary>Cuándo ocurrió.</summary>
     public DateTimeOffset OccurredAt { get; set; }
 
-    /// <summary>Quién lo hizo. Nulo si fue el sistema o si el usuario fue eliminado.</summary>
+    /// <summary>Identificador local congelado. No se modifica al eliminar la cuenta.</summary>
     public int? AdminUserId { get; set; }
 
     /// <summary>
@@ -43,6 +43,9 @@ public class AuditLog
     /// <summary>Dirección de origen. Admite IPv6.</summary>
     public string? IpAddress { get; set; }
 
-    /// <summary>Usuario que actuó, si sigue existiendo.</summary>
-    public AdminUser? AdminUser { get; set; }
+    /// <summary>Nombre congelado; null en registros históricos que no lo guardaron.</summary>
+    public string? AdminUserName { get; set; }
+
+    /// <summary>Nodo de pertenencia congelado; nunca se deriva del nodo de la petición.</summary>
+    public string? AdminUserHomeNode { get; set; }
 }

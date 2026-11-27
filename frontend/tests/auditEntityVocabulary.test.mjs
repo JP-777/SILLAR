@@ -25,6 +25,8 @@ const expected = {
   featured_product: 'Producto destacado',
   featured_project: 'Trabajo destacado',
   installation: 'Instalación',
+  installation_time_zone: 'Zona horaria del negocio',
+  order_indicators: 'Indicadores de pedidos',
   media_asset: 'Archivo',
   module: 'Módulo',
   product: 'Producto',
@@ -37,11 +39,12 @@ const expected = {
 };
 
 const surfaces = [
+  { file: 'src/modules/reporting/auditEntityVocabulary.ts', exportName: 'reportingAuditEntityVocabulary', moduleCode: 'reporting', count: 1 },
   {
     file: 'src/modules/core/auditEntityVocabulary.ts',
     exportName: 'coreAuditEntityVocabulary',
     moduleCode: 'core',
-    count: 7,
+    count: 8,
   },
   {
     file: 'src/modules/catalog/routes.tsx',
@@ -109,13 +112,13 @@ function contributions() {
   return surfaces.map(contribution);
 }
 
-test('CORE + M01 + M02 + M05a + M04 activos componen exactamente las veintiuna etiquetas', () => {
+test('CORE + M01 + M02 + M05a + M04 activos componen exactamente las veintitrés etiquetas', () => {
   const actual = visibleAuditEntityLabelsFrom(
     contributions(),
     () => true,
   );
 
-  assert.equal(Object.keys(actual).length, 21);
+  assert.equal(Object.keys(actual).length, 23);
   assert.deepEqual(actual, expected);
 });
 
@@ -158,18 +161,19 @@ test('sin M01 product_item no queda registrado y degrada al código técnico', (
   );
 });
 
-test('solo CORE aporta exactamente sus siete etiquetas', () => {
+test('solo CORE aporta exactamente sus ocho etiquetas', () => {
   const actual = visibleAuditEntityLabelsFrom(
     contributions(),
     (moduleCode) => moduleCode === 'core',
   );
 
-  assert.equal(Object.keys(actual).length, 7);
+  assert.equal(Object.keys(actual).length, 8);
   assert.deepEqual(actual, {
     admin_session: 'Sesión',
     admin_user: 'Usuario',
     email: 'Correo',
     installation: 'Instalación',
+  installation_time_zone: 'Zona horaria del negocio',
     media_asset: 'Archivo',
     module: 'Módulo',
     setting: 'Ajuste',
@@ -185,7 +189,7 @@ test('el registro pasa el predicado de actividad al compositor', () => {
   );
 });
 
-test('el registro contiene las cinco contribuciones y ninguna etiqueta concreta', () => {
+test('el registro contiene las seis contribuciones y ninguna etiqueta concreta', () => {
   const registry = source('src/platform/auditEntityVocabularies.ts');
 
   const body =
@@ -203,6 +207,7 @@ test('el registro contiene las cinco contribuciones y ninguna etiqueta concreta'
 
   assert.deepEqual(listed, [
     'coreAuditEntityVocabulary',
+    'reportingAuditEntityVocabulary',
     'catalogAuditEntityVocabulary',
     'cmsAuditEntityVocabulary',
     'servicesAuditEntityVocabulary',
@@ -348,6 +353,8 @@ const auditPageVocabularyBaseline = {
   "admin_user": 0,
   "email": 1,
   "installation": 0,
+  "installation_time_zone": 0,
+  "order_indicators": 0,
   "media_asset": 0,
   "module": 1,
   "setting": 0,
@@ -371,6 +378,8 @@ const auditPageVocabularyBaseline = {
   "Usuario": 1,
   "Correo": 0,
   "Instalación": 0,
+  "Zona horaria del negocio": 0,
+  "Indicadores de pedidos": 0,
   "Archivo": 0,
   "Módulo": 2,
   "Ajuste": 0,
@@ -476,6 +485,7 @@ test('AuditPage consulta capacidades y no recentraliza vocabulario en ninguna re
 
   for (const contributionName of [
     'coreAuditEntityVocabulary',
+    'reportingAuditEntityVocabulary',
     'catalogAuditEntityVocabulary',
     'cmsAuditEntityVocabulary',
     'crmAuditEntityVocabulary',

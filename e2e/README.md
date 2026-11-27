@@ -1,5 +1,9 @@
 # SILLAR · Arnés end-to-end
 
+**Fecha de creación:** 18 de agosto de 2026 (según el historial documental).
+**Fecha de última verificación:** 27 de noviembre de 2026, America/Lima.
+**Commit contrastado:** `1c34bd53d016ac0db6b94d9d0bc8b439166609db` más cambios locales de cierre.
+
 Prueba el sistema entero —backend y frontend juntos— contra un stack docker
 efímero que la propia suite levanta, siembra, instala y destruye. Ningún
 `page.route()` sustituye al servidor real salvo que la prueba lo diga
@@ -25,7 +29,7 @@ vistazo a quien no lo construyó.
   tienes) — lo usa `setup/migrate.ts` para aplicar las migraciones de CORE y
   Catalog contra la base efímera.
 - **Dependencias instaladas**: `pnpm install` en `e2e/` y en `frontend/` (la
-  suite arranca el Vite de `frontend/` como su propio servidor; no lo trae
+  suite compila `frontend/` y sirve su resultado con Vite preview; no lo trae
   consigo).
 - Los navegadores de Playwright: `pnpm exec playwright install chromium` si es
   la primera vez en esta máquina.
@@ -52,10 +56,9 @@ E2E_KEEP_STACK=1 pnpm test    # bash;  en PowerShell: $env:E2E_KEEP_STACK=1
 pnpm stack:down               # y esto lo tira después
 ```
 
-Cada corrida completa —incluida construir la imagen Docker en Debug— tarda
-entre 40 y 60 segundos con la imagen ya en caché de Docker; bastante más la
-primera vez, mientras Docker descarga las imágenes base del SDK y del
-runtime de .NET.
+La duración depende del equipo, de las migraciones y de los ciclos de reinicio.
+El antiguo estimado de 40–60 segundos no describe esta suite integrada.
+La ejecución registra tiempos reales; no hay un plazo de cierre supuesto.
 
 ## Inventario, un archivo por línea
 
@@ -68,7 +71,10 @@ runtime de .NET.
   correcto el día que se decidió.
 - **`playwright.config.ts`** — un solo worker (el stack es compartido y con
   estado), `globalSetup`/`globalTeardown`, y el `webServer` que arranca el
-  Vite de `frontend/` apuntado a la API del stack e2e vía `SILLAR_API_ORIGIN`.
+  frontend compilado mediante Vite preview, apuntado a la API del stack e2e vía
+  `SILLAR_API_ORIGIN`. Esto ejerce el artefacto de producción y evita la carga
+  de módulos de desarrollo en cada navegación. No se relaja la vigilancia de
+  errores de consola ni se reintentan pruebas fallidas.
 - **`tsconfig.json`** — `lib` incluye `DOM` (los fixtures llaman
   `document.documentElement` dentro de `page.evaluate`).
 - **`package.json`** / **`pnpm-lock.yaml`** — dependencias: `@playwright/test`,

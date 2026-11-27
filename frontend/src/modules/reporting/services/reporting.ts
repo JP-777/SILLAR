@@ -2,7 +2,7 @@ import { http } from '../../../shared/http/client';
 import { describe, type Failure } from '../../../shared/errors/messages';
 import { isApiError } from '../../../shared/http/errors';
 import { isSourceFailure } from './sourceFailure';
-import { exportAuditPortOver, readInstallationZone } from './coreSeam';
+import { readInstallationZone } from './coreSeam';
 import type { OrderIndicatorsView } from './orderIndicators';
 import { InconsistentIndicatorsError, verifyOrderIndicators } from './verifyOrderIndicators';
 import {
@@ -62,7 +62,13 @@ export function loadInstallationZoneObservation(): Promise<unknown> {
   return readInstallationZone(() => http.get<unknown>('/admin/reporting/installation-zone'));
 }
 
-/** Puerto de auditoría candidato. Sin conectar: `exportAuditPort` sigue en null. */
-export const httpExportAuditPort = exportAuditPortOver(
-  (call) => http.post<unknown>('/admin/reporting/orders/export-audit', call),
-);
+/** El servidor es el único productor y auditor de los bytes del CSV. */
+export async function downloadOrderIndicatorsCsv(start: string, end: string, zone: string, signal?: AbortSignal): Promise<string> {
+  const content = await http.post<unknown>('/admin/reporting/orders/export', {
+    startInclusive: start, endExclusive: end, zone,
+  }, { signal });
+  if (typeof content !== 'string' || !content.replace(/^\uFEFF/, '').startsWith('Cohorte,')) {
+    throw new Error('El servidor no devolvió un archivo de indicadores válido.');
+  }
+  return content;
+}

@@ -28,7 +28,7 @@ public sealed class OrderIndicatorsEndpointTests
         var rutas = Endpoints(Aplicacion(lector: null));
 
         Assert.Equal(
-            [("GET", Ruta), ("GET", "/api/admin/reporting/orders/value"), ("GET", "/api/admin/reporting/payments"), ("GET", "/api/admin/reporting/installation-zone"), ("POST", "/api/admin/reporting/orders/export-audit")],
+            [("GET", Ruta), ("GET", "/api/admin/reporting/orders/value"), ("GET", "/api/admin/reporting/payments"), ("GET", "/api/admin/reporting/installation-zone"), ("POST", "/api/admin/reporting/orders/export")],
             rutas.Select(r => (Assert.Single(r.Metadata.GetMetadata<HttpMethodMetadata>()!.HttpMethods), r.RoutePattern.RawText)).ToArray());
         foreach (var ruta in rutas)
         {

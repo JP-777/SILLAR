@@ -15,11 +15,12 @@ public sealed class OrderIndicatorsReportTests
     private static readonly DateTimeOffset Fin = new(2026, 10, 8, 0, 0, 0, TimeSpan.FromHours(-5));
 
     [Fact]
-    public void El_modulo_declara_codigo_reporting_sin_schema_y_ventas_como_dependencia_blanda()
+    public void El_modulo_declara_codigo_y_schema_reporting_y_ventas_como_dependencia_blanda()
     {
         var module = new ReportsModule();
         Assert.Equal("reporting", module.Code);
-        Assert.Null(module.Schema);
+        Assert.Equal("reporting", module.Schema);
+        Assert.IsAssignableFrom<Sillar.Shared.Data.Modularity.IModuleMigrations>(module);
         Assert.Equal(["core"], module.HardDependencies);
         Assert.Equal(["sales"], module.SoftDependencies);
     }

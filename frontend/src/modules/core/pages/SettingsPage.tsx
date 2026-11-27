@@ -7,6 +7,7 @@ import { ConfirmDialog, Toasts, useToasts } from '../../../shared/ui/patterns';
 import { ForbiddenPage } from '../../../platform/ForbiddenPage';
 import { useSession } from '../../../session';
 import { EmailTestPanel } from '../components/EmailTestPanel';
+import { InstallationTimeZonePanel } from '../components/InstallationTimeZonePanel';
 import { SettingRow } from '../components/SettingRow';
 import {
   groupSettings,
@@ -35,7 +36,7 @@ export function SettingsPage() {
   const [pendingVisibility, setPendingVisibility] = useState<Setting | null>(null);
 
   const settings = state.status === 'ready' ? state.data : [];
-  const groups = useMemo(() => groupSettings(settings), [settings]);
+  const groups = useMemo(() => groupSettings(settings.filter(s => s.key !== 'installation.timezone_iana')), [settings]);
   const pendingCount = settings.filter((setting) => setting.needsSetup).length;
 
   async function save(setting: Setting, value: string, isPublic?: boolean) {
@@ -119,6 +120,7 @@ export function SettingsPage() {
           </Card>
         ))}
 
+      <InstallationTimeZonePanel canEdit={canPublish} />
       {canPublish && <EmailTestPanel defaultRecipient={user?.email ?? ''} />}
 
       <ConfirmDialog

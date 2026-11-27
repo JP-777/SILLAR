@@ -3,7 +3,7 @@ namespace Sillar.Core.Dtos;
 /// <summary>Una entrada del registro de auditoría.</summary>
 /// <param name="Id">Identificador.</param>
 /// <param name="OccurredAt">Cuándo ocurrió.</param>
-/// <param name="AdminUserId">Quién actuó, si su cuenta sigue existiendo.</param>
+/// <param name="AdminUserId">Identificador local congelado de quien actuó.</param>
 /// <param name="AdminUserEmail">
 /// Correo de quien actuó, tal como se guardó. Es un snapshot, no una unión con
 /// <c>admin_users</c>: por eso el registro sobrevive al borrado del usuario.
@@ -24,4 +24,6 @@ public sealed record AuditEntryResponse(
     string? EntityId,
     string Action,
     string? Summary,
-    string? IpAddress);
+    string? IpAddress,
+    string? AdminUserName = null,
+    string? AdminUserHomeNode = null);

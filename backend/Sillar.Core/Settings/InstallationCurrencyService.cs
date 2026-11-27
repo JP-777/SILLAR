@@ -245,7 +245,7 @@ internal sealed record CurrencyChangeResult(CurrencyChangeOutcome Outcome, strin
 /// <para>
 /// <b>Cambio y auditoría, o nada.</b> La fila se bloquea (<c>FOR UPDATE</c>), se lee
 /// el valor anterior, se cambia, y el registro con los dos valores se prepara en el
-/// mismo contexto con <see cref="AuditWriter.Stage"/>: un solo <c>SaveChanges</c>
+/// mismo contexto con <see cref="AuditWriter.StageAsync"/>: un solo <c>SaveChanges</c>
 /// dentro de una transacción explícita. Si falla, se deshace todo.
 /// </para>
 /// <para>
@@ -385,7 +385,7 @@ internal sealed class InstallationCurrencyService(
 
             setting.SettingValue = value!;
             setting.IsPublic = false;
-            staged = auditWriter.Stage(new AuditEntry(AuditAction.Update)
+            staged = await auditWriter.StageAsync(new AuditEntry(AuditAction.Update)
             {
                 AdminUserId = actingUserId,
                 AdminUserEmail = actingEmail,
@@ -394,7 +394,7 @@ internal sealed class InstallationCurrencyService(
                 EntityId = InstallationCurrency.SettingKey,
                 // Hay fila, así que el valor anterior se leyó arriba, bajo el bloqueo.
                 Summary = InstallationCurrencyAuditText.Compose(previous!, value!),
-            });
+            }, cancellationToken);
 
             await database.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);

@@ -61,8 +61,8 @@ public static class CoreServices
         // en que el host tiene que detenerse tras responder.
         services.AddSingleton<HostRestarter>();
 
-        // Bus de eventos. Hoy no hay ningún manejador registrado: publicar es
-        // gratis y M10 Reportes se alimentará de aquí cuando exista.
+        // Notificaciones auxiliares. El bus no garantiza entrega: los indicadores
+        // de M10 y cualquier dependencia dura se resuelven mediante lecturas.
         services.AddSingleton<IEventPublisher, InProcessEventBus>();
 
         // La caché de configuración es singleton porque vive más que una
@@ -110,6 +110,11 @@ public static class CoreServices
         services.AddScoped<AdminUserService>();
         services.AddScoped<SiteSettingService>();
         services.AddInstallationCurrency();
+        services.AddSingleton<ITzdbSource, SystemTzdbSource>();
+        services.AddScoped<ITimeZoneAttestationStore, PersistedTimeZoneAttestationStore>();
+        services.AddScoped<IInstallationTimeZoneResolver, DurableInstallationTimeZoneResolver>();
+        services.AddScoped<InstallationTimeZoneService>();
+        services.AddScoped<IExportAudit, ExportAudit>();
         services.AddScoped<AuditQueryService>();
         services.AddScoped<ModuleActivationService>();
         services.AddScoped<MediaService>();

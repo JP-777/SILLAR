@@ -493,23 +493,9 @@ function desenlaceDeCorreo(summary: string): string | null {
  * snapshot: sin él, borrar a alguien borraría la huella de lo que hizo.
  */
 function Actor({ entry }: { entry: AuditEntry }) {
-  if (!entry.adminUserEmail) {
-    return <span style={subtle}>El sistema</span>;
-  }
-
-  const deleted = entry.adminUserId === null && entry.action !== 'login_failed';
-
-  return (
-    <span style={{ whiteSpace: 'nowrap' }}>
-      {entry.adminUserEmail}
-      {deleted && (
-        <>
-          {' '}
-          <Badge tone="neutral">cuenta eliminada</Badge>
-        </>
-      )}
-    </span>
-  );
+  if (entry.adminUserName) return <span>{entry.adminUserName}{entry.adminUserEmail && <small> · {entry.adminUserEmail}</small>}</span>;
+  if (!entry.adminUserEmail) return <span style={subtle}>Sin atribución humana registrada</span>;
+  return <span>{entry.adminUserEmail}{entry.action !== 'login_failed' && <Badge tone="neutral">atribución histórica incompleta</Badge>}</span>;
 }
 
 function toneOf(action: string): 'neutral' | 'success' | 'warning' | 'danger' {

@@ -213,9 +213,19 @@ namespace Sillar.Core.Migrations
                         .HasColumnType("character varying(150)")
                         .HasColumnName("admin_user_email");
 
+                    b.Property<string>("AdminUserHomeNode")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("admin_user_home_node");
+
                     b.Property<int?>("AdminUserId")
                         .HasColumnType("integer")
                         .HasColumnName("admin_user_id");
+
+                    b.Property<string>("AdminUserName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("admin_user_name");
 
                     b.Property<string>("EntityId")
                         .HasMaxLength(60)
@@ -262,7 +272,9 @@ namespace Sillar.Core.Migrations
 
                     b.ToTable("audit_log", "core", t =>
                         {
-                            t.HasCheckConstraint("ck_audit_log_action", "action IN ('create', 'update', 'delete', 'activate', 'deactivate', 'login', 'login_failed', 'logout', 'setup', 'email_send')");
+                            t.HasCheckConstraint("ck_audit_log_action", "action IN ('create', 'update', 'delete', 'activate', 'deactivate', 'login', 'login_failed', 'logout', 'setup', 'email_send', 'export')");
+
+                            t.HasCheckConstraint("ck_audit_log_actor_snapshot", "(admin_user_id IS NULL AND admin_user_name IS NULL AND admin_user_home_node IS NULL) OR (admin_user_id IS NOT NULL AND admin_user_id > 0 AND admin_user_name IS NOT NULL AND btrim(admin_user_name) <> '' AND admin_user_home_node IS NOT NULL AND btrim(admin_user_home_node) <> '')");
                         });
                 });
 
@@ -343,6 +355,86 @@ namespace Sillar.Core.Migrations
                             t.HasCheckConstraint("ck_installation_product_version_not_empty", "btrim(product_version) <> ''");
 
                             t.HasCheckConstraint("ck_installation_singleton", "singleton");
+                        });
+                });
+
+            modelBuilder.Entity("Sillar.Core.Domain.InstallationTimeZoneAttestation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid>("AttestationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("attestation_id");
+
+                    b.Property<DateTimeOffset>("AttestedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("attested_at");
+
+                    b.Property<string>("AttestedByAdminUserHomeNode")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("attested_by_admin_user_home_node");
+
+                    b.Property<int>("AttestedByAdminUserLocalId")
+                        .HasColumnType("integer")
+                        .HasColumnName("attested_by_admin_user_local_id");
+
+                    b.Property<string>("AttestedByName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("attested_by_name");
+
+                    b.Property<string>("AuthorityVersion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("authority_version");
+
+                    b.Property<Guid>("InstallationKey")
+                        .HasColumnType("uuid")
+                        .HasColumnName("installation_key");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("SourceName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("source_name");
+
+                    b.Property<string>("SourceVersion")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("source_version");
+
+                    b.Property<string>("ZoneId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("zone_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_installation_time_zone_attestations");
+
+                    b.HasIndex("AttestationId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_time_zone_attestation_id");
+
+                    b.ToTable("installation_time_zone_attestations", "core", t =>
+                        {
+                            t.HasCheckConstraint("ck_time_zone_actor", "attested_by_admin_user_local_id > 0 AND btrim(attested_by_name) <> '' AND btrim(attested_by_admin_user_home_node) <> ''");
+
+                            t.HasCheckConstraint("ck_time_zone_source", "btrim(zone_id) <> '' AND btrim(source_name) <> '' AND btrim(source_version) <> '' AND btrim(authority_version) <> ''");
                         });
                 });
 
@@ -735,17 +827,6 @@ namespace Sillar.Core.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_admin_sessions_admin_user_id");
-
-                    b.Navigation("AdminUser");
-                });
-
-            modelBuilder.Entity("Sillar.Core.Domain.AuditLog", b =>
-                {
-                    b.HasOne("Sillar.Core.Domain.AdminUser", "AdminUser")
-                        .WithMany()
-                        .HasForeignKey("AdminUserId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_audit_log_admin_user_id");
 
                     b.Navigation("AdminUser");
                 });

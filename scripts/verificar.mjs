@@ -2178,6 +2178,7 @@ const etapas = [
         'Sillar.Modules.B2B',
         // M08 conserva solo historial local, pero su instalación debe ser real.
         'Sillar.Modules.Portal',
+        'Sillar.Modules.Reports',
       ];
       let salida = '';
       for (const modulo of modulos) {

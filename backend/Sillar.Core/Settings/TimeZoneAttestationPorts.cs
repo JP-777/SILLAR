@@ -4,10 +4,8 @@ namespace Sillar.Core.Settings;
 /// Puerto de fuente TZDB: dice si una zona es canónica en una fuente con versión.
 /// </summary>
 /// <remarks>
-/// La fuente no está elegida: <c>tzdata.zi</c> del sistema (no existe en Windows,
-/// y su versión cambia con la imagen) o una TZDB empaquetada, que sería una
-/// dependencia nueva. Hasta que JP la elija, el único adaptador es
-/// <see cref="UnavailableTzdbSource"/>.
+/// WEB usa tzdata.zi del runtime Linux, con versión y huella. La ausencia de
+/// fuente se mantiene distinguible y nunca se convierte en un positivo.
 /// </remarks>
 internal interface ITzdbSource
 {
@@ -35,9 +33,8 @@ internal sealed class UnavailableTzdbSource : ITzdbSource
 /// de esta instalación.
 /// </summary>
 /// <remarks>
-/// No hay almacenamiento: guardarla necesita filas nuevas (migración), y quién
-/// puede atestiguar no está ratificado. El único adaptador es
-/// <see cref="NoTimeZoneAttestationStore"/>, que nunca encuentra ninguna.
+/// CORE conserva la evidencia local sin FK al administrador. La configuración
+/// vigente y la evidencia se leen en una sentencia para evitar estados mezclados.
 /// </remarks>
 internal interface ITimeZoneAttestationStore
 {
@@ -54,7 +51,9 @@ internal sealed record TimeZoneAttestation(
     int AttestedByAdminUserId,
     string AttestedByHomeNode,
     DateTimeOffset AttestedAt,
-    DateTimeOffset? RevokedAt);
+    DateTimeOffset? RevokedAt,
+    string? AttestedByName = null,
+    string? AuthorityVersion = null);
 
 /// <summary>Sin almacenamiento de atestaciones.</summary>
 internal sealed class NoTimeZoneAttestationStore : ITimeZoneAttestationStore

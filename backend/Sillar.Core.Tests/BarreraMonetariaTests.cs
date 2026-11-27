@@ -52,6 +52,8 @@ public sealed class BarreraMonetariaTests
     {
         // PostgreSQL no mezcla el espacio de una clave bigint con el de dos claves int4.
         Assert.Equal(typeof(long), typeof(ModuleActivationService).GetField(nameof(ModuleActivationService.ActivationLockKey))!.FieldType);
+        Assert.IsType<long>((object)InstallationTimeZoneService.ChangeLock);
+        Assert.NotEqual(ModuleActivationService.ActivationLockKey, InstallationTimeZoneService.ChangeLock);
 
         var backend = Path.Combine(RaizDelRepositorio(), "backend");
         var usos = Directory.EnumerateFiles(backend, "*.cs", SearchOption.AllDirectories)
@@ -64,7 +66,7 @@ public sealed class BarreraMonetariaTests
 
         Assert.Equal(
             // El SQL del bloqueo de moneda solo vive en el contrato: CORE lo toma de ahí.
-            ["ModuleActivationService.cs", "MonetaryAuthorityLock.cs",
+            ["InstallationTimeZoneService.cs", "ModuleActivationService.cs", "MonetaryAuthorityLock.cs",
              "ServiceOrderApplicationService.cs", "TrackingApplicationService.cs"],
             usos);
 

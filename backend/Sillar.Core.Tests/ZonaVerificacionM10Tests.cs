@@ -211,13 +211,13 @@ public sealed class ZonaVerificacionM10Tests
         => Assert.Equal(SiteSettingService.PendingMarker, IanaZoneCandidate.PendingMarker);
 
     [Fact]
-    public void CORE_no_registra_el_productor_de_zona_por_su_cuenta()
+    public void CORE_registra_el_productor_de_zona_persistente()
     {
         var servicios = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
 
         servicios.AddCoreEssentials(Configuracion(), CadenaSinServidor).AddCoreAuthentication();
 
-        Assert.DoesNotContain(servicios, d => d.ServiceType == typeof(IInstallationTimeZoneResolver));
+        Assert.Contains(servicios, d => d.ServiceType == typeof(IInstallationTimeZoneResolver) && d.ImplementationType == typeof(DurableInstallationTimeZoneResolver));
     }
 
     // ── Dobles ─────────────────────────────────────────────────────────────

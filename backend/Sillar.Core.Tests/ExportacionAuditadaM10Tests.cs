@@ -39,14 +39,14 @@ public sealed class ExportacionAuditadaM10Tests
     // ── Con el vocabulario real: cerrado ──────────────────────────────────
 
     [Fact]
-    public void El_vocabulario_de_auditoria_de_esta_base_no_admite_export()
-        => Assert.DoesNotContain(ExportAudit.ExportActionCode, AuditAction.All);
+    public void El_vocabulario_de_auditoria_admite_export()
+        => Assert.Contains(ExportAudit.ExportActionCode, AuditAction.All);
 
     [Fact]
-    public async Task Con_el_vocabulario_real_la_exportacion_de_M10_se_rechaza_sin_escribir_ni_entregar()
+    public async Task Sin_export_en_el_vocabulario_la_exportacion_se_rechaza_sin_escribir_ni_entregar()
     {
         var escritor = new EscritorFalso();
-        var (auditoria, contexto) = Auditoria(escritor);
+        var (auditoria, contexto) = Auditoria(escritor, vocabulario: AuditAction.All.Where(x => x != AuditAction.Export).ToArray());
         using var _ = contexto;
         var entregas = 0;
 
@@ -75,11 +75,13 @@ public sealed class ExportacionAuditadaM10Tests
         Assert.True(r.Delivered);
         Assert.Equal(r.Audit.ExportId, r.Value);
         Assert.Equal(["auditoria", "archivo"], orden);
-        Assert.Equal(new ExportActor(7, "operadora@ejemplo.test", "principal"), r.Audit.Actor);
+        Assert.Equal(new ExportActor(7, "operadora@ejemplo.test", "principal", "Operadora"), r.Audit.Actor);
         Assert.Equal(
             new AuditEntry("export")
             {
                 AdminUserId = 7,
+                AdminUserName = "Operadora",
+                AdminUserHomeNode = "principal",
                 AdminUserEmail = "operadora@ejemplo.test",
                 ModuleCode = "reporting",
                 EntityType = "order_indicators",
@@ -187,13 +189,13 @@ public sealed class ExportacionAuditadaM10Tests
     }
 
     [Fact]
-    public void CORE_no_registra_el_productor_de_exportacion_por_su_cuenta()
+    public void CORE_registra_el_productor_de_exportacion_real()
     {
         var servicios = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
 
         servicios.AddCoreEssentials(Configuracion(), CadenaSinServidor).AddCoreAuthentication();
 
-        Assert.DoesNotContain(servicios, d => d.ServiceType == typeof(IExportAudit));
+        Assert.Contains(servicios, d => d.ServiceType == typeof(IExportAudit) && d.ImplementationType == typeof(ExportAudit));
     }
 
     // ── Dobles ─────────────────────────────────────────────────────────────
