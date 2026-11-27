@@ -1,13 +1,13 @@
 # Bitácora de SILLAR
 
 **Fecha de creación:** 14 de agosto de 2026, 23:25:09 -05:00 (America/Lima).
-**Última verificación de esta continuación:** 27 de noviembre de 2026, 12:14 -05:00.
-**Commit verificado:** `58f9870666272cda265bb1cb703dffd4a9b2582d` (sexta corrida).
+**Última verificación de esta continuación:** 27 de noviembre de 2026, 12:17 -05:00.
+**Commit verificado:** `3b5a6971a55d4cb1928c0190ad2ae35ef9df0b33` (séptima corrida).
 
 ## Continuación: cierre único de SILLAR WEB — 26 de noviembre de 2026
 
 **Estado actual: EN TRABAJO, sin 6/6.** Las dos primeras corridas pasaron 1–4
-y fallaron en 5. La tercera pasó 1–3 y falló por conexión en 4. La cuarta pasó 1–4 y falló en 5 por una expectativa de migraciones desactualizada. La quinta pasó 1–5 y ejecutó E2E, que falló y fue interrumpida; no hay 6/6. La sexta se detuvo en etapa 1 por F4, corregida después. Los cierres
+y fallaron en 5. La tercera pasó 1–3 y falló por conexión en 4. La cuarta pasó 1–4 y falló en 5 por una expectativa de migraciones desactualizada. La quinta pasó 1–5 y ejecutó E2E, que falló y fue interrumpida; no hay 6/6. La sexta se detuvo en etapa 1 por F4 y la séptima por tipos del formulario; ambos errores se corrigieron después. Los cierres
 históricos que siguen más abajo corresponden a sus árboles y fechas; no se
 transfieren al conjunto pendiente de integrar. No se afirma 6/6 ni se sustituye
 «sin comprobar» por cero fallos.
@@ -18,6 +18,23 @@ aplazado y excluido del árbol integrado: Yape manual en M03 cubre v1. No fusion
 ni rebasar `main`. Se permiten commits y empujes de la rama de trabajo. El encargo
 del 26/11 sustituye las antiguas restricciones de aprobación por etapas de
 `CLAUDE.md`; las decisiones reversibles se toman y se registran.
+
+### 2026-11-27 · 12:16 -05:00 · séptima puerta, contrato de formulario
+
+- **Artefacto:** `3b5a6971a55d4cb1928c0190ad2ae35ef9df0b33`, árbol limpio.
+  **Puerta 7:** etapa 1 fallida; 2–6 no ejecutadas; salida 1. F4 y sus 34
+  pruebas ya pasan. Tipos detecta `InstallationTimeZonePanel.tsx:42`: `Field`
+  recibe una función que entrega al control sus atributos de accesibilidad,
+  no un elemento hijo directo. Se corrige respetando ese contrato, incluido
+  el indicador de obligatoriedad. Evidencia: `tmp/cierre-web/puerta-07.log`.
+- **Error de verificación propio:** la entrada anterior dio los tipos frontend
+  por correctos a partir de un log vacío, sin confirmar la terminación del
+  proceso. Esa afirmación queda corregida: no había evidencia de éxito. Desde
+  aquí se exige código de salida del proceso, además de leer el log.
+- **Repetición focal observada a las 12:17:** tipos frontend con salida 0;
+  `git diff --check` limpio. Se prepara la octava puerta sobre nuevo commit.
+- No se tocó la lista de módulos ni se rebajó una barrera. Sigue sin haber
+  evidencia nueva sobre las etapas 2–6 ni sobre los ciclos del navegador.
 
 ### 2026-11-27 · 12:14 -05:00 · sexta puerta, barrera F4
 

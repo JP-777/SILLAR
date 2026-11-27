@@ -38,8 +38,8 @@ export function InstallationTimeZonePanel({ canEdit }: { canEdit: boolean }) {
       : failure ? 'No se pudo consultar la zona.' : 'Consultando la zona…'}</p>
     {failure && <Alert tone="danger">{failure}</Alert>}
     {canEdit ? <form onSubmit={save}>
-      <Field label="Zona IANA" hint="Por ejemplo: America/Lima. Si se actualizaron las reglas horarias, acredita de nuevo la misma zona.">
-        <Input value={zone} onChange={event => setZone(event.target.value)} required disabled={busy} />
+      <Field label="Zona IANA" required hint="Por ejemplo: America/Lima. Si se actualizaron las reglas horarias, acredita de nuevo la misma zona.">
+        {field => <Input {...field} value={zone} onChange={event => setZone(event.target.value)} disabled={busy} />}
       </Field>
       <Button type="submit" disabled={busy || !zone}>{busy ? 'Acreditando…' : 'Acreditar zona'}</Button>
     </form> : <p>El superadministrador puede acreditar o cambiar la zona.</p>}
