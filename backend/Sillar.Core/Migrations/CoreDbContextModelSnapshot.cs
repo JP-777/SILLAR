@@ -751,6 +751,74 @@ namespace Sillar.Core.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Sillar.Core.Domain.ModuleLicense", b =>
+                {
+                    b.Property<string>("ModuleCode")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("module_code")
+                        .UseCollation("C");
+
+                    b.Property<bool>("IsLicensed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_licensed");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("source");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("ModuleCode")
+                        .HasName("pk_module_licenses");
+
+                    b.ToTable("module_licenses", "core", t =>
+                        {
+                            t.HasCheckConstraint("ck_module_license_code", "module_code ~ '^[a-z][a-z0-9_]{0,39}$'");
+                        });
+                });
+
+            modelBuilder.Entity("Sillar.Core.Domain.ModuleOperationPermission", b =>
+                {
+                    b.Property<int>("AdminUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("admin_user_id");
+
+                    b.Property<string>("ModuleCode")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("module_code")
+                        .UseCollation("C");
+
+                    b.Property<string>("OperationCode")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("operation_code")
+                        .UseCollation("C");
+
+                    b.Property<bool>("Allowed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("allowed");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("AdminUserId", "ModuleCode", "OperationCode")
+                        .HasName("pk_module_operation_permissions");
+
+                    b.ToTable("module_operation_permissions", "core", t =>
+                        {
+                            t.HasCheckConstraint("ck_module_permission_module", "module_code ~ '^[a-z][a-z0-9_]{0,39}$'");
+
+                            t.HasCheckConstraint("ck_module_permission_operation", "operation_code ~ '^[a-z][a-z0-9_]{0,59}$'");
+                        });
+                });
+
             modelBuilder.Entity("Sillar.Core.Domain.SiteSetting", b =>
                 {
                     b.Property<int>("SiteSettingId")
@@ -862,6 +930,16 @@ namespace Sillar.Core.Migrations
                     b.Navigation("DependsOnModule");
 
                     b.Navigation("Module");
+                });
+
+            modelBuilder.Entity("Sillar.Core.Domain.ModuleOperationPermission", b =>
+                {
+                    b.HasOne("Sillar.Core.Domain.AdminUser", null)
+                        .WithMany()
+                        .HasForeignKey("AdminUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_module_permission_admin_user");
                 });
 
             modelBuilder.Entity("Sillar.Core.Domain.AdminUser", b =>

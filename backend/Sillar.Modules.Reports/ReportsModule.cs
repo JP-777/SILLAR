@@ -50,6 +50,9 @@ public sealed class ReportsModule : IModule, IModuleMigrations
     /// <inheritdoc />
     public string[] SoftDependencies => ["sales"];
 
+    public IReadOnlyList<ModuleOperation> Operations =>
+        [new("read", "Consultar reportes", "admin"), new("export", "Exportar indicadores", "admin")];
+
     /// <inheritdoc />
     public void RegisterServices(IServiceCollection services, IConfiguration configuration)
         => services.AddOrderIndicatorsReport();

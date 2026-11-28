@@ -1,7 +1,9 @@
 # ADR-004 — Licenciamiento por módulo y descubrimiento de capacidades
 
 - **Estado:** Aceptada
-- **Fecha:** 2026-08-14
+- **Fecha de creación:** 2026-08-14
+- **Fecha de última verificación:** 2026-11-27, America/Lima
+- **Commit contrastado:** `6ea2d74fd4471d2ded81d3e104d740ac4ad19863` más cambios locales de separación de licencias; ver BITACORA.
 - **Decide:** JP
 
 ## Contexto
@@ -16,7 +18,9 @@ La activación de módulos vive en el schema `core` y se expone al frontend medi
 
 - `installation` — identidad del negocio instalado, clave de instalación, datos de licencia.
 - `modules` — catálogo de módulos que el producto conoce: código, nombre, versión, dependencias duras y blandas.
-- `module_activations` — qué está activo en esta instalación, vigencia y límites.
+- `module_licenses` — derecho local previo a la activación, provisionado desde el despliegue; el panel no lo concede.
+- `module_activations` — elección funcional de qué está encendido. Solo surte efecto si existe licencia.
+- `module_operation_permissions` — restricciones locales por cuenta y operación, bajo el techo de los roles.
 
 **Comportamiento del backend:**
 
@@ -44,6 +48,6 @@ La activación de módulos vive en el schema `core` y se expone al frontend medi
 
 ## Alcance actual
 
-Se implementan las tablas, la validación del grafo, el registro condicional de módulos y el endpoint de capacidades.
+La integración de cierre WEB separa las tres decisiones: derecho de uso, activación y permiso de operación. La provisión manual usa `Sillar:License:Modules` y se registra atómicamente; una lista vacía no concede derechos. Su contrato detallado está en SPEC CORE §4.4a. Esta actualización aplica el mandato de JP del 26/11 y no elige condiciones comerciales. La acreditación de la integración se registra en BITACORA.
 
 Se difiere a la fase de comercialización: la firma criptográfica del archivo de licencia, el control de vencimientos y los límites de uso. El esquema de datos ya los contempla para no tener que migrar después.

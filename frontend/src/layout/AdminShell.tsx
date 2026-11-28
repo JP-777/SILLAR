@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useCapability } from '../capabilities/useCapability';
-import { useSession } from '../session';
+import { useSession, useModulePermissions } from '../session';
 import { roleLabel } from '../session/roleVocabulary';
 import { usePublicSettings } from '../platform/usePublicSettings';
 import { Button } from '../shared/ui';
@@ -23,7 +23,8 @@ export function AdminShell() {
   const location = useLocation();
   const businessName = usePublicSettings().get('business_name');
 
-  const groups = visibleNavigation(has, hasRole);
+  const { hasOperation } = useModulePermissions();
+  const groups = visibleNavigation(has, hasRole, hasOperation);
   const destinationCount =
     1 + groups.reduce((total, group) => total + group.items.length, 0);
   const usesDisclosures = destinationCount >= 6;

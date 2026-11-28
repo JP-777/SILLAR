@@ -114,6 +114,8 @@ export const CONNECTION_STRING = cadenaDeConexion({
  * se apoyaba en ese punto, así que se midió en vez de leerse.
  */
 export const ENTORNO_DE_COMPOSE: Record<string, string> = {
+  // Derechos explícitos del escenario efímero; no activan ningún módulo.
+  Sillar__License__Modules: 'core,catalog,cms,crm,services,sales,b2b,service_orders,tracking,portal,reporting,demo_catalog,demo_crm,demo_sales,demo_services,demo_service_orders,demo_tracking',
   COMPOSE_PROJECT_NAME: PROJECT_NAME,
   POSTGRES_USER,
   POSTGRES_PASSWORD,

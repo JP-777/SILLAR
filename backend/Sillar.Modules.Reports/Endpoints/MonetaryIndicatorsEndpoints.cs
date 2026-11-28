@@ -100,7 +100,7 @@ public static class MonetaryIndicatorsEndpoints
                 title: "El módulo de ventas respondió con cifras que no cuadran, así que no se muestra ninguna.",
                 detail: "Esto no significa cero. Vuelve a consultar; si se repite, avisa a quien administre el sistema.");
         }
-        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+        catch (Exception exception) when (exception is not ModuleAccessDeniedException && !cancellationToken.IsCancellationRequested)
         {
             logger.LogError(exception, "La lectura de {What} falló para [{Start}, {End}).", what, start, end);
             return Results.Problem(

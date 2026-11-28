@@ -3,13 +3,15 @@ import type { AdminModule } from '../services/modules';
 import './modules.css';
 
 /** Los cuatro estados que la tarjeta tiene que saber contar. */
-export type ModuleState = 'core' | 'active' | 'inactive' | 'blocked';
+export type ModuleState = 'core' | 'unlicensed' | 'active' | 'inactive' | 'blocked';
 
 /** Deduce el estado a partir de lo que dice el servidor. */
 export function stateOf(module: AdminModule): ModuleState {
   if (module.isCore) {
     return 'core';
   }
+
+  if (!module.isLicensed) return 'unlicensed';
 
   if (module.isActive) {
     return 'active';
@@ -64,7 +66,7 @@ export function ModuleCard({
 
         {/* CORE no lleva interruptor. No es uno deshabilitado: es que no lo
             tiene, porque desactivarlo no es una operación que exista. */}
-        {state !== 'core' && (
+        {state !== 'core' && state !== 'unlicensed' && (
           <button
             type="button"
             className="mod__switch"
@@ -102,6 +104,8 @@ function StateBadge({ state }: { state: ModuleState }) {
   switch (state) {
     case 'core':
       return <Badge tone="neutral">Núcleo</Badge>;
+    case 'unlicensed':
+      return <Badge tone="neutral">Sin licencia</Badge>;
     case 'active':
       return <Badge tone="success">Activo</Badge>;
     case 'blocked':

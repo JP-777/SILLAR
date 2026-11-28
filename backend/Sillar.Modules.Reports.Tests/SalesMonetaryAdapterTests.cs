@@ -162,6 +162,7 @@ public sealed class SalesMonetaryAdapterTests
     private static WebApplication Aplicacion(Action<IServiceCollection> lectores)
     {
         var builder = WebApplication.CreateSlimBuilder();
+        builder.Services.ConPermisoDePrueba();
         builder.Services.AddRouting();
         builder.Services.AddSingleton<IOrderAggregateReader>(new VentasPresente());
         lectores(builder.Services);

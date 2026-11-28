@@ -103,6 +103,11 @@ public static class CoreServices
             }
         });
 
+        services.AddExceptionHandler<Sillar.Core.Authentication.ModuleAccessExceptionHandler>();
+        services.AddScoped<Sillar.Core.Authentication.AdminSessionAuthority>();
+        services.AddScoped<Sillar.Core.Authentication.IAdminSessionAuthority>(sp => sp.GetRequiredService<Sillar.Core.Authentication.AdminSessionAuthority>());
+        services.AddScoped<IModuleAuthorization, Sillar.Core.Modularity.ModuleAuthorization>();
+        services.AddScoped<ModulePermissionService>();
         services.AddScoped<CurrentAdmin>();
         services.AddScoped<ICurrentAdmin>(provider => provider.GetRequiredService<CurrentAdmin>());
 

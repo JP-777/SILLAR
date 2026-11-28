@@ -14,6 +14,8 @@ namespace Sillar.Core.Dtos;
 /// <param name="Action">Acción realizada.</param>
 /// <param name="Summary">Descripción legible.</param>
 /// <param name="IpAddress">Dirección de origen.</param>
+/// <param name="AdminUserName">Nombre congelado al actuar, si fue conservado.</param>
+/// <param name="AdminUserHomeNode">Nodo congelado de pertenencia del autor.</param>
 public sealed record AuditEntryResponse(
     long Id,
     DateTimeOffset OccurredAt,

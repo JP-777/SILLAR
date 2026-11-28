@@ -1,4 +1,5 @@
 import { createContext, useCallback, useMemo, useState, type ReactNode } from 'react';
+import { ModulePermissionsProvider } from './ModulePermissions';
 import { http } from '../shared/http/client';
 
 /** Roles administrativos, de menor a mayor. */
@@ -138,7 +139,7 @@ export function SessionProvider({
     [user, login, logout, refresh, clear],
   );
 
-  return <SessionContext value={value}>{children}</SessionContext>;
+  return <SessionContext value={value}><ModulePermissionsProvider userId={user?.id}>{children}</ModulePermissionsProvider></SessionContext>;
 }
 
 /**

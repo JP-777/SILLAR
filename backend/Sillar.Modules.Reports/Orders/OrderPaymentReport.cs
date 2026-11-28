@@ -1,3 +1,4 @@
+using Sillar.Core.Contracts;
 using System.Text.RegularExpressions;
 using Sillar.Modules.Sales.Contracts;
 
@@ -106,6 +107,7 @@ internal sealed partial class OrderPaymentReport(IServiceProvider services)
     public async Task<PaymentIndicatorsView> ReadAsync(
         DateTimeOffset startInclusive, DateTimeOffset endExclusive, CancellationToken cancellationToken)
     {
+        await ModuleOperationAccess.RequireAsync(services, ReportsModule.ModuleCode, "read", cancellationToken);
         var startUtc = startInclusive.ToUniversalTime();
         var endUtc = endExclusive.ToUniversalTime();
 

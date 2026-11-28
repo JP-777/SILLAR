@@ -2,7 +2,7 @@
 
 **Fecha de creación:** 26 de noviembre de 2026, America/Lima.
 **Fecha de última verificación:** 27 de noviembre de 2026, America/Lima.
-**Commit contrastado:** `1c34bd53d016ac0db6b94d9d0bc8b439166609db` más los cambios locales de cierre de M10 descritos en BITACORA.
+**Commit contrastado:** `6ea2d74fd4471d2ded81d3e104d740ac4ad19863` más los cambios locales de cierre de M10 descritos en BITACORA.
 **Estado:** contrato de cierre; implementación y acreditación en curso.
 
 ## 1. Autoridad y alcance
@@ -152,8 +152,11 @@ acreditación de zona al superadministrador y conecta la descarga al servidor.
 Las pruebas físicas han demostrado migración, desinstalación repetida,
 reinstalación y rechazo de objetos desconocidos sin borrado parcial. La prueba
 de autoridad falla al retirar deliberadamente su guarda y vuelve a verde al
-restaurarla. Estos hechos no cierran M10: siguen pendientes los permisos por
-operación y licencia, el recorrido HTTP e interfaz completo, la cobertura
+restaurarla. CORE conserva ahora licencias y permisos locales; M10 declara
+lectura y exportación y exige autoridad dentro de sus operaciones. Las pruebas
+físicas de permiso y revocación pasaron; retirar la guarda produjo una roja y
+restaurarla volvió a verde. Estos hechos no cierran M10: siguen pendientes el
+recorrido HTTP e interfaz completo, la cobertura
 monetaria del escritor manual de M03 y la puerta canónica 6/6. La evidencia y sus
 límites están en la entrada de continuación del 27/11 de BITACORA.
 

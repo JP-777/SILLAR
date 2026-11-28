@@ -29,6 +29,8 @@ const expected = {
   order_indicators: 'Indicadores de pedidos',
   media_asset: 'Archivo',
   module: 'Módulo',
+  module_license: 'Licencia de módulo',
+  module_permission: 'Permiso de módulo',
   product: 'Producto',
   product_image: 'Imagen de producto',
   product_item: 'Presentación',
@@ -44,7 +46,7 @@ const surfaces = [
     file: 'src/modules/core/auditEntityVocabulary.ts',
     exportName: 'coreAuditEntityVocabulary',
     moduleCode: 'core',
-    count: 8,
+    count: 10,
   },
   {
     file: 'src/modules/catalog/routes.tsx',
@@ -112,13 +114,13 @@ function contributions() {
   return surfaces.map(contribution);
 }
 
-test('CORE + M01 + M02 + M05a + M04 activos componen exactamente las veintitrés etiquetas', () => {
+test('CORE + M01 + M02 + M05a + M04 activos componen exactamente las veinticinco etiquetas', () => {
   const actual = visibleAuditEntityLabelsFrom(
     contributions(),
     () => true,
   );
 
-  assert.equal(Object.keys(actual).length, 23);
+  assert.equal(Object.keys(actual).length, 25);
   assert.deepEqual(actual, expected);
 });
 
@@ -161,13 +163,13 @@ test('sin M01 product_item no queda registrado y degrada al código técnico', (
   );
 });
 
-test('solo CORE aporta exactamente sus ocho etiquetas', () => {
+test('solo CORE aporta exactamente sus diez etiquetas', () => {
   const actual = visibleAuditEntityLabelsFrom(
     contributions(),
     (moduleCode) => moduleCode === 'core',
   );
 
-  assert.equal(Object.keys(actual).length, 8);
+  assert.equal(Object.keys(actual).length, 10);
   assert.deepEqual(actual, {
     admin_session: 'Sesión',
     admin_user: 'Usuario',
@@ -176,6 +178,8 @@ test('solo CORE aporta exactamente sus ocho etiquetas', () => {
   installation_time_zone: 'Zona horaria del negocio',
     media_asset: 'Archivo',
     module: 'Módulo',
+  module_license: 'Licencia de módulo',
+  module_permission: 'Permiso de módulo',
     setting: 'Ajuste',
   });
 });
@@ -357,6 +361,8 @@ const auditPageVocabularyBaseline = {
   "order_indicators": 0,
   "media_asset": 0,
   "module": 1,
+  "module_license": 0,
+  "module_permission": 0,
   "setting": 0,
   "brand": 0,
   "category": 0,
@@ -382,6 +388,8 @@ const auditPageVocabularyBaseline = {
   "Indicadores de pedidos": 0,
   "Archivo": 0,
   "Módulo": 2,
+  "Licencia de módulo": 0,
+  "Permiso de módulo": 0,
   "Ajuste": 0,
   "Marca": 0,
   "Categoría": 0,

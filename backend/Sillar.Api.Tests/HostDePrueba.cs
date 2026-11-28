@@ -81,6 +81,8 @@ internal static partial class HostDePrueba
         info.Environment["ASPNETCORE_ENVIRONMENT"] = "Production";
         info.Environment["DOTNET_ENVIRONMENT"] = "Production";
         info.Environment["Modules__IncludeDemoModules"] = "false";
+        // El escenario de correo activa CRM; su derecho se provisiona explícitamente.
+        info.Environment["Sillar__License__Modules"] = "core,crm";
 
         // Puerto efímero: dos frentes corriendo a la vez no pueden pelearse por
         // un número fijo, y el que toque se lee de lo que imprime Kestrel.

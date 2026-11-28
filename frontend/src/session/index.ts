@@ -11,3 +11,5 @@ export {
 
 export { useSession } from './useSession';
 export { RequireAuth, RequireRole } from './guards';
+
+export { useModulePermissions, RequireModuleOperation } from './ModulePermissions';

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Sillar.Core.Contracts;
@@ -33,7 +34,7 @@ public sealed record ModuleSyncResult(
 /// negocio es <c>core.module_activations</c>, y eso el sincronizador solo lo
 /// crea cuando falta: jamás pisa una activación existente.
 /// </remarks>
-public sealed class ModuleSynchronizer(CoreDbContext database, ILogger<ModuleSynchronizer> logger)
+public sealed class ModuleSynchronizer(CoreDbContext database, ILogger<ModuleSynchronizer> logger, IConfiguration? configuration = null)
 {
     /// <summary>
     /// Sincroniza catálogo y dependencias, garantiza una fila de activación por
@@ -70,6 +71,7 @@ public sealed class ModuleSynchronizer(CoreDbContext database, ILogger<ModuleSyn
 
         await MarkOrphanMediaAsync(declared, cancellationToken);
 
+        await ModuleLicensing.ApplyProvisioningAsync(database, declared, configuration, cancellationToken);
         var active = await ReadActiveAsync(declared, cancellationToken);
         return new ModuleSyncResult(active, activeCodesInDatabase);
     }
@@ -291,7 +293,8 @@ public sealed class ModuleSynchronizer(CoreDbContext database, ILogger<ModuleSyn
         CancellationToken cancellationToken)
     {
         var rows = await database.Modules
-            .Where(module => module.Activation != null && module.Activation.IsActive)
+            .Where(module => module.Activation != null && module.Activation.IsActive
+                && (module.Code == ModuleGraph.CoreCode || database.ModuleLicenses.Any(l => l.ModuleCode == module.Code && l.IsLicensed)))
             .OrderBy(module => module.DisplayOrder)
             .ThenBy(module => module.Code)
             .Select(module => new { module.Code, module.Activation!.ExpiresAt })

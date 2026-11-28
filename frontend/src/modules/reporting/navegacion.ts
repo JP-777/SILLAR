@@ -4,5 +4,5 @@ import type { ModuleNavigation } from '../../layout/navigation';
 export const reportingNavigation: ModuleNavigation = {
   moduleCode: 'reporting',
   group: 'Reportes',
-  items: [{ to: '/admin/reportes', label: 'Pedidos', minimumRole: 'admin' }],
+  items: [{ to: '/admin/reportes', label: 'Pedidos', minimumRole: 'admin', operation: 'read' }],
 };

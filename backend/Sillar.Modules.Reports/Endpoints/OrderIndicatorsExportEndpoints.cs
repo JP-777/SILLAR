@@ -74,6 +74,7 @@ internal static class OrderIndicatorsExportEndpoints
 
         // 1. Zona: verificada por CORE, y la del archivo es esa o UTC.
         var services = http.RequestServices;
+        await ModuleOperationAccess.RequireAsync(services, ReportsModule.ModuleCode, "export", cancellationToken);
         var read = await InstallationZoneGate.ReadAsync(services, loggerFactory, cancellationToken);
         if (read.Failed) return InstallationZoneGate.Unreadable();
         if (InstallationZoneGate.Verified(read.Resolution) is not { } verified)
@@ -93,7 +94,7 @@ internal static class OrderIndicatorsExportEndpoints
         {
             data = await report.ReadAsync(start, end, cancellationToken);
         }
-        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+        catch (Exception exception) when (exception is not ModuleAccessDeniedException && !cancellationToken.IsCancellationRequested)
         {
             logger.LogError(exception, "La lectura para exportar falló para [{Start}, {End}).", start, end);
             return Unavailable("El módulo de ventas no respondió, así que no se generó el archivo.");
@@ -132,7 +133,7 @@ internal static class OrderIndicatorsExportEndpoints
         // Legítimo: registrado, uuid v7 y un actor con nombre, id, correo y nodo.
         if (CoreSeamEndpoints.LegitimateRecord(result) is not { } exportId)
         {
-            return result is { IsRecorded: false, Failure: ExportAuditFailure.ActorMissing or ExportAuditFailure.MetadataInvalid }
+            return result is { IsRecorded: false, Failure: ExportAuditFailure.ActorMissing or ExportAuditFailure.MetadataInvalid or ExportAuditFailure.PermissionDenied }
                 ? Results.Problem(
                     statusCode: StatusCodes.Status403Forbidden,
                     title: "La auditoría no aceptó registrar esta exportación a tu nombre, así que no se generó el archivo.",
@@ -147,6 +148,8 @@ internal static class OrderIndicatorsExportEndpoints
             return afterAudit;
         }
         cancellationToken.ThrowIfCancellationRequested();
+
+        await ModuleOperationAccess.RequireAsync(services, ReportsModule.ModuleCode, "export", cancellationToken);
 
         // 5. Bytes.
         http.Response.Headers[ExportIdHeader] = exportId.ToString();

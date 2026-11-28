@@ -2,8 +2,8 @@ namespace Sillar.Core.Contracts;
 
 /// <summary>Roles de los usuarios administradores.</summary>
 /// <remarks>
-/// Tres roles fijos (ADR-010). Los permisos granulares por módulo se difieren
-/// hasta que exista un caso real que los pida.
+/// Tres roles fijos (ADR-010). La autoridad por operación aplica permisos
+/// locales adicionales, sin permitir superar este techo de rol.
 ///
 /// Vive aquí y no dentro de CORE: todo módulo con endpoints de administración
 /// los exige en <c>RequireAuthorization</c> (SPEC de M01 §8, que gatea todo su

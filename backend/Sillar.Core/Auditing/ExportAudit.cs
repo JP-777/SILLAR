@@ -33,12 +33,13 @@ internal sealed partial class ExportAudit : IExportAudit
 
     private readonly IAuditWriter writer;
     private readonly ICurrentAdmin admin;
+    private readonly IModuleAuthorization authorization;
     private readonly CoreDbContext database;
     private readonly ILogger<ExportAudit> logger;
     private readonly IReadOnlyCollection<string> admittedActions;
 
-    public ExportAudit(IAuditWriter writer, ICurrentAdmin admin, CoreDbContext database, ILogger<ExportAudit> logger)
-        : this(writer, admin, database, logger, AuditAction.All)
+    public ExportAudit(IAuditWriter writer, ICurrentAdmin admin, CoreDbContext database, ILogger<ExportAudit> logger, IModuleAuthorization authorization)
+        : this(writer, admin, database, logger, AuditAction.All, authorization)
     {
     }
 
@@ -48,10 +49,12 @@ internal sealed partial class ExportAudit : IExportAudit
         ICurrentAdmin admin,
         CoreDbContext database,
         ILogger<ExportAudit> logger,
-        IReadOnlyCollection<string> admittedActions)
+        IReadOnlyCollection<string> admittedActions,
+        IModuleAuthorization authorization)
     {
         this.writer = writer;
         this.admin = admin;
+        this.authorization = authorization;
         this.database = database;
         this.logger = logger;
         this.admittedActions = admittedActions;
@@ -85,7 +88,10 @@ internal sealed partial class ExportAudit : IExportAudit
             return ExportAuditResult.Rejected(ExportAuditFailure.AuditNotDurable);
         }
 
-        var actor = new ExportActor(adminUserId, admin.Email, admin.HomeNode, admin.DisplayName);
+        AuthorizedAdmin authorized;
+        try { authorized = await authorization.RequireAsync(request.ModuleCode, "export", cancellationToken); }
+        catch (ModuleAccessDeniedException) { return ExportAuditResult.Rejected(ExportAuditFailure.PermissionDenied); }
+        var actor = new ExportActor(authorized.LocalId, authorized.Email, authorized.HomeNode, authorized.DisplayName);
         var exportId = Guid.CreateVersion7();
         var entry = new AuditEntry(ExportActionCode)
         {

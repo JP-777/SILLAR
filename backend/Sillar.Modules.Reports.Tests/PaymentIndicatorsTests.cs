@@ -366,6 +366,7 @@ public sealed class PaymentIndicatorsTests
     private static WebApplication Aplicacion(bool ventas, IOrderPaymentAggregatePort? puerto)
     {
         var builder = WebApplication.CreateSlimBuilder();
+        builder.Services.ConPermisoDePrueba();
         builder.Services.AddRouting();
         if (ventas) builder.Services.AddSingleton<IOrderAggregateReader>(new VentasPresente());
         if (puerto is not null) builder.Services.AddSingleton(puerto);

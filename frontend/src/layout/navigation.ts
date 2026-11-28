@@ -24,6 +24,8 @@ export interface NavItem {
   readonly label: string;
   /** Rol mínimo para verla. Sin él, no se muestra. */
   readonly minimumRole?: Role;
+  /** Operación del módulo requerida, además del rol. */
+  readonly operation?: string;
 }
 
 /**
@@ -66,11 +68,12 @@ export const MODULE_NAVIGATION: readonly ModuleNavigation[] = [
 export function visibleNavigation(
   isActive: (code: string) => boolean,
   hasRole: (minimum: Role) => boolean,
+  hasOperation: (module: string, operation: string) => boolean = () => false,
 ): ModuleNavigation[] {
   return MODULE_NAVIGATION.filter((entry) => isActive(entry.moduleCode))
     .map((entry) => ({
       ...entry,
-      items: entry.items.filter((item) => !item.minimumRole || hasRole(item.minimumRole)),
+      items: entry.items.filter((item) => (!item.minimumRole || hasRole(item.minimumRole)) && (!item.operation || hasOperation(entry.moduleCode, item.operation))),
     }))
     .filter((entry) => entry.items.length > 0);
 }

@@ -198,7 +198,7 @@ internal static class ModuleBootstrapper
         builder.Services.AddSingleton(new CsrfTokenFactory(installationKey.Value));
 
         // --- Pasos 4 y 5: sincronizar catálogo y activaciones -------------
-        var synchronizer = new ModuleSynchronizer(database, loggerFactory.CreateLogger<ModuleSynchronizer>());
+        var synchronizer = new ModuleSynchronizer(database, loggerFactory.CreateLogger<ModuleSynchronizer>(), builder.Configuration);
         var sync = await synchronizer.SynchronizeAsync(admittedModules, cancellationToken);
         var activeModules = sync.Active;
         var activeCodes = activeModules.Select(module => module.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);

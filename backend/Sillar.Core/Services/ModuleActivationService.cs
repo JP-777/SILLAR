@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Sillar.Core.Authentication;
 using Sillar.Core.Contracts;
 using Sillar.Core.Contracts.Events;
 using Sillar.Core.Data;
@@ -63,7 +64,8 @@ internal sealed class ModuleActivationService(
     IAuditWriter audit,
     IEventPublisher events,
     TimeProvider clock,
-    HostRestarter restarter)
+    HostRestarter restarter,
+    IAdminSessionAuthority authority)
 {
     /// <summary>
     /// Clave del bloqueo que serializa las activaciones de la instalación.
@@ -81,6 +83,7 @@ internal sealed class ModuleActivationService(
     /// <summary>Devuelve el catálogo completo con su estado y sus bloqueos.</summary>
     public async Task<IReadOnlyList<ModuleResponse>> ListAsync(CancellationToken cancellationToken)
     {
+        await authority.RequireAsync(AdminRole.Admin, cancellationToken);
         var rows = await ReadActivationsAsync(cancellationToken);
         var activeCodes = ActiveCodesOf(rows);
 
@@ -106,8 +109,6 @@ internal sealed class ModuleActivationService(
     public async Task<ActivationOperation> SetActiveAsync(
         string code,
         bool activate,
-        int actingUserId,
-        string actingEmail,
         CancellationToken cancellationToken)
     {
         var module = Catalog.FirstOrDefault(
@@ -144,6 +145,10 @@ internal sealed class ModuleActivationService(
             [ActivationLockKey],
             cancellationToken);
 
+        if (!await ModuleLicensing.IsLicensedAsync(database, module.Code, cancellationToken))
+            return new ActivationOperation(ActivationOutcome.NotFound);
+
+        var actor = await authority.RequireAsync(AdminRole.SuperAdmin, cancellationToken);
         var rows = await ReadActivationsAsync(cancellationToken);
         var activeCodes = ActiveCodesOf(rows);
 
@@ -228,8 +233,10 @@ internal sealed class ModuleActivationService(
         await audit.WriteAsync(
             new AuditEntry(activate ? AuditAction.Activate : AuditAction.Deactivate)
             {
-                AdminUserId = actingUserId,
-                AdminUserEmail = actingEmail,
+                AdminUserId = actor.LocalId,
+                AdminUserEmail = actor.Email,
+                AdminUserName = actor.DisplayName,
+                AdminUserHomeNode = actor.HomeNode,
                 ModuleCode = CoreModule.ModuleCode,
                 EntityType = "module",
                 EntityId = module.Code,
@@ -322,10 +329,11 @@ internal sealed class ModuleActivationService(
             module.DisplayOrder,
             [.. module.HardDependencies],
             [.. module.SoftDependencies],
-            CanActivate: !isActive && missing.Count == 0,
+            CanActivate: row?.IsLicensed == true && !isActive && missing.Count == 0,
             CanDeactivate: isActive && !isCore && dependents.Count == 0,
             BlockedBy: isActive ? dependents : missing,
-            RestartsAutomatically: restarter.RestartsAutomatically);
+            RestartsAutomatically: restarter.RestartsAutomatically,
+            IsLicensed: row?.IsLicensed == true);
     }
 
     private async Task<IReadOnlyDictionary<string, ActivationRow>> ReadActivationsAsync(
@@ -338,7 +346,8 @@ internal sealed class ModuleActivationService(
                 module.Activation != null && module.Activation.IsActive,
                 module.Activation!.ActivatedAt,
                 module.Activation!.DeactivatedAt,
-                module.Activation!.ExpiresAt))
+                module.Activation!.ExpiresAt,
+                module.Code == ModuleGraph.CoreCode || database.ModuleLicenses.Any(l => l.ModuleCode == module.Code && l.IsLicensed)))
             .ToDictionaryAsync(row => row.Code, StringComparer.OrdinalIgnoreCase, cancellationToken);
 
     /// <summary>
@@ -350,7 +359,7 @@ internal sealed class ModuleActivationService(
     /// </remarks>
     private IReadOnlySet<string> ActiveCodesOf(IReadOnlyDictionary<string, ActivationRow> rows)
         => Catalog
-            .Where(module => rows.TryGetValue(module.Code, out var row) && row.IsActive)
+            .Where(module => rows.TryGetValue(module.Code, out var row) && row.IsLicensed && row.IsActive)
             .Select(module => module.Code)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -360,5 +369,6 @@ internal sealed class ModuleActivationService(
         bool IsActive,
         DateTimeOffset? ActivatedAt,
         DateTimeOffset? DeactivatedAt,
-        DateTimeOffset? ExpiresAt);
+        DateTimeOffset? ExpiresAt,
+        bool IsLicensed);
 }

@@ -34,6 +34,7 @@ namespace Sillar.Core.Dtos;
 /// cierta en <i>esta</i> instalación, en vez de suponer que siempre se reinicia
 /// sola.
 /// </param>
+/// <param name="IsLicensed">Derecho de uso previo a la activación; el panel no lo concede.</param>
 public sealed record ModuleResponse(
     string Code,
     string DisplayName,
@@ -50,7 +51,8 @@ public sealed record ModuleResponse(
     bool CanActivate,
     bool CanDeactivate,
     IReadOnlyList<string> BlockedBy,
-    bool RestartsAutomatically);
+    bool RestartsAutomatically,
+    bool IsLicensed = false);
 
 /// <summary>Resultado de activar o desactivar un módulo.</summary>
 /// <param name="Code">Código del módulo.</param>

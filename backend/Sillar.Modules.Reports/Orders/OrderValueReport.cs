@@ -1,3 +1,4 @@
+using Sillar.Core.Contracts;
 using Sillar.Modules.Sales.Contracts;
 
 namespace Sillar.Modules.Reports.Orders;
@@ -59,6 +60,7 @@ internal sealed class OrderValueReport(IServiceProvider services)
     public async Task<OrderValueView> ReadAsync(
         DateTimeOffset startInclusive, DateTimeOffset endExclusive, CancellationToken cancellationToken)
     {
+        await ModuleOperationAccess.RequireAsync(services, ReportsModule.ModuleCode, "read", cancellationToken);
         var startUtc = startInclusive.ToUniversalTime();
         var endUtc = endExclusive.ToUniversalTime();
 

@@ -7,6 +7,7 @@ import { ConfirmDialog, FailureAlert, Table, Toasts, useToasts, type Column } fr
 import { ForbiddenPage } from '../../../platform/ForbiddenPage';
 import { useSession } from '../../../session';
 import { roleLabel } from '../../../session/roleVocabulary';
+import { UserPermissions } from '../components/UserPermissions';
 import { UserForm } from '../components/UserForm';
 import { SessionList } from '../components/SessionList';
 import { usersService, type AdminUser } from '../services/users';
@@ -19,6 +20,7 @@ export function UsersPage() {
   const { toasts, show } = useToasts();
 
   const [editing, setEditing] = useState<AdminUser | null>(null);
+  const [permissionsFor, setPermissionsFor] = useState<AdminUser | null>(null);
   const [creating, setCreating] = useState(false);
   const [pendingDeactivation, setPendingDeactivation] = useState<AdminUser | null>(null);
   const [busy, setBusy] = useState(false);
@@ -94,6 +96,7 @@ export function UsersPage() {
           <Button size="sm" variant="secondary" onClick={() => setEditing(user)}>
             Editar
           </Button>
+          <Button size="sm" variant="secondary" onClick={() => setPermissionsFor(user)}>Permisos</Button>
           {user.isActive && user.id !== me?.id && (
             <Button size="sm" variant="ghost" onClick={() => setPendingDeactivation(user)}>
               Desactivar
@@ -169,6 +172,7 @@ export function UsersPage() {
         <p>La cuenta no se borra: sus registros de auditoría se conservan y puedes reactivarla.</p>
       </ConfirmDialog>
 
+      {permissionsFor && <UserPermissions key={permissionsFor.id} user={permissionsFor} onClose={() => setPermissionsFor(null)} />}
       <Toasts toasts={toasts} />
     </PageContainer>
   );

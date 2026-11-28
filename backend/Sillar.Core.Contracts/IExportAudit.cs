@@ -52,6 +52,9 @@ public enum ExportAuditFailure
     /// <summary>Sin administrador identificado con id, correo y nodo.</summary>
     ActorMissing,
 
+    /// <summary>La sesión o el permiso vigente no autoriza exportar.</summary>
+    PermissionDenied,
+
     /// <summary>Algún metadato no cumple su formato.</summary>
     MetadataInvalid,
 

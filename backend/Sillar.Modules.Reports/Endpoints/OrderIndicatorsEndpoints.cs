@@ -52,7 +52,7 @@ public static class OrderIndicatorsEndpoints
         {
             data = await report.ReadAsync(start, end, cancellationToken);
         }
-        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+        catch (Exception exception) when (exception is not ModuleAccessDeniedException && !cancellationToken.IsCancellationRequested)
         {
             loggerFactory.CreateLogger(typeof(OrderIndicatorsEndpoints)).LogError(
                 exception, "La lectura agregada de pedidos falló para [{Start}, {End}).", start, end);

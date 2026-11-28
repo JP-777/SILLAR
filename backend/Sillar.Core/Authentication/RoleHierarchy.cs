@@ -5,8 +5,8 @@ namespace Sillar.Core.Authentication;
 /// <summary>Jerarquía de roles: <c>super_admin</c> &gt; <c>admin</c> &gt; <c>editor</c>.</summary>
 /// <remarks>
 /// Exigir <c>admin</c> acepta también a <c>super_admin</c>. No son permisos
-/// granulares —eso llegará cuando exista un caso real que lo pida—, solo un
-/// orden.
+/// granulares: esta jerarquía fija el techo, y ModuleAuthorization aplica
+/// además las restricciones locales por operación.
 /// </remarks>
 public static class RoleHierarchy
 {

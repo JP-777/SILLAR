@@ -102,6 +102,7 @@ public sealed class CoreModule : IModule, IModuleMigrations
         endpoints.MapCapabilitiesEndpoints();
         endpoints.MapAuthEndpoints();
         endpoints.MapAdminUserEndpoints();
+        endpoints.MapModulePermissionEndpoints();
         endpoints.MapAdminModuleEndpoints();
         endpoints.MapSettingsEndpoints();
         endpoints.MapAuditEndpoints();

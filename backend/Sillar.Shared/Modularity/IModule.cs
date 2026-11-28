@@ -87,6 +87,9 @@ public interface IModule
     /// </remarks>
     string[] SoftDependencies { get; }
 
+    /// <summary>Operaciones administrativas; sus permisos son locales y pertenecen a CORE.</summary>
+    IReadOnlyList<ModuleOperation> Operations => [];
+
     /// <summary>
     /// Registra en el contenedor los servicios del módulo: su <c>DbContext</c>,
     /// sus servicios de aplicación y las implementaciones de sus contratos.

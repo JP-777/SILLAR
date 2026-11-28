@@ -73,6 +73,12 @@ public class CoreDbContext(
     /// <summary>Módulos activos en esta instalación.</summary>
     public DbSet<ModuleActivation> ModuleActivations => Set<ModuleActivation>();
 
+    /// <summary>Licencias locales, independientes de la activación.</summary>
+    public DbSet<ModuleLicense> ModuleLicenses => Set<ModuleLicense>();
+
+    /// <summary>Permisos locales por cuenta y operación; no se replican.</summary>
+    public DbSet<ModuleOperationPermission> ModuleOperationPermissions => Set<ModuleOperationPermission>();
+
     /// <summary>Usuarios administradores.</summary>
     public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
 

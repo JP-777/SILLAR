@@ -13,9 +13,8 @@ namespace Sillar.Core.Tests;
 /// (<c>reporting</c> / <c>order_indicators</c> / <c>csv</c>).
 /// </summary>
 /// <remarks>
-/// Con el vocabulario real ninguna exportación se registra: <c>export</c> no está
-/// en <see cref="AuditAction.All"/>. El camino positivo se prueba con un
-/// vocabulario de prueba y un escritor falso; en el producto sigue cerrado.
+/// El vocabulario real admite exportación. Aquí la autoridad y el escritor son
+/// dobles explícitos; las pruebas físicas verifican la revocación y la persistencia.
 /// Sin PostgreSQL: los contextos apuntan a un puerto cerrado.
 /// </remarks>
 public sealed class ExportacionAuditadaM10Tests
@@ -29,8 +28,8 @@ public sealed class ExportacionAuditadaM10Tests
     {
         var contexto = Contexto(CadenaSinServidor);
         var auditoria = vocabulario is null
-            ? new ExportAudit(escritor, admin ?? Operadora(), contexto, NullLogger<ExportAudit>.Instance)
-            : new ExportAudit(escritor, admin ?? Operadora(), contexto, NullLogger<ExportAudit>.Instance, vocabulario);
+            ? new ExportAudit(escritor, admin ?? Operadora(), contexto, NullLogger<ExportAudit>.Instance, new AutoridadFalsa())
+            : new ExportAudit(escritor, admin ?? Operadora(), contexto, NullLogger<ExportAudit>.Instance, vocabulario, new AutoridadFalsa());
         return (auditoria, contexto);
     }
 
@@ -166,7 +165,7 @@ public sealed class ExportacionAuditadaM10Tests
         var contexto = Contexto(CadenaSinServidor);
         await using var _ = contexto;
         var escritor = new AuditWriter(contexto, new HttpContextAccessor(), TimeProvider.System);
-        var auditoria = new ExportAudit(escritor, Operadora(), contexto, NullLogger<ExportAudit>.Instance, ConExport);
+        var auditoria = new ExportAudit(escritor, Operadora(), contexto, NullLogger<ExportAudit>.Instance, ConExport, new AutoridadFalsa());
         var entregas = 0;
 
         var r = await auditoria.DeliverAuditedAsync(DeM10, (_, _) => Task.FromResult(++entregas), TestContext.Current.CancellationToken);
@@ -199,6 +198,12 @@ public sealed class ExportacionAuditadaM10Tests
     }
 
     // ── Dobles ─────────────────────────────────────────────────────────────
+
+    private sealed class AutoridadFalsa : IModuleAuthorization
+    {
+        public Task<AuthorizedAdmin> RequireAsync(string module, string operation, CancellationToken ct)
+            => Task.FromResult(new AuthorizedAdmin(7, "Operadora", "principal", "operadora@ejemplo.test", AdminRole.Admin));
+    }
 
     private sealed class EscritorFalso(Action? alEscribir = null) : IAuditWriter
     {

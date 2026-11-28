@@ -114,6 +114,7 @@ public sealed class CoreSeamEndpointsTests
     private static WebApplication Aplicacion(IInstallationTimeZoneResolver? zona, IExportAudit? auditoria)
     {
         var builder = WebApplication.CreateSlimBuilder();
+        builder.Services.ConPermisoDePrueba();
         builder.Services.AddRouting();
         // Los productores de CORE son opcionales: el host todavía no los registra.
         if (zona is not null) builder.Services.AddSingleton(zona);

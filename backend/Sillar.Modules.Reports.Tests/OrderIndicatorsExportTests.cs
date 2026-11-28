@@ -325,6 +325,7 @@ public sealed class OrderIndicatorsExportTests
     private static WebApplication Aplicacion(ZonaDeCore? zona, AuditoriaDeCore? auditoria, Ventas? ventas)
     {
         var builder = WebApplication.CreateSlimBuilder();
+        builder.Services.ConPermisoDePrueba();
         builder.Services.AddRouting();
         if (zona is not null) builder.Services.AddSingleton<IInstallationTimeZoneResolver>(zona);
         if (auditoria is not null) builder.Services.AddSingleton<IExportAudit>(auditoria);

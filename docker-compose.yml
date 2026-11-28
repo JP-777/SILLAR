@@ -74,6 +74,8 @@ services:
       # Falso por defecto, e ignorado fuera de Development de todos modos: es
       # la tercera barrera de ENTREGA-04A §0. Solo e2e/ lo pone en true.
       Modules__IncludeDemoModules: ${MODULES_INCLUDE_DEMO:-false}
+      # Lista de módulos concedidos por quien provisiona el despliegue; el panel no la cambia.
+      Sillar__License__Modules: ${Sillar__License__Modules:-}
       Media__RootPath: /data/media
       # Secreto SMTP: servidor/puerto/remitente viven en site_settings, la
       # contraseña solo entra al proceso mediante el entorno.

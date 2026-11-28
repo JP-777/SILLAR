@@ -11,6 +11,8 @@ export const coreAuditEntityVocabulary: AuditEntityVocabulary = {
     ['installation_time_zone', 'Zona horaria del negocio'],
     ['media_asset', 'Archivo'],
     ['module', 'Módulo'],
+    ['module_license', 'Licencia de módulo'],
+    ['module_permission', 'Permiso de módulo'],
     ['setting', 'Ajuste'],
   ],
 };

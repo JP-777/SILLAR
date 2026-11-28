@@ -36,7 +36,7 @@ public sealed class ModuleSynchronizerReadActivePostgresTests
             {
                 var synchronizer = new ModuleSynchronizer(
                     inicial,
-                    NullLogger<ModuleSynchronizer>.Instance);
+                    NullLogger<ModuleSynchronizer>.Instance, LicenciasDePrueba(declarados));
 
                 await synchronizer.SynchronizeAsync(declarados, ct);
             }

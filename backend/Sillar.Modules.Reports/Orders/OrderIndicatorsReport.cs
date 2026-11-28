@@ -1,3 +1,4 @@
+using Sillar.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Sillar.Modules.Sales.Contracts;
 
@@ -21,6 +22,7 @@ public sealed class OrderIndicatorsReport(IServiceProvider services) : IOrderInd
                 nameof(endExclusive), "El fin debe ser posterior al inicio.");
         }
 
+        await ModuleOperationAccess.RequireAsync(services, ReportsModule.ModuleCode, "read", cancellationToken);
         var startUtc = startInclusive.ToUniversalTime();
         var endUtc = endExclusive.ToUniversalTime();
 

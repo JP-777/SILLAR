@@ -108,11 +108,16 @@ internal static class BaseDePrueba
             NullLogger<HostRestarter>.Instance);
 
     public static ModuleActivationService Activacion(CoreDbContext contexto)
-        => new(contexto, Desplegados(), new AuditoriaNula(), new EventosNulos(), TimeProvider.System, Reiniciador());
+        => new(contexto, Desplegados(), new AuditoriaNula(), new EventosNulos(), TimeProvider.System, Reiniciador(), new AutoridadDeActivacionFalsa());
+
+    public static IConfiguration LicenciasDePrueba(IEnumerable<Sillar.Shared.Modularity.IModule>? modules = null)
+        => new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> {
+            ["Sillar:License:Modules"] = string.Join(",", (modules ?? Desplegados().Modules).Select(m => m.Code))
+        }).Build();
 
     /// <summary>Crea las filas de módulos y activaciones, como el arranque.</summary>
     public static Task SincronizarAsync(CoreDbContext contexto, CancellationToken ct)
-        => new ModuleSynchronizer(contexto, NullLogger<ModuleSynchronizer>.Instance)
+        => new ModuleSynchronizer(contexto, NullLogger<ModuleSynchronizer>.Instance, LicenciasDePrueba())
             .SynchronizeAsync(Desplegados().Modules, ct);
 
     /// <summary>

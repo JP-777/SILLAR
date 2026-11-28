@@ -115,8 +115,6 @@ public static class AdminModuleEndpoints
         var result = await modules.SetActiveAsync(
             code,
             activate,
-            currentUser.AdminUserId!.Value,
-            currentUser.Email!,
             cancellationToken);
 
         switch (result.Outcome)

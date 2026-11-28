@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { downloadOrderIndicatorsCsv } from '../services/reporting';
+import { useModulePermissions } from '../../../session';
 import { describe } from '../../../shared/errors/messages';
 
 /** El servidor consulta, valida, cuenta y audita el archivo antes de responder. */
 export function OrderCsvDownload({ start, end, zone }: { start: string; end: string; zone: string }) {
+  const { hasOperation } = useModulePermissions();
   const active = useRef<AbortController | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -26,6 +28,7 @@ export function OrderCsvDownload({ start, end, zone }: { start: string; end: str
       if (result.kind !== 'silent') setMessage(result.message);
     } finally { if (!controller.signal.aborted) setBusy(false); }
   }
+  if (!hasOperation('reporting', 'export')) return null;
   return <div>
     <button type="button" className="ui-button" disabled={busy} onClick={() => void download()}>
       {busy ? 'Preparando CSV…' : 'Exportar recuentos del período (CSV)'}

@@ -15,6 +15,8 @@ export interface AdminModule {
   version: string;
   isCore: boolean;
   isActive: boolean;
+  /** Derecho de uso previo al interruptor; lo publica CORE. */
+  isLicensed: boolean;
   activatedAt: string | null;
   deactivatedAt: string | null;
   /** Vencimiento de la licencia. Se muestra pero **no se evalúa** (fase 5). */

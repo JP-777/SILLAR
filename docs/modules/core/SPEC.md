@@ -1,9 +1,13 @@
 # SPEC — CORE · Núcleo de plataforma
 
+**Fecha de creación:** 13 de agosto de 2026, America/Lima (alta en `baa7144307dd0cc0db5109531c351e1bc9e300d9`).
+**Fecha de última verificación:** 27 de noviembre de 2026, America/Lima.
+**Commit contrastado:** `6ea2d74fd4471d2ded81d3e104d740ac4ad19863` más cambios locales de licencias y permisos; acreditación pendiente.
+
 - **Código:** `core`
 - **Schema:** `core`
 - **Versión:** 1.2.0 — zona horaria inicial y auditoría obligatoria de exportaciones (`ENTREGA-06-ZONA-Y-EXPORTACION.md`). Candidata: moneda de la instalación (`ENTREGA-07-MONEDA-DE-LA-INSTALACION.md`)
-- **Estado:** Aprobado
+- **Estado:** contrato actualizado para el cierre WEB; nuevas autoridades pendientes de acreditación integral
 - **Fase:** 0 y 1 — es lo primero que se construye
 
 ---
@@ -135,7 +139,7 @@ Proyección del grafo de dependencias, también sincronizada desde el código.
 
 ### 4.4 `core.module_activations`
 
-Qué está activo **en esta instalación**. Se separa de `modules` porque tienen dueños distintos: `modules` lo escribe el producto, `module_activations` lo escribe la licencia del cliente.
+Qué está activo **en esta instalación**. Se separa de `modules` porque tienen dueños distintos: `modules` lo escribe el producto, `module_activations` lo cambia la administración del negocio. La licencia es un derecho separado y previo, conservado en `module_licenses`. Una activación guardada sin licencia no monta el módulo.
 
 | Campo | Tipo | Nulo | Clave | Descripción |
 |---|---|---|---|---|
@@ -147,6 +151,48 @@ Qué está activo **en esta instalación**. Se separa de `modules` porque tienen
 | expires_at | timestamptz | Sí | | Vencimiento del módulo, si aplica |
 | notes | varchar(250) | Sí | | Nota administrativa |
 | created_at / updated_at | timestamptz | | | |
+
+### 4.4a Licencias locales y permisos por operación
+
+`core.module_licenses` conserva `module_code` (clave primaria, comparación C),
+`is_licensed`, `updated_at` y `source`. Es local, no replicada. CORE es intrínseco.
+Los módulos restantes no reciben licencia por aparecer en el binario ni por
+arrastrar una activación histórica. Sin licencia no se registra el módulo y no
+aparece su interruptor. Con licencia y apagado se muestra el interruptor, sin
+registrar sus servicios ni rutas.
+
+La configuración confiable `Sillar:License:Modules` permite provisionamiento
+manual mediante lista explícita de códigos: reemplaza las concesiones locales,
+exige todas las dependencias duras y rechaza códigos desconocidos antes de
+aplicarla. Vacía conserva lo existente; `core` retira las demás concesiones.
+Se aplica al arrancar bajo el mismo bloqueo transaccional de activaciones,
+con auditoría de sistema cuyos tres campos humanos son nulos. El panel no
+puede conceder licencias. No implementa precio, firma, vencimiento ni límites
+de uso: siguen diferidos según ADR-004. No es protección frente al administrador
+del servidor, que controla configuración y base.
+
+Cada módulo declara sus operaciones en `IModule.Operations`: código estable,
+nombre en español y rol mínimo. CORE guarda excepciones en
+`core.module_operation_permissions`: clave compuesta `admin_user_id`,
+`module_code`, `operation_code`, más `allowed` y `updated_at`. Tabla local;
+la FK hacia cuentas locales no participa en ninguna replicación. Sin excepción
+se hereda del rol; denegación explícita restringe; permiso explícito nunca
+supera el rol mínimo. Borrar la excepción restaura la herencia.
+
+`IModuleAuthorization.RequireAsync` se invoca desde la operación, antes de
+consultar los datos. Relee licencia, activación durable, sesión no revocada,
+cuenta activa, rol y permiso; no cachea positivos. Devuelve la fotografía
+actual de la persona para la auditoría. La interfaz consulta sus operaciones
+permitidas para ocultar navegación y controles; no sustituye la autoridad.
+M10 declara `read` y `export`; la incorporación de los demás módulos se
+acredita por separado, sin darla por concluida por añadir este contrato.
+
+Solo una sesión vigente de superadministración configura excepciones mediante
+`GET/PUT /api/admin/users/{id}/module-permissions[/<módulo>/<operación>]`.
+`PUT` exige CSRF y confirma permiso y auditoría en una sola transacción.
+`GET /api/admin/module-permissions` devuelve las operaciones actualmente
+permitidas a la sesión. La activación también comprueba la sesión dentro de
+su servicio, sin aceptar una identidad entregada por el llamador.
 
 ### 4.5 `core.admin_users`
 
@@ -404,7 +450,7 @@ Es la parte más delicada de CORE. La secuencia importa.
      Solo se exponen /api/setup*. Fin del arranque.
 4. Sincronizar core.modules y core.module_dependencies desde el código.
 5. Crear la fila de module_activations que falte, inactiva por defecto. CORE siempre activo.
-6. Leer las activaciones. Para cada módulo activo, verificar que sus dependencias DURAS
+6. Aplicar la provisión explícita de licencias, si existe, y leer únicamente las activaciones licenciadas. Para cada módulo activo, verificar que sus dependencias DURAS
    están activas.
    → Si falla, ABORTAR indicando qué módulo y qué dependencia. Nunca degradar en silencio.
 7. Registrar servicios y endpoints ÚNICAMENTE de los módulos activos.
@@ -438,7 +484,7 @@ Base vacía o instalación sin completar: el API solo expone `/api/setup*` y el 
 14. Toda acción administrativa que modifica datos se registra en auditoría.
 15. Los registros de auditoría **no se editan ni se borran** desde el API.
 16. Toda exportación de datos se registra en auditoría con la acción `export` **antes** de entregarse; sin registro no se entrega. El registro **no guarda el contenido exportado**.
-17. La zona horaria inicial de la instalación es **America/Lima**. No se considera verificada: la verificación autoritativa de zonas queda pendiente.
+17. La zona horaria inicial de la instalación es **America/Lima**. Se acredita únicamente cuando la fuente tzdb canónica disponible verifica sus reglas y se conserva evidencia durable con la persona que instala; sin evidencia suficiente queda sin verificar.
 18. La moneda de la instalación (`installation.currency_iso4217`) solo la establece un `super_admin`, solo con un código de la lista cerrada `SupportedCurrencies`, y su cambio se guarda en la misma transacción que su auditoría con el valor anterior y el nuevo, o no se guarda. No se establece mientras no se pueda comprobar que no hay pedidos. La ruta genérica `PUT /api/admin/settings/{key}` la rechaza. Ver `ENTREGA-07-MONEDA-DE-LA-INSTALACION.md`.
 
 ---

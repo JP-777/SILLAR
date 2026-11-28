@@ -50,6 +50,7 @@ public static class CoreSeamEndpoints
     private static async Task<IResult> ReadZone(
         IServiceProvider services, ILoggerFactory loggerFactory, CancellationToken cancellationToken)
     {
+        await ModuleOperationAccess.RequireAsync(services, ReportsModule.ModuleCode, "read", cancellationToken);
         var read = await InstallationZoneGate.ReadAsync(services, loggerFactory, cancellationToken);
         return read.Failed ? InstallationZoneGate.Unreadable() : Results.Ok(Observe(read));
     }

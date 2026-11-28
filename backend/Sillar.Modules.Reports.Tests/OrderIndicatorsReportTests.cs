@@ -28,7 +28,7 @@ public sealed class OrderIndicatorsReportTests
     [Fact]
     public async Task Sin_el_modulo_de_ventas_la_fuente_no_esta_disponible_y_ninguna_metrica_es_cero()
     {
-        using var services = new ServiceCollection().BuildServiceProvider();
+        using var services = new ServiceCollection().ConPermisoDePrueba().BuildServiceProvider();
 
         var result = await new OrderIndicatorsReport(services).ReadAsync(Inicio, Fin, CancellationToken.None);
 
@@ -96,7 +96,7 @@ public sealed class OrderIndicatorsReportTests
     }
 
     private static ServiceProvider Proveedor(IOrderAggregateReader reader) =>
-        new ServiceCollection().AddSingleton(reader).BuildServiceProvider();
+        new ServiceCollection().ConPermisoDePrueba().AddSingleton(reader).BuildServiceProvider();
 
     private sealed class LectorEnMemoria : IOrderAggregateReader
     {

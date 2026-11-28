@@ -30,6 +30,9 @@ public static partial class ModuleGraph
     [GeneratedRegex(@"^\d+\.\d+\.\d+$")]
     private static partial Regex VersionPattern { get; }
 
+    [GeneratedRegex(@"^[a-z][a-z0-9_]{0,59}$")]
+    private static partial Regex OperationPattern { get; }
+
     /// <summary>
     /// Comprueba códigos, dependencias y ausencia de ciclos, y devuelve el
     /// orden de instalación.
@@ -215,6 +218,14 @@ public static partial class ModuleGraph
         foreach (var module in modules)
         {
             var origin = module.GetType().FullName ?? module.GetType().Name;
+            var operations = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var operation in module.Operations)
+            {
+                if (string.IsNullOrWhiteSpace(operation.Code) || !OperationPattern.IsMatch(operation.Code)
+                    || !operations.Add(operation.Code) || string.IsNullOrWhiteSpace(operation.DisplayName)
+                    || operation.MinimumRole is not ("editor" or "admin" or "super_admin"))
+                    errors.Add($"El módulo '{module.Code}' declara una operación inválida o repetida: '{operation.Code}'. Revisa código, nombre y rol mínimo.");
+            }
 
             if (string.IsNullOrWhiteSpace(module.Code) || !CodePattern.IsMatch(module.Code))
             {

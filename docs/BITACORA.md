@@ -1,7 +1,7 @@
 # Bitácora de SILLAR
 
 **Fecha de creación:** 14 de agosto de 2026, 23:25:09 -05:00 (America/Lima).
-**Última verificación de esta continuación:** 27 de noviembre de 2026, 17:42 -05:00.
+**Última verificación de esta continuación:** 27 de noviembre de 2026, 23:24 -05:00.
 **Commit verificado:** `8a3481f402460bb32c887b3d203cb2100ee8fc36` (octava corrida).
 
 ## Continuación: cierre único de SILLAR WEB — 26 de noviembre de 2026
@@ -19,7 +19,26 @@ ni rebasar `main`. Se permiten commits y empujes de la rama de trabajo. El encar
 del 26/11 sustituye las antiguas restricciones de aprobación por etapas de
 `CLAUDE.md`; las decisiones reversibles se toman y se registran.
 
-### 2026-11-27 · 17:42 -05:00 · octava puerta y baja física de M04
+### 2026-11-27 · 23:24 -05:00 · licencias y permisos físicos verificados
+
+- **Artefacto:** base `6ea2d74fd4471d2ded81d3e104d740ac4ad19863` más el cambio local de autoridades, que se fija en el siguiente commit. `main` intacto. El empuje hasta `6ea2d74` está confirmado.
+- **Persistencia:** `20261127234639_LicenciasYPermisosLocales` crea dos tablas locales; la única FK es permiso → cuenta, ambas locales. La baja de migración rehúsa borrar derechos o permisos conservados. La provisión de licencias comparte el bloqueo de activaciones. No hay migraciones desde el panel.
+- **Observado en base propia:** CORE **488/488**, Reportes **152/152**, cero omitidas, salida 0 y limpieza completada (`permisos-fisicos-01.log/.rc`). Incluye licencia ausente, licencia sin activación, revocación en caliente, rol degradado con claims antiguos, permiso explícito incapaz de superar el rol, sesión revocada, auditoría atómica, autoría congelada y catálogo de operaciones inválido. La guarda vive en `ModuleAuthorization.cs:14` y activación relee autoridad antes de escribir en `ModuleActivationService.cs:150`.
+- **Control negativo observado:** se retiró temporalmente `permission == false`; el caso físico pasó a **1 roja/1** porque no lanzó el rechazo esperado. Archivo restaurado con SHA-256 idéntico y repetición **1/1** verde. Se recompiló API para no dejar copias del binario mutado. Evidencia `permisos-mutacion-01.log/.resultado/.rc`; no queda mutación aplicada.
+- **Frontend:** tipos con salida 0, fronteras **34/34**, vocabulario **15/15** y Reportes **67/67**, sin omitidas. E2E tipos salida 0. Se prepara `zz-z-m10-ciclo.spec.ts`: licencia sin interruptor, permiso desde el panel, denegación HTTP, CSV descargado y auditado, fuente ausente distinguida de cero, baja física, rechazo sin esquema y reinstalación. Su ejecución está pendiente; no se acredita por haberlo escrito.
+- **Errores propios corregidos:** intenté compilar `Sillar.slnx`, que no existe; se repitió sobre `Sillar.sln` con salida 0. La primera invocación de EF no encontraba la herramienta global en PATH; se usó la ya instalada, sin dependencia nueva. Lancé Reportes sin su identidad efímera: 151 verdes y la prueba física correctamente roja; se repitió en base propia migrada y pasó entera. El inventario negativo de etiquetas no incluía las dos claves nuevas: se completó conservando su valor cero en AuditPage, sin mover etiquetas a la página.
+- **Interrupción de cuota:** la revisión automática rechazó el lanzamiento de la repetición frontend; no se ejecutó. Al reanudar se recuperaron los resultados físicos y se ejecutó la repetición pendiente. No se trató el rechazo como aprobación ni se eludió la revisión.
+- **Aún sin comprobar:** recorrido HTTP y navegador del nuevo cambio, todas las operaciones de los otros módulos, negativa física del Down con datos y nueva puerta completa. M03, M12 y M18 conservan el trabajo pendiente ya descrito; WEB no se declara terminado.
+
+### 2026-11-27 · 18:43 -05:00 · ciclo M04 restaurado e integración de autoridades
+
+- **Artefacto:** `6ea2d74fd4471d2ded81d3e104d740ac4ad19863`, limpio durante la prueba. **Observado:** repetición de M04 aprobada, 1/1, sin omitidas, salida 0; ciclo 8,8 minutos y preparación completa 14,3 minutos. Evidencia local `tmp/cierre-web/m04-ciclo-09.log` y `.rc`. No es una nueva puerta de seis etapas.
+- **Corrección documental propia:** la entrada de la octava puerta se fechó 17:42 al redactarla, pero el commit que la conservó tiene hora 17:39. Se corrige al momento observado del commit; desde aquí se contrasta el reloj de Lima antes de fechar.
+- **Integración en curso:** se aplican los borradores de `ModuleLicensing`, `ModuleAuthorization`, `AdminSessionAuthority`, permisos locales, operaciones declaradas y gestión en el panel. M10 protege lecturas y exportación dentro de las operaciones; la activación ya no recibe identidad arbitraria del llamador. Licencia y activación se serializan bajo el mismo bloqueo; provisión sin lista no concede derechos.
+- **Alcance explícito:** quedan por generar y probar la migración de CORE, la persistencia y las rutas reales. Los demás módulos aún deben declarar sus operaciones administrativas. No se acredita autorización transversal por haber integrado únicamente M10.
+- **Pruebas preparadas:** licencia ausente, licencia sin activación, revocación, rol degradado con claims antiguos, permiso independiente por operación, auditoría fallida con reversión, nombre congelado y catálogo inválido. Ningún resultado se anticipa. Sin nuevas dependencias. ADR-004 y SPEC CORE actualizados con creación, verificación y commit.
+
+### 2026-11-27 · 17:39 -05:00 · octava puerta y baja física de M04
 
 - **Artefacto observado:** `8a3481f402460bb32c887b3d203cb2100ee8fc36`, limpio durante la corrida. **Puerta 8:** etapas 1–5 aprobadas; etapa 6 fallida, 198/199 aprobadas, una fallida, ninguna omitida; salida 1. Evidencia local: `tmp/cierre-web/puerta-08.log` y `.rc`. Los ciclos M05b, M06 y M08 terminaron correctamente en esta corrida; esto no acredita todavía el producto completo.
 - **Causa leída y observada:** `crm/99_drop.sql` rechazó la baja porque `portal` seguía instalado como dependiente duro. El ciclo de M04 retiraba Sales y B2B, pero no había incorporado la nueva persistencia de Portal. La barrera funcionó: no se debilitó ni se quitó el historial para forzar verde.

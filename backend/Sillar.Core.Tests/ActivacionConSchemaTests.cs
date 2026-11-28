@@ -24,9 +24,6 @@ namespace Sillar.Core.Tests;
 /// </remarks>
 public sealed class ActivacionConSchemaTests
 {
-    private const int Operador = 1;
-    private const string Correo = "operador@ejemplo.test";
-
     /// <summary>
     /// Deja la base con CORE migrado, las filas de módulos creadas, y además
     /// migrados los módulos que se pidan.
@@ -64,7 +61,7 @@ public sealed class ActivacionConSchemaTests
             await PrepararAsync(cadena, ct, "catalog");
 
             await using var contexto = Contexto(cadena);
-            var resultado = await Activacion(contexto).SetActiveAsync("catalog", true, Operador, Correo, ct);
+            var resultado = await Activacion(contexto).SetActiveAsync("catalog", true, ct);
 
             Assert.Equal(ActivationOutcome.Changed, resultado.Outcome);
             Assert.True((await EstadoAsync(cadena, "catalog", ct)).Activo);
@@ -81,7 +78,7 @@ public sealed class ActivacionConSchemaTests
             await PrepararAsync(cadena, ct);
 
             await using var contexto = Contexto(cadena);
-            var resultado = await Activacion(contexto).SetActiveAsync("catalog", true, Operador, Correo, ct);
+            var resultado = await Activacion(contexto).SetActiveAsync("catalog", true, ct);
 
             Assert.Equal(ActivationOutcome.Conflict, resultado.Outcome);
         }, ct);
@@ -99,7 +96,7 @@ public sealed class ActivacionConSchemaTests
 
             await using (var contexto = Contexto(cadena))
             {
-                await Activacion(contexto).SetActiveAsync("catalog", true, Operador, Correo, ct);
+                await Activacion(contexto).SetActiveAsync("catalog", true, ct);
             }
 
             // Ni activo, ni con fecha de activación: fail-closed, sin rastro.
@@ -119,7 +116,7 @@ public sealed class ActivacionConSchemaTests
             var esperado = new NpgsqlConnectionStringBuilder(cadena);
 
             await using var contexto = Contexto(cadena);
-            var error = (await Activacion(contexto).SetActiveAsync("crm", true, Operador, Correo, ct)).Error!;
+            var error = (await Activacion(contexto).SetActiveAsync("crm", true, ct)).Error!;
 
             Assert.Contains("'crm'", error);
             Assert.Contains("schema 'crm'", error);
@@ -170,7 +167,7 @@ public sealed class ActivacionConSchemaTests
             await PrepararAsync(cadena, ct);
 
             await using var contexto = Contexto(cadena);
-            var resultado = await Activacion(contexto).SetActiveAsync("demo_catalog", true, Operador, Correo, ct);
+            var resultado = await Activacion(contexto).SetActiveAsync("demo_catalog", true, ct);
 
             Assert.Equal(ActivationOutcome.Changed, resultado.Outcome);
         }, ct);
@@ -190,11 +187,11 @@ public sealed class ActivacionConSchemaTests
             await using (var contexto = Contexto(cadena))
             {
                 Assert.Equal(ActivationOutcome.Changed,
-                    (await Activacion(contexto).SetActiveAsync("catalog", true, Operador, Correo, ct)).Outcome);
+                    (await Activacion(contexto).SetActiveAsync("catalog", true, ct)).Outcome);
             }
 
             await using var otro = Contexto(cadena);
-            var resultado = await Activacion(otro).SetActiveAsync("cms", true, Operador, Correo, ct);
+            var resultado = await Activacion(otro).SetActiveAsync("cms", true, ct);
 
             Assert.Equal(ActivationOutcome.Conflict, resultado.Outcome);
             Assert.Contains("schema 'cms'", resultado.Error);
@@ -223,7 +220,7 @@ public sealed class ActivacionConSchemaTests
             foreach (var modulo in Instalador().Orden().Where(m => m.Code != "core"))
             {
                 await using var contexto = Contexto(cadena);
-                var resultado = await Activacion(contexto).SetActiveAsync(modulo.Code, true, Operador, Correo, ct);
+                var resultado = await Activacion(contexto).SetActiveAsync(modulo.Code, true, ct);
 
                 Assert.True(
                     resultado.Outcome == ActivationOutcome.Changed,

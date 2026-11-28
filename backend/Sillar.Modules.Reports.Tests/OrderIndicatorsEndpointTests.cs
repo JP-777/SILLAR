@@ -142,6 +142,7 @@ public sealed class OrderIndicatorsEndpointTests
     private static WebApplication Aplicacion(IOrderAggregateReader? lector)
     {
         var builder = WebApplication.CreateSlimBuilder();
+        builder.Services.ConPermisoDePrueba();
         builder.Services.AddRouting();
         // Ventas registra su lector solo cuando está activo; aquí, igual.
         if (lector is not null) builder.Services.AddSingleton(lector);
