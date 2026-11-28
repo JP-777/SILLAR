@@ -64,6 +64,7 @@ internal sealed class OrderStatusChangeConfiguration : IEntityTypeConfiguration<
             .ValueGeneratedNever();
 
         builder.Property(x => x.OrderId).HasColumnName("order_id").HasColumnType("uuid").IsRequired();
+        builder.Property(x => x.Reason).HasColumnName("reason").HasMaxLength(1000);
         builder.Property(x => x.FromStatus).HasColumnName("from_status");
         builder.Property(x => x.ToStatus).HasColumnName("to_status").IsRequired();
 

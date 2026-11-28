@@ -1,0 +1,11 @@
+.sa-stack { display: grid; gap: var(--s4); }
+.sa-panel { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--bg-raised); padding: var(--s4); }
+.sa-panel h2 { margin-top: 0; }
+.sa-row { display: flex; align-items: end; gap: var(--s3); flex-wrap: wrap; }
+.sa-row label { display: grid; gap: var(--s2); flex: 1 1 12rem; }
+.sa-list { list-style: none; padding: 0; display: grid; gap: var(--s3); }
+.sa-note { color: var(--text-muted); }
+.sa-attention { font-weight: 600; color: var(--danger); }
+.sa-panel fieldset { border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--s3); }
+.sa-panel textarea { width: 100%; }
+@media (max-width: 640px) { .sa-row > * { flex: 1 1 100%; min-width: 0; } }

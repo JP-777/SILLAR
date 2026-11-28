@@ -750,6 +750,7 @@ public sealed class SalesDbFixture
         inicio.Environment["ASPNETCORE_URLS"] = "http://127.0.0.1:0";
         inicio.Environment["ConnectionStrings__Default"] = cadena;
         inicio.Environment["Media__RootPath"] = medios;
+        inicio.Environment["Sillar__License__Modules"] = "core,catalog,crm,sales";
         inicio.Environment["Modules__IncludeDemoModules"] = "false";
         inicio.Environment["Modules__RestartAfterActivation"] = "true";
         inicio.Environment["Sillar__Database__ApplyMigrationsOnStartup"] = "true";

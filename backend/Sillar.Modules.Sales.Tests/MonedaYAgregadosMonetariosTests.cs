@@ -140,13 +140,13 @@ public sealed class MonedaYAgregadosMonetariosTests
     }
 
     [Fact]
-    public void El_modelo_no_se_adelanta_a_la_retencion_no_ratificada()
+    public void El_cierre_WEB_conserva_pagos_ante_un_borrado_del_pedido()
     {
-        // RESTRICT es candidata; mientras no se ratifique, el modelo dice lo de SalesInitial.
+        // Mandato de cierre: la operación manual conserva hechos financieros. La candidata histórica no se reintroduce.
         var fk = Modelo().FindEntityType(typeof(OrderPayment))!.GetForeignKeys()
             .Single(f => f.PrincipalEntityType.ClrType == typeof(Order));
 
-        Assert.Equal(DeleteBehavior.Cascade, fk.DeleteBehavior);
+        Assert.Equal(DeleteBehavior.Restrict, fk.DeleteBehavior);
     }
 
     // ------------------------------------------------------------------ migraciones
@@ -164,6 +164,7 @@ public sealed class MonedaYAgregadosMonetariosTests
                 "20261026235312_SalesCurrencyCandidate20261026",
                 "20261027145605_SalesPaymentSourceNullableCandidate20261027",
                 "20261126114656_IdempotenciaDeLiquidacionExterna",
+                "20261128045120_OperacionesManualesDePedidos",
             ],
             contexto.Database.GetMigrations());
     }

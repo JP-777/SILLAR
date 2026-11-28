@@ -2,9 +2,9 @@
 
 ## Mandato vigente de cierre — 26 de noviembre de 2026
 
-**Última verificación de esta revisión:** 26/11/2026, America/Lima.
+**Última verificación de esta revisión:** 2026-11-28 00:00 (America/Lima).
 
-**Commit contrastado:** `483bcac54e1baaddd3b2500ac9726b518e175d93`.
+**Commit contrastado:** `d94e7f9713ba7cc3763821cae78fd8e49473ca2c`, más cambios locales de cierre de M03 descritos en bitácora y aún sin cierre E2E.
 La fecha de creación histórica se conserva debajo.
 
 JP autorizó completar WEB y resolver la implementación en la rama de trabajo.
@@ -26,6 +26,48 @@ migración deben acreditarse antes del cierre; no se elige proveedor.
 El formato antiguo con prefijo de nodo y las condiciones pendientes que siguen
 abajo se conservan como historial de decisiones. El código y las pruebas se
 alinearán al mandato actual y cada diferencia se registrará en la bitácora.
+
+
+### Operación del personal — cierre en construcción, 27/11/2026
+
+El mandato vigente sustituye las esperas históricas por atribución o aprobación por etapas.
+Las operaciones declaradas son `sales/read` y `sales/manage` (editor), y `sales/pay`
+(administrador). CORE conserva los permisos locales y se consulta dentro de la operación,
+también después de esperar un bloqueo; no se acepta identidad enviada en el cuerpo HTTP.
+
+- El pago manual conserva medio Yape o efectivo, importe, moneda congelada del pedido,
+  referencia opcional, hora del registro y fotografía de autoría. La comparación con el
+  plazo conserva `was_late`, incluso si el proceso de vencimiento todavía no pasó.
+- Un intento manual tiene `manual_request_id`, único por pedido. Repetir el mismo contenido
+  devuelve el hecho existente; cambiarlo conservando la identidad se rechaza. Es independiente
+  de `external_settlement_id`, que sigue nulo para pagos manuales.
+- Se aceptan abonos parciales sin declarar el pedido pagado. No se admite sobrepago ni un
+  importe de moneda desconocida. Solo el pago completo y la comprobación humana de poder
+  atender permiten pasar a Preparando. Un pedido gratuito se confirma una sola vez sin importe.
+- Sin posibilidad de atender, el pago se conserva y queda visible en la bandeja de atención;
+  no aparece un octavo estado. Preparar después exige pago completo y una actuación humana.
+- Preparando → Listo para recoger → Entregado son actuaciones del personal. Cancelar exige
+  motivo persistente, no borra pagos y no se permite después de entregar. Devoluciones siguen
+  fuera de v1: se coordinan con el cliente; no se inventa una operación financiera de reversión.
+- Vencimiento, cobro y cambio de estado bloquean la misma fila antes de decidir. El proceso
+  periódico revisa cada minuto y la consulta del panel actualiza los vencimientos cumplidos;
+  los rechazos del proceso quedan en el registro. El aviso al personal se lee del estado
+  persistente, sin depender de un mensaje del bus. Sus tres datos de autoría son nulos.
+- La nueva migración conserva nulos históricos en campos nuevos, impide reescribir hechos
+  y fotografías por SQL, y protege el pedido con pagos mediante FK RESTRICT. Su Down rechaza
+  retirar evidencia conservada. La candidata histórica de retención permanece excluida:
+  se recoge la decisión en la migración nueva, sin reintroducir una candidata incompleta.
+- La desinstalación elimina únicamente los objetos conocidos dentro de una transacción y
+  con RESTRICT. Un objeto desconocido o una dependencia externa detiene y revierte la baja.
+- M10 recibe los lectores reales de valor y pagos al activarse Ventas. La cobertura histórica
+  del escritor sigue pendiente de acreditación durable: no se publica como medido lo desconocido.
+
+El panel tiene listado, detalle, pagos e historial. La primera lista presenta explícitamente
+hasta cien pedidos recientes y permite abrir otro por código; falta paginación completa.
+**No se acredita cierre:** carrito, compra pública, aviso de pago del cliente, numeración vigente,
+cobertura del escritor y recorrido completo siguen pendientes. Tipos frontend/E2E y fronteras
+pasan; primera suite física 760 aprobadas y una roja del inventario de escritores; tras corregirlo,
+la repetición aprobó 764/764 sin omisiones. El detalle de cada corrida vive en la bitácora.
 
 
 - **Creación:** 26 de septiembre de 2026 — America/Lima

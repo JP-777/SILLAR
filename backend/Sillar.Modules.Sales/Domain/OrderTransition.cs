@@ -184,6 +184,22 @@ public static class OrderTransitionPolicy
         return OrderTransition.Permite(OrderStatus.Cancelled);
     }
 
+    /// <summary>Avance manual. Preparar confirma una comprobación humana, nunca una reserva del sistema.</summary>
+    public static OrderTransition Gestionar(string status, string action, StaffAttribution? who, string? reason, bool paid)
+    {
+        if (who is null) return OrderTransition.Rechaza("Esta operación requiere personal identificado.");
+        if (action == "cancel") return Cancelar(status, who, reason);
+        if (!paid) return OrderTransition.Rechaza("Falta registrar y verificar el pago completo del pedido.");
+        return (status, action) switch
+        {
+            (OrderStatus.PendingPayment or OrderStatus.PaymentToVerify or OrderStatus.Expired, "prepare")
+                => OrderTransition.Permite(OrderStatus.Preparing),
+            (OrderStatus.Preparing, "ready") => OrderTransition.Permite(OrderStatus.ReadyForPickup),
+            (OrderStatus.ReadyForPickup, "deliver") => OrderTransition.Permite(OrderStatus.Delivered),
+            _ => OrderTransition.Rechaza("Ese cambio no corresponde al estado actual del pedido. Actualiza el detalle.")
+        };
+    }
+
     /// <summary>
     /// Vencer el plazo para pagar. Lo provoca el tiempo, no una persona.
     /// </summary>

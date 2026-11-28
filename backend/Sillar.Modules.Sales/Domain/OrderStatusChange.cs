@@ -38,6 +38,9 @@ public class OrderStatusChange : IReplicatedEntity
     /// <summary>Cuándo ocurrió.</summary>
     public DateTimeOffset ChangedAt { get; set; }
 
+    /// <summary>Motivo escrito por el personal. Los históricos conservan ausencia desconocida.</summary>
+    public string? Reason { get; set; }
+
     /// <summary>
     /// Nombre del trabajador que lo cambió, congelado, o nulo si lo hizo el sistema.
     /// </summary>

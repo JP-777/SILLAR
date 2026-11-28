@@ -84,6 +84,12 @@ public class OrderPayment : IReplicatedEntity
     /// </summary>
     public string? ExternalSettlementId { get; set; }
 
+    /// <summary>Identidad del intento manual; nula en históricos. No es una identidad externa.</summary>
+    public Guid? ManualRequestId { get; set; }
+
+    /// <summary>Comprobación del personal al cobrar, no una garantía automática de existencias.</summary>
+    public bool? CanFulfill { get; set; }
+
     /// <summary>
     /// Nombre del trabajador que registró el pago, congelado al actuar.
     /// </summary>

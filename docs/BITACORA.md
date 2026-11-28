@@ -1,7 +1,7 @@
 # Bitácora de SILLAR
 
 **Fecha de creación:** 14 de agosto de 2026, 23:25:09 -05:00 (America/Lima).
-**Última verificación de esta continuación:** 27 de noviembre de 2026, 23:24 -05:00.
+**Última verificación de esta continuación:** 2026-11-28 00:00 -05:00 (America/Lima).
 **Commit verificado:** `8a3481f402460bb32c887b3d203cb2100ee8fc36` (octava corrida).
 
 ## Continuación: cierre único de SILLAR WEB — 26 de noviembre de 2026
@@ -18,6 +18,39 @@ aplazado y excluido del árbol integrado: Yape manual en M03 cubre v1. No fusion
 ni rebasar `main`. Se permiten commits y empujes de la rama de trabajo. El encargo
 del 26/11 sustituye las antiguas restricciones de aprobación por etapas de
 `CLAUDE.md`; las decisiones reversibles se toman y se registran.
+
+### 2026-11-28 · 00:06 -05:00 · bloqueo de vencimiento demostrado en rojo y restaurado
+
+- **Artefacto:** cambio local de M03 sobre `d94e7f9713ba7cc3763821cae78fd8e49473ca2c`, fijado en el siguiente commit. **Observado:** al retirar `FOR UPDATE SKIP LOCKED`, el caso físico de cobro concurrente falló **1/1** por cancelación de la espera (13 segundos). Se restauraron exactamente los bytes y la repetición aprobó **1/1**, sin omitidas; salida global 0 y API recompilada sin errores para retirar copias del binario mutado.
+- **Evidencia:** `ventas-mutacion-01.log/.rc/.resultado`; SHA-256 restaurado `50801c5211ffde0479c71cc720367de07990246c7bedc2c2716b18f2a6dadd4e`. La base propia se eliminó en el `finally`. No queda una mutación aplicada.
+- **Precisión documental:** el primer borrador contó 19 casos físicos nuevos; al contrastar las declaraciones se corrigió a **18** antes del commit. El total ejecutado sigue siendo 764, tomado de la salida de la suite, no del recuento manual.
+- **Siguiente verificación:** recorrido E2E M03 sobre commit limpio. No se anticipa su resultado ni se declara completo el módulo: falta el tramo de compra pública y los pendientes descritos en SPEC.
+
+### 2026-11-28 · 00:05 -05:00 · M03 físico repetido sin omisiones
+
+- **Artefacto:** base `d94e7f9713ba7cc3763821cae78fd8e49473ca2c` más el cambio local de operaciones M03. **Observado:** Sales **764/764**, cero omitidas, salida 0, 3 minutos 50 segundos; migración aplicada sobre base propia y limpieza completada (`ventas-fisicas-02.log/.rc/.resultado`). Incluye 18 casos nuevos: bloqueo concurrente, doble cobro simultáneo, pago tardío, abonos, permiso revocado, cancelación, autoría inmutable, rechazo de borrado con pagos y negativa de baja ante objetos/dependencias ajenas.
+- La prueba del Down ejecuta físicamente su guarda SQL con pagos presentes; no acredita todavía una reversión completa sin datos. Se distingue de la baja completa que se ejecutará en el ciclo E2E.
+- Tipos frontend y E2E con salida 0 (`ventas-tipos-01.rc`, `ventas-e2e-tipos-01.rc`); fronteras 34/34 (`ventas-fronteras-01.log/.rc`). No hay resultado de navegador de este cambio todavía.
+- **Control negativo en curso:** el arnés propio retirará únicamente `FOR UPDATE SKIP LOCKED` de vencimiento, exigirá que el caso de dos conexiones falle por esperar el cobro y restaurará los mismos bytes antes de repetir. Ningún resultado se anticipa; se conserva restauración en `finally` y digest del archivo.
+
+### 2026-11-28 · 00:00 -05:00 · Ventas: operaciones reales y primera prueba física
+
+- **Artefacto:** base `d94e7f9713ba7cc3763821cae78fd8e49473ca2c` más cambios locales de M03, aún sin commit de cierre. `main` no se modifica. El resultado M10 1/1 anterior permanece referido exclusivamente a d94.
+- **Ficheros y decisión:** `GestionDePedidos.cs`, `BloqueoDePedido.cs`, `GestionDePedidosEndpoints.cs`, DTO y panel `frontend/src/modules/sales/` integran consulta, cobro, cancelación y avances manuales. Las guardas viven en la operación y se releen tras esperar el bloqueo. CORE declara tres operaciones; la cuenta aporta su fotografía completa, nunca el llamador. No se añadió dependencia.
+- **Persistencia:** migración `20261128045120_OperacionesManualesDePedidos` añade identidad de reintento manual, comprobación humana de atención y motivo de cancelación, todos anulables en históricos. Índice único por pedido e intento, FK RESTRICT para conservar pagos y triggers que impiden reescribir hechos y atribución. Down protege evidencia; no es una eliminación silenciosa de campos. `99_drop.sql` deja de usar CASCADE y opera sobre objetos conocidos en una sola transacción.
+- **Criterio comercial aplicado:** abonos parciales no preparan el pedido; no hay sobrepago, suma entre monedas ni moneda implícita. El pago tardío se registra y, sin posibilidad de atención, queda visible para el personal. Un pedido gratuito se confirma una vez. No se introduce proveedor ni M11. Registrar una devolución sigue fuera del alcance v1; cancelar conserva los pagos y lo explica.
+- **Concurrencia:** vencimiento pasa a leer bajo bloqueo de fila, compartido con cobro y cambios manuales. El proceso periódico y el panel dejan un estado persistente que alimenta la bandeja. Se descarta depender del bus para el aviso obligatorio. M10 registra sus dos lectores reales; su cobertura permanece desconocida hasta acreditarla con evidencia durable, sin inventar fecha global.
+- **Observado:** compilación de API sin errores ni advertencias; migración física aplicada. Primera suite Sales: **760 aprobadas, una fallida, cero omitidas, salida 1** (`ventas-fisicas-01.log/.rc`). La roja es la barrera de inventario de escritores: detectó correctamente `GestionDePedidos.cs`. Se incluye explícitamente y se exige que tome moneda del pedido congelado. No se elimina ni se amplía genéricamente la barrera. La base propia se retiró al acabar. Repetición en marcha, sin anticipar resultado.
+- **Observado adicional:** tipos frontend y arnés E2E con salida 0; fronteras **34/34**, cero omitidas. Se escribió el ciclo M03 de navegador, aún no ejecutado. Incluye pago tardío sin atención, reintento, permiso revocado, entrega, cancelación, baja y reinstalación.
+- **Errores propios:** omití inicialmente el campo persistente `Reason`; compilación lo rechazó con dos errores. Se añadió con su migración. Un script de edición buscó un comentario con texto inexacto, falló y dejó cambios anteriores ya aplicados; el comando siguiente se lanzó por faltar `set -e`. Se revisó el estado, se guardaron las dos salidas generadas en el directorio ignorado y se regeneró el modelo completo con retención. Las escrituras siguientes exigen salida correcta antes de avanzar.
+- **Aún pendiente:** control negativo deliberado del bloqueo, repetición física, ciclo del navegador, compra pública/carrito/aviso del cliente, formato año-correlativo, cobertura del escritor, paginación completa, módulos M12/M18 y operaciones de los otros módulos. La puerta completa conserva su último resultado 5/6 más 198/199 E2E; no hay 6/6.
+
+### 2026-11-27 · 23:44 -05:00 · ciclo M10 observado y continuidad de Ventas
+
+- **Artefacto:** `d94e7f9713ba7cc3763821cae78fd8e49473ca2c`, limpio durante el ciclo. **Observado:** M10 **1/1**, cero omitidas, salida 0, preparación y ejecución 11 minutos. Evidencia local `tmp/cierre-web/m10-ciclo-01.log/.rc`. El ciclo verificó licencia previa sin interruptor, permisos desde el panel y HTTP, archivo CSV auditado, fuente ausente diferenciada de cero, baja física, negativa de activación sin esquema y reinstalación idempotente. No es una nueva puerta completa; sigue pendiente 6/6.
+- **Leído:** `SalesModule.cs` solo monta rutas de pedidos del cliente. Las políticas de pago/cancelación están en `OrderTransition.cs`, pero no hay operación del personal que las persista. Los dos lectores monetarios siguen fuera del registro normal en `LectoresMonetarios.cs`; se integrarán conservando la cobertura histórica desconocida hasta acreditar el escritor. La ausencia de escritor no se convertirá en cero medido.
+- **Decisión:** completar la operación transaccional del personal antes de su interfaz: autorización local dentro de la operación, bloqueo del pedido compartido con vencimiento, pago manual idempotente y fotografía de autoría. Las transiciones no afirmarán existencias garantizadas. Sin proveedor M11 ni nuevas dependencias. El formato visible año-correlativo del mandato vigente sustituirá al prefijo histórico, conservando legibilidad de códigos anteriores.
+- **Sin comprobar aún:** las nuevas operaciones, el carrito y su interfaz, M12, M18 y la puerta entera. No se transfiere el resultado de M10 al producto completo.
 
 ### 2026-11-27 · 23:24 -05:00 · licencias y permisos físicos verificados
 

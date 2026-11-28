@@ -78,6 +78,12 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
         // Anulable solo para los históricos; sin valor por defecto, que sería un origen inventado.
         builder.Property(x => x.Source).HasColumnName("source");
 
+        builder.Property(x => x.ManualRequestId).HasColumnName("manual_request_id");
+        builder.Property(x => x.CanFulfill).HasColumnName("can_fulfill");
+        builder.HasIndex(x => new { x.OrderId, x.ManualRequestId }).IsUnique()
+            .HasDatabaseName("uq_order_payments_manual_request")
+            .HasFilter("manual_request_id IS NOT NULL");
+
         builder.Property(x => x.Reference).HasColumnName("reference");
         builder.Property(x => x.ExternalSettlementId)
             .HasColumnName("external_settlement_id")
@@ -131,10 +137,8 @@ internal sealed class OrderPaymentConfiguration : IEntityTypeConfiguration<Order
             .WithMany()
             .HasForeignKey(x => x.OrderId)
             .HasConstraintName("fk_order_payments_order_id")
-            // Cascade, lo ratificado en SalesInitial. Restrict es una decisión candidata
-            // no ratificada: su migración existe pero está fuera de la compilación (ver
-            // el .csproj), y el modelo no se adelanta a ella.
-            .OnDelete(DeleteBehavior.Cascade);
+            // El cierre WEB conserva el hecho financiero ante un borrado accidental del pedido.
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(x => x.OrderId).HasDatabaseName("idx_order_payments_order_id");
 

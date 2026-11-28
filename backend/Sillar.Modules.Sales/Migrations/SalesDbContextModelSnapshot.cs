@@ -308,6 +308,10 @@ namespace Sillar.Modules.Sales.Migrations
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("amount");
 
+                    b.Property<bool?>("CanFulfill")
+                        .HasColumnType("boolean")
+                        .HasColumnName("can_fulfill");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamptz")
@@ -324,6 +328,10 @@ namespace Sillar.Modules.Sales.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("external_settlement_id")
                         .UseCollation("C");
+
+                    b.Property<Guid?>("ManualRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("manual_request_id");
 
                     b.Property<string>("Method")
                         .IsRequired()
@@ -395,6 +403,11 @@ namespace Sillar.Modules.Sales.Migrations
                     b.HasIndex("WasLate")
                         .HasDatabaseName("idx_order_payments_was_late")
                         .HasFilter("was_late");
+
+                    b.HasIndex("OrderId", "ManualRequestId")
+                        .IsUnique()
+                        .HasDatabaseName("uq_order_payments_manual_request")
+                        .HasFilter("manual_request_id IS NOT NULL");
 
                     b.ToTable("order_payments", "sales", t =>
                         {
@@ -509,6 +522,11 @@ namespace Sillar.Modules.Sales.Migrations
                         .HasColumnType("text")
                         .HasColumnName("origin_node");
 
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("reason");
+
                     b.Property<long>("RowVersion")
                         .HasColumnType("bigint")
                         .HasDefaultValue(1L)
@@ -574,7 +592,7 @@ namespace Sillar.Modules.Sales.Migrations
                     b.HasOne("Sillar.Modules.Sales.Domain.Order", null)
                         .WithMany()
                         .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_order_payments_order_id");
                 });

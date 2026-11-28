@@ -67,6 +67,12 @@ public sealed class SalesModule : IModule, IModuleMigrations
     /// <inheritdoc />
     public int DisplayOrder => 30;
 
+    public IReadOnlyList<ModuleOperation> Operations => [
+        new("read", "Consultar pedidos", AdminRole.Editor),
+        new("manage", "Preparar, entregar y cancelar pedidos", AdminRole.Editor),
+        new("pay", "Registrar pagos manuales", AdminRole.Admin),
+    ];
+
     /// <summary>
     /// Duras: CORE por plataforma, M01 porque no se vende lo que no está
     /// catalogado, y M04 porque comprar exige cuenta —lo que convirtió esa
@@ -99,6 +105,10 @@ public sealed class SalesModule : IModule, IModuleMigrations
         services.AddScoped<CongeladorDeCliente>();
         services.AddScoped<VencimientoDePlazos>();
         services.AddScoped<CreadorDePedidos>();
+        services.AddScoped<GestionDePedidos>();
+        services.AddHostedService<VencimientoEnSegundoPlano>();
+        services.AddScoped<IOrderValueAggregateReader, LectorDeValorDePedidos>();
+        services.AddScoped<IOrderPaymentAggregateReader, LectorAgregadoDePagos>();
 
         // La moneda de venta es la que CORE da por acreditada, leída en cada pedido y
         // bajo el bloqueo de moneda, en la transacción del pedido (R10-E13-B). Usa los dos
@@ -121,14 +131,10 @@ public sealed class SalesModule : IModule, IModuleMigrations
     }
 
     /// <inheritdoc />
-    /// <remarks>
-    /// Las rutas del cliente: crear un pedido y leer los propios. Las operaciones del
-    /// personal —registrar pago, cancelar, cambiar estado— esperan que
-    /// <c>ICurrentAdmin</c> pueda dar los tres datos de atribución que R-14 exige, y
-    /// hoy no puede (§p).
-    /// </remarks>
+    /// <remarks>El cliente consulta lo propio; el personal opera con autoridad local y fotografía de identidad.</remarks>
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPedidosDelClienteEndpoints();
+        endpoints.MapGestionDePedidosEndpoints();
     }
 }

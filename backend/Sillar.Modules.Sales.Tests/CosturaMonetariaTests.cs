@@ -453,7 +453,7 @@ public sealed class CosturaMonetariaTests
     }
 
     [Fact]
-    public void Los_que_guardan_en_el_contexto_de_ventas_son_conocidos_y_solo_el_creador_pone_moneda()
+    public void Los_escritores_conocidos_congelan_la_moneda_en_el_pedido_y_la_conservan_al_cobrar()
     {
         // Un escritor nuevo hace fallar esta prueba: hay que decidir si congela moneda y,
         // si la congela, ponerlo detrás de la barrera.
@@ -470,6 +470,7 @@ public sealed class CosturaMonetariaTests
                 "Sillar.Modules.Sales/Data/OrderCodeAllocator.cs",                 // ídem: va por SQL directo
                 "Sillar.Modules.Sales/Data/SalesDbContext.cs",                     // la sobrecarga con la guarda de origen
                 "Sillar.Modules.Sales/Pedidos/CreadorDePedidos.cs",
+                "Sillar.Modules.Sales/Pedidos/GestionDePedidos.cs", // cobra en la moneda congelada del pedido
                 "Sillar.Modules.Sales/Pedidos/VencimientoDePlazos.cs",
             ],
             guardan);
@@ -478,6 +479,11 @@ public sealed class CosturaMonetariaTests
         var vencimiento = File.ReadAllText(Ruta("Sillar.Modules.Sales/Pedidos/VencimientoDePlazos.cs"));
         Assert.DoesNotContain("CurrencyCode", vencimiento, StringComparison.Ordinal);
         Assert.DoesNotContain("Orders.Add", vencimiento, StringComparison.Ordinal);
+        var gestion = File.ReadAllText(Ruta("Sillar.Modules.Sales/Pedidos/GestionDePedidos.cs"));
+        Assert.Contains("CurrencyCode = p.CurrencyCode", gestion, StringComparison.Ordinal);
+        Assert.DoesNotContain("IInstallationCurrency", gestion, StringComparison.Ordinal);
+        Assert.DoesNotContain("ISettingsReader", gestion, StringComparison.Ordinal);
+
     }
 
     [Fact]

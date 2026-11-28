@@ -1,28 +1,13 @@
--- ============================================================
--- M03 Ventas Online — desinstalación
---
--- Elimina únicamente lo perteneciente a Sales:
---   - el schema sales completo (las siete tablas, sus triggers,
---     la función sales.set_updated_at() y sales.__migrations)
---
--- Conserva intactos:
---   - CORE (schema core, colaciones core.es_ci y core.es_search)
---   - M01 Catálogo (schema catalog)
---   - M04 Clientes (schema crm)
---   - cualquier objeto de otro módulo
---   - las extensiones compartidas: M03 no instala ninguna y no
---     retira las que otros módulos pusieron
---
--- Las dos claves foráneas cruzadas —sales.orders hacia
--- crm.customers y sales.order_lines hacia catalog.product_items—
--- se van con las tablas que las llevan, porque viven en el lado
--- dependiente. Ni crm ni catalog quedan tocados: esa es la razón
--- de declararlas en la migración de M03 y no en las suyas.
---
--- DROP SCHEMA ... CASCADE elimina las tablas, sus triggers, la
--- función del schema y el historial de migraciones.
---
--- Idempotente: IF EXISTS permite ejecutarlo dos veces seguidas.
--- ============================================================
-
-DROP SCHEMA IF EXISTS sales CASCADE;
+-- M03: baja transaccional de objetos conocidos. Una dependencia u objeto ajeno impide toda la baja.
+DO $sales_drop$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'sales') THEN RETURN; END IF;
+    DROP TABLE IF EXISTS sales.cart_items, sales.carts, sales.order_lines,
+        sales.order_payments, sales.order_status_changes, sales.orders,
+        sales.order_series, sales.__migrations RESTRICT;
+    DROP FUNCTION IF EXISTS sales.proteger_hechos_manuales() RESTRICT;
+    DROP FUNCTION IF EXISTS sales.order_payments_source_protegido() RESTRICT;
+    DROP FUNCTION IF EXISTS sales.set_updated_at() RESTRICT;
+    DROP SCHEMA sales RESTRICT;
+END
+$sales_drop$;

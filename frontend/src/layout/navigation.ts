@@ -6,6 +6,7 @@ import { crmNavigation } from '../modules/crm/routes';
 import { servicesNavigation } from '../modules/services/routes';
 import { serviceOrdersNavigation } from '../modules/service-orders/routes';
 import { trackingNavigation } from '../modules/tracking/routes';
+import { salesNavigation } from '../modules/sales/routes';
 import { reportingNavigation } from '../modules/reporting/routes';
 import type { Role } from '../session/SessionProvider';
 
@@ -62,6 +63,7 @@ export const MODULE_NAVIGATION: readonly ModuleNavigation[] = [
   b2bNavigation,
   trackingNavigation,
   reportingNavigation,
+  salesNavigation,
 ];
 
 /** Filtra la navegación por módulos activos y por rol. */

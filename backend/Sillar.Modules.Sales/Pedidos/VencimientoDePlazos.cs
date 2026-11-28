@@ -73,19 +73,16 @@ internal sealed class VencimientoDePlazos(SalesDbContext database, TimeProvider 
     {
         var ahora = clock.GetUtcNow();
 
-        var pendientes = await database.Orders
-            .Where(o => o.IsActive
-                        && o.Status == OrderStatus.PendingPayment
-                        && o.PaymentDueAt <= ahora)
-            .ToListAsync(cancellationToken);
-
-        if (pendientes.Count == 0)
-        {
-            return new ResultadoDeVencimiento(0, []);
-        }
-
         await using var transaccion =
             await TransaccionDeOperacion.AbrirSiHaceFaltaAsync(database, cancellationToken);
+        // Mismo bloqueo que cobro y cambios manuales. SKIP LOCKED evita esperar a un
+        // pedido en atención; la siguiente pasada lo revisa con su estado confirmado.
+        var filas = await database.Orders.FromSqlInterpolated($"""
+            SELECT * FROM sales.orders
+            WHERE is_active AND status = {OrderStatus.PendingPayment} AND payment_due_at <= {ahora}
+            ORDER BY order_id FOR UPDATE SKIP LOCKED
+            """).AsNoTracking().ToListAsync(cancellationToken);
+        var pendientes = filas.Select(p => BloqueoDePedido.RastrearActual(database, p)).ToList();
 
         var codigos = new List<string>(pendientes.Count);
 
